@@ -150,7 +150,7 @@ public class JDController implements ControlListener, UIListener {
     private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
     private boolean isReconnecting;
-
+    private int downloadListChangeID=0;
     private boolean lastReconnectSuccess;
     private FilePackage fp;
     private ArrayList<ControlEvent> eventQueue;
@@ -248,7 +248,7 @@ public class JDController implements ControlListener, UIListener {
 
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
-        if(event==null){
+        if (event == null) {
             logger.info("JJJ");
         }
         switch (event.getID()) {
@@ -257,7 +257,7 @@ public class JDController implements ControlListener, UIListener {
             if (fileLogger != null) {
                 LogRecord l = (LogRecord) event.getParameter();
                 try {
-                    fileLogger.write(l.getMillis() + " : " + l.getSourceClassName() + "(" + l.getSourceMethodName() + ") " + "[" + l.getLevel() + "] -> " + l.getMessage()+"\r\n");
+                    fileLogger.write(l.getMillis() + " : " + l.getSourceClassName() + "(" + l.getSourceMethodName() + ") " + "[" + l.getLevel() + "] -> " + l.getMessage() + "\r\n");
                     fileLogger.flush();
                 } catch (IOException e) {
                 }
@@ -1413,6 +1413,9 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
+        if(controlEvent.getID()==ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED){
+            this.increaseChangeID();
+        }
         try {
             // this.controlEvent(controlEvent);
             // if (controlListener == null) controlListener = new
@@ -1961,5 +1964,57 @@ public class JDController implements ControlListener, UIListener {
     public void setLogFileWriter(BufferedWriter bufferedWriter) {
         this.fileLogger = bufferedWriter;
 
+    }
+
+    public DownloadLink getDownloadLinkBefore(DownloadLink downloadLink) {
+        synchronized (packages) {
+
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            DownloadLink lastDownloadLink = null;
+            for (Iterator<FilePackage> packageIterator = packages.iterator(); packageIterator.hasNext();) {
+                fp = packageIterator.next();
+
+                for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
+
+                    nextDownloadLink = linkIterator.next();
+                    if (downloadLink == nextDownloadLink) return lastDownloadLink;
+                    lastDownloadLink = nextDownloadLink;
+
+                }
+            }
+            return null;
+
+        }
+
+    }
+
+    public DownloadLink getDownloadLinkAfter(DownloadLink lastElement) {
+        synchronized (packages) {
+
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            DownloadLink lastDownloadLink = null;
+            for (Iterator<FilePackage> packageIterator = packages.iterator(); packageIterator.hasNext();) {
+                fp = packageIterator.next();
+
+                for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
+
+                    nextDownloadLink = linkIterator.next();
+                    if (lastElement == lastDownloadLink) return nextDownloadLink;
+                    lastDownloadLink = nextDownloadLink;
+
+                }
+            }
+            return null;
+
+        }
+    }
+
+    public int getDownloadListChangeID() {
+        return downloadListChangeID;
+    }
+    private synchronized void increaseChangeID(){
+        downloadListChangeID++;
     }
 }

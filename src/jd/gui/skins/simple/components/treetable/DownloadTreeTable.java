@@ -6,6 +6,8 @@ package jd.gui.skins.simple.components.treetable;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -38,9 +40,11 @@ import javax.swing.tree.TreePath;
 import jd.JDFileFilter;
 import jd.config.MenuItem;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.DownloadInfo;
 import jd.gui.skins.simple.DownloadLinksView;
+import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.PackageInfo;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.BrowseFile;
@@ -64,7 +68,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
+public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener{
     private Logger logger = JDUtilities.getLogger();
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -83,7 +87,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private TooltipTimer tooltipTimer;
 
-    private Point mousePoint=null;
+    private Point mousePoint = null;
 
     private HTMLTooltip tooltip = null;
 
@@ -96,6 +100,10 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private TreeTableTransferHandler transferHandler;
 
+    private Vector<DownloadLink> moved;
+
+    private long ignoreSelectionsAndExpansionsUntil;
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -106,13 +114,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         this.getTableHeader().setResizingAllowed(true);
         // this.setExpandsSelectedPaths(true);
         this.setToggleClickCount(1);
-       if(JDUtilities.getJavaVersion()>=1.6) this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
-       this.setDragEnabled(true);
+        if (JDUtilities.getJavaVersion() >= 1.6) this.setDropMode(DropMode.ON_OR_INSERT_ROWS);
+        this.setDragEnabled(true);
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
         SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
-
+this.addKeyListener(this);
         this.setEditable(false);
 
         setDragEnabled(true);
@@ -121,8 +129,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         addTreeSelectionListener(this);
         addMouseListener(this);
         this.addMouseMotionListener(this);
-        this.setTransferHandler(transferHandler=new TreeTableTransferHandler(this));
-        if(JDUtilities.getJavaVersion()>1.6)this.setDropMode(DropMode.USE_SELECTION);
+        this.setTransferHandler(transferHandler = new TreeTableTransferHandler(this));
+        if (JDUtilities.getJavaVersion() > 1.6) this.setDropMode(DropMode.USE_SELECTION);
         this.tooltipTimer = new TooltipTimer(2000);
         tooltipTimer.start();
     }
@@ -133,7 +141,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
      */
     public void updateSelectionAndExpandStatus() {
         // logger.info("UPD");
-        
+
         int i = 0;
         FilePackage fp;
         DownloadLink dl;
@@ -156,7 +164,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
             i++;
         }
-        
 
     }
 
@@ -171,36 +178,36 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     }
 
     public void setColumnSizes() {
-        if(false){
-        TableColumn column = null;
-        for (int c = 0; c < getColumnModel().getColumnCount(); c++) {
-            column = getColumnModel().getColumn(c);
+        if (false) {
+            TableColumn column = null;
+            for (int c = 0; c < getColumnModel().getColumnCount(); c++) {
+                column = getColumnModel().getColumn(c);
 
-            switch (c) {
+                switch (c) {
 
-            case DownloadTreeTableModel.COL_PART:
-                column.setPreferredWidth(110);
-                column.setMinWidth(110);
-                // column.setMaxWidth(140);
-                break;
-            case DownloadTreeTableModel.COL_FILE:
-                column.setPreferredWidth(160);
-                // column.setMinWidth(180);
-                break;
-            case DownloadTreeTableModel.COL_HOSTER:
-                column.setPreferredWidth(100);
-                column.setMaxWidth(100);
-                break;
-            case DownloadTreeTableModel.COL_STATUS:
-                column.setPreferredWidth(160);
-                column.setMaxWidth(160);
-                break;
-            case DownloadTreeTableModel.COL_PROGRESS:
-                column.setPreferredWidth(190);
-                column.setMaxWidth(190);
-                break;
+                case DownloadTreeTableModel.COL_PART:
+                    column.setPreferredWidth(110);
+                    column.setMinWidth(110);
+                    // column.setMaxWidth(140);
+                    break;
+                case DownloadTreeTableModel.COL_FILE:
+                    column.setPreferredWidth(160);
+                    // column.setMinWidth(180);
+                    break;
+                case DownloadTreeTableModel.COL_HOSTER:
+                    column.setPreferredWidth(100);
+                    column.setMaxWidth(100);
+                    break;
+                case DownloadTreeTableModel.COL_STATUS:
+                    column.setPreferredWidth(160);
+                    column.setMaxWidth(160);
+                    break;
+                case DownloadTreeTableModel.COL_PROGRESS:
+                    column.setPreferredWidth(190);
+                    column.setMaxWidth(190);
+                    break;
+                }
             }
-        }
         }
 
     }
@@ -220,12 +227,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
      * Ästen deren Status
      */
     public void treeCollapsed(TreeExpansionEvent event) {
+        if (this.ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) return;
         FilePackage fp = (FilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(DownloadTreeTable.PROPERTY_EXPANDED, false);
 
     }
 
     public void treeExpanded(TreeExpansionEvent event) {
+        if (this.ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) return;
         FilePackage fp = (FilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(DownloadTreeTable.PROPERTY_EXPANDED, true);
     }
@@ -234,30 +243,26 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         TreePath[] paths = e.getPaths();
         // logger.info("" + e);
-
+        if (this.ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) return;
         for (TreePath path : paths) {
             if (e.isAddedPath(path)) {
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
-               
-                    // logger.info("SELECTED " + ((DownloadLink)
-                    // path.getLastPathComponent()));
+
+                    logger.info("SELECTED " + ((DownloadLink) path.getLastPathComponent()));
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
-                    
-                    // logger.info("SELECTED " + ((FilePackage)
-                    // path.getLastPathComponent()));
+
+                    logger.info("SELECTED " + ((FilePackage) path.getLastPathComponent()));
                 }
             } else {
 
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-                    // logger.info("NOT SELECTED " + ((DownloadLink)
-                    // path.getLastPathComponent()));
+                    logger.info("NOT SELECTED " + ((DownloadLink) path.getLastPathComponent()));
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-                    // logger.info("NOT SELECTED " + ((FilePackage)
-                    // path.getLastPathComponent()));
+                    logger.info("NOT SELECTED " + ((FilePackage) path.getLastPathComponent()));
                 }
             }
         }
@@ -311,8 +316,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     next = it2.next();
                     // logger.info("Refresh " + next.getKey() + " - " +
                     // next.getValue().size());
-                    
-                    if(!model.containesPackage(next.getKey()))continue;
+
+                    if (!model.containesPackage(next.getKey())) continue;
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
 
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
@@ -320,20 +325,20 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;
-                   
-                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext(); ) {
+
+                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                             next3 = it3.next();
-                            if(!next.getKey().contains(next3))continue;
+                            if (!next.getKey().contains(next3)) continue;
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
                             i++;
                             // logger.info(" children: " + next3 + " - " +
                             // ind[i]);
                         }
-if(i>0){
-                        supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
-}                  
-}
+                        if (i > 0) {
+                            supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
+                        }
+                    }
 
                 }
                 updatePackages = null;
@@ -354,7 +359,7 @@ if(i>0){
 
             supporter.fireTreeStructureChanged(new TreePath(model.getRoot()));
 
-            // ignoreSelectionsAndExpansions(200);
+            ignoreSelectionsAndExpansions(500);
             updateSelectionAndExpandStatus();
             // logger.info("finished");
 
@@ -364,7 +369,13 @@ if(i>0){
 
     }
 
+    void ignoreSelectionsAndExpansions(int i) {
+        ignoreSelectionsAndExpansionsUntil = System.currentTimeMillis() + i;
+
+    }
+
     public void mouseClicked(MouseEvent e) {
+        ignoreSelectionsAndExpansions(-100);
         if (tooltip != null) {
             tooltip.destroy();
             tooltip = null;
@@ -373,8 +384,8 @@ if(i>0){
             Point point = e.getPoint();
             int row = this.rowAtPoint(point);
             TreePath path = getPathForRow(row);
-            if(path==null)return;
-           Object obj=path.getLastPathComponent();
+            if (path == null) return;
+            Object obj = path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
                 new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) getPathForRow(row).getLastPathComponent());
             }
@@ -387,26 +398,23 @@ if(i>0){
 
     public void mouseExited(MouseEvent e) {
         this.tooltipTimer.setCaller(null);
-//        Point point = mousePoint;
-//        this.mousePoint = null;
-//       if(point!=null) {
-//           getDownladTreeTableModel().getModelSupporter().fireNewRoot();
-//       }
-        
+        // Point point = mousePoint;
+        // this.mousePoint = null;
+        // if(point!=null) {
+        // getDownladTreeTableModel().getModelSupporter().fireNewRoot();
+        // }
+
     }
 
     public void mouseReleased(MouseEvent e) {
         TreePath path = this.getPathForLocation(e.getX(), e.getY());
-       
-        if(path!=null && path.getLastPathComponent() instanceof FilePackage){
+
+        if (path != null && path.getLastPathComponent() instanceof FilePackage) {
             JDSounds.PT("sound.gui.selectPackage");
-        }else if(path!=null){
+        } else if (path != null) {
             JDSounds.PT("sound.gui.selectLink");
         }
-    
-       
-        
-        
+
         this.tooltipTimer.setCaller(null);
         if (tooltip != null) {
             tooltip.destroy();
@@ -415,6 +423,7 @@ if(i>0){
     }
 
     public void mousePressed(MouseEvent e) {
+        ignoreSelectionsAndExpansions(-100);
         // TODO: isPopupTrigger() funktioniert nicht
         // logger.info("Press"+e.isPopupTrigger() );
         Point point = e.getPoint();
@@ -433,51 +442,48 @@ if(i>0){
                 Vector<FilePackage> fps = new Vector<FilePackage>();
                 int disabled = 0;
                 int enabled = 0;
-                int progress=0;
-                int resumeable=0;
+                int progress = 0;
+                int resumeable = 0;
                 for (Iterator<DownloadLink> it = getSelectedDownloadLinks().iterator(); it.hasNext();) {
                     DownloadLink next = it.next();
                     if (!fps.contains(next.getFilePackage())) fps.add(next.getFilePackage());
                     if (!next.isEnabled()) disabled++;
                     if (next.isEnabled()) enabled++;
                     if (next.isInProgress()) progress++;
-                    if (!next.isInProgress()&&next.isFailed()) resumeable++;
+                    if (!next.isInProgress() && next.isFailed()) resumeable++;
                 }
                 JPopupMenu popup = new JPopupMenu();
                 Plugin plg = ((DownloadLink) obj).getPlugin();
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
 
                 JMenu packagePopup = new JMenu(JDLocale.L("gui.table.contextmenu.packagesubmenu", "Paket"));
-                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin")+" ("+plg.getPluginName()+")");
-                
+                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin") + " (" + plg.getPluginName() + ")");
+
                 MenuItem next1;
                 JMenuItem mi;
                 ArrayList<MenuItem> pluginMenuEntries = plg.createMenuitems();
-                if(pluginMenuEntries!=null)
-                for (Iterator<MenuItem> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
+                if (pluginMenuEntries != null) for (Iterator<MenuItem> it1 = pluginMenuEntries.iterator(); it1.hasNext();) {
                     next1 = it1.next();
-                    mi=SimpleGUI.getJMenuItem(next1);
+                    mi = SimpleGUI.getJMenuItem(next1);
 
-                   if(mi==null){
-                       pluginPopup.addSeparator(); 
-                   }else{
-                    pluginPopup.add(mi);
-                   }
-                    
+                    if (mi == null) {
+                        pluginPopup.addSeparator();
+                    } else {
+                        pluginPopup.add(mi);
+                    }
+
                 }
-                
-                if(pluginMenuEntries!=null)
-                if (pluginMenuEntries.size() == 0) pluginPopup.setEnabled(false);
+
+                if (pluginMenuEntries != null) if (pluginMenuEntries.size() == 0) pluginPopup.setEnabled(false);
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DOWNLOAD_DIR, new Property("downloadlink", obj))));
-                popup.add(tmp=new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
-if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabled(false);
+                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
+                if (((DownloadLink) obj).getLinkType() != DownloadLink.LINKTYPE_NORMAL) tmp.setEnabled(false);
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.delete", "entfernen"), TreeTableAction.DOWNLOAD_DELETE, new Property("downloadlinks", getSelectedDownloadLinks()))));
-              
-                
+
                 tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + disabled + ")", TreeTableAction.DOWNLOAD_ENABLE, new Property("downloadlinks", getSelectedDownloadLinks())));
                 if (disabled == 0) tmp.setEnabled(false);
                 popup.add(tmp);
@@ -485,20 +491,19 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 if (enabled == 0) tmp.setEnabled(false);
                 popup.add(tmp);
 
-                
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.DOWNLOAD_RESET, new Property("downloadlinks", getSelectedDownloadLinks()))));
-                tmp=(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abort", "abbrechen")+ " (" + progress + ")", TreeTableAction.DOWNLOAD_ABORT, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                tmp = (new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abort", "abbrechen") + " (" + progress + ")", TreeTableAction.DOWNLOAD_ABORT, new Property("downloadlinks", getSelectedDownloadLinks()))));
                 popup.add(tmp);
-                if(progress==0)tmp.setEnabled(false);
-                tmp=(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen")+ " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                if (progress == 0) tmp.setEnabled(false);
+                tmp = (new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", getSelectedDownloadLinks()))));
                 popup.add(tmp);
-                if(resumeable==0)tmp.setEnabled(false);
+                if (resumeable == 0) tmp.setEnabled(false);
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben"), TreeTableAction.DOWNLOAD_NEW_PACKAGE, new Property("downloadlinks", getSelectedDownloadLinks()))));
-                
+
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen"), TreeTableAction.DOWNLOAD_DLC, new Property("downloadlinks", getSelectedDownloadLinks()))));
-                
+
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packageinfo", "Detailansicht"), TreeTableAction.PACKAGE_INFO, new Property("package", ((DownloadLink) obj).getFilePackage()))));
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", ((DownloadLink) obj).getFilePackage()))));
                 packagePopup.add(new JSeparator());
@@ -507,18 +512,18 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern"), TreeTableAction.PACKAGE_EDIT_NAME, new Property("package", ((DownloadLink) obj).getFilePackage()))));
                 packagePopup.add(new JSeparator());
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.deletepackage", "entfernen"), TreeTableAction.PACKAGE_DELETE, new Property("packages", fps))));
-                tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enablepackage", "aktivieren") , TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps)));
-             
+                tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enablepackage", "aktivieren"), TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps)));
+
                 packagePopup.add(tmp);
-                tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disablepackage", "deaktivieren") , TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps)));
-             
+                tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disablepackage", "deaktivieren"), TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps)));
+
                 packagePopup.add(tmp);
 
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resetpackage", "zurücksetzen"), TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abortpackage", "abbrechen"), TreeTableAction.PACKAGE_ABORT, new Property("packages", fps))));
                 packagePopup.add(new JSeparator());
                 packagePopup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc_package", "DLC erstellen"), TreeTableAction.PACKAGE_DLC, new Property("packages", fps))));
-                
+
                 // popup.add(new JMenuItem(new TreeTableAction(this,
                 // "forcedownload", TreeTableAction.DOWNLOAD_FORCE,new
                 // Property("downloadlinks",getSelectedDownloadLinks()))));
@@ -544,7 +549,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abortpackage", "abbrechen"), TreeTableAction.PACKAGE_ABORT, new Property("packages", getSelectedFilePackages()))));
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc_package", "DLC erstellen"), TreeTableAction.PACKAGE_DLC, new Property("packages", getSelectedFilePackages()))));
-                
+
                 // popup.add(new JMenuItem(new TreeTableAction(this,
                 // "forcedownload", TreeTableAction.DOWNLOAD_FORCE,new
                 // Property("downloadlinks",getSelectedDownloadLinks()))));
@@ -586,6 +591,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         DownloadLink link;
+        SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         FilePackage fp;
         Vector<DownloadLink> links;
         Vector<FilePackage> fps;
@@ -628,9 +634,22 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
 
         case TreeTableAction.DOWNLOAD_DELETE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
-            JDUtilities.getController().removeDownloadLinks(links);
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
+            if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
+
+                    JDUtilities.getController().removeDownloadLinks(links);
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+
+                    // fireUIEvent(new UIEvent(this,
+                    // UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
+
+                }
+            } else {
+                JDUtilities.getController().removeDownloadLinks(links);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+
+            }
             break;
         case TreeTableAction.DOWNLOAD_ENABLE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
@@ -645,13 +664,11 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
 
             for (int i = 0; i < links.size(); i++) {
                 links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                links.elementAt(i).setStatusText(JDLocale.L("gui.linklist.status.doresume","Warte auf Fortsetzung"));
+                links.elementAt(i).setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
                 links.elementAt(i).getPlugin().resetSteps();
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
-            
-            
             break;
         case TreeTableAction.DOWNLOAD_DISABLE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
@@ -662,7 +679,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
-            
+
         case TreeTableAction.DOWNLOAD_DLC:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
@@ -674,8 +691,8 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
             }
-           
-            JDUtilities.getController().saveDLC(ret,links);
+
+            JDUtilities.getController().saveDLC(ret, links);
             break;
         case TreeTableAction.DOWNLOAD_NEW_PACKAGE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
@@ -701,11 +718,11 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
 
             for (int i = 0; i < links.size(); i++) {
-               // if (!links.elementAt(i).isInProgress()) {
-                    links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                    links.elementAt(i).setStatusText("");
-                    links.elementAt(i).reset();
-               
+                // if (!links.elementAt(i).isInProgress()) {
+                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
+                links.elementAt(i).setStatusText("");
+                links.elementAt(i).reset();
+
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
@@ -716,12 +733,13 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
 
             for (int i = 0; i < links.size(); i++) {
-               // if (!links.elementAt(i).isInProgress()) {
-                    links.elementAt(i).setAborted(true);
-            
-               
+                // if (!links.elementAt(i).isInProgress()) {
+                links.elementAt(i).setAborted(true);
+
             }
-            //JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
+            // JDUtilities.getController().fireControlEvent(new
+            // ControlEvent(this,
+            // ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, this));
 
             break;
         // case TreeTableAction.DOWNLOAD_FORCE:
@@ -739,8 +757,8 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             fc = new JDFileChooser();
             fc.setApproveButtonText("OK");
             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-      
-            fc.setCurrentDirectory(fp.getDownloadDirectory()!=null?new File(fp.getDownloadDirectory()):JDUtilities.getResourceFile("downloads"));
+
+            fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
             fc.showOpenDialog(this);
             ret = fc.getSelectedFile();
 
@@ -801,9 +819,9 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
-            
+
         case TreeTableAction.PACKAGE_DLC:
-            links= new Vector<DownloadLink>();
+            links = new Vector<DownloadLink>();
             fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
 
             for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
@@ -813,17 +831,17 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 }
 
             }
-             fc = new JDFileChooser("_LOADSAVEDLC");
+            fc = new JDFileChooser("_LOADSAVEDLC");
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
-             ret = fc.getSelectedFile();
+            ret = fc.getSelectedFile();
             if (ret == null) return;
             if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
             }
-           
-            JDUtilities.getController().saveDLC(ret,links);
+
+            JDUtilities.getController().saveDLC(ret, links);
             break;
         case TreeTableAction.PACKAGE_ABORT:
 
@@ -877,9 +895,9 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
         final int moColumn = this.columnAtPoint(e.getPoint());
         this.mousePosition = e.getPoint();
         this.mousePoint = e.getPoint();
-        Point screen=this.getLocationOnScreen();
-        mousePoint.x+=screen.x;
-        mousePoint.y+=screen.y;
+        Point screen = this.getLocationOnScreen();
+        mousePoint.x += screen.x;
+        mousePoint.y += screen.y;
         if (this.getPathForRow(moRow) == null) {
             this.mouseOverRow = moRow;
             this.mouseOverColumn = moColumn;
@@ -919,8 +937,8 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
             tooltip.destroy();
             tooltip = null;
         }
-        
-        if (!SimpleGUI.CURRENTGUI.getFrame().isActive()||transferHandler.isDragging) return;
+
+        if (!SimpleGUI.CURRENTGUI.getFrame().isActive() || transferHandler.isDragging) return;
         StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = this.getPathForRow(mouseOverRow).getLastPathComponent();
@@ -976,21 +994,23 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
                 break;
             }
         } else {
-//            FilePackage filePackage;
-//            DownloadLink dLink;
-//            for(Iterator<FilePackage> packageIterator = JDUtilities.getController().getPackages().iterator();packageIterator.hasNext();){
-//                filePackage = packageIterator.next();
-//                for(Iterator<DownloadLink> linkIterator = filePackage.getDownloadLinks().iterator();linkIterator.hasNext();){
-//                    dLink = linkIterator.next();
-//                    logger.info(dLink.getName());
-//                    logger.info(dLink.getHost());
-//                    logger.info(dLink.getStatusText());//Gibt einen Statustext aus der den jeweiligen Status des Links beschreibt. inkl. Speed
-//                    logger.info("Link in Arbeit: "+dLink.isInProgress());
-//                }
-//                
-//            }
-            
-            
+            // FilePackage filePackage;
+            // DownloadLink dLink;
+            // for(Iterator<FilePackage> packageIterator =
+            // JDUtilities.getController().getPackages().iterator();packageIterator.hasNext();){
+            // filePackage = packageIterator.next();
+            // for(Iterator<DownloadLink> linkIterator =
+            // filePackage.getDownloadLinks().iterator();linkIterator.hasNext();){
+            // dLink = linkIterator.next();
+            // logger.info(dLink.getName());
+            // logger.info(dLink.getHost());
+            // logger.info(dLink.getStatusText());//Gibt einen Statustext aus
+            // der den jeweiligen Status des Links beschreibt. inkl. Speed
+            // logger.info("Link in Arbeit: "+dLink.isInProgress());
+            // }
+            //                
+            // }
+
             fp = (FilePackage) obj;
             switch (mouseOverColumn) {
             case 0:
@@ -1089,7 +1109,7 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
     }
 
     public void windowLostFocus(WindowEvent e) {
-        if (tooltip != null&&e.getOppositeWindow()!=tooltip) {
+        if (tooltip != null && e.getOppositeWindow() != tooltip) {
             tooltip.destroy();
             tooltip = null;
         }
@@ -1097,8 +1117,98 @@ if(((DownloadLink) obj).getLinkType()!=DownloadLink.LINKTYPE_NORMAL)tmp.setEnabl
     }
 
     public Point getMousePosition2() {
-      
+
         return mousePosition;
+    }
+
+    public void moveSelectedItems(int id) {
+        Vector<DownloadLink> links = getSelectedDownloadLinks();
+        Vector<FilePackage> fps = getSelectedFilePackages();
+        this.moved = links;
+        this.ignoreSelectionsAndExpansions(2000);
+
+        if (links.size() >= fps.size()) {
+            if (links.size() == 0) return;
+            // getDownladTreeTableModel().move(draggingPathes, preLink,
+            // current.getLastPathComponent())
+            switch (id) {
+            case JDAction.ITEMS_MOVE_BOTTOM:
+                // DownloadLink before =
+                // JDUtilities.getController().getDownloadLinkBefore(links.get(0));
+                DownloadLink lastLink = JDUtilities.getController().getPackages().lastElement().getDownloadLinks().lastElement();
+                JDUtilities.getController().moveLinks(links, lastLink, null);
+                break;
+            case JDAction.ITEMS_MOVE_TOP:
+
+                DownloadLink firstLink = JDUtilities.getController().getPackages().firstElement().getDownloadLinks().firstElement();
+                JDUtilities.getController().moveLinks(links, null, firstLink);
+                break;
+            case JDAction.ITEMS_MOVE_UP:
+
+                DownloadLink before = JDUtilities.getController().getDownloadLinkBefore(links.get(0));
+                JDUtilities.getController().moveLinks(links, null, before);
+                break;
+            case JDAction.ITEMS_MOVE_DOWN:
+                DownloadLink after = JDUtilities.getController().getDownloadLinkAfter(links.lastElement());
+                JDUtilities.getController().moveLinks(links, after, null);
+
+                break;
+            }
+
+        } else {
+
+            switch (id) {
+            case JDAction.ITEMS_MOVE_BOTTOM:
+                // DownloadLink before =
+                // JDUtilities.getController().getDownloadLinkBefore(links.get(0));
+                FilePackage lastFilepackage = JDUtilities.getController().getPackages().lastElement();
+                JDUtilities.getController().movePackages(fps, lastFilepackage, null);
+                break;
+            case JDAction.ITEMS_MOVE_TOP:
+                FilePackage firstPackage = JDUtilities.getController().getPackages().firstElement();
+                JDUtilities.getController().movePackages(fps, null, firstPackage);
+            
+                break;
+            case JDAction.ITEMS_MOVE_UP:
+                int i=JDUtilities.getController().getPackages().indexOf(fps.get(0));
+                if(i<=0)return;
+                
+                FilePackage before = JDUtilities.getController().getPackages().get(i-1);
+                JDUtilities.getController().movePackages(fps, null, before);
+            
+                break;
+            case JDAction.ITEMS_MOVE_DOWN:
+                 i=JDUtilities.getController().getPackages().indexOf(fps.lastElement());
+                if(i>=JDUtilities.getController().getPackages().size()-1)return;
+                FilePackage after = JDUtilities.getController().getPackages().get(i+1);
+                
+                JDUtilities.getController().movePackages(fps, after, null);
+
+                break;
+            }
+            
+        }
+
+    }
+
+    public void keyPressed(KeyEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void keyReleased(KeyEvent e) {
+      
+        String modifier=KeyEvent.getKeyModifiersText(e.getModifiers());
+        String l= KeyEvent.getKeyText(e.getKeyCode());
+        String code=(modifier+"+"+l).toLowerCase();
+        logger.info(code);
+       
+        
+    }
+
+    public void keyTyped(KeyEvent e) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

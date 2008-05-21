@@ -236,6 +236,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JButton btnCes;
     private JDAction actionHelp;
 
+    private JDAction actionItemsTop;
+
+    private JDAction actionItemsUp;
+
+    private JDAction actionItemsDown;
+
+    private JDAction actionItemsBottom;
+
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
@@ -438,15 +446,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // actionSearch = new JDAction(this, JDTheme.I("gui.images.find"),
         // "action.search", JDAction.APP_SEARCH);
         actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
-        // actionItemsTop = new JDAction(this, JDTheme.I("gui.images.top"),
-        // "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
-        // actionItemsUp = new JDAction(this, JDTheme.I("gui.images.go_top"),
-        // "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
-        // actionItemsDown = new JDAction(this, JDTheme.I("gui.images.down"),
-        // "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
-        // actionItemsBottom = new JDAction(this,
-        // JDTheme.I("gui.images.go_bottom"), "action.edit.items_bottom",
-        // JDAction.ITEMS_MOVE_BOTTOM);
+         actionItemsTop = new JDAction(this, JDTheme.V("gui.images.go_top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
+         actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"),"action.edit.items_up", JDAction.ITEMS_MOVE_UP);
+         actionItemsDown = new JDAction(this, JDTheme.V("gui.images.down"),"action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
+         actionItemsBottom = new JDAction(this,JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
 
@@ -487,28 +490,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
         // edit menu
-        JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
+       //JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
         menFile.setMnemonic(JDLocale.L("gui.menu.edit_mnem").charAt(0));
         // JMenuItem menEditItemTop = createMenuItem(actionItemsTop);
         // JMenuItem menEditItemUp = createMenuItem(actionItemsUp);
         // JMenuItem menEditItemDown = createMenuItem(actionItemsDown);
         // JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
-        JMenuItem menEditItemsDelete = createMenuItem(actionItemsDelete);
-        menEdit.add(menEditItemsDelete);
+       // JMenuItem menEditItemsDelete = createMenuItem(actionItemsDelete);
+       // menEdit.add(menEditItemsDelete);
         // menEdit.addSeparator();
         // menEdit.add(menEditItemTop);
         // menEdit.add(menEditItemUp);
         // menEdit.add(menEditItemDown);
         // menEdit.add(menEditItemBottom);
         // action menu
-        JMenu menAction = new JMenu(JDLocale.L("gui.menu.action"));
-        menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
-        JMenuItem menDownload = createMenuItem(actionStartStopDownload);
-        JMenuItem menAddLinks = createMenuItem(actionItemsAdd);
-        menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
+       // JMenu menAction = new JMenu(JDLocale.L("gui.menu.action"));
+       // menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
+//        JMenuItem menDownload = createMenuItem(actionStartStopDownload);
+//        JMenuItem menAddLinks = createMenuItem(actionItemsAdd);
+//        menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
         // extra
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra"));
-        menAction.setMnemonic(JDLocale.L("gui.menu.extra_mnem").charAt(0));
+//        menAction.setMnemonic(JDLocale.L("gui.menu.extra_mnem").charAt(0));
         menViewLog = new JCheckBoxMenuItem(actionLog);
         menViewLog.setIcon(null);
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
@@ -705,11 +708,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menPasswordlist);
         menExtra.add(new JSeparator());
         menExtra.add(help);
-        menAction.add(menDownload);
-        menAction.add(menAddLinks);
+//        menAction.add(menDownload);
+//        menAction.add(menAddLinks);
         menuBar.add(menFile);
-        menuBar.add(menEdit);
-        menuBar.add(menAction);
+       // menuBar.add(menEdit);
+//        menuBar.add(menAction);
         menuBar.add(menExtra);
         menuBar.add(menAddons);
         menuBar.add(menPlugins);
@@ -788,6 +791,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnUpdate.setFocusPainted(false);
         btnUpdate.setBorderPainted(false);
         btnUpdate.setText(null);
+        
+        JButton btnTop = new JButton(this.actionItemsTop);
+        btnTop.setFocusPainted(false);
+        btnTop.setBorderPainted(false);
+        btnTop.setText(null);
+        JButton btnBottom = new JButton(this.actionItemsBottom);
+        btnBottom.setFocusPainted(false);
+        btnBottom.setBorderPainted(false);
+        btnBottom.setText(null);
+        JButton btnUp = new JButton(this.actionItemsUp);
+        btnUp.setFocusPainted(false);
+        btnUp.setBorderPainted(false);
+        btnUp.setText(null);
+        JButton btnDown = new JButton(this.actionItemsDown);
+        btnDown.setFocusPainted(false);
+        btnDown.setBorderPainted(false);
+        btnDown.setText(null);
         JButton btnSave = new JButton(this.actionSaveDLC);
         btnSave.setFocusPainted(false);
         btnSave.setBorderPainted(false);
@@ -826,6 +846,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnAdd);
         toolBar.add(btnDelete);
         // toolBar.add(btnSearch);
+        toolBar.addSeparator();
+        toolBar.add(btnBottom);
+        toolBar.add(btnDown);
+        toolBar.add(btnUp);
+        toolBar.add(btnTop);
         toolBar.addSeparator();
         toolBar.add(btnUpdate);
         toolBar.addSeparator();
@@ -870,7 +895,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ITEMS_MOVE_DOWN:
         case JDAction.ITEMS_MOVE_TOP:
         case JDAction.ITEMS_MOVE_BOTTOM:
-            // linkListPane.moveSelectedItems(e.getID());
+            linkListPane.moveSelectedItems(e.getID());
             break;
         case JDAction.APP_PAUSE_DOWNLOADS:
             this.btnPause.setSelected(!btnPause.isSelected());

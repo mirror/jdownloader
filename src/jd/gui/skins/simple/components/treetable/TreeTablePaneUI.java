@@ -38,21 +38,20 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     private static Color COLOR_DONE;
 
-    private static Color COLOR_ERROR ;
+    private static Color COLOR_ERROR;
 
     private static Color COLOR_DISABLED;
 
-    private static Color COLOR_WAIT ;
-
-
+    private static Color COLOR_WAIT;
 
     // ------------------------------------------------------------------------------------------------------------------
     // Custom installation methods
     // ------------------------------------------------------------------------------------------------------------------
 
     protected void installDefaults() {
-/*FIXME: Ist für Nimbus LAF auskommentiert*/ 
-      // super.installDefaults();
+
+        /* Ist für Nimbus LAF auskommentiert */
+        // super.installDefaults();
 
         EVEN_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_a", "EDF3FE");
 
@@ -73,8 +72,6 @@ public class TreeTablePaneUI extends BasicTableUI {
         COLOR_DISABLED = JDTheme.C("gui.color.downloadlist.row_link_disabled", "adadad");
 
         COLOR_WAIT = JDTheme.C("gui.color.downloadlist.row_link_disabled", "4393d7");
-
-       
 
         table.setShowGrid(false);
         table.setRowHeight(table.getFont().getSize() + 6);
@@ -229,8 +226,10 @@ public class TreeTablePaneUI extends BasicTableUI {
                 JComponent vComponent = (JComponent) c;
                 vComponent.setOpaque(false);
             }
-
-            super.paintComponent(g, c, p, x, y, w, h, shouldValidate);
+            try {
+                super.paintComponent(g, c, p, x, y, w, h, shouldValidate);
+            } catch (Exception e) {
+            }
         }
     }
 }

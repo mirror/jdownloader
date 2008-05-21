@@ -57,4 +57,9 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     }
 
+    public void moveSelectedItems(int id) {
+        internalTreeTable.moveSelectedItems(id);
+        
+    }
+
 }
