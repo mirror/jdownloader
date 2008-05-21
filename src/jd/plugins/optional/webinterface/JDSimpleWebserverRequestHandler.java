@@ -359,7 +359,28 @@ public class JDSimpleWebserverRequestHandler {
 
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
                 logger.info("reconnect now wurde gedrückt");
-                JDUtilities.getController().requestReconnect();
+                class JDReconnect implements Runnable {
+                    /*
+                     * zeitverzögertes neustarten
+                     */
+                    JDReconnect() {
+                        new Thread(this).start();
+                    }
+
+                    public void run() {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        logger.info("manual reconnect now");
+                        JDUtilities.getController().requestReconnect();
+                    }
+                }
+                @SuppressWarnings("unused")
+                JDReconnect jdrc = new JDReconnect();
+                
             } else if (requestParameter.get("do").compareToIgnoreCase("close") == 0) {
                 logger.info("close jd wurde gedrückt");
                 class JDClose implements Runnable { /* zeitverzögertes beenden */
@@ -374,11 +395,12 @@ public class JDSimpleWebserverRequestHandler {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
+                        logger.info("close jd now");
                         JDUtilities.getController().exit();
                     }
                 }
                 @SuppressWarnings("unused")
-                JDClose jds = new JDClose();
+                JDClose jdc = new JDClose();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
                 logger.info("start wurde gedrückt");
@@ -403,11 +425,12 @@ public class JDSimpleWebserverRequestHandler {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
+                        logger.info("restart jd now");
                         JDUtilities.restartJD();
                     }
                 }
                 @SuppressWarnings("unused")
-                JDRestart jdr = new JDRestart();
+                JDRestart jdrs = new JDRestart();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 logger.info("add wurde gedrückt");

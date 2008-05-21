@@ -55,7 +55,7 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getPluginID() {
-        return "0.0.0.7";
+        return "0.0.0.8";
     }
 
     @Override
@@ -65,7 +65,7 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getVersion() {
-        return "0.0.0.7";
+        return "0.0.0.8";
     }
 
     @Override
