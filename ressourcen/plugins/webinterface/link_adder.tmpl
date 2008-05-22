@@ -55,14 +55,14 @@
 
 
 				<tmpl_loop pakete>
-					<tr class="package<tmpl_var download_status>">
+					<tr class="package<tmpl_var download_status escape>">
 						<td><INPUT type="checkbox" name="package_all_add" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_add,this)"></td>
 						<td colspan="2">Package-Name: <INPUT size="35" type="text" name="adder_package_name_<tmpl_var package_id escape>" value="<tmpl_var download_name escape>"> <!--<span style="margin-left: 30px;">Password:</span> <INPUT size="35" type="text" name="adder_password_<tmpl_var package_id escape>" value="">--></td>
 					</tr>
 
 					<tmpl_loop downloads>
-						<tr class="download<tmpl_var download_status>" banane="sdf">
-							<td><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>
+						<tr class="download<tmpl_var download_status escape>" banane="sdf">
+							<td><INPUT type="checkbox" name="package_single_add" value="<tmpl_var package_id escape> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_add,document.jd.package_all_add)"></TD>
 							<td style="padding-left: 30px;"><tmpl_var download_name></TD>
 							<td><tmpl_var download_hoster></TD>
 						</tr>
@@ -92,6 +92,7 @@
 					<textarea name="addlinks" cols="90" rows="3" onfocus="clean(this)" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
 					<br>
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+					<br class="clear">
 				</DIV>
 			</FORM>
 		</div>

@@ -39,8 +39,8 @@
 						<span class="toolbarButton" id="btnRefresh" title="Refresh Page" onclick="forwardto('/index.tmpl')"></span>
 						<span class="toolbarButton" id="btnDL<tmpl_var config_startstopbutton escape>" title="Start/Stop Downloads" onclick="submitForm('jdForm','/index.tmpl','do', '<tmpl_var config_startstopbutton escape>')"></span>
 						<span class="toolbarButton" id="btnReconnect" title="Reconnect" onclick="submitForm('jdForm','/reconnect.tmpl','do','reconnect')"></span>
-						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect >" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect >')"></span>
-						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect >></div>
+						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect escape>" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect escape>')"></span>
+						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect>></div>
 					</div>
 					<div id="toolbarcenter">
 						<span id="deactivatedAutoReloadSpace">&nbsp;</span> <!--Um Spruenge im Design beim IE6 zu vermeiden-->
@@ -61,14 +61,14 @@
 
 
 				<tmpl_loop pakete>
-					<tr class="package<tmpl_var download_status>">
+					<tr class="package<tmpl_var download_status escape>">
 						<td><INPUT type="checkbox" name="package_all_downloads" value="<tmpl_var package_id escape>" onclick="samecheckall(document.jd.package_single_download,this)"></td>
 						<td><A href="all_info.tmpl?all_info=<tmpl_var package_id escape>" name="PackageInfo" onclick="return popup(this,600,200)"><tmpl_var download_name></A></td>
 						<td><tmpl_var download_hoster></td>
 						<td class="ladebalken">
 							<div class="ladebalken">
 								<div class="ladebalkenWrapper">
-									<div name="ladebalken" class="running" style="width: <tmpl_var download_status_percent>%;" id="<tmpl_var package_id escape>">&nbsp;
+									<div name="ladebalken" class="running" style="width: <tmpl_var download_status_percent escape>%;" id="<tmpl_var package_id escape>">&nbsp;
 									</div>
 								</div>
 								<span class="ladestatus"><tmpl_var download_status_text></span>
@@ -78,14 +78,14 @@
 					</tr>
 
 					<tmpl_loop downloads>
-						<tr class="download<tmpl_var download_status>">
-							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
-							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
+						<tr class="download<tmpl_var download_status escape>">
+							<td><INPUT type="checkbox" name="package_single_download" value="<tmpl_var package_id escape> <tmpl_var download_id escape>" onclick="areallsamechecked(this,document.jd.package_single_download,document.jd.package_all_downloads)"></TD>
+							<td><A href="single_info.tmpl?single_info=<tmpl_var package_id escape>+<tmpl_var download_id escape>" name="LinkInfo" onclick="return popup(this,600,200)" style="padding-left: 20px;"><tmpl_var download_name></A></TD>
 							<td><tmpl_var download_hoster></TD>
 							<td class="ladebalken">
 								<div class="ladebalken">
 									<div class="ladebalkenWrapper">
-										<div name="ladebalken" class="<tmpl_var download_status>" style="width: <tmpl_var download_status_percent>%;" id="<tmpl_var package_id>_<tmpl_var download_id escape>">&nbsp;
+										<div name="ladebalken" class="<tmpl_var download_status escape>" style="width: <tmpl_var download_status_percent escape>%;" id="<tmpl_var package_id escape>_<tmpl_var download_id escape>">&nbsp;
 										</div>
 									</div>
 									<span class="ladestatus"><tmpl_var download_status_text></span>

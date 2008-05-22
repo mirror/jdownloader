@@ -10,6 +10,7 @@
 </head>
 
 <body>
+<div class="hide" style="width:0%;" id="0">&nbsp;</div><!--package - needed by setProgressBarsColors-->
 <table width="95%" align="center" id="infotable">
 <tbody>
 	<tmpl_loop all_infos>
@@ -20,7 +21,7 @@
 		<td class="ladebalken">
 			<div class="ladebalken">
 				<div class="ladebalkenWrapper">
-					<div name="ladebalken" class="<tmpl_var download_status escape>" style="width: <tmpl_var info_percent>%;" id="0_<tmpl_var download_id escape>">&nbsp;</div>
+					<div name="ladebalken" class="<tmpl_var download_status escape>" style="width: <tmpl_var info_percent escape>%;" id="0_<tmpl_var download_id escape>">&nbsp;</div>
 				</div>
 				<span class="ladestatus"><tmpl_var info_value></span><br class="clear">
 			</div>
