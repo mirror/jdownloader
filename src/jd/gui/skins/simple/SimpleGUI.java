@@ -1458,8 +1458,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * @param string
      */
     public boolean showConfirmDialog(String string) {
-        logger.info("confirmdialog");
-        return JOptionPane.showConfirmDialog(frame, string) == JOptionPane.OK_OPTION;
+        logger.info("confirmdialog");        
+        return JOptionPane.showConfirmDialog(frame, string,"",JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION;
     }
 
     /**
@@ -1521,7 +1521,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         if (e.getComponent() == this.getFrame()) {
             boolean doIt;
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                doIt = this.showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));
+                doIt = this.showConfirmDialog(JDLocale.L("sys.ask.rlyclose", "Wollen Sie jDownloader wirklich schließen?"));                        
             } else {
                 doIt = true;
             }
