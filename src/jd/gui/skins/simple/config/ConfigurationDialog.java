@@ -92,6 +92,10 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JButton btnRestart;
 
+    /**
+     * @param parent
+     * @param uiinterface
+     */
     private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
         // super(parent);
         DIALOG = this;
@@ -170,16 +174,23 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             tabbedPane.setSelectedIndex(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
         } // paintPanel();
 
-        pack();
+        // there is already a pack below. Can't see how a second pack would imrove things?
+        // pack();
 
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
         this.addWindowListener(list);
+        // questionable if one needs this call to pack since restoreWindow does
+        // a similar job. Only way this may hurt is by increasing the time it takes to 
+        // make the dialog visible.
         pack();
-        this.validate();
-        this.setVisible(true);
+        // pack already calls validate implicitely. 
+        // this.validate();
         SimpleGUI.restoreWindow(parent, null, this);
-
+        // setVisible should be called after restoreWindow. Otherwise we have a
+        // strange growing effect since the dialog is first made visible and then
+        // assigned a new (possibly different) size by restoreWindow.
+        this.setVisible(true);
     }
 
     @SuppressWarnings("unchecked")
