@@ -36,7 +36,7 @@ public class MediafireCom extends PluginForHost {
 
     private static final String  VERSION          = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[*]mediafire.com/download.php?[+]");
+    static private final Pattern patternSupported = getSupportPattern("(http://[*]mediafire.com/download.php?[+])|(http://[*]mediafire.com/?[+])");
 
     static private final String offlinelink = "The quickkey you provided for file download was invalid";
     
@@ -168,6 +168,6 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://filebase.to/tos/";
+        return "http://www.mediafire.com/terms_of_service.php";
     }
 }
