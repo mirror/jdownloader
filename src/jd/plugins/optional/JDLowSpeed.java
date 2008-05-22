@@ -4,7 +4,6 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -26,7 +25,7 @@ public class JDLowSpeed extends PluginOptional {
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
     private Thread pluginThread = null;
     private boolean isRunning = false;
-    
+
     public JDLowSpeed() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_RAPIDSHAREONLY, JDLocale.L("plugins.optional.jdlowspeed.rsonly", "Nur Raidshare überwachen")));
@@ -70,11 +69,10 @@ public class JDLowSpeed extends PluginOptional {
         }
         return menu;
     }
-    private void controllDownload(final DownloadLink downloadLink,final int minspeed,final int maxspeed)
-    {
-        if(downloadLink.getSpeedMeter().getSpeed()<minspeed)
-        {
-            new Thread(new Runnable(){
+
+    private void controllDownload(final DownloadLink downloadLink, final ArrayList<DownloadLink> other, final int minspeed, final int maxspeed) {
+        if (downloadLink.getSpeedMeter().getSpeed() < minspeed) {
+            new Thread(new Runnable() {
 
                 public void run() {
                     for (int i = 0; i < 20; i++) {
@@ -86,47 +84,70 @@ public class JDLowSpeed extends PluginOptional {
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
                         long size = downloadLink.getDownloadMax();
-                        if(speed>minspeed || (((size-downloadLink.getDownloadCurrent())/speed)<(size/maxspeed)))
-                        {
-                            return;
+                        if (!downloadLink.isInProgress() || downloadLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS || speed > minspeed) return;
+                        if (size != 0) {
+                            if (((size - downloadLink.getDownloadCurrent()) / speed) < (size / maxspeed)) { return; }
+                            Iterator<DownloadLink> iter = other.iterator();
+                            long othersSpeed = 0;
+                            while (iter.hasNext()) {
+                                DownloadLink downloadLink2 = (DownloadLink) iter.next();
+                                if (downloadLink2.isInProgress() || downloadLink2.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
+                            }
+                            if (othersSpeed != 0 && ((size - downloadLink.getDownloadCurrent()) / speed) < (size / ((maxspeed * 5 / 4) - othersSpeed))) { return; }
                         }
                     }
-                    logger.info("reset download: "+downloadLink.getName());
+                    logger.info("reset download: " + downloadLink.getName());
                     downloadLink.setStatus(DownloadLink.STATUS_TODO);
                     downloadLink.setStatusText("");
                     downloadLink.reset();
 
                 }
-                
+
             }).start();
         }
     }
+
     private void initPlugin() {
         if (!isRunning) {
             logger.info("start");
-            isRunning=true;
-            pluginThread = new Thread(new Runnable(){
+            isRunning = true;
+            pluginThread = new Thread(new Runnable() {
 
                 public void run() {
                     while (isRunning) {
                         int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-                        if(maxspeed==0)
-                            maxspeed = subConfig.getIntegerProperty(PROPERTY_MAXSPEED, 350);
-                        maxspeed=maxspeed*4/5;
-                        maxspeed*=1024;
+                        if (maxspeed == 0) maxspeed = subConfig.getIntegerProperty(PROPERTY_MAXSPEED, 350);
+                        maxspeed = maxspeed * 4 / 5;
+                        maxspeed *= 1024;
                         Boolean rsOnly = subConfig.getBooleanProperty(PROPERTY_RAPIDSHAREONLY, true);
-                        if(JDUtilities.getController().getSpeedMeter()<maxspeed)
-                        {
-                        int minspeed = subConfig.getIntegerProperty(PROPERTY_MINSPEED, 350)*1024;
+                        if (JDUtilities.getController().getSpeedMeter() < maxspeed) {
+                            int minspeed = subConfig.getIntegerProperty(PROPERTY_MINSPEED, 350) * 1024;
 
-                        Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
-                        while (ff.hasNext()) {
-                            DownloadLink dl = ff.next();
+                            Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
+                            ArrayList<DownloadLink> dls = new ArrayList<DownloadLink>();
+                            ArrayList<DownloadLink> dlsToCheck = new ArrayList<DownloadLink>();
+                            while (ff.hasNext()) {
+                                DownloadLink dl = ff.next();
+                                if (dl.isInProgress() || dl.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                                    dls.add(dl);
+                                    if (!rsOnly || dl.getPlugin().getHost().equals("rapidshare.com")) {
+                                        dlsToCheck.add(dl);
 
-                            if (dl.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && (!rsOnly || dl.getPlugin().getHost().equals("rapidshare.com"))) {
-                                controllDownload(dl, minspeed, maxspeed);
+                                    }
+                                }
                             }
-                        }
+                            ff = dlsToCheck.iterator();
+                            while (ff.hasNext()) {
+                                DownloadLink downloadLink = (DownloadLink) ff.next();
+                                ArrayList<DownloadLink> other = new ArrayList<DownloadLink>();
+                                Iterator<DownloadLink> it = dls.iterator();
+                                while (it.hasNext()) {
+                                    DownloadLink downloadLink2 = (DownloadLink) it.next();
+                                    if (!downloadLink2.equals(downloadLink)) other.add(downloadLink);
+                                }
+
+                                controllDownload(downloadLink, other, minspeed, maxspeed);
+                            }
                         }
                         try {
                             Thread.sleep(20000);
@@ -135,15 +156,16 @@ public class JDLowSpeed extends PluginOptional {
                             e.printStackTrace();
                         }
                     }
-                    
-                }});
+
+                }
+            });
             pluginThread.start();
         }
     }
 
     private void stopPlugin() {
         logger.info("stop");
-        isRunning=false;
+        isRunning = false;
 
     }
 
@@ -165,8 +187,7 @@ public class JDLowSpeed extends PluginOptional {
         MenuItem mi = (MenuItem) e.getSource();
         if (mi.getActionID() == 0) {
             subConfig.setProperty(PROPERTY_ENABLED, true);
-            if(JDUtilities.getController().getDownloadStatus()==JDController.DOWNLOAD_RUNNING)
-            {
+            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
                 initPlugin();
             }
             subConfig.save();
