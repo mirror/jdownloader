@@ -112,8 +112,8 @@ public class Serienjunkies extends PluginForHost {
             URL url = new URL(parameter);
             subdomain = new Regexp(parameter, "http://(.*?)serienjunkies.org.*").getFirstMatch();
             String modifiedURL = JDUtilities.htmlDecode(url.toString());
-            modifiedURL = modifiedURL.replaceAll("safe/rc", "safe/frc");
-            modifiedURL = modifiedURL.replaceAll("save/rc", "save/frc");
+            modifiedURL = modifiedURL.replaceAll("safe/", "safe/f");
+            modifiedURL = modifiedURL.replaceAll("save/", "save/f");
             modifiedURL = modifiedURL.substring(modifiedURL.lastIndexOf("/"));
 
             patternCaptcha = Pattern.compile(dynamicCaptcha);
@@ -328,10 +328,8 @@ public class Serienjunkies extends PluginForHost {
         boolean fileDownloaded = false;
         if (!url.startsWith("http://")) url = "http://" + url;
         try {
-            url = url.replaceAll("safe/rc", "safe/frc");
-            url = url.replaceAll("save/rc", "save/frc");
-            url = url.replaceAll("save/rs", "save/frs");
-            url = url.replaceAll("safe/rs", "safe/frs");
+            url = url.replaceAll("safe/", "safe/f");
+            url = url.replaceAll("save/", "save/f");
             RequestInfo reqinfo = getRequest(new URL(url));
             File captchaFile = null;
             String capTxt = null;
