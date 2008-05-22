@@ -28,7 +28,7 @@ public abstract class PluginOptional extends Plugin implements ActionListener,Co
 
     @Override
     public boolean doBotCheck(File file) { return false; }
-
+    public static int VERSION_ID=0;
     @Override public PluginStep doStep(PluginStep step, Object parameter) { return null; }
     @Override public String getHost()            { return null; }
     @Override public String getLinkName()        { return null; }
@@ -37,7 +37,9 @@ public abstract class PluginOptional extends Plugin implements ActionListener,Co
     public String getPluginName() {
         return "Unnamend Optional Plugin";
     }
-
+    public static int getVersionID(){
+        return VERSION_ID;
+    }
 
     public abstract boolean initAddon();
     public abstract String getRequirements();

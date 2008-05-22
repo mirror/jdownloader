@@ -201,8 +201,11 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-
-        return JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
+        boolean ret=JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
+        if(!ret)return false;
+        String info=JDUtilities.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
+        if(info.contains("disabled"))return false;
+        return true;
     }
 
     /**
@@ -1951,7 +1954,7 @@ public class JAntiCaptcha {
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
                 // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName());
-                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()) {
+                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists()&&!JDUtilities.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
                     return true;
                 } else {

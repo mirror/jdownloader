@@ -690,7 +690,7 @@ public class JDInit {
     public void removeFiles() {
         String[] remove=null;
         
-        //remove = new String[] { "jd/captcha/methods/rapidshare.com" };
+       // remove = new String[] { "jd/captcha/methods/filefactory.com" };
 if(remove!=null)
         for (String file : remove) {
 

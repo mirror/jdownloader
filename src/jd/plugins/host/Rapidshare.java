@@ -769,7 +769,7 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    private PluginStep doFreeStep0(PluginStep step, DownloadLink downloadLink) {
+    private PluginStep doFreeStep0(PluginStep step, DownloadLink downloadLink)  {
         if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
             long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
             logger.severe("wait (intern) " + waitTime + " minutes");
@@ -1210,7 +1210,6 @@ public class Rapidshare extends PluginForHost {
                 downloadLink.setDownloadMax(length);
 
                 Set<Entry<String, String>> entries = serverMap.entrySet();
-                logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
                 Iterator<Entry<String, String>> it = entries.iterator();
                 while (it.hasNext()) {
                     Entry<String, String> entry = it.next();
@@ -1221,6 +1220,14 @@ public class Rapidshare extends PluginForHost {
                         break;
                     }
                 }
+                downloadLink.setStatusText(JDUtilities.htmlDecode(actionString));
+                downloadLink.requestGuiUpdate();
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    // TODO Auto-generated catch block
+//                    e.printStackTrace();
+//                }
                 logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
 
                 dl = new RAFDownload(this, downloadLink, urlConnection);

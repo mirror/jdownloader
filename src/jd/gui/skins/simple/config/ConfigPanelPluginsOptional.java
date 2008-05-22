@@ -44,6 +44,7 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -78,6 +79,10 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
     //private JarFile[] availablePluginJarFiles;
 
     private Vector<PluginOptional> plugins;
+
+    private JButton openPluginDir;
+
+    private JLinkButton link;
 
     public ConfigPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -167,12 +172,20 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
         enableDisable.addActionListener(this);
         
+        
+        openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir","Addon Ordner öffnen"));
+
+        openPluginDir.addActionListener(this);
+      
+        link= new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help","Hilfe"),JDLocale.L("gui.config.plugin.optional.link_help","  http://jdownloader.ath.cx/page.php?id=122"));
         JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, openPluginDir, 2, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
@@ -224,6 +237,13 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
             boolean b = configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false);
             configuration.setProperty(getConfigParamKey(plugins.get(rowIndex)), !b);
             fireTableChanged();
+        }
+        if(e.getSource()==openPluginDir){
+            
+            try {
+                new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));
+            } catch (Exception ec) {
+            }
         }
 
     }
