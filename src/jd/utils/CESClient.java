@@ -162,7 +162,7 @@ public class CESClient implements Serializable {
                     String id = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_ID, 0);
                     String state = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_STATE, 0);
 
-                    logger.info(ri.getHtmlCode());
+                    printMessage(ri.getHtmlCode());
                     this.askUserForCode(server + img, id, state);
 
                 }
