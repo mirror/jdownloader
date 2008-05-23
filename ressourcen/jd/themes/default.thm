@@ -45,6 +45,12 @@ gui.images.package_closed = default/package_closed
 gui.images.link=default/link
 gui.images.selected=default/checked
 gui.images.unselected=default/unchecked
+
+gui.icons.copy=default/editcopy
+gui.icons.cut=default/editcut
+gui.icons.paste=default/editpaste
+gui.icons.select_all=default/edit_select_all
+gui.icons.delete=default/editdelete
 gui.color.downloadlist.font = 000000
 
 gui.color.downloadlist.row_a = EEEEEE
