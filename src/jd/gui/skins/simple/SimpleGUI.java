@@ -1632,81 +1632,86 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     }
 
-    public void controlEvent(ControlEvent event) {
-        switch (event.getID()) {
-
-        case ControlEvent.CONTROL_PLUGIN_ACTIVE:
-            logger.info("Plugin Aktiviert: " + event.getSource());
-            // setPluginActive((PluginForDecrypt) event.getParameter(), true);
-            if (event.getSource() instanceof Interaction) {
-                logger.info("Interaction start. ");
-                statusBar.setText("Interaction: " + ((Interaction) event.getSource()).getInteractionName());
-                frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getSource()).getInteractionName());
-
-            }
-            break;
-        case ControlEvent.CONTROL_SYSTEM_EXIT:
-            this.getFrame().setVisible(false);
-            this.getFrame().dispose();
-            break;
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            logger.info("Plugin Deaktiviert: " + event.getSource());
-            // setPluginActive((PluginForDecrypt) event.getParameter(), false);
-            if (event.getSource() instanceof Interaction) {
-                logger.info("Interaction zu ende. rest status");
-
-                statusBar.setText(null);
-                frame.setTitle(JDUtilities.getJDTitle());
-            }
-            break;
-        case ControlEvent.CONTROL_ON_PROGRESS:
-
-            handleProgressController((ProgressController) event.getSource(), event.getParameter());
-
-            break;
-
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-            // showTrayTip("Downloads", "All downloads finished");
-            logger.info("ALL FINISHED");
-            btnStartStop.setSelected(false);
-            btnStartStop.setEnabled(true);
-            btnPause.setEnabled(false);
-            btnPause.setSelected(false);
-            break;
-
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
-            frame.setTitle(JDUtilities.getJDTitle() + " - Downloads werden abgebrochen");
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
-            frame.setTitle(JDUtilities.getJDTitle());
-            break;
-        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            if (event.getSource().getClass() == JDController.class) {
-            }
-            break;
-        case ControlEvent.CONTROL_DOWNLOAD_START:
-            // only in this way the button state is correctly set
-            // controller.startDownloads() is called by button itself so it
-            // cannot handle this
-      
-            btnStartStop.setEnabled(true);
-            btnPause.setEnabled(true);
-            btnStartStop.setSelected(true);
+    public void controlEvent(final ControlEvent event) {
+        // Moved the whole content of this method into a Runnable run by
+        // invokeLater(). Ensures that everything inside is executed on the EDT.
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                switch (event.getID()) {
+                
+                case ControlEvent.CONTROL_PLUGIN_ACTIVE:
+                    logger.info("Plugin Aktiviert: " + event.getSource());
+                    // setPluginActive((PluginForDecrypt) event.getParameter(), true);
+                    if (event.getSource() instanceof Interaction) {
+                        logger.info("Interaction start. ");
+                        statusBar.setText("Interaction: " + ((Interaction) event.getSource()).getInteractionName());
+                        frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getSource()).getInteractionName());
+                        
+                    }
+                    break;
+                case ControlEvent.CONTROL_SYSTEM_EXIT:
+                    SimpleGUI.this.getFrame().setVisible(false);
+                    SimpleGUI.this.getFrame().dispose();
+                    break;
+                case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+                    logger.info("Plugin Deaktiviert: " + event.getSource());
+                    // setPluginActive((PluginForDecrypt) event.getParameter(), false);
+                    if (event.getSource() instanceof Interaction) {
+                        logger.info("Interaction zu ende. rest status");
+                        
+                        statusBar.setText(null);
+                        frame.setTitle(JDUtilities.getJDTitle());
+                    }
+                    break;
+                case ControlEvent.CONTROL_ON_PROGRESS:
+                    
+                    handleProgressController((ProgressController) event.getSource(), event.getParameter());
+                    
+                    break;
+                    
+                case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+                    // showTrayTip("Downloads", "All downloads finished");
+                    logger.info("ALL FINISHED");
+                    btnStartStop.setSelected(false);
+                    btnStartStop.setEnabled(true);
+                    btnPause.setEnabled(false);
+                    btnPause.setSelected(false);
+                    break;
+                    
+                case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+                    break;
+                case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE:
+                    frame.setTitle(JDUtilities.getJDTitle() + " - Downloads werden abgebrochen");
+                    break;
+                case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
+                    frame.setTitle(JDUtilities.getJDTitle());
+                    break;
+                case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
+                    if (event.getSource().getClass() == JDController.class) {
+                    }
+                    break;
+                case ControlEvent.CONTROL_DOWNLOAD_START:
+                    // only in this way the button state is correctly set
+                    // controller.startDownloads() is called by button itself so it
+                    // cannot handle this
+                    
+                    btnStartStop.setEnabled(true);
+                    btnPause.setEnabled(true);
+                    btnStartStop.setSelected(true);
 //            btnStartStop.setSelected(!btnStartStop.isSelected());
 //            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
 //            this.startStopDownloads();
-            break;
-            
-        case ControlEvent.CONTROL_DOWNLOAD_STOP:
-            btnStartStop.setEnabled(true);
-            btnPause.setEnabled(true);
-            btnStartStop.setSelected(false);
-            
-            break;
-        }
-
+                    break;
+                    
+                case ControlEvent.CONTROL_DOWNLOAD_STOP:
+                    btnStartStop.setEnabled(true);
+                    btnPause.setEnabled(true);
+                    btnStartStop.setSelected(false);
+                    
+                    break;
+                }
+            }
+        });
     }
 
     public void setGUIStatus(int id) {
