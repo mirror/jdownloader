@@ -18,6 +18,7 @@ package jd;
 
 import java.awt.Image;
 import java.awt.MediaTracker;
+import java.awt.Toolkit;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -44,6 +45,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
+import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.HTTPConnection;
 import jd.utils.JDLocale;
@@ -248,7 +250,7 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-
+        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue()); 
         JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();
