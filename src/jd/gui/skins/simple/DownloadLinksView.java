@@ -1,5 +1,6 @@
 package jd.gui.skins.simple;
 
+import java.awt.EventQueue;
 import java.awt.LayoutManager;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -42,30 +43,34 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
         JDUtilities.getController().addControlListener(this);
     }
 
-    public void controlEvent(ControlEvent event) {
-
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
-            fireTableChanged(REFRESH_SPECIFIED_LINKS,event.getParameter());
-            // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
-            break;
-
-        case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
-            fireTableChanged(REFRESH_ALL_DATA_CHANGED,null);
-            // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
-            break;
-        case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            if (event.getSource().getClass() == JDController.class) {
-                this.setPackages(JDUtilities.getController().getPackages());
+    public void controlEvent(final ControlEvent event) {
+        // Moved the whole content of this method into a Runnable run by
+        // invokeLater(). Ensures that everything inside is executed on the EDT.
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                switch (event.getID()) {
+                case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
+                    fireTableChanged(REFRESH_SPECIFIED_LINKS,event.getParameter());
+                    // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
+                    break;
+                    
+                case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
+                    fireTableChanged(REFRESH_ALL_DATA_CHANGED,null);
+                    // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
+                    break;
+                case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
+                    if (event.getSource().getClass() == JDController.class) {
+                        DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
+                    }
+                    fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED,null);
+                    
+                }
             }
-            fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED,null);
-
-        }
+        });
     }
 
     private void setPackages(Vector<FilePackage> packages) {
         this.packages = packages;// new Vector<FilePackage>(packages);
-
     }
 
     // /**
