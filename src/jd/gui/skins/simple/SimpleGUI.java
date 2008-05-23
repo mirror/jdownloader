@@ -18,6 +18,7 @@ package jd.gui.skins.simple;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -56,6 +57,8 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
@@ -344,18 +347,30 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         dragNDrop.addUIListener(this);
         // Ruft jede sekunde ein UpdateEvent auf
 
-        new Thread("GUI Interval") {
-            public void run() {
+        
+        /*
+         * jago: Fixed very bad style of coding which often is the cause of
+         * fully frozen applications!!! After the JFrame is realized (e.g.
+         * setVisible, see above) it is not allowed to access any Swing object
+         * from outside of the EDT. Even worse in this case the code created a
+         * new Thread that constantly executed interval() which accesses the EDT
+         * from outside every second!
+         * 
+         * Look out for similar code in the rest of JD whenever you encounter
+         * unreproducible, seemingly random crashes or an unresponsive/frozen
+         * GUI.
+         */
+        new SwingWorker() {
+
+            @Override
+            protected Object doInBackground() throws Exception {
                 while (true) {
                     interval();
-                    try {
-                        Thread.sleep(1000);
-
-                    } catch (InterruptedException e) {
-                    }
+                    Thread.sleep(1000);
                 }
             }
-        }.start();
+
+        }.execute();
 
         // enableOptionalPlugins(true);
     }
