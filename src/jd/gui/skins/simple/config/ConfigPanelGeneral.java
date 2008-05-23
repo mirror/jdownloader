@@ -82,8 +82,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
       
 
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
+        
 
 
      
