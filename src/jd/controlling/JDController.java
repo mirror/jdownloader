@@ -627,8 +627,8 @@ public class JDController implements ControlListener, UIListener {
             this.addPackage(fp);
             return;
         }
-        if (index < 0) index = 0;
         if (index > packages.size() - 1) index = packages.size() - 1;
+        if (index < 0) index = 0;        
         synchronized (packages) {
             packages.add(index, fp);
         }
