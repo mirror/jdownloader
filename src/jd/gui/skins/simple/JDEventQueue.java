@@ -29,12 +29,12 @@ public class JDEventQueue extends EventQueue {
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) return;
         JTextComponent t = (JTextComponent) c;
         JPopupMenu menu = new JPopupMenu();
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden (Strg+x)")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden    (Strg+x)")) {
             public void actionPerformed(ActionEvent e) {
                 c.cut();
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy","Kopieren (Strg+c)")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy","Kopieren        (Strg+c)")) {
             public void actionPerformed(ActionEvent e) {
                 c.copy();
             }
@@ -43,7 +43,7 @@ public class JDEventQueue extends EventQueue {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste","Einfügen (Strg+v)")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste","Einfügen        (Strg+v)")) {
             public void actionPerformed(ActionEvent e) {
                 c.paste();
             }
@@ -56,7 +56,7 @@ public class JDEventQueue extends EventQueue {
                     return false;
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete","Löschen (Entf)")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete","Löschen         (Entf)")) {
             public void actionPerformed(ActionEvent e) {
                 c.replaceSelection(null);
             }
