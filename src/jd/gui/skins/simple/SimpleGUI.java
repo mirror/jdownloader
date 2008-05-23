@@ -365,7 +365,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             @Override
             protected Object doInBackground() throws Exception {
                 while (true) {
-                    interval();
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            interval();
+                        }
+                    });
                     Thread.sleep(1000);
                 }
             }
