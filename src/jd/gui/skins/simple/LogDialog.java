@@ -17,6 +17,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -242,8 +243,18 @@ public class LogDialog extends JFrame implements ActionListener {
     private class LogStream extends OutputStream {
 
         @Override
-        public void write(int b) throws IOException {
-            if (logField != null) logField.append((String.valueOf((char) b)));
+        public void write(final int b) throws IOException {
+            // Another example where some non-EDT Thread accesses calls a Swing
+            // method. This is forbidden and might bring the whole app down.
+            // more info: http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
+            // and: http://en.wikipedia.org/wiki/Event_dispatching_thread
+            if (logField != null) {
+                EventQueue.invokeLater(new Runnable() {
+                    public void run() {
+                        logField.append((String.valueOf((char) b)));
+                    }
+                });
+            }
         }
 
     }
