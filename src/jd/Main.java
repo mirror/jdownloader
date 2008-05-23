@@ -16,6 +16,7 @@ package jd;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
 import java.awt.Toolkit;
@@ -222,8 +223,13 @@ public class Main {
 
                 if (!stop) {
 
-                    Main main = new Main();
-                    main.go();
+                    final Main main = new Main();
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+                            main.go();
+                        }
+                    });
 
                     // post start parameters //
                     server.processParameters(args);
@@ -250,7 +256,6 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-        Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue()); 
         JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();
