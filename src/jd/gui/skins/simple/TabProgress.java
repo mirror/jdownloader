@@ -20,12 +20,16 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import java.util.Vector;
 
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.Timer;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -39,7 +43,7 @@ import jd.utils.JDLocale;
  * 
  * @author JD-Team
  */
-public class TabProgress extends JPanel {
+public class TabProgress extends JPanel implements ActionListener {
     /**
      * serialVersionUID
      */
@@ -57,6 +61,8 @@ public class TabProgress extends JPanel {
     private Vector<ProgressController> controllers;
 
     private Vector<JProgressBar>       bars;
+
+    private Timer flickerTimer;
 
     //private Logger                     logger           = JDUtilities.getLogger();
 
@@ -216,6 +222,8 @@ public class TabProgress extends JPanel {
             }
             else {
                 this.setVisible(true);
+                if(flickerTimer!=null &&flickerTimer.isRunning())
+                flickerTimer.stop();
                 if (controllers.indexOf(source) < bars.size()) {
                     bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
                     bars.get(controllers.indexOf(source)).setValue(source.getValue());
@@ -225,7 +233,10 @@ public class TabProgress extends JPanel {
 
         }
         else {
-            this.setVisible(false);
+            this.flickerTimer= new Timer(3000,this);
+            flickerTimer.setRepeats(false);
+            flickerTimer.start();
+            
         }
 
         table.tableChanged(new TableModelEvent(table.getModel()));
@@ -235,5 +246,10 @@ public class TabProgress extends JPanel {
     public synchronized Vector<ProgressController> getControllers() {
 
         return controllers;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        this.setVisible(false);
+        
     }
 }
