@@ -224,9 +224,9 @@ public class Main {
                 if (!stop) {
 
                     final Main main = new Main();
+                    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
                         }
                     });
