@@ -669,7 +669,7 @@ public class JDInit {
             String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
             if (lastLog.trim().length() > 5) 
                 {
-                splashScreen.finish();
+               if(splashScreen!=null) splashScreen.finish();
                 JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
                 }
 

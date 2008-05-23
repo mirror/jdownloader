@@ -44,6 +44,10 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     }
 
     public void controlEvent(final ControlEvent event) {
+        if(event==null){
+            logger.warning("vent==null");
+            return;
+        }
         // Moved the whole content of this method into a Runnable run by
         // invokeLater(). Ensures that everything inside is executed on the EDT.
         EventQueue.invokeLater(new Runnable() {

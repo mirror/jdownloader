@@ -88,7 +88,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
             progress.setRange(1);
             try {
                 RequestInfo ri = getRequestWithoutHtmlCode(new URL(parameter), null, null, false);
-                logger.info(ri.getHeaders() + "");
+                //logger.info(ri.getHeaders() + "");
                 if (ri.getLocation() != null&&!openedLinks.contains(ri.getLocation())) {
                     // ri.getLocation()
 

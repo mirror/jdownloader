@@ -69,9 +69,9 @@ public class Property implements Serializable {
      * @param value
      */
     public void setProperty(String key, Object value) {
-        if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
-            logger.info("II");
-        }
+//        if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
+//            logger.info("II");
+//        }
         saveCount++;
         if (properties == null) properties = new HashMap<String, Object>();
         Object old = getProperty(key);

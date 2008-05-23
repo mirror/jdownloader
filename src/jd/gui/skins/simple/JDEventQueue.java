@@ -16,6 +16,8 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
+import jd.utils.JDLocale;
+
 public class JDEventQueue extends EventQueue {
     protected void dispatchEvent(AWTEvent ev) {
         super.dispatchEvent(ev);
@@ -27,19 +29,25 @@ public class JDEventQueue extends EventQueue {
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) return;
         JTextComponent t = (JTextComponent) c;
         JPopupMenu menu = new JPopupMenu();
-        menu.add(new MenuAbstractAction(t, "Cut") {public void actionPerformed(ActionEvent e) {c.cut();}});
-        menu.add(new MenuAbstractAction(t, "Copy") {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden (Strg+x)")) {
+            public void actionPerformed(ActionEvent e) {
+                c.cut();
+            }
+        });
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy","Kopieren (Strg+c)")) {
             public void actionPerformed(ActionEvent e) {
                 c.copy();
             }
+
             public boolean isEnabled() {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
         });
-        menu.add(new MenuAbstractAction(t, "Paste") {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste","Einfügen (Strg+v)")) {
             public void actionPerformed(ActionEvent e) {
                 c.paste();
             }
+
             public boolean isEnabled() {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
@@ -48,9 +56,13 @@ public class JDEventQueue extends EventQueue {
                     return false;
             }
         });
-        menu.add(new MenuAbstractAction(t, "Delete") {public void actionPerformed(ActionEvent e) {c.replaceSelection(null);}});
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete","Löschen (Entf)")) {
+            public void actionPerformed(ActionEvent e) {
+                c.replaceSelection(null);
+            }
+        });
         menu.addSeparator();
-        menu.add(new MenuAbstractAction(t, "Select All") {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall","Alles auswählen (Strg+a)")) {
             public void actionPerformed(ActionEvent e) {
                 c.selectAll();
             }
@@ -63,10 +75,17 @@ public class JDEventQueue extends EventQueue {
         Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), t);
         menu.show(t, pt.x, pt.y);
     }
-    
+
     abstract class MenuAbstractAction extends AbstractAction {
         JTextComponent c;
-        public MenuAbstractAction(JTextComponent c, String text) {super(text);this.c = c;}
-        public boolean isEnabled() {return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;}
+
+        public MenuAbstractAction(JTextComponent c, String text) {
+            super(text);
+            this.c = c;
+        }
+
+        public boolean isEnabled() {
+            return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
+        }
     }
 }

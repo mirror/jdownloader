@@ -422,7 +422,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // }
 
     }
-
+  
     private void reprintTabbedPane() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

@@ -250,7 +250,8 @@ public class JDController implements ControlListener, UIListener {
     @SuppressWarnings("unchecked")
     public void controlEvent(ControlEvent event) {
         if (event == null) {
-            logger.info("JJJ");
+            logger.warning("event= NULL");
+            return;
         }
         switch (event.getID()) {
 
@@ -1427,6 +1428,7 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
+        if(controlEvent==null)return;
         if (controlEvent.getID() == ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED) {
             this.increaseChangeID();
         }
@@ -1909,9 +1911,9 @@ public class JDController implements ControlListener, UIListener {
                 public void run() {
                     while (true) {
                         if (eventStart > 0 && (System.currentTimeMillis() - eventStart) > MAX_EVENT_TIME) {
-                            JDUtilities.getLogger().severe("WATCHDOG: Execution Limit reached");
-                            JDUtilities.getLogger().severe("ControlListener: " + currentListener);
-                            JDUtilities.getLogger().severe("Event: " + event);
+                            JDUtilities.getLogger().finer("WATCHDOG: Execution Limit reached");
+                            JDUtilities.getLogger().finer("ControlListener: " + currentListener);
+                            JDUtilities.getLogger().finer("Event: " + event);
 
                         }
                         try {
@@ -1945,6 +1947,7 @@ public class JDController implements ControlListener, UIListener {
                     // JDUtilities.getLogger().severe("THREAD");
                     if (eventQueue != null && eventQueue.size() > 0) {
                         event = eventQueue.remove(0);
+                        if(event==null)continue;
                         eventStart = System.currentTimeMillis();
                         currentListener = JDController.this;
                         controlEvent(event);

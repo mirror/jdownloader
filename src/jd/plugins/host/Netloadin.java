@@ -359,7 +359,7 @@ public class Netloadin extends PluginForHost {
                     }
                     if(finalURL==null){ 
                         logger.severe("Could not get final URL");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
