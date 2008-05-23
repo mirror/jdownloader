@@ -65,7 +65,11 @@ public class Netloadin extends PluginForHost {
     static private final String  DOWNLOAD_START   = "download_load.tpl";
     //static private final String  DOWNLOAD_WAIT    = "download_wait.tpl";
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
-    
+    /**
+     * Muss static bleiben!!!. Das Rapidshare Plugin merkt sich so, dass es
+     * gerade wartezeit hat. Überflüssige
+     */
+    private static long END_OF_DOWNLOAD_LIMIT = 0;
     static private long 		 LAST_FILE_STARTED  = 0;
     private static final String  PROPERTY_TRY_2_SIMULTAN = "TRY_2_SIMULTAN";
     
@@ -148,8 +152,24 @@ public class Netloadin extends PluginForHost {
             
             switch (step.getStep()) {
                 case PluginStep.STEP_WAIT_TIME:
+                  
+                    
+                    
                     LAST_FILE_STARTED=System.currentTimeMillis();
                     if (captchaURL == null) {
+                        
+                        if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
+                            long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
+                            logger.severe("wait (intern) " + waitTime + " minutes");
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
+                            step.setParameter((long) waitTime);
+                            return step;
+                        }
+                        logger.info("Intern: " + END_OF_DOWNLOAD_LIMIT + " - " + System.currentTimeMillis());
+                        
+                        
                         requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                         this.sessionID = requestInfo.getCookie();
                         String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
@@ -200,6 +220,10 @@ public class Netloadin extends PluginForHost {
                         }
                     }
                     else {
+                     
+                        
+                        
+                        
                         requestInfo = postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + (String) steps.get(1).getParameter() + "&start=", false);
                         if(requestInfo.containsHTML(FILE_NOT_FOUND)) {
                         	step.setStatus(PluginStep.STATUS_ERROR);
@@ -218,6 +242,7 @@ public class Netloadin extends PluginForHost {
                             waitTime = Long.parseLong(getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
                             waitTime = waitTime*10L;
                             step.setParameter(waitTime);
+                            END_OF_DOWNLOAD_LIMIT=System.currentTimeMillis()+waitTime;
                             return step;
                         }
                         if (requestInfo.getHtmlCode().indexOf(CAPTCHA_WRONG) >= 0) {

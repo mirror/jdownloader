@@ -2132,7 +2132,7 @@ public class JDUtilities {
 
                                     JDUtilities.restartJD();
                                 }
-                            }
+                            }  
 
                         }
                         buffer = new StringBuffer();

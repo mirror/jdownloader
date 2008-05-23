@@ -623,6 +623,10 @@ public class JDController implements ControlListener, UIListener {
     // }
 
     public void addPackageAt(FilePackage fp, int index) {
+        if(packages.size()==0){
+            this.addPackage(fp);
+            return;
+        }
         if (index < 0) index = 0;
         if (index > packages.size() - 1) index = packages.size() - 1;
         synchronized (packages) {

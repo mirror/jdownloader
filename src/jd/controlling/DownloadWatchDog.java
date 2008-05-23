@@ -217,12 +217,14 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      */
     private int setDownloadActive() {
         DownloadLink dlink;
+     
         int ret = 0;
         // logger.info("Gleichzeitige Downloads erlaubt: " +
         // getSimultanDownloadNum() + " aktiv: " + activeLinks.size());
         while (activeDownloadControllers.size() < getSimultanDownloadNum()) {
             dlink = this.getNextDownloadLink();
             if (dlink == null) break;
+            if(dlink!=this.getNextDownloadLink())break;
             this.startDownloadThread(dlink);
             ret++;
         }

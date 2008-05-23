@@ -15,7 +15,7 @@ public class ScheduleFrame extends JPanel implements ActionListener{
     Timer t = new Timer(10000,this); 
     Timer c = new Timer(1000,this);
     JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN),1,10,1));
-    JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED),0,5000,50));
+    JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED),0,50000,50));
     JCheckBox premium = new JCheckBox();
     JCheckBox reconnect = new JCheckBox();
     JCheckBox stop_start = new JCheckBox();

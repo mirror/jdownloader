@@ -80,12 +80,18 @@ public class RelinkUs extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "form action=\'°\' method=\'post\'");
+    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "action='°' method='post' target='_blank'");
     			progress.setRange( links.size());
     			
     			for(int i=0; i<links.size(); i++) {
     				reqinfo = postRequest(new URL("http://relink.us/" + links.get(i).get(0)), "submit=Open");
-    				decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"")));
+    				String link=getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
+    				
+    				if(link.contains("yourlayer")){
+    				    reqinfo=getRequest(new URL(link));
+    				    link=getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
+    				}
+    				decryptedLinks.add(this.createDownloadlink(link));
     			progress.increase(1);
     			}
     			
