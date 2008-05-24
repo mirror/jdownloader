@@ -103,7 +103,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         // ce.setDefaultValue(false);
         // addGUIConfigEntry(new GUIConfigEntry(ce));
         ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
-        addGUIConfigEntry(new GUIConfigEntry(ce));
+        // addGUIConfigEntry(new GUIConfigEntry(ce));
         table = new InternalTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         // table.setDragEnabled(true);
@@ -168,8 +168,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, new GUIConfigEntry(ce), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         add(panel, BorderLayout.CENTER);
-
     }
 
     @Override
