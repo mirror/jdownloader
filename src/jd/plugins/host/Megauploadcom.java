@@ -51,9 +51,9 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String SIMPLEPATTERN_CAPTCHA_URl = " <img src=\"/capgen.php?°\">";
 
-    static private final String SIMPLEPATTERN_FILE_NAME = "<b>Dateiname:</b>°</div>";
+    static private final String SIMPLEPATTERN_FILE_NAME = "Dateiname°</b>°</div>";
 
-    static private final String SIMPLEPATTERN_FILE_SIZE = "<b>Dateigr°e:</b>°</div>";
+    static private final String SIMPLEPATTERN_FILE_SIZE = "Dateigr°</b>°</div>";
 
     static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"°\" target";
 
@@ -414,7 +414,8 @@ public class Megauploadcom extends PluginForHost {
                 this.setStatusText("File Not Found");
                 return false;
             }
-            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 0));
+            logger.info(requestInfo+"");
+            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
             String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
             if (fileName == null || fileSize == null) { return false; }
             downloadLink.setName(fileName.trim());
