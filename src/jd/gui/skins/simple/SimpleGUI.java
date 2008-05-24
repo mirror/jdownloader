@@ -46,6 +46,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -443,25 +444,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         else
             return JDTheme.V("gui.images.reconnect_bad");
     }
-    
-    private String getStartStopDownloadImage(){
-        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING)       
+
+    private String getStartStopDownloadImage() {
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING)
             return JDTheme.V("gui.images.next");
         else
             return JDTheme.V("gui.images.stop");
     }
-    
-    private String getPauseImage(){
-        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING){            
-            if (btnPause.isSelected()) 
+
+    private String getPauseImage() {
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+            if (btnPause.isSelected())
                 return JDTheme.V("gui.images.stop_after_active");
-            else 
+            else
                 return JDTheme.V("gui.images.stop_after");
-        } else            
+        } else
             return JDTheme.V("gui.images.stop_after");
-        
-            
+
     }
+
     /**
      * Die Aktionen werden initialisiert
      */
@@ -793,17 +794,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tmp);
         // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
         // tabPluginActivity);
-        btnStartStop = new JButton(this.actionStartStopDownload);        
+        btnStartStop = new JButton(this.actionStartStopDownload);
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
-        btnStartStop.setText(null);       
-        btnPause = new JButton(this.actionPause);        
+        btnStartStop.setText(null);
+        btnPause = new JButton(this.actionPause);
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
         btnPause.setSelected(false);
-        btnToggleReconnect = new JButton(this.doReconnect);        
+        btnToggleReconnect = new JButton(this.doReconnect);
         btnToggleReconnect.setFocusPainted(false);
         btnToggleReconnect.setBorderPainted(false);
         btnToggleReconnect.setText(null);
@@ -961,8 +962,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_START_STOP_DOWNLOADS:
             logger.finer("Start Stop Downloads");
-//            btnStartStop.setSelected(!btnStartStop.isSelected());
-//            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
+            // btnStartStop.setSelected(!btnStartStop.isSelected());
+            // if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
             this.startStopDownloads();
             btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
             btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
@@ -1083,11 +1084,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JDUtilities.saveConfig();
         btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
         /*
-         * Steht hier, weil diese Funktion(toggleReconnect) direkt vom Trayicon Addon aufgerufen
-         * wird und ich dennoch die Gui aktuell halten will
+         * Steht hier, weil diese Funktion(toggleReconnect) direkt vom Trayicon
+         * Addon aufgerufen wird und ich dennoch die Gui aktuell halten will
          */
         if (checked && message) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
-        /*fixme: bitte die message box lokalisieren*/
+        /* fixme: bitte die message box lokalisieren */
     }
 
     public void doReconnect() {
@@ -1428,12 +1429,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // }
         private void colorizeSpinnerSpeed(Integer Speed) {
             /* färbt den spinner ein, falls speedbegrenzung aktiv */
-            JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
+            JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();           
             Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
             if (Speed > 0) {
-                spMaxEditor.getTextField().setBackground(warning);
+                spMaxEditor.getTextField().setForeground(warning);
             } else
-                spMaxEditor.getTextField().setBackground(Color.white);
+                spMaxEditor.getTextField().setForeground(Color.black);            
         }
 
         public void setSpinnerSpeed(Integer speed) {
