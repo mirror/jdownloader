@@ -90,7 +90,7 @@ public class ImageFap extends PluginForHost {
         //var s1=unescape(s.substr(0,s.length-1)); var t='';
         //for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.substr(s.length-1,1));
         //return unescape(t);
-        //logger.info("DONE: RAUS " + JDUtilities.htmlDecode(t));
+        logger.info("return of DecryptLink(): " + JDUtilities.htmlDecode(t));
        return JDUtilities.htmlDecode(t); 
     }
     
@@ -108,10 +108,10 @@ public class ImageFap extends PluginForHost {
                 file.mkdir();
                 
                 requestInfo = postRequestWithoutHtmlCode(new URL(Imagelink), null, null, null, true);
-                downloadLink.setName(Imagename);
+                downloadLink.setName(gallery + "/" + gallery + " - " + Imagename);
                 dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                 dl.startDownload();
-                new File(downloadLink.getFileOutput()).renameTo(new File(file,gallery + " - " + Imagename));
+                new File(downloadLink.getFileOutput()).renameTo(new File(file,gallery + "/" + gallery + " - " + Imagename));
                 
                 step.setStatus(PluginStep.STATUS_DONE);
                 downloadLink.setStatus(DownloadLink.STATUS_DONE);
@@ -138,12 +138,11 @@ public class ImageFap extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
-        try {
-
+        try {        	
             requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
             String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
             String gallery = getFirstMatch(requestInfo.getHtmlCode(), GALLERY, 1);
-            downloadLink.setName(gallery + " - " + name);
+            downloadLink.setName(gallery + "/" + gallery + " - " + name);
             /*
              * 
              * Vector<String> link = matches.get(id);
@@ -159,7 +158,7 @@ public class ImageFap extends PluginForHost {
     }
     @Override
     public int getMaxSimultanDownloadNum() {
-        return 1;
+        return 50;
     }
     @Override
     public void resetPluginGlobals() {
