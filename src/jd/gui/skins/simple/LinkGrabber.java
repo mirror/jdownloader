@@ -1298,9 +1298,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             table.addKeyListener(this);
             table.setModel(internalTableModel);
             
-            TableColumn col = table.getColumnModel().getColumn(0);
-            int width = 10; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
-            
             // table.setAutoCreateRowSorter(true);
             // table.setUpdateSelectionOnSort(true);
             table.setGridColor(Color.BLUE);
@@ -1313,26 +1310,29 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             this.setPreferredSize(new Dimension(700, 350));
 
-            TableColumn column = null;
+            TableColumn col = null;
             for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-                column = table.getColumnModel().getColumn(c);
+                int width = 0;
+                col = table.getColumnModel().getColumn(c);
+                System.out.println("c: " + c);
+                System.out.println("column: " + col);
                 switch (c) {
-
                     case 0:
                         // column.setPreferredWidth(20);
-                        column.setMaxWidth(20);
+                        width = 10; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
                         break;
                     case 1:
-                        column.setMaxWidth(150);
+                        col.setMaxWidth(150);
                         break;
                     case 2:
-                        column.setPreferredWidth(250);
+                        col.setPreferredWidth(250);
                         break;
                     case 3:
-                        column.setPreferredWidth(60);
+                        // col.setPreferredWidth(60);
+                        width = 10; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
                         break;
                     case 4:
-                        column.setPreferredWidth(210);
+                        col.setPreferredWidth(210);
                         break;
 
                 }
