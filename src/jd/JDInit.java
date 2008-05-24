@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.CookieHandler;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -371,18 +372,38 @@ public class JDInit {
 //            // TODO: handle exception
 //        }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        String[] optionalPlugins = new String[] {"JDTrayIcon", "JDGetter", "JDLightTray", "webinterface.JDWebinterface", "schedule.Schedule", "JDFolderWatch","JDShutdown", "JDRemoteControl", "JDLowSpeed"};
-        double[] optionalVersions = new double[] { 1.6, 1.5, 1.6, 1.5, 1.6, 1.5 ,1.5, 1.5, 1.5};
+        class optionalPluginsVersions
+        {
+            public String name;
+            public double version;
+            public optionalPluginsVersions(String name, double version) {
+                this.name=name;
+                this.version=version;
+            }
+            public String toString() {
+                return name;
+            }
+        }
+        ArrayList<optionalPluginsVersions> optionalPluginsVersionsArray = new ArrayList<optionalPluginsVersions>();
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDTrayIcon", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDGetter", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLightTray", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("webinterface.JDWebinterface", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDFolderWatch", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDShutdown", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLowSpeed", 1.5));
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        int i = 0;
+
         Double version = JDUtilities.getJavaVersion();
-        for (String cl : optionalPlugins) {
-            if (version < optionalVersions[i]) {
-                i++;
-                logger.finer("Plugin " + cl + " requires Java Version " + optionalVersions[i - 1] + " your Version is: " + version);
+        Iterator<optionalPluginsVersions> iter = optionalPluginsVersionsArray.iterator();
+        while (iter.hasNext()) {
+            optionalPluginsVersions cl = (optionalPluginsVersions) iter.next();
+            if (version < cl.version) {
+                logger.finer("Plugin " + cl + " requires Java Version " + cl.version + " your Version is: " + version);
                 continue;
             }
-            i++;
             logger.finer("Try to initialize " + cl);
             try {
                 Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
@@ -406,7 +427,6 @@ public class JDInit {
                 logger.info("Plugin Exception!");
                 e.printStackTrace();
             }
-
         }
 
         return pluginsOptional;
