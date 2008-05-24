@@ -218,7 +218,7 @@ public class SingleDownloadController extends Thread {
         }
 
         PluginStep resultStep = step;
-        int resultPluginStatus = step!=null?step.getStatus():-1;
+        int resultPluginStatus = step != null ? step.getStatus() : -1;
         int resultLinkStatus = downloadLink.getStatus();
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
@@ -309,7 +309,7 @@ public class SingleDownloadController extends Thread {
                 this.onErrorUnknown(downloadLink, currentPlugin, resultStep);
             }
 
-            if (downloadLink.getStatus()!=DownloadLink.STATUS_TODO&&resultPluginStatus == PluginStep.STATUS_ERROR && currentPlugin.getRetryOnErrorCount() < currentPlugin.getMaxRetriesOnError() && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries()&& !downloadLink.isWaitingForReconnect()) {
+            if (downloadLink.getStatus() != DownloadLink.STATUS_TODO && resultPluginStatus == PluginStep.STATUS_ERROR && currentPlugin.getRetryOnErrorCount() < currentPlugin.getMaxRetriesOnError() && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() && !downloadLink.isWaitingForReconnect()) {
                 currentPlugin.setRetryOnErrorCount(currentPlugin.getRetryOnErrorCount() + 1);
                 logger.info("Retry on Error: " + (currentPlugin.getRetryOnErrorCount() - 1));
 
@@ -349,15 +349,24 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: No Serverconnection");
-        long milliSeconds = 10 * 60 * 1000;
+        long milliSeconds = 5 * 60 * 1000;
         try {
             milliSeconds = (Long) step.getParameter();
         } catch (Exception e) {
         }
+        while (milliSeconds > 0 && !this.aborted&& !this.downloadLink.isAborted()) {
 
-        downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-        downloadLink.setStatusText(JDLocale.L("controller.status.noConnaction", "Keine Verbindung") + " ");
+            downloadLink.setStatusText(JDUtilities.formatSeconds((int) (milliSeconds / 1000)));
+            downloadLink.requestGuiUpdate();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+            }
+            milliSeconds -= 1000;
+        }
 
+        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        downloadLink.setEndOfWaittime(0);
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
@@ -556,14 +565,15 @@ public class SingleDownloadController extends Thread {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-//        while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
-//            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
-//            try {
-//                Thread.sleep(5000);
-//            } catch (InterruptedException e) {
-//            }
-//
-//        }
+        // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // downloadLink);
+        // try {
+        // Thread.sleep(5000);
+        // } catch (InterruptedException e) {
+        // }
+        //
+        // }
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
 
         downloadLink.setStatusText("");
@@ -755,16 +765,17 @@ public class SingleDownloadController extends Thread {
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(0);
         }
-//        while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
-//            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
-//            try {
-//                Thread.sleep(5000);
-//            } catch (InterruptedException e) {
-//            }
-//
-//        }
-//        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-//        downloadLink.setStatusText("");
+        // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // downloadLink);
+        // try {
+        // Thread.sleep(5000);
+        // } catch (InterruptedException e) {
+        // }
+        //
+        // }
+        // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        // downloadLink.setStatusText("");
     }
 
     public DownloadLink getDownloadLink() {

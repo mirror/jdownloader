@@ -87,9 +87,9 @@ abstract public class DownloadInterface {
 
     protected int chunkNum = 1;
 
-    private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 10000);
+    private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 20000);
 
-    private int requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 10000);
+    private int requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 20000);
 
     private int chunksInProgress = 0;
 
@@ -530,7 +530,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public int getReadTimeout() {
-        return readTimeout;
+        return Math.max(10000,readTimeout);
     }
 
     protected void addException(Exception e) {
@@ -553,7 +553,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public int getRequestTimeout() {
-        return requestTimeout;
+        return Math.max(10000,requestTimeout);
     }
 
     /**

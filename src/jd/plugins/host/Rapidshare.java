@@ -248,6 +248,8 @@ public class Rapidshare extends PluginForHost {
 
     transient private int downloadType = -1;
 
+    private boolean ddl=false;
+
     private static DownloadLink freeInsteadOfPremiumDownloadlink;
 
     private static long freeInsteadOfPremiumStarttime = 0;
@@ -770,6 +772,10 @@ public class Rapidshare extends PluginForHost {
     }
 
     private PluginStep doFreeStep0(PluginStep step, DownloadLink downloadLink)  {
+        if(ddl)return this.doPremiumStep(step, downloadLink);
+        
+        
+        
         if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
             long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
             logger.severe("wait (intern) " + waitTime + " minutes");
@@ -798,7 +804,13 @@ public class Rapidshare extends PluginForHost {
                 String link = downloadLink.getDownloadURL();
                 if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
                 requestInfo = getRequest(new URL(link));
-
+if(requestInfo.getLocation()!=null){
+    logger.info("Direct Download");
+    this.ddl=true;
+    finalURL=requestInfo.getLocation();
+    return step;
+    
+}
                 if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
                     // hardewaredefeklt bei rs.com
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -866,6 +878,9 @@ public class Rapidshare extends PluginForHost {
             logger.warning("could not get downloadInfo ");
             return step;
         case PluginStep.STEP_PENDING:
+            if(ddl){
+                step=this.nextStep(step);
+            }else{
             try {
                 if (aborted) {
                     logger.warning("Plugin abgebrochen");
@@ -1097,7 +1112,11 @@ public class Rapidshare extends PluginForHost {
             step.setStatus(PluginStep.STATUS_ERROR);
             logger.warning("could not get downloadInfo 2");
             return step;
+            }
         case PluginStep.STEP_PAGE:
+            if(ddl){
+                step=this.nextStep(step);
+            }else{
             String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
             String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
             String serverAbb = serverMap.get(server1);
@@ -1182,8 +1201,13 @@ public class Rapidshare extends PluginForHost {
             downloadLink.setStatusText(actionString);
 
             break;
+            }
         case PluginStep.STEP_DOWNLOAD:
-
+            if(ddl){
+                step=this.nextStep(step);
+            }else{
+                
+            
             actionString = actionString.replace(' ', '+');
             postParameter.put("mirror", "on");
             postParameter.put("accesscode", this.captchaCode);
@@ -1283,7 +1307,7 @@ public class Rapidshare extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
-
+            }
             break;
         }
         return step;
@@ -1527,7 +1551,7 @@ public class Rapidshare extends PluginForHost {
 
                 requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), finalCookie, finalURL, ranger, true);
 
-                if (requestInfo.getConnection().getHeaderField("content-disposition") == null || Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) != headLength) {
+                if (requestInfo.getConnection().getHeaderField("content-disposition") == null || (!ddl&&Long.parseLong(requestInfo.getConnection().getHeaderField("Content-Length")) != headLength)) {
                     String error;
                     requestInfo = readFromURL(requestInfo.getConnection());
                     if (requestInfo.containsHTML(PATTERN_ACCOUNT_OVERLOAD)) {
@@ -1648,6 +1672,7 @@ public class Rapidshare extends PluginForHost {
         ticketCode = "";
         noLimitFreeInsteadPremium = false;
         downloadType = -1;
+        ddl=false;
     }
 
     public String getFileInformationString(DownloadLink parameter) {
@@ -1669,11 +1694,16 @@ public class Rapidshare extends PluginForHost {
         LAST_FILE_CHECK = System.currentTimeMillis();
         RequestInfo requestInfo;
         try {
+            //http://rapidshare.com/files/117366525/dlc.dlc
             requestInfo = getRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL() + "&toolmode=1"));
 
             String[] erg = requestInfo.getHtmlCode().trim().split(",");
-
-            if (erg.length < 6 || !erg[2].equals("1")) return false;
+/*
+ * 1: Normal online
+ * -1: date nicht gefunden
+ * 3: Drect download
+ */
+            if (erg.length < 6 || (!erg[2].equals("1")&& !erg[2].equals("3"))) return false;
 
             downloadLink.setName(erg[5]);
             downloadLink.setDownloadMax(Integer.parseInt(erg[4]));

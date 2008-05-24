@@ -813,8 +813,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
+        setEndOfWaittime(0);
         this.chunksProgress = null;
         downloadCurrent = 0;
+        this.waittime=0;
         aborted = false;
         this.crcStatus = CRC_STATUS_UNCHECKED;
     }
