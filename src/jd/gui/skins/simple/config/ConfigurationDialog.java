@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -138,7 +139,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // this.addConfigPanel(ConfigPanelTweak.class,
         // JDTheme.I("gui.images.config.tip"),
         // JDLocale.L("gui.config.tabLables.tweak", "Leistung optimieren"));
-
+        
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
             this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
             this.addConfigPanel(ConfigPanelInfoFileWriter.class, JDTheme.V("gui.images.config.load", "load"), JDLocale.L("gui.config.tabLables.infoFileWriter", "'Info File Writer' settings"));
@@ -151,7 +152,15 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         this.addConfigPanel(ConfigPanelRessources.class, JDTheme.V("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.ressources", "Paketmanager"));
 
         this.addConfigPanel(ConfigPanelLinks.class, JDTheme.V("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
+        
 
+        int maxLength = 0;
+        int tabs = tabbedPane.getTabCount();
+        for (int i = 0; i < tabs; i++) {maxLength = Math.max(maxLength, tabbedPane.getTitleAt(i).length());}
+        for (int i = 0; i < tabs; i++) {tabbedPane.setTitleAt(i, fill(tabbedPane.getTitleAt(i), maxLength+1));}
+        tabbedPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+
+        
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel", "Abbrechen"));
@@ -213,6 +222,14 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // strange growing effect since the dialog is first made visible and then
         // assigned a new (possibly different) size by restoreWindow.
         this.setVisible(true);
+    }
+
+    private String fill(String s, int maxLength) {
+        int add = maxLength - s.length();
+        for (int i = 0; i < add; i++) {
+            s += " ";
+        }
+        return s;
     }
 
     @SuppressWarnings("unchecked")
@@ -278,6 +295,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
         headerPanel.add(new JXTitledSeparator("Einstellungen"), BorderLayout.SOUTH);
         p.add(headerPanel , BorderLayout.NORTH);
+        
         
         tabbedPane.addTab(title, new ImageIcon(icon.getImage().getScaledInstance(20, -1, Image.SCALE_SMOOTH)), p);
     }
