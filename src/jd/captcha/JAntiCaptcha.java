@@ -1126,7 +1126,10 @@ public class JAntiCaptcha {
         // Führe prepare aus
         jas.executePrepareCommands(captcha);
         Letter[] letters = captcha.getLetters(getLetterNum());
-        if (letters == null) return null;
+        if (letters == null){
+            captcha.setValityPercent(100.0);
+            return null;
+        }
         // LetterComperator[] newLetters = new LetterComperator[letters.length];
         String ret = "";
         double correct = 0;
@@ -1189,6 +1192,7 @@ public class JAntiCaptcha {
         if (getJas().getString("useLettercomparatorFilter") != null && getJas().getString("useLettercomparatorFilter").length() > 0) {
             String[] ref = getJas().getString("useLettercomparatorFilter").split("\\.");
             if (ref.length != 2) {
+                captcha.setValityPercent(100.0);
                 if (JAntiCaptcha.isLoggerActive()) logger.severe("useLettercomparatorFilter should have the format Class.Method");
                 return null;
             }
@@ -1236,7 +1240,9 @@ public class JAntiCaptcha {
 
         if (JAntiCaptcha.isLoggerActive()) logger.finer("Vality: " + ((int) (correct / newLettersVector.size())));
         captcha.setValityPercent(correct / (double) newLettersVector.size());
-
+if(ret==null){
+    captcha.setValityPercent(100.0);
+}
         return ret;
     }
 

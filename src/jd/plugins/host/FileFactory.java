@@ -46,7 +46,8 @@ public class FileFactory extends PluginForHost {
     static private final Pattern patternSupported = Pattern.compile("http://.*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
-    private static Pattern patternForCaptcha = Pattern.compile("src=\"(/captcha2/captcha.php\\?[^\"]*)\" alt=");
+   // src="/securimage/securimage_show.php?f=044a7b&amp;h=c5b0bfa214ecf57d7f5250582c8004a3" alt="Verification code
+    private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
     private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
     
@@ -546,7 +547,7 @@ public class FileFactory extends PluginForHost {
 				if(fileName==null)return false;
 				fileName = fileName.replaceAll(" <br>", "").trim();
 				
-				Double fileSize = Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1));
+				Double fileSize = Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
 				String unit = new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(2);
 				
 				if ( unit.equals("B") )  length = (int) Math.round(fileSize);

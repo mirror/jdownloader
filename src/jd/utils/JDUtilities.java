@@ -777,8 +777,11 @@ public class JDUtilities {
             String code = null;
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
             LetterComperator[] lcs = captcha.getLetterComperators();
-            if (lcs == null) return null;
+            
             double vp = 0.0;
+            if (lcs == null){
+                vp=100.0;
+            }else{
             for (int i = 0; i < lcs.length; i++) {
                 // window.setImage(i, 0, lcs[i].getB().getImage(3));
                 // window.setImage(i, 1, lcs[i].getA().getImage(3));
@@ -790,6 +793,7 @@ public class JDUtilities {
                 // window.setText(i, 2, lcs[i].getValityPercent());
                 // window.setText(i, 3, lcs[i].getDecodedValue());
                 // window.setText(i, 4, lcs[i].getB().getPixelString());
+            }
             }
             // window.pack();
             logger.info("worst letter: " + vp);

@@ -52,6 +52,7 @@ public class ShareBaseDe extends PluginForHost {
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
     private static final String SIM_DL = "Das gleichzeitige Downloaden";
     private static final String WAIT = "Du musst noch °:°:° warten!";
+    private static final String DOWLOAD_RUNNING ="Von deinem Computer ist noch ein Download aktiv";
     
     /*
      * Konstruktor 
@@ -142,6 +143,13 @@ public class ShareBaseDe extends PluginForHost {
                     requestInfo = getRequest(downloadUrl);
                
                     String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+                    
+                    if(requestInfo.containsHTML(DOWLOAD_RUNNING)){
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        step.setParameter((long)(60 * 1000));
+                        
+                    }
                     // Download-Limit erreicht
                     if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
                     	
