@@ -120,14 +120,14 @@ public class CryptItCom extends PluginForDecrypt {
 
                 }
                 String cookie = ri.getCookie();
-                logger.info(ri + "");
+            
                 String packagename = getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
                 String password = getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
-                logger.info(ri + "");
+              
                 HashMap<String, String> header = new HashMap<String, String>();
                 header.put("Content-Type", "application/x-amf");
-                String key = "77k/lAWHSntRYdontstealpr";
+               
                 byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x06 };
 
                 ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder, false);
@@ -142,7 +142,7 @@ public class CryptItCom extends PluginForDecrypt {
                 Vector<String> p = new Vector<String>();
                 p.add(password);
                 for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
-                    String cipher = it.next().trim().substring(1);
+                    String cipher = JDUtilities.filterString(it.next(),"1234567890abcdefABCDEF");
                     progress.increase(1);
                     DownloadLink link = this.createDownloadlink(decrypt(cipher));
                     link.setSourcePluginPasswords(p);
@@ -260,7 +260,7 @@ public class CryptItCom extends PluginForDecrypt {
         byte[] cipher = new byte[ciphertext.length() / 2 + ciphertext.length() % 2];
 
         for (int i = 0; i < ciphertext.length(); i += 2) {
-            String sub = ciphertext.substring(i, i + 2);
+            String sub = ciphertext.substring(i, Math.min(ciphertext.length(), i + 2));
             cipher[i / 2] = (byte) Integer.parseInt(sub, 16);
 
         }
