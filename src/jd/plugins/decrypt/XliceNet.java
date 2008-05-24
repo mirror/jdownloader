@@ -44,51 +44,74 @@ import org.mozilla.javascript.Scriptable;
 
 public class XliceNet extends PluginForDecrypt {
 
-    final static String           HOST                = "xlice.net";
+    final static String HOST = "xlice.net";
 
-    private String                VERSION             = "2.1.3";
+    private String VERSION = "2.1.3";
 
-    private String                CODER               = "JD-Team";
+    private String CODER = "JD-Team";
 
-    private Pattern               patternSupported    = getSupportPattern("http://[*]xlice.net/(.*/)?(file|folder)/[a-zA-Z0-9]{32}[*]");
+    private Pattern patternSupported = getSupportPattern("http://[*]xlice.net/(.*/)?(file|folder)/[a-zA-Z0-9]{32}[*]");
 
-    private static final String[] USEARRAY            = new String[] { "Rapidshare.com", "Uploaded.to", "FileFactory.com", "Fast-Load.net", "MegaUpload.com", "Netload.in", "Gulli.com", "Filer.net", "Load.to", "Sharebase.de", "zShare.net", "Share-Online.biz", "Bluehost.to", /*
-                                                                                                                                                                                                                                                                                     * no
-                                                                                                                                                                                                                                                                                     * plugin
-                                                                                                                                                                                                                                                                                     * yet >>
-                                                                                                                                                                                                                                                                                     */"BinLoad.to", "Simpleupload.net", "UltimateLoad.in", "MeinUpload.com", "Qshare.com", /* old >> */
-                                                      "Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net" };
+    private static final String[] USEARRAY = new String[] { 
+        "Rapidshare.com", 
+        "Uploaded.to",
+        "FileFactory.com", 
+        "Fast-Load.net", 
+        "MegaUpload.com",
+        "Netload.in", 
+        "Gulli.com", 
+        "Filer.net",
+        "Load.to", 
+        "Sharebase.de", 
+        "zShare.net", 
+        "Share-Online.biz", 
+        "Bluehost.to", 
+        "BinLoad.to",
+        "Simpleupload.net", 
+        "UltimateLoad.in", 
+        "MeinUpload.com", 
+        "Qshare.com", 
+        "filecache.in",
+        "badongo.com",
+        "dataup.de", 
+        "badongo.com", 
+        "depositfiles.com", 
+        "easy-share.com", 
+        "flyupload.com", 
+        "badongo.com", 
+        "mediafire.com", 
+        "sendspace.com", 
+        
+        /* old >> */
+    "Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net" };
 
-    private final static Pattern  patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    private final static Pattern  patternFileName     = Pattern.compile("<div align=\"left\">(.*?)\\s*\\(");
+    private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?)\\s*\\(");
 
     // <a href="#" id="contentlink_0"
     // rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img
     // src="/img/download.jpg" alt="Download" width="24" height="24"
     // border="0"></a>
-    static Pattern                patternLink         = Pattern.compile("<a href=\"#\".*rev=\"([^\"].+)\" rel=\"linklayer\">", Pattern.CASE_INSENSITIVE);
+    static Pattern patternLink = Pattern.compile("<a href=\"#\".*rev=\"([^\"].+)\" rel=\"linklayer\">", Pattern.CASE_INSENSITIVE);
 
     // <br /><a href="/" onclick="createWnd('/gateway/278450/5/', '', 1000,
     // 600);" id="dlok">share.gulli.com</a>
-    static Pattern                patternMirrorLink   = Pattern.compile("<a href=\"[^\\\"]*\" onclick=\\\"[^(]+\\('([^']*)[^>]*>([^<]+)</a>");
+    static Pattern patternMirrorLink = Pattern.compile("<a href=\"[^\\\"]*\" onclick=\\\"[^(]+\\('([^']*)[^>]*>([^<]+)</a>");
 
-    static Pattern                patternJSDESFile    = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
+    static Pattern patternJSDESFile = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
 
-    //static Pattern                patternJsScript     = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
-    static Pattern                patternJsScript     = Pattern.compile("<script\\s+type=\\\"text/javascript\">(.*document.write\\(message\\).*?)</script>", Pattern.DOTALL);
-    
-    static Pattern				  patternRemoveComments = Pattern.compile("<!--.*?-->", Pattern.DOTALL);
-    static Pattern				  patternRemoveNotDisplayedDivs = Pattern.compile("<div.*?style=\"display:\\s+none;\">.*?</div>", Pattern.DOTALL);
-    static Pattern                patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
-    
-    //a little java script helper to minimize decipher afforts
-    static private final String jsScript =  "var document = new Object();\n" +
-										    "document.write = write\n" +
-										    "function write(content){\n" +
-										    "return content;"+
-										    "}\n";
-    
+    // static Pattern patternJsScript =
+    // Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>",
+    // Pattern.DOTALL);
+    static Pattern patternJsScript = Pattern.compile("<script\\s+type=\\\"text/javascript\">(.*document.write\\(message\\).*?)</script>", Pattern.DOTALL);
+
+    static Pattern patternRemoveComments = Pattern.compile("<!--.*?-->", Pattern.DOTALL);
+    static Pattern patternRemoveNotDisplayedDivs = Pattern.compile("<div.*?style=\"display:\\s+none;\">.*?</div>", Pattern.DOTALL);
+    static Pattern patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
+
+    // a little java script helper to minimize decipher afforts
+    static private final String jsScript = "var document = new Object();\n" + "document.write = write\n" + "function write(content){\n" + "return content;" + "}\n";
 
     public XliceNet() {
         super();
@@ -128,15 +151,11 @@ public class XliceNet extends PluginForDecrypt {
     }
 
     private boolean getUseConfig(String link) {
-        if (link == null) {
-            return false;
-        }
+        if (link == null) { return false; }
 
         link = link.toLowerCase();
         for (String hoster : USEARRAY) {
-            if (link.matches(".*" + hoster.toLowerCase() + ".*")) {
-                return getProperties().getBooleanProperty(hoster, true);
-            }
+            if (link.matches(".*" + hoster.toLowerCase() + ".*")) { return getProperties().getBooleanProperty(hoster, true); }
         }
 
         return false;
@@ -146,18 +165,17 @@ public class XliceNet extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            
-            if(parameter.contains("folder")){
-                String id=parameter.substring(parameter.indexOf("folder")+7).trim();
-                
-               // while(id.endsWith("/")||id.endsWith("\\"))id=id.substring(0,id.length()-1);
-                
-               String dlcLink= "http://xlice.net/getdlc/"+id;
-                
-               step.setParameter(new DistributeData(dlcLink).findLinks());
-               return step;
-                
-                
+
+            if (parameter.contains("folder")) {
+                String id = parameter.substring(parameter.indexOf("folder") + 7).trim();
+
+                // while(id.endsWith("/")||id.endsWith("\\"))id=id.substring(0,id.length()-1);
+
+                String dlcLink = "http://xlice.net/getdlc/" + id;
+
+                step.setParameter(new DistributeData(dlcLink).findLinks());
+                return step;
+
             }
             Context cx = null;
             try {
@@ -172,9 +190,9 @@ public class XliceNet extends PluginForDecrypt {
                 progress.setRange(links.length);
 
                 String[] rowCandidates = new Regexp(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
-                if(0 == rowCandidates.length){
-                	logger.severe("unable to find row candidates - adapt patternTableRowLink (see next INFO log line");
-                	logger.info("reqinfo.getHtmlCode(): " + reqinfo.getHtmlCode() );
+                if (0 == rowCandidates.length) {
+                    logger.severe("unable to find row candidates - adapt patternTableRowLink (see next INFO log line");
+                    logger.info("reqinfo.getHtmlCode(): " + reqinfo.getHtmlCode());
                 }
 
                 for (String rowCandiate : rowCandidates) {
@@ -187,19 +205,19 @@ public class XliceNet extends PluginForDecrypt {
 
                     // check if there is a filename in row Candidate
                     String fileName = new Regexp(rowCandiate, patternFileName).getFirstMatch();
-                    
-                    if( null == fileName){
-                    	logger.warning("filename could not be determined - fix patternFileName (see next INFO log line");
-                    	logger.info("rowCandidate: "+ rowCandiate);
+
+                    if (null == fileName) {
+                        logger.warning("filename could not be determined - fix patternFileName (see next INFO log line");
+                        logger.info("rowCandidate: " + rowCandiate);
                     }
 
                     URL mirrorUrl = new URL("http://" + (getHost() + link));
                     RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null, true);
 
                     ArrayList<ArrayList<String>> groups = getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);
-                    if(groups.isEmpty()){
-                    	logger.severe("unable to find mirrors - fix patternMirrorLink (see next INFO log line");
-                    	logger.info(mirrorInfo.getHtmlCode());
+                    if (groups.isEmpty()) {
+                        logger.severe("unable to find mirrors - fix patternMirrorLink (see next INFO log line");
+                        logger.info(mirrorInfo.getHtmlCode());
                     }
 
                     for (ArrayList<String> pair : groups) {
@@ -227,7 +245,7 @@ public class XliceNet extends PluginForDecrypt {
                             // compile the script and load it into context and
                             // scope
                             cx.compileString(desInfo.getHtmlCode(), "<des>", 1, null).exec(cx, scope);
-                            
+
                             // compile the helper script into context
                             cx.compileString(jsScript, "<des>", 1, null).exec(cx, scope);
                         }
@@ -240,7 +258,7 @@ public class XliceNet extends PluginForDecrypt {
                             logger.severe("Unable to find decypher recipe - adapt patternJsScript (have a look at next Info log line)");
                             logger.info(fileInfo.getHtmlCode());
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            return  null;
+                            return null;
                         }
 
                         // put the script together and run it
@@ -250,12 +268,11 @@ public class XliceNet extends PluginForDecrypt {
                         // fetch the result of the javascript interpreter and
                         // finally find the link :)
                         String iframe = Context.toString(result);
-                        
-                        //remove all decoys
+
+                        // remove all decoys
                         iframe = removeMatches(patternRemoveComments, iframe);
                         iframe = removeMatches(patternRemoveNotDisplayedDivs, iframe);
-                        
-                        
+
                         String hosterURL = new Regexp(iframe, patternHosterIframe).getFirstMatch();
                         if (null == hosterURL) {
                             logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
@@ -263,8 +280,8 @@ public class XliceNet extends PluginForDecrypt {
                         }
 
                         DownloadLink downloadLink = createDownloadlink(hosterURL);
-                        if( null != fileName){
-                        	downloadLink.setName(fileName);
+                        if (null != fileName) {
+                            downloadLink.setName(fileName);
                         }
 
                         decryptedLinks.add(downloadLink);
@@ -275,17 +292,14 @@ public class XliceNet extends PluginForDecrypt {
                 logger.info(decryptedLinks.size() + " downloads decrypted");
 
                 step.setParameter(decryptedLinks);
-            }
-            catch (MissingResourceException e) {
+            } catch (MissingResourceException e) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("MissingResourceException class name: " + e.getClassName() + " key: " + e.getKey());
                 e.printStackTrace();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 e.printStackTrace();
-            }
-            finally {
+            } finally {
                 // Exit from the context.
                 if (null != cx) {
                     Context.exit();
@@ -294,30 +308,29 @@ public class XliceNet extends PluginForDecrypt {
         }
         return null;
     }
-    
-    
-    private String removeMatches(Pattern pattern, String string){
-    	Matcher matcher = pattern.matcher(string);
-    	return matcher.replaceAll("");
+
+    private String removeMatches(Pattern pattern, String string) {
+        Matcher matcher = pattern.matcher(string);
+        return matcher.replaceAll("");
     }
 
     private void setConfigEelements() {
         ConfigEntry cfg;
-        ConfigContainer hoster=null;
+        ConfigContainer hoster = null;
 
         int c = 0;
         int max = 6;
         for (int i = 0; i < USEARRAY.length; i++) {
-            
+
             if (c == 0) {
-                hoster = new ConfigContainer(this, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl") + " " + (i + 1) + "-" + Math.min(USEARRAY.length,(i + max)));
+                hoster = new ConfigContainer(this, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl") + " " + (i + 1) + "-" + Math.min(USEARRAY.length, (i + max)));
                 config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, hoster));
             }
-           
+
             hoster.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAY[i], USEARRAY[i]));
             cfg.setDefaultValue(true);
             ++c;
-            if(c==max)c=0;
+            if (c == max) c = 0;
         }
     }
 

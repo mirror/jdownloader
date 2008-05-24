@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -146,7 +147,15 @@ public class HTTPConnection {
         wr.close();
 
     }
+    public void post(byte[] parameter) throws IOException {
+        BufferedOutputStream wr =  new BufferedOutputStream(connection.getOutputStream());
+        if (parameter != null) wr.write(parameter);
 
+        this.postData = "binary";
+        wr.flush();
+        wr.close();
+
+    }
     public void postGzip(String parameter) throws IOException {
 
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());

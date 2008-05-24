@@ -1543,7 +1543,7 @@ public class JDController implements ControlListener, UIListener {
         }
         if (wait > 0 && lastReconnectSuccess) return true;
 
-        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+        
 
         logger.finer("Reconnect disabled: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
@@ -1555,6 +1555,7 @@ public class JDController implements ControlListener, UIListener {
             logger.finer("Downloads are running. reconnect is disabled");
             return false;
         }
+        Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
         String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
         if (type == null) {
 

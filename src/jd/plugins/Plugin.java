@@ -1093,7 +1093,7 @@ public abstract class Plugin implements ActionListener {
             }
         }
         if (parameter != null) {
-            parameter = parameter.trim();
+            //parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
         }
         httpConnection.setDoOutput(true);
@@ -1108,7 +1108,7 @@ public abstract class Plugin implements ActionListener {
         // (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
-
+    
     /**
      * Gibt header- und cookieinformationen aus ohne den HTMLCode
      * herunterzuladen
@@ -1360,9 +1360,9 @@ public abstract class Plugin implements ActionListener {
      * @param id
      * @return String Match
      */
-    public static String getSimpleMatch(String source, String pattern, int id) {
+    public static String getSimpleMatch(Object source, String pattern, int id) {
 
-        String[] res = getSimpleMatches(source, pattern);
+        String[] res = getSimpleMatches(source.toString(), pattern);
         if (res != null && res.length > id) { return res[id]; }
         return null;
     }
@@ -1441,10 +1441,10 @@ public abstract class Plugin implements ActionListener {
      * @param id
      * @return Matchlist
      */
-    public static ArrayList<String> getAllSimpleMatches(String source, String pattern, int id) {
+    public static ArrayList<String> getAllSimpleMatches(Object source, String pattern, int id) {
         pattern = getPattern(pattern);
         ArrayList<String> ret = new ArrayList<String>();
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source.toString()); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
         return ret;

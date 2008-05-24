@@ -192,13 +192,10 @@ public class ShareOnlineBiz extends PluginForHost {
 
             return true;
         }
-        catch (MalformedURLException e) {
+    
+        catch (Exception e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return false;
     }
