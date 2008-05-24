@@ -26,6 +26,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
@@ -49,8 +50,9 @@ public abstract class ConfigPanel extends JPanel {
     protected Insets               insets           = new Insets(1, 5, 1, 5);
 
     ConfigPanel(UIInterface uiinterface) {
-
-        this.setLayout(new BorderLayout());
+        int n = 4;
+        this.setLayout(new BorderLayout(n,n));
+        this.setBorder(new EmptyBorder(n,n,n,n));
         panel = new JPanel(new GridBagLayout());
         this.uiinterface = uiinterface;
 

@@ -21,6 +21,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,6 +37,8 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -134,12 +137,14 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     @Override
     public void initPanel() {
-        setLayout(new BorderLayout());
+        int n = 10;
+        setBorder(new EmptyBorder(n,n,n,n));
+        setLayout(new BorderLayout(10, 10));
         table = new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
 
         table.setModel(new InternalTableModel());
-        this.setPreferredSize(new Dimension(700, 350));
+        // this.setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -178,24 +183,37 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         openPluginDir.addActionListener(this);
       
         link= new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help","Hilfe"),JDLocale.L("gui.config.plugin.optional.link_help","  http://jdownloader.ath.cx/page.php?id=122"));
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        // JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//
+//        JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, openPluginDir, 2, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-        JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, openPluginDir, 2, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+        JPanel contentPanel = new JPanel(new BorderLayout(5,5));
+        n = 5;
+        contentPanel.setBorder(new EmptyBorder(0,n,0,n));
+        String text = JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!");
+        contentPanel.add(new JLabel("<html><b>" + text), BorderLayout.NORTH);
+        contentPanel.add(scrollpane, BorderLayout.CENTER);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
+        buttonPanel.add(btnEdit);
+        buttonPanel.add(enableDisable);
+        buttonPanel.add(openPluginDir);
+        buttonPanel.add(link);
+        
+        add(contentPanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+        
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        add(panel, BorderLayout.CENTER);
-
     }
 
     @Override
     public String getName() {
-
         return JDLocale.L("gui.config.plugin.optional.name","Optional Plugins");
     }
 
