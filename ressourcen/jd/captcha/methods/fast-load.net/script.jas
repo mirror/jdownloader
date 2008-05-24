@@ -1,0 +1,95 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---fast-load.net---####################################
+##############Set parameter
+
+param.simplifyFaktor = 1.0;
+##Border Tolleranzen geben an wie groß der Größenunterschied zwischen datenbankbild und Letter höchstens sein darf (PX)
+param.borderVarianceX=10;
+param.borderVarianceY=10;
+##Scanvarianzen geben an wieviel die Bilder beim vergleich gegeneinander ÜBER ihre Grenzen hinaus verschoben werden
+param.scanVariancex=10;
+param.scanVarianceY=10;
+##Farbraum
+param.colorType = RGB;
+##Trainiert nur Captchs die noch nicht in der DB sind
+param.trainOnlyUnknown=true;
+
+##Objekt erkennungsparameter
+param.useObjectDetection = false;
+param.useColorObjectDetection=false;
+param.multiplePartMergeMinSize=10;
+param.objectColorContrast = 0.4;
+param.objectDetectionContrast = 0.6;
+param.minimumObjectArea = 60;
+param.minimumLetterWidth=5;
+param.minObjectSize=10;
+#param.directLetterDetection=true;
+param.splitPixelObjectsOverlap=0;
+
+##Alternative Zeichentrennungsmethoden
+param.splitGapsOverlap=0;
+param.useAverageGapDetection=false;
+param.usePeakGapdetection=false;
+param.gaps={18,46,79};
+
+
+
+##Rotationsgrenzen des Buchstaben
+param.scanAngleLeft=0;
+param.scanAngleRight=0;
+param.scanAngleSteps=0;
+
+
+##Gridscan parameter
+param.scanstepy=1;
+param.scanstepx=1;
+
+##Gewichtung der Vergleichsfaktoren
+param.errorAWeight=3;
+param.errorBWeight=3;
+param.coverageFaktorAWeight=1.5;
+param.coverageFaktorBWeight=4;
+param.intersectionAHeightWeight=0;
+param.intersectionAWidthWeight=0;
+param.cleftFaktor=1; 
+
+
+##Special Code
+
+
+
+##Scanparameter
+param.overlayNoiseSize=0;
+param.intersectionDimensionWeight=8.0;
+param.inverseFontWeight=100.0;
+
+##Letter Scan Limits
+param.LetterSearchLimitPerfectPercent=10;
+
+## Quickscan
+param.quickScanReliabilityLimit=0;
+param.quickScanValityLimit=0;
+
+## Prescan filter
+param.preScanFilter=95;
+param.preScanEmergencyFilter=100;
+param.preScanFaktor=3;
+
+
+
+
+
+##################Prepare captcha Funktionen
+
+captcha.prepare.cleanWithDetailMask(bg_mask.png,2000000);
+captcha.prepare.blurIt(2);
+
+#################Letter Prepare Funktionen
+letter.prepare.invert();
+letter.prepare.toBlackAndWhite(1.1);
+letter.prepare.invert();
+
+
+		

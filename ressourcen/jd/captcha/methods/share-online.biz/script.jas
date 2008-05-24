@@ -1,0 +1,73 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Filefactory.com---####################################
+##############Set parameter
+param.simplifyFaktor = 1;
+param.borderVarianceX=20;
+param.borderVarianceY=20;
+param.scanVarianceX=6;
+param.scanVarianceY=6;
+param.trainOnlyUnknown=false;
+param.colorType = b;
+
+##Object Detection
+param.relativecontrast=0.90;
+param.objectColorContrast = 0.6;
+param.objectDetectionContrast = 0.8;
+param.useObjectDetection = true;
+param.minimumObjectArea = 250;
+param.minimumLetterWidth=10;
+param.minObjectSize=40;
+param.backgroundsamplecleancontrast=0.15;
+param.splitPixelObjectsOverlap=5;
+
+##alternative TRennungsmethoden
+param.usepeakgapdetection=false;
+param.useaveragegapdetection=false;
+param.splitGapsOverlap=4;
+
+
+##Scanparameter
+param.alignAngleSteps=2;
+
+##gewichtungsfaktoren
+param.intersectionDimensionWeight=5;
+param.minCleftSize=4;
+param.overlayNoiseSize=6;
+param.scanAngleLeft=0;
+param.scanAngleRight=0;
+param.scanAngleSteps=0;
+param.errorAWeight=3;
+param.errorBWeight=4;
+param.coverageFaktorAWeight=3;
+param.coverageFaktorBWeight=3;
+param.cleftFaktor=2;
+param.intersectionAHeightWeight=1;
+param.intersectionAWidthWeight=1;
+
+##quickscan
+param.quickScanReliabilityLimit=0;
+param.quickScanValityLimit=0;
+
+##filterparameter
+param.LetterSearchLimitPerfectPercent=15;
+
+##prescan
+param.preScanFilter=100;
+param.preScanFaktor=3;
+
+##################Prepare captcha
+#captcha.prepare.clean();
+captcha.prepare.toBlackAndWhite(0.70);
+captcha.prepare.reduceWhiteNoise(4,1);
+captcha.prepare.toBlackAndWhite(0.9);
+captcha.prepare.removeSmallObjects(0.3,0.5,10);
+
+
+
+
+##################Prepare letter
+#letter.prepare.removeSmallObjects(0.3,0.5,25);
+
+letter.prepare.removeSmallObjects(0.3,0.5,10);

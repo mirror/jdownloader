@@ -1,0 +1,63 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---Rapidshare.com---####################################
+##############Set parameter
+param.simplifyFaktor = 1.0;
+param.borderVarianceX=100;
+param.borderVarianceY=100;
+param.scanVariancex=5;
+param.scanVarianceY=5;
+param.colorType = b;
+param.trainOnlyUnknown=false;
+
+param.multiplePartMergeMinSize=10;
+
+param.splitGapsOverlap=5;
+param.objectColorContrast = 0.6;
+param.objectDetectionContrast = 0.9;
+param.useObjectDetection = true;
+param.minimumObjectArea = 950;
+param.minimumLetterWidth=10;
+param.scanAngleLeft=-180;
+param.scanAngleRight=180;
+param.scanAngleSteps=15;
+param.scanstepy=2;
+param.scanstepx=1;
+param.divider=2.0;
+ 
+param.errorAWeight=1;
+param.errorBWeight=6;
+param.coverageFaktorAWeight=0;
+param.coverageFaktorBWeight=0;
+
+param.splitPixelObjectsOverlap=10;
+param.turnDB=true;
+
+
+#####################Scanparameter
+param.overlayNoiseSize=1;
+param.cleftFaktor=2.0;
+param.intersectionDimensionWeight=9;
+############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
+
+param.LetterSearchLimitPerfectPercent=0; 
+param.quickScanReliabilityLimit=0;
+param.quickScanValityLimit=0;
+param.preScanFilter=40;
+param.preScanFaktor=3;
+##################Prepare captcha
+#captcha.prepare.toBlackAndWhite(0.70);
+#captcha.prepare.blurIt(2);
+#captcha.prepare.toBlackAndWhite(0.8);
+#letter.prepare.resizeToHeight(30);
+#captcha.prepare.removeSmallObjects(0.5,0.8,100);
+#captcha.prepare.reduceWhiteNoise(4,0.05);
+captcha.prepare.toBlackAndWhite(0.99);
+
+
+letter.prepare.removeSmallObjects(0.7,0.9,10);
+#letter.prepare.reduceBlackNoise(1);
+#letter.prepare.reduceWhiteNoise(1);
+
+		
