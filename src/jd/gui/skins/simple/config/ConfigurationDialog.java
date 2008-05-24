@@ -24,6 +24,7 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
@@ -273,11 +274,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         
         int m = 10;
         JPanel headerPanel = new JPanel(new BorderLayout(m,m));
-        headerPanel.add(new JLabel(title, new ImageIcon(JDUtilities.getImage(img)), SwingConstants.LEFT), BorderLayout.NORTH);
+        ImageIcon icon = new ImageIcon(JDUtilities.getImage(img));
+        headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
         headerPanel.add(new JXTitledSeparator("Einstellungen"), BorderLayout.SOUTH);
         p.add(headerPanel , BorderLayout.NORTH);
         
-        tabbedPane.addTab(title, p);
+        tabbedPane.addTab(title, new ImageIcon(icon.getImage().getScaledInstance(20, -1, Image.SCALE_SMOOTH)), p);
     }
 
     /**
