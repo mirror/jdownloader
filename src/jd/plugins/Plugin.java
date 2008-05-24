@@ -1331,10 +1331,10 @@ public abstract class Plugin implements ActionListener {
      *            verwendet.
      * @return Alle TReffer
      */
-    public static String[] getSimpleMatches(String source, String pattern) {
+    public static String[] getSimpleMatches(Object source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
         if (source == null || pattern == null) return null;
-        Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source);
+        Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source.toString());
         if (!rr.find()) {
             // Keine treffer
         }
