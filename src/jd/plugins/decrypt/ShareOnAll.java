@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -31,18 +30,22 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class ShareOnAll extends PluginForDecrypt {
     final static String host             = "shareonall.com";
+    private static final String IGNORE_LIST = "IGNORE_LIST";
     private String      version          = "1.0.0.0";
     private Pattern     patternSupported = getSupportPattern("http://[*]shareonall\\.com/[+]");
-    private String[][]  conf             = new String[][] { { "USE_RAPIDSHARE", "Rapidshare.com" }, { "USE_FILEFACTORY", "Filefactory.com" }, { "USE_MEGAUPLOAD", "Megaupload.com" }, { "USE_DEPOSITFILES", "DepositFiles.com" }, { "USE_DIVSHARE", "DivShare.com" }, { "USE_ZSHARE", "ZShare.net" } };
-
+    private String[] ignoreList;
+ 
     public ShareOnAll() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigEelements();
+        this.ignoreList=JDUtilities.splitByNewline(getProperties().getStringProperty(IGNORE_LIST, ""));
     }
 
     @Override
@@ -77,15 +80,10 @@ public class ShareOnAll extends PluginForDecrypt {
 
     private boolean checkLink(String link) {
 
-        for (int i = 0; i < conf.length; i++) {
-            if ((Boolean) this.getProperties().getProperty(conf[i][0], true)) {
-                Pattern pattern = Pattern.compile(".*" + conf[i][1] + ".*", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(link);
-                if (matcher.find()) return true;
-            }
-
+        for(String hoster:ignoreList){
+            if(hoster.trim().length()>2&&link.toLowerCase().contains(hoster.toLowerCase().trim()))return false;
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -119,14 +117,11 @@ public class ShareOnAll extends PluginForDecrypt {
 
     private void setConfigEelements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
-        cfg.setDefaultValue(true);
-        for (int i = 1; i < conf.length; i++) {
-            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), conf[i][0], conf[i][1]));
-            cfg.setDefaultValue(false);
-        }
+       // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(domain1.com;domain2.com;...)")));
+
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), IGNORE_LIST,JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(Eine Domain/Zeile)")) );
+    
+   
     }
 
     @Override
