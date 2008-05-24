@@ -196,7 +196,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         int n = 5;
         contentPanel.setBorder(new EmptyBorder(0,n,0,n));
         String text = JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!");
-        contentPanel.add(new JLabel("<html><b>" + text), BorderLayout.NORTH);
+        contentPanel.add(new JLabel(text), BorderLayout.NORTH);
         contentPanel.add(scrollpane, BorderLayout.CENTER);
         
         JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
