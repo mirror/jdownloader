@@ -1311,25 +1311,23 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             this.setPreferredSize(new Dimension(700, 350));
 
             TableColumn col = null;
-            for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-                int width = 0;
+            for (int c = 0; c < internalTableModel.getColumnCount(); c++) {                
                 col = table.getColumnModel().getColumn(c);
                 switch (c) {
                     case 0:
-                        width = 20; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
+                        col.setMinWidth(20); col.setMaxWidth(30); col.setPreferredWidth(30);
                         break;
                     case 1:
-                        col.setMaxWidth(150);
+                        col.setMinWidth(50); col.setMaxWidth(200); col.setPreferredWidth(150);
                         break;
                     case 2:
-                        col.setPreferredWidth(250);
+                        col.setMinWidth(50); col.setMaxWidth(250); col.setPreferredWidth(150);
                         break;
-                    case 3:
-                        // col.setPreferredWidth(60);
-                        width = 50; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
+                    case 3:                        
+                        col.setMinWidth(50); col.setMaxWidth(120); col.setPreferredWidth(100);
                         break;
                     case 4:
-                        col.setPreferredWidth(210);
+                        col.setPreferredWidth(150);
                         break;
 
                 }
