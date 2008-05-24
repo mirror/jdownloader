@@ -437,12 +437,37 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     }
 
+    private String getDoReconnectImage() {
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false))
+            return JDTheme.V("gui.images.reconnect_ok");
+        else
+            return JDTheme.V("gui.images.reconnect_bad");
+    }
+    
+    private String getStartStopDownloadImage(){
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING)       
+            return JDTheme.V("gui.images.next");
+        else
+            return JDTheme.V("gui.images.stop");
+    }
+    
+    private String getPauseImage(){
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING){            
+            if (btnPause.isSelected()) 
+                return JDTheme.V("gui.images.stop_after_active");
+            else 
+                return JDTheme.V("gui.images.stop_after");
+        } else            
+            return JDTheme.V("gui.images.stop_after");
+        
+            
+    }
     /**
      * Die Aktionen werden initialisiert
      */
     public void initActions() {
-        actionStartStopDownload = new JDAction(this, JDTheme.V("gui.images.next"), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
-        actionPause = new JDAction(this, JDTheme.V("gui.images.stop_after"), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
+        actionStartStopDownload = new JDAction(this, getStartStopDownloadImage(), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
+        actionPause = new JDAction(this, getPauseImage(), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
 
@@ -466,7 +491,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
         actionItemsDown = new JDAction(this, JDTheme.V("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
-        doReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect_ok"), "action.doReconnect", JDAction.ITEMS_MOVE_BOTTOM);
+        doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
 
     }
@@ -768,30 +793,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tmp);
         // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
         // tabPluginActivity);
-        btnStartStop = new JButton(actionStartStopDownload);
-        if (JDUtilities.getImage(JDTheme.V("gui.images.stop")) != null) btnStartStop.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.stop"))));
+        btnStartStop = new JButton(this.actionStartStopDownload);        
         btnStartStop.setFocusPainted(false);
         btnStartStop.setBorderPainted(false);
-        btnStartStop.setText(null);
-        btnPause = new JButton(actionPause);
-        if (JDUtilities.getImage(JDTheme.V("gui.images.stop_after_active")) != null) btnPause.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.stop_after_active"))));
+        btnStartStop.setText(null);       
+        btnPause = new JButton(this.actionPause);        
         btnPause.setFocusPainted(false);
         btnPause.setBorderPainted(false);
         btnPause.setText(null);
         btnPause.setEnabled(false);
-        btnToggleReconnect = new JButton(doReconnect);
-        if (JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad")) != null) btnToggleReconnect.setSelectedIcon(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"))));
+        btnPause.setSelected(false);
+        btnToggleReconnect = new JButton(this.doReconnect);        
         btnToggleReconnect.setFocusPainted(false);
         btnToggleReconnect.setBorderPainted(false);
         btnToggleReconnect.setText(null);
-        btnToggleReconnect.setEnabled(true);
-        btnToggleReconnect.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-
-        JButton btnAdd = new JButton(actionItemsAdd);
+        JButton btnAdd = new JButton(this.actionItemsAdd);
         btnAdd.setFocusPainted(false);
         btnAdd.setBorderPainted(false);
         btnAdd.setText(null);
-        JButton btnDelete = new JButton(actionItemsDelete);
+        JButton btnDelete = new JButton(this.actionItemsDelete);
         btnDelete.setFocusPainted(false);
         btnDelete.setBorderPainted(false);
         btnDelete.setText(null);
@@ -807,7 +827,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnUpdate.setFocusPainted(false);
         btnUpdate.setBorderPainted(false);
         btnUpdate.setText(null);
-
         JButton btnTop = new JButton(this.actionItemsTop);
         btnTop.setFocusPainted(false);
         btnTop.setBorderPainted(false);
@@ -902,10 +921,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         JDSounds.PT("sound.gui.clickToolbar");
-        if (e.getSource() == btnToggleReconnect) {
-            this.toggleReconnect(true);
-            return;
-        }
         switch (e.getID()) {
         case JDAction.ITEMS_MOVE_UP:
         case JDAction.ITEMS_MOVE_DOWN:
@@ -913,9 +928,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ITEMS_MOVE_BOTTOM:
             linkListPane.moveSelectedItems(e.getID());
             break;
+        case JDAction.APP_ALLOW_RECONNECT:
+            logger.finer("Allow Reconnect");
+            toggleReconnect(true);
+            btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
+            break;
         case JDAction.APP_PAUSE_DOWNLOADS:
-            this.btnPause.setSelected(!btnPause.isSelected());
+            btnPause.setSelected(!btnPause.isSelected());
             fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
+            btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
             break;
         case JDAction.APP_TESTER:
             logger.finer("Test trigger pressed");
@@ -939,11 +960,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
             break;
         case JDAction.APP_START_STOP_DOWNLOADS:
-
-            btnStartStop.setSelected(!btnStartStop.isSelected());
-            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
+            logger.finer("Start Stop Downloads");
+//            btnStartStop.setSelected(!btnStartStop.isSelected());
+//            if (!btnStartStop.isSelected()) btnStartStop.setEnabled(false);
             this.startStopDownloads();
-
+            btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
+            btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
             break;
         case JDAction.APP_SAVE_DLC:
             JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
@@ -1055,11 +1077,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void toggleReconnect(boolean message) {
-        btnToggleReconnect.setSelected(!btnToggleReconnect.isSelected());
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, btnToggleReconnect.isSelected());
+        boolean checked = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, checked);
+        btnToggleReconnect.setSelected(checked);
         JDUtilities.saveConfig();
-
-        if (btnToggleReconnect.isSelected() && message) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
+        btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
+        /*
+         * Steht hier, weil diese Funktion(toggleReconnect) direkt vom Trayicon Addon aufgerufen
+         * wird und ich dennoch die Gui aktuell halten will
+         */
+        if (checked && message) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
+        /*fixme: bitte die message box lokalisieren*/
     }
 
     public void doReconnect() {
@@ -1303,7 +1331,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
             chbPremium.addChangeListener(this);
             JDUtilities.getController().addControlListener(this);
-            chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));            
+            chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Geschw."));
             lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
             int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
@@ -1399,9 +1427,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // lbl.setIcon(imgInactive);
         // }
         private void colorizeSpinnerSpeed(Integer Speed) {
-            /*färbt den spinner ein, falls speedbegrenzung aktiv*/
+            /* färbt den spinner ein, falls speedbegrenzung aktiv */
             JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
-            Color warning=JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
+            Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
             if (Speed > 0) {
                 spMaxEditor.getTextField().setBackground(warning);
             } else
@@ -1690,6 +1718,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(false);
                     btnPause.setSelected(false);
+                    btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
+                    btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
 
                 case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
@@ -1717,13 +1747,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     // if (!btnStartStop.isSelected())
                     // btnStartStop.setEnabled(false);
                     // this.startStopDownloads();
+                    btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
+                    btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
 
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(true);
                     btnStartStop.setSelected(false);
-
+                    btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
+                    btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
                 }
             }
