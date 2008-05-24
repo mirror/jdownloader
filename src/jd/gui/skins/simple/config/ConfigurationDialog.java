@@ -16,7 +16,11 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.ComponentOrientation;
+import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,8 +39,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.jdesktop.swingx.JXTitledSeparator;
+
+import com.sun.org.apache.xalan.internal.xsltc.compiler.FlowList;
 
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -108,6 +118,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
         configuration = JDUtilities.getConfiguration();
         tabbedPane = new JTabbedPane();
+        tabbedPane.setBorder(null);
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
 
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -151,13 +162,23 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         chbExpert.addActionListener(this);
 
         setLayout(new GridBagLayout());
-        JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JPanel btPanel = new JPanel();
+        // JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        int n = 5;
+        JPanel cp = new JPanel(new BorderLayout(n,n));
+        int b = 12;
+        cp.setBorder(new EmptyBorder(b,b,b,b));
+        setContentPane(cp);
+        JPanel sp = new JPanel(new BorderLayout(n,n));
+        JPanel btPanel = new JPanel(new FlowLayout(n,n, FlowLayout.RIGHT));
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
-        JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        sp.add(chbExpert, BorderLayout.WEST);
+        sp.add(btPanel, BorderLayout.EAST);
+        // JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(this, btPanel, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        cp.add(tabbedPane, BorderLayout.CENTER);
+        cp.add(sp, BorderLayout.SOUTH);
 
         // JDUtilities.addToGridBag(this, btnSave, GridBagConstraints.RELATIVE,
         // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0,
@@ -205,8 +226,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         configPanels.remove(i);
         configPanels.add(i, panel);
         JPanel container = containerPanels.get(i);
-        JDUtilities.addToGridBag(container, new JScrollPane(panel), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
-
+        
+        JScrollPane scrollPane = new JScrollPane(panel);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBorder(null);
+        // JDUtilities.addToGridBag(container, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+        container.add(scrollPane, BorderLayout.CENTER);
     }
 
     @SuppressWarnings("unchecked")
@@ -234,14 +259,25 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
         this.configClasses.add(configPanelClass);
 
-        JPanel p = new JPanel(new GridBagLayout());
+//        JPanel p = new JPanel(new GridBagLayout());
+//        this.containerPanels.add(p);
+//        configPanels.add(null);
+//        JDUtilities.addToGridBag(p, new JLabel(title, new ImageIcon(JDUtilities.getImage(img)), SwingConstants.LEFT), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.FIRST_LINE_START);
+//        JDUtilities.addToGridBag(p, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+
+        int n = 10;
+        JPanel p = new JPanel(new BorderLayout(n,n));
+        p.setBorder(new EmptyBorder(n,n,n,n));
         this.containerPanels.add(p);
         configPanels.add(null);
-        JDUtilities.addToGridBag(p, new JLabel(title, new ImageIcon(JDUtilities.getImage(img)), SwingConstants.LEFT), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.FIRST_LINE_START);
-        JDUtilities.addToGridBag(p, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-
+        
+        int m = 10;
+        JPanel headerPanel = new JPanel(new BorderLayout(m,m));
+        headerPanel.add(new JLabel(title, new ImageIcon(JDUtilities.getImage(img)), SwingConstants.LEFT), BorderLayout.NORTH);
+        headerPanel.add(new JXTitledSeparator("Einstellungen"), BorderLayout.SOUTH);
+        p.add(headerPanel , BorderLayout.NORTH);
+        
         tabbedPane.addTab(title, p);
-
     }
 
     /**

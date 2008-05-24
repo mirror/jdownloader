@@ -115,7 +115,7 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
             tabbedPane = new JTabbedPane();
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+            tabbedPane.setTabPlacement(JTabbedPane.RIGHT);
             Vector<ConfigEntry> entries = plugin.getConfig().getEntries();
 
             Vector<ConfigContainer> container = new Vector<ConfigContainer>();

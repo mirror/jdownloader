@@ -137,8 +137,8 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     @Override
     public void initPanel() {
-        int n = 10;
-        setBorder(new EmptyBorder(n,n,n,n));
+//        int n = 10;
+//        setBorder(new EmptyBorder(n,n,n,n));
         setLayout(new BorderLayout(10, 10));
         table = new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
@@ -193,7 +193,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 //        JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
         JPanel contentPanel = new JPanel(new BorderLayout(5,5));
-        n = 5;
+        int n = 5;
         contentPanel.setBorder(new EmptyBorder(0,n,0,n));
         String text = JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!");
         contentPanel.add(new JLabel("<html><b>" + text), BorderLayout.NORTH);
