@@ -83,7 +83,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     }
 
     public void initPanel() {
-
+        this.setPreferredSize(new Dimension(650, 350));
         config = JDUtilities.getSubConfig("PACKAGEMANAGER");
         packageData = new PackageManager().getPackageData();
 
