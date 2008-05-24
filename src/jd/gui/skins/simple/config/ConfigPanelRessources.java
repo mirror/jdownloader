@@ -166,9 +166,9 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         // list = new JList();
         table.addMouseListener(this);
         JScrollPane scrollpane = new JScrollPane(table);
-        // scrollpane.setPreferredSize(new Dimension(400, 200));
+        scrollpane.setPreferredSize(new Dimension(400, 200));
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        add(panel, BorderLayout.NORTH);
+        add(panel, BorderLayout.CENTER);
 
     }
 
