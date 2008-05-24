@@ -222,22 +222,19 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.setName("LINKGRABBER");
         this.setPreferredSize(new Dimension(600, 400));
         // http://serienfreaks.tv/?id=6523
-        pack();
-        this.setVisible(true);
         if (SimpleGUI.getLastDimension(this, null) != null) {
             this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
-
-            pack();
         }
         if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
             this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
-
         }
 
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
         this.addWindowListener(list);
 
+        pack();
+        this.setVisible(true);
     }
 
     // private void refreshTabbedPane() {
@@ -1300,6 +1297,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             InternalTableModel internalTableModel = new InternalTableModel();
             table.addKeyListener(this);
             table.setModel(internalTableModel);
+            
+            TableColumn col = table.getColumnModel().getColumn(0);
+            int width = 10; col.setMinWidth(width); col.setMaxWidth(width); col.setPreferredWidth(width);
+            
             // table.setAutoCreateRowSorter(true);
             // table.setUpdateSelectionOnSort(true);
             table.setGridColor(Color.BLUE);
