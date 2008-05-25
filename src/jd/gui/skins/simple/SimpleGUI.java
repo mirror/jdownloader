@@ -69,6 +69,7 @@ import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
@@ -1329,7 +1330,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public StatusBar() {            
             setLayout(new BorderLayout());
             int n = 10;
-            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, n,0));
+            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, n/2,0));
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
             add(bundle(left, right));
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
@@ -1360,7 +1361,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
             
             left.add(lblMessage);
-            left.add(new JLinkButton("http://jdownloader.ath.cx"));
+            JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
+            linkButton.setBorder(null);
+            left.add(linkButton);
             right.add(bundle(lblSimu, spMaxDls));            
             right.add(chbPremium);
             right.add(bundle(lblSpeed,spMax));
@@ -1452,7 +1455,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03");
             if (Speed > 0) {
                 lblSpeed.setForeground(warning);                
-                spMaxEditor.getTextField().setForeground(warning);
+                spMaxEditor.getTextField().setForeground(Color.red);
             } else {               
                 lblSpeed.setForeground(Color.black);
                 spMaxEditor.getTextField().setForeground(Color.black);
