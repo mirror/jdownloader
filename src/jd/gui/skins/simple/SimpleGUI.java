@@ -1338,7 +1338,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             chbPremium.addChangeListener(this);
             JDUtilities.getController().addControlListener(this);
             chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-            lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Geschw."));
+            lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
             lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
             int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
@@ -1405,7 +1405,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          */
         public void setSpeed(Integer speed) {
             if (speed <= 0) {
-                lblSpeed.setText("Cur/Max. Geschw.");
+                lblSpeed.setText(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
                 return;
             }
 
@@ -1449,7 +1449,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         private void colorizeSpinnerSpeed(Integer Speed) {
             /* färbt den spinner ein, falls speedbegrenzung aktiv */
             JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();           
-            Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
+            Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03");
             if (Speed > 0) {
                 lblSpeed.setForeground(warning);                
                 spMaxEditor.getTextField().setForeground(warning);
