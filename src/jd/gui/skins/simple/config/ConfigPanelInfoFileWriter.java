@@ -18,6 +18,11 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.InfoFileWriter;
@@ -51,7 +56,6 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
             ce = new GUIConfigEntry(fileWriter.getConfig().getEntries().get(i));
             addGUIConfigEntry(ce);
         }
-       
         add(panel, BorderLayout.NORTH);
     }
     @Override
