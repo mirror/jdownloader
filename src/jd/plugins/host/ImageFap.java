@@ -31,11 +31,11 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class ImageFap extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*&pgid=.*&gid=.*&page=.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", Pattern.CASE_INSENSITIVE);
     
     static private final String HOST = "imagefap.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.2";
+    static private final String PLUGIN_VERSION = "0.3";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
     static private final Pattern IMAGELINK = Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE);
@@ -90,7 +90,7 @@ public class ImageFap extends PluginForHost {
         //var s1=unescape(s.substr(0,s.length-1)); var t='';
         //for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.substr(s.length-1,1));
         //return unescape(t);
-        logger.info("return of DecryptLink(): " + JDUtilities.htmlDecode(t));
+        //logger.info("return of DecryptLink(): " + JDUtilities.htmlDecode(t));
        return JDUtilities.htmlDecode(t); 
     }
     
@@ -143,6 +143,7 @@ public class ImageFap extends PluginForHost {
             String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
             String gallery = getFirstMatch(requestInfo.getHtmlCode(), GALLERY, 1);
             downloadLink.setName(gallery + "/" + gallery + " - " + name);
+           
             /*
              * 
              * Vector<String> link = matches.get(id);
@@ -162,12 +163,10 @@ public class ImageFap extends PluginForHost {
     }
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
         
     }
     @Override
     public String getAGBLink() {
-        // TODO Auto-generated method stub
         return "http://imagefap.com/faq.php";
     }
 }
