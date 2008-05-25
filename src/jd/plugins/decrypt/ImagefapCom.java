@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -30,15 +29,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
-
 public class ImagefapCom extends PluginForDecrypt {
-    static private final String host             = "imagefap.com folder";
-    private String              version          = "1.0.0.0";
-    static private final Pattern patternSupported = Pattern.compile("http://.*?imagefap\\.com/gallery/[0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final String host = "imagefap.com folder";
+    private String version = "1.0.0.0";
+    // http://www.imagefap.com/gallery.php?gid=1139808&gen=
+    static private final Pattern patternSupported =  getSupportPattern("(http://[*]imagefap\\.com/gallery.php\\?gid\\=[+]|http://[*]imagefap\\.com/gallery/[+])");
+
+        
     static private final Pattern GALLERY = Pattern.compile("\\<a href=\"gallery\\.php\\?gid=[0-9]+?\"\\>\\<font color=\"white\"\\>(.*?)\\<\\/font\\>\\<\\/a\\>", Pattern.CASE_INSENSITIVE);
-    
-    private Vector<DownloadLink>      decryptedLinks   = new Vector<DownloadLink>();
-    private URL                 url;
+
+    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    private URL url;
 
     public ImagefapCom() {
         super();
@@ -79,40 +80,54 @@ public class ImagefapCom extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            try {
-                url = new URL(parameter + "&view=2");
-                RequestInfo reqinfo = getRequest(url);
-              
-              ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "image.php?id=°\">");
-              logger.info("size: " + links.size());
-              
-              progress.setRange(links.size());
-              
-              FilePackage fp = new FilePackage();
-              RequestInfo reqinfo2 = getRequest(new URL("http://imagefap.com/image.php?id=" + links.get(0).get(0)));
-              
-              String gallery = getFirstMatch(reqinfo2.getHtmlCode(), GALLERY, 1);
-              logger.info("Galleryname: "+ gallery);
-              fp.setName(gallery);
-                        
-              for(int i=0; i<links.size(); i++) {
-            	  //logger.info("http://imagefap.com/image.php?id=" + links.get(i).get(0));
-                  DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links.get(i).get(0));
-                  fp.add(link);
-                  link.setSourcePluginComment(gallery);
-                  decryptedLinks.add(link);
-                  progress.increase(1);
-              } 
+//            try {
+//            if (parameter.indexOf(".php") > 0) {
+//              
+          
+                
+                
+//            }
+//            }catch(Exception e){
+//                e.printStackTrace();
+//            }
+//            } else {
 
+                try {
+                    parameter=parameter.replaceAll("view\\=[0-9]+", "view=2");
+                    if(!parameter.contains("view=2"))parameter+="&view=2";
+                    url = new URL(parameter + "&view=2");
+                    RequestInfo reqinfo = getRequest(url);
 
-                // Decrypt abschliessen
+                    ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "image.php?id=°\">");
+                    logger.info("size: " + links.size());
 
-                step.setParameter(decryptedLinks);
+                    progress.setRange(links.size());
+
+                    FilePackage fp = new FilePackage();
+                    RequestInfo reqinfo2 = getRequest(new URL("http://imagefap.com/image.php?id=" + links.get(0).get(0)));
+
+                    String gallery = getFirstMatch(reqinfo2.getHtmlCode(), GALLERY, 1);
+                    logger.info("Galleryname: " + gallery);
+                    fp.setName(gallery);
+
+                    for (int i = 0; i < links.size(); i++) {
+                        // logger.info("http://imagefap.com/image.php?id=" +
+                        // links.get(i).get(0));
+                        DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links.get(i).get(0));
+                        fp.add(link);
+                        link.setSourcePluginComment(gallery);
+                        decryptedLinks.add(link);
+                        progress.increase(1);
+                    }
+
+                    // Decrypt abschliessen
+
+                    step.setParameter(decryptedLinks);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        
 
         return null;
     }
