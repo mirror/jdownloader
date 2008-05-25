@@ -53,7 +53,10 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
             ce = new GUIConfigEntry(fileWriter.getConfig().getEntries().get(i));
             addGUIConfigEntry(ce);
         }
-        add(new JScrollPane(panel), BorderLayout.NORTH);
+        JScrollPane scrollPane = new JScrollPane(panel);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBorder(null);
+        add(scrollPane, BorderLayout.NORTH);
     }
     @Override
     public void load() {
