@@ -593,6 +593,10 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean removePackage(FilePackage fp2) {
+        for( Iterator<DownloadLink> it = fp2.getDownloadLinks().iterator();it.hasNext();){
+            it.next().setAborted(true);
+        }
+        
         synchronized (packages) {
             return packages.remove(fp2);
         }
