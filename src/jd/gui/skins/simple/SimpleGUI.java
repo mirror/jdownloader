@@ -1364,8 +1364,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
             linkButton.setBorder(null);
             left.add(linkButton);
-            right.add(bundle(lblSimu, spMaxDls));            
             right.add(chbPremium);
+            right.add(bundle(lblSimu, spMaxDls));            
             right.add(bundle(lblSpeed,spMax));
             
             colorizeSpinnerSpeed(maxspeed);
