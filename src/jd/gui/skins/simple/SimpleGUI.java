@@ -16,10 +16,12 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -33,6 +35,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -42,6 +46,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -59,6 +64,7 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -67,6 +73,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+
+import org.jdesktop.swingx.JXGlassBox;
+import org.jdesktop.swingx.JXHyperlink;
 
 import jd.JDFileFilter;
 import jd.captcha.CES;
@@ -1323,10 +1332,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         private JCheckBox chbPremium;
 
+        private JLabel maxspeedlabel;
+
         public StatusBar() {
             if (JDUtilities.getImage(JDTheme.V("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_green")));
             if (JDUtilities.getImage(JDTheme.V("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_empty")));
-            setLayout(new GridBagLayout());
+            setLayout(new BorderLayout());
+            int n = 10;
+            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, n,0));
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
+            add(bundle(left, right));
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
@@ -1342,7 +1357,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             spMax.setPreferredSize(new Dimension(60, 20));
             spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
             spMax.addChangeListener(this);
-            colorizeSpinnerSpeed(maxspeed);
 
             spMaxDls = new JSpinner();
             spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3), 1, 20, 1));
@@ -1354,16 +1368,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive = new JLabel(imgInactive);
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
-            JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, new JSeparator(JSeparator.VERTICAL), 4, 0, 1, 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-            JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-            JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
+            left.add(lblMessage);
+            left.add(new JLinkButton("http://jdownloader.ath.cx"));
+            right.add(bundle(lblSimu, spMaxDls));
+            maxspeedlabel = new JLabel("Max Speed:", imgActive, SwingConstants.LEFT);
+            right.add(chbPremium);
+            right.add(bundle(bundle(maxspeedlabel, spMax), lblSpeed));
+            
+            colorizeSpinnerSpeed(maxspeed);
+//            JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+//
+//            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, new JSeparator(JSeparator.VERTICAL), 4, 0, 1, 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH, GridBagConstraints.WEST);
+//
+//            JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+//
+//            JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
             // JDUtilities.addToGridBag(this, lblPluginHostActive, 5, 0, 1, 1,
             // 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE,
@@ -1371,6 +1394,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // JDUtilities.addToGridBag(this, lblPluginDecryptActive, 6, 0, 1,
             // 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE,
             // GridBagConstraints.EAST);
+        }
+
+        private Component bundle(Component c1, Component c2) {
+            JPanel panel = new JPanel(new BorderLayout(0,0));
+            panel.add(c1, BorderLayout.WEST);
+            panel.add(c2, BorderLayout.EAST);
+            return panel;
         }
 
         public void setText(String text) {
@@ -1432,8 +1462,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();           
             Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
             if (Speed > 0) {
+                maxspeedlabel.setIcon(imgActive);
                 spMaxEditor.getTextField().setForeground(warning);
             } else
+                maxspeedlabel.setIcon(imgInactive);
                 spMaxEditor.getTextField().setForeground(Color.black);            
         }
 
