@@ -5,18 +5,26 @@ gui.images.clipboardon = default/clipboardon
 gui.images.clipboardoff = default/clipboardoff
 gui.images.ceson = default/ceson
 gui.images.cesoff = default/cesoff
-gui.images.config.database = default/database
-gui.images.config.edit_redo = default/edit_redo
+
+gui.images.config.container = default/database
+gui.images.config.addons = default/tool
 gui.images.config.find = default/find
 gui.images.config.home = default/home
-gui.images.config.load = default/load
+gui.images.config.infoFile = default/attach
 gui.images.config.network_local = default/network_local
-gui.images.config.ocr = default/ocr
-gui.images.config.package = default/package
-gui.images.config.reboot = default/reboot
-gui.images.config.star = default/star
-gui.images.config.switch = default/switch
-gui.images.config.tip = default/tip
+gui.images.config.ocr = default/charset
+gui.images.config.unrar = default/package
+gui.images.config.packagemanager = default/run
+gui.images.config.eventmanager = default/chronometer
+gui.images.config.tip = default/help_hint
+gui.images.config.updater=default/update_manager
+gui.images.config.gui=default/style
+gui.images.config.reconnect=default/clear_time
+gui.images.config.host=default/host
+gui.images.config.decrypt=default/decrypted
+
+
+
 gui.images.configuration = default/configuration
 gui.images.delete = default/delete
 gui.images.down = default/down
@@ -39,6 +47,7 @@ gui.images.stop_after_active = default/stop_after_active
 gui.images.terminal = default/terminal
 gui.images.top = default/top
 gui.images.update_manager = default/update_manager
+
 gui.images.help=default/help
 gui.images.package_opened = default/package_opened
 gui.images.package_closed = default/package_closed
@@ -51,7 +60,6 @@ gui.icons.cut=default/editcut
 gui.icons.paste=default/editpaste
 gui.icons.select_all=default/edit_select_all
 gui.icons.delete=default/editdelete
-
 gui.color.downloadlist.font = 000000
 
 gui.color.downloadlist.row_a = EEEEEE
