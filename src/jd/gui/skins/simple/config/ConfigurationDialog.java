@@ -41,12 +41,14 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jdesktop.swingx.JXTitledSeparator;
+import org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeelAddons;
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.FlowList;
 
@@ -122,6 +124,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         tabbedPane = new JTabbedPane();
         tabbedPane.setBorder(null);
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        if (UIManager.getLookAndFeel().getName().toLowerCase().contains("nimbus")) tabbedPane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
