@@ -249,7 +249,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBorder(null);
         // JDUtilities.addToGridBag(container, scrollPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
-        container.add(scrollPane, BorderLayout.CENTER);
+        container.add(panel, BorderLayout.CENTER);
+//        container.add(scrollPane, BorderLayout.CENTER);
     }
 
     @SuppressWarnings("unchecked")
