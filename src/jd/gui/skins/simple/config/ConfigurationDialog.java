@@ -124,7 +124,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         tabbedPane = new JTabbedPane();
         tabbedPane.setBorder(null);
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        if (UIManager.getLookAndFeel().getName().toLowerCase().contains("nimbus")) tabbedPane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        String laf = UIManager.getLookAndFeel().getName().toLowerCase();
+        if (laf.contains("nimbus") || laf.contains("gtk")) tabbedPane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
