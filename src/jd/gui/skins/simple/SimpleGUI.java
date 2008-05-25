@@ -1321,22 +1321,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         //
         // private JLabel lblPluginDecryptActive;
 
-        private ImageIcon imgActive;
-
-        private ImageIcon imgInactive;
-
         protected JSpinner spMax;
         protected JSpinner spMaxDls;
 
-        private JButton btnConfirm;
-
         private JCheckBox chbPremium;
 
-        private JLabel maxspeedlabel;
-
-        public StatusBar() {
-            if (JDUtilities.getImage(JDTheme.V("gui.images.led_green")) != null) imgActive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_green")));
-            if (JDUtilities.getImage(JDTheme.V("gui.images.led_empty")) != null) imgInactive = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.led_empty")));
+        public StatusBar() {            
             setLayout(new BorderLayout());
             int n = 10;
             JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, n,0));
@@ -1371,10 +1361,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             
             left.add(lblMessage);
             left.add(new JLinkButton("http://jdownloader.ath.cx"));
-            right.add(bundle(lblSimu, spMaxDls));
-            maxspeedlabel = new JLabel("Max Speed:", imgActive, SwingConstants.LEFT);
+            right.add(bundle(lblSimu, spMaxDls));            
             right.add(chbPremium);
-            right.add(bundle(bundle(maxspeedlabel, spMax), lblSpeed));
+            right.add(bundle(lblSpeed,spMax));
             
             colorizeSpinnerSpeed(maxspeed);
 //            JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -1416,14 +1405,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          */
         public void setSpeed(Integer speed) {
             if (speed <= 0) {
-                lblSpeed.setText("");
+                lblSpeed.setText("Cur/Max. Geschw.");
                 return;
             }
 
             if (speed > 1024) {
-                lblSpeed.setText((speed / 1024) + JDLocale.L("gui.download.kbps", "kb/s"));
+                lblSpeed.setText("("+(speed / 1024) + JDLocale.L("gui.download.kbps", "kb/s")+")");
             } else {
-                lblSpeed.setText(speed + JDLocale.L("gui.download.bps", "bytes/s"));
+                lblSpeed.setText("("+speed + JDLocale.L("gui.download.bps", "bytes/s")+")");
             }
         }
 
@@ -1462,11 +1451,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();           
             Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "fb6c53");
             if (Speed > 0) {
-                maxspeedlabel.setIcon(imgActive);
+                lblSpeed.setForeground(warning);                
                 spMaxEditor.getTextField().setForeground(warning);
-            } else
-                maxspeedlabel.setIcon(imgInactive);
-                spMaxEditor.getTextField().setForeground(Color.black);            
+            } else {               
+                lblSpeed.setForeground(Color.black);
+                spMaxEditor.getTextField().setForeground(Color.black);
+            }
         }
 
         public void setSpinnerSpeed(Integer speed) {
