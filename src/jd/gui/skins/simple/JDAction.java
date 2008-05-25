@@ -104,8 +104,8 @@ public class JDAction extends AbstractAction{
         putValue(Action.NAME,              JDLocale.L("gui.menu."+ressourceName+".name"));
         char mnemonic = JDLocale.L("gui.menu."+ressourceName+".mnem").charAt(0);
       
-      
-        if (mnemonic!=0)
+        
+        if (mnemonic!=0 && JDLocale.L("gui.menu."+ressourceName+".mnem").contentEquals("-")==false)
         {
            Class<?> b = KeyEvent.class;
            Field f;
