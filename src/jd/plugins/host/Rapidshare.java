@@ -1687,7 +1687,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        if ((System.currentTimeMillis() - LAST_FILE_CHECK) < 500) {
+        if ((System.currentTimeMillis() - LAST_FILE_CHECK) < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
             } catch (InterruptedException e) {

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.net.MalformedURLException;
@@ -40,9 +39,9 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     /**
      * Diese Methode entschlüsselt Links.
      * 
-     * @param cryptedLinks Ein Vector, mit jeweils einem verschlüsseltem Link.
-     *            Die einzelnen verschlüsselten Links werden aufgrund des
-     *            Patterns
+     * @param cryptedLinks
+     *            Ein Vector, mit jeweils einem verschlüsseltem Link. Die
+     *            einzelnen verschlüsselten Links werden aufgrund des Patterns
      *            {@link jd.plugins.Plugin#getSupportedLinks() getSupportedLinks()}
      *            herausgefiltert
      * @return Ein Vector mit Klartext-links
@@ -54,46 +53,48 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     public Vector<DownloadLink> decryptLinks(Vector<String> cryptedLinks) {
         this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();      
-       for(  Iterator<String> iterator = cryptedLinks.iterator();iterator.hasNext();) {        
+        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        for (Iterator<String> iterator = cryptedLinks.iterator(); iterator.hasNext();) {
             decryptedLinks.addAll(decryptLink(iterator.next()));
         }
-       this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
-    
+        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
+
         return decryptedLinks;
     }
 
-    private String cryptedLink              = null;
+    private String cryptedLink = null;
 
-    //private String decrypterDefaultPassword = null;
+    // private String decrypterDefaultPassword = null;
 
-    //private String decrypterDefaultComment  = null;
+    // private String decrypterDefaultComment = null;
 
-    protected Vector<String> default_password=new Vector<String>();;
-    public  ArrayList<MenuItem> createMenuitems(){
+    protected Vector<String> default_password = new Vector<String>();;
+
+    public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
+
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
      * durchlaufen. Der letzte step muss als parameter einen Vector<String> mit
      * den decoded Links setzen
      * 
-     * @param cryptedLink Ein einzelner verschlüsselter Link
+     * @param cryptedLink
+     *            Ein einzelner verschlüsselter Link
      * 
      * @return Ein Vector mit Klartext-links
      */
     @SuppressWarnings("unchecked")
-	public Vector<DownloadLink> decryptLink(String cryptedLink) {
+    public Vector<DownloadLink> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
         if (progress != null && !progress.isFinished()) {
             progress.finalize();
             logger.warning(" Progress ist besetzt von " + progress);
         }
-       
+
         progress = new ProgressController("Decrypter: " + this.getLinkName());
         progress.setStatusText("decrypt-" + getPluginName() + ": " + this.getLinkName());
         PluginStep step = null;
-        
 
         while ((step = nextStep(step)) != null) {
             doStep(step, cryptedLink);
@@ -104,54 +105,50 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
                 if (tmpLinks == null || !(tmpLinks instanceof Vector)) {
                     logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
-                   
+
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
                 Vector links = (Vector) tmpLinks;
 
                 if (links.size() == 0) {
-                   
+
                     progress.finalize();
                     return new Vector<DownloadLink>();
                 }
-                //Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                // Vector<DownloadLink> decryptedLinks = new
+                // Vector<DownloadLink>();
                 String link;
                 try {
                     if (links.get(0) instanceof DownloadLink) {
-                        
 
                         for (int i = links.size() - 1; i >= 0; i--) {
                             DownloadLink dl = (DownloadLink) links.get(i);
                             link = JDUtilities.htmlDecode(dl.getDownloadURL());
                             dl.setUrlDownload(link);
-                           
-                            if(dl.getSourcePluginPasswords()==null||dl.getSourcePluginPasswords().size()==0){
+
+                            if (dl.getSourcePluginPasswords() == null || dl.getSourcePluginPasswords().size() == 0) {
                                 dl.setSourcePluginPasswords(this.getDefaultPassswords());
                             }
                             if (link == null || link.trim().equalsIgnoreCase(cryptedLink.trim())) {
                                 links.remove(i);
-                            }
-                            else {
+                            } else {
 
-                            
                             }
 
                         }
-                     
+
                         progress.finalize();
 
                         return (Vector<DownloadLink>) links;
-                    }
-                    else {
+                    } else {
                         logger.severe("ACHTUNG2 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
 
                         progress.finalize();
                         return new Vector<DownloadLink>();
                     }
 
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
 
                     e.printStackTrace();
 
@@ -161,15 +158,17 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
             }
         }
-      
+
         progress.finalize();
         return new Vector<DownloadLink>();
 
     }
- protected DownloadLink createDownloadlink(String link){
-     DownloadLink dl= new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
-    return dl;
- }
+
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink dl = new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
+        return dl;
+    }
+
     /**
      * Sucht in data nach allen passenden links und gibt diese als vektor zurück
      * 
@@ -180,15 +179,14 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         Vector<String> hits = getMatches(data, getSupportedLinks());
         if (hits != null && hits.size() > 0) {
 
-            for (int i = hits.size()-1; i>=0; i--) {
+            for (int i = hits.size() - 1; i >= 0; i--) {
                 String file = hits.get(i);
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
                     file = file.substring(0, file.length() - 1);
                 hits.setElementAt(file, i);
-                
-              
+
             }
         }
         return hits;
@@ -203,10 +201,12 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @return gerade abgeschlossener Schritt
      */
     public abstract PluginStep doStep(PluginStep step, String parameter);
-    public Vector<String> getDefaultPassswords(){
-       return default_password;
-    
+
+    public Vector<String> getDefaultPassswords() {
+        return default_password;
+
     }
+
     /**
      * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
      */
@@ -224,20 +224,18 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         if (cryptedLink == null) return "";
         try {
             return new URL(cryptedLink).getFile();
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
             return "";
         }
     }
-    
+
     /**
-     * vergleicht Decryptplugins anhand des Hostnamens
-     * wird zur Sortierung benötigt
+     * vergleicht Decryptplugins anhand des Hostnamens wird zur Sortierung
+     * benötigt
      */
-    public int compareTo(Object o)
-	{
-		return getHost().toLowerCase().compareTo(((PluginForDecrypt)o).getHost().toLowerCase());
-	}
+    public int compareTo(Object o) {
+        return getHost().toLowerCase().compareTo(((PluginForDecrypt) o).getHost().toLowerCase());
+    }
 
 }

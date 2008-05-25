@@ -1141,12 +1141,12 @@ public abstract class Plugin implements ActionListener {
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-
+        httpConnection.setDoOutput(true);
         if (parameter != null) {
             if (parameter == null) parameter = "";
             parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
-            httpConnection.setDoOutput(true);
+            
             httpConnection.connect();
             OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
             wr.write(parameter);

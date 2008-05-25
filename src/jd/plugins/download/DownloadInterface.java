@@ -442,10 +442,17 @@ abstract public class DownloadInterface {
             downloadLink.setStatusText(JDLocale.L("download.error.message.chunk_incomplete", "Chunk(s) incomplete"));
             return false;
         }
-        if (this.totaleLinkBytesLoaded != this.fileSize) {
+        if (this.totaleLinkBytesLoaded != this.fileSize&&fileSize>0) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             downloadLink.setStatusText(JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
+            return false;
+        }
+        
+        if(getExceptions()!=null&&getExceptions().size()>0){
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            downloadLink.setStatusText(JDUtilities.convertExceptionReadable(getExceptions().firstElement()));
             return false;
         }
         plugin.getCurrentStep().setStatus(PluginStep.STATUS_DONE);
@@ -987,7 +994,7 @@ abstract public class DownloadInterface {
         public void run0() {
 
             logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
-            if ((startByte >= endByte && endByte > 0) || startByte >= getFileSize()) {
+            if ((startByte >= endByte && endByte > 0) || (startByte >= getFileSize()&&endByte > 0)) {
 
                 // Korrektur Byte
                 if(speedDebug) logger.finer("correct -1 byte");
@@ -1133,7 +1140,7 @@ abstract public class DownloadInterface {
             if (speedDebug) logger.finer("resume Chunk with " + totalPartBytes + "/" + this.getChunkSize() + " at " + getCurrentBytesPosition());
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
-                if (bufferSize > endByte - getCurrentBytesPosition() + 1) {
+                if (endByte>0&&bufferSize > endByte - getCurrentBytesPosition() + 1) {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());

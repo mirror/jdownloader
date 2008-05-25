@@ -3,15 +3,15 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Thu May 22 17:12:27 CEST 2008
+  Logfile created on Sun May 25 16:28:17 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 3270560 bytes
-  Total memory available                        : 7815168 bytes
+  Memory in use after class data structure built: 3405992 bytes
+  Total memory available                        : 8536064 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -494,13 +494,13 @@
   <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String md5sum(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo readFromURL(jd.plugins.HTTPConnection)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.Object, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="boolean canHandle(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.config.ConfigContainer getConfig()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, boolean)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getHttpLinkList(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="int getCaptchaDetectionID()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep getCurrentStep()"/>
-  <method class="jd.plugins.Plugin" name="java.lang.String[] getSimpleMatches(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="int countOccurences(java.lang.String, java.util.regex.Pattern)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String)"/>
@@ -509,6 +509,7 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, boolean)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String createPostParameterFromHashMap(java.util.HashMap)"/>
   <method class="jd.plugins.Plugin" name="void setLastCaptcha(jd.captcha.pixelgrid.Captcha)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.Object, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="void fireControlEvent(int, java.lang.Object)"/>
   <method class="jd.plugins.Plugin" name="void abort()"/>
   <method class="jd.plugins.Plugin" name="void init()"/>
@@ -517,7 +518,6 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, java.lang.String, boolean, int, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getStatusText()"/>
   <method class="jd.plugins.Plugin" name="int getConnectTimeoutFromConfiguration()"/>
-  <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.String, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getLinkName()"/>
   <method class="jd.plugins.Plugin" name="void setCaptchaDetectID(int)"/>
   <method class="jd.plugins.Plugin" name="jd.captcha.pixelgrid.Captcha getLastCaptcha()"/>
@@ -548,7 +548,6 @@
   <method class="jd.plugins.Plugin" name="java.lang.String getCoder()"/>
   <method class="jd.plugins.Plugin" name="java.util.ArrayList createMenuitems()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getCaptchaCode(java.io.File, jd.plugins.Plugin)"/>
-  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getHost()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPluginID()"/>
   <method class="jd.plugins.Plugin" name="void resetSteps()"/>
@@ -566,6 +565,7 @@
   <method class="jd.plugins.Plugin" name="java.lang.String findPassword(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="boolean doBotCheck(java.io.File)"/>
   <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getSimpleMatches(java.lang.Object, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.Object)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep nextStep(jd.plugins.PluginStep)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String md5sum(java.io.File)"/>

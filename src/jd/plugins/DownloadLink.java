@@ -186,10 +186,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String name;
 
-    /**
-     * TODO downloadpath ueber config setzen
-     */
-    private String downloadPath = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+    private String downloadPath = null;
 
     /**
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
@@ -351,7 +348,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getName() {
 
-        if (this.getStaticFileName() == null) return name==null?UNKNOWN_FILE_NAME:name;
+        if (this.getStaticFileName() == null) return name == null ? UNKNOWN_FILE_NAME : name;
         return this.getStaticFileName();
 
     }
@@ -384,15 +381,21 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Datei zum Abspeichern
      */
     public String getFileOutput() {
-        if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-            return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
-        } else {
-            if (downloadPath != null) {
-                return new File(new File(downloadPath), getName()).getAbsolutePath();
-            } else {
-                return null;
-            }
+        return JDUtilities.validatePath(getFileOutput0());
 
+    }
+
+    public String getFileOutput0() {
+        if (downloadPath != null) {
+            return new File(new File(downloadPath), getName()).getAbsolutePath();
+        } else {
+            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
+            } else {
+
+                return null;
+
+            }
         }
 
     }
@@ -597,24 +600,26 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         this.downloadMax = downloadMax;
     }
-    public void requestGuiUpdate(){
+
+    public void requestGuiUpdate() {
         JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
-        
+
     }
 
-//    /*
-//     * (non-Javadoc)
-//     * 
-//     * @see java.lang.Object#equals(java.lang.Object)
-//     */
-//    @Override
-//    public boolean equals(Object obj) {
-//
-//        if (obj instanceof DownloadLink && this.getName() != null && ((DownloadLink) obj).getName() != null)
-//            return this.getName().equals(((DownloadLink) obj).getName());
-//        else
-//            return super.equals(obj);
-//    }
+    // /*
+    // * (non-Javadoc)
+    // *
+    // * @see java.lang.Object#equals(java.lang.Object)
+    // */
+    // @Override
+    // public boolean equals(Object obj) {
+    //
+    // if (obj instanceof DownloadLink && this.getName() != null &&
+    // ((DownloadLink) obj).getName() != null)
+    // return this.getName().equals(((DownloadLink) obj).getName());
+    // else
+    // return super.equals(obj);
+    // }
 
     /**
      * Setzt den Downloadpfad neu
@@ -639,7 +644,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             updatePartID();
 
         } else {
-            //logger.severe("Set invalid filename: " + name);
+            // logger.severe("Set invalid filename: " + name);
         }
 
     }
@@ -713,17 +718,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         ret += this.toStatusString() + " ";
-        if (!this.isEnabled()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+        if (!this.isEnabled() && this.getStatus() != DownloadLink.STATUS_DONE) {
             ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]") + " ";
             this.setStatusText("");
             return ret;
         }
-        if (this.isAborted()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+        if (this.isAborted() && this.getStatus() != DownloadLink.STATUS_DONE) {
             ret += JDLocale.L("gui.downloadlink.aborted", "[abgebrochen]") + " ";
             this.setStatusText("");
             return ret;
         }
-        if (this.isAvailabilityChecked() && !this.isAvailable()&&this.getStatus()!=DownloadLink.STATUS_DONE) {
+        if (this.isAvailabilityChecked() && !this.isAvailable() && this.getStatus() != DownloadLink.STATUS_DONE) {
             ret += JDLocale.L("gui.downloadlink.offline", "[offline]") + " ";
         }
 
@@ -734,7 +739,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else if (this.getCrcStatus() == DownloadLink.CRC_STATUS_OK) {
             ret += "[" + JDLocale.L("gui.downloadlink.status.crcok", "Checksum OK") + "] ";
         }
-        if(statusText!=null&&ret.contains(statusText))return ret;
+        if (statusText != null && ret.contains(statusText)) return ret;
         return statusText == null ? ret : ret + statusText;
 
     }
@@ -816,7 +821,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         setEndOfWaittime(0);
         this.chunksProgress = null;
         downloadCurrent = 0;
-        this.waittime=0;
+        this.waittime = 0;
         aborted = false;
         this.crcStatus = CRC_STATUS_UNCHECKED;
     }
@@ -1224,6 +1229,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public boolean isFailed() {
         // TODO Auto-generated method stub
-        return !this.isInProgress()&&this.getStatus()!=DownloadLink.STATUS_DONE&&this.getStatus()!=DownloadLink.STATUS_TODO;
+        return !this.isInProgress() && this.getStatus() != DownloadLink.STATUS_DONE && this.getStatus() != DownloadLink.STATUS_TODO;
     }
 }

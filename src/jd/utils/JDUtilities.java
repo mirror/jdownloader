@@ -136,7 +136,7 @@ public class JDUtilities {
     public static String LOGGER_NAME = "java_downloader";
 
     /**
-     * Titel der Applikation 
+     * Titel der Applikation
      */
     public static final String JD_VERSION = "0.";
 
@@ -154,6 +154,8 @@ public class JDUtilities {
     public static final int RUNTYPE_LOCAL_JARED = 2;
 
     public static final int RUNTYPE_LOCAL_ENV = 3;
+
+    private static final int OS_TYPE = -1;
 
     // private static Vector<PluginForSearch> pluginsForSearch = null;
 
@@ -777,23 +779,23 @@ public class JDUtilities {
             String code = null;
             plugin.setCaptchaDetectID(Plugin.CAPTCHA_JAC);
             LetterComperator[] lcs = captcha.getLetterComperators();
-            
+
             double vp = 0.0;
-            if (lcs == null){
-                vp=100.0;
-            }else{
-            for (int i = 0; i < lcs.length; i++) {
-                // window.setImage(i, 0, lcs[i].getB().getImage(3));
-                // window.setImage(i, 1, lcs[i].getA().getImage(3));
-                if (lcs[i] == null) {
-                    vp = 100.0;
-                    break;
+            if (lcs == null) {
+                vp = 100.0;
+            } else {
+                for (int i = 0; i < lcs.length; i++) {
+                    // window.setImage(i, 0, lcs[i].getB().getImage(3));
+                    // window.setImage(i, 1, lcs[i].getA().getImage(3));
+                    if (lcs[i] == null) {
+                        vp = 100.0;
+                        break;
+                    }
+                    vp = Math.max(vp, lcs[i].getValityPercent());
+                    // window.setText(i, 2, lcs[i].getValityPercent());
+                    // window.setText(i, 3, lcs[i].getDecodedValue());
+                    // window.setText(i, 4, lcs[i].getB().getPixelString());
                 }
-                vp = Math.max(vp, lcs[i].getValityPercent());
-                // window.setText(i, 2, lcs[i].getValityPercent());
-                // window.setText(i, 3, lcs[i].getDecodedValue());
-                // window.setText(i, 4, lcs[i].getB().getPixelString());
-            }
             }
             // window.pack();
             logger.info("worst letter: " + vp);
@@ -1070,7 +1072,7 @@ public class JDUtilities {
      */
     @SuppressWarnings("unchecked")
     public static Vector<PluginForHost> getPluginsForHost() {
-        // return pluginsForHost; 
+        // return pluginsForHost;
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
         if (pluginsForHost != null) plgs.addAll(pluginsForHost);
@@ -1096,7 +1098,7 @@ public class JDUtilities {
      */
     public static HashMap<String, PluginOptional> getPluginsOptional() {
         return pluginsOptional;
-    } 
+    }
 
     /**
      * Gibt den MD5 hash eines Strings zurück
@@ -2099,13 +2101,13 @@ public class JDUtilities {
             logger.setLevel(Level.ALL);
             logger.addHandler(new Handler() {
                 public void publish(LogRecord logRecord) {
-//                  System.out.println(logRecord.getLevel() + ":");
-//                  System.out.println(logRecord.getSourceClassName() + ":");
-//                  System.out.println(logRecord.getSourceMethodName() + ":");
-//                  System.out.println("<" + logRecord.getMessage() + ">");
-//                  System.out.println("\n");
-                  if(JDUtilities.getController()!=null)
-                  JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED,logRecord);
+                    // System.out.println(logRecord.getLevel() + ":");
+                    // System.out.println(logRecord.getSourceClassName() + ":");
+                    // System.out.println(logRecord.getSourceMethodName() +
+                    // ":");
+                    // System.out.println("<" + logRecord.getMessage() + ">");
+                    // System.out.println("\n");
+                    if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
                 }
 
                 public void flush() {
@@ -2113,8 +2115,8 @@ public class JDUtilities {
 
                 public void close() {
                 }
-              });
-            
+            });
+
             // logger.finer("Init Logger:" + LOGGER_NAME);
             // Leitet System.out zum Logger um.
             // final PrintStream err = System.err;
@@ -2136,7 +2138,7 @@ public class JDUtilities {
 
                                     JDUtilities.restartJD();
                                 }
-                            }  
+                            }
 
                         }
                         buffer = new StringBuffer();
@@ -2299,7 +2301,7 @@ public class JDUtilities {
 
         if (plain == null) return null;
         String base64 = new BASE64Encoder().encode(plain.getBytes());
-        base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=");
+        base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
 
         return base64;
     }
@@ -2407,5 +2409,20 @@ public class JDUtilities {
         }
 
     }
+
+    public static String validatePath(String fileOutput0) {
+        if (OSDetector.isWindows()) {
+            String hd="";
+            if(new File(fileOutput0).isAbsolute()){
+                hd=fileOutput0.substring(0,3);
+                fileOutput0=fileOutput0.substring(3);
+            }
+            fileOutput0 = hd+fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?])+", "_");
+        }
+
+        return fileOutput0;
+    }
+
+    
 
 }

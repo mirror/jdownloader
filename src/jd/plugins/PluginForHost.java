@@ -116,9 +116,9 @@ public abstract class PluginForHost extends Plugin {
      * @param data Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein Vector mit den gefundenen Downloadlinks
      */
-    public Vector<DownloadLink> getDownloadLinks(String data) {
+    public Vector<DownloadLink> getDownloadLinks(String data,FilePackage fp) {
       
-        Vector<DownloadLink> links = null;
+        Vector<DownloadLink> links = null; 
 
         Vector<String> hits = getMatches(data, getSupportedLinks());
         if (hits != null && hits.size() > 0) {
@@ -136,8 +136,9 @@ public abstract class PluginForHost extends Plugin {
                     // Plugininstanz
                     PluginForHost plg = this.getClass().newInstance();
                 
-
-                    links.add(new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true));
+                    DownloadLink link=new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+                    links.add(link);
+                   if(fp!=null)link.setFilePackage(fp);
                 }
                 catch (InstantiationException e) {
                      e.printStackTrace();

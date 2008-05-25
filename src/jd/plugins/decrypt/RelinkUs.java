@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -80,9 +81,12 @@ public class RelinkUs extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = getRequest(url);
     			
+    			String title=getSimpleMatch(reqinfo, "<div class='ordner_head'>°</div>", 0);
+    			
     			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "action='°' method='post' target='_blank'");
     			progress.setRange( links.size());
-    			
+    			FilePackage fp= new FilePackage();
+    			fp.setName(title);
     			for(int i=0; i<links.size(); i++) {
     				reqinfo = postRequest(new URL("http://relink.us/" + links.get(i).get(0)), "submit=Open");
     				String link=getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
@@ -91,7 +95,12 @@ public class RelinkUs extends PluginForDecrypt {
     				    reqinfo=getRequest(new URL(link));
     				    link=getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
     				}
+    				
+    				
+    				
+    				
     				decryptedLinks.add(this.createDownloadlink(link));
+    				fp.add(decryptedLinks.lastElement());
     			progress.increase(1);
     			}
     			

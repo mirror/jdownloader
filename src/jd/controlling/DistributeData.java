@@ -139,7 +139,7 @@ public class DistributeData extends ControlBroadcaster {
                 try {
     				PluginForHost pHost = (PluginForHost) iteratorHost.next();
     				if (pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL());
+                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL(),decrypted.getFilePackage()!=JDUtilities.getController().getDefaultFilePackage()?decrypted.getFilePackage():null);
                       
                         for (int c = 0; c < dLinks.size(); c++) {
 
@@ -167,7 +167,7 @@ public class DistributeData extends ControlBroadcaster {
         while (iteratorHost.hasNext()) {
 			PluginForHost pHost = (PluginForHost) iteratorHost.next();
             if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data);
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data,null);
                 if (foundpassword.size()>0) {
                 	Iterator<DownloadLink> iter = dl.iterator();
                 	while (iter.hasNext()) {
@@ -273,6 +273,7 @@ public class DistributeData extends ControlBroadcaster {
                     }
                 }
 			}
+            
             if (canDecrypt) {
                 decryptedLinks.remove(i);
                 hasDecryptedLinks = true;

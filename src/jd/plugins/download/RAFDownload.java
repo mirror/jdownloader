@@ -122,6 +122,9 @@ public class RAFDownload extends DownloadInterface {
 
                 // downloadLink.setChunksProgress(new int[chunkNum]);
                 Chunk chunk;
+                if(!new File(downloadLink.getFileOutput()).getParentFile().exists()){
+                    new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
+                }
                 if (maxBytes < 0) outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
 
                 if (maxBytes < 0) outputChannel = outputFile.getChannel();

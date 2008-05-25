@@ -17,7 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,10 +28,12 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.controlling.JDController;
 import jd.crypt.AESdecrypt;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -120,17 +124,19 @@ public class CryptItCom extends PluginForDecrypt {
 
                 }
                 String cookie = ri.getCookie();
-            
+
                 String packagename = getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
                 String password = getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
-              
+
                 HashMap<String, String> header = new HashMap<String, String>();
                 header.put("Content-Type", "application/x-amf");
-               
-                byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x06 };
 
-                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder, false);
+                byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x06 };
+                b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
+                byte[] b2 = new byte[] { 0x02, 0x00, 0x00 };
+
+                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2), false);
 
                 ArrayList<String> ciphers = getAllSimpleMatches(ri, "url°size", 1);
                 progress.setRange(ciphers.size());
@@ -142,115 +148,113 @@ public class CryptItCom extends PluginForDecrypt {
                 Vector<String> p = new Vector<String>();
                 p.add(password);
                 for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
-                    String cipher = JDUtilities.filterString(it.next(),"1234567890abcdefABCDEF");
+                    String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
+                    String linktext = decrypt(cipher);
                     progress.increase(1);
-                    DownloadLink link = this.createDownloadlink(decrypt(cipher));
-                    link.setSourcePluginPasswords(p);
-                    link.setSourcePluginComment(packagename);
+                    linktext = Plugin.getHttpLinkList(linktext).trim();
+                    if (linktext.toLowerCase().startsWith("http")) {
+                        DownloadLink link = this.createDownloadlink(linktext);
+                        link.setSourcePluginPasswords(p);
+                        link.setSourcePluginComment(packagename);
 
-                    fp.add(link);
-                    decryptedLinks.add(link);
+                        fp.add(link);
+                        decryptedLinks.add(link);
+                    }
                 }
-                step.setParameter(decryptedLinks);
+                if (decryptedLinks.size() == 0) {
+                    return containerStep(step, parameter);
+                } else {
+                    step.setParameter(decryptedLinks);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
         }
 
-        // if (step.getStep() == PluginStep.STEP_DECRYPT) {
-        //
-        // // surpress jd warning
-        // Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        // step.setParameter(decryptedLinks);
-        //
-        // parameter = parameter.replace("/s/", "/d/");
-        // parameter = parameter.replace("/e/", "/d/");
-        // parameter = parameter.replace("ccf://", "http://");
-        //
-        // try {
-        //
-        // requestInfo = getRequestWithoutHtmlCode(new URL(parameter), null,
-        // null, null, true);
-        //               
-        // if (requestInfo.getConnection().getContentType().indexOf("text/html")
-        // >= 0) {
-        // requestInfo = readFromURL(requestInfo.getConnection());
-        // String cookie = requestInfo.getCookie();
-        // if (requestInfo.containsHTML(PATTERN_PW)) {
-        //
-        // String pass =
-        // JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput",
-        // "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie
-        // das Passwort ein:"));
-        // String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-        // requestInfo = postRequest(new URL(parameter),
-        // requestInfo.getCookie(), parameter, null, "a=pw&pw=" + pass, false);
-        // if (requestInfo.containsHTML(PATTERN_PW)) {
-        //
-        // logger.warning("Password wrong");
-        // JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong",
-        // "Passwort falsch"));
-        // step.setStatus(PluginStep.STATUS_ERROR);
-        // return null;
-        //
-        // }
-        // }
-        //
-        // parameter = parameter.replace("/c/", "/d/");
-        // requestInfo = getRequestWithoutHtmlCode(new URL(parameter), cookie,
-        // null, null, true);
-        // }
-        //
-        // String folder =
-        // JDUtilities.getConfiguration().getDefaultDownloadDirectory();
-        // String name =
-        // this.getFileNameFormHeader(requestInfo.getConnection());
-        //
-        // if (name.equals("redir.ccf") || !name.contains(".ccf")) {
-        //
-        // logger.severe("Container not found");
-        // step.setStatus(PluginStep.STATUS_ERROR);
-        // return null;
-        //
-        // }
-        //
-        // // download
-        // File file = new File(folder, name);
-        // int i = 0;
-        //
-        // while (file.exists()) {
-        //
-        // String newName = name.substring(0, name.length() - 4) + "-" +
-        // String.valueOf(i) + ".ccf";
-        // file = new File(folder, newName);
-        // i++;
-        //
-        // }
-        //
-        // logger.info("Download container: " + file.getAbsolutePath());
-        // JDUtilities.download(file, requestInfo.getConnection());
-        //
-        // // read container
-        // JDController controller = JDUtilities.getController();
-        // controller.loadContainerFile(file);
-        //
-        // // delete container
-        // file.delete();
-        //
-        // }
-        // catch (MalformedURLException e) {
-        // e.printStackTrace();
-        // }
-        // catch (FileNotFoundException e) {
-        // e.printStackTrace();
-        // }
-        // catch (IOException e) {
-        // e.printStackTrace();
-        // }
-        //
-        // }
+        return null;
+    }
 
+    private PluginStep containerStep(PluginStep step, String parameter) {
+
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+
+            // surpress jd warning
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            step.setParameter(decryptedLinks);
+
+            parameter = parameter.replace("/s/", "/d/");
+            parameter = parameter.replace("/e/", "/d/");
+            parameter = parameter.replace("ccf://", "http://");
+
+            try {
+
+                requestInfo = getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
+
+                if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
+                    requestInfo = readFromURL(requestInfo.getConnection());
+                    String cookie = requestInfo.getCookie();
+                    if (requestInfo.containsHTML(PATTERN_PW)) {
+
+                        String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+                        String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                        requestInfo = postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, "a=pw&pw=" + pass, false);
+                        if (requestInfo.containsHTML(PATTERN_PW)) {
+
+                            logger.warning("Password wrong");
+                            JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return null;
+
+                        }
+                    }
+
+                    parameter = parameter.replace("/c/", "/d/");
+                    requestInfo = getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
+                }
+
+                String folder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+                String name = this.getFileNameFormHeader(requestInfo.getConnection());
+
+                if (name.equals("redir.ccf") || !name.contains(".ccf")) {
+
+                    logger.severe("Container not found");
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return null;
+
+                }
+
+                // download
+                File file = new File(folder, name);
+                int i = 0;
+
+                while (file.exists()) {
+
+                    String newName = name.substring(0, name.length() - 4) + "-" + String.valueOf(i) + ".ccf";
+                    file = new File(folder, newName);
+                    i++;
+
+                }
+
+                logger.info("Download container: " + file.getAbsolutePath());
+                JDUtilities.download(file, requestInfo.getConnection());
+
+                // read container
+                JDController controller = JDUtilities.getController();
+                controller.loadContainerFile(file);
+
+                // delete container
+                file.deleteOnExit();
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
         return null;
     }
 
