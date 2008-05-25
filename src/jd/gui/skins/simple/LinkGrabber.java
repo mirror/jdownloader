@@ -1,3 +1,5 @@
+
+
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -442,8 +444,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
 
                     }
-
                     setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+
                 }
 
             }
@@ -595,7 +597,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
         }
-        this.setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
 
     }
 
@@ -1232,9 +1233,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         private void refreshTable() {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    table.tableChanged(new TableModelEvent(table.getModel()));
+                    onPackageNameChanged(PackageTab.this);
 
-            table.tableChanged(new TableModelEvent(table.getModel()));
-            onPackageNameChanged(this);
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                }
+            });
         }
 
         private void buildGui() {
@@ -1360,18 +1366,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
                 PackageTab newTab = addTab();
-
                 int[] rows = table.getSelectedRows();
-
                 if (0 < rows.length) {
                     DownloadLink linksToTransfer[] = new DownloadLink[rows.length];
                     int targetIndex = 0;
-
-                    for (int currentRow = rows.length - 1; currentRow >= 0; --currentRow) {
-                        linksToTransfer[targetIndex++] = this.getLinkAt(currentRow);
-                        linkList.remove(currentRow);
+                    for (int i = rows.length - 1; i >= 0; i--) {
+                        linksToTransfer[targetIndex++] = this.getLinkAt(rows[i]);
+                        linkList.remove(rows[i]);
                     }
-
                     newTab.addLinks(linksToTransfer);
                     this.refreshTable();
                 }
@@ -1613,3 +1615,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
 }
+
+
+
+
+
+
+
+
+              

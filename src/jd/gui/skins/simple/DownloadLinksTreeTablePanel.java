@@ -54,7 +54,8 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
             links.addAll(it.next().getDownloadLinks());
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
-
+       
+        
     }
 
     public void moveSelectedItems(int id) {
