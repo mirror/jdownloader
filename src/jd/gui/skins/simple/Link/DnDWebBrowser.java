@@ -14,8 +14,8 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.Link;
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.datatransfer.DataFlavor;
@@ -49,213 +49,210 @@ import javax.swing.event.HyperlinkListener;
 
 public class DnDWebBrowser extends JDialog {
 
-  /**
+    /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-/**
+    /**
      * 
      */
 
-private WebToolBar toolBar;
+    private WebToolBar toolBar;
 
-  private WebBrowserPane browserPane = new WebBrowserPane();
+    private WebBrowserPane browserPane = new WebBrowserPane();
 
-  public DnDWebBrowser(JFrame owner) {
-      super(owner);
-      setModal(true);
-    toolBar = new WebToolBar(browserPane);
+    public DnDWebBrowser(JFrame owner) {
+        super(owner);
+        setModal(true);
+        toolBar = new WebToolBar(browserPane);
 
-    browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY,
-        new DropTargetHandler()));
+        browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY, new DropTargetHandler()));
 
-    Container contentPane = getContentPane();
-    contentPane.add(toolBar, BorderLayout.NORTH);
-    contentPane.add(new JScrollPane(browserPane), BorderLayout.CENTER);
-  }
-  
-  public void goTo(URL url)
-  {
-      try {
-        browserPane.setPage(url);
-        toolBar.urlTextField.setText(url.toString());
-    } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
+        Container contentPane = getContentPane();
+        contentPane.add(toolBar, BorderLayout.NORTH);
+        contentPane.add(new JScrollPane(browserPane), BorderLayout.CENTER);
     }
-  }
 
-  private class DropTargetHandler implements DropTargetListener {
-    @SuppressWarnings( "unchecked")
-	public void drop(DropTargetDropEvent event) {
-      Transferable transferable = event.getTransferable();
-      if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-        event.acceptDrop(DnDConstants.ACTION_COPY);
+    public void goTo(URL url) {
         try {
-          List fileList = (List) transferable.getTransferData(DataFlavor.javaFileListFlavor);
-
-          Iterator iterator = fileList.iterator();
-
-          while (iterator.hasNext()) {
-            File file = (File) iterator.next();
-            browserPane.goToURL(file.toURL());
-          }
-          event.dropComplete(true);
-        } catch (UnsupportedFlavorException flavorException) {
-          flavorException.printStackTrace();
-          event.dropComplete(false);
-        } catch (IOException ioException) {
-          ioException.printStackTrace();
-          event.dropComplete(false);
+            browserPane.setPage(url);
+            toolBar.urlTextField.setText(url.toString());
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-      } else {
-        event.rejectDrop();
-      }
     }
 
-    public void dragEnter(DropTargetDragEvent event) {
-      if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
-        event.acceptDrag(DnDConstants.ACTION_COPY);
-      else {
-        event.rejectDrag();
-      }
-    }
+    private class DropTargetHandler implements DropTargetListener {
+        @SuppressWarnings("unchecked")
+        public void drop(DropTargetDropEvent event) {
+            Transferable transferable = event.getTransferable();
+            if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                event.acceptDrop(DnDConstants.ACTION_COPY);
+                try {
+                    List fileList = (List) transferable.getTransferData(DataFlavor.javaFileListFlavor);
 
-    public void dragExit(DropTargetEvent event) {
-    }
+                    Iterator iterator = fileList.iterator();
 
-    public void dragOver(DropTargetDragEvent event) {
-    }
+                    while (iterator.hasNext()) {
+                        File file = (File) iterator.next();
+                        browserPane.goToURL(file.toURL());
+                    }
+                    event.dropComplete(true);
+                } catch (UnsupportedFlavorException flavorException) {
+                    flavorException.printStackTrace();
+                    event.dropComplete(false);
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                    event.dropComplete(false);
+                }
+            } else {
+                event.rejectDrop();
+            }
+        }
 
-    public void dropActionChanged(DropTargetDragEvent event) {
-    }
+        public void dragEnter(DropTargetDragEvent event) {
+            if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
+                event.acceptDrag(DnDConstants.ACTION_COPY);
+            else {
+                event.rejectDrag();
+            }
+        }
 
-  }
+        public void dragExit(DropTargetEvent event) {
+        }
+
+        public void dragOver(DropTargetDragEvent event) {
+        }
+
+        public void dropActionChanged(DropTargetDragEvent event) {
+        }
+
+    }
 }
 
 class WebBrowserPane extends JEditorPane {
 
-/**
+    /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-/**
+    /**
      * 
      */
 
-/**
+    /**
      * 
      */
 
-private List<URL> history = new ArrayList<URL>();
+    private List<URL> history = new ArrayList<URL>();
 
-  private int historyIndex;
+    private int historyIndex;
 
-  public WebBrowserPane() {
-    setEditable(false);
-  }
-
-  public void goToURL(URL url) {
-    displayPage(url);
-    history.add(url);
-    historyIndex = history.size() - 1;
-  }
-
-  public URL forward() {
-    historyIndex++;
-    if (historyIndex >= history.size())
-      historyIndex = history.size() - 1;
-
-    URL url = (URL) history.get(historyIndex);
-    displayPage(url);
-
-    return url;
-  }
-
-  public URL back() {
-    historyIndex--;
-    if (historyIndex < 0)
-      historyIndex = 0;
-    URL url = (URL) history.get(historyIndex);
-    displayPage(url);
-
-    return url;
-  }
-
-  private void displayPage(URL pageURL) {
-    try {
-      setPage(pageURL);
-    } catch (IOException ioException) {
-      ioException.printStackTrace();
+    public WebBrowserPane() {
+        setEditable(false);
     }
-  }
+
+    public void goToURL(URL url) {
+        displayPage(url);
+        history.add(url);
+        historyIndex = history.size() - 1;
+    }
+
+    public URL forward() {
+        historyIndex++;
+        if (historyIndex >= history.size()) historyIndex = history.size() - 1;
+
+        URL url = (URL) history.get(historyIndex);
+        displayPage(url);
+
+        return url;
+    }
+
+    public URL back() {
+        historyIndex--;
+        if (historyIndex < 0) historyIndex = 0;
+        URL url = (URL) history.get(historyIndex);
+        displayPage(url);
+
+        return url;
+    }
+
+    private void displayPage(URL pageURL) {
+        try {
+            setPage(pageURL);
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
+    }
 }
 
 class WebToolBar extends JToolBar implements HyperlinkListener {
 
-  /**
+    /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-/**
+    /**
      * 
      */
 
-private WebBrowserPane webBrowserPane;
+    private WebBrowserPane webBrowserPane;
 
-  private JButton backButton;
+    private JButton backButton;
 
-  private JButton forwardButton;
+    private JButton forwardButton;
 
-  public JTextField urlTextField;
+    public JTextField urlTextField;
 
-  public WebToolBar(WebBrowserPane browser) {
-    super("Web Navigation");
-    webBrowserPane = browser;
-    webBrowserPane.addHyperlinkListener(this);
-    urlTextField = new JTextField(25);
-    urlTextField.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent event) {
-        try {
-          URL url = new URL(urlTextField.getText());
-          webBrowserPane.goToURL(url);
-        } catch (MalformedURLException urlException) {
-          urlException.printStackTrace();
-        }
-      }
-    });
-    backButton = new JButton("back");
+    public WebToolBar(WebBrowserPane browser) {
+        super("Web Navigation");
+        webBrowserPane = browser;
+        webBrowserPane.addHyperlinkListener(this);
+        urlTextField = new JTextField(25);
+        urlTextField.setEditable(true);
+        urlTextField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                try {
+                    URL url = new URL(urlTextField.getText());
+                    webBrowserPane.goToURL(url);
+                } catch (MalformedURLException urlException) {
+                    urlException.printStackTrace();
+                }
+            }
+        });
+        backButton = new JButton("back");
 
-    backButton.addActionListener(new ActionListener() {
+        backButton.addActionListener(new ActionListener() {
 
-      public void actionPerformed(ActionEvent event) {
-        URL url = webBrowserPane.back();
-        urlTextField.setText(url.toString());
-      }
-    });
-    forwardButton = new JButton("forward");
+            public void actionPerformed(ActionEvent event) {
+                URL url = webBrowserPane.back();
+                urlTextField.setText(url.toString());
+            }
+        });
+        forwardButton = new JButton("forward");
 
-    forwardButton.addActionListener(new ActionListener() {
+        forwardButton.addActionListener(new ActionListener() {
 
-      public void actionPerformed(ActionEvent event) {
-        URL url = webBrowserPane.forward();
-        urlTextField.setText(url.toString());
-      }
-    });
-    add(backButton);
-    add(forwardButton);
-    add(urlTextField);
+            public void actionPerformed(ActionEvent event) {
+                URL url = webBrowserPane.forward();
+                urlTextField.setText(url.toString());
+            }
+        });
+        add(backButton);
+        add(forwardButton);
+        add(urlTextField);
 
-  }
-
-  public void hyperlinkUpdate(HyperlinkEvent event) {
-    if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-      URL url = event.getURL();
-      webBrowserPane.goToURL(url);
-      urlTextField.setText(url.toString());
     }
-  }
+
+    public void hyperlinkUpdate(HyperlinkEvent event) {
+        if (event.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            URL url = event.getURL();
+            webBrowserPane.goToURL(url);
+            urlTextField.setText(url.toString());
+        }
+    }
 }
