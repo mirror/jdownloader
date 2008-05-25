@@ -58,11 +58,12 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             return key;
         }
-
+ 
         if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
         logger.info("Key not found: " + key + " (" + def + ")");
 
-        if ((def == null || def.length() == 0) && defaultData.containsKey(key)) {
+     
+        if (defaultData.containsKey(key)) {
             def = JDUtilities.UTF8Decode(defaultData.get(key));
             logger.finer("Use default Value: " + def);
         }
