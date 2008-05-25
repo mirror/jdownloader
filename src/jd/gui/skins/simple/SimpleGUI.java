@@ -1330,7 +1330,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public StatusBar() {            
             setLayout(new BorderLayout());
             int n = 10;
-            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, n/2,0));
+            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0,0));
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
             add(bundle(left, right));
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
@@ -1362,7 +1362,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             
             left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
-            linkButton.setBorder(null);
             left.add(linkButton);
             right.add(chbPremium);
             right.add(bundle(lblSimu, spMaxDls));            
