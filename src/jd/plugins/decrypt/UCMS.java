@@ -209,7 +209,7 @@ public class UCMS extends PluginForDecrypt {
 		                       	}
 		                    
 		                    }
-                            if(reqinfo.containsHTML("class=\"ERROR\"")) {
+                            if(reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
                                 logger.warning("Captcha Detection failed");
                                 reqinfo = getRequest(url);
                             }

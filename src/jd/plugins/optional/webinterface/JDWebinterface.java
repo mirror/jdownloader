@@ -55,7 +55,7 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getPluginID() {
-        return "0.0.0.8";
+        return "0.0.0.9";
     }
 
     @Override
@@ -65,9 +65,11 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getVersion() {
-        return "0.0.0.8";
+        return "0.0.0.9";
     }
-
+    public static int getAddonInterfaceVersion() {
+        return 0;
+    }
     @Override
     public boolean initAddon() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
