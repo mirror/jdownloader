@@ -112,7 +112,7 @@ public class Lixin extends PluginForDecrypt {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this).toUpperCase();
                         form.put("capt", captchaCode);
                     } else {
                         logger.info("no captcha");

@@ -34,7 +34,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDWebinterface extends PluginOptional {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     static final String PROPERTY_PORT = "PARAM_PORT";
     static final String PROPERTY_USER = "PARAM_USER";
     static final String PROPERTY_PASS = "PARAM_PASS";
@@ -67,9 +69,7 @@ public class JDWebinterface extends PluginOptional {
     public String getVersion() {
         return "0.0.0.9";
     }
-    public static int getAddonInterfaceVersion() {
-        return 0;
-    }
+
     @Override
     public boolean initAddon() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");

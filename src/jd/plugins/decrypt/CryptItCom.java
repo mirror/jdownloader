@@ -118,7 +118,7 @@ public class CryptItCom extends PluginForDecrypt {
                     if (pass == null) { return null; }
                     String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
                     ri = postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
- }
+                }
                 String cookie = ri.getCookie();
                 String packagename = getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
                 String password = getSimpleMatch(ri, PATTERN_PASSWORD, 0);
@@ -134,7 +134,7 @@ public class CryptItCom extends PluginForDecrypt {
                 byte[] b2 = new byte[] { 0x02, 0x00 };
                 ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + String.valueOf(pass.length()) + pass, false);
                 ArrayList<String> ciphers = getAllSimpleMatches(ri, "url°size", 1);
-                progress.setRange(ciphers.size());           
+                progress.setRange(ciphers.size());
                 FilePackage fp = new FilePackage();
                 fp.setName(packagename);
                 fp.setPassword(password);
