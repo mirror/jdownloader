@@ -66,7 +66,7 @@ public class PluginStep {
 
     public static final int STEP_LOGIN            = 9;
     
-    public static final int STEP_CONVERT            = 10;
+
 
     /**
      * Dieser Schritt muß erst noch stattfinden

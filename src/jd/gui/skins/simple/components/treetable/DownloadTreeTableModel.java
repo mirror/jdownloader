@@ -10,6 +10,7 @@ import javax.swing.tree.TreePath;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -171,7 +172,13 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
                 break;
 
             case COL_HOSTER:
-                value = downloadLink.getHost();
+                try{
+                  
+                
+                value = downloadLink.getHost()+((PluginForHost)downloadLink.getPlugin()).getPluginNameExtension(downloadLink);
+                }catch(Exception e){
+                    value = downloadLink.getHost();  
+                }
                 break;
             case COL_STATUS:
                 value = downloadLink.getStatusText();

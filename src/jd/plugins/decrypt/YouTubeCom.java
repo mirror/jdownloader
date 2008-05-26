@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -42,7 +41,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -55,7 +53,11 @@ private static final String VIDEO_ID = "video_id";
 private static final String T = "\"t\"";
 private static final String HOST = "BASE_YT_URL";
 private static final String PLAYER = "get_video";
+public static final int CONVERT_ID_AUDIO = 0;
 
+public static final int CONVERT_ID_VIDEO = 1;
+
+public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
 private String version = "1.0.0.0";
 
 //http://youtube.com/watch?v=qgjWZXnTn9A
@@ -115,11 +117,7 @@ private boolean yConvertChecked = false;
 private static final int saveyConvert = 1;
 
 
-private static final int yAudio = 0;
 
-private static final int yVideo = 1;
-
-private static final int yBoth = 2;
 
 private void yConvertDialog() {
     if (yConvertChecked || useyConvert[1] == saveyConvert) return;
@@ -194,9 +192,9 @@ private void yConvertDialog() {
                 }
             });
             meth[] meths = new meth[3];
-            meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioOnly", "Nur Audio"), yAudio);
-            meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.VideoOnly", "Nur Video"), yVideo);
-            meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioandVideo", "Audio und Video"), yBoth);
+            meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioOnly", "Nur Audio"), CONVERT_ID_AUDIO);
+            meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.VideoOnly", "Nur Video"), CONVERT_ID_VIDEO);
+            meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioandVideo", "Audio und Video"), CONVERT_ID_AUDIO_AND_VIDEO);
 
             methods = new JComboBox(meths);
             checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Einstellungen für diese Sitzung beibehalten?"), true);

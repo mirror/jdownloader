@@ -56,6 +56,9 @@ public abstract class PluginForHost extends Plugin {
     public  ArrayList<MenuItem> createMenuitems(){
         return null;
     }
+    public String getPluginNameExtension(DownloadLink link){
+        return "";
+    }
     /**
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
      * Neustart vor. Sollte nicht überschrieben werden
