@@ -111,7 +111,7 @@ public class Youtube extends PluginForHost {
                 logger.info(downloadfile);
 
                 HTTPConnection urlConnection;
-                requestInfo = getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, false);
+                requestInfo = getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
                 urlConnection = requestInfo.getConnection();
 
                 dl = new RAFDownload(this, downloadLink, urlConnection);
