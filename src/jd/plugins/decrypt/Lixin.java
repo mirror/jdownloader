@@ -36,6 +36,8 @@ public class Lixin extends PluginForDecrypt {
     static private final String host = "lix.in";
 
     private String version = "1.0.0.0";
+
+    private static String COOKIE = null;
     // lix.in/cc1d28
     static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?captcha.*?)\"");
@@ -89,37 +91,55 @@ public class Lixin extends PluginForDecrypt {
                     URL url = new URL(parameter);
                     progress.setRange(1);
 
-                    RequestInfo reqInfo = getRequest(url);
-                    Form form = reqInfo.getForm();
-                    form.method = Form.METHOD_POST;
-
-                    // check if this link is captcha protected
-                    // funny thing is, even the same link can have a captcha if
-                    // you open
-                    // it the first time, and the second time there is no
-                    // captcha, therefore
-                    // we have to check
-                    Matcher matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
-
-                    if (matcher.find()) {
-                        logger.info("has captcha");
-                        String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            step.setParameter(null);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this).toUpperCase();
-                        form.put("capt", captchaCode);
+                    RequestInfo reqInfo;
+                    if (COOKIE != null) {
+                        reqInfo = getRequest(url, COOKIE, null, false);
                     } else {
-                        logger.info("no captcha");
+                        reqInfo = getRequest(url);
                     }
+                    Form[] forms = reqInfo.getForms();
+                    RequestInfo reqInfoForm;
+                    Matcher matcher;
+                    if (forms.length == 0) {
+                        String param="submit=continue&tiny=" + getSimpleMatch(reqInfo, "name='tiny' value='°'>", 0);
+                        reqInfoForm = postRequest(url, COOKIE, null, null, param, false);
 
-                    RequestInfo reqInfoForm = form.getRequestInfo();
+                    } else {
+                        Form form = forms[0];
 
+                        form.method = Form.METHOD_POST;
+
+                        // check if this link is captcha protected
+                        // funny thing is, even the same link can have a captcha
+                        // if
+                        // you open
+                        // it the first time, and the second time there is no
+                        // captcha, therefore
+                        // we have to check
+                        matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
+
+                        if (matcher.find()) {
+                            logger.info("has captcha");
+                            String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+
+                            File captchaFile = this.getLocalCaptchaFile(this);
+                            if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                                logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                                step.setParameter(null);
+                                step.setStatus(PluginStep.STATUS_ERROR);
+                                return step;
+                            }
+                            String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                            if (captchaCode == null) return null;
+                            captchaCode = captchaCode.toUpperCase();
+                            form.put("capt", captchaCode);
+                        } else {
+                            logger.info("no captcha");
+                        }
+                        COOKIE = reqInfo.getCookie();
+
+                        reqInfoForm = form.getRequestInfo();
+                    }
                     // Link herausfiltern
                     matcher = patternIframe.matcher(reqInfoForm.getHtmlCode());
                     if (!matcher.find()) {
@@ -150,8 +170,7 @@ public class Lixin extends PluginForDecrypt {
                     break;
                 }
                 logger.severe("decrypterror");
-                
-                
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
