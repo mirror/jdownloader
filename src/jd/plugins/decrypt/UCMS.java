@@ -35,6 +35,7 @@ public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
     private String version = "1.0.0.0";
 
+
     private Pattern patternSupported = getSupportPattern("(http://[*]lesestunde.info/\\?id=[+])"
     		+ "|(http://[*]filefox.in/\\?id=[+])"
     		+ "|(http://[*]alphawarez.us/\\?id=[+])"
@@ -163,7 +164,7 @@ public class UCMS extends PluginForDecrypt {
     			
     			for(int i=0; i<forms.size(); i++) {
     				if(forms.get(i).get(2).contains("download") || forms.get(i).get(2).contains("mirror")) {
-		    			for (;;) {
+		    			for (int retry=0; retry<5;retry++) {
 		                    Matcher matcher = PAT_CAPTCHA.matcher(forms.get(i).get(3));
 		
 		                    if (matcher.find()) {
@@ -206,14 +207,15 @@ public class UCMS extends PluginForDecrypt {
 		                       		
 		                       		break;
 		                       	}
-		                        if(!reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
-		                        	reqinfo = getRequest(url);
-		                        }
-		                        else {
-		                        	break;
-		                        }
-		                    }
 		                    
+		                    }
+                            if(reqinfo.containsHTML("class=\"ERROR\"")) {
+                                logger.warning("Captcha Detection failed");
+                                reqinfo = getRequest(url);
+                            }
+                            else {
+                                break;
+                            }
 		                    if(reqinfo.getConnection().getURL().toString().equals(host + forms.get(i).get(0)))
 		                    	break;
 		                }
