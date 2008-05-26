@@ -111,37 +111,30 @@ public class CryptItCom extends PluginForDecrypt {
                 if (!url.endsWith("/")) url += "/";
                 String mode = getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
                 String folder = getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
-
                 RequestInfo ri = getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-
-                // http://crypt-it.com/s/VSU7UD
+                String pass = "";
                 while (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
-                    String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
-                    if (pass == null) { return null;
-
-                    }
-                    ri = postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, "a=pw&pw=" + pass, true);
-
-                }
+                    pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
+                    if (pass == null) { return null; }
+                    String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                    ri = postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
+ }
                 String cookie = ri.getCookie();
-
                 String packagename = getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
                 String password = getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
-
                 HashMap<String, String> header = new HashMap<String, String>();
                 header.put("Content-Type", "application/x-amf");
-
-                byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00, 0x00, 0x01, 0x02, 0x00, 0x06 };
-                b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
-                byte[] b2 = new byte[] { 0x02, 0x00, 0x00 };
-
-                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2), false);
-
+                // alt: byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00,
+                // 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74,
+                // 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00,
+                // 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00,
+                // 0x00, 0x01, 0x02, 0x00, 0x06 };
+                byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
+                byte[] b2 = new byte[] { 0x02, 0x00 };
+                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + String.valueOf(pass.length()) + pass, false);
                 ArrayList<String> ciphers = getAllSimpleMatches(ri, "url°size", 1);
-                progress.setRange(ciphers.size());
-                // À7d8353d0cee19d970ba10fd82fea164638d7dadd080879855603467aa7ad63b60b3648d72d4e7e64bf764efef7ee513ba7007e79dcdfc52b8f4dac5fd312c4e943fc36913b2c2c0ce58e0c2afbfd2676242d877e14abd6a11f35c787cbbe231c
-                logger.info(ciphers + "");
+                progress.setRange(ciphers.size());           
                 FilePackage fp = new FilePackage();
                 fp.setName(packagename);
                 fp.setPassword(password);
@@ -151,9 +144,11 @@ public class CryptItCom extends PluginForDecrypt {
                     String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
                     String linktext = decrypt(cipher);
                     progress.increase(1);
-                    linktext = Plugin.getHttpLinkList(linktext).trim();
-                    if (linktext.toLowerCase().startsWith("http")) {
-                        DownloadLink link = this.createDownloadlink(linktext);
+                    String[] links;
+
+                    links = Plugin.getHttpLinks(linktext, null);
+                    if (links.length > 0 && links[0].startsWith("http")) {
+                        DownloadLink link = this.createDownloadlink(links[0]);
                         link.setSourcePluginPasswords(p);
                         link.setSourcePluginComment(packagename);
 
@@ -198,7 +193,7 @@ public class CryptItCom extends PluginForDecrypt {
 
                         String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
                         String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                        requestInfo = postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, "a=pw&pw=" + pass, false);
+                        requestInfo = postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                         if (requestInfo.containsHTML(PATTERN_PW)) {
 
                             logger.warning("Password wrong");
@@ -259,8 +254,12 @@ public class CryptItCom extends PluginForDecrypt {
     }
 
     private String decrypt(String ciphertext) {
-        byte[] key = new byte[] { (byte) 55, (byte) 55, (byte) 107, (byte) 47, (byte) 108, (byte) 65, (byte) 87, (byte) 72, (byte) 83, (byte) 110, (byte) 116, (byte) 82, (byte) 89, (byte) 100, (byte) 111, (byte) 110, (byte) 116, (byte) 115, (byte) 116, (byte) 101, (byte) 97, (byte) 108, (byte) 112, (byte) (byte) 114 };
-
+        // alt: byte[] key = new byte[] { (byte) 55, (byte) 55, (byte) 107,
+        // (byte) 47, (byte) 108, (byte) 65, (byte) 87, (byte) 72, (byte) 83,
+        // (byte) 110, (byte) 116, (byte) 82, (byte) 89, (byte) 100, (byte) 111,
+        // (byte) 110, (byte) 116, (byte) 115, (byte) 116, (byte) 101, (byte)
+        // 97, (byte) 108, (byte) 112, (byte) (byte) 114 };
+        byte[] key = JDUtilities.Base64Decode("c281c3hOc1BLZk5TRERaSGF5cjMyNTIw").getBytes();
         byte[] cipher = new byte[ciphertext.length() / 2 + ciphertext.length() % 2];
 
         for (int i = 0; i < ciphertext.length(); i += 2) {
