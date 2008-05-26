@@ -43,7 +43,9 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDGetter extends PluginOptional implements ControlListener {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     private Server server;
     private AbstractHandler serverHandler;
 

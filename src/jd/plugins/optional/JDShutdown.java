@@ -34,7 +34,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     private static final int count = 60;
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 

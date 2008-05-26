@@ -17,6 +17,10 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDLowSpeed extends PluginOptional {
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
+    
     private String version = "0.1";
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
     private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";

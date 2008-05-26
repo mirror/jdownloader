@@ -32,6 +32,10 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class JDFolderWatch extends PluginOptional implements ControlListener {
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
+    
     private boolean threadend = true;
     private boolean running = true;
     private check i;

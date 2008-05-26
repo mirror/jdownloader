@@ -36,7 +36,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     private TrayIcon trayIcon;
 
     private TrayIconPopup popup;

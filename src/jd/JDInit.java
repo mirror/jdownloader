@@ -18,9 +18,12 @@ package jd;
 
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.CookieHandler;
 import java.net.URL;
 import java.util.ArrayList;
@@ -69,10 +72,11 @@ public class JDInit {
 
     private int cid = -1;
     private SplashScreen splashScreen;
-    public JDInit()
-    {
+
+    public JDInit() {
         this(null);
     }
+
     public JDInit(SplashScreen splashScreen) {
         this.splashScreen = splashScreen;
     }
@@ -88,12 +92,12 @@ public class JDInit {
     public void loadImages() {
         ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-//        try {
-//            splashScreen.increase();
-//            splashScreen.setText("Load images");
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.increase();
+        // splashScreen.setText("Load images");
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         File dir = JDUtilities.getResourceFile("jd/img/");
 
         String[] images = dir.list();
@@ -104,11 +108,11 @@ public class JDInit {
         for (int i = 0; i < images.length; i++) {
             if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
                 File f = new File(images[i]);
-//                try {
-//                    splashScreen.increase(2);
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
+                // try {
+                // splashScreen.increase(2);
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
                 logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
                 JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
             }
@@ -128,12 +132,12 @@ public class JDInit {
         try {
 
             if (fileInput != null && fileInput.exists()) {
-//                try {
-//                    splashScreen.increase();
-//                    splashScreen.setText("Load Configuration");
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
+                // try {
+                // splashScreen.increase();
+                // splashScreen.setText("Load Configuration");
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
                 Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
@@ -141,7 +145,7 @@ public class JDInit {
                     JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
                     JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
                     JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
-                    
+
                 } else {
                     // log += "\r\n" + ("Configuration error: " + obj);
                     // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
@@ -211,12 +215,12 @@ public class JDInit {
                 inst.dispose();
             }
         }
-//        try {
-//            splashScreen.setText("Configuration loaded");
-//            splashScreen.increase(5);
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("Configuration loaded");
+        // splashScreen.increase(5);
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         this.afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
@@ -226,12 +230,12 @@ public class JDInit {
     }
 
     public JDController initController() {
-//        try {
-//            splashScreen.setText("init Controller");
-//            splashScreen.increase(2);
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("init Controller");
+        // splashScreen.increase(2);
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         return new JDController();
     }
 
@@ -246,29 +250,29 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-//        try {
-//            splashScreen.setText("Load Plugins for Decrypt");
-//            splashScreen.increase();
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("Load Plugins for Decrypt");
+        // splashScreen.increase();
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         logger.finer("Load PLugins");
         Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-//        int c=0;
+        // int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-//                try {
-//
-//                    if(c++%2==0)
-//                    {
-//                    splashScreen.setText(p.getPluginName());
-//                    splashScreen.increase();
-//                    }
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
+                // try {
+                //
+                // if(c++%2==0)
+                // {
+                // splashScreen.setText(p.getPluginName());
+                // splashScreen.increase();
+                // }
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
                 logger.info("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
@@ -284,30 +288,30 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-//        try {
-//            splashScreen.setText("Load Plugins for Host");
-//            splashScreen.increase();
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("Load Plugins for Host");
+        // splashScreen.increase();
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForHost.class, jdClassLoader);
-//        int c=0;
+        // int c=0;
         while (iterator.hasNext()) {
             try {
                 PluginForHost next = (PluginForHost) iterator.next();
                 logger.finer("Load PLugins" + next);
-//                try {
-//                    if(c++%2==0)
-//                    {
-//                    splashScreen.setText(next.getPluginName());
-//                    splashScreen.increase();
-//                    }
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
+                // try {
+                // if(c++%2==0)
+                // {
+                // splashScreen.setText(next.getPluginName());
+                // splashScreen.increase();
+                // }
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
                 PluginForHost p = next;
 
                 plugins.add(p);
@@ -335,23 +339,23 @@ public class JDInit {
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Iterator iterator;
-//        try {
-//            splashScreen.setText("Load Container Plugins");
-//            splashScreen.increase();
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("Load Container Plugins");
+        // splashScreen.increase();
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         logger.finer("Load PLugins");
         iterator = Service.providers(PluginForContainer.class, jdClassLoader);
         while (iterator.hasNext()) {
             try {
                 PluginForContainer p = (PluginForContainer) iterator.next();
-//                try {
-//                    splashScreen.setText(p.getPluginName());
-//                    splashScreen.increase();
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
+                // try {
+                // splashScreen.setText(p.getPluginName());
+                // splashScreen.increase();
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
                 plugins.add(p);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -365,21 +369,22 @@ public class JDInit {
 
     @SuppressWarnings("unchecked")
     public HashMap<String, PluginOptional> loadPluginOptional() {
-//        try {
-//            splashScreen.setText("Load Optional Plugins");
-//            splashScreen.increase();
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.setText("Load Optional Plugins");
+        // splashScreen.increase();
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        class optionalPluginsVersions
-        {
+        class optionalPluginsVersions {
             public String name;
             public double version;
+
             public optionalPluginsVersions(String name, double version) {
-                this.name=name;
-                this.version=version;
+                this.name = name;
+                this.version = version;
             }
+
             public String toString() {
                 return name;
             }
@@ -406,6 +411,7 @@ public class JDInit {
             }
             logger.finer("Try to initialize " + cl);
             try {
+
                 Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
                 if (plgClass == null) {
                     logger.info("PLUGIN NOT FOUND!");
@@ -413,15 +419,32 @@ public class JDInit {
                 }
                 Class[] classes = new Class[] {};
                 Constructor con = plgClass.getConstructor(classes);
-                PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
-                pluginsOptional.put(p.getPluginName(), p);
-//                try {
-//                    splashScreen.setText(p.getPluginName());
-//                    splashScreen.increase(2);
-//                } catch (Exception e) {
-//                    // TODO: handle exception
-//                }
-                logger.finer("Successfull!. Loaded " + cl);
+
+                try {
+
+                    Method f = plgClass.getMethod("getAddonInterfaceVersion", new Class[] {});
+
+                    int id = (Integer) f.invoke(null, new Object[] {});
+
+                    if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
+                        logger.severe("Addon "+cl+" is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
+
+                    } else {
+
+                        PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
+                        pluginsOptional.put(p.getPluginName(), p);
+                        // try {
+                        // splashScreen.setText(p.getPluginName());
+                        // splashScreen.increase(2);
+                        // } catch (Exception e) {
+                        // // TODO: handle exception
+                        // }
+                        logger.finer("Successfull!. Loaded " + cl);
+                    }
+                } catch (Exception e) {
+                    logger.severe("Addon "+cl+" is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
+
+                }
 
             } catch (Throwable e) {
                 logger.info("Plugin Exception!");
@@ -449,72 +472,49 @@ public class JDInit {
 
     public void initPlugins() {
         try {
-        logger.info("Lade Plugins");
-//        try {
-//            splashScreen.setText("Load Plugins");
-//            splashScreen.increase(3);
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
-//        JDController controller = JDUtilities.getController();
-        JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
-        JDUtilities.setPluginForHostList(this.loadPluginForHost());
-        JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
-        try {
-            JDUtilities.setPluginOptionalList(this.loadPluginOptional());
-        } catch (Exception e1) {
-            e1.printStackTrace();
-        }
+            logger.info("Lade Plugins");
+            // try {
+            // splashScreen.setText("Load Plugins");
+            // splashScreen.increase(3);
+            // } catch (Exception e) {
+            // // TODO: handle exception
+            // }
+            // JDController controller = JDUtilities.getController();
+            JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
+            JDUtilities.setPluginForHostList(this.loadPluginForHost());
+            JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
+            try {
+                JDUtilities.setPluginOptionalList(this.loadPluginOptional());
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
 
-        // Iterator<PluginForHost> iteratorHost =
-        // JDUtilities.getPluginsForHost().iterator();
-        // while (iteratorHost.hasNext()) {
-        // iteratorHost.next().addPluginListener(controller);
-        // }
-        // Iterator<PluginForDecrypt> iteratorDecrypt =
-        // JDUtilities.getPluginsForDecrypt().iterator();
-        // while (iteratorDecrypt.hasNext()) {
-        // iteratorDecrypt.next().addPluginListener(controller);
-        // }
-        // Iterator<PluginForContainer> iteratorContainer =
-        // JDUtilities.getPluginsForContainer().iterator();
-        // while (iteratorContainer.hasNext()) {
-        // iteratorContainer.next().addPluginListener(controller);
-        // }
+            HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
 
-        // Iterator<String> iteratorOptional =
-        // JDUtilities.getPluginsOptional().keySet().iterator();
-        // while (iteratorOptional.hasNext()) {
-        // JDUtilities.getPluginsOptional().get(iteratorOptional.next()).addPluginListener(controller);
-        // }
+            Iterator<String> iterator = pluginsOptional.keySet().iterator();
+            String key;
 
-        HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
+            while (iterator.hasNext()) {
+                key = iterator.next();
+                PluginOptional plg = pluginsOptional.get(key);
+                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
+                    try {
+                        if (!pluginsOptional.get(key).initAddon()) {
+                            logger.severe("Error loading Optional Plugin: FALSE");
+                        }
 
-        Iterator<String> iterator = pluginsOptional.keySet().iterator();
-        String key;
-
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            PluginOptional plg = pluginsOptional.get(key);
-            if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
-                try {
-                    if(!pluginsOptional.get(key).initAddon()){
-                        logger.severe("Error loading Optional Plugin: FALSE");
+                    } catch (Throwable e2) {
+                        logger.severe("Error loading Optional Plugin: " + e2.getMessage());
+                        e2.printStackTrace();
                     }
-                   
-                
-                }catch(Throwable e2){
-                    logger.severe("Error loading Optional Plugin: " + e2.getMessage());
-                    e2.printStackTrace();
                 }
             }
-        }
-        }catch(Throwable e2){
+        } catch (Throwable e2) {
             logger.severe("Error loading Optional Plugin: " + e2.getMessage());
             e2.printStackTrace();
         }
     }
- 
+
     public void checkWebstartFile() {
 
     }
@@ -552,7 +552,7 @@ public class JDInit {
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
-                //logger.info(files + "");
+                // logger.info(files + "");
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
                 // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
                 // false)){
@@ -604,7 +604,7 @@ public class JDInit {
 
                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                             JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-                           
+
                             JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                             logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                             System.exit(0);
@@ -635,7 +635,7 @@ public class JDInit {
 
                                 if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
                                     JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-                              
+
                                     JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                                     logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                                     System.exit(0);
@@ -687,11 +687,10 @@ public class JDInit {
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
             String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
-            if (lastLog.trim().length() > 5) 
-                {
-               if(splashScreen!=null) splashScreen.finish();
+            if (lastLog.trim().length() > 5) {
+                if (splashScreen != null) splashScreen.finish();
                 JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
-                }
+            }
 
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
@@ -708,11 +707,10 @@ public class JDInit {
     }
 
     public void removeFiles() {
-        String[] remove=null;
-        
-       // remove = new String[] { "jd/captcha/methods/filefactory.com" };
-if(remove!=null)
-        for (String file : remove) {
+        String[] remove = null;
+
+        // remove = new String[] { "jd/captcha/methods/filefactory.com" };
+        if (remove != null) for (String file : remove) {
 
             if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {
                 logger.warning("Removed " + file);
@@ -723,12 +721,12 @@ if(remove!=null)
     }
 
     public void setupProxy() {
-//        try {
-//            splashScreen.increase(2);
-//            splashScreen.setText("Setup Proxy");
-//        } catch (Exception e) {
-//            // TODO: handle exception
-//        }
+        // try {
+        // splashScreen.increase(2);
+        // splashScreen.setText("Setup Proxy");
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
         System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
         System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 80) + "");
         System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER, ""));

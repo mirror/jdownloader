@@ -73,6 +73,7 @@ public class SingleDownloadController extends Thread {
         super("JD-StartDownloads");
         this.downloadLink = dlink;
         this.controller = controller;
+        this.setPriority(Thread.MIN_PRIORITY);
     }
 
     /**

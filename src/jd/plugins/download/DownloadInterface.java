@@ -774,6 +774,7 @@ abstract public class DownloadInterface {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
+            this.setPriority(Thread.MIN_PRIORITY);
 
         }
 

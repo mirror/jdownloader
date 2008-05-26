@@ -51,7 +51,9 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDTrayIcon extends PluginOptional {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     private JPopupMenu popupMenu;
     private JWindow trayParent;
     private TrayIcon trayIcon;

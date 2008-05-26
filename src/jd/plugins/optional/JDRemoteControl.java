@@ -61,7 +61,9 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
-
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     private String version = "0.5.0.3";
     private DecimalFormat f = new DecimalFormat("#0.00"); 
     
