@@ -114,8 +114,8 @@ public class ImagefapCom extends PluginForDecrypt {
                         // logger.info("http://imagefap.com/image.php?id=" +
                         // links.get(i).get(0));
                         DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links.get(i).get(0));
+                        link.setSourcePluginComment("ImageFap.com - " + gallery);
                         fp.add(link);
-                        link.setSourcePluginComment(gallery);
                         decryptedLinks.add(link);
                         progress.increase(1);
                     }
