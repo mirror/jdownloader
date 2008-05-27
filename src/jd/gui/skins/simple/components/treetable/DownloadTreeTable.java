@@ -320,9 +320,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                     if (!model.containesPackage(next.getKey())) continue;
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
-
+                 
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
-
+                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
+                            next3 = it3.next();
+                            if (!next.getKey().contains(next3))it3.remove();
+                        
+                        }
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;
@@ -330,9 +334,10 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                             next3 = it3.next();
                             if (!next.getKey().contains(next3)) {
-                                return;
+                             //return;
 //                                nulls++;
-//                                continue;
+                                logger.warning("Dauniel bug");
+                                continue;
                             }
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
