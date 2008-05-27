@@ -1417,11 +1417,11 @@ public abstract class Plugin implements ActionListener {
      *            Ein RegEx Pattern
      * @return Treffer
      */
-    public static ArrayList<ArrayList<String>> getAllSimpleMatches(String source, Pattern pattern) {
+    public static ArrayList<ArrayList<String>> getAllSimpleMatches(Object source, Pattern pattern) {
         ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
         ArrayList<String> entry;
         String tmp;
-        for (Matcher r = pattern.matcher(source); r.find();) {
+        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
             entry = new ArrayList<String>();
             for (int x = 1; x <= r.groupCount(); x++) {
                 tmp = r.group(x).trim();
@@ -1450,10 +1450,10 @@ public abstract class Plugin implements ActionListener {
         return ret;
     }
 
-    public static ArrayList<String> getAllSimpleMatches(String source, Pattern pattern, int id) {
+    public static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
 
         ArrayList<String> ret = new ArrayList<String>();
-        for (Matcher r = pattern.matcher(source); r.find();) {
+        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
         return ret;

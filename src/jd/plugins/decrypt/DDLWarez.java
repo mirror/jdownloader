@@ -14,115 +14,133 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
-	private static final String host             = "ddl-warez.org";
-	private static final String version          = "1.0.0.0";
-	                //http://ddl-warez.org/detail.php?id=5380&cat=games
-	private static final Pattern patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[+]&cat=[+]");
-	private static final Pattern patternFrame = Pattern.compile("<frame\\s.*?src=\"(.*?)\"", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+    private static final String host = "ddl-warez.org";
+    private static final String version = "1.0.0.0";
+    // http://ddl-warez.org/detail.php?id=5380&cat=games
+    private static final Pattern patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[+]&cat=[+]");
+    private static final Pattern patternFrame = Pattern.compile("<frame\\s.*?src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-	public DDLWarez() {
-		super();
-		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-		currentStep = steps.firstElement();
-		default_password.add("ddl-warez");
-	}
+    public DDLWarez() {
+        super();
+        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        currentStep = steps.firstElement();
+        default_password.add("ddl-warez");
+    }
 
-	@Override
-	public String getCoder() {
-		return "Bo0nZ";
-	}
+    @Override
+    public String getCoder() {
+        return "Bo0nZ";
+    }
 
-	@Override
-	public String getHost() {
-		return host;
-	}
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-	@Override
-	public String getPluginID() {
-		return host + "-" + version;
-	}
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
+    }
 
-	@Override
-	public String getPluginName() {
-		return host;
-	}
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-	@Override
-	public Pattern getSupportedLinks() {
-		return patternSupported;
-	}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-	@Override
-	public String getVersion() {
-		return version;
-	}
+    @Override
+    public String getVersion() {
+        return version;
+    }
 
-	@Override
-	public PluginStep doStep(PluginStep step, String parameter) {
-		if (step.getStep() == PluginStep.STEP_DECRYPT) {
-			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-			try {
-				URL url = new URL(parameter);
-				RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+                String title = getSimpleMatch(reqinfo, "<title>DDL-Warez v3.0 // °</title>", 0);
+                String pass = getSimpleMatch(reqinfo, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
+                if (pass.equals("kein Passwort")) pass = null;
+                logger.info("Password=" + pass);
+                Form[] forms = reqinfo.getForms();
 
-				Form []forms = reqinfo.getForms();
+                // first form is the search form, not needed
+                progress.setRange(forms.length - 1);
+                Matcher frameMatcher = null;
+                FilePackage fp = new FilePackage();
+                fp.setName(title);
+                fp.setPassword(pass);
 
-				//first form is the search form, not needed
-				progress.setRange(forms.length -1);
-				Matcher frameMatcher = null;
+                for (int i = 1; i < forms.length; ++i) {
+                    RequestInfo formInfo = forms[i].getRequestInfo();
 
-				for(int i=1; i<forms.length; ++i){
-					RequestInfo formInfo = forms[i].getRequestInfo();
+                    // signed: the 2nd redirection layer was removed
+                    // URL urlredirector = new
+                    // URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"",
+                    // "\""));
+                    // RequestInfo reqinfoRS = getRequest(urlredirector);
 
+                    // System.out.println(formInfo.getHtmlCode());
 
-					//signed: the 2nd redirection layer was removed
-//					URL urlredirector = new URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"", "\""));
-//					RequestInfo reqinfoRS = getRequest(urlredirector);
+                    for (Iterator<String> it = getAllSimpleMatches(formInfo, this.patternFrame, 1).iterator(); it.hasNext();) {
 
-					//System.out.println(formInfo.getHtmlCode());
+                        String[] links = getHttpLinks(it.next().trim(), null);
 
-					frameMatcher = patternFrame.matcher(formInfo.getHtmlCode());
-					frameMatcher.find(); //fetch the first frame
-					if( !frameMatcher.find() ){
-						logger.severe("redirection page changed");
-						return null;
-					}
+                        for (String link : links) {
+                            try {
+                                if (JDUtilities.getPluginForHost(new URL(link).getHost()) != null) {
+                                    ;
+                                    decryptedLinks.add(this.createDownloadlink(link));
+                                    decryptedLinks.lastElement().setFilePackage(fp);
+                                    decryptedLinks.lastElement().addSourcePluginPassword(pass);
+                                }
+                            } catch (Exception e) {
+                            }
+                        }
+                    }
 
-					String found = frameMatcher.group(1);
-					//System.out.println("found: "+found);
+                    // System.out.println("found: "+found);
 
-					decryptedLinks.add(this.createDownloadlink(found));
-					progress.increase(1);
-				}
+                    progress.increase(1);
+                }
 
-				// Decrypt abschliessen
-				step.setParameter(decryptedLinks);
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return null;
-	}
+                // Decrypt abschliessen
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
 
-	@Override
-	public boolean doBotCheck(File file) {
-		return false;
-	}
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 
 }
