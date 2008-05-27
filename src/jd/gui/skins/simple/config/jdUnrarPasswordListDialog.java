@@ -17,6 +17,9 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -25,8 +28,10 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
@@ -71,9 +76,12 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      */
     @SuppressWarnings("static-access")
 	public jdUnrarPasswordListDialog(JFrame owner) {
-        super(owner);
+        super(owner, "Password Liste");
         setModal(true);
-        setLayout(new GridBagLayout());
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n,n));
+        panel.setBorder(new EmptyBorder(n,n,n,n));
+        setContentPane(panel);
         
         btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name"));
         btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem").charAt(0));
@@ -86,22 +94,28 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
         getRootPane().setDefaultButton(btnSave);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        pwField = new JTextArea(10, 60);
-        pwScrollPane = new JScrollPane(pwField);
+        pwField = new JTextArea();
+        pwScrollPane = new JScrollPane(pwField, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         pwField.setEditable(true);
         JUnrar unrar = new JUnrar(false);
         String[] pws = unrar.returnPasswords();
         for (int i = 0; i < pws.length; i++) {
             pwField.append(pws[i] + System.getProperty("line.separator"));
         }
+        pwField.setCaretPosition(0);
+        getContentPane().add(pwScrollPane, BorderLayout.CENTER);
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n,0));
+        getContentPane().add(bpanel, BorderLayout.SOUTH);
+//        JDUtilities.addToGridBag(this, pwScrollPane, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+        bpanel.add(btnSave);
+        bpanel.add(btnCancel);
 
-        JDUtilities.addToGridBag(this, pwScrollPane, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+        setPreferredSize(new Dimension(400,300));
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
-
     }
 
     /*
