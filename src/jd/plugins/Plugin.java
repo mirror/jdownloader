@@ -1403,8 +1403,8 @@ public abstract class Plugin implements ActionListener {
      *            verwendet.
      * @return Treffer
      */
-    public static ArrayList<ArrayList<String>> getAllSimpleMatches(String source, String pattern) {
-        return getAllSimpleMatches(source, Pattern.compile(getPattern(pattern), Pattern.DOTALL));
+    public static ArrayList<ArrayList<String>> getAllSimpleMatches(Object source, String pattern) {
+        return getAllSimpleMatches(source.toString(), Pattern.compile(getPattern(pattern), Pattern.DOTALL));
     }
 
     /**

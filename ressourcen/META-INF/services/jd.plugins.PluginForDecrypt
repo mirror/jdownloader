@@ -74,7 +74,7 @@ jd.plugins.decrypt.DLCXliceNet
 jd.plugins.decrypt.DLCXliceNetRedirect
 jd.plugins.decrypt.FTI6xto
 jd.plugins.decrypt.LinksaveIn
-#jd.plugins.decrypt.RapidsafeDe
+jd.plugins.decrypt.RapidsafeDe
 jd.plugins.decrypt.MediafireFolder
 jd.plugins.decrypt.ImagefapCom
 jd.plugins.decrypt.YouTubeCom

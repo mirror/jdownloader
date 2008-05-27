@@ -14,14 +14,16 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.net.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
 import java.util.Vector;
@@ -36,9 +38,9 @@ import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
-    final static String host             = "rapidsafe.de";
-    private String      version          = "0.1";
-    private Pattern     patternSupported = getSupportPattern("http://[+]rapidsafe.de");
+    final static String host = "rapidsafe.de";
+    private String version = "0.1";
+    private Pattern patternSupported = getSupportPattern("http://[+]rapidsafe.de");
 
     public RapidsafeDe() {
         super();
@@ -58,7 +60,7 @@ public class RapidsafeDe extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -78,11 +80,10 @@ public class RapidsafeDe extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        
-        if(step.getStep() == PluginStep.STEP_DECRYPT) {
+
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            if(!parameter.endsWith("/"))
-                parameter += "/";
+            if (!parameter.endsWith("/")) parameter += "/";
             try {
                 setReadTimeout(120000);
                 setConnectTimeout(120000);
@@ -100,110 +101,101 @@ public class RapidsafeDe extends PluginForDecrypt {
                 HTTPConnection con = new HTTPConnection(new URL(parameter + flash).openConnection());
                 con.setRequestProperty("Cookie", cookie);
                 con.setRequestProperty("Referer", parameter);
-
-                BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+                //Debug inputstream
+               // InputStream in = new FileInputStream(new File("c:/swf.swf"));
+                BufferedInputStream input = new BufferedInputStream( con.getInputStream() );
                 StringBuffer sb = new StringBuffer();
-                ArrayList<Byte> bb = new ArrayList<Byte>();
-                int xx = 0;
-                int[] zaehler = new int[7];
+              
+                long[] zaehler = new long[7];
                 byte[] b = new byte[1];
+                //liest alles ein und legt alle daten hexcodiert ab. Das ermöglicht ascii regex suche
                 while (input.read(b) != -1) {
-                    if(b[0]<0||b[0]>34||b[0]==9||b[0]==10||b[0]==13){
-                        sb.append(new String(b));
-                    }else{
-                        sb.append(".");
-                    }
-                    if(sb.toString().endsWith(".....") && xx < 7 && sb.toString().indexOf("getURL") > 1){
-                        input.read(b);
-                        if(b[0]<0||b[0]>34||b[0]==9||b[0]==10||b[0]==13){
-                            sb.append(new String(b));
-                        }
-                        else {
-                            sb.append(".");
-                        }
-                        zaehler[xx] = (0x000000FF & ((int)b[0]));
-                        xx++;
-                    }
-                    if(new Regexp(sb.toString(), "getURL").count() == 1)
-                        bb.add(b[0]);
-                    
-                    if(new Regexp(sb.toString(), "getURL").count() > 1)
-                        break;
-                }
-                input.close();
-                //logger.info(""+sb.toString());
-                for(int u=0; u< zaehler.length; u++)
-                    System.out.println(zaehler[u]);
-                    
-                byte[] bh1 = new byte[8];
-                ArrayList<Integer> zahlen = new ArrayList<Integer>();
+                    String s = Integer.toHexString((byte) b[0] & 0x000000ff);
+                    sb.append((s.length() == 1 ? "0" : "") + s + "");
 
-                for(int i=0; i<bb.size()-15; i++) {
-                    if(bb.get(i)==0x07){
-                        bh1 = new byte[8];
-                        bh1[0] = bb.get(i+1);
-                        bh1[1] = bb.get(i+2);
-                        bh1[2] = bb.get(i+7);
-                        bh1[3] = bb.get(i+8);
-                        bh1[4] = bb.get(i+9);
-                        bh1[5] = bb.get(i+10);
-                        bh1[6] = bb.get(i+11);
-                        bh1[7] = bb.get(i+12);
-                        if(bh1[0]==0x00 && bh1[1]==0x07 && bh1[2]==0x08 && bh1[3]==0x02 && bh1[4]==0x01C && bh1[5]==-106 && bh1[6]==0x02 && bh1[7]==0x00) {
-                            //System.out.println(bh1[2] + " " + bh1[3] + " " + bh1[4] + " " + bh1[5] + " " + bh1[6] + " " + bh1[7]);
-                            zahlen.add((0x000000FF & ((int)bb.get(i+3))));
-                        }
-                    }
                 }
-                
+                String c = sb.toString();
+                //die zwei positionen von getURL
+                int index1 = c.indexOf("67657455524c");
+                int index2 = c.indexOf("67657455524c", index1 + 8);
+                c = c.substring(c.indexOf("67657455524c"), index2);
+                //Suchen der zahlen
+                ArrayList<ArrayList<String>> search1 = getAllSimpleMatches(c, "96070008°07°3c");
+                ArrayList<ArrayList<String>> search2 = getAllSimpleMatches(c, "070007°08021c960200");
+                //Umwandlen der Hexwerte
+                for (int i = 0; i < 7; i++)
+                    zaehler[i] = (int) Long.parseLong(spin(search1.get(i).get(1).toUpperCase()), 16);
+
+                long ax5 = zaehler[0];
+                long ccax4 = zaehler[1];
+                long ax3 = zaehler[2];
+                long ax7 = zaehler[3];
+                long ax6 = zaehler[4];
+                long ax1 = zaehler[5];
+                long ax2 = zaehler[6];
+                input.close();
+                //Umwandlen der Hexwerte
+                long[] modifier = new long[search2.size()];
+                int count = 0;
+                for (Iterator<ArrayList<String>> it = search2.iterator(); it.hasNext();) {               
+                    modifier[count++] = (Long.parseLong(spin( it.next().get(0)), 16));
+                }
+
                 String postdata = "";
-                int xor1 = zaehler[2] ^ zaehler[6] + 2 + 9 ^ zaehler[1] + 12;
-                int xor2 = 12 ^ 112 ^ zaehler[5] ^ zaehler[0] ^ 41 ^ zaehler[4] ^ zaehler[3];
-                for(int i=0;i<zahlen.size();i++) {
-                    postdata += String.valueOf((char) (zahlen.get(i) ^ xor1 ^ 2 ^ 41 - xor2));
+                for (long zahl : modifier) {
+                    postdata += String.valueOf((char) (zahl ^ (ax3 ^ ax2 + 2 + 9 ^ ccax4 + 12) ^ 2 ^ 41 - 12 ^ 112 ^ ax1 ^ ax5 ^ 41 ^ ax6 ^ ax7));
                 }
+
                 System.out.println(postdata);
-                postdata = getSimpleMatch(postdata,"RapidSafePSC('°'",0);
+                postdata = getSimpleMatch(postdata, "RapidSafePSC('°'", 0);
                 System.out.println(postdata);
-                
+
                 ri = postRequest(new URL(parameter), cookie, parameter, null, postdata, false);
                 Map<String, List<String>> headers = ri.getHeaders();
                 String content = "";
-                
+
                 int counter = 0;
                 String help1 = "";
-                while(true) {
+                while (true) {
                     try {
-                        help1=headers.get("X-RapidSafe-E"+counter).get(0);
+                        help1 = headers.get("X-RapidSafe-E" + counter).get(0);
                         content += help1;
                         counter++;
-                    }
-                    catch(NullPointerException e) {
+                    } catch (NullPointerException e) {
                         break;
                     }
                 }
-                //System.out.println(content.length());
-                String content1 = "";                
-                
-                //System.out.println(content);
-                for(int i=0; i<content.length(); i+=2) {
-                    content1 += String.valueOf((char)Integer.parseInt(content.substring(i, i+2), 16));
+                // System.out.println(content.length());
+                String content1 = "";
+
+                // System.out.println(content);
+                for (int i = 0; i < content.length(); i += 2) {
+                    content1 += String.valueOf((char) Integer.parseInt(content.substring(i, i + 2), 16));
                 }
-                //System.out.println(content1);
+                // System.out.println(content1);
                 String[][] help = new Regexp(content1, "\\(([\\d]+).([\\d]+).([\\d]+)\\)").getMatches();
-                
+
                 content = "";
-                for(int i=0; i<help.length; i++) {
-                    content += String.valueOf((char)(Integer.parseInt(help[i][0]) ^ Integer.parseInt(help[i][1]) ^ Integer.parseInt(help[i][2])));
+                for (int i = 0; i < help.length; i++) {
+                    content += String.valueOf((char) (Integer.parseInt(help[i][0]) ^ Integer.parseInt(help[i][1]) ^ Integer.parseInt(help[i][2])));
                 }
-                System.out.println(getBetween(content, "method=\"POST\" action=\"", "\""));
+               
+                String link = getSimpleMatch(content, "action=\"°\" id", 0);
+                logger.info(link);
                 step.setParameter(decryptedLinks);
-            } catch(IOException e) {
-                 e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            
+
         }
         return null;
+    }
+
+    private String spin(String string) {
+        String ret = "";
+        for (int i = string.length(); i >= 2; i -= 2)
+            ret += string.substring(i - 2, i);
+        return ret;
     }
 
     @Override
