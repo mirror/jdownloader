@@ -136,5 +136,8 @@ public static int WINDOW_STATUS_FOREGROUND = 4;
  * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,* verwendet werden
  */
     public void setGUIStatus(int id);
+    
+
+        public void displayMiniWarning(String shortWarn,String longWarn, int showtime);
  
 }

@@ -120,7 +120,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
             }
 
             progress.increase(1);
-
+       
             step.setParameter(decryptedLinks);
         }
         return null;

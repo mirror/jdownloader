@@ -414,7 +414,7 @@ public class Megauploadcom extends PluginForHost {
                 this.setStatusText("File Not Found");
                 return false;
             }
-            logger.info(requestInfo+"");
+
             String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
             String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
             if (fileName == null || fileSize == null) { return false; }

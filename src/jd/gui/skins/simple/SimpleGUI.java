@@ -35,8 +35,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -46,12 +44,10 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -65,18 +61,15 @@ import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-
-import org.jdesktop.swingx.JXGlassBox;
-import org.jdesktop.swingx.JXHyperlink;
 
 import jd.JDFileFilter;
 import jd.captcha.CES;
@@ -257,6 +250,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionItemsDown;
 
     private JDAction actionItemsBottom;
+
+    private JLabel warning;
+
+    private JDAction actionAbout;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
@@ -504,6 +501,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
+        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
 
     }
 
@@ -537,7 +535,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // file menu
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file"));
         menFile.setMnemonic(JDLocale.L("gui.menu.file_mnem").charAt(0));
-
+        JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
         JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
         JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
@@ -572,7 +570,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menTester = createMenuItem(actionTester);
         JMenuItem menUnrar = createMenuItem(actionUnrar);
         JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
-        JMenuItem help = createMenuItem(actionHelp);
+
         // add menus to parents
 
         // Adds the menus form the Addons
@@ -626,6 +624,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.host", "Hoster"));
         JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt", "Decrypter"));
         JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
+
         menPlugins.add(helpHost);
 
         menPlugins.add(helpDecrypt);
@@ -758,17 +757,46 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(memDnD);
         menExtra.add(menUnrar);
         menExtra.add(menPasswordlist);
+
+        JMenuItem menAbout = createMenuItem(actionAbout);
+        JMenuItem menHelpB = createMenuItem(actionHelp);
+        menHelp.add(menHelpB);
         menExtra.add(new JSeparator());
-        menExtra.add(help);
+        /*
+         * TODO: ABout Frame
+         */
+        menAbout.setEnabled(false);
+        menHelp.add(menAbout);
+
         // menAction.add(menDownload);
         // menAction.add(menAddLinks);
+        menuBar.setLayout(new GridBagLayout());
         menuBar.add(menFile);
+        Insets insets = new Insets(1, 1, 1, 1);
+        int m = 0;
+        JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         // menuBar.add(menEdit);
         // menuBar.add(menAction);
-        menuBar.add(menExtra);
-        menuBar.add(menAddons);
-        menuBar.add(menPlugins);
+        JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(menuBar, menPlugins, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+
+        // menuBar.add(menExtra);
+        // /menuBar.add(menAddons);
+        // menuBar.add(menPlugins);
+
+        warning = new JLabel("", JDTheme.II("gui.images.warning", 16, 16), SwingConstants.RIGHT);
+        warning.setVisible(false);
+        warning.setIconTextGap(10);
+        warning.setHorizontalTextPosition(SwingConstants.LEFT);
+        JDUtilities.addToGridBag(menuBar, warning, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+
         frame.setJMenuBar(menuBar);
+
     }
 
     /**
@@ -898,16 +926,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnUp);
         toolBar.add(btnTop);
         toolBar.addSeparator();
-        toolBar.add(btnUpdate);
-        toolBar.addSeparator();
         toolBar.add(btnConfig);
-        toolBar.add(btnLog);
+        // toolBar.add(btnLog);
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
-        toolBar.add(btnClipBoard);
         toolBar.add(btnToggleReconnect);
+        toolBar.add(btnClipBoard);
+        toolBar.addSeparator();
+        toolBar.add(btnUpdate);
+
         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) toolBar.add(btnCes);
-        toolBar.add(btnHelp);
+        // toolBar.add(btnHelp);
         // reconnectBox = new JCheckBox("Reconnect durchführen");
         // boolean rc =
         // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
@@ -951,7 +980,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_TESTER:
             logger.finer("Test trigger pressed");
+            displayMiniWarning("Testtrigger wurde ausgelöst", "Der Testauslöser für den Eventmanager wurde manuel ausgelöst.", 5000);
             Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
+
             break;
         case JDAction.APP_UNRAR:
             logger.finer("Unrar");
@@ -1327,11 +1358,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         private JCheckBox chbPremium;
 
-        public StatusBar() {            
+        public StatusBar() {
             setLayout(new BorderLayout());
             int n = 10;
-            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0,0));
-            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
+            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
             add(bundle(left, right));
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
@@ -1359,25 +1390,40 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive = new JLabel(imgInactive);
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
-            
+
             left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
             left.add(linkButton);
             right.add(chbPremium);
-            right.add(bundle(lblSimu, spMaxDls));            
-            right.add(bundle(lblSpeed,spMax));
-            
+            right.add(bundle(lblSimu, spMaxDls));
+            right.add(bundle(lblSpeed, spMax));
+
             colorizeSpinnerSpeed(maxspeed);
-//            JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new Insets(0, 5, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-//
-//            JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, new JSeparator(JSeparator.VERTICAL), 4, 0, 1, 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH, GridBagConstraints.WEST);
-//
-//            JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
-//
-//            JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new Insets(0, 2, 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new
+            // Insets(0, 5,
+            // 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, lblSimu, 1, 0, 1, 1, 0, 0, new
+            // Insets(0, 2, 0,
+            // 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, spMaxDls, 2, 0, 1, 1, 0, 0, new
+            // Insets(0, 2,
+            // 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            //
+            // JDUtilities.addToGridBag(this, chbPremium, 3, 0, 1, 1, 0, 0, new
+            // Insets(0, 2,
+            // 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, new
+            // JSeparator(JSeparator.VERTICAL), 4, 0, 1,
+            // 1, 0, 0, new Insets(2, 2, 2, 2), GridBagConstraints.BOTH,
+            // GridBagConstraints.WEST);
+            //
+            // JDUtilities.addToGridBag(this, lblSpeed, 5, 0, 1, 1, 0, 0, new
+            // Insets(0, 2,
+            // 0, 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
+            //
+            // JDUtilities.addToGridBag(this, spMax, 6, 0, 1, 1, 0, 0, new
+            // Insets(0, 2, 0,
+            // 0), GridBagConstraints.NONE, GridBagConstraints.WEST);
 
             // JDUtilities.addToGridBag(this, lblPluginHostActive, 5, 0, 1, 1,
             // 0, 0, new Insets(0, 5, 0, 0), GridBagConstraints.NONE,
@@ -1388,7 +1434,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         private Component bundle(Component c1, Component c2) {
-            JPanel panel = new JPanel(new BorderLayout(0,0));
+            JPanel panel = new JPanel(new BorderLayout(0, 0));
             panel.add(c1, BorderLayout.WEST);
             panel.add(c2, BorderLayout.EAST);
             return panel;
@@ -1412,9 +1458,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
 
             if (speed > 1024) {
-                lblSpeed.setText("("+(speed / 1024) + JDLocale.L("gui.download.kbps", "kb/s")+")");
+                lblSpeed.setText("(" + (speed / 1024) + JDLocale.L("gui.download.kbps", "kb/s") + ")");
             } else {
-                lblSpeed.setText("("+speed + JDLocale.L("gui.download.bps", "bytes/s")+")");
+                lblSpeed.setText("(" + speed + JDLocale.L("gui.download.bps", "bytes/s") + ")");
             }
         }
 
@@ -1450,12 +1496,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // }
         private void colorizeSpinnerSpeed(Integer Speed) {
             /* färbt den spinner ein, falls speedbegrenzung aktiv */
-            JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();           
+            JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
             Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03");
             if (Speed > 0) {
-                lblSpeed.setForeground(warning);                
+                lblSpeed.setForeground(warning);
                 spMaxEditor.getTextField().setForeground(Color.red);
-            } else {               
+            } else {
                 lblSpeed.setForeground(Color.black);
                 spMaxEditor.getTextField().setForeground(Color.black);
             }
@@ -1889,6 +1935,75 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public boolean showCountdownConfirmDialog(String string, int sec) {
         return CountdownConfirmDialog.showCountdownConfirmDialog(this.frame, string, sec);
+    }
+
+    public void displayMiniWarning(final String shortWarn, final String tooltip, final int showtime) {
+        if (shortWarn == null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    warning.setVisible(false);
+
+                    warning.setText("");
+                }
+            });
+        } else {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    warning.setVisible(true);
+
+                    warning.setText(shortWarn);
+                    warning.setToolTipText(tooltip);
+                }
+            });
+
+            new SwingWorker() {
+
+                @Override
+                protected Object doInBackground() throws Exception {
+                    for (int i = 0; i < 5; i++) {
+                        try {
+                            Thread.sleep(300);
+                        } catch (Exception e) {
+                        }
+                        EventQueue.invokeLater(new Runnable() {
+                            public void run() {
+                                warning.setEnabled(false);
+                            }
+                        });
+                        try {
+                            Thread.sleep(100);
+                        } catch (Exception e) {
+                        }
+
+                        EventQueue.invokeLater(new Runnable() {
+                            public void run() {
+                                warning.setEnabled(true);
+                            }
+                        });
+
+                    }
+
+                    return null;
+                }
+            }
+
+            .execute();
+
+            if (showtime > 0) {
+                new Thread() {
+                    public void run() {
+                        try {
+                            Thread.sleep(showtime);
+                        } catch (InterruptedException e) {
+
+                            e.printStackTrace();
+                        }
+                        displayMiniWarning(null, null, 0);
+                    }
+                }.start();
+            }
+
+        }
     }
 
 }

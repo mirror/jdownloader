@@ -48,7 +48,8 @@ public class ShareOnlineBiz extends PluginForHost {
     // http://share-online.biz/dl/1/48DQA0U39
     // http://dl-o-1.share-online.biz/1051994
     // http://www.share-online.biz/download.php?id=D90258485
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?share-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]{9}.*", Pattern.CASE_INSENSITIVE);
+    //http://.*?share-online\\.biz/(download.php\\?id\\=[a-zA-Z0-9]{9}|\\?d\\=[a-zA-Z0-9]{9}).*
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?share-online\\.biz/(download.php\\?id\\=[a-zA-Z0-9]{9}|\\?d\\=[a-zA-Z0-9]{9}).*", Pattern.CASE_INSENSITIVE);
 
     private static final String PATTERN_FILENAME = "<span class=\"locatedActive\">Download °</span>";
 
