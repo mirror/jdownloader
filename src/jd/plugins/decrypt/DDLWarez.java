@@ -31,7 +31,7 @@ import jd.plugins.RequestInfo;
 public class DDLWarez extends PluginForDecrypt {
 	private static final String host             = "ddl-warez.org";
 	private static final String version          = "1.0.0.0";
-
+	                //http://ddl-warez.org/detail.php?id=5380&cat=games
 	private static final Pattern patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[+]&cat=[+]");
 	private static final Pattern patternFrame = Pattern.compile("<frame\\s.*?src=\"(.*?)\"", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
 
