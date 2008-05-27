@@ -184,7 +184,7 @@ if(version>=1.6){
             } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
                 progress.setMaximum(dLink.getWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
-                if(ui!=null)    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                if(ui!=null)   ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                 if(ui!=null)   ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 progress.setStringPainted(true);
                 progress.setValue((int) dLink.getRemainingWaittime());

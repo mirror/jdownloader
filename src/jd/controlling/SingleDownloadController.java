@@ -39,6 +39,8 @@ import jd.utils.JDUtilities;
  * @author astaldo/JD-Team
  */
 public class SingleDownloadController extends Thread {
+    public static final String WAIT_TIME_ON_CONNECTION_LOSS = "WAIT_TIME_ON_CONNECTION_LOSS";
+
     /**
      * Das Plugin, das den aktuellen Download steuert
      */
@@ -350,7 +352,7 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: No Serverconnection");
-        long milliSeconds = 5 * 60 * 1000;
+        long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60 )* 1000;
         try {
             milliSeconds = (Long) step.getParameter();
         } catch (Exception e) {

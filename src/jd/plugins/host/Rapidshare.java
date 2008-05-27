@@ -725,6 +725,18 @@ public class Rapidshare extends PluginForHost {
     // public URLConnection getURLConnection() {
     // return null;
     // }
+    private static String getCorrectedURL(String link){
+        if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
+            link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
+        }
+        return link;
+
+    }
+    public static void correctURL(DownloadLink downloadLink){
+    
+           downloadLink.setUrlDownload(getCorrectedURL(downloadLink.getDownloadURL()));
+        
+    }
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         // RequestInfo requestInfo;
 
@@ -732,12 +744,7 @@ public class Rapidshare extends PluginForHost {
             logger.info("Plugin Ende erreicht.");
             return null;
         }
-        String link = downloadLink.getDownloadURL();
-        if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
-            link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
-
-            downloadLink.setUrlDownload(link);
-        }
+        correctURL(downloadLink);
 
         // premium
         PluginStep st;
@@ -1693,6 +1700,7 @@ public class Rapidshare extends PluginForHost {
             } catch (InterruptedException e) {
             }
         }
+        correctURL(downloadLink);
         LAST_FILE_CHECK = System.currentTimeMillis();
         RequestInfo requestInfo;
         try {

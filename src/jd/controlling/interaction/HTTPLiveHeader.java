@@ -339,6 +339,11 @@ public class HTTPLiveHeader extends Interaction {
         }
 
         String afterIP = JDUtilities.getIPAddress();
+        if(!JDUtilities.validateIP(afterIP)){
+            logger.warning("IP "+afterIP+" was filtered by mask: "+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short","Die IP %s wurde als nicht erlaubt identifiziert"),afterIP), null, 20);
+            afterIP=null;
+        }
         logger.finer("Ip after: " + afterIP);
         progress.increase(1);
         String pattern;
@@ -378,27 +383,27 @@ public class HTTPLiveHeader extends Interaction {
         logger.info("Rec fail: "+afterIP);
         return false;
     }
-/*
-    private void getDatabase() {
+
+    public static void getDatabase() {
         Vector<String[]> db = new Vector<String[]>();
         String[] cScript = null;
         try {
 
-            RequestInfo requestInfo = Plugin.getRequest(new URL("http://files.thau-ex.de/reconnect/"));
-            Vector<Vector<String>> cats = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+            RequestInfo requestInfo = Plugin.getRequest(new URL("http://reconnect.thau-ex.de/"));
+            ArrayList<ArrayList<String>> cats = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
 
             for (int i = 0; i < cats.size(); i++) {
-                requestInfo = Plugin.getRequest(new URL("http://files.thau-ex.de/reconnect/?cat_select=" + cats.get(i).get(0)));
-                Vector<Vector<String>> router = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+                requestInfo = Plugin.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats.get(i).get(0)));
+                ArrayList<ArrayList<String>> router = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
 
                 for (int t = 0; t < router.size(); t++) {
-                    String endURL = "http://files.thau-ex.de/reconnect/?cat_select=" + router.get(t).get(0) + "&show=" + router.get(t).get(1);
+                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router.get(t).get(0) + "&show=" + router.get(t).get(1);
                     requestInfo = Plugin.getRequest(new URL(endURL));
                     // s logger.info(requestInfo.getHtmlCode() + "");
 
                     String code = Plugin.getSimpleMatch(requestInfo.getHtmlCode(), "<textarea name=\"ReconnectCode\" °>°</textarea", 1);
 
-                    String script = getScriptFromCURL(code);
+                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router.get(t).get(2)));
                     if (script == null) {
 
                         cScript = new String[] { router.get(t).get(0), router.get(t).get(2), code };
@@ -430,7 +435,7 @@ public class HTTPLiveHeader extends Interaction {
         ch.clear();
         JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
     }
-    private String[] getParameter(String code) {
+    public static String[] getParameter(String code) {
         logger.info("st " + code);
         //boolean qOpen = false;
         Vector<String> ret = new Vector<String>();
@@ -479,10 +484,13 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
-    private String getScriptFromCURL(String code) {
+    public static String getScriptFromCURL(String code, String name) {
+        String SEPARATOR="\r\n";
         String ret = "[[[HSRC]]]" + SEPARATOR + "";
         try {
-
+            ret += "    [[[STEP]]]" + SEPARATOR + "";
+            ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
+            ret += "    [[[/STEP]]]" + SEPARATOR;
             String[] lines = JDUtilities.splitByNewline(code);
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].trim().toLowerCase().startsWith("curl")) {
@@ -554,7 +562,7 @@ public class HTTPLiveHeader extends Interaction {
         ret += "[[[/HSRC]]]" + SEPARATOR;
         return ret;
     }
-*/
+
     private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
         if (requestInfo == null) return;
 

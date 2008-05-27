@@ -54,6 +54,8 @@ gui.images.package_closed = default/package_closed
 gui.images.link=default/link
 gui.images.selected=default/checked
 gui.images.unselected=default/unchecked
+gui.images.warning=default/dialog_warning
+
 
 gui.icons.copy=default/editcopy
 gui.icons.cut=default/editcut

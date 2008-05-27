@@ -384,11 +384,12 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
                 int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
 try{
     
-
+            value=Math.min((Integer)((SpinnerNumberModel)((JSpinner) input[0]).getModel()).getMaximum(),value);
+                value=Math.max((Integer)((SpinnerNumberModel)((JSpinner) input[0]).getModel()).getMinimum(),value);
                 ((JSpinner) input[0]).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
 
 }catch(Exception e){
-    
+    e.printStackTrace();
 }
                 break;
             case ConfigContainer.TYPE_RADIOFIELD:

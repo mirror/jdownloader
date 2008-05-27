@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.utils.JDLocale;
@@ -74,6 +75,12 @@ public class BatchReconnect extends Interaction implements Serializable {
         }
 
         String afterIP = JDUtilities.getIPAddress();
+      
+        if(!JDUtilities.validateIP(afterIP)){
+            logger.warning("IP "+afterIP+" was filtered by mask: "+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short","Die IP %s wurde als nicht erlaubt identifiziert"),afterIP), null, 20);
+            afterIP=null;
+        }
         logger.finer("Ip after: " + afterIP);
         String pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
         progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));

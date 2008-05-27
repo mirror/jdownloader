@@ -231,6 +231,10 @@ public class Configuration extends Property implements Serializable {
 
     public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
 
+    public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
+
+
+
    
 
   

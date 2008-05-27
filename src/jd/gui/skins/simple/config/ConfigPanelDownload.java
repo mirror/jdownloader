@@ -18,11 +18,13 @@ package jd.gui.skins.simple.config;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.controlling.SingleDownloadController;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginForHost;
@@ -80,16 +82,25 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce =new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[]{Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, JDLocale.L("gui.config.general.toDoWithDownloads", "Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START).setExpertEntry(true);
         container.addEntry(ce); 
        
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 60000);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 120000);
         ce.setDefaultValue(10000);
         ce.setStep(500);
         ce.setExpertEntry(true);
         network.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 0, 60000);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 0, 120000);
         ce.setDefaultValue(10000);
         ce.setStep(500);
         ce.setExpertEntry(true);
         network.addEntry(ce);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, SingleDownloadController.WAIT_TIME_ON_CONNECTION_LOSS, JDLocale.L("gui.config.download.connectionlost.wait", "Wartezeit nach Verbindungsabbruch [s]"), 0, 24*60*60);
+        ce.setDefaultValue(5*60);
+        ce.setStep(1);
+        ce.setExpertEntry(true);
+        network.addEntry(ce);
+        
+       
+        
+        
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20);
         ce.setDefaultValue(3);
         ce.setStep(1);
@@ -128,6 +139,12 @@ public class ConfigPanelDownload extends ConfigPanel {
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP"));
         ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setExpertEntry(true);
+        extended.addEntry(ce);
+    
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDLocale.L("gui.config.download.ipcheck.mask", "Erlaubte IPs"));
+        ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         ce.setExpertEntry(true);
         extended.addEntry(ce);

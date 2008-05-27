@@ -709,7 +709,7 @@ public class JDInit {
     public void removeFiles() {
         String[] remove = null;
 
-        // remove = new String[] { "jd/captcha/methods/filefactory.com" };
+       remove = new String[] { "jd/captcha/methods/filefactory.com","jd/captcha/methods/stealth.to"  };
         if (remove != null) for (String file : remove) {
 
             if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {
