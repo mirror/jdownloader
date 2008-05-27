@@ -6,8 +6,6 @@ package jd.gui.skins.simple.components.treetable;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -123,7 +121,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         this.setColumnControlVisible(true);
         SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
-       
+
         this.setEditable(false);
 
         setDragEnabled(true);
@@ -328,17 +326,42 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;
-
+                        int nulls = 0;
                         for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                             next3 = it3.next();
-                            if (!next.getKey().contains(next3)) continue;
+                            if (!next.getKey().contains(next3)) {
+                                nulls++;
+                                continue;
+                            }
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
+                            if (next3 == null) nulls++;
                             i++;
                             // logger.info(" children: " + next3 + " - " +
                             // ind[i]);
                         }
+                        if (nulls > 0) {
+                            logger.warning("GUI Update error.");
+                            objs = new Object[next.getValue().size() - nulls];
+                            if (next.getValue().size() - nulls == 0) return;
+                            ind = new int[next.getValue().size() - nulls];
+                            objs = new Object[next.getValue().size() - nulls];
+                            i = 0;
+                            for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
+                                next3 = it3.next();
+                                if (!next.getKey().contains(next3)) {
+
+                                    continue;
+                                }
+                                ind[i] = next.getKey().indexOf(next3);
+                                objs[i] = next3;
+
+                                i++;
+
+                            }
+                        }
                         if (i > 0) {
+                            // if(model.getRoot()==null || )
                             supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
                         }
                     }
@@ -1129,7 +1152,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         Vector<FilePackage> fps = getSelectedFilePackages();
         this.moved = links;
         this.ignoreSelectionsAndExpansions(2000);
-logger.info(links.size()+" - "+fps.size());
+        logger.info(links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {
             if (links.size() == 0) return;
             // getDownladTreeTableModel().move(draggingPathes, preLink,
@@ -1203,7 +1226,5 @@ logger.info(links.size()+" - "+fps.size());
         timer.start();
 
     }
-
-
 
 }

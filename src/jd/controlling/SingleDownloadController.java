@@ -700,17 +700,18 @@ public class SingleDownloadController extends Thread {
     private void onErrorBotdetection(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         // Bot erkannt. Interaction!
         logger.severe("Error occurred: Bot detected");
-
+        downloadLink.setEndOfWaittime(0);
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         new CaptchaMethodLoader().interact(plugin.getHost());
-        if (plugin.getBotWaittime() < 0 && controller.requestReconnect()) {
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            downloadLink.setEndOfWaittime(0);
+        if (plugin.getBotWaittime() < 0 ) {
+            downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2*60*1000);
+            downloadLink.setStatusText(JDLocale.L("controller.status.botWaitReconnect", "Bot. Warte auf Reconnect"));
         } else if (plugin.getBotWaittime() > 0) {
 
-            downloadLink.setEndOfWaittime(System.currentTimeMillis() + plugin.getBotWaittime());
+          
             downloadLink.setStatusText(JDLocale.L("controller.status.botWait", "Botwait "));
+            
             while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 try {
