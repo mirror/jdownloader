@@ -335,7 +335,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                             }
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
-                            if (next3 == null) nulls++;
+                            
                             i++;
                             // logger.info(" children: " + next3 + " - " +
                             // ind[i]);
@@ -347,13 +347,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                             ind = new int[next.getValue().size() - nulls];
                             objs = new Object[next.getValue().size() - nulls];
                             i = 0;
+                            nulls=0;
                             for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                                 next3 = it3.next();
                                 if (!next.getKey().contains(next3)) {
-
+                                    nulls++;
                                     continue;
                                 }
-                                ind[i] = next.getKey().indexOf(next3);
+                                ind[i] = next.getKey().indexOf(next3)-nulls;
                                 objs[i] = next3;
 
                                 i++;
