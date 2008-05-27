@@ -991,7 +991,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_CLIPBOARD:
             logger.finer("Clipboard");
             JDUtilities.getController().getClipboard().toggleActivation();
-            btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+            
             break;
         case JDAction.APP_CES:
             logger.finer("CES");
@@ -1121,15 +1121,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void toggleReconnect(boolean message) {
         boolean checked = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, checked);
-        btnToggleReconnect.setSelected(checked);
+
         JDUtilities.saveConfig();
-        btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
+
         /*
          * Steht hier, weil diese Funktion(toggleReconnect) direkt vom Trayicon
          * Addon aufgerufen wird und ich dennoch die Gui aktuell halten will
          */
-        if (checked && message) this.showMessageDialog("Reconnect is now disabled! Do not forget to reactivate this feature!");
-        /* fixme: bitte die message box lokalisieren */
+        if (checked) displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 10000);
+
     }
 
     public void doReconnect() {
@@ -1803,6 +1803,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     break;
                 case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
                     if (event.getSource().getClass() == JDController.class) {
+                    }
+                    break;
+
+                case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
+                    Property p = (Property) event.getSource();
+                    if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {
+                        btnToggleReconnect.setSelected(p.getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
+                        btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
+
+                    }
+                    
+                    if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
+                        btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+                        btnClipBoard.setSelected(p.getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE));
+                       
                     }
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
