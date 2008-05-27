@@ -326,12 +326,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;
-                        int nulls = 0;
+                        //int nulls = 0;
                         for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                             next3 = it3.next();
                             if (!next.getKey().contains(next3)) {
-                                nulls++;
-                                continue;
+                                return;
+//                                nulls++;
+//                                continue;
                             }
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
@@ -340,27 +341,27 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                             // logger.info(" children: " + next3 + " - " +
                             // ind[i]);
                         }
-                        if (nulls > 0) {
-                            logger.warning("GUI Update error.");
-                            objs = new Object[next.getValue().size() - nulls];
-                            if (next.getValue().size() - nulls == 0) return;
-                            ind = new int[next.getValue().size() - nulls];
-                            objs = new Object[next.getValue().size() - nulls];
-                            i = 0;
-                            nulls=0;
-                            for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
-                                next3 = it3.next();
-                                if (!next.getKey().contains(next3)) {
-                                    nulls++;
-                                    continue;
-                                }
-                                ind[i] = next.getKey().indexOf(next3)-nulls;
-                                objs[i] = next3;
-
-                                i++;
-
-                            }
-                        }
+//                        if (nulls > 0) {
+//                            logger.warning("GUI Update error.");
+//                            objs = new Object[next.getValue().size() - nulls];
+//                            if (next.getValue().size() - nulls == 0) return;
+//                            ind = new int[next.getValue().size() - nulls];
+//                            objs = new Object[next.getValue().size() - nulls];
+//                            i = 0;
+//                            nulls=0;
+//                            for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
+//                                next3 = it3.next();
+//                                if (!next.getKey().contains(next3)) {
+//                                    nulls++;
+//                                    continue;
+//                                }
+//                                ind[i] = next.getKey().indexOf(next3)-nulls;
+//                                objs[i] = next3;
+//
+//                                i++;
+//
+//                            }
+//                        }
                         if (i > 0) {
                             // if(model.getRoot()==null || )
                             supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
