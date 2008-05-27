@@ -294,11 +294,11 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         this.containerPanels.add(p);
         configPanels.add(null);
         
-        int m = 10;
+        int m = 2;
         JPanel headerPanel = new JPanel(new BorderLayout(m,m));
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(img));
         headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
-        // headerPanel.add(new JXTitledSeparator("Einstellungen"), BorderLayout.SOUTH);
+        headerPanel.add(new JXTitledSeparator(""), BorderLayout.SOUTH);
         p.add(headerPanel , BorderLayout.NORTH);
         
         
