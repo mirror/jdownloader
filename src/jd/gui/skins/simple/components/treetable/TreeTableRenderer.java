@@ -195,6 +195,8 @@ if(version>=1.6){
             return label;
         } else if (value instanceof FilePackage) {
             fp = (FilePackage) value;
+            
+            System.out.print(fp.getLinksFinished());
             if (fp.getPercent() == 0.0) {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setStringPainted(true);

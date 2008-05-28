@@ -69,7 +69,7 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             
             
             
-            JDUtilities.getLogger().severe(((FilePackage) value).getLinksFinished()+"");
+        
             if (expanded) {
                 lbl_fp_opened.setText(((FilePackage) value).getName());
                 if (selected) {
