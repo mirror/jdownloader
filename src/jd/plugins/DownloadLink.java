@@ -466,8 +466,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Größe der Datei
      */
     public long getDownloadMax() {
-
-        return downloadMax;
+      
+        return Math.max(getDownloadCurrent(),downloadMax);
     }
 
     /**

@@ -6,6 +6,8 @@ package jd.gui.skins.simple.components.treetable;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -67,7 +69,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
-public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener {
+public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
     private Logger logger = JDUtilities.getLogger();
 
     public static final String PROPERTY_EXPANDED = "expanded";
@@ -129,6 +131,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         addTreeExpansionListener(this);
         addTreeSelectionListener(this);
         addMouseListener(this);
+        addKeyListener(this);
         this.addMouseMotionListener(this);
         this.setTransferHandler(transferHandler = new TreeTableTransferHandler(this));
         if (JDUtilities.getJavaVersion() > 1.6) this.setDropMode(DropMode.USE_SELECTION);
@@ -249,7 +252,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             if (e.isAddedPath(path)) {
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
-
+                    DownloadLink link = ((DownloadLink) path.getLastPathComponent());
                     logger.info("SELECTED " + ((DownloadLink) path.getLastPathComponent()));
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
@@ -320,49 +323,50 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                     if (!model.containesPackage(next.getKey())) continue;
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
-                 
+
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
-                        
+
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;
-                        //int nulls = 0;
+                        // int nulls = 0;
                         for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
                             next3 = it3.next();
                             if (!next.getKey().contains(next3)) {
-                             //return;
-//                                nulls++;
+                                // return;
+                                // nulls++;
                                 logger.warning("Dauniel bug");
                                 continue;
                             }
                             ind[i] = next.getKey().indexOf(next3);
                             objs[i] = next3;
-                            
+
                             i++;
                             // logger.info(" children: " + next3 + " - " +
                             // ind[i]);
                         }
-//                        if (nulls > 0) {
-//                            logger.warning("GUI Update error.");
-//                            objs = new Object[next.getValue().size() - nulls];
-//                            if (next.getValue().size() - nulls == 0) return;
-//                            ind = new int[next.getValue().size() - nulls];
-//                            objs = new Object[next.getValue().size() - nulls];
-//                            i = 0;
-//                            nulls=0;
-//                            for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
-//                                next3 = it3.next();
-//                                if (!next.getKey().contains(next3)) {
-//                                    nulls++;
-//                                    continue;
-//                                }
-//                                ind[i] = next.getKey().indexOf(next3)-nulls;
-//                                objs[i] = next3;
-//
-//                                i++;
-//
-//                            }
-//                        }
+                        // if (nulls > 0) {
+                        // logger.warning("GUI Update error.");
+                        // objs = new Object[next.getValue().size() - nulls];
+                        // if (next.getValue().size() - nulls == 0) return;
+                        // ind = new int[next.getValue().size() - nulls];
+                        // objs = new Object[next.getValue().size() - nulls];
+                        // i = 0;
+                        // nulls=0;
+                        // for (Iterator<DownloadLink> it3 =
+                        // next.getValue().iterator(); it3.hasNext();) {
+                        // next3 = it3.next();
+                        // if (!next.getKey().contains(next3)) {
+                        // nulls++;
+                        // continue;
+                        // }
+                        // ind[i] = next.getKey().indexOf(next3)-nulls;
+                        // objs[i] = next3;
+                        //
+                        // i++;
+                        //
+                        // }
+                        // }
                         if (i > 0) {
                             // if(model.getRoot()==null || )
                             supporter.fireChildrenChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }), ind, objs);
@@ -1227,6 +1231,57 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         });
         timer.setRepeats(false);
         timer.start();
+
+    }
+
+    public void keyPressed(KeyEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void keyReleased(KeyEvent e) {
+
+        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+
+            Vector<DownloadLink> links = this.getSelectedDownloadLinks();
+            Vector<FilePackage> fps = this.getSelectedFilePackages();
+
+            if (fps.size() == 0 && links.size() == 0) return;
+
+            for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                DownloadLink link = it.next();
+                for (Iterator<FilePackage> it2 = fps.iterator(); it2.hasNext();) {
+                    if (it2.next().contains(link)) {
+                        it.remove();
+                        break;
+                    }
+                }
+
+            }
+
+            if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
+
+                    // zuerst Pakete entfernen
+                    for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
+                        JDUtilities.getController().removePackage(it.next());
+                    }
+                    //
+                    JDUtilities.getController().removeDownloadLinks(links);
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+
+                    // fireUIEvent(new UIEvent(this,
+                    // UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
+
+                }
+            }
+
+        }
+
+    }
+
+    public void keyTyped(KeyEvent e) {
+        // TODO Auto-generated method stub
 
     }
 

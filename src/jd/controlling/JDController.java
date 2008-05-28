@@ -300,9 +300,9 @@ public class JDController implements ControlListener, UIListener {
                 this.removeDownloadLink(lastDownloadFinished);
                 this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
-            } else {
+            } 
                 saveDownloadLinks();
-            }
+            
 
             break;
         case ControlEvent.CONTROL_CAPTCHA_LOADED:

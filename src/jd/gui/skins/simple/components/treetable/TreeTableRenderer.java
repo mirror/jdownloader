@@ -87,7 +87,9 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private DownloadLink link;
 
-    private Double version;;
+    private Double version;
+
+    private MiniBar miniBar;;
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
@@ -138,7 +140,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
         this.label = new JLabel();
         this.label.setOpaque(false);
-
+       this.miniBar=new MiniBar();
         this.progress = new JProgressBar();
 this.version=JDUtilities.getJavaVersion();
 JDUtilities.getLogger().info("Version "+version);
@@ -163,20 +165,10 @@ if(version>=1.6){
             double pv;
             if (filePackage.getLinksFinished() == 0) pv = 1;
             else pv = 1.0 - (filePackage.getLinksFinished()/((double)filePackage.size()));
-            final double p = pv;
-            JLabel cell = new JLabel(label){
-                @Override
-                protected void paintComponent(Graphics g) {
-                    if (p!=0) {
-                        int n = 5;
-                        int start = getHeight()-n;
-                        ((Graphics2D) g).setPaint(new GradientPaint(0,0,Color.green, getWidth(), getHeight(), Color.red));
-                        g.fillRect(0, start, (int) (getWidth()*p), n);
-                    }
-                    super.paintComponent(g);
-                }
-            };
-            return cell;
+            //final double p = pv;
+            miniBar.setText(label);
+            miniBar.setPercent(pv);
+            return miniBar;
         }
         
         if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
@@ -292,5 +284,28 @@ if(version>=1.6){
         return co;
 
     }
-
+private class MiniBar extends JLabel{
+  
+        /**
+     * 
+     */
+    private static final long serialVersionUID = -3508403269097752259L;
+        private double p;
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (p!=0) {
+                int n = 3;
+                int start = getHeight()-n;
+                ((Graphics2D) g).setPaint(new GradientPaint(0,0,ACTIVE_PROGRESS_COLOR, getWidth(), getHeight(), ACTIVE_PROGRESS_COLOR.darker()));
+                g.fillRect(0, start, (int) (getWidth()*p), n);
+            }
+            super.paintComponent(g);
+        }
+        public void setPercent(double percent){
+            p=percent;
+        }
+        public double getPercent(){
+            return p;
+        }
+}
 }

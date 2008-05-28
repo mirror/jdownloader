@@ -111,7 +111,7 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = false;
+    protected boolean speedDebug = true;
 
     private Vector<Exception> exceptions = null;
 

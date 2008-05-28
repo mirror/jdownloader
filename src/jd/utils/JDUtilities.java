@@ -914,6 +914,9 @@ public class JDUtilities {
                 // Object15475dea4e088fe0e9445da30604acd1
                 // Object80d11614908074272d6b79abe91eeca1
                 // logger.info("Loaded Object (" + hash + "): ");
+                
+            
+                
                 return objectLoaded;
             } catch (ClassNotFoundException e) {
                 logger.severe(e.getMessage());
@@ -999,6 +1002,7 @@ public class JDUtilities {
                 // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
                 // " + hashPost);
             }
+          
             // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
             // false));
         } else {
