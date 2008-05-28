@@ -352,12 +352,12 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: No Serverconnection");
-        long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60 )* 1000;
+        long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
         try {
             milliSeconds = (Long) step.getParameter();
         } catch (Exception e) {
         }
-        while (milliSeconds > 0 && !this.aborted&& !this.downloadLink.isAborted()) {
+        while (milliSeconds > 0 && !this.aborted && !this.downloadLink.isAborted()) {
 
             downloadLink.setStatusText(JDUtilities.formatSeconds((int) (milliSeconds / 1000)));
             downloadLink.requestGuiUpdate();
@@ -704,20 +704,21 @@ public class SingleDownloadController extends Thread {
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         new CaptchaMethodLoader().interact(plugin.getHost());
-        if (plugin.getBotWaittime() < 0 ) {
-            downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2*60*1000);
+        if (plugin.getBotWaittime() < 0) {
+            downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 * 1000);
             downloadLink.setStatusText(JDLocale.L("controller.status.botWaitReconnect", "Bot. Warte auf Reconnect"));
         } else if (plugin.getBotWaittime() > 0) {
 
-          
+            long wait = plugin.getBotWaittime();
             downloadLink.setStatusText(JDLocale.L("controller.status.botWait", "Botwait "));
-            
-            while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
+
+            while (wait > 0 && !aborted) {
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(2000);
                 } catch (InterruptedException e) {
                 }
+                wait -= 2000;
 
             }
             downloadLink.setStatus(DownloadLink.STATUS_TODO);

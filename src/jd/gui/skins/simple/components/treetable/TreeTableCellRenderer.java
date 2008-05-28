@@ -66,7 +66,10 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             }
             return lbl_link;
         } else if (value instanceof FilePackage) {
-
+            
+            
+            
+            JDUtilities.getLogger().severe(((FilePackage) value).getLinksFinished()+"");
             if (expanded) {
                 lbl_fp_opened.setText(((FilePackage) value).getName());
                 if (selected) {

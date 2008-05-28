@@ -402,7 +402,7 @@ public class JDController implements ControlListener, UIListener {
             }
 
         }
-       // logger.severe("Link " + link + " does not belong to any Package");
+        // logger.severe("Link " + link + " does not belong to any Package");
 
     }
 
@@ -410,7 +410,7 @@ public class JDController implements ControlListener, UIListener {
         if (links == null || links.size() == 0) return;
         Iterator<DownloadLink> iterator = links.iterator();
         while (iterator.hasNext()) {
-            
+
             this.removeDownloadLink(iterator.next());
         }
 
@@ -593,10 +593,10 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean removePackage(FilePackage fp2) {
-        for( Iterator<DownloadLink> it = fp2.getDownloadLinks().iterator();it.hasNext();){
+        for (Iterator<DownloadLink> it = fp2.getDownloadLinks().iterator(); it.hasNext();) {
             it.next().setAborted(true);
         }
-        
+
         synchronized (packages) {
             return packages.remove(fp2);
         }
@@ -629,12 +629,12 @@ public class JDController implements ControlListener, UIListener {
     // }
 
     public void addPackageAt(FilePackage fp, int index) {
-        if(packages.size()==0){
+        if (packages.size() == 0) {
             this.addPackage(fp);
             return;
         }
         if (index > packages.size() - 1) index = packages.size() - 1;
-        if (index < 0) index = 0;        
+        if (index < 0) index = 0;
         synchronized (packages) {
             packages.add(index, fp);
         }
@@ -696,7 +696,6 @@ public class JDController implements ControlListener, UIListener {
         File file = JDUtilities.getResourceFile("links.dat");
         JDUtilities.saveObject(null, packages, file, "links", "dat", Configuration.saveAsXML);
     }
-
 
     public String encryptDLC(String xml) {
         // if(true)return xml;
@@ -788,7 +787,8 @@ public class JDController implements ControlListener, UIListener {
         if (cipher != null) {
 
             JDUtilities.writeLocalFile(file, cipher);
-            if (!JDUtilities.getSubConfig("DLC Parser").getBooleanProperty("HOW_INFO_AFTER_CREATE", true))
+            SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
+            if (!cfg.getBooleanProperty("HOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {
 
@@ -810,11 +810,15 @@ public class JDController implements ControlListener, UIListener {
         // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
-
-            JDUtilities.writeLocalFile(file, cipher);
-            if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
-                loadContainerFile(file);
-                return;
+            SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
+            if (!cfg.getBooleanProperty("HOW_INFO_AFTER_CREATE", false))
+            // Nur Falls Die Meldung nicht deaktiviert wurde
+            {
+                JDUtilities.writeLocalFile(file, cipher);
+                if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+                    loadContainerFile(file);
+                    return;
+                }
             }
             return;
         }
@@ -1056,8 +1060,6 @@ public class JDController implements ControlListener, UIListener {
 
             return false;
         }
-
-    
 
         for (Iterator<FilePackage> packageIterator = packages.iterator(); packageIterator.hasNext();) {
 
@@ -1333,7 +1335,7 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
-        if(controlEvent==null)return;
+        if (controlEvent == null) return;
         if (controlEvent.getID() == ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED) {
             this.increaseChangeID();
         }
@@ -1447,8 +1449,6 @@ public class JDController implements ControlListener, UIListener {
 
         }
         if (wait > 0 && lastReconnectSuccess) return true;
-
-        
 
         logger.finer("Reconnect disabled: " + JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true));
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
@@ -1853,7 +1853,7 @@ public class JDController implements ControlListener, UIListener {
                     // JDUtilities.getLogger().severe("THREAD");
                     if (eventQueue != null && eventQueue.size() > 0) {
                         event = eventQueue.remove(0);
-                        if(event==null)continue;
+                        if (event == null) continue;
                         eventStart = System.currentTimeMillis();
                         currentListener = JDController.this;
                         controlEvent(event);

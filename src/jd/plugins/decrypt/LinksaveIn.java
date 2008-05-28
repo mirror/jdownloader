@@ -110,7 +110,7 @@ public class LinksaveIn extends PluginForDecrypt {
                     ri = getRequest(new URL(parameter));
 
                     if (ri.containsHTML(".dlc")) {
-                        url = parameter + "/" + id + "dlc";
+                        url = parameter + "/" + id + ".dlc";
                         container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                     } else if (ri.containsHTML(".rsdf")) {
                         url = parameter + "/" + id + ".rsdf";
