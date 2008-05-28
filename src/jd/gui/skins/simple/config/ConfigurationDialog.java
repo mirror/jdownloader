@@ -183,7 +183,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         int n = 5;
         JXPanel cp = new JXPanel(new BorderLayout(n,n));
-        cp.setBackgroundPainter(new PinstripePainter<JComponent>(new Color(128, 128, 128, 50), 45d));
         int b = 12;
         cp.setBorder(new EmptyBorder(b,b,b,b));
         setContentPane(cp);
