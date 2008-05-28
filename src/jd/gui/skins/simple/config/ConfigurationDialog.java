@@ -34,6 +34,7 @@ import java.util.Vector;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -47,7 +48,9 @@ import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledSeparator;
+import org.jdesktop.swingx.painter.PinstripePainter;
 import org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeelAddons;
 
 import com.sun.org.apache.xalan.internal.xsltc.compiler.FlowList;
@@ -178,15 +181,19 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         setLayout(new GridBagLayout());
         // JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         int n = 5;
-        JPanel cp = new JPanel(new BorderLayout(n,n));
+        JXPanel cp = new JXPanel(new BorderLayout(n,n));
+        cp.setBackgroundPainter(new PinstripePainter<JComponent>(new Color(128, 128, 128, 50), 45d));
         int b = 12;
         cp.setBorder(new EmptyBorder(b,b,b,b));
         setContentPane(cp);
         JPanel sp = new JPanel(new BorderLayout(n,n));
+        sp.setOpaque(false);
         JPanel btPanel = new JPanel(new FlowLayout(n,n, FlowLayout.RIGHT));
+        btPanel.setOpaque(false);
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
+        chbExpert.setOpaque(false);
         sp.add(chbExpert, BorderLayout.WEST);
         sp.add(btPanel, BorderLayout.EAST);
         // JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
