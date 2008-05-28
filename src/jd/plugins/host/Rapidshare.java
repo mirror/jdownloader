@@ -1582,7 +1582,16 @@ public class Rapidshare extends PluginForHost {
                         return step;
 
                     }
-
+                    
+                    if (requestInfo.getHtmlCode().indexOf(hardwareDefektString) > 0) {
+                        // hardewaredefeklt bei rs.com
+                        step.setStatus(PluginStep.STATUS_ERROR);
+                        step.setParameter(60 * 10);
+                        logger.warning("Rs.com hardwaredefekt");
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        return step;
+                    }
+                    
                     if ((error = getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_ERROR_OCCURED, 2)) != null) {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler: " + error);
