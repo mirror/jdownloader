@@ -256,6 +256,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionAbout;
 
+    private SwingWorker warningWorker;
+
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
@@ -1973,8 +1975,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     warning.setToolTipText(tooltip);
                 }
             });
-
-            new SwingWorker() {
+            if(warningWorker!=null)
+            warningWorker.cancel(true);
+         warningWorker=   new SwingWorker() {
 
                 @Override
                 protected Object doInBackground() throws Exception {
@@ -2003,9 +2006,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                     return null;
                 }
-            }
-
-            .execute();
+            };
+            warningWorker.execute();
+         
 
             if (showtime > 0) {
                 new Thread() {

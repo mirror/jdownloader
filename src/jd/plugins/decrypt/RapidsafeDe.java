@@ -131,12 +131,17 @@ public class RapidsafeDe extends PluginForDecrypt {
                     int index2 = c.indexOf("67657455524c", index1 + 8);
                     c = c.substring(c.indexOf("67657455524c"), index2);
                     // Suchen der zahlen
-                    ArrayList<ArrayList<String>> search1 = getAllSimpleMatches(c, "96070008°07°3c");
-                    ArrayList<ArrayList<String>> search2 = getAllSimpleMatches(c, "070007°08021c960200");
+                    ArrayList<ArrayList<String>> search1 = getAllSimpleMatches(c, Pattern.compile("96070008[^\\s]{2}07([^\\s]{8})3c"));
+                    ArrayList<ArrayList<String>> search2 = getAllSimpleMatches(c, Pattern.compile("4796070007([^\\s]{8})08021c96"));
+                    
                     // Umwandlen der Hexwerte
-                    for (int i = 0; i < 7; i++)
-                        zaehler[i] = (int) Long.parseLong(spin(search1.get(i).get(1).toUpperCase()), 16);
-
+                    for (int i = 0; i < 7; i++){
+                   try{
+                        zaehler[i] = (int) Long.parseLong(spin(search1.get(i).get(0).toUpperCase()), 16);
+                   } catch(Exception e){
+                            e.printStackTrace();
+                        }
+                    }
                     long ax5 = zaehler[0];
                     long ccax4 = zaehler[1];
                     long ax3 = zaehler[2];
@@ -197,6 +202,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                return null;
             }
             step.setParameter(decryptedLinks);
             return step;
