@@ -2,16 +2,23 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.text.DecimalFormat;
+import java.util.Random;
 
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JTable;
+import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -148,7 +155,31 @@ if(version>=1.6){
 
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         // if (column == DownloadTreeTableModel.COL_PROGRESS) {
-        if (value instanceof DownloadLink) {
+        if (column == DownloadTreeTableModel.COL_STATUS && value instanceof FilePackage) {
+            String label = "";
+            FilePackage filePackage = (FilePackage) value;
+            if (filePackage.getLinksInProgress() > 0) label = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
+            if (filePackage.getTotalDownloadSpeed() > 0) label = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+            double pv;
+            if (filePackage.getLinksFinished() == 0) pv = 1;
+            else pv = 1.0 - (filePackage.getLinksFinished()/((double)filePackage.size()));
+            final double p = pv;
+            JLabel cell = new JLabel(label){
+                @Override
+                protected void paintComponent(Graphics g) {
+                    if (p!=0) {
+                        int n = 5;
+                        int start = getHeight()-n;
+                        ((Graphics2D) g).setPaint(new GradientPaint(0,0,Color.green, getWidth(), getHeight(), Color.red));
+                        g.fillRect(0, start, (int) (getWidth()*p), n);
+                    }
+                    super.paintComponent(g);
+                }
+            };
+            return cell;
+        }
+        
+        if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0) {
 
@@ -184,7 +215,7 @@ if(version>=1.6){
             } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
                 progress.setMaximum(dLink.getWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
-                if(ui!=null)   ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                if(ui!=null)    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                 if(ui!=null)   ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 progress.setStringPainted(true);
                 progress.setValue((int) dLink.getRemainingWaittime());
@@ -193,10 +224,8 @@ if(version>=1.6){
             }
             label.setText("");
             return label;
-        } else if (value instanceof FilePackage) {
+        } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
-            
-            System.out.print(fp.getLinksFinished());
             if (fp.getPercent() == 0.0) {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setStringPainted(true);

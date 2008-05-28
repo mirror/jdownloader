@@ -10,7 +10,6 @@ import javax.swing.tree.TreePath;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -172,17 +171,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
                 break;
 
             case COL_HOSTER:
-                try{
-                  
-                
-                value = downloadLink.getHost()+((PluginForHost)downloadLink.getPlugin()).getPluginNameExtension(downloadLink);
-                }catch(Exception e){
-                    value = downloadLink.getHost();  
-                }
+                value = downloadLink.getHost();
                 break;
             case COL_STATUS:
-                value = downloadLink.getStatusText();
-                break;
+                 value = downloadLink.getStatusText();
+                 break;
+//                return downloadLink;
             case COL_PROGRESS:
                 return downloadLink;
 
@@ -204,11 +198,12 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             case COL_STATUS:
                 value = "";
 
-                if (filePackage.getLinksInProgress() > 0) {
-                    value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
-                }
-                if (filePackage.getTotalDownloadSpeed() > 0) value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
-                break;
+//                if (filePackage.getLinksInProgress() > 0) {
+//                    value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
+//                }
+//                if (filePackage.getTotalDownloadSpeed() > 0) value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+//                break;
+                return filePackage;
 
             case COL_PROGRESS:
                 return filePackage;
