@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -35,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
@@ -169,17 +171,33 @@ private Configuration configuration;
         btnAdd.addActionListener(this);
         btnRemove.addActionListener(this);
         btnEdit.addActionListener(this);
-        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//        JDUtilities.ahddToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnRemove, 1, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnEdit, 2, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnTop, 3, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnBottom, 4, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//
+//        JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnRemove, 1, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnEdit, 2, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnTop, 3, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnBottom, 4, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+        JPanel contentPanel = new JPanel(new BorderLayout(5,5));
+        int n = 5;
+        contentPanel.setBorder(new EmptyBorder(0,n,0,n));
+        contentPanel.add(scrollpane, BorderLayout.CENTER);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
+        buttonPanel.add(btnAdd);
+        buttonPanel.add(btnRemove);
+        buttonPanel.add(btnEdit);
+        buttonPanel.add(btnTop);
+        buttonPanel.add(btnBottom);
+        
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+        add(contentPanel, BorderLayout.CENTER);
+//        add(buttonPanel, BorderLayout.SOUTH);
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        add(panel, BorderLayout.CENTER);
 
     }
 

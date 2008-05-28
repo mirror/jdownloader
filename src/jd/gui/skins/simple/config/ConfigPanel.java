@@ -50,7 +50,7 @@ public abstract class ConfigPanel extends JPanel {
     protected Insets               insets           = new Insets(1, 5, 1, 5);
 
     ConfigPanel(UIInterface uiinterface) {
-        int n = 0;
+        int n = 2;
         this.setLayout(new BorderLayout(n,n));
         this.setBorder(new EmptyBorder(n,n,n,n));
         panel = new JPanel(new GridBagLayout());

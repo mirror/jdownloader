@@ -145,20 +145,20 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		JScrollPane scrollpane = new JScrollPane(table);
 		scrollpane.setPreferredSize(new Dimension(400, 200));
 
-		btnEdit = new JButton(JDLocale.L(
-				"gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
-
+		btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
 		btnEdit.addActionListener(this);
-		JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
-				GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//		JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
+//				GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+		JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-		JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
-				GridBagConstraints.NONE, GridBagConstraints.WEST);
+//		JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
+//				GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+	    JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
 		// JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
 		// GridBagConstraints.BOTH, GridBagConstraints.WEST);
 		add(panel, BorderLayout.CENTER);
-
 	}
 
 	private int getSelectedInteractionIndex() {

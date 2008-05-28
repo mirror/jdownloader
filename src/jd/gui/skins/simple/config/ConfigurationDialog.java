@@ -177,6 +177,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         chbExpert = new JCheckBox(JDLocale.L("gui.config.cbo_expert", "Experten Ansicht"));
         chbExpert.setSelected(guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false));
         chbExpert.addActionListener(this);
+        chbExpert.setOpaque(false);
 
         setLayout(new GridBagLayout());
         // JDUtilities.addToGridBag(this, tabbedPane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
@@ -193,7 +194,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
-        chbExpert.setOpaque(false);
         sp.add(chbExpert, BorderLayout.WEST);
         sp.add(btPanel, BorderLayout.EAST);
         // JDUtilities.addToGridBag(this, chbExpert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
