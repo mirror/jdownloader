@@ -90,6 +90,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             inProgress = 0;
             updates.clear();
             boolean rr=false;
+            try{
             for (Iterator<FilePackage> fpsIt = fps.iterator(); fpsIt.hasNext();) {
                 links = fpsIt.next().getDownloadLinks();
 
@@ -178,7 +179,9 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 break;
 
             }
-
+            }catch(Exception e){
+                
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -553,6 +556,10 @@ try{
      */
     public int getTotalSpeed() {
         return totalSpeed;
+    }
+
+    public Vector<SingleDownloadController> getActiveDownloadControllers() {
+        return activeDownloadControllers;
     }
 
 }

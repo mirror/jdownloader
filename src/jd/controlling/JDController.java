@@ -1203,6 +1203,10 @@ public class JDController implements ControlListener, UIListener {
                 }
             }
         }
+        
+        if(!this.watchdog.isAborted()&&watchdog.isAlive()){
+            return Math.max(watchdog.getActiveDownloadControllers().size(), ret);
+        }
         return ret;
     }
 
