@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -1391,6 +1392,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
 
+            Dimension d = new Dimension(5,0);
+            left.add(new Box.Filler(d,d,d));
             left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
             left.add(linkButton);
