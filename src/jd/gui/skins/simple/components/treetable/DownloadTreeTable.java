@@ -322,11 +322,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     supporter.firePathChanged(new TreePath(new Object[] { model.getRoot(), next.getKey() }));
                  
                     if (next.getKey().getBooleanProperty(PROPERTY_EXPANDED, false)) {
-                        for (Iterator<DownloadLink> it3 = next.getValue().iterator(); it3.hasNext();) {
-                            next3 = it3.next();
-                            if (!next.getKey().contains(next3))it3.remove();
                         
-                        }
                         int[] ind = new int[next.getValue().size()];
                         Object[] objs = new Object[next.getValue().size()];
                         int i = 0;

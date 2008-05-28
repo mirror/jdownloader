@@ -391,7 +391,7 @@ public class Serienjunkies extends PluginForHost {
                 if (aborted) return null;
                 FilePackage fp = downloadLink.getFilePackage();
                 int index= fp.indexOf(downloadLink);
-               
+                fp.remove(downloadLink);
                 Vector<Integer> down = new Vector<Integer>();
                 Vector<DownloadLink> ret = new Vector<DownloadLink>();
                 for (int i = dls.size()-1; i >=0; i--) {
@@ -446,12 +446,11 @@ public class Serienjunkies extends PluginForHost {
 	                }
                 }
                 if (down.size() > 0) {
+                    fp.add(downloadLink);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
                     return step;
-                } else {
-                    fp.remove(downloadLink);
                 }
             }
         } catch (Exception e) {

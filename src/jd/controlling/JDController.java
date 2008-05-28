@@ -402,7 +402,7 @@ public class JDController implements ControlListener, UIListener {
             }
 
         }
-        logger.severe("Link " + link + " does not belong to any Package");
+       // logger.severe("Link " + link + " does not belong to any Package");
 
     }
 
