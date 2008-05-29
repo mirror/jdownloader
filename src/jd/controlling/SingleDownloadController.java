@@ -32,6 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -564,10 +565,11 @@ public class SingleDownloadController extends Thread {
         // this);
         // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
         // this);
-        if (controller.requestReconnect()) {
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            downloadLink.setEndOfWaittime(0);
-        }
+        Reconnecter.requestReconnect();
+//        if (Reconnecter.waitForNewIP(0)) {
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            downloadLink.setEndOfWaittime(0);
+//        }
         // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
         // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
         // downloadLink);
@@ -766,10 +768,11 @@ public class SingleDownloadController extends Thread {
         // Download Zeit. Versuch durch eine Interaction einen reconnect
         // zu machen. wenn das klappt nochmal versuchen
 
-        if (controller.requestReconnect()) {
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            downloadLink.setEndOfWaittime(0);
-        }
+//        if (Reconnecter.waitForNewIP(0)) {
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            downloadLink.setEndOfWaittime(0);
+//        }
+        Reconnecter.requestReconnect();
         // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
         // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
         // downloadLink);

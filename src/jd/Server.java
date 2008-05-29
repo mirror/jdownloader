@@ -20,6 +20,7 @@ import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 
@@ -190,7 +191,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addPasswordsSwitch = false;
                 extractSwitch = false;
                 logger.info(currentArg + " parameter");
-                JDUtilities.getController().requestReconnect();
+                Reconnecter.waitForNewIP(1);
                 
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 

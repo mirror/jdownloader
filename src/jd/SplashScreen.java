@@ -21,8 +21,11 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import javax.swing.event.TableModelEvent;
 
 import jd.gui.skins.simple.SimpleGUI;
+
+import jd.utils.JDLocale;
 
 /**
  * <p>
@@ -69,9 +72,14 @@ public class SplashScreen implements ActionListener
 
         private final Timer timer;
         private JProgressBar progressBar;
-        public void setText(String text)
+        public void setText(final String text)
         {
-            progressBar.setString(text);
+            
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    progressBar.setString(text);}
+            });
+          
         }
         public void setVisible(boolean b)
         {
@@ -89,9 +97,15 @@ public class SplashScreen implements ActionListener
         {
             return progressBar.getValue();
         }
-        public void setValue(int perc)
+        public void setValue(final int perc)
         {
-            progressBar.setValue(Math.min(100,perc));
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    progressBar.setValue(Math.min(100,perc));
+                }
+            });
+          
+          
 //            if(perc>70)
 //               
 //            if(perc>99)

@@ -41,6 +41,7 @@ import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class Serienjunkies extends PluginForHost {
     private final static String HOST = "Serienjunkies.org";
@@ -223,16 +224,10 @@ public class Serienjunkies extends PluginForHost {
 
                     }
                     if (con.getContentLength() < 1000) {
-
-                        while (!JDUtilities.getController().requestReconnect()) {
-                            if (aborted) return null;
-                            try {
-                                Thread.sleep(5000);
-
-                            } catch (InterruptedException e) {
-                            }
-
+                        if(!Reconnecter.waitForNewIP(5*60l)){
+                            return null;
                         }
+                    
                         reqinfo = getRequest(new URL(url));
                         cookie = reqinfo.getCookie();
 

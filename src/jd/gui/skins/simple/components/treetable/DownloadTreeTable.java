@@ -1077,7 +1077,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         }
 
         sb.append("</div>");
-        if (sb.length() <= 12) return;
+        if (sb.length() <= 22) return;
         tooltip = HTMLTooltip.show(sb.toString(), this.mousePoint);
 
     }

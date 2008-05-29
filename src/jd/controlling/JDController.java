@@ -58,6 +58,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -538,7 +539,7 @@ public class JDController implements ControlListener, UIListener {
 
             // Interaction.handleInteraction(Interaction.INTERACTION_NEED_RECONNECT,
             // this);
-            if (requestReconnect()) {
+            if (Reconnecter.waitForNewIP(1)) {
                 uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
 
             } else {
@@ -1206,7 +1207,7 @@ public class JDController implements ControlListener, UIListener {
             }
         }
 
-        if (!this.watchdog.isAborted() && watchdog.isAlive()) { return Math.max(watchdog.getActiveDownloadControllers().size(), ret); }
+        if (watchdog!=null&&!this.watchdog.isAborted() && watchdog.isAlive()) { return Math.max(watchdog.getActiveDownloadControllers().size(), ret); }
         return ret;
     }
 
@@ -1401,7 +1402,8 @@ public class JDController implements ControlListener, UIListener {
                         nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
                         nextDownloadLink.setStatusText("");
                         nextDownloadLink.reset();
-
+                        nextDownloadLink.setEndOfWaittime(0);
+                        ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
                         al.add(nextDownloadLink);
                     }
 
@@ -1411,6 +1413,9 @@ public class JDController implements ControlListener, UIListener {
 
         }
 
+      
+        
+        
     }
 
     public void requestDownloadLinkUpdate(DownloadLink link) {
@@ -1436,100 +1441,100 @@ public class JDController implements ControlListener, UIListener {
         return infoFileWriterModule;
     }
 
-    /**
-     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
-     * 
-     * @return
-     */
-
-    public boolean requestReconnect() {
-        int wait = 0;
-        while (isReconnecting) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
-            wait += 500;
-
-        }
-        if (wait > 0 && lastReconnectSuccess) return true;
-        boolean ipChangeSuccess = false;
-        isReconnecting=true;
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
-            //logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
-            if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * 60 * 10)) {
-                this.lastIPUpdate = System.currentTimeMillis();
-                String tmp = CURRENT_IP;
-                CURRENT_IP = JDUtilities.getIPAddress();
-                if (CURRENT_IP!=null&&!tmp.equals(CURRENT_IP)) {
-                    logger.info("Detected external IP Change.");
-                    ipChangeSuccess = true;
-                }
-                JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
-                
-            }
-
-             if (!ipChangeSuccess) {
-                 isReconnecting=false;
-                 return false;
-             }
-        }
-        if (!ipChangeSuccess) {
-            if (this.getForbiddenReconnectDownloadNum() > 0) {
-                logger.finer("Downloads are running. reconnect is disabled");
-                isReconnecting=false;
-                return false;
-            }
-            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
-            String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
-            if (type == null) {
-                isReconnecting=false;
-                logger.severe("Reconnect is not configured. Config->Reconnect!");
-                return false;
-            }
-            isReconnecting = true;
-
-            if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
-                ipChangeSuccess = new ExternReconnect().interact(null);
-            } else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
-                ipChangeSuccess = new BatchReconnect().interact(null);
-            } else {
-                ipChangeSuccess = new HTTPLiveHeader().interact(null);
-            }
-
-            lastReconnectSuccess = ipChangeSuccess;
-            logger.info("Reconnect success: " + ipChangeSuccess);
-        }
-        if (ipChangeSuccess) {
-            synchronized (packages) {
-                Iterator<FilePackage> iterator = packages.iterator();
-                FilePackage fp = null;
-                DownloadLink nextDownloadLink;
-                while (iterator.hasNext()) {
-                    fp = iterator.next();
-                    Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-                    while (it2.hasNext()) {
-                        nextDownloadLink = it2.next();
-                        if (nextDownloadLink.getRemainingWaittime() > 0) {
-                            nextDownloadLink.setEndOfWaittime(0);
-                            logger.finer("REset GLOBALS: " + ((PluginForHost) nextDownloadLink.getPlugin()));
-                            ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-                            nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
-
-                        }
-                    }
-                }
-            }
-
-        }
-        if (ipChangeSuccess) {
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
-        }
-        isReconnecting = false;
-        this.lastIPUpdate = System.currentTimeMillis();
-        CURRENT_IP = JDUtilities.getIPAddress();
-        return ipChangeSuccess;
-    }
+//    /**
+//     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
+//     * 
+//     * @return
+//     */
+//
+//    public boolean requestReconnect() {
+//        int wait = 0;
+//        while (isReconnecting) {
+//            try {
+//                Thread.sleep(500);
+//            } catch (InterruptedException e) {
+//            }
+//            wait += 500;
+//
+//        }
+//        if (wait > 0 && lastReconnectSuccess) return true;
+//        boolean ipChangeSuccess = false;
+//        isReconnecting=true;
+//        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
+//            //logger.finer("Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it");
+//            if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * 60 * 10)) {
+//                this.lastIPUpdate = System.currentTimeMillis();
+//                String tmp = CURRENT_IP;
+//                CURRENT_IP = JDUtilities.getIPAddress();
+//                if (CURRENT_IP!=null&&!tmp.equals(CURRENT_IP)) {
+//                    logger.info("Detected external IP Change.");
+//                    ipChangeSuccess = true;
+//                }
+//                JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
+//                
+//            }
+//
+//             if (!ipChangeSuccess) {
+//                 isReconnecting=false;
+//                 return false;
+//             }
+//        }
+//        if (!ipChangeSuccess) {
+//            if (this.getForbiddenReconnectDownloadNum() > 0) {
+//                logger.finer("Downloads are running. reconnect is disabled");
+//                isReconnecting=false;
+//                return false;
+//            }
+//            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, this);
+//            String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
+//            if (type == null) {
+//                isReconnecting=false;
+//                logger.severe("Reconnect is not configured. Config->Reconnect!");
+//                return false;
+//            }
+//            isReconnecting = true;
+//
+//            if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
+//                ipChangeSuccess = new ExternReconnect().interact(null);
+//            } else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
+//                ipChangeSuccess = new BatchReconnect().interact(null);
+//            } else {
+//                ipChangeSuccess = new HTTPLiveHeader().interact(null);
+//            }
+//
+//            lastReconnectSuccess = ipChangeSuccess;
+//            logger.info("Reconnect success: " + ipChangeSuccess);
+//        }
+//        if (ipChangeSuccess) {
+//            synchronized (packages) {
+//                Iterator<FilePackage> iterator = packages.iterator();
+//                FilePackage fp = null;
+//                DownloadLink nextDownloadLink;
+//                while (iterator.hasNext()) {
+//                    fp = iterator.next();
+//                    Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+//                    while (it2.hasNext()) {
+//                        nextDownloadLink = it2.next();
+//                        if (nextDownloadLink.getRemainingWaittime() > 0) {
+//                            nextDownloadLink.setEndOfWaittime(0);
+//                            logger.finer("REset GLOBALS: " + ((PluginForHost) nextDownloadLink.getPlugin()));
+//                            ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
+//                            nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
+//
+//                        }
+//                    }
+//                }
+//            }
+//
+//        }
+//        if (ipChangeSuccess) {
+//            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, this);
+//        }
+//        isReconnecting = false;
+//        this.lastIPUpdate = System.currentTimeMillis();
+//        CURRENT_IP = JDUtilities.getIPAddress();
+//        return ipChangeSuccess;
+//    }
 
     public ClipboardHandler getClipboard() {
         if (clipboard == null) {

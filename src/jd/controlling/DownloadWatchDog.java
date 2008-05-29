@@ -29,6 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 /**
  * Dieser Controller verwaltet die downloads. Während StartDownloads.java für
@@ -122,17 +123,17 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         inProgress++;
                         currentTotalSpeed += link.getDownloadSpeed();
                     }
-                    if (!rr&&link.isWaitingForReconnect()) {
-
-                        controller.requestReconnect();
-
-                        rr=true;
-
-                    }
+//                    if (!rr&&link.isWaitingForReconnect()) {
+//
+//                        controller.requestReconnect();
+//
+//                        rr=true;
+//
+//                    }
 
                 }
             }
-            
+            Reconnecter.doReconnectIfRequested();
             if (inProgress > 0) {
                 fps = controller.getPackages();
 
@@ -389,19 +390,20 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             // Reconnectversuch gemacht. Die handleInteraction - funktion
             // blockiert den Aufruf wenn es noch weitere Downloads gibt die
             // gerade laufen
-            one: for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
-                for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
-
-                    if (it2.next().isWaitingForReconnect()) {
-
-                        controller.requestReconnect();
-
-                        break one;
-
-                    }
-
-                }
-            }
+        
+//            one: for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
+//                for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
+//
+//                    if (it2.next().isWaitingForReconnect()) {
+//
+//                        controller.requestReconnect();
+//
+//                        break one;
+//
+//                    }
+//
+//                }
+//            }
 
             break;
 

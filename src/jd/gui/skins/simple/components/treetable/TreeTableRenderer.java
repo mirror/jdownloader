@@ -167,7 +167,7 @@ if(version>=1.6){
             else pv = 1.0 - (filePackage.getLinksFinished()/((double)filePackage.size()));
             //final double p = pv;
             miniBar.setText(label);
-            miniBar.setPercent(pv);
+            miniBar.setPercent(1.0-pv);
             return miniBar;
         }
         

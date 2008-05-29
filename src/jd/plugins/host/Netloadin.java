@@ -534,6 +534,7 @@ public class Netloadin extends PluginForHost {
     }
     @Override
     public void resetPluginGlobals() {
+        END_OF_DOWNLOAD_LIMIT=0l;
     }
     @Override
     public String getAGBLink() {

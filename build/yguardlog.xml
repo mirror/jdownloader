@@ -3,15 +3,15 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Mon May 26 19:04:33 CEST 2008
+  Logfile created on Thu May 29 16:27:46 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2582952 bytes
-  Total memory available                        : 5177344 bytes
+  Memory in use after class data structure built: 2734496 bytes
+  Total memory available                        : 5517312 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPConnection not found! -->
@@ -491,7 +491,7 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo postRequest(java.net.URL, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="boolean collectCaptchas()"/>
   <method class="jd.plugins.Plugin" name="java.util.Vector getMatches(java.lang.String, java.util.regex.Pattern)"/>
-  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.Object, java.util.regex.Pattern)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String md5sum(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo readFromURL(jd.plugins.HTTPConnection)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getSimpleMatch(java.lang.Object, java.lang.String, int)"/>
@@ -545,8 +545,10 @@
   <method class="jd.plugins.Plugin" name="java.lang.String getPluginName()"/>
   <method class="jd.plugins.Plugin" name="void setReadTimeout(int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPattern(java.lang.String)"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.Object, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getCoder()"/>
   <method class="jd.plugins.Plugin" name="java.util.ArrayList createMenuitems()"/>
+  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.Object, java.util.regex.Pattern, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getCaptchaCode(java.io.File, jd.plugins.Plugin)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getHost()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getPluginID()"/>
@@ -555,7 +557,6 @@
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequest(java.net.URL)"/>
   <method class="jd.plugins.Plugin" name="int getReadTimeoutFromConfiguration()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getFormInputHidden(java.lang.String, java.lang.String, java.lang.String)"/>
-  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String joinMap(java.util.Map, java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.Vector findPasswords(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getFormInputHidden(java.lang.String)"/>
@@ -564,7 +565,6 @@
   <method class="jd.plugins.Plugin" name="java.lang.String getCookieString(jd.plugins.HTTPConnection)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String findPassword(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="boolean doBotCheck(java.io.File)"/>
-  <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.String, java.util.regex.Pattern, int)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String[] getSimpleMatches(java.lang.Object, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep doStep(jd.plugins.PluginStep, java.lang.Object)"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep nextStep(jd.plugins.PluginStep)"/>
@@ -599,7 +599,7 @@
   <field class="jd.plugins.container.ContainerDLC$1" name="this$0" map="A"/>
   <method class="jd.plugins.container.ContainerDLC$1" name="int compare(java.lang.Object, java.lang.Object)" map="compare"/>
   <field class="jd.plugins.container.ContainerDLC" name="CONFIGNAME" map="O"/>
-  <field class="jd.plugins.container.ContainerDLC" name="PARAM_HOW_INFO_AFTER_CREATE" map="P"/>
+  <field class="jd.plugins.container.ContainerDLC" name="PARAM_SHOW_INFO_AFTER_CREATE" map="P"/>
   <field class="jd.plugins.container.ContainerDLC" name="patternSupported" map="Q"/>
   <field class="jd.plugins.container.ContainerDLC" name="ACTION_SHOW_INFO_AFTER_CREATE" map="R"/>
   <field class="jd.plugins.container.ContainerDLC" name="header" map="S"/>

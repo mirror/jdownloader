@@ -41,6 +41,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class ConfigPanelReconnect extends ConfigPanel implements ActionListener, ControlListener {
     /**
@@ -161,7 +162,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             new Thread() {
                 public void run() {
 
-                    if (JDUtilities.getController().requestReconnect()) {
+                    if (Reconnecter.waitForNewIP(1)) {
                         mld.setText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull")+ "\r\n\r\n\r\n"+mld.getText());
                     } else {
                         

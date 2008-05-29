@@ -4,7 +4,7 @@
     <property name="cls" value="bin" />
     <property name="dist" value="dist" />
     <property name="res" value="ressourcen" />
-	<property name="keystore" value="G:\jdworkspace\jDownloader.keystore" />
+	<property name="keystore" value="D:\jdworkspace\jDownloader.keystore" />
 	<property name="class-path" value="libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/servlet-api-2.5-6.1.8.jar libs/servlet-api-2.5-6.1.8.jar libs/jetty-6.1.8.jar libs/jetty-util-6.1.8.jar libs/jl1.0.jar" />
     <target name="compile">
         <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />

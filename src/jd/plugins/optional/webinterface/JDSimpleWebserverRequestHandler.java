@@ -16,6 +16,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class JDSimpleWebserverRequestHandler {
 
@@ -383,7 +384,7 @@ public class JDSimpleWebserverRequestHandler {
                             logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
                             JDUtilities.getController().stopDownloads();
                         }
-                        if (JDUtilities.getController().requestReconnect()) {
+                        if (Reconnecter.waitForNewIP(1)) {
                             logger.info("Reconnect erfolgreich");
                         } else {
                             logger.info("Reconnect fehlgeschlagen");

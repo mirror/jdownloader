@@ -34,6 +34,7 @@ import jd.gui.skins.simple.ProgressDialog;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class GetRouterInfo {
     public String password = null;
@@ -239,7 +240,7 @@ public class GetRouterInfo {
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
             JDUtilities.saveConfig();
-            if (JDUtilities.getController().requestReconnect()) {
+            if (Reconnecter.waitForNewIP(1)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
                 JDUtilities.saveConfig();

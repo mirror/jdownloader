@@ -1008,7 +1008,7 @@ public class JDUtilities {
         } else {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
-    }
+    } 
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
