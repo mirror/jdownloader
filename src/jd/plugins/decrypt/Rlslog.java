@@ -26,11 +26,6 @@ public class Rlslog extends PluginForDecrypt {
 
     private Pattern patternSupported = getSupportPattern("(http://[*]rlslog.net(/[+]/[+]/#comments|/[+]/#comments))");
 
-    // private Pattern PAT_CAPTCHA = Pattern.compile("<TD><IMG
-    // SRC=\"/gfx/secure/");
-    // private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\"
-    // CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT
-    // TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)");
 
     public Rlslog() {
         super();
@@ -80,18 +75,12 @@ public class Rlslog extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         logger.info("Rlslog Comment Parser");
-        String followcomments = parameter.substring(0, parameter.indexOf("/#comments"));/*
-                                                                                         * FIXME
-                                                                                         * falls
-                                                                                         * url
-                                                                                         * schon
-                                                                                         * auf
-                                                                                         * eine
-                                                                                         * weitere
-                                                                                         * comment
-                                                                                         * page
-                                                                                         * zeigt
-                                                                                         */
+        String followcomments="";
+        
+        if ( parameter.contains("/comment-page")){
+            followcomments = parameter.substring(0, parameter.indexOf("/comment-page"));
+        }else followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
+        
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
