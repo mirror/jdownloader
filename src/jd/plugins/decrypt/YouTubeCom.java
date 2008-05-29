@@ -250,13 +250,15 @@ public PluginStep doStep(PluginStep step, String parameter) {
           String filename = getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1);
           String video_id="";
           String t="";
-
+String cookies = reqinfo.getCookie();
           fp.setName(filename);
           
           //logger.info(reqinfo.getHtmlCode());
 
           //logger.info(getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1));
-          String[] lineSub = getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1).split(",|:");    
+          String match=getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1);
+          if(match==null)return null;
+          String[] lineSub = match.split(",|:");    
  
           for (int i = 0; i < lineSub.length; i++) {           
               String s = lineSub[i];

@@ -1185,6 +1185,7 @@ abstract public class DownloadInterface {
                         // Prüft ob bytes zum Lesen anliegen.
                         if (inputStream.available() > 0) {
                             // kann den connectiontimeout nicht auswerten
+                            if (speedDebug)  logger.finer("Read block");
                             block = source.read(buffer);
 
                         } else {
@@ -1193,6 +1194,7 @@ abstract public class DownloadInterface {
 
                             // wertet den Timeout der connection aus
                             // (HTTPInputStream)
+                            if (speedDebug) logger.finer("check timeout");
                             read = inputStream.read(b, 0, 1);
                             if (read > 0) {
                                 buffer.put(b);
@@ -1224,6 +1226,7 @@ abstract public class DownloadInterface {
                     if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     
                     buffer.flip();
+                    if (speedDebug) logger.finer("write bytes");
                     writeBytes(this);
 
                     buffer.clear();
