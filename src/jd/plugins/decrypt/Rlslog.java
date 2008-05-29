@@ -75,10 +75,11 @@ public class Rlslog extends PluginForDecrypt {
 
         if (parameter.contains("/comment-page")) {
             followcomments = parameter.substring(0, parameter.indexOf("/comment-page"));
-        }if (!parameter.contains("#comments")){
-            parameter+="#comments";
+        }
+        if (!parameter.contains("#comments")) {
+            parameter += "#comments";
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
-        }else{
+        } else {
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
         }
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
@@ -87,7 +88,7 @@ public class Rlslog extends PluginForDecrypt {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url);
                 String[] Links = Plugin.getHttpLinks(reqinfo.getHtmlCode(), null);
-Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
+                Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
                 for (int i = 0; i < Links.length; i++) {
 
                     if (checkLink(Links[i])) {
@@ -95,13 +96,14 @@ Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
                          * links adden, die in der hosterlist stehen
                          */
                         decryptedLinks.add(this.createDownloadlink(Links[i]));
+                        decryptedLinks.lastElement().addSourcePluginPasswords(passs);
                     }
-
                     if (Links[i].contains(followcomments) == true) {
                         /* weitere comment pages abrufen */
                         URL url2 = new URL(Links[i]);
                         RequestInfo reqinfo2 = getRequest(url2);
                         String[] Links2 = Plugin.getHttpLinks(reqinfo2.getHtmlCode(), null);
+                        Vector<String> passs2 = findPasswords(reqinfo2.getHtmlCode());
                         for (int j = 0; j < Links2.length; j++) {
 
                             if (checkLink(Links2[j])) {
@@ -109,13 +111,10 @@ Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
                                  * links adden, die in der hosterlist stehen
                                  */
                                 decryptedLinks.add(this.createDownloadlink(Links2[j]));
-                               
-                                    decryptedLinks.lastElement().addSourcePluginPasswords(passs);
-                                
+                                decryptedLinks.lastElement().addSourcePluginPasswords(passs2);
                             }
                         }
                     }
-
                 }
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
