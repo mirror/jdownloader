@@ -63,7 +63,7 @@ public class XupIn extends PluginForHost {
         
     	super();
         steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        /*steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null)); haben aktuell keine captchas*/
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
     }
