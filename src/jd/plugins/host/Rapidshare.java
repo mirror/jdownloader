@@ -783,7 +783,7 @@ public class Rapidshare extends PluginForHost {
 
         if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
             long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
-            logger.severe("wait (intern) " + waitTime + " minutes");
+            logger.finer("wait (intern) " + waitTime + " minutes");
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
             step.setStatus(PluginStep.STATUS_ERROR);
             logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);

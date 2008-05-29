@@ -757,7 +757,7 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
-        logger.severe("Error occurred: Wait Time " + step);
+        logger.finer("Error occurred: Wait Time " + step);
         long milliSeconds = (Long) step.getParameter();
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText(" " + JDLocale.L("controller.status.reconnect", "Reconnect "));

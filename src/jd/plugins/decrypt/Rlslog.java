@@ -21,7 +21,7 @@ public class Rlslog extends PluginForDecrypt {
     private static final String HOSTER_LIST = "HOSTER_LIST";
     private String[] hosterList;
 
-    private Pattern patternSupported = getSupportPattern("(http://[*]rlslog.net(/[+]/[+]/#comments|/[+]/#comments))");
+    private Pattern patternSupported = getSupportPattern("(http://[*]rlslog.net(/[+]/[+]/#comments|/[+]/#comments|/[+]/))");
 
     public Rlslog() {
         super();
@@ -75,16 +75,19 @@ public class Rlslog extends PluginForDecrypt {
 
         if (parameter.contains("/comment-page")) {
             followcomments = parameter.substring(0, parameter.indexOf("/comment-page"));
-        } else
+        }if (!parameter.contains("#comments")){
+            parameter+="#comments";
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
-
+        }else{
+            followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
+        }
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url);
                 String[] Links = Plugin.getHttpLinks(reqinfo.getHtmlCode(), null);
-
+Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
                 for (int i = 0; i < Links.length; i++) {
 
                     if (checkLink(Links[i])) {
@@ -106,6 +109,9 @@ public class Rlslog extends PluginForDecrypt {
                                  * links adden, die in der hosterlist stehen
                                  */
                                 decryptedLinks.add(this.createDownloadlink(Links2[j]));
+                               
+                                    decryptedLinks.lastElement().addSourcePluginPasswords(passs);
+                                
                             }
                         }
                     }
