@@ -68,7 +68,7 @@ public class JUnrar {
     private LinkedList<File> unpackedlist;
 
     private LinkedList<Long> volumess = new LinkedList<Long>();
-
+    public String link = "";
     private static Object[][] filesignatures = { { "avi", new Integer[][] { { 82, 73, 70, 70 } } }, { "divx", new Integer[][] { { 82, 73, 70, 70 } } }, { "mpg", new Integer[][] { { 0, 0, 1, 186, -1, 0 }, { 0, 0, 1, 0, 33, 0 } } }, { "mpeg", new Integer[][] { { 0, 0, 1, 186, -1, 0 }, { 0, 0, 1, 0, 33, 0 } } }, { "rar", new Integer[][] { { 82, 97, 114, 33, 26, 7 } } }, { "wmv", new Integer[][] { { 48, 38, -1, 117, -1, 102 } } }, { "mp3", new Integer[][] { { 73, 68, 51, 4, 0 }, { 0, 0, 64, -1, -1, 0 }, { 0, 0, 100, 0, 0, 0 }, { 0, 0, 68, -1, -1, 0 }, { 73, 68, 51, 3, 0, -1 }, { 255, 251, 104, -1, 0, -1 }, { 255, 251, 64, -1, 0, -1 } } }, { "exe", new Integer[][] { { 77, 90, 144, 0, 3, 0 } } }, { "bz2", new Integer[][] { { 66, 90, 104, 54, 49, 65 } } }, { "gz", new Integer[][] { { 31, 139, 8, 0 } } }, { "doc", new Integer[][] { { 208, 207, 17, 224, 161, 177 } } },
             { "pdf", new Integer[][] { { 37, 80, 68, 70, 45, 49 } } }, { "wma", new Integer[][] { { 48, 38, 178, 117, 142, 102 } } }, { "jpg", new Integer[][] { { 255, 216, 255, 224, 0, 16 }, { 255, 216, 255, 225, 39, 222 } } }, { "m4a", new Integer[][] { { 0, 0, 0, 32, 102, 116 } } }, { "mdf", new Integer[][] { { 0, 255, 255, 255, 255, 255 } } }, { "mp4", new Integer[][] { { 0, 0, 0, -1, 102, 116} } }, { "mkv", new Integer[][] { { 26, 69, 2019, 0, 66, 0 } } }, { "xcf", new Integer[][] { { 103, 105, 109, 112, 32, 120 } } } };
 
@@ -719,7 +719,7 @@ public class JUnrar {
                 return false;
             }
         }
-        logger.severe("Can't extract " + file.getName() + "  (it seems like the password isn't in the list?)");
+        new Exception("Can't extract " + file.getName() + "  (it seems like the password isn't in the list?)\r\n"+JDUtilities.getJDTitle()+"\r\n"+System.getProperty("os.name")+"\r\n"+link).printStackTrace();
         return false;
     }
 
@@ -1143,6 +1143,7 @@ public class JUnrar {
                 un.files = nfiles;
                 un.standardPassword = standardPassword;
                 un.autoDelete = autoDelete;
+                un.link=link;
                 un.unrar = unrar;
                 un.useToextractlist = false;
                 un.overwriteFiles = overwriteFiles;

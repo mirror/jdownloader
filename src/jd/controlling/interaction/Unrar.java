@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
@@ -108,6 +109,13 @@ public class Unrar extends Interaction implements Serializable {
             }
             unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()), password);
             unrar.useToextractlist = true;
+            Vector<DownloadLink> links = lastFinishedDownload.getFilePackage().getDownloadLinks();
+            if(!links.contains(lastFinishedDownload))
+                links.add(lastFinishedDownload);
+            for (int i = 0; i < links.size(); i++) {
+                unrar.link+=links.get(i).getDownloadURL()+"\r\n";
+            }
+
         } else {
             unrar = new JUnrar();
             unrar.useToextractlist = false;
