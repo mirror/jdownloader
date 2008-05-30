@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -106,11 +107,22 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
         plafs = new String[info.length];
-
+        String defplaf=JDUtilities.getConfiguration().getStringProperty(SimpleGUI.PARAM_PLAF, null);
+        if(defplaf==null)
+        {
+        for (int i = 0; i < info.length; i++) {
+            if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
+                    defplaf=info[i].getName();
+                    break;
+            }
+        }
+        if(defplaf==null)
+            defplaf="Windows";
+        }
         for (int i = 0; i < plafs.length; i++) {
             plafs[i] = info[i].getName();
         }
-        ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue("Windows"));
+        ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue(defplaf));
         look.addEntry(ce);
 
         ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false).setExpertEntry(true));
