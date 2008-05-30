@@ -1606,7 +1606,7 @@ public abstract class Plugin implements ActionListener {
                 }
 
                 if ((link.length() > 6) && (link.substring(0, 7).equals("http://")))
-                    ;
+                    continue;
                 else if (link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
                         link = "http://" + link;
@@ -1631,6 +1631,7 @@ public abstract class Plugin implements ActionListener {
             link = JDUtilities.htmlDecode(link);
             link = link.replaceAll(protocols[0] + "://", "http://");
             link = link.replaceFirst("^www\\..*" + protocols[0] + "://", "http://");
+            link = link.replaceAll("https?://.*http://", "http://");
             for (int j = 1; j < protocols.length; j++) {
                 link = link.replaceFirst("^www\\..*" + protocols[j] + "://", protocols[j] + "://");
             }
