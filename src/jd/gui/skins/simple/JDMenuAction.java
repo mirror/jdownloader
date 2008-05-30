@@ -30,7 +30,9 @@ public class JDMenuAction extends AbstractAction {
         super();
         this.menuItem = mi;
    
+        if(JDUtilities.getJavaVersion()>=1.6){
         putValue(SELECTED_KEY, mi.isSelected());
+        }
         
         putValue(NAME, mi.getTitle());
 

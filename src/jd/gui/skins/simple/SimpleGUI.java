@@ -63,7 +63,6 @@ import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
@@ -256,7 +255,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionAbout;
 
-    private SwingWorker warningWorker;
+    private Thread warningWorker;
+
+    // private SwingWorker warningWorker;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
 
@@ -368,21 +369,39 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          * unreproducible, seemingly random crashes or an unresponsive/frozen
          * GUI.
          */
-        new SwingWorker() {
-
-            @Override
-            protected Object doInBackground() throws Exception {
+        new Thread("guiworker") {
+            public void run() {
                 while (true) {
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
                             interval();
                         }
                     });
-                    Thread.sleep(1000);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
                 }
             }
+        }.start();
 
-        }.execute();
+        // new SwingWorker() {
+        //
+        // @Override
+        // protected Object doInBackground() throws Exception {
+        // while (true) {
+        // EventQueue.invokeLater(new Runnable() {
+        // public void run() {
+        // interval();
+        // }
+        // });
+        // Thread.sleep(1000);
+        // }
+        // }
+        //
+        // }.execute();
 
         // enableOptionalPlugins(true);
     }
@@ -994,7 +1013,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_CLIPBOARD:
             logger.finer("Clipboard");
             JDUtilities.getController().getClipboard().toggleActivation();
-            
+
             break;
         case JDAction.APP_CES:
             logger.finer("CES");
@@ -1143,7 +1162,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
         if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-            int confirm = JOptionPane.showConfirmDialog(frame, JDLocale.L("gui.reconnect.confirm","Wollen Sie sicher eine neue Verbindung aufbauen?"));
+            int confirm = JOptionPane.showConfirmDialog(frame, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"));
             if (confirm == JOptionPane.OK_OPTION) {
                 fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
             }
@@ -1394,8 +1413,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
 
-            Dimension d = new Dimension(5,0);
-            left.add(new Box.Filler(d,d,d));
+            Dimension d = new Dimension(5, 0);
+            left.add(new Box.Filler(d, d, d));
             left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
             left.add(linkButton);
@@ -1818,11 +1837,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         btnToggleReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
 
                     }
-                    
+
                     if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
                         btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
                         btnClipBoard.setSelected(p.getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE));
-                       
+
                     }
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
@@ -1975,40 +1994,41 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     warning.setToolTipText(tooltip);
                 }
             });
-            if(warningWorker!=null)
-            warningWorker.cancel(true);
-         warningWorker=   new SwingWorker() {
+            if (warningWorker != null) warningWorker.interrupt();
+            warningWorker = new Thread() {
 
                 @Override
-                protected Object doInBackground() throws Exception {
+           public void run() {
                     for (int i = 0; i < 5; i++) {
                         try {
                             Thread.sleep(300);
                         } catch (Exception e) {
                         }
+                        if(this.isInterrupted())return;
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 warning.setEnabled(false);
                             }
                         });
+                        if(this.isInterrupted())return;
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
                         }
-
+                        if(this.isInterrupted())return;
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 warning.setEnabled(true);
                             }
                         });
+                        if(this.isInterrupted())return;
 
                     }
 
-                    return null;
+                 
                 }
             };
-            warningWorker.execute();
-         
+            warningWorker.start();
 
             if (showtime > 0) {
                 new Thread() {

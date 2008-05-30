@@ -165,7 +165,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         int tabs = tabbedPane.getTabCount();
         for (int i = 0; i < tabs; i++) {maxLength = Math.max(maxLength, tabbedPane.getTitleAt(i).length());}
         for (int i = 0; i < tabs; i++) {tabbedPane.setTitleAt(i, fill(tabbedPane.getTitleAt(i), maxLength+1));}
-        tabbedPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+       if(JDUtilities.getJavaVersion()>1.6)tabbedPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
 
         
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));

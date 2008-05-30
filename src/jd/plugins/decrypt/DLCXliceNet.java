@@ -92,7 +92,7 @@ public class DLCXliceNet extends PluginForDecrypt {
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
         step.setParameter(decryptedLinks);
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
+//http://xlice.net/getdlc/2b923de22cfb3009d82c84fa9ff37ae1
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             if (JDUtilities.download(container, parameter)) {
                 

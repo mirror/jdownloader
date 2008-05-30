@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
     private Pattern patternSupported = getSupportPattern("http://dlc.xlice.net/[+]/[+]/[+]/[+]/[+]");
 
     public static ArrayList<String> openedLinks = new ArrayList<String>();;
-
+    public static HashMap<String,String> lists = new HashMap<String,String>();
     public DLCXliceNetRedirect() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -84,9 +85,10 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-
+           // http://xlice.net/folder/f786e5cdc2ca2172e2648c1c72104793/
             progress.setRange(1);
             try {
+               
                 RequestInfo ri = getRequestWithoutHtmlCode(new URL(parameter), null, null, false);
                 //logger.info(ri.getHeaders() + "");
                 if (ri.getLocation() != null&&!openedLinks.contains(ri.getLocation())) {
@@ -106,6 +108,22 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
                         openedLinks.add(ri.getLocation());
                     } else {
                         decryptedLinks.add(this.createDownloadlink(ri.getLocation()));
+                        
+                        String name=getSimpleMatch(parameter+"/","http://dlc.xlice.net/°/°/°/°/°/",4);
+                        String org=name;
+                        name=name.substring(0,name.indexOf("."));
+                        File f= JDUtilities.getResourceFile("container/xlice_"+name+".txt");
+                        String c="";
+                    
+                        if(lists.containsKey(name)){
+                            c=lists.get(name);
+                        }
+                        
+                        
+                        
+                        c+=org+": "+ri.getLocation()+"\r\n";
+                        lists.put(name, c);
+                        JDUtilities.writeLocalFile(f, c);
                     }
                 } else {
 
