@@ -141,7 +141,7 @@ public class ClipboardHandler extends Thread {
                         if (!data.equals(olddata)) {
                             olddata = data;
                        
-                            distributeData = new DistributeData(data);
+                            distributeData = new DistributeData(data, true);
                             distributeData.addControlListener(JDUtilities.getController());
                             distributeData.start();
                         }

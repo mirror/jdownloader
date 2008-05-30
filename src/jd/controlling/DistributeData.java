@@ -17,6 +17,9 @@
 
 package jd.controlling;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,6 +31,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.Regexp;
+import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**
@@ -58,6 +63,11 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean                  startDownload;
 
+    /**
+     * Aufruf von Clipboard Überwachung
+     */
+    private boolean                  clipboard = false;
+
     private Vector<DownloadLink>     linkData;
 
     /**
@@ -70,21 +80,65 @@ public class DistributeData extends ControlBroadcaster {
         super("JD-DistributeData");
         this.data = data;
         try {
-            // this.data = URLDecoder.decode(this.data, "UTF-8");
-        }
-        catch (Exception e) {
+            this.data = URLDecoder.decode(this.data, "UTF-8");
+        } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
     }
+    
     public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
         super("JD-DistributeData");
         this.data = data;
+        try {
+            this.data = URLDecoder.decode(this.data, "UTF-8");
+        } catch (Exception e) {
+            logger.warning("text not url decodeable");
+        }
         this.hideGrabber = hideGrabber;
         this.startDownload = startDownload;
     }
+    
+    public DistributeData(String data, boolean fromClipboard) {
+        super("JD-DistributeData");
+        this.data = data;
+        try {
+            this.data = URLDecoder.decode(this.data, "UTF-8");
+        } catch (Exception e) {
+            logger.warning("text not url decodeable");
+        }
+        if ( fromClipboard ) this.clipboard = true;
+    }
 
     public void run() {
+    	
         Vector<DownloadLink> links = findLinks();
+        
+        if ( links.size() == 0 && !clipboard ) {
+
+        	logger.info("No supported links found -> search for links in source code of all urls");
+        	String[] urls = Plugin.getHttpLinks(data, null);
+        	
+        	if ( urls.length > 0 ) this.data = "";
+        	
+        	for ( String url : urls ) {
+        		
+                try {
+                	
+					RequestInfo requestInfo = Plugin.getRequest(new URL(url));
+					data += requestInfo.getHtmlCode() + " ";
+					
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+        		
+        	}
+        	
+        	links = findLinks();
+        	
+        }
+        
         Collections.sort(links);
         
         if (hideGrabber && startDownload) {
@@ -112,14 +166,12 @@ public class DistributeData extends ControlBroadcaster {
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
         Vector<String> foundpassword = Plugin.findPasswords(data);
-
-
+        
         // Zuerst wird data durch die Such Plugins geschickt.
-       // decryptedLinks.addAll(handleSearchPlugins());
-
+        // decryptedLinks.addAll(handleSearchPlugins());
+		
         reformDataString();
-
-
+		
         // es werden die entschlüsselten Links (soweit überhaupt
         // vorhanden)
         // an die HostPlugins geschickt, damit diese einen Downloadlink
@@ -289,7 +341,7 @@ public class DistributeData extends ControlBroadcaster {
     private void reformDataString() {
         if (data != null) {
             data = Plugin.getHttpLinkList(data);
-
+            
             try {
                 this.data = URLDecoder.decode(this.data, "UTF-8");
             }
