@@ -241,7 +241,7 @@ public class JDController implements ControlListener, UIListener {
     public void exit() {
         saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
-
+        Interaction.handleInteraction(Interaction.INTERACTION_EXIT,null);
         System.exit(0);
     }
 
@@ -792,7 +792,7 @@ public class JDController implements ControlListener, UIListener {
             JDUtilities.writeLocalFile(file, cipher);
             SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
             if (!cfg.getBooleanProperty("HOW_INFO_AFTER_CREATE", false))
-            // Nur Falls Die Meldung nicht deaktiviert wurde
+    
             {
 
                 if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {

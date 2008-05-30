@@ -328,7 +328,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public synchronized void addLinks(DownloadLink[] linkList) {
 
         for (int i = 0; i < linkList.length; i++) {
-
+            if(isDupe(linkList[i]))continue;
             if (linkList[i].isAvailabilityChecked()) {
                 attachLinkTopackage(linkList[i]);
             } else {
@@ -339,7 +339,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             startLinkGatherer();
         }
     }
-
+private boolean isDupe(DownloadLink link){
+  //  http://anonym.to/?http://www.anonymz.com/?http://rapidshare.com/files/117903695/284.Das.Ende.der.Bauplaene.HD.720P.x264.by.M3lloW.part1.rar
+    
+    for(DownloadLink l:waitingLinkList){
+        String a=l.getDownloadURL();
+        String b=link.getDownloadURL();
+        if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
+        
+    }
+    
+    for(PackageTab p:this.tabList){
+        for( DownloadLink l:p.getLinkList()){
+            if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
+        }
+        
+    }
+    return false;
+}
     private void startLinkGatherer() {
         progress.setMaximum(waitingLinkList.size());
         progress.setString(null);

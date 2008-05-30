@@ -35,7 +35,7 @@ public class FileBaseTo extends PluginForHost {
 
     private static final String  VERSION          = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[*]filebase.to/files/[+]/[+]");
+    static private final Pattern patternSupported = getSupportPattern("http://[w]filebase.to/files/[+]/[+]");
 
     //
     @Override

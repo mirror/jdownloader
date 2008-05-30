@@ -224,7 +224,9 @@ public abstract class Plugin implements ActionListener {
      */
     public static Pattern getSupportPattern(String patternString) {
         patternString = patternString.replaceAll("\\[\\*\\]", ".*");
+      
         patternString = patternString.replaceAll("\\[\\+\\]", ".+");
+        patternString = patternString.replaceAll("\\[\\w\\]", "[\\w\\.]*?");
         if (patternString.endsWith(".*") || patternString.endsWith(".+")) {
             patternString = patternString.substring(0, patternString.length() - 2) + "[^\"]" + patternString.substring(patternString.length() - 1);
         }

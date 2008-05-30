@@ -79,7 +79,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         if(!JDUtilities.validateIP(afterIP)){
             logger.warning("IP "+afterIP+" was filtered by mask: "+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
             JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short","Die IP %s wurde als nicht erlaubt identifiziert"),afterIP), null, 20);
-            afterIP=null;
+            afterIP="offline";
         }
         logger.finer("Ip after: " + afterIP);
         String pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
