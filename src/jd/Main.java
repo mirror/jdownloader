@@ -16,6 +16,7 @@ package jd;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
@@ -171,7 +172,6 @@ public class Main {
             // TODO: handle exception
         }
         setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
-
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
 
@@ -224,9 +224,11 @@ public class Main {
                 if (!stop) {
 
                     final Main main = new Main();
-                    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+
+ 
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
+                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
                         }
                     });
@@ -364,14 +366,18 @@ public class Main {
                 JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.ath.cx/faq.php?lng=deutsch"));
             }
         }
-       
 
     }
 
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
+        // System.out.println(l);
         if (splashScreen == null) return;
-        splashScreen.setText(l);
-        splashScreen.setValue(splashScreen.getValue() + i);
+        try {
+            splashScreen.setText(l);
+            splashScreen.setValue(splashScreen.getValue() + i);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
 
     }
 
