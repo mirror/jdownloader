@@ -10,7 +10,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Schedule extends PluginOptional implements ControlListener {
-    
+    public static int getAddonInterfaceVersion(){
+        return 0;
+    }
     ScheduleControl b = new ScheduleControl();
     
     public void initschedule(){

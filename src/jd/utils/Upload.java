@@ -58,7 +58,21 @@ public class Upload {
          return null;
      }
    }
-   
+   public static String toJDownloader(String str, String desc){
+       try {
+       RequestInfo ri = Plugin.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc="+desc+"&log="+str);
+    
+       return "http://jdservice.ath.cx/tools/log.php?id="+ri.getHtmlCode();
+       } catch (MalformedURLException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+    }
+     return null;  
+       
+   }
    public static String toPastebinCa(String str,String name,String desc,String pw){
        try {
            //Logger logger = JDUtilities.getLogger();

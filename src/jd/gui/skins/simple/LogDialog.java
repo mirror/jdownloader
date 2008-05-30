@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.EventQueue;
@@ -61,40 +60,42 @@ public class LogDialog extends JFrame implements ActionListener {
     /**
      * JTextField wo der Logger Output eingetragen wird
      */
-    private JTextArea         logField;
+    private JTextArea logField;
 
     /**
      * JScrollPane fuer das logField
      */
-    private JScrollPane       logScrollPane;
+    private JScrollPane logScrollPane;
 
     /**
      * Knopf zum schliessen des Fensters
      */
-    private JButton           btnOK;
+    private JButton btnOK;
 
-    private JButton           btnSave;
+    private JButton btnSave;
 
     // private JButton btnCensor;
 
-    private JFrame            owner;
+    private JFrame owner;
 
-    private JButton           btnUpload;
+    private JButton btnUpload;
 
     /**
      * Primary Constructor
      * 
-     * @param owner The owning Frame
-     * @param logger The connected Logger
+     * @param owner
+     *            The owning Frame
+     * @param logger
+     *            The connected Logger
      */
     public LogDialog(JFrame owner, Logger logger) {
-      
+
         this.owner = owner;
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         setLayout(new GridBagLayout());
         this.setName("LOGDIALOG");
-   
+
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
         streamHandler.setFormatter(new LogFormatter());
@@ -127,11 +128,11 @@ public class LogDialog extends JFrame implements ActionListener {
         JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
-         this.addWindowListener(list);
-       
+        this.addWindowListener(list);
+
         pack();
         SimpleGUI.restoreWindow(null, null, this);
-       
+
     }
 
     /*
@@ -190,32 +191,27 @@ public class LogDialog extends JFrame implements ActionListener {
 
             String name = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName", "Your name?"));
             String question = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));
-            String pw = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askPW", "Would you like to set a password? Leave empty if not."));
-            if (pw == null || pw.length() < 3) pw = null;
-            String url = Upload.toPastebinCa(content, name, question, pw);
+            // String pw =
+            // JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askPW",
+            // "Would you like to set a password? Leave empty if not."));
+            // if (pw == null || pw.length() < 3) pw = null;
 
+            String url = Upload.toJDownloader(content, name + "\r\n\r\n" + question);
             if (url != null) {
-                String res=null;
-                if (pw != null) {
-                    res=JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url + " (pw: " + pw + ")");
+                String res = null;
 
-                }
-                else {
-                    res=JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
+                res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
 
-                }
-                if(res!=null){
+                if (res != null) {
                     try {
                         JLinkButton.openURL(url);
-                    }
-                    catch (MalformedURLException e1) {
+                    } catch (MalformedURLException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }
 
-            }
-            else {
+            } else {
                 JOptionPane.showMessageDialog(this, JDLocale.L("gui.logDialog.warning.uploadFailed", "Upload failed"));
             }
 
@@ -246,7 +242,8 @@ public class LogDialog extends JFrame implements ActionListener {
         public void write(final int b) throws IOException {
             // Another example where some non-EDT Thread accesses calls a Swing
             // method. This is forbidden and might bring the whole app down.
-            // more info: http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
+            // more info:
+            // http://java.sun.com/products/jfc/tsc/articles/threads/threads1.html
             // and: http://en.wikipedia.org/wiki/Event_dispatching_thread
             if (logField != null) {
                 EventQueue.invokeLater(new Runnable() {
@@ -277,7 +274,8 @@ public class LogDialog extends JFrame implements ActionListener {
          * which initialized the <tt>LogRecord</tt> and forwarded it here.
          * <p>
          * 
-         * @param record description of the log event. A null record is silently
+         * @param record
+         *            description of the log event. A null record is silently
          *            ignored and is not published
          */
         public void publish(LogRecord record) {

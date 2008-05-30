@@ -1274,6 +1274,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     // UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
 
                 }
+            }else{
+                for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
+                    JDUtilities.getController().removePackage(it.next());
+                }
+                //
+                JDUtilities.getController().removeDownloadLinks(links);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+  
             }
 
         }

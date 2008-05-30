@@ -133,7 +133,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static final InteractionTrigger INTERACTION_CONTAINER_DOWNLOAD = new InteractionTrigger(16, JDLocale.L("interaction.trigger.container_download", "Linkcontainer geladen"), JDLocale.L("interaction.trigger.download_download.desc", "Wird aufgerufen wenn ein LinkContainer(DLC,RSDF,CCF,...) geladen wurde"));
 
     
-    public static final InteractionTrigger INTERACTION_EXIT= new InteractionTrigger(17, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
+    public static final InteractionTrigger INTERACTION_EXIT= new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
 
     // /**
     // * Nach einem IP wechsel

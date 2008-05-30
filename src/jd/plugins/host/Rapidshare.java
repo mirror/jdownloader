@@ -1299,7 +1299,10 @@ public class Rapidshare extends PluginForHost {
                         }
 
                         if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
-                        if (!happyhourboolean)getRequest(new URL("http://jdservice.ath.cx/rs/hash.php?code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                        if (!happyhourboolean){
+                            
+                            getRequest(new URL("http://jdservice.ath.cx/rs/hash.php?code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                        }
                         happyhourboolean = false;
 
                         return null;

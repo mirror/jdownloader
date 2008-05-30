@@ -1637,7 +1637,7 @@ public class JDUtilities {
      */
 public static boolean validateIP(String ip){
     return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
-}
+} 
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
      * 

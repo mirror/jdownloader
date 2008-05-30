@@ -30,11 +30,14 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class CountdownConfirmDialog extends JDialog implements ActionListener {
+public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
     /**
      * Bestätigungsknopf
@@ -101,6 +104,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener {
             ((JTextPane) htmlArea).setContentType("text/html");
             ((JTextPane) htmlArea).setText(msg);
             ((JTextPane) htmlArea).requestFocusInWindow();
+            ((JTextPane) htmlArea).addHyperlinkListener(this);
+            
         }
         scrollPane = new JScrollPane(htmlArea);
         JDUtilities.addToGridBag(this, scrollPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
@@ -157,5 +162,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener {
     public static void main(String[] args) {
        showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
 
+    }
+    
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+            
+            JLinkButton.openURL( e.getURL());
+            
+          }
+        
     }
 }

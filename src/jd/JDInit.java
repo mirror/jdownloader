@@ -394,7 +394,7 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDGetter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLightTray", 1.6));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("webinterface.JDWebinterface", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDFolderWatch", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDShutdown", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));

@@ -44,7 +44,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
     private Pattern patternSupported = getSupportPattern("http://dlc.xlice.net/[+]/[+]/[+]/[+]/[+]");
 
     public static ArrayList<String> openedLinks = new ArrayList<String>();;
-    public static HashMap<String,String> lists = new HashMap<String,String>();
+    
     public DLCXliceNetRedirect() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -109,21 +109,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
                     } else {
                         decryptedLinks.add(this.createDownloadlink(ri.getLocation()));
                         
-                        String name=getSimpleMatch(parameter+"/","http://dlc.xlice.net/°/°/°/°/°/",4);
-                        String org=name;
-                        name=name.substring(0,name.indexOf("."));
-                        File f= JDUtilities.getResourceFile("container/xlice_"+name+".txt");
-                        String c="";
-                    
-                        if(lists.containsKey(name)){
-                            c=lists.get(name);
-                        }
-                        
-                        
-                        
-                        c+=org+": "+ri.getLocation()+"\r\n";
-                        lists.put(name, c);
-                        JDUtilities.writeLocalFile(f, c);
+                       
                     }
                 } else {
 
