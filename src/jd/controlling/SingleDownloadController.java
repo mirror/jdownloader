@@ -706,21 +706,23 @@ public class SingleDownloadController extends Thread {
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         new CaptchaMethodLoader().interact(plugin.getHost());
-        if (plugin.getBotWaittime() < 0) {
+        if (plugin.getBotWaittime() <= 0) {
+            Reconnecter.requestReconnect();
             downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 * 1000);
             downloadLink.setStatusText(JDLocale.L("controller.status.botWaitReconnect", "Bot. Warte auf Reconnect"));
         } else if (plugin.getBotWaittime() > 0) {
 
             long wait = plugin.getBotWaittime();
-            downloadLink.setStatusText(JDLocale.L("controller.status.botWait", "Botwait "));
+           
 
             while (wait > 0 && !aborted) {
+                downloadLink.setStatusText(JDLocale.L("controller.status.botWait", "Botwait ")+JDUtilities.formatSeconds((int)wait/1000));
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
                 }
-                wait -= 2000;
+                wait -= 1000;
 
             }
             downloadLink.setStatus(DownloadLink.STATUS_TODO);

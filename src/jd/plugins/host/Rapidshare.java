@@ -1223,7 +1223,7 @@ public class Rapidshare extends PluginForHost {
 
                 actionString = actionString.replace(' ', '+');
                 postParameter.put("mirror", "on");
-                postParameter.put("accesscode", this.captchaCode);
+                postParameter.put("accesscode", "2222");//this.captchaCode);
                 postParameter.put("actionstring", actionString);
                 try {
 
@@ -1232,7 +1232,7 @@ public class Rapidshare extends PluginForHost {
                     // Post Parameter vorbereiten
                     String postParams = createPostParameterFromHashMap(postParameter);
 
-                    postParams = "mirror=on&accesscode=" + captchaCode + "&actionstring=" + actionString;
+                    postParams = "mirror=on&accesscode=" + "2222" + "&actionstring=" + actionString;
 
                     OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
                     wr.write(postParams);

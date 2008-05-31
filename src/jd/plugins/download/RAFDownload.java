@@ -47,14 +47,20 @@ public class RAFDownload extends DownloadInterface {
 
     private RandomAccessFile outputFile;
 
+    private boolean WRITING=false;
+
     protected void writeChunkBytes(Chunk chunk) {
         try {
             // int limit = chunk.buffer.limit()-chunk.buffer.position();
+            while(WRITING){
+               if (speedDebug)logger.finer("Wait to write to HD");
+                Thread.sleep(10);
+            }
             if (maxBytes < 0) {
-                synchronized (outputChannel) {
+                WRITING=true;
                     outputFile.seek(chunk.getWritePosition());
                     outputChannel.write(chunk.buffer);
-                }
+                    WRITING=false;
             } else {
                 chunk.buffer.clear();
             }
@@ -65,6 +71,7 @@ public class RAFDownload extends DownloadInterface {
             error(ERROR_LOCAL_IO);
             addException(e);
         }
+        WRITING=false;
 
     }
 

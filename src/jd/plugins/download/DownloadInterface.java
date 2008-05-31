@@ -111,7 +111,7 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = false;
+    protected boolean speedDebug = true;
 
     private Vector<Exception> exceptions = null;
 
@@ -1195,7 +1195,12 @@ abstract public class DownloadInterface {
                             // wertet den Timeout der connection aus
                             // (HTTPInputStream)
                             if (speedDebug) logger.finer("check timeout");
+                            try{
                             read = inputStream.read(b, 0, 1);
+                            }catch(Exception e){
+                                e.printStackTrace();
+                                read=-1;
+                            }
                             if (read > 0) {
                                 buffer.put(b);
                                 block = read;
