@@ -932,11 +932,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 logger.fine("RemoteControl - Set ReConnect: " + newrc );
                 if((!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) ^ (newrc)) /*C++ User:^ is equivalent to XOR*/
                 {
-                    simplegui.toggleReconnect(false);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+
+                    JDUtilities.saveConfig();
+                    
                     response.getWriter().println("reconnect=" + newrc + " (CHANGED=true)");
                 }
                 else
                 {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+
+                    JDUtilities.saveConfig();
                     response.getWriter().println("reconnect=" + newrc + " (CHANGED=false)");
                 } 
             }

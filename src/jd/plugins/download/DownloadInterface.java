@@ -1185,7 +1185,7 @@ abstract public class DownloadInterface {
                         // Prüft ob bytes zum Lesen anliegen.
                         if (inputStream.available() > 0) {
                             // kann den connectiontimeout nicht auswerten
-                            if (speedDebug)  logger.finer("Read block");
+                            //if (speedDebug)  logger.finer("Read block");
                             block = source.read(buffer);
 
                         } else {

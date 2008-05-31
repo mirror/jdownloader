@@ -302,7 +302,9 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
-            simplegui.toggleReconnect(false);
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,  JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+
+            JDUtilities.saveConfig();
             break;
         case TrayIconPopup.ACTION_UPDATE:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
