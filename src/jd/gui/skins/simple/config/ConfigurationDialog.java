@@ -29,6 +29,8 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Vector;
 
 import javax.swing.ImageIcon;
@@ -60,6 +62,7 @@ import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -303,12 +306,18 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         int m = 2;
         JPanel headerPanel = new JPanel(new BorderLayout(m,m));
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(img));
-        headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
+//        headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
+        try {
+            headerPanel.add(new JLinkButton(title, icon, new URL(JDLocale.L("gui.configdialog.wikilink.theconfigurationmenu", "http://jdownloader.ath.cx/wiki/index.php?title=Konfig:")+title.replaceAll("\\s", "_"))), BorderLayout.NORTH);
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         headerPanel.add(new JXTitledSeparator(""), BorderLayout.SOUTH);
         p.add(headerPanel , BorderLayout.NORTH);
         
         
-        tabbedPane.addTab(title, new ImageIcon(icon.getImage().getScaledInstance(20, -1, Image.SCALE_SMOOTH)), p);
+        tabbedPane.addTab(title, new ImageIcon(icon.getImage().getScaledInstance(20, -1, Image.SCALE_SMOOTH)), p);       
     }
 
     /**
