@@ -16,16 +16,44 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 
+import javax.swing.DefaultListModel;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+
+import org.jdesktop.swingx.graphics.ColorUtilities;
+
+import com.sun.xml.internal.ws.api.server.DocumentAddressResolver;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,6 +64,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
@@ -160,14 +189,89 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                 }
             }
             ch.clear();
-            String[] d = new String[scripts.size()];
+            final String[] d = new String[scripts.size()];
             for (int i = 0; i < d.length; i++) {
                 d[i] = i + ". " + JDUtilities.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
             }
 
-            String selected = (String) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte wähle deinen Router aus"), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
-            if (selected != null) {
-
+//            String selected = (String) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte wähle deinen Router aus"), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
+            JPanel panel = new JPanel(new BorderLayout(10,10));
+            final DefaultListModel defaultListModel = new DefaultListModel();
+            final String text = "Search Router Model";
+            final JTextField searchField = new JTextField();
+            searchField.setForeground(Color.lightGray);
+            final JList list = new JList(defaultListModel);
+            searchField.getDocument().addDocumentListener(new DocumentListener(){
+                public void changedUpdate(DocumentEvent e) {}
+                public void insertUpdate(DocumentEvent e) {refreshList();}
+                public void removeUpdate(DocumentEvent e) {refreshList();}
+                private void refreshList() {
+                    String search = searchField.getText().toLowerCase();
+                    String[] hits = search.split(" ");
+                    defaultListModel.removeAllElements();
+                    for (int i = 0; i < d.length; i++) {
+                        for (int j = 0; j < hits.length; j++) {if (!d[i].toLowerCase().contains(hits[j])) break;}
+                        defaultListModel.addElement(d[i]);
+                    }
+                    list.setModel(defaultListModel);
+                }
+            });
+            searchField.addFocusListener(new FocusAdapter(){
+                boolean onInit = true; 
+                public void focusGained(FocusEvent e) {
+                    System.out.println("focusGained");
+                    if (onInit) {onInit=!onInit; return;} 
+                    searchField.setForeground(Color.black);
+                    if (searchField.getText().equals(text)) searchField.setText("");
+                }
+            });
+            
+            // !!! Eclipse Clear Console Icon
+            ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
+            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
+            JButton reset = new JButton(imageIcon);
+            reset.setBorder(null);
+            reset.setOpaque(false);
+            reset.setContentAreaFilled(false);
+            reset.setBorderPainted(false);
+            reset.addActionListener(new ActionListener(){
+                public void actionPerformed(ActionEvent e) {
+                    searchField.setForeground(Color.lightGray);
+                    searchField.setText(text);
+                    for (int i = 0; i < d.length; i++) {
+                        defaultListModel.addElement(d[i]);
+                    }
+                }
+            });
+            searchField.setText(text);
+            // !!! Lupen-Icon
+            Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
+            JPanel p = new JPanel(new BorderLayout(10,10));
+            p.add(searchField, BorderLayout.CENTER);
+            p.add(reset, BorderLayout.EAST);
+            for (int i = 0; i < d.length; i++) {
+                defaultListModel.addElement(d[i]);
+            }
+//            list.setPreferredSize(new Dimension(400, 500));
+            JScrollPane scrollPane = new JScrollPane(list);
+            panel.add(p, BorderLayout.NORTH);
+            panel.add(scrollPane, BorderLayout.CENTER);
+            panel.setPreferredSize(new Dimension(400, 500));
+            int n = 10;
+            panel.setBorder(new EmptyBorder(n,n,n,n));
+            JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
+//            JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
+            JDialog dialog = op.createDialog(this, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+            dialog.add(op);
+            dialog.setModal(true);
+            dialog.setPreferredSize(new Dimension(400, 500));
+            dialog.pack();
+            dialog.setLocationRelativeTo(null);
+            dialog.setVisible(true);
+            int answer = ((Integer)op.getValue()).intValue(); //JOptionPane.showConfirmDialog(this, panel, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
+            if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue()!=null) {
+                System.out.println(list.getSelectedValue());
+                String selected = (String) list.getSelectedValue();
                 int id = Integer.parseInt(selected.split("\\.")[0]);
                 String[] data = scripts.get(id);
                 if (data[2].toLowerCase().indexOf("curl") >= 0) {
