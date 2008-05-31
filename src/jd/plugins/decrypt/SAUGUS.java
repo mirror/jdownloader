@@ -114,8 +114,6 @@ public class SAUGUS extends PluginForDecrypt {
 		if (step.getStep() == PluginStep.STEP_DECRYPT) {
 			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 			try {
-
-				
 				request.getRequest(parameter);
 				if(request.toString().contains("<span style=\"font-size:9pt;\">Dateien offline!"))
 				{
@@ -123,27 +121,32 @@ public class SAUGUS extends PluginForDecrypt {
 				}
 				String hst = "http://" + request.getHost()+"/";
 				String[] crypt = new Regexp(request.getHtmlCode(),
-						"document.write\\(deca.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
+						"document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
 				progress.setRange(crypt.length);
-						for (int i = 0; i < crypt.length; i++) {
-							String string = crypt[i];
-							string = deca1(string);
-							string = new Regexp(string,
-									"document.write\\(dec.*?\\(\'(.*?)\'\\)\\)\\;")
-									.getFirstMatch();
-							string = deca1(string);
-							string = hst+HTMLEntities.unhtmlentities(new Regexp(string,
-							"javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
-							string = HTMLEntities.unhtmlentities(new Regexp(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
-							if(!string.toLowerCase().matches("http\\:\\/\\/.*"))
-								decryptedLinks.add(createDownloadlink(request.getRequest(hst+string).getForm().action));
-							else
-								decryptedLinks.add(createDownloadlink(string));
+				
+				for (int i = 0; i < crypt.length; i++) {
+					String string = crypt[i];
+					string = deca1(string);
+					
+					string = new Regexp(string,
+							"\\(deca.*?\\(\'(.*?)\'")
+							.getFirstMatch();
+					string = deca1(string);
+					
+					string = new Regexp(string,
+                            "\\(dec.*?\\(\'(.*?)\'")
+                            .getFirstMatch();
+					string = deca1(string);
 
-							
-
-							progress.increase(1);
-						}
+					string = hst+HTMLEntities.unhtmlentities(new Regexp(string,
+					"javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
+					string = HTMLEntities.unhtmlentities(new Regexp(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
+					if(!string.toLowerCase().matches("http\\:\\/\\/.*"))
+						decryptedLinks.add(createDownloadlink(request.getRequest(hst+string).getForm().action));
+					else
+						decryptedLinks.add(createDownloadlink(string));
+					progress.increase(1);
+				}
 				step.setParameter(decryptedLinks);
 			} catch (Exception e) {
 				e.printStackTrace();
