@@ -96,12 +96,10 @@ public class Stealth extends PluginForDecrypt {
     		try {
     			CaptchaInfo<File, String> captchaInfo = null;
     			request.getRequest(parameter);
-    			for (;;) { // for() läuft bis kein Captcha mehr abgefragt
+    			for (int i=0;i<5;i++) { 
                     // wird
                     if (request.toString().contains("captcha_img.php")) {
-                        if(captchaInfo!=null && captchaInfo.captchaFile!=null && captchaInfo.captchaCode != null){
-                            JDUtilities.appendInfoToFilename(this, captchaInfo.captchaFile,captchaInfo.captchaCode, false);
-                        }
+                        
                         String sessid = new Regexp(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
                         if(sessid==null){
                             logger.severe("Error sessionid: "+request.getCookie());
@@ -118,12 +116,13 @@ public class Stealth extends PluginForDecrypt {
                         request.setRequestInfo(form);
                     }
                     else {
-                        if(captchaInfo!=null && captchaInfo.captchaFile!=null && captchaInfo.captchaCode != null){
-                            JDUtilities.appendInfoToFilename(this, captchaInfo.captchaFile,captchaInfo.captchaCode, true);
-                        }
+                        
+                        
+                        
                         break;
                     }
                 }
+    			//
     			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
     			ArrayList<ArrayList<String>> links = getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
     			progress.setRange( links.size());

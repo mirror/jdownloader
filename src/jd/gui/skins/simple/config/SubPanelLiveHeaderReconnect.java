@@ -53,7 +53,7 @@ import javax.swing.event.DocumentListener;
 
 import org.jdesktop.swingx.graphics.ColorUtilities;
 
-import com.sun.xml.internal.ws.api.server.DocumentAddressResolver;
+
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;

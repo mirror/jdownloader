@@ -250,6 +250,8 @@ public class Rapidshare extends PluginForHost {
 
     private boolean ddl = false;
 
+    private boolean hashFound;
+
     private static DownloadLink freeInsteadOfPremiumDownloadlink;
 
     private static long freeInsteadOfPremiumStarttime = 0;
@@ -1069,6 +1071,8 @@ public class Rapidshare extends PluginForHost {
                             this.captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                             progress.finalize();
                         }
+                    }else{
+                        hashFound=true;
                     }
                     timer = System.currentTimeMillis() - timer;
                     logger.info("captcha detection: " + timer + " ms");
@@ -1298,11 +1302,12 @@ public class Rapidshare extends PluginForHost {
                             return step;
                         }
 
-                        if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
-                        if (!happyhourboolean){
+                        if (!happyhourboolean&&!this.hashFound){
                             
                             getRequest(new URL("http://jdservice.ath.cx/rs/hash.php?code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
                         }
+                        if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+                        
                         happyhourboolean = false;
 
                         return null;

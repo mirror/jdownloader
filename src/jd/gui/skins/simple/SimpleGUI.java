@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -256,6 +257,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionAbout;
 
     private Thread warningWorker;
+
+    private JDAction actionWiki;
 
     // private SwingWorker warningWorker;
 
@@ -524,6 +527,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
+        actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"), "action.wiki", JDAction.WIKI);
 
     }
 
@@ -780,15 +784,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menUnrar);
         menExtra.add(menPasswordlist);
 
-        JMenuItem menAbout = createMenuItem(actionAbout);
-        JMenuItem menHelpB = createMenuItem(actionHelp);
-        menHelp.add(menHelpB);
+  
+        menHelp.add(createMenuItem(actionHelp));
+        menHelp.add(createMenuItem(actionWiki));
         menExtra.add(new JSeparator());
         /*
          * TODO: ABout Frame
          */
-        menAbout.setEnabled(false);
-        menHelp.add(menAbout);
+        //menAbout.setEnabled(false);
+        menHelp.add(createMenuItem(actionAbout));
 
         // menAction.add(menDownload);
         // menAction.add(menAddLinks);
@@ -848,124 +852,41 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         splitpane.setBottomComponent(progressBar);
         // JPanel tmp=new JPanel(new BorderLayout());
         splitpane.setTopComponent(linkListPane);
-        splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-        // tmp.add(tabDownloadTable,BorderLayout.CENTER);
-        // tabbedPane.addTab(JDLocale.L("gui.tab.download"),
-        // tmp);
-        // tabbedPane.addTab(JDLocale.L("gui.tab.plugin_activity"),
-        // tabPluginActivity);
-        btnStartStop = new JButton(this.actionStartStopDownload);
-        btnStartStop.setFocusPainted(false);
-        btnStartStop.setBorderPainted(false);
-        btnStartStop.setText(null);
-        btnPause = new JButton(this.actionPause);
-        btnPause.setFocusPainted(false);
-        btnPause.setBorderPainted(false);
-        btnPause.setText(null);
+        splitpane.setOrientation(JSplitPane.VERTICAL_SPLIT); 
+        btnStartStop = createMenuButton(actionStartStopDownload);
+        btnPause = createMenuButton(actionPause);    
         btnPause.setEnabled(false);
         btnPause.setSelected(false);
-        btnToggleReconnect = new JButton(this.doReconnect);
-        btnToggleReconnect.setFocusPainted(false);
-        btnToggleReconnect.setBorderPainted(false);
-        btnToggleReconnect.setText(null);
-        JButton btnAdd = new JButton(this.actionItemsAdd);
-        btnAdd.setFocusPainted(false);
-        btnAdd.setBorderPainted(false);
-        btnAdd.setText(null);
-        JButton btnDelete = new JButton(this.actionItemsDelete);
-        btnDelete.setFocusPainted(false);
-        btnDelete.setBorderPainted(false);
-        btnDelete.setText(null);
-        JButton btnConfig = new JButton(this.actionConfig);
-        btnConfig.setFocusPainted(false);
-        btnConfig.setBorderPainted(false);
-        btnConfig.setText(null);
-        JButton btnReconnect = new JButton(this.actionReconnect);
-        btnReconnect.setFocusPainted(false);
-        btnReconnect.setBorderPainted(false);
-        btnReconnect.setText(null);
-        JButton btnUpdate = new JButton(this.actionUpdate);
-        btnUpdate.setFocusPainted(false);
-        btnUpdate.setBorderPainted(false);
-        btnUpdate.setText(null);
-        JButton btnTop = new JButton(this.actionItemsTop);
-        btnTop.setFocusPainted(false);
-        btnTop.setBorderPainted(false);
-        btnTop.setText(null);
-        JButton btnBottom = new JButton(this.actionItemsBottom);
-        btnBottom.setFocusPainted(false);
-        btnBottom.setBorderPainted(false);
-        btnBottom.setText(null);
-        JButton btnUp = new JButton(this.actionItemsUp);
-        btnUp.setFocusPainted(false);
-        btnUp.setBorderPainted(false);
-        btnUp.setText(null);
-        JButton btnDown = new JButton(this.actionItemsDown);
-        btnDown.setFocusPainted(false);
-        btnDown.setBorderPainted(false);
-        btnDown.setText(null);
-        JButton btnSave = new JButton(this.actionSaveDLC);
-        btnSave.setFocusPainted(false);
-        btnSave.setBorderPainted(false);
-        btnSave.setText(null);
-        JButton btnLoad = new JButton(this.actionLoadDLC);
-        btnLoad.setFocusPainted(false);
-        btnLoad.setBorderPainted(false);
-        btnLoad.setText(null);
-        JButton btnLog = new JButton(this.actionLog);
-        btnLog.setFocusPainted(false);
-        btnLog.setBorderPainted(false);
-        btnLog.setText(null);
-        btnClipBoard = new JButton(this.actionClipBoard);
-        btnClipBoard.setFocusPainted(false);
-        btnClipBoard.setBorderPainted(false);
-        btnClipBoard.setText(null);
-        btnCes = new JButton(this.actionCes);
-        btnCes.setFocusPainted(false);
-        btnCes.setBorderPainted(false);
-        btnCes.setText(null);
-        // JButton btnSearch = new JButton(this.actionSearch);
-        // btnSearch.setFocusPainted(false);
-        // btnSearch.setBorderPainted(false);
-        // btnSearch.setText(null);
-        JButton btnHelp = new JButton(this.actionHelp);
-        btnHelp.setFocusPainted(false);
-        btnHelp.setBorderPainted(false);
-        btnHelp.setText(null);
-
-        toolBar.setFloatable(false);
-        toolBar.add(btnLoad);
-        toolBar.add(btnSave);
+        btnToggleReconnect = createMenuButton(doReconnect);    
+  
+        btnClipBoard = createMenuButton(actionClipBoard);     
+        btnCes = createMenuButton(this.actionCes);
+      toolBar.setFloatable(false);
+        toolBar.add(createMenuButton(this.actionLoadDLC));
+        toolBar.add(createMenuButton(this.actionSaveDLC));
         toolBar.addSeparator();
         toolBar.add(btnStartStop);
         toolBar.add(btnPause);
-        toolBar.add(btnAdd);
-        toolBar.add(btnDelete);
+        toolBar.add(createMenuButton(actionItemsAdd));
+        toolBar.add(createMenuButton(actionItemsDelete));
         // toolBar.add(btnSearch);
+        toolBar.addSeparator();       
+        
+        toolBar.add(createMenuButton(actionItemsBottom));
+        toolBar.add(createMenuButton(actionItemsDown));
+        toolBar.add(createMenuButton(actionItemsUp));
+        toolBar.add(createMenuButton(actionItemsTop));
         toolBar.addSeparator();
-        toolBar.add(btnBottom);
-        toolBar.add(btnDown);
-        toolBar.add(btnUp);
-        toolBar.add(btnTop);
+        toolBar.add(createMenuButton(actionConfig));
         toolBar.addSeparator();
-        toolBar.add(btnConfig);
-        // toolBar.add(btnLog);
-        toolBar.addSeparator();
-        toolBar.add(btnReconnect);
-        toolBar.add(btnToggleReconnect);
+        toolBar.add(createMenuButton(doReconnect));
+        toolBar.add(createMenuButton(this.actionReconnect));
         toolBar.add(btnClipBoard);
         toolBar.addSeparator();
-        toolBar.add(btnUpdate);
+        toolBar.add(createMenuButton(this.actionUpdate));
 
         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) toolBar.add(btnCes);
-        // toolBar.add(btnHelp);
-        // reconnectBox = new JCheckBox("Reconnect durchführen");
-        // boolean rc =
-        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
-        // true);
-        //
-        // reconnectBox.addActionListener(this);
-        // toolBar.add(reconnectBox);
+   
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(frame, splitpane, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -973,6 +894,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(frame, logger);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
+    }
+
+    private JButton createMenuButton(JDAction action) {
+        JButton bt = new JButton(action);
+        bt.setFocusPainted(false);
+        bt.setBorderPainted(false);
+        bt.setText(null);
+        return bt;
     }
 
     /**
@@ -1090,6 +1019,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ITEMS_DND:
             this.toggleDnD();
             break;
+        case JDAction.ABOUT:
+            String txt;
+                try {
+                    txt = Plugin.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
+         
+            
+            JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
+                } catch (MalformedURLException e2) {
+                    // TODO Auto-generated catch block
+                    e2.printStackTrace();
+                } catch (IOException e2) {
+                    // TODO Auto-generated catch block
+                    e2.printStackTrace();
+                }
+            break;
         case JDAction.ITEMS_ADD:
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             String cb = "";
@@ -1118,7 +1062,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         //                
         case JDAction.HELP:
             try {
-                JLinkButton.openURL("http://jdownloadersupport.ath.cx");
+                JLinkButton.openURL(JDLocale.L("gui.support.forumurl","http://www.the-lounge.org/viewforum.php?f=291"));
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+
+            break;
+            
+        case JDAction.WIKI:
+            try {
+                JLinkButton.openURL(JDLocale.L("gui.support.wikiurl","http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English"));
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
@@ -1129,6 +1082,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             break;
         }
+        
     }
 
     public void toggleDnD() {

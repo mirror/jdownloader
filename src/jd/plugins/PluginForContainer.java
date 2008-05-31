@@ -68,7 +68,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
 
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
-        logger.info("EXTRACT " + downloadLink);
+       // logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
         return downloadLinksURL.get(downloadLink.getContainerIndex());

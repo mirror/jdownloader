@@ -81,6 +81,8 @@ public class JDAction extends AbstractAction{
     public static final int APP_ALLOW_RECONNECT =  31;
 
     public static final int ABOUT = 32;
+
+    public static final int WIKI = 33;
     private ActionListener actionListener;
     private int actionID;
     private KeyStroke accelerator;
