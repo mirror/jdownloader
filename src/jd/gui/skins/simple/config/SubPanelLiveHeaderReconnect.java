@@ -253,9 +253,12 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             searchField.setText(text);
             // !!! Lupen-Icon
             Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
-            JPanel p = new JPanel(new BorderLayout(10,10));
+            JPanel p = new JPanel(new BorderLayout(5,5));
             p.add(searchField, BorderLayout.CENTER);
             p.add(reset, BorderLayout.EAST);
+            JLabel example = new JLabel("Example: 3Com ADSL");
+            example.setForeground(Color.gray);
+            p.add(example, BorderLayout.SOUTH);
             for (int i = 0; i < d.length; i++) {
                 defaultListModel.addElement(d[i]);
             }
