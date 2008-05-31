@@ -203,8 +203,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             final JList list = new JList(defaultListModel);
             searchField.getDocument().addDocumentListener(new DocumentListener(){
                 public void changedUpdate(DocumentEvent e) {}
-                public void insertUpdate(DocumentEvent e) {System.out.println("insertUpdate");refreshList();}
-                public void removeUpdate(DocumentEvent e) {System.out.println("removeUpdate");refreshList();}
+                public void insertUpdate(DocumentEvent e) {refreshList();}
+                public void removeUpdate(DocumentEvent e) {refreshList();}
                 private void refreshList() {
                     String search = searchField.getText().toLowerCase();
                     String[] hits = search.split(" ");
@@ -227,7 +227,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             searchField.addFocusListener(new FocusAdapter(){
                 boolean onInit = true; 
                 public void focusGained(FocusEvent e) {
-                    System.out.println("focusGained");
                     if (onInit) {onInit=!onInit; return;} 
                     searchField.setForeground(Color.black);
                     if (searchField.getText().equals(text)) searchField.setText("");
