@@ -934,3 +934,12 @@ interaction.trigger.exit = JD wird beendet
 interaction.trigger.exit.desc = Wird beim Beenden vor dem Schließen des Programms aufgerufen
 plugins.decrypt.rlslog.hosterlist = Liste der zu suchenden Hoster(Ein Hoster/Zeile)
 plugins.decrypt.shareonall.ignorelist = Liste der ignorierten Domains(Eine Domain/Zeile)
+addons.jdlowspeed.statusmessage.enabled = Low Speederkennung einschalten
+gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_de.html
+gui.dialog.about.title = Über JDownloader
+gui.reconnect.confirm = Wollen Sie sicher eine neue Verbindung aufbauen?
+gui.reconnect.success = Reconnect erfolgreich
+gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=316
+gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php
+gui.warning.reconnect.hasbeendisabled = Reconnect deaktiviert!
+gui.warning.reconnect.hasbeendisabled.tooltip = Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden.
