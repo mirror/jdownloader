@@ -38,8 +38,8 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-import jd.config.SubConfiguration;
-import jd.utils.JDUtilities;
+
+
 
 public class Main {
 
@@ -58,7 +58,7 @@ public static Insets INSETS=new Insets(5,5,5,5);
         final StringBuffer log = new StringBuffer();
 
             UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-            SubConfiguration guiConfig = JDUtilities.getSubConfig("simpleGUI");
+            SubConfiguration guiConfig = SubConfiguration.getSubConfig("simpleGUI");
             String paf = guiConfig.getStringProperty("PLAF", null);
             boolean plafisSet = false;
             if(paf!=null)
