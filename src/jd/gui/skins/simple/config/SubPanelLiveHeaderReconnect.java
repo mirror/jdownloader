@@ -212,11 +212,9 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                     for (int i = 0; i < d.length; i++) {
                         for (int j = 0; j < hits.length; j++) {
                             if (!d[i].toLowerCase().contains(hits[j])) {
-                                System.out.println("skipped: " + hits[j]);
                                 break;
                             }
                             if (j == hits.length-1) {
-                                System.out.println("add: " + d[i]);
                                 defaultListModel.addElement(d[i]);
                             }
                         }
@@ -280,7 +278,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             dialog.setVisible(true);
             int answer = ((Integer)op.getValue()).intValue(); //JOptionPane.showConfirmDialog(this, panel, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
             if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue()!=null) {
-                System.out.println(list.getSelectedValue());
                 String selected = (String) list.getSelectedValue();
                 int id = Integer.parseInt(selected.split("\\.")[0]);
                 String[] data = scripts.get(id);
