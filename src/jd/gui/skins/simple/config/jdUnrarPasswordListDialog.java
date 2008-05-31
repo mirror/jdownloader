@@ -20,8 +20,6 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -83,12 +81,12 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
         panel.setBorder(new EmptyBorder(n,n,n,n));
         setContentPane(panel);
         
-        btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name"));
-        btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem").charAt(0));
+        btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name", "Abbrechen"));
+        btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem", "a").charAt(0));
         btnCancel.addActionListener(this);
         
-        btnSave = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_save.name"));
-        btnSave.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_save.mnem").charAt(0));
+        btnSave = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_save.name", "Speichern"));
+        btnSave.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_save.mnem", "s").charAt(0));
         
         btnSave.addActionListener(this);
         getRootPane().setDefaultButton(btnSave);
