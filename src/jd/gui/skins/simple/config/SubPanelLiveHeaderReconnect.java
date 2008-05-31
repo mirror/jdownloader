@@ -203,15 +203,23 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             final JList list = new JList(defaultListModel);
             searchField.getDocument().addDocumentListener(new DocumentListener(){
                 public void changedUpdate(DocumentEvent e) {}
-                public void insertUpdate(DocumentEvent e) {refreshList();}
-                public void removeUpdate(DocumentEvent e) {refreshList();}
+                public void insertUpdate(DocumentEvent e) {System.out.println("insertUpdate");refreshList();}
+                public void removeUpdate(DocumentEvent e) {System.out.println("removeUpdate");refreshList();}
                 private void refreshList() {
                     String search = searchField.getText().toLowerCase();
                     String[] hits = search.split(" ");
                     defaultListModel.removeAllElements();
                     for (int i = 0; i < d.length; i++) {
-                        for (int j = 0; j < hits.length; j++) {if (!d[i].toLowerCase().contains(hits[j])) break;}
-                        defaultListModel.addElement(d[i]);
+                        for (int j = 0; j < hits.length; j++) {
+                            if (!d[i].toLowerCase().contains(hits[j])) {
+                                System.out.println("skipped: " + hits[j]);
+                                break;
+                            }
+                            if (j == hits.length-1) {
+                                System.out.println("add: " + d[i]);
+                                defaultListModel.addElement(d[i]);
+                            }
+                        }
                     }
                     list.setModel(defaultListModel);
                 }
