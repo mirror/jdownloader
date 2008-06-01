@@ -324,19 +324,17 @@ public class Serienjunkies extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
         case PluginStep.STEP_DECRYPT:
-
+            request.withHtmlCode = false;
+            request.redirect = false;
+            request.getRequest("http://serienjunkies.org/");
+            request.withHtmlCode = true;
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
                 boolean isP = parameter.contains("/?p=");
                 int catst = getSerienJunkiesCat(isP);
                 scatChecked = false;
                 int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
-
                 if (sCatNewestDownload == catst) {
-                    request.withHtmlCode = false;
-                    request.redirect = false;
-                    request.getRequest("http://serienjunkies.org/");
-                    request.withHtmlCode = true;
                     request.getRequest("http://serienjunkies.org/");
 
                     Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
