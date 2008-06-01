@@ -135,7 +135,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+        if (System.getProperty("os.name").toLowerCase().contains("mac") && UIManager.getSystemLookAndFeelClassName().equals(UIManager.getLookAndFeel())) {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
         }
 
