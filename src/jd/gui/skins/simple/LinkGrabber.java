@@ -960,7 +960,7 @@ private boolean isDupe(DownloadLink link){
                     for (int i = 0; i < lines.length; i++) {
                         int id = lines[i].indexOf("\t");
                         if (id <= 0) continue;
-                        id = Integer.parseInt(lines[i].substring(0, id));
+                        id = Integer.parseInt(lines[i].substring(0, id))-1;
                         // DownloadLink link = source.removeLinkAt(id);
                         move.add(source.getLinkAt(id));
 
@@ -1464,7 +1464,7 @@ private boolean isDupe(DownloadLink link){
 
                 switch (columnIndex) {
                 case 0:
-                    return rowIndex;
+                    return rowIndex+1;
                 case 1:
                     return linkList.get(rowIndex).getHost();
                 case 2:
