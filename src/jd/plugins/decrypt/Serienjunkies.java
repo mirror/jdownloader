@@ -324,9 +324,9 @@ public class Serienjunkies extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         switch (step.getStep()) {
         case PluginStep.STEP_DECRYPT:
+            request.redirect = true;
             request.withHtmlCode = false;
-            request.redirect = false;
-            request.getRequest("http://serienjunkies.org/");
+            request.getRequest("http://serienjunkies.org/enter/");
             request.withHtmlCode = true;
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
