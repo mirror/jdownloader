@@ -1682,7 +1682,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void onJDInitComplete() {
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-            btnStartStop.setSelected(true);
+            //btnStartStop.setSelected(true);
             this.startStopDownloads();
         }
         this.frame.setTitle(JDUtilities.getJDTitle());
@@ -1765,7 +1765,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
                     // showTrayTip("Downloads", "All downloads finished");
                     logger.info("ALL FINISHED");
-                    btnStartStop.setSelected(false);
+                    //btnStartStop.setSelected(false);
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(false);
                     btnPause.setSelected(false);
@@ -1812,7 +1812,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(true);
-                    btnStartStop.setSelected(true);
+                    //btnStartStop.setSelected(true);
                     // btnStartStop.setSelected(!btnStartStop.isSelected());
                     // if (!btnStartStop.isSelected())
                     // btnStartStop.setEnabled(false);
@@ -1824,7 +1824,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 case ControlEvent.CONTROL_DOWNLOAD_STOP:
                     btnStartStop.setEnabled(true);
                     btnPause.setEnabled(true);
-                    btnStartStop.setSelected(false);
+                    //btnStartStop.setSelected(false);
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                     break;
