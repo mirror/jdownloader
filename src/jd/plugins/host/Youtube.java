@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.controlling.ProgressController;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -105,11 +106,11 @@ public class Youtube extends PluginForHost {
         return null;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                int convert = Integer.parseInt(getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
+                final int convert = Integer.parseInt(getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
                 requestInfo = getRequest(new URL(getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -143,31 +144,43 @@ public class Youtube extends PluginForHost {
                 dl.setResume(false);
                 if (dl.startDownload()) {
 
-                    switch (convert) {
-                    case CONVERT_ID_AUDIO:
-                        downloadLink.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3"));
-                        downloadLink.requestGuiUpdate();
-                        new FLV(downloadLink.getFileOutput(), true, true);
-                        if (!new File(downloadLink.getFileOutput()).delete()) {
-                            new File(downloadLink.getFileOutput()).deleteOnExit();
-                        }
-                        if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
-                            new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
-                        }
-                        break;
-                    case CONVERT_ID_VIDEO:
-                        // nothing.flv stays
-                        break;
-                    case CONVERT_ID_AUDIO_AND_VIDEO:
-                        downloadLink.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3"));
-                        downloadLink.requestGuiUpdate();
-                        new FLV(downloadLink.getFileOutput(), true, true);
-                        if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
-                            new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
-                        }
-                        break;
+                    new Thread() {
+                        public void run() {
+                            ProgressController progress = new ProgressController(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName(),3);
+                            progress.increase(1);
+                            switch (convert) {
+                            case CONVERT_ID_AUDIO:
+                                progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName());
+                             
+                                new FLV(downloadLink.getFileOutput(), true, true);
+                                progress.increase(1);
+                                if (!new File(downloadLink.getFileOutput()).delete()) {
+                                    new File(downloadLink.getFileOutput()).deleteOnExit();
+                                }
+                                if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
+                                    new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
+                                }
+                            
+                                break;
+                            case CONVERT_ID_VIDEO:
+                                // nothing.flv stays
+                            
+                                break;
+                            case CONVERT_ID_AUDIO_AND_VIDEO:
+                                progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3")+" "+downloadLink.getName());
+                          
+                                new FLV(downloadLink.getFileOutput(), true, true);
+                                progress.increase(1);
+                                if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
+                                    new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
+                                }
+                               
+                                break;
 
-                    }
+                            }
+                            progress.finalize();
+                        }
+                    }.start();
                     step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(DownloadLink.STATUS_DONE);
                 }
