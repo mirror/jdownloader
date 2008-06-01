@@ -17,21 +17,18 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
-import jd.config.Configuration;
-import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class LinksaveIn extends PluginForDecrypt {
@@ -44,13 +41,13 @@ public class LinksaveIn extends PluginForDecrypt {
 
     // http://xlice.net/getdlc/a50d323947054cc204362a47ddd5bc49/
     static private final Pattern patternSupported = getSupportPattern("http://linksave.in/[+]/[+].[+]|http://linksave.in/[+]");
+    
+    static private final Pattern patternCaptcha = Pattern.compile("img id=\"captcha\" src=\"\\./captcha/captcha\\.php(.+?)\"");
 
     public LinksaveIn() {
-
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-
     }
 
     @Override
@@ -86,7 +83,7 @@ public class LinksaveIn extends PluginForDecrypt {
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         // surpress jd warning
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         step.setParameter(decryptedLinks);
         String url = parameter;
         String[] sp = parameter.split("[/|\\\\]");
@@ -108,6 +105,35 @@ public class LinksaveIn extends PluginForDecrypt {
                 RequestInfo ri;
                 try {
                     ri = getRequest(new URL(parameter));
+                    
+                    Matcher matcher = patternCaptcha.matcher(ri.getHtmlCode());
+                    String cookie = ri.getCookie();
+                    while (matcher.find()) {
+                        logger.info("Captcha protected");
+                        String captchaAddress = "http://www.linksave.in/captcha/captcha.php" + matcher.group(1);
+
+                        File captchaFile = this.getLocalCaptchaFile(this);
+                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                        HashMap<String, String> reqpro = new HashMap<String, String>();
+                        reqpro.put("Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
+                        reqpro.put("Accept-Encoding", "gzip,deflate");
+                        reqpro.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+                        
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        String postdata = getFormInputHidden(getBetween(ri.getHtmlCode(), "form name=\"captchaform\" method=\"post\"", "/form")) + "&code=" + captchaCode + "&x=0&y=0";
+                        ri = postRequest(new URL(parameter), cookie, parameter, reqpro, postdata, false);
+                        
+                        if(ri.getHtmlCode().contains("Der eingegebene Captcha-code ist falsch"))
+                            ri = getRequest(new URL(parameter));
+                        else
+                            ri = getRequest(new URL(parameter), ri.getCookie(), parameter, false);
+                        matcher = patternCaptcha.matcher(ri.getHtmlCode());
+                    }
 
                     if (ri.containsHTML(".dlc")) {
                         url = parameter + "/" + id + ".dlc";
