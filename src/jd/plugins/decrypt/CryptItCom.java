@@ -132,7 +132,7 @@ public class CryptItCom extends PluginForDecrypt {
                 // 0x00, 0x01, 0x02, 0x00, 0x06 };
                 byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
                 byte[] b2 = new byte[] { 0x02, 0x00 };
-                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + String.valueOf(pass.length()) + pass, false);
+                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[]{(byte)pass.length()}) + pass, false);
                 ArrayList<String> ciphers = getAllSimpleMatches(ri, "url°size", 1);
                 progress.setRange(ciphers.size());
                 FilePackage fp = new FilePackage();

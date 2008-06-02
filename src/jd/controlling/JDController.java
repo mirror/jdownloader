@@ -791,7 +791,7 @@ public class JDController implements ControlListener, UIListener {
 
             JDUtilities.writeLocalFile(file, cipher);
             SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
-            if (!cfg.getBooleanProperty("HOW_INFO_AFTER_CREATE", false))
+            if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
     
             {
 
@@ -814,7 +814,7 @@ public class JDController implements ControlListener, UIListener {
         String cipher = encryptDLC(xml);
         if (cipher != null) {
             SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
-            if (!cfg.getBooleanProperty("HOW_INFO_AFTER_CREATE", false))
+            if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {
                 JDUtilities.writeLocalFile(file, cipher);

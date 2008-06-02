@@ -32,9 +32,11 @@ import jd.plugins.RequestInfo;
 public class GappingOrg extends PluginForDecrypt {
     final static String host             = "gapping.org";
     private String      version          = "0.1.0";
+    //http://www.gapping.org/f/979.html
     private Pattern     patternSupported = getSupportPattern(
-    	 "(http://gapping\\.org/index\\.php\\?folderid=[0-9]+)"+
-    	 "|(http://gapping\\.org/file\\.php\\?id=[+])");
+    	 "(http://[*]gapping\\.org/index\\.php\\?folderid=[0-9]+)"+
+    	 "|(http://[*]gapping\\.org/file\\.php\\?id=[+])"+
+    	 "|(http://[*]gapping\\.org/f/[+])");
     
     public GappingOrg() {
         super();
@@ -106,6 +108,18 @@ public class GappingOrg extends PluginForDecrypt {
     				decryptedLinks.add(this.createDownloadlink(link));
     				progress.increase(1);
     				
+    			}else{
+    			    RequestInfo request = getRequest(new URL(parameter));
+    			    
+    			  ArrayList<String> links = getAllSimpleMatches(request, "<a target=\"_blank\" onclick=\"image°.src='http://www.gapping.org/img/°';\" href=\"°http://gapping.org/d/°\" >", 4);
+    			
+    			  
+    			  for(String link:links){
+    			     RequestInfo ri = getRequest(new URL("http://gapping.org/d/"+link));
+    			    String url=getSimpleMatch(ri, "<iframe height=° width=°  name=° src=\"°\" frameborder=\"0\"   />", 3);
+    			    decryptedLinks.add(this.createDownloadlink(url.trim()));
+    			  }
+    			  logger.info("");
     			}
 				
 				step.setParameter(decryptedLinks);
