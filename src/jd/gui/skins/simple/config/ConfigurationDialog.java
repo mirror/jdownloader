@@ -164,13 +164,13 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
         this.addConfigPanel(ConfigPanelLinks.class, JDTheme.V("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
         
-
-        int maxLength = 0;
-        int tabs = tabbedPane.getTabCount();
-        for (int i = 0; i < tabs; i++) {maxLength = Math.max(maxLength, tabbedPane.getTitleAt(i).length());}
-        for (int i = 0; i < tabs; i++) {tabbedPane.setTitleAt(i, fill(tabbedPane.getTitleAt(i), maxLength+1));}
-       if(JDUtilities.getJavaVersion()>1.6)tabbedPane.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-
+        try {
+            tabbedPane.setFont(new Font("Courier", Font.PLAIN, 12));
+            int maxLength = 0;
+            int tabs = tabbedPane.getTabCount();
+            for (int i = 0; i < tabs; i++) {maxLength = Math.max(maxLength, tabbedPane.getTitleAt(i).length());}
+            for (int i = 0; i < tabs; i++) {tabbedPane.setTitleAt(i, fill(tabbedPane.getTitleAt(i), maxLength+1));}
+        } catch (Exception e) {}
         
         btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
         btnSave.addActionListener(this);
@@ -219,7 +219,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             tabbedPane.setSelectedIndex(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
         } // paintPanel();
 
-        // there is already a pack below. Can't see how a second pack would imrove things?
+        // there is already a pack below. Can't see how a second pack would improve things?
         // pack();
 
         LocationListener list = new LocationListener();
