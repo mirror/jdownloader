@@ -714,8 +714,6 @@ gui.treetable.part.label = File
 gui.treetable.part.label_package = Package
 gui.treetable.part.label_update = Update
 gui.treetable.parts = Parts
-gui.warning.reconnect.hasbeendisabled = Reconnect disabled!
-gui.warning.reconnect.hasbeendisabled.tooltip = Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden.
 gui.warning.reconnectFailed = Reconnect failed!
 gui.warning.reconnectSuccess = Reconnect successfully!
 gui.warning.restartNeeded = You need to restart jD!
@@ -985,7 +983,6 @@ gui.menu.action.wiki.desc = Find help in the wikipedia
 gui.menu.action.wiki.mnem = -
 gui.menu.action.wiki.name = Wikipedia
 plugins.container.dlc.showdialogoncreatedlc = Show Confirmationmessage after creation
-addons.jdlowspeed.statusmessage.enabled = Enable Lowspeed detection
 gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
 gui.dialog.about.title = About JDownloader
 gui.reconnect.confirm = Do you want to reconnect your connection?
@@ -994,3 +991,4 @@ gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
 gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English
 gui.warning.reconnect.hasbeendisabled = Reconnect disabled!
 gui.warning.reconnect.hasbeendisabled.tooltip = To allow JDownloader to perform automated reconnects, you should enable this feature!
+plugins.optional.RemoteControl.port = Port:

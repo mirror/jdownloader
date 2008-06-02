@@ -107,7 +107,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, btnCancel,      0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         pack();
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        setLocation(JDUtilities.getCenterOfComponent(owner, this));
         setVisible(true);
 
     }
