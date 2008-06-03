@@ -180,7 +180,7 @@ public class Rapidshare extends PluginForHost {
     /**
      * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
-    private String patternErrorDownloadLimitReached = "Oder warte ° Minute";
+    private String patternErrorDownloadLimitReached = "Alternativ k&ouml;nnen Sie ° Minuten warten.";
 
     // private Pattern patternErrorCaptchaWrong = Pattern.compile("(zugriffscode
     // falsch|code wrong)", Pattern.CASE_INSENSITIVE);
