@@ -131,7 +131,7 @@ public class JDUtilities {
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
     /**
-     * Name des Loggers
+     * Name des Loggers 
      */
     public static String LOGGER_NAME = "java_downloader";
 
