@@ -52,10 +52,10 @@ public class RAFDownload extends DownloadInterface {
     protected void writeChunkBytes(Chunk chunk) {
         try {
             // int limit = chunk.buffer.limit()-chunk.buffer.position();
-//            while(WRITING){
-//               if (speedDebug)logger.finer("Wait to write to HD");
-//                Thread.sleep(10);
-//            }
+            while(WRITING){
+               if (speedDebug)logger.finer("Wait to write to HD");
+                Thread.sleep(10);
+            }
             if (maxBytes < 0) {
                 WRITING=true;
                     outputFile.seek(chunk.getWritePosition());

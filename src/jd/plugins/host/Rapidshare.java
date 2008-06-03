@@ -136,7 +136,7 @@ public class Rapidshare extends PluginForHost {
      * Das findet die Captcha URL <form *name *= *"dl" (?s).*<img *src *=
      * *"([^\n"]*)">
      */
-    private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dl\" (?s).*<img *src *= *\"([^\\n\"]*\\.jpg)\">");
+    private Pattern patternForCaptcha = Pattern.compile("<form *name *= *\"dlf\" (?s).*<img *src *= *\"([^\\n\"]*\\.jpg)\">");
 
     /**
      * <form name="dl".* action="([^\n"]*)"(?s).*?<input type="submit"
@@ -152,7 +152,7 @@ public class Rapidshare extends PluginForHost {
     // Premium-User. Bitte<br>'°'<img src=°><br>hier eingeben: <input
     // type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input
     // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
-    private String dataPatternPost = "<form name=\"dl\" ' +°'action=\"°\" method=\"post\">'"; // "document.dl.action=°document.dl.actionstring.value";
+    private String dataPatternPost = "<form name=\"dlf\" action=\"°\" method=\"post\""; // "document.dl.action=°document.dl.actionstring.value";
 
     // private String dataPatternAction = "name=\"actionstring\"
     // value=\"°\"></h3></form>";
@@ -203,8 +203,9 @@ public class Rapidshare extends PluginForHost {
     private String toManyUser = "Zu viele Benutzer";
 
     private String notUploaded = "Diese Datei ist noch nicht vollst";
-
-    private static final String PATTERN_ACCOUNT_EXPIRED = "Dieser Account lief am";
+//<!-- E#8 --><p>Dieses Konto ist am Mon, 2. Jun 2008 abgelaufen. Verl&auml;ngern Sie jetzt Ihren Account und nutzen profitieren Sie weiterhin von den Vorteilen der Premium-Mitgliedschaft.</p></p> 
+    
+    private static final String PATTERN_ACCOUNT_EXPIRED = "Dieses Konto ist am Mon";
 
     private static final String PATTERN_ERROR_BOT = "Too many wrong codes";
 
@@ -1032,7 +1033,7 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
                     }
-                    RequestInfo ri = getRequest(new URL("http://jdservice.ath.cx/rs/hash.php?code=&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                    RequestInfo ri = getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=&hash=" + JDUtilities.getLocalHash(captchaFile)));
                     captchaCode = getSimpleMatch(ri, "code=°;", 0);
                     if (captchaCode.trim().length() != 4) {
 
@@ -1157,15 +1158,14 @@ public class Rapidshare extends PluginForHost {
                 // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
                 // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
                 if (happyhourboolean) {
-                    postTarget = getBetween(ticketCode, "form name=\"dl\" action=\"", "\"");
+                    postTarget = getBetween(ticketCode, "form name=\"dlf\" action=\"", "\"");
                 } else {
-                    postTarget = getSimpleMatch(ticketCode, dataPatternPost, 1);
+                    postTarget = getSimpleMatch(ticketCode, dataPatternPost, 0);
                 }
 
                 // actionString = getSimpleMatch(ticketCode, dataPatternAction,
                 // 0);
-                actionString = getBetween(ticketCode, "input type=\"submit\" name=\"actionstring\" value=\"", "\"");
-
+           
                 if (postTarget == null) {
                     logger.severe("postTarget not found:");
                     logger.finer(ticketCode);
@@ -1173,14 +1173,14 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                // postTarget=postTarget.substring(2, postTarget.length()-3);
-                // logger.info(postTarget+" -"+actionString);
-                if (actionString == null) {
-                    logger.severe("actionString not found");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+//                // postTarget=postTarget.substring(2, postTarget.length()-3);
+//                // logger.info(postTarget+" -"+actionString);
+//                if (actionString == null) {
+//                    logger.severe("actionString not found");
+//                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+//                    step.setStatus(PluginStep.STATUS_ERROR);
+//                    return step;
+//                }
                 // Vector<String> serverids = getAllSimpleMatches(ticketCode,
                 // patternForServer, 3);
                 ArrayList<String> serverstrings = getAllSimpleMatches(ticketCode, patternForServer, 7);
@@ -1224,7 +1224,8 @@ public class Rapidshare extends PluginForHost {
                 actionString = actionString.replace(' ', '+');
                 postParameter.put("mirror", "on");
                 postParameter.put("accesscode", this.captchaCode);
-                postParameter.put("actionstring", actionString);
+                postParameter.put("x", (int)(Math.random()*40)+"");
+                postParameter.put("y", (int)(Math.random()*40)+"");
                 try {
 
                     HTTPConnection urlConnection = new HTTPConnection(new URL(postTarget).openConnection());
@@ -1232,8 +1233,7 @@ public class Rapidshare extends PluginForHost {
                     // Post Parameter vorbereiten
                     String postParams = createPostParameterFromHashMap(postParameter);
 
-                    postParams = "mirror=on&accesscode=" + captchaCode + "&actionstring=" + actionString;
-
+                   
                     OutputStreamWriter wr = new OutputStreamWriter(urlConnection.getOutputStream());
                     wr.write(postParams);
                     wr.flush();
@@ -1304,7 +1304,7 @@ public class Rapidshare extends PluginForHost {
 
                         if (!happyhourboolean&&!this.hashFound){
                             
-                            getRequest(new URL("http://jdservice.ath.cx/rs/hash.php?code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                            getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
                         }
                         if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
                         
@@ -1385,22 +1385,22 @@ public class Rapidshare extends PluginForHost {
         }
         if (step == this.steps.firstElement()) this.downloadType = PREMIUM;
         this.setMaxConnections(35);
-        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
-        String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
-        String serverAbb = serverMap.get(server1);
-        String server2Abb = serverMap.get(server2);
-
-        logger.info("Servermap: " + serverMap);
-        logger.info("Servers settings: " + server1 + "-" + server2 + " : " + serverAbb + "-" + server2Abb);
-
-        if (serverAbb == null) {
-            serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
-            logger.finer(" Use Random #1 server " + serverAbb);
-        }
-        if (server2Abb == null) {
-            server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
-            logger.finer("Use Random #2 server " + server2Abb);
-        }
+//        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
+//        String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
+//        String serverAbb = serverMap.get(server1);
+//        String server2Abb = serverMap.get(server2);
+//
+//        logger.info("Servermap: " + serverMap);
+//        logger.info("Servers settings: " + server1 + "-" + server2 + " : " + serverAbb + "-" + server2Abb);
+//
+//        if (serverAbb == null) {
+//            serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
+//            logger.finer(" Use Random #1 server " + serverAbb);
+//        }
+//        if (server2Abb == null) {
+//            server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
+//            logger.finer("Use Random #2 server " + server2Abb);
+//        }
         // String endServerAbb = "";
         // Boolean telekom =
         // !(this.getProperties().getProperty(PROPERTY_USE_TELEKOMSERVER) ==

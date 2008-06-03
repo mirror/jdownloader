@@ -1156,6 +1156,7 @@ abstract public class DownloadInterface {
             ReadableByteChannel source = null;
 
             try {
+                logger.finer("Set timeouts: "+getReadTimeout()+" - "+getRequestTimeout());
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
 
