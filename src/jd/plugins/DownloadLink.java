@@ -781,7 +781,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         case DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
             return JDLocale.L("downloadlink.status.error.not_owner", "Link is already in progress");
         case DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC:
-            return JDLocale.L("downloadlink.status.error.plugin_specific", "Plugin Error");
+            return JDLocale.L("downloadlink.status.error.plugin_specific", "Plg.:");
         case DownloadLink.STATUS_ERROR_PREMIUM:
             return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
         case DownloadLink.STATUS_ERROR_SECURITY:
