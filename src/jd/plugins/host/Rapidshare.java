@@ -210,7 +210,7 @@ public class Rapidshare extends PluginForHost {
 
     private String postTarget;
 
-    private String actionString;
+   
 
     private HashMap<String, String> postParameter = new HashMap<String, String>();
 
@@ -1053,7 +1053,7 @@ public class Rapidshare extends PluginForHost {
                     // if(true)return step;
                     if (captchaCode == null || captchaCode.trim().length() != 4) {
 
-                        JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
+                        JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, false);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
 
                         if (ces != null) ces.sendCaptchaWrong();
@@ -1161,26 +1161,25 @@ public class Rapidshare extends PluginForHost {
                 logger.info("Preselected Server: " + selected);
                 if (preselected) {
                     logger.info("RS.com-free Use preselected : " + selected);
-                    actionString = selected;
+                   
                 } else if (telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
-                    actionString = "Download via Deutsche Telekom.";
+                    
                     logger.info("RS.com-free Use Telekom Server");
                 } else if (ticketCode.indexOf(serverAbb + ".rapidshare.com") >= 0) {
                     logger.info("RS.com-free Use Mirror #1 Server: " + getServerFromAbbreviation(serverAbb));
-                    actionString = "Download via " + getServerFromAbbreviation(serverAbb);
+                   
                 } else if (ticketCode.indexOf(server2Abb + ".rapidshare.com") >= 0) {
                     logger.info("RS.com-free Use Mirror #2 Server: " + getServerFromAbbreviation(server2Abb));
-                    actionString = "Download via " + getServerFromAbbreviation(server2Abb);
+                   
                 } else if (serverstrings.size() > 0) {
-                    actionString = serverstrings.get((int) Math.ceil(Math.random() * serverstrings.size()) - 1);
-                    logger.info("RS.com-free Use Errer random Server: " + actionString);
+                  
                 } else {
                     logger.severe("Kein Server gefunden");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return null;
                 }
-                downloadLink.setStatusText(actionString);
+               
 
                 break;
             }
@@ -1189,7 +1188,7 @@ public class Rapidshare extends PluginForHost {
                 step = this.nextStep(step);
             } else {
 
-                actionString = actionString.replace(' ', '+');
+               
                 postParameter.put("mirror", "on");
                 postParameter.put("accesscode", this.captchaCode);
                 postParameter.put("x", (int) (Math.random() * 40) + "");
@@ -1213,33 +1212,32 @@ public class Rapidshare extends PluginForHost {
                     int length = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
 
-                    Set<Entry<String, String>> entries = serverMap.entrySet();
-                    Iterator<Entry<String, String>> it = entries.iterator();
-                    while (it.hasNext()) {
-                        Entry<String, String> entry = it.next();
-                        int i;
-                        if ((i = postTarget.indexOf(entry.getValue())) < 20 && i > 0) {
-                            logger.info(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim());
-                            postTarget = postTarget.substring(0, i) + serverMap.get(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim()) + postTarget.substring(i + entry.getValue().length());
-                            break;
-                        }
-                    }
-                    downloadLink.setStatusText(JDUtilities.htmlDecode(actionString));
-                    downloadLink.requestGuiUpdate();
+//                    Set<Entry<String, String>> entries = serverMap.entrySet();
+//                    Iterator<Entry<String, String>> it = entries.iterator();
+//                    while (it.hasNext()) {
+//                        Entry<String, String> entry = it.next();
+//                        int i;
+//                        if ((i = postTarget.indexOf(entry.getValue())) < 20 && i > 0) {
+//                           postTarget = postTarget.substring(0, i) + serverMap.get(JDUtilities.htmlDecode(actionString.split("via")[1].trim()).trim()) + postTarget.substring(i + entry.getValue().length());
+//                            break;
+//                        }
+//                    }
+               
+                 
                     // try {
                     // Thread.sleep(1000);
                     // } catch (InterruptedException e) {
                     // // TODO Auto-generated catch block
                     // e.printStackTrace();
                     // }
-                    logger.info("link: " + postTarget.substring(0, 30) + " " + actionString);
+                    logger.info("link: " + postTarget.substring(0, 30) + " ");
 
                     dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     if (dl.startDownload()) {
                         if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong) > 0) {
                             new File(downloadLink.getFileOutput()).delete();
-                            JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, false);
+                            JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, false);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             // logger.info("Error detected. Update
                             // captchafile");
@@ -1273,7 +1271,7 @@ public class Rapidshare extends PluginForHost {
 
                             getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
                         }
-                        if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, actionString + "_" + captchaCode, true);
+                        if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, true);
 
                         happyhourboolean = false;
 
@@ -1648,7 +1646,7 @@ public class Rapidshare extends PluginForHost {
         waitTime = 500;
         captchaAddress = null;
         postTarget = null;
-        actionString = null;
+    
         postParameter = new HashMap<String, String>();
         ticketCode = "";
         noLimitFreeInsteadPremium = false;
