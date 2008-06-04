@@ -143,7 +143,7 @@ public class ConfigPanelGUI extends ConfigPanel {
             } catch (UnsupportedOperatingSystemException e) {
                 e.printStackTrace();
             }
-            if (ar.size() < 2) {
+            if (ar==null ||ar.size() < 2) {
                 BrowserArray = new Object[] { "JavaBrowser" };
             } else {
                 BrowserArray = new Object[ar.size() + 1];

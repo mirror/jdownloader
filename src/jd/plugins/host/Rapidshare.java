@@ -153,6 +153,7 @@ public class Rapidshare extends PluginForHost {
     // type=\"text\" name=\"accesscode\" °size=\"5\" maxlength=\"4\"> <input
     // type=\"submit\" name=\"actionstring\" value=\"°\"></h3></form>";
     private String dataPatternPost = "<form name=\"dlf\" action=\"°\" method=\"post\""; // "document.dl.action=°document.dl.actionstring.value";
+    private String dataPatternPostHH = "<form name=\"dl\" action=\"°\" method=\"post\""; // "document.dl.action=°document.dl.actionstring.value";
 
     // private String dataPatternAction = "name=\"actionstring\"
     // value=\"°\"></h3></form>";
@@ -174,7 +175,7 @@ public class Rapidshare extends PluginForHost {
     /**
      * Wenn Rapidshare ihre happyhour hat
      */
-    private static final String happyhour = "RapidShare Happy Hours";
+    private static final String happyhour = "Wir haben Happy Hour";
     private boolean happyhourboolean = false;
 
     /**
@@ -1126,7 +1127,7 @@ public class Rapidshare extends PluginForHost {
                 // postTarget=this.getSimpleMatch(ticketCode, dataPattern, 0);
                 // actionString=this.getSimpleMatch(ticketCode, dataPattern, 1);
                 if (happyhourboolean) {
-                    postTarget = getBetween(ticketCode, "form name=\"dlf\" action=\"", "\"");
+                    postTarget = getSimpleMatch(ticketCode, dataPatternPostHH, 0);
                 } else {
                     postTarget = getSimpleMatch(ticketCode, dataPatternPost, 0);
                 }
@@ -1243,6 +1244,11 @@ public class Rapidshare extends PluginForHost {
                             // captchafile");
                             // new
                             // CaptchaMethodLoader().interact("rapidshare.com");
+                            
+                            if (!happyhourboolean && this.hashFound) {
+
+                                getRequest(new URL("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                            }
                             if (ces != null) ces.sendCaptchaWrong();
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;

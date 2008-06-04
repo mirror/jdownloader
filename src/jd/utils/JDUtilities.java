@@ -120,7 +120,7 @@ import sun.misc.BASE64Encoder;
 
 /**
  * @author astaldo/JD-Team
- */
+ */ 
 public class JDUtilities {
 
     /** 

@@ -939,9 +939,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             //btnReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
             break;
         case JDAction.APP_PAUSE_DOWNLOADS:
-            //btnPause.setSelected(!btnPause.isSelected());
+            btnPause.setSelected(!btnPause.isSelected());
             fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
-            //btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
+           btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
             break;
         case JDAction.APP_TESTER:
             logger.finer("Test trigger pressed");
