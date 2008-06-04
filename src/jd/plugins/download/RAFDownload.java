@@ -16,7 +16,6 @@
 
 package jd.plugins.download;
 
-
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
@@ -47,31 +46,25 @@ public class RAFDownload extends DownloadInterface {
 
     private RandomAccessFile outputFile;
 
-    private boolean WRITING=false;
-
     protected void writeChunkBytes(Chunk chunk) {
         try {
             // int limit = chunk.buffer.limit()-chunk.buffer.position();
-            while(WRITING){
-               if (speedDebug)logger.finer("Wait to write to HD");
-                Thread.sleep(10);
-            }
+
             if (maxBytes < 0) {
-                WRITING=true;
+                synchronized (outputChannel) {
                     outputFile.seek(chunk.getWritePosition());
                     outputChannel.write(chunk.buffer);
-                    WRITING=false;
+                }
             } else {
                 chunk.buffer.clear();
             }
-           
+
         } catch (Exception e) {
 
             e.printStackTrace();
             error(ERROR_LOCAL_IO);
             addException(e);
         }
-        WRITING=false;
 
     }
 
@@ -129,7 +122,7 @@ public class RAFDownload extends DownloadInterface {
 
                 // downloadLink.setChunksProgress(new int[chunkNum]);
                 Chunk chunk;
-                if(!new File(downloadLink.getFileOutput()).getParentFile().exists()){
+                if (!new File(downloadLink.getFileOutput()).getParentFile().exists()) {
                     new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
                 }
                 if (maxBytes < 0) outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
@@ -215,7 +208,7 @@ public class RAFDownload extends DownloadInterface {
             if (maxBytes < 0) outputFile.close();
             if (maxBytes < 0) outputChannel.close();
             if (!handleErrors()) {
-            
+
             return; }
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
@@ -227,13 +220,13 @@ public class RAFDownload extends DownloadInterface {
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getStatus() == DownloadLink.STATUS_DONE) {
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
-                    
+
                     String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
-                    if (sfvText != null&&sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
+                    if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
                         String[] l = JDUtilities.splitByNewline(sfvText);
                         boolean c = false;
                         for (String line : l) {
-                            logger.info(line+" - "+Long.toHexString(crc).toUpperCase());
+                            logger.info(line + " - " + Long.toHexString(crc).toUpperCase());
                             if (line.trim().endsWith(Long.toHexString(crc).toUpperCase()) || line.trim().endsWith(Long.toHexString(crc).toLowerCase())) {
                                 c = true;
                                 logger.info("CRC CHECK SUCCESS");
@@ -245,7 +238,7 @@ public class RAFDownload extends DownloadInterface {
                         } else {
                             downloadLink.setCrcStatus(DownloadLink.CRC_STATUS_BAD);
                             error(ERROR_CRC);
-                            
+
                         }
 
                     }

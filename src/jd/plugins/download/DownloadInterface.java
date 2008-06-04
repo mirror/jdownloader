@@ -160,7 +160,7 @@ abstract public class DownloadInterface {
         if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
             error(ERROR_NIBBLE_LIMIT_REACHED);
         }
-        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition()-1;
+        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
 
         // 152857135
         // logger.info("Bytes " + totalLoadedBytes);
@@ -415,11 +415,11 @@ abstract public class DownloadInterface {
         if (errors.contains(ERROR_CRC)) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            //downloadLink.setEnabled(false);
+            // downloadLink.setEnabled(false);
             downloadLink.setStatusText(JDLocale.L("download.error.message.crc", "Falsche Checksum"));
             return false;
         }
-        
+
         if (exceptions != null) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -442,14 +442,14 @@ abstract public class DownloadInterface {
             downloadLink.setStatusText(JDLocale.L("download.error.message.chunk_incomplete", "Chunk(s) incomplete"));
             return false;
         }
-        if (this.totaleLinkBytesLoaded != this.fileSize&&fileSize>0) {
+        if (this.totaleLinkBytesLoaded != this.fileSize && fileSize > 0) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             downloadLink.setStatusText(JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
         }
-        
-        if(getExceptions()!=null&&getExceptions().size()>0){
+
+        if (getExceptions() != null && getExceptions().size() > 0) {
             plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
             downloadLink.setStatusText(JDUtilities.convertExceptionReadable(getExceptions().firstElement()));
@@ -480,7 +480,7 @@ abstract public class DownloadInterface {
             assignChunkSpeeds();
 
         }
-        
+
     }
 
     /**
@@ -537,7 +537,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public int getReadTimeout() {
-        return Math.max(10000,readTimeout);
+        return Math.max(10000, readTimeout);
     }
 
     protected void addException(Exception e) {
@@ -560,7 +560,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public int getRequestTimeout() {
-        return Math.max(10000,requestTimeout);
+        return Math.max(10000, requestTimeout);
     }
 
     /**
@@ -762,6 +762,8 @@ abstract public class DownloadInterface {
 
         private int chunkBytesLoaded = 0;
 
+        private long nodataSince = 0;
+
         /**
          * die connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -881,8 +883,8 @@ abstract public class DownloadInterface {
                     channel.read(buffer);
 
                 }
-                if(speedDebug)logger.finer("loaded Prebytes " + preBytes);
-                if(speedDebug) logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
+                if (speedDebug) logger.finer("loaded Prebytes " + preBytes);
+                if (speedDebug) logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
                 inputStream.close();
                 channel.close();
                 connection.getHTTPURLConnection().disconnect();
@@ -927,9 +929,9 @@ abstract public class DownloadInterface {
          * @return
          */
         private HTTPConnection copyConnection(HTTPConnection connection) {
-           
-            int start=(int)startByte+getPreBytes(this);
-            String end=(endByte > 0 ? endByte + 1 : "")+"";
+
+            int start = (int) startByte + getPreBytes(this);
+            String end = (endByte > 0 ? endByte + 1 : "") + "";
             if (start == 0) return connection;
             try {
                 URL link = connection.getURL();
@@ -951,11 +953,8 @@ abstract public class DownloadInterface {
                     }
                 }
 
-             
+                httpConnection.setRequestProperty("Range", "bytes=" + start + "-" + end);
 
-                    httpConnection.setRequestProperty("Range", "bytes=" +  start + "-" + end);
-
-                
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     httpConnection.setDoOutput(true);
                     httpConnection.connect();
@@ -966,9 +965,12 @@ abstract public class DownloadInterface {
                     httpConnection.connect();
                 }
                 if (speedDebug) {
-//                    logger.finer("Org request headers " + this.getID() + ":" + request);
-//                    logger.finer("Coppied request headers " + this.getID() + ":" + httpConnection.getRequestProperties());
-//                    logger.finer("Server chunk Headers: " + this.getID() + ":" + httpConnection.getHeaderFields());
+                    // logger.finer("Org request headers " + this.getID() + ":"
+                    // + request);
+                    // logger.finer("Coppied request headers " + this.getID() +
+                    // ":" + httpConnection.getRequestProperties());
+                    // logger.finer("Server chunk Headers: " + this.getID() +
+                    // ":" + httpConnection.getHeaderFields());
                 }
                 // connection.getHTTPURLConnection().disconnect();
                 return httpConnection;
@@ -995,10 +997,10 @@ abstract public class DownloadInterface {
         public void run0() {
 
             logger.finer("Start Chunk " + this.getID() + " : " + startByte + " - " + endByte);
-            if ((startByte >= endByte && endByte > 0) || (startByte >= getFileSize()&&endByte > 0)) {
+            if ((startByte >= endByte && endByte > 0) || (startByte >= getFileSize() && endByte > 0)) {
 
                 // Korrektur Byte
-                if(speedDebug) logger.finer("correct -1 byte");
+                if (speedDebug) logger.finer("correct -1 byte");
                 addToTotalLinkBytesLoaded(-1);
 
                 return;
@@ -1007,7 +1009,7 @@ abstract public class DownloadInterface {
             if (chunkNum > 1) {
                 if (DownloadInterface.this.getPreBytes(this) > 0) {
                     loadPreBytes();
-                    if(speedDebug)logger.finer("After prebytes: " + startByte + " - " + endByte);
+                    if (speedDebug) logger.finer("After prebytes: " + startByte + " - " + endByte);
                 }
                 this.connection = copyConnection(connection);
 
@@ -1018,14 +1020,14 @@ abstract public class DownloadInterface {
                     return;
                 }
 
-                if ((startByte+getPreBytes(this))>0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                if ((startByte + getPreBytes(this)) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(ERROR_CHUNKLOAD_FAILED);
                     logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
 
                     return;
 
                 }
-            }else if(   startByte>0){
+            } else if (startByte > 0) {
                 this.connection = copyConnection(connection);
 
                 if (connection == null) {
@@ -1035,7 +1037,7 @@ abstract public class DownloadInterface {
                     return;
                 }
 
-                if ((startByte+getPreBytes(this))>0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                if ((startByte + getPreBytes(this)) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(ERROR_CHUNKLOAD_FAILED);
                     logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
 
@@ -1043,16 +1045,15 @@ abstract public class DownloadInterface {
 
                 }
             }
-            
-         
+
             // Content-Range=[133333332-199999999/200000000]}
-            if ((startByte+getPreBytes(this)) > 0) {
+            if ((startByte + getPreBytes(this)) > 0) {
                 String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
                 if (speedDebug) logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
 
                 if (range == null && chunkNum > 1) {
                     error(ERROR_CHUNKLOAD_FAILED);
-                    logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this)+ connection.getHeaderField("Content-Range")+": "+ connection.getHeaderField("Content-Range"));
+                    logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
 
                     return;
 
@@ -1141,7 +1142,7 @@ abstract public class DownloadInterface {
             if (speedDebug) logger.finer("resume Chunk with " + totalPartBytes + "/" + this.getChunkSize() + " at " + getCurrentBytesPosition());
             try {
                 bufferSize = getBufferSize(getMaximalSpeed());
-                if (endByte>0&&bufferSize > endByte - getCurrentBytesPosition() + 1) {
+                if (endByte > 0 && bufferSize > endByte - getCurrentBytesPosition() + 1) {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
@@ -1156,7 +1157,8 @@ abstract public class DownloadInterface {
             ReadableByteChannel source = null;
 
             try {
-                //logger.finer("Set timeouts: "+getReadTimeout()+" - "+getRequestTimeout());
+                // logger.finer("Set timeouts: "+getReadTimeout()+" -
+                // "+getRequestTimeout());
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
 
@@ -1174,6 +1176,7 @@ abstract public class DownloadInterface {
                 long addWait;
                 byte b[] = new byte[1];
                 int read = 0;
+                long readTimeout = getReadTimeout();
                 int ti = 0;
                 while (!isExternalyAborted()) {
                     bytes = 0;
@@ -1186,52 +1189,41 @@ abstract public class DownloadInterface {
                         // Prüft ob bytes zum Lesen anliegen.
                         if (inputStream.available() > 0) {
                             // kann den connectiontimeout nicht auswerten
-                            //if (speedDebug)  logger.finer("Read block");
+                            // if (speedDebug) logger.finer("Read block");
+                            nodataSince = 0;
                             block = source.read(buffer);
-
+                            addPartBytes(block);
+                            addToTotalLinkBytesLoaded(block);
+                            addChunkBytesLoaded(block);
+                            bytes += block;
                         } else {
 
                             // logger.finer(""+inputStream.getClass());
+                            if (nodataSince == 0) {
+                                this.nodataSince = System.currentTimeMillis();
+                            } else {
+                                // wertet den Timeout der connection aus
+                                // (HTTPInputStream)
+                                if ((System.currentTimeMillis() - nodataSince) >= readTimeout) {
 
-                            // wertet den Timeout der connection aus
-                            // (HTTPInputStream)
-                            if (speedDebug) logger.finer("check timeout");
-                            try{
-                            read = inputStream.read(b, 0, 1);
-                            }catch(Exception e){
-                                e.printStackTrace();
-                                read=-1;
+                                    logger.severe("Timeout: " + readTimeout);
+                                    block = -1;
+                                    error(ERROR_TIMEOUT_REACHED);
+                                    break;
+
+                                }
+                                Thread.sleep(50);
+
+                                
                             }
-                            if (speedDebug) logger.finer("return timeout");
-                            if (read > 0) {
-                                buffer.put(b);
-                                block = read;
-                                // Pause falls das Ende nicht erreicht worden
-                                // ist. Die Schelife läuft zu schnell
-                                // logger.finer("Pause");
-                                // Thread.sleep(25);
-                            } else if (read < 0) {
-                                block = -1;
 
-                                break;
-                            }
                         }
-
-                        if (block == -1) {
-
-                            break;
-                        }
-
-                        addPartBytes(block);
-                        addToTotalLinkBytesLoaded(block);
-                        addChunkBytesLoaded(block);
-                        bytes += block;
                     }
                     if (block == -1 && bytes == 0) break;
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
                     desiredBps = (1000 * (long) bytes) / deltaTime;
                     if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
-                    
+
                     buffer.flip();
                     if (speedDebug) logger.finer("write bytes");
                     writeBytes(this);
@@ -1255,7 +1247,7 @@ abstract public class DownloadInterface {
                      * War der download des buffers zu schnell, wird heir eine
                      * pause eingelegt
                      */
-                   tempBuff = getBufferSize(getMaximalSpeed());
+                    tempBuff = getBufferSize(getMaximalSpeed());
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden

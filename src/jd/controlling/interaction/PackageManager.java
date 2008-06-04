@@ -28,6 +28,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -98,6 +99,9 @@ public class PackageManager extends Interaction implements Serializable {
     public Vector<HashMap<String, String>> getPackageData() {
         if (PACKAGE_DATA != null) return PACKAGE_DATA;
         RequestInfo ri = null;
+        
+        ProgressController progress = new ProgressController(JDLocale.L("interaction.packagemanager.progress.loadpackages","Load packagedata"),10);
+        progress.setRange(3);
         try {
             //
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
@@ -107,7 +111,7 @@ public class PackageManager extends Interaction implements Serializable {
             } else {
                 ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
             }
-
+            progress.increase(1);
             String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
             DocumentBuilderFactory factory;
             InputSource inSource;
@@ -135,11 +139,15 @@ public class PackageManager extends Interaction implements Serializable {
                 }
             }
             PACKAGE_DATA = data;
+            progress.increase(1);
+            progress.finalize();
             return data;
         } catch (Exception e) {
             e.printStackTrace();
+            progress.finalize();
             return new Vector<HashMap<String, String>>();
         }
+       
     }
 
     public void run() {

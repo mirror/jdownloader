@@ -62,7 +62,7 @@ private String version = "1.0.0.0";
 
 //http://youtube.com/watch?v=qgjWZXnTn9A
 
-private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
 static private final Pattern FILENAME = Pattern.compile("<div id=\"watch-vid-title\">[\\s\\S]*?<div >(.*?)</div>", Pattern.CASE_INSENSITIVE);
 
 static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
@@ -247,7 +247,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           RequestInfo reqinfo = getRequest(url);
 
           FilePackage fp = new FilePackage();
-          String filename = getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1);
+          String filename = JDUtilities.htmlDecode(getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
           String video_id="";
           String t="";
 String cookies = reqinfo.getCookie();

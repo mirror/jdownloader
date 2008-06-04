@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.CaptchaMethodLoader;
+
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
@@ -705,9 +705,9 @@ public class SingleDownloadController extends Thread {
         downloadLink.setEndOfWaittime(0);
         downloadLink.setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        new CaptchaMethodLoader().interact(plugin.getHost());
-        if (plugin.getBotWaittime() <= 0) {
+       if (plugin.getBotWaittime() <= 0) {
             Reconnecter.requestReconnect();
+            downloadLink.setStatus(DownloadLink.STATUS_TODO);
             downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 * 1000);
             downloadLink.setStatusText(JDLocale.L("controller.status.botWaitReconnect", "Bot. Warte auf Reconnect"));
         } else if (plugin.getBotWaittime() > 0) {

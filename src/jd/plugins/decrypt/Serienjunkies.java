@@ -451,7 +451,7 @@ public class Serienjunkies extends PluginForDecrypt {
             mirrors = getMirrors(parameter, info[2]);
         }
         try {
-            linkName = (((title.length() > 10) ? title.substring(0, 10) : title) + "#" + ((name.length() > 20) ? name.substring(0, 20) : name)).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
+            linkName = (((title.length() > 10) ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
             // TODO: handle exception
         }

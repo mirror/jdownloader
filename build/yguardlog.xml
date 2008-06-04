@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Wed Jun 04 00:39:00 CEST 2008
+  Logfile created on Wed Jun 04 22:52:46 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2582336 bytes
+  Memory in use after class data structure built: 2550072 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
@@ -235,17 +235,6 @@
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
-<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
-<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
-<!-- WARNING: No mapping found: jd.utils.JDLocale -->
-<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
-<!-- WARNING: Unresolved external dependency: jd.config.Property not found! -->
-<!-- WARNING: No mapping found: jd.config.ConfigContainer -->
-<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
-<!-- WARNING: No mapping found: jd.config.ConfigEntry -->
-<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
-<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
-<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
 <!-- WARNING: No mapping found: jd.plugins.RequestInfo -->
@@ -266,26 +255,14 @@
 <!-- WARNING: No mapping found: jd.utils.JDUtilities -->
 <!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
 <!-- WARNING: No mapping found: jd.controlling.JDController -->
-<!-- WARNING: No mapping found: jd.config.SubConfiguration -->
-<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
-<!-- WARNING: No mapping found: jd.utils.JDUtilities -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
-<!-- WARNING: No mapping found: jd.plugins.DownloadLink -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: No mapping found: jd.plugins.PluginStep -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
-<!-- WARNING: Unresolved external dependency: jd.config.ConfigEntry not found! -->
-<!-- WARNING: Unresolved external dependency: jd.utils.JDLocale not found! -->
-<!-- WARNING: Unresolved external dependency: jd.config.ConfigContainer not found! -->
-<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
-<!-- WARNING: Unresolved external dependency: jd.config.SubConfiguration not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.RequestInfo not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.HTTPPost not found! -->
+<!-- WARNING: Unresolved external dependency: jd.utils.JDUtilities not found! -->
 <!-- WARNING: Unresolved external dependency: jd.controlling.JDController not found! -->
-<!-- WARNING: Unresolved external dependency: jd.plugins.DownloadLink not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
 <!-- WARNING: Unresolved external dependency: jd.plugins.PluginStep not found! -->
