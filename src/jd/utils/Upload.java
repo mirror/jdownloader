@@ -60,7 +60,7 @@ public class Upload {
    }
    public static String toJDownloader(String str, String desc){
        try {
-       RequestInfo ri = Plugin.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc="+desc+"&log="+str);
+       RequestInfo ri = Plugin.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc="+JDUtilities.urlEncode(desc)+"&log="+JDUtilities.urlEncode(str));
     
        return "http://jdservice.ath.cx/tools/log.php?id="+ri.getHtmlCode();
        } catch (MalformedURLException e) {

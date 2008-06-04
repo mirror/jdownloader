@@ -1156,7 +1156,7 @@ abstract public class DownloadInterface {
             ReadableByteChannel source = null;
 
             try {
-                logger.finer("Set timeouts: "+getReadTimeout()+" - "+getRequestTimeout());
+                //logger.finer("Set timeouts: "+getReadTimeout()+" - "+getRequestTimeout());
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
 
@@ -1202,6 +1202,7 @@ abstract public class DownloadInterface {
                                 e.printStackTrace();
                                 read=-1;
                             }
+                            if (speedDebug) logger.finer("return timeout");
                             if (read > 0) {
                                 buffer.put(b);
                                 block = read;
