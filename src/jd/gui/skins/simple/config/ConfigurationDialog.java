@@ -309,7 +309,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(img));
 //        headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT), BorderLayout.NORTH);
         try {
-            headerPanel.add(new JLinkButton(title, icon, new URL(JDLocale.L("gui.configdialog.wikilink.theconfigurationmenu", "http://jdownloader.ath.cx/wiki/index.php?title=Konfig:")+title.replaceAll("\\s", "_"))), BorderLayout.WEST);
+            JLinkButton linkButton = new JLinkButton(title, icon, new URL(JDLocale.L("gui.configdialog.wikilink.theconfigurationmenu", "http://jdownloader.ath.cx/wiki/index.php?title=Konfig:")+title.replaceAll("\\s", "_")));
+            linkButton.setBorder(null);
+            headerPanel.add(linkButton, BorderLayout.WEST);
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
