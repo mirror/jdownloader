@@ -111,6 +111,7 @@ public class SingleDownloadController extends Thread {
 
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));
         plugin.clean();
+        downloadLink.requestGuiUpdate();
     }
 
     private void fireControlEvent(ControlEvent controlEvent) {
@@ -232,7 +233,7 @@ public class SingleDownloadController extends Thread {
             currentPlugin.abort();
             logger.warning("Thread aborted");
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
+            
             // try {
             // Thread.sleep(1000);
             // }
@@ -513,7 +514,7 @@ public class SingleDownloadController extends Thread {
 
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText(JDLocale.L("controller.status.toManyUser", "ausgelastet") + " ");
-
+        downloadLink.setStatus(DownloadLink.STATUS_TODO);
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }

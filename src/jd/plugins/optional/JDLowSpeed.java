@@ -90,7 +90,11 @@ public class JDLowSpeed extends PluginOptional {
                         long size = downloadLink.getDownloadMax();
                         if (!downloadLink.isInProgress() || downloadLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS || speed > minspeed) return;
                         if (size != 0) {
+                            try{
                             if (((size - downloadLink.getDownloadCurrent()) / speed) < (size / maxspeed)) { return; }
+                            }catch(Exception e){
+                                return;
+                            }
                             Iterator<DownloadLink> iter = other.iterator();
                             long othersSpeed = 0;
                             while (iter.hasNext()) {

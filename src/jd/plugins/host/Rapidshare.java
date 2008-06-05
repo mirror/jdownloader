@@ -171,8 +171,7 @@ public class Rapidshare extends PluginForHost {
     private static long END_OF_DOWNLOAD_LIMIT = 0;
 
     private static final String captchaWrong = "wrong code";
-    private static final String captchaWrong2="Wrong access code";
-  
+    private static final String captchaWrong2 = "Wrong access code";
 
     /**
      * Wenn Rapidshare ihre happyhour hat
@@ -283,7 +282,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
 
-    private static final String PATTERN_DOWNLOAD_ERRORPAGE = "RapidShare: 1-Click Webhosting";
+    private static final String PATTERN_DOWNLOAD_ERRORPAGE = "RapidShare";
 
     private static final String PATTERN_ACCOUNT_OVERLOAD = "runtergeladen und damit das Limit";
 
@@ -316,6 +315,10 @@ public class Rapidshare extends PluginForHost {
     private static final int ERROR_ID_ACCOUNTEXPIRED = 8;
 
     private static final int ERROR_ID_FILENOTFOUND = 4;
+
+    private static final String PATTERN_ERROR_2 = "<h1>Fehler</h1>";
+
+    private static final String PATTERN_TOO_MANY_USERS = "Bitte versuchen Sie es in 2 Minuten";
 
     private static boolean HAPPYHOUR_IS_SUPPOSED = true;
 
@@ -881,6 +884,8 @@ public class Rapidshare extends PluginForHost {
                         return step;
                     }
 
+       
+
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
@@ -918,8 +923,36 @@ public class Rapidshare extends PluginForHost {
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     // return step;
                     // }
+                    if (requestInfo.containsHTML(PATTERN_ERROR_2)) {
+                        error = getSimpleMatch(requestInfo, "<h1>Fehler</h1>°<div class=\"klappbox\">° folgende Datei herunterladen:°<p><b>°<", 3);
+                        if (requestInfo.containsHTML(PATTERN_TOO_MANY_USERS)) {
+
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TO_MANY_USERS);
+
+                        } else    if (requestInfo.containsHTML(patternForAlreadyDownloading)) {
+                            logger.severe("1Already Loading wait " + 180 + " sek. to Retry");
+
+                            waitTime = 180 * 1000;
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
+                            logger.info("Wait until: " + System.currentTimeMillis() + "+ " + waitTime + " = " + END_OF_DOWNLOAD_LIMIT);
+                            logger.info(" WARTEZEIT SETZEN IN (already loading)" + step + " : " + waitTime);
+                            step.setParameter((long) waitTime);
+                            return step;
+                        }else {
+
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                            step.setParameter(error);
+                        }
+                        return step;
+                    }
+                    
+                    
                     if (requestInfo.containsHTML(patternForAlreadyDownloading)) {
-                        logger.severe("Already Loading wait " + 180 + " sek. to Retry");
+                        logger.severe("2Already Loading wait " + 180 + " sek. to Retry");
 
                         waitTime = 180 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
@@ -987,12 +1020,12 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         step.setParameter(null);
-                        try{
+                        try {
                             getRequest(new URL("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash=" + JDUtilities.getLocalHash(captchaFile)));
-                        }catch(Exception e){
+                        } catch (Exception e) {
                             e.printStackTrace();
                         }
-                        
+
                         break;
                     }
                     downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.captcha", "OCR & Wartezeit"));
@@ -1008,13 +1041,13 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setEndOfWaittime(System.currentTimeMillis() + pendingTime);
                     }
-                   try{
-                    RequestInfo ri = getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=&hash=" + JDUtilities.getLocalHash(captchaFile)));
-                    captchaCode = getSimpleMatch(ri, "code=°;", 0);
-                   }catch(Exception e){
-                       e.printStackTrace();
-                   }
-                    if (captchaCode!=null &&captchaCode.trim().length() != 4) {
+                    try {
+                        RequestInfo ri = getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                        captchaCode = getSimpleMatch(ri, "code=°;", 0);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    if (captchaCode != null && captchaCode.trim().length() != 4) {
 
                         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false) && !CES.isEnabled()) {
                             ces = new CESClient(captchaFile);
@@ -1247,16 +1280,15 @@ public class Rapidshare extends PluginForHost {
                     dl = new RAFDownload(this, downloadLink, urlConnection);
 
                     if (dl.startDownload()) {
-                        if (new File(downloadLink.getFileOutput()).length() < 6000 && (JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong) > 0||JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong2) > 0)) {
+                        if (new File(downloadLink.getFileOutput()).length() < 6000 && (JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong) > 0 || JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(captchaWrong2) > 0)) {
                             new File(downloadLink.getFileOutput()).delete();
 
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                         
 
                             if (!happyhourboolean && this.hashFound) {
-                                try{
+                                try {
                                     getRequest(new URL("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
-                                }catch(Exception e){
+                                } catch (Exception e) {
                                     e.printStackTrace();
                                 }
 
@@ -1273,10 +1305,10 @@ public class Rapidshare extends PluginForHost {
                             logger.info("Error detected. Bot detected");
 
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            
-                            try{
+
+                            try {
                                 getRequest(new URL("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash=" + JDUtilities.getLocalHash(captchaFile)));
-                            }catch(Exception e){
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             return step;
@@ -1293,12 +1325,12 @@ public class Rapidshare extends PluginForHost {
                         }
 
                         if (!happyhourboolean && !this.hashFound) {
-try{
-                            getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
-}catch(Exception e){
-    e.printStackTrace();
-}                       
-}
+                            try {
+                                getRequest(new URL("http://jdservice.ath.cx/rs/h.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
                         if (!happyhourboolean) JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, true);
 
                         happyhourboolean = false;
@@ -1589,7 +1621,7 @@ try{
                 dl.startDownload();
 
                 if (dl.getErrors().size() == 0) {
-                    if (new File(downloadLink.getFileOutput()).length() < 4000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
+                    if (new File(downloadLink.getFileOutput()).length() < 6000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
                         new File(downloadLink.getFileOutput()).delete();
 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);

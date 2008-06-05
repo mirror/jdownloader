@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ReadableByteChannel;
 import java.util.Iterator;
 import java.util.List;
@@ -491,6 +492,7 @@ abstract public class DownloadInterface {
         int allowedLinkSpeed = downloadLink.getMaximalspeed();
         int mChunk = (int) ((allowedLinkSpeed / chunkNum) * 0.4);
         int currentSpeed = 0;
+        long timeout = this.getReadTimeout();
         Chunk next;
         synchronized (chunks) {
             Iterator<Chunk> it = chunks.iterator();
@@ -510,6 +512,7 @@ abstract public class DownloadInterface {
                 if (next.isAlive()) {
                     next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
                 }
+                next.checkTimeout(timeout);
             }
         }
 
@@ -762,7 +765,13 @@ abstract public class DownloadInterface {
 
         private int chunkBytesLoaded = 0;
 
-        private long nodataSince = 0;
+      
+
+        private long blockStart=0;
+
+        private InputStream inputStream;
+
+        private ReadableByteChannel source;
 
         /**
          * die connection wird entsprechend der start und endbytes neu
@@ -777,6 +786,27 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             this.setPriority(Thread.MIN_PRIORITY);
+
+        }
+
+        public void checkTimeout(long timeout) {
+            if (this.blockStart == 0 || interrupted()) return;
+            try {
+                if( this.inputStream.available()>0){
+                    blockStart=0;
+                }
+            } catch (IOException e) { }
+            if (blockStart>0 &&(System.currentTimeMillis() - blockStart >= timeout) || isExternalyAborted()) {
+                logger.severe("Timeout or termination detected: interrupt: " + timeout);
+                this.interrupt();
+               
+            } else if (System.currentTimeMillis() - blockStart >= 5000) {
+                downloadLink.setStatusText(JDLocale.L("download.connection.idle", "Idle"));
+                downloadLink.requestGuiUpdate();
+
+            }else{
+                downloadLink.setStatusText(JDLocale.L("download.connection.normal", "Download"));
+            }
 
         }
 
@@ -1153,8 +1183,8 @@ abstract public class DownloadInterface {
                 return;
             }
 
-            InputStream inputStream = null;
-            ReadableByteChannel source = null;
+            // InputStream inputStream = null;
+            // ReadableByteChannel source = null;
 
             try {
                 // logger.finer("Set timeouts: "+getReadTimeout()+" -
@@ -1174,9 +1204,7 @@ abstract public class DownloadInterface {
                 int block = 0;
                 int tempBuff = 0;
                 long addWait;
-                byte b[] = new byte[1];
-                int read = 0;
-                long readTimeout = getReadTimeout();
+
                 int ti = 0;
                 while (!isExternalyAborted()) {
                     bytes = 0;
@@ -1186,38 +1214,78 @@ abstract public class DownloadInterface {
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
-                        // Prüft ob bytes zum Lesen anliegen.
-                        if (inputStream.available() > 0) {
-                            // kann den connectiontimeout nicht auswerten
-                            // if (speedDebug) logger.finer("Read block");
-                            nodataSince = 0;
+                        // PrÃŒft ob bytes zum Lesen anliegen.
+
+                        // kann den connectiontimeout nicht auswerten
+                        if (speedDebug) logger.finer("Read block");
+
+                        try {
+
+                            this.blockStart = System.currentTimeMillis();
                             block = source.read(buffer);
-                            addPartBytes(block);
-                            addToTotalLinkBytesLoaded(block);
-                            addChunkBytesLoaded(block);
-                            bytes += block;
-                        } else {
 
-                            // logger.finer(""+inputStream.getClass());
-                            if (nodataSince == 0) {
-                                this.nodataSince = System.currentTimeMillis();
+                        } catch (ClosedByInterruptException e) {
+                            if (this.isExternalyAborted()) {
+
                             } else {
-                                // wertet den Timeout der connection aus
-                                // (HTTPInputStream)
-                                if ((System.currentTimeMillis() - nodataSince) >= readTimeout) {
-
-                                    logger.severe("Timeout: " + readTimeout);
-                                    block = -1;
-                                    error(ERROR_TIMEOUT_REACHED);
-                                    break;
-
-                                }
-                                Thread.sleep(50);
-
-                                
+                                logger.severe("Timeout detected");
+                                error(ERROR_TIMEOUT_REACHED);
                             }
 
+                            block = -1;
+                            break;
                         }
+
+                        this.blockStart = 0;
+                        if (block == -1) {
+
+                            break;
+                        }
+
+                        addPartBytes(block);
+                        addToTotalLinkBytesLoaded(block);
+                        addChunkBytesLoaded(block);
+                        bytes += block;
+
+                        // block = 0;
+                        //
+                        // // Prüft ob bytes zum Lesen anliegen.
+                        // if (inputStream.available() > 0) {
+                        // // kann den connectiontimeout nicht auswerten
+                        // // if (speedDebug) logger.finer("Read block");
+                        // nodataSince = 0;
+                        // block = source.read(buffer);
+                        // addPartBytes(block);
+                        // addToTotalLinkBytesLoaded(block);
+                        // addChunkBytesLoaded(block);
+                        // bytes += block;
+                        // if(getCurrentBytesPosition() >= this.endByte){
+                        // break;
+                        //                                
+                        // }
+                        // } else {
+                        //
+                        // // logger.finer(""+inputStream.getClass());
+                        // if (nodataSince == 0) {
+                        // this.nodataSince = System.currentTimeMillis();
+                        // } else {
+                        // // wertet den Timeout der connection aus
+                        // // (HTTPInputStream)
+                        // if ((System.currentTimeMillis() - nodataSince) >=
+                        // readTimeout) {
+                        //
+                        // logger.severe("Timeout: " + readTimeout);
+                        // block = -1;
+                        // error(ERROR_TIMEOUT_REACHED);
+                        // break;
+                        //
+                        // }
+                        // Thread.sleep(50);
+                        //
+                        //                                
+                        // }
+                        //
+                        // }
                     }
                     if (block == -1 && bytes == 0) break;
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);

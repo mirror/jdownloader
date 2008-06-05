@@ -466,8 +466,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Größe der Datei
      */
     public long getDownloadMax() {
-      
-        return Math.max(getDownloadCurrent(),downloadMax);
+
+        return Math.max(getDownloadCurrent(), downloadMax);
     }
 
     /**
@@ -710,13 +710,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                         // eta) + " @ " + (speed / 1024) + " kb/s." + "(" +
                         // downloadInstance.getChunksDownloading() + "/" +
                         // downloadInstance.getChunks() + ")");
-                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
+                        ret+= "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" + downloadInstance.getChunksDownloading() + "/" + downloadInstance.getChunkNum() + ")";
                     } else {
-                        return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s ";
+                        ret+= "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s ";
                     }
+                    if(this.statusText!=null&&this.statusText.length()>0){
+                        ret+=" ["+statusText+"]";
+                    }
+                    return ret;
                 }
             }
         }
+        
         ret += this.toStatusString() + " ";
         if (!this.isEnabled() && this.getStatus() != DownloadLink.STATUS_DONE) {
             ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]") + " ";
