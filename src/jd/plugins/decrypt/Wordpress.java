@@ -14,7 +14,7 @@ import jd.plugins.RequestInfo;
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
-    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])"+"|(http://[*]xxx-blog.org/blog.php\\?id=[+])"+"|(http://[*]sky-porn.info/blog/\\?p=[+])";    
+    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])";
     private Pattern patternSupported = getSupportPattern(Supportpattern);
 
     public Wordpress() {
@@ -55,8 +55,6 @@ public class Wordpress extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        logger.info("Wordpress Comment Parser");
-
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {

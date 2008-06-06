@@ -70,7 +70,6 @@ public class Rlslog extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        logger.info("Rlslog Comment Parser");
         String followcomments = "";
 
         if (parameter.contains("/comment-page")) {
@@ -125,7 +124,7 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), HOSTER_LIST, JDLocale.L("plugins.decrypt.rlslog.hosterlist", "Liste der zu suchenden Hoster(Ein Hoster/Zeile)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), HOSTER_LIST, JDLocale.L("plugins.decrypt.rlslog.hosterlist", "Liste der zu suchenden Hoster(Ein Hoster/Zeile)")).setDefaultValue("rapidshare.com"));        
     }
 
     @Override
