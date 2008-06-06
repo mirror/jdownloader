@@ -17,6 +17,7 @@
 
 package jd.controlling.interaction;
 
+import java.io.File;
 import java.io.Serializable;
 
 import jd.config.ConfigContainer;
@@ -64,7 +65,6 @@ public class ExternReconnect extends Interaction implements Serializable {
     // private static final int MAX_RETRIES = 10;
     // private static final String PROPERTY_EXTERN_RECONNECT_DISABLED =
     // "EXTERN_RECONNECT_DISABLED";
-    private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 
     private static final String PROPERTY_RECONNECT_PARAMETER      = "EXTERN_RECONNECT__PARAMETER";
 
@@ -83,12 +83,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         ProgressController progress = new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title", "ExternReconnect"), 10);
 
         progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.1_retries", "ExternReconnect #") + retries);
-/*
-        int waitForReturn = JDUtilities.getConfiguration().getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String executeIn = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
-        String command = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_COMMAND);
-        String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
-*/
+
         int waittime = JDUtilities.getConfiguration().getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
@@ -145,8 +140,12 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private void runCommands() {
         int waitForReturn = JDUtilities.getConfiguration().getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
-        String executeIn = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_EXECUTE_FOLDER);
         String command = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_COMMAND);
+        
+        File f = new File(command);
+        String t = f.getAbsolutePath();
+        String executeIn = t.substring(0, t.indexOf(f.getName())-1);
+        
         String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
     
 
@@ -175,7 +174,6 @@ public class ExternReconnect extends Interaction implements Serializable {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")).setExpertEntry(true));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.externreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.externreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_RETRIES, JDLocale.L("interaction.externreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setExpertEntry(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.externreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setExpertEntry(true));
