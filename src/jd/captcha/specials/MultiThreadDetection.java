@@ -6,7 +6,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
 import jd.utils.JDUtilities;
 
 public class MultiThreadDetection {
@@ -87,5 +89,29 @@ public class MultiThreadDetection {
             startDetection(this);
         }
     };
+    
+    
+    public static Letter[] multiCore(Letter[] org, JAntiCaptcha jac) {
+       
+        int ths = Runtime.getRuntime().availableProcessors();
+        MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
+        Vector<Letter> ret = new Vector<Letter>();
+
+        Vector<PixelObject> sp;
+
+        // dummy.setValityPercent(100.0);
+
+        int count = org.length;
+
+        Letter ll;
+        LetterComperator resletter;
+        int bx = jac.getJas().getInteger("borderVarianceX");
+
+        for (Letter l : org) {
+            mtd.queueDetection(l);
+        }
+        mtd.waitFor(null);
+        return org;
+    }
 
 }

@@ -159,6 +159,12 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(false);
         ce.setExpertEntry(true);
         extended.addEntry(ce);
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "USEWRITERTHREAD", JDLocale.L("gui.config.download.downloadThread", "Gleichzeitig downloaden und auf Festplatte schreiben"));
+        ce.setDefaultValue(false);
+        ce.setExpertEntry(true);
+        extended.addEntry(ce);
+        
+
         
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);

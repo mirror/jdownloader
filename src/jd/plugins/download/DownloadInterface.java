@@ -735,7 +735,7 @@ abstract public class DownloadInterface {
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final int MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
-        private static final long MAX_BUFFERSIZE = 6 * 1024 * 1024;
+        private static final long MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
         private static final long MIN_BUFFERSIZE = 1024;
 
@@ -765,9 +765,7 @@ abstract public class DownloadInterface {
 
         private int chunkBytesLoaded = 0;
 
-      
-
-        private long blockStart=0;
+        private long blockStart = 0;
 
         private InputStream inputStream;
 
@@ -790,21 +788,24 @@ abstract public class DownloadInterface {
         }
 
         public void checkTimeout(long timeout) {
+            timeout=120000;
             if (this.blockStart == 0 || interrupted()) return;
             try {
-                if( this.inputStream.available()>0){
-                    blockStart=0;
+                if (this.inputStream.available() > 0) {
+                    blockStart = 0;
                 }
-            } catch (IOException e) { }
-            if (blockStart>0 &&(System.currentTimeMillis() - blockStart >= timeout) || isExternalyAborted()) {
+            } catch (IOException e) {
+            }
+long dif=System.currentTimeMillis() - blockStart;
+            if (blockStart > 0 && (dif>= timeout) || isExternalyAborted()) {
                 logger.severe("Timeout or termination detected: interrupt: " + timeout);
                 this.interrupt();
-               
-            } else if (System.currentTimeMillis() - blockStart >= 5000) {
+
+            } else if (blockStart > 0 &&dif >= 5000) {
                 downloadLink.setStatusText(JDLocale.L("download.connection.idle", "Idle"));
                 downloadLink.requestGuiUpdate();
 
-            }else{
+            } else {
                 downloadLink.setStatusText(JDLocale.L("download.connection.normal", "Download"));
             }
 
@@ -882,7 +883,7 @@ abstract public class DownloadInterface {
                 }
                 if (speedDebug) logger.finer("return speed: min " + maxSpeed + " - " + (this.desiredBps * 1.5));
                 if (desiredBps < 1024) return maxSpeed;
-                return Math.min(maxSpeed, (int) (this.desiredBps * 1.5));
+                return Math.min(maxSpeed, (int) (this.desiredBps * 1.3));
             } catch (Exception e) {
                 addException(e);
                 error(ERROR_UNKNOWN);
@@ -1204,14 +1205,14 @@ abstract public class DownloadInterface {
                 int block = 0;
                 int tempBuff = 0;
                 long addWait;
-
+                ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 128);
                 int ti = 0;
                 while (!isExternalyAborted()) {
                     bytes = 0;
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
                     if (speedDebug) logger.finer("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
-                    while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
+                    while (buffer.hasRemaining() &&  !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
                         // PrÃŒft ob bytes zum Lesen anliegen.
@@ -1222,7 +1223,15 @@ abstract public class DownloadInterface {
                         try {
 
                             this.blockStart = System.currentTimeMillis();
-                            block = source.read(buffer);
+                           
+                            if (miniBuffer.capacity() > buffer.remaining()) {
+                                block = source.read(buffer);
+                            } else {
+                                block = source.read(miniBuffer);
+                                miniBuffer.flip();
+                                buffer.put(miniBuffer);
+                                miniBuffer.clear();
+                            }
 
                         } catch (ClosedByInterruptException e) {
                             if (this.isExternalyAborted()) {
@@ -1247,45 +1256,6 @@ abstract public class DownloadInterface {
                         addChunkBytesLoaded(block);
                         bytes += block;
 
-                        // block = 0;
-                        //
-                        // // Prüft ob bytes zum Lesen anliegen.
-                        // if (inputStream.available() > 0) {
-                        // // kann den connectiontimeout nicht auswerten
-                        // // if (speedDebug) logger.finer("Read block");
-                        // nodataSince = 0;
-                        // block = source.read(buffer);
-                        // addPartBytes(block);
-                        // addToTotalLinkBytesLoaded(block);
-                        // addChunkBytesLoaded(block);
-                        // bytes += block;
-                        // if(getCurrentBytesPosition() >= this.endByte){
-                        // break;
-                        //                                
-                        // }
-                        // } else {
-                        //
-                        // // logger.finer(""+inputStream.getClass());
-                        // if (nodataSince == 0) {
-                        // this.nodataSince = System.currentTimeMillis();
-                        // } else {
-                        // // wertet den Timeout der connection aus
-                        // // (HTTPInputStream)
-                        // if ((System.currentTimeMillis() - nodataSince) >=
-                        // readTimeout) {
-                        //
-                        // logger.severe("Timeout: " + readTimeout);
-                        // block = -1;
-                        // error(ERROR_TIMEOUT_REACHED);
-                        // break;
-                        //
-                        // }
-                        // Thread.sleep(50);
-                        //
-                        //                                
-                        // }
-                        //
-                        // }
                     }
                     if (block == -1 && bytes == 0) break;
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);

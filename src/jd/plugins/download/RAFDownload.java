@@ -18,7 +18,9 @@ package jd.plugins.download;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
@@ -27,9 +29,11 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class RAFDownload extends DownloadInterface {
+    private Boolean writeType;
+
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         super(plugin, downloadLink, urlConnection);
-
+        this.writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
     }
 
     protected long writeTimer = System.currentTimeMillis();
@@ -45,26 +49,70 @@ public class RAFDownload extends DownloadInterface {
     private FileChannel outputChannel;
 
     private RandomAccessFile outputFile;
+    private ArrayList<ChunkBuffer> bufferList = new ArrayList<ChunkBuffer>();
+
+    private WriterWorker writer;
 
     protected void writeChunkBytes(Chunk chunk) {
-        try {
-            // int limit = chunk.buffer.limit()-chunk.buffer.position();
+        if (maxBytes < 0) {
 
-            if (maxBytes < 0) {
-                synchronized (outputChannel) {
-                    outputFile.seek(chunk.getWritePosition());
-                    outputChannel.write(chunk.buffer);
+            if (writeType) {
+                ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
+                buffer.put(chunk.buffer);
+                buffer.flip();
+                synchronized (bufferList) {
+                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition()));
+                    logger.info("new  buffer. size: "+bufferList.size());
+                }
+              
+                if (this.writer == null) {
+                    writer = new WriterWorker();
+
+                }
+                
+                synchronized (writer) {
+                    if (writer.waitFlag) {
+                        writer.waitFlag = false;
+                        writer.notify();
+                    }
+
                 }
             } else {
-                chunk.buffer.clear();
+                try {
+
+                    outputFile.seek(chunk.getWritePosition());
+                    outputChannel.write(chunk.buffer);
+
+                } catch (Exception e) {
+
+                    e.printStackTrace();
+                    error(ERROR_LOCAL_IO);
+                    addException(e);
+                }
+
             }
 
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            error(ERROR_LOCAL_IO);
-            addException(e);
+        } else {
+            chunk.buffer.clear();
         }
+        // try {
+        // // int limit = chunk.buffer.limit()-chunk.buffer.position();
+        //
+        // if (maxBytes < 0) {
+        // synchronized (outputChannel) {
+        // outputFile.seek(chunk.getWritePosition());
+        // outputChannel.write(chunk.buffer);
+        // }
+        // } else {
+        // chunk.buffer.clear();
+        // }
+        //
+        // } catch (Exception e) {
+        //
+        // e.printStackTrace();
+        // error(ERROR_LOCAL_IO);
+        // addException(e);
+        // }
 
     }
 
@@ -198,7 +246,22 @@ public class RAFDownload extends DownloadInterface {
 
     @Override
     protected void onChunksReady() {
-
+        if(writer!=null){
+            
+            writer.interrupt();
+            
+            
+            while(writer.isAlive()&&bufferList.size()>0){
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+        
+        
         System.gc();
         System.runFinalization();
         //
@@ -250,6 +313,64 @@ public class RAFDownload extends DownloadInterface {
             addException(e);
         }
 
+    }
+
+    class WriterWorker extends Thread {
+
+        public boolean waitFlag = true;
+
+        public WriterWorker() {
+            start();
+        }
+
+        public void run() {
+            ChunkBuffer buf;
+            while (!isInterrupted() ||bufferList.size()>0) {
+                synchronized (this) {
+
+                    while (waitFlag) {
+                        try {
+                            wait();
+                        } catch (Exception e) {
+                           return;
+                        }
+                    }
+                }
+                synchronized (bufferList) {
+                    if (bufferList.size() > 0) {
+                        buf = bufferList.remove(0);
+
+                        try {
+
+                            synchronized (outputChannel) {
+                                outputFile.seek(buf.position);
+                                outputChannel.write(buf.buffer);
+                                logger.info("Wrote  buffer. rest: "+bufferList.size());
+                            }
+
+                        } catch (Exception e) {
+
+                            e.printStackTrace();
+                            error(ERROR_LOCAL_IO);
+                            addException(e);
+                        }
+                    } else {
+                        waitFlag = true;
+
+                    }
+                }
+            }
+        }
+    }
+
+    class ChunkBuffer {
+        public long position;
+        public ByteBuffer buffer;
+
+        public ChunkBuffer(ByteBuffer buffer, long position) {
+            this.buffer = buffer;
+            this.position = position;
+        }
     }
 
 }

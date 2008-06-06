@@ -87,7 +87,7 @@ public class Lixin extends PluginForDecrypt {
             try {
                 int tries = 0;
 
-                while (tries < 3) {
+                while (tries < 8) {
                     URL url = new URL(parameter);
                     progress.setRange(1);
 
