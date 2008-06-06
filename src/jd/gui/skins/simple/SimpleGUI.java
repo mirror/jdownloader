@@ -45,7 +45,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -107,6 +106,7 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
+import com.nilo.plaf.nimrod.NimRODLookAndFeel;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
@@ -321,6 +321,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 UIManager.setLookAndFeel(new WindowsLookAndFeel());
             } catch (UnsupportedLookAndFeelException e) {
             }
+        }
+        try {
+//            System.setProperty("nimrodlf.themeFile", "arena.theme");
+            System.setProperty("nimrodlf.themeFile", "arena2.theme");
+//            System.setProperty("nimrodlf.themeFile", "ash.theme");
+//            System.setProperty("nimrodlf.themeFile", "night.theme");
+            UIManager.setLookAndFeel(new NimRODLookAndFeel());
+        } catch (UnsupportedLookAndFeelException e1) {
+            e1.printStackTrace();
         }
     }
 
