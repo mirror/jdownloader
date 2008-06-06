@@ -3,6 +3,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
@@ -10,17 +11,32 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
     private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])";
-    private Pattern patternSupported = getSupportPattern(Supportpattern);
-
+    private Pattern patternSupported = getSupportPattern(Supportpattern);    
+    private Vector<String> passwordpattern =new Vector<String>();
+    private Vector<String> partpattern = new Vector<String>();
+    
     public Wordpress() {
         super();
+        passwordpatterns();
+        partpatterns();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-
+    }    
+    
+    private void partpatterns(){
+        /*Diese Pattern dienen zum auffinden der einzelnen Parts*/
+        partpattern.add("<A HREF=\"°\" TARGET=\"_blank\">Part °</A>");
+    }
+    private void passwordpatterns(){
+        /*diese Pattern dienen zum auffinden des Passworts*/
+        passwordpattern.add("<B>Passwort:</B> ° |");
+        passwordpattern.add("<strong>Passwort:</strong> ° |");
+        passwordpattern.add("<strong>Passwort: </strong>°</p>");   
     }
 
     @Override
@@ -61,15 +77,34 @@ public class Wordpress extends PluginForDecrypt {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = getRequest(url);
                 String[] Links = Plugin.getHttpLinks(reqinfo.getHtmlCode(), null);
-                Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
-                for (int i = 0; i < Links.length; i++) {
-
-                    if (!Links[i].contains(url.getHost())) {
-                        decryptedLinks.add(this.createDownloadlink(Links[i]));
-                        decryptedLinks.lastElement().addSourcePluginPasswords(passs);
+                
+                String password = null;
+                /*Passwort suchen*/
+                for (int i=0;i<passwordpattern.size();i++){
+                    password=JDUtilities.htmlDecode(getSimpleMatch(reqinfo, passwordpattern.get(i), 1));
+                    if (password != null)
+                    {
+                        default_password.add(password);
+                        break;
                     }
-                }
-                step.setParameter(decryptedLinks);
+                };
+                /*Alle Parts suchen*/
+                ArrayList <String> parts =null;
+                for (int i=0;i<partpattern.size();i++){
+                    
+                    parts=getAllSimpleMatches(reqinfo, partpattern.get(i), 0);
+                    if (parts != null)
+                    {
+                        logger.info("gefunden");
+                        for (int ii=0;ii<parts.size();ii++)
+                        {
+                            logger.info("test"+parts.get(ii));
+                        };                        
+                    }
+                };               
+                
+                
+                //step.setParameter(decryptedLinks);*/
             } catch (IOException e) {
                 e.printStackTrace();
             }
