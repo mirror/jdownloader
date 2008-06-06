@@ -75,8 +75,7 @@ public class Wordpress extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
-                String[] Links = Plugin.getHttpLinks(reqinfo.getHtmlCode(), null);
+                RequestInfo reqinfo = getRequest(url);                
                 
                 String password = null;
                 /*Passwort suchen*/
@@ -87,26 +86,23 @@ public class Wordpress extends PluginForDecrypt {
                         default_password.add(password);
                         break;
                     }
-                };
-                
-                
+                };           
              
                 /*Alle Parts suchen*/
                 ArrayList <String> parts =null;
                 for (int i=0;i<partpattern.size();i++){
                     parts=getAllSimpleMatches(reqinfo,Pattern.compile( partpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (parts != null)
-                    {
-                        logger.info("gefunden");
+                    {                        
                         for (int ii=0;ii<parts.size();ii++)
-                        {
-                            logger.info("test"+parts.get(ii));
+                        {   
+                            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));
                         };                        
                     }
-                };               
+                };           
                 
                 
-                //step.setParameter(decryptedLinks);*/
+                step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }
