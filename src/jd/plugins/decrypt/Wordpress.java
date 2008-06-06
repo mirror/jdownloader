@@ -30,7 +30,7 @@ public class Wordpress extends PluginForDecrypt {
     
     private void partpatterns(){
         /*Diese Pattern dienen zum auffinden der einzelnen Parts*/
-        partpattern.add("<A HREF=\"°\" TARGET=\"_blank\">Part °</A>");
+        partpattern.add("<a href=\"([^>]*?)\" target=\"_blank\">Part \\d{0,3}</A>");
     }
     private void passwordpatterns(){
         /*diese Pattern dienen zum auffinden des Passworts*/
@@ -88,11 +88,13 @@ public class Wordpress extends PluginForDecrypt {
                         break;
                     }
                 };
+                
+                
+             
                 /*Alle Parts suchen*/
                 ArrayList <String> parts =null;
                 for (int i=0;i<partpattern.size();i++){
-                    
-                    parts=getAllSimpleMatches(reqinfo, partpattern.get(i), 0);
+                    parts=getAllSimpleMatches(reqinfo,Pattern.compile( partpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (parts != null)
                     {
                         logger.info("gefunden");
