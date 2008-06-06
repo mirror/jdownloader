@@ -53,11 +53,13 @@ private static final String VIDEO_ID = "video_id";
 private static final String T = "\"t\"";
 private static final String HOST = "BASE_YT_URL";
 private static final String PLAYER = "get_video";
+
 public static final int CONVERT_ID_AUDIO = 0;
-
 public static final int CONVERT_ID_VIDEO = 1;
-
 public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
+public static final int CONVERT_ID_MP4 = 3;
+public static final int CONVERT_ID_3GP = 4;
+
 private String version = "1.0.0.0";
 
 //http://youtube.com/watch?v=qgjWZXnTn9A
@@ -132,7 +134,7 @@ private void yConvertDialog() {
 		void init() {
             setLayout(new BorderLayout());
             setModal(true);
-            setTitle(JDLocale.L("plugins.YouTube.ConvertDialog.title", "Youtube.com ::Convert::"));
+            setTitle(JDLocale.L("plugins.YouTube.ConvertDialog.title", "Youtube.com Dateiformat"));
             setAlwaysOnTop(true);
             setLocation(20, 20);
             JPanel panel = new JPanel(new GridBagLayout());
@@ -151,8 +153,8 @@ private void yConvertDialog() {
                     // TODO Auto-generated method stub
                     return name;
                 }
-            }
-            ;
+            };
+            
             addWindowListener(new WindowListener() {
 
                 public void windowActivated(WindowEvent e) {
@@ -191,15 +193,17 @@ private void yConvertDialog() {
 
                 }
             });
-            meth[] meths = new meth[3];
-            meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioOnly", "Nur Audio"), CONVERT_ID_AUDIO);
-            meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.VideoOnly", "Nur Video"), CONVERT_ID_VIDEO);
-            meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.AudioandVideo", "Audio und Video"), CONVERT_ID_AUDIO_AND_VIDEO);
+            meth[] meths = new meth[5];
+            meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
+            meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
+            meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
+            meths[3] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
+            meths[4] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
 
             methods = new JComboBox(meths);
-            checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Einstellungen für diese Sitzung beibehalten?"), true);
+            checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);
             Insets insets = new Insets(0, 0, 0, 0);
-            JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.YouTube.ConvertDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.YouTube.ConvertDialog.action", "Dateiformat: ")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(panel, checkyConvert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             JButton btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
@@ -211,7 +215,7 @@ private void yConvertDialog() {
                 }
 
             });
-            JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
             add(panel, BorderLayout.CENTER);
             pack();
             setVisible(true);
@@ -271,25 +275,25 @@ String cookies = reqinfo.getCookie();
                   t = clean(lineSub[i+1]);
               }
           }
-
           
+          String link = "http://"+host + "/"+PLAYER+"?" + VIDEO_ID +"="+ video_id + "&" + "t="+ t;
+          int convertId = getYoutubeConvertTo();
           
-          String link = "http://"+host + "/"+PLAYER+"?" + VIDEO_ID +"="+ video_id + "&" + "t="+ t;     
+          if ( convertId == CONVERT_ID_MP4 ) {
+        	  link += "&fmt=18";
+          } else if ( convertId == CONVERT_ID_3GP ) {
+        	  link += "&fmt=13";
+          }
 
-          link = "< youtubedl url=\"" + parameter +  "\" decrypted=\"" + link + "\" convert=\"" + getYoutubeConvertTo() + "\" >";
-
+          link = "< youtubedl url=\"" + parameter +  "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
           
           logger.info(link);
           
           fp.add(this.createDownloadlink(link));
           decryptedLinks.add(this.createDownloadlink(link));
           progress.increase(1);
-          
-
-
-          // Decrypt abschliessen
-
           step.setParameter(decryptedLinks);
+          
       } catch (IOException e) {
           e.printStackTrace();
       }

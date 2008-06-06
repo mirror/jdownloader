@@ -43,15 +43,15 @@ public class Youtube extends PluginForHost {
     static private final String PLUGIN_VERSION = "0.1";
     static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     static private final String CODER = "JD-Team";
+
     public static final int CONVERT_ID_AUDIO = 0;
-
     public static final int CONVERT_ID_VIDEO = 1;
-
     public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
+    public static final int CONVERT_ID_MP4 = 3;
+    public static final int CONVERT_ID_3GP = 4;
+    
     static private final Pattern FILENAME = Pattern.compile("<div id=\"watch-vid-title\">[\\s\\S]*?<div >(.*?)</div>", Pattern.CASE_INSENSITIVE);
-
     static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
-
     static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
     static private final Pattern DOWNLOADFILE = Pattern.compile("< youtubedl url=\".*?\" decrypted=\"(.*?)\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
 
@@ -98,10 +98,12 @@ public class Youtube extends PluginForHost {
             return JDLocale.L("plugins.host.YouTube.pluginextensions.audio", "->mp3");
         case CONVERT_ID_VIDEO:
             return JDLocale.L("plugins.host.YouTube.pluginextensions.video", "->flv");
-
         case CONVERT_ID_AUDIO_AND_VIDEO:
             return JDLocale.L("plugins.host.YouTube.pluginextensions.audioandvideo", "->mp3+flv");
-
+        case CONVERT_ID_MP4:
+            return JDLocale.L("plugins.host.YouTube.pluginextensions.mp4", "->mp4");
+        case CONVERT_ID_3GP:
+            return JDLocale.L("plugins.host.YouTube.pluginextensions.3gp", "->3gp");
         }
         return null;
     }
@@ -128,8 +130,17 @@ public class Youtube extends PluginForHost {
                     return step;
 
                 }
-
-                downloadLink.setName(name + ".flv");
+                
+                switch (convert) {
+                case CONVERT_ID_MP4:
+                    downloadLink.setName(name + ".mp4");
+                    break;
+                case CONVERT_ID_3GP:
+                    downloadLink.setName(name + ".3gp");
+                    break;
+                default:
+                    downloadLink.setName(name + ".flv");
+                }
 
                 logger.info(downloadfile);
 
@@ -149,6 +160,10 @@ public class Youtube extends PluginForHost {
                             ProgressController progress = new ProgressController(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName(),3);
                             progress.increase(1);
                             switch (convert) {
+                            case CONVERT_ID_MP4:
+                                break;
+                            case CONVERT_ID_3GP:
+                                break;
                             case CONVERT_ID_AUDIO:
                                 progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName());
                              
