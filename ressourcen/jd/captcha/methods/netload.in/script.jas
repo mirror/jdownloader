@@ -2,6 +2,8 @@
 ##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
 ##### erkennung nötig sind #####
 #####################################---Filefactory.com---####################################
+
+param.useLetterFilter=MultiThreadDetection.multiCore;
 ##############Set parameter
 param.simplifyFaktor = 1;
 param.borderVarianceX=6;

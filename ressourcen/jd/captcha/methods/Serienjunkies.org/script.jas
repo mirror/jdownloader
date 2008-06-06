@@ -6,7 +6,7 @@
 param.simplifyFaktor = 1;
 param.trainOnlyUnknown=true;
 param.colorType = RGB;
-
+param.useLetterFilter=MultiThreadDetection.multiCore;
 
 ############Scanner parameter
 param.borderVarianceX=6;
@@ -43,7 +43,8 @@ param.relativecontrast=0.999;
 param.useColorObjectDetection = true;
 
 param.splitPixelObjectsOverlap=3;
-############Parameter die die Bildbearbeitung beeinflussen
+############Parameter die die Bildbearbeitung beeinflussen
+
 
 ##################Prepare captcha 22 29 35
 #captcha.prepare.toBlackAndWhite(0.3);

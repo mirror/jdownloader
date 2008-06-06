@@ -7,7 +7,7 @@ param.simplifyFaktor = 1;
 param.trainOnlyUnknown=true;
 param.colorType = sss;
 
-
+param.useLetterFilter=MultiThreadDetection.multiCore;
 ############Scanner parameter
 param.borderVarianceX=6;
 param.borderVarianceY=6;

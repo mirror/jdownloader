@@ -6,7 +6,7 @@
 param.simplifyFaktor = 1;
 param.trainOnlyUnknown=true;
 param.colorType = RGB;
-
+param.useLetterFilter=MultiThreadDetection.multiCore;
 
 ############Scanner parameter
 param.borderVarianceX=9;
