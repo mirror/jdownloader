@@ -112,7 +112,7 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = true;
+    protected boolean speedDebug = false;
 
     private Vector<Exception> exceptions = null;
 
@@ -482,7 +482,7 @@ abstract public class DownloadInterface {
 
     private void waitForChunks() {
         int i = 0;
-        int interval = 50;
+        int interval = 150;
         while (chunksInProgress > 0) {
             synchronized (this) {
 
@@ -835,9 +835,9 @@ abstract public class DownloadInterface {
             }
             if (timer <= 0) return;
             long dif = System.currentTimeMillis() - timer;
-            logger.info(this + " " + dif);
+            //logger.info(this + " " + dif);
             if (dif >= timeout) {
-                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif);
+                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif+" - "+timer);
                 this.interrupt();
 
             } else if (dif >= 5000) {

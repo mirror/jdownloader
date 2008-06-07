@@ -298,7 +298,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
         String[][] help = new String[][] {
         		{ JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" },
-        		{ "http://jdownloader.ath.cx/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
+        		{ "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
         		{ "-h/--help\t", "Show this help message" },
         		{ "-a/--add-link(s)", "Add links" },
         		{ "-c/--add-container(s)", "Add containers" },

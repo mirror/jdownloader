@@ -182,7 +182,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
         openPluginDir.addActionListener(this);
       
-        link= new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help","Hilfe"),JDLocale.L("gui.config.plugin.optional.link_help","  http://jdownloader.ath.cx/page.php?id=122"));
+        link= new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help","Hilfe"),JDLocale.L("gui.config.plugin.optional.link_help","  http://jdownloader.org/page.php?id=122"));
         // JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
 //        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);

@@ -294,7 +294,7 @@ public class CESClient implements Serializable {
         // [01.05.08 22:48, coalado, bla und so,
         // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
         String title = String.format(JDLocale.L("captcha.ces.message.title", "C.E.S. Neue Nachricht erhalten von %s am %s"), message.get(1), message.get(0));
-        String html = String.format(JDLocale.L("captcha.ces.message.body", "<link href=\"http://jdownloader.ath.cx/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" /><div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)), JDUtilities.htmlDecode(message.get(1)), JDUtilities.htmlDecode(message.get(2)));
+        String html = String.format(JDLocale.L("captcha.ces.message.body", "<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" /><div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)), JDUtilities.htmlDecode(message.get(1)), JDUtilities.htmlDecode(message.get(2)));
         JDUtilities.getGUI().showHTMLDialog(title, html);
 
     }

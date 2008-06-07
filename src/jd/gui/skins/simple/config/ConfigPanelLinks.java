@@ -56,19 +56,19 @@ if(guiConfig!=null)
         GUIConfigEntry ce;
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.message", "Hier finden Sie einige wichtige Links bezogen auf jDownloader")));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.home", "Heimat von JDownloader"),"http://jdownloader.ath.cx"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.home", "Heimat von JDownloader"),"http://jdownloader.org"));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.lblSupport", "Support")));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.dlccreate", "Online DLContainer erstellen"),"http://jdownloader.ath.cx/dlc.php"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.dlccreate", "Online DLContainer erstellen"),"http://jdownloader.org/dlc.php"));
         addGUIConfigEntry(ce);
 
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.support", "Supportforum"),"http://jdownloadersupport.ath.cx"));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.email", "Email an jDownloader"),"mailto:jdownloader@freenet.de"));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.wiki", "Wiki - häufige Fragen"),"http://jdownloader.ath.cx/wiki/index.php?title=Hauptseite"));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.wiki", "Wiki - häufige Fragen"),"http://jdownloader.org/wiki/index.php?title=Hauptseite"));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("gui.config.general.link.jddownload", "Download: jDownloader"),"http://jdownloaderinstall.ath.cx"));
         addGUIConfigEntry(ce);

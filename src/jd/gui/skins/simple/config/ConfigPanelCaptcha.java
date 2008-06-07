@@ -142,7 +142,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         jac.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true);
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.ath.cx/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle"));
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.org/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle"));
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         jac.addEntry(ce);
 
@@ -156,7 +156,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.JAC_USE_CES, JDLocale.L("gui.config.captcha.use_Ces", "CaptchaExchangeServer verwenden(Neustart nötig)"));
         ce.setDefaultValue(true);
         conditionEntry = ce;
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.ath.cx/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
 
         // ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp",
         // "http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3"));
@@ -175,7 +175,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), CESClient.DO_WARNING, JDLocale.L("gui.config.captcha.useCESPenaltyWarning", "Durch frühzeitige Rückfrage Punktstrafen vermeiden"));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.ath.cx/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
+        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
  
         ce.setDefaultValue(true);
         ces.addEntry(ce);
@@ -387,7 +387,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages","C.E.S. Keine Nachrichten für dich!"));  
             return;
             }
-            String html="<link href=\"http://jdownloader.ath.cx/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
+            String html="<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
            
             ArrayList<String> message;
             int i=0;

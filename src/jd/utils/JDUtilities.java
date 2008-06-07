@@ -133,7 +133,7 @@ public class JDUtilities {
     /**
      * Name des Loggers 
      */
-    public static String LOGGER_NAME = "java_downloader";
+    public static String LOGGER_NAME = "java_downloader"; 
 
     /**
      * Titel der Applikation

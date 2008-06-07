@@ -1094,7 +1094,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             
         case JDAction.WIKI:
             try {
-                JLinkButton.openURL(JDLocale.L("gui.support.wikiurl","http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English"));
+                JLinkButton.openURL(JDLocale.L("gui.support.wikiurl","http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English"));
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
@@ -1381,7 +1381,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Dimension d = new Dimension(5, 0);
             left.add(new Box.Filler(d, d, d));
             left.add(lblMessage);
-            JLinkButton linkButton = new JLinkButton("http://jdownloader.ath.cx");
+            JLinkButton linkButton = new JLinkButton("http://jdownloader.org");
             left.add(linkButton);
             right.add(chbPremium);
             right.add(bundle(lblSimu, spMaxDls));
