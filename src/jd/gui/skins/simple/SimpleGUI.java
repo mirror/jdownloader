@@ -535,8 +535,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
-        actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"), "action.wiki", JDAction.WIKI);
-        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
+//        actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"), "action.wiki", JDAction.WIKI);
+        actionWiki = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.wiki", JDAction.WIKI);
+//        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
+        actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
 
     }
 
