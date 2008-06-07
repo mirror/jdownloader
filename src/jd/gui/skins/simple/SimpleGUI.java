@@ -210,7 +210,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     Dropper dragNDrop;
 
-    private JCheckBoxMenuItem menViewLog = null;
+    private JMenuItem menViewLog = null;
 
     private JSplitPane splitpane;
 
@@ -535,8 +535,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
-        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
         actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"), "action.wiki", JDAction.WIKI);
+        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
 
     }
 
@@ -597,8 +597,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // extra
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra"));
         // menAction.setMnemonic(JDLocale.L("gui.menu.extra_mnem").charAt(0));
-        menViewLog = new JCheckBoxMenuItem(actionLog);
-        menViewLog.setIcon(null);
+        menViewLog = createMenuItem(actionLog);
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
         JMenuItem memDnD = createMenuItem(actionDnD);
         JMenuItem menConfig = createMenuItem(actionConfig);
