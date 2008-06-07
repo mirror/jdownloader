@@ -17,7 +17,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -44,7 +43,6 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     private InfoFileWriter fileWriter;
     public ConfigPanelInfoFileWriter(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        panel.setLayout(new StackLayout(10));
        // this.configuration = configuration;
         fileWriter= InfoFileWriter.getInstance();
         initPanel();
@@ -70,7 +68,8 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
                 entries.add(ce);
             }
         }
-        add(panel, BorderLayout.CENTER);
+        panel.setLayout(new BorderLayout());
+        add(panel, "Center");
     }
     @Override
     public void load() {
@@ -81,22 +80,15 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
         return JDLocale.L("gui.config.infoFileWriter.name","Info Datei");
     }
     
-    class StackLayout implements LayoutManager {
-        private int gap = 0;
+    private class BorderLayout implements LayoutManager {
+        private int gap = 10;
         public int getGap() {return gap;}
         public void setGap(int gap) {this.gap = gap;}
-        StackLayout() {
-            super();
-        }
-        StackLayout(int gap) {
-            this.gap = gap;
-        }
         public void addLayoutComponent(String name, Component comp) {}
         public void removeLayoutComponent(Component comp) {}
         public Dimension preferredLayoutSize(Container parent) {
             Insets insets = parent.getInsets();
             Dimension pref = new Dimension(0, 0);
-
             for (int i = 0, c = parent.getComponentCount(); i < c; i++) {
               Component m = parent.getComponent(i);
               if (m.isVisible()) {
@@ -105,21 +97,16 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
                 pref.width = Math.max(pref.width, componentPreferredSize.width);
               }
             }
-
             pref.width += insets.left + insets.right;
             pref.height += insets.top + insets.bottom;
-
             return pref;
         }
-        public Dimension minimumLayoutSize(Container parent) {
-            return null;
-        }
+        public Dimension minimumLayoutSize(Container parent) {return null;}
         public void layoutContainer(Container parent) {
             Insets insets = parent.getInsets();
             Dimension size = parent.getSize();
             int width = size.width - insets.left - insets.right;
             int height = insets.top;
-
             for (int i = 0, c = parent.getComponentCount(); i < c; i++) {
               Component m = parent.getComponent(i);
               if (m.isVisible()) {

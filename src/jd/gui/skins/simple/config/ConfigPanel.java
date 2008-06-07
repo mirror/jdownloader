@@ -39,7 +39,7 @@ public abstract class ConfigPanel extends JPanel {
      */
     private static final long      serialVersionUID = 3383448498625377495L;
 
-    private Vector<GUIConfigEntry> entries          = new Vector<GUIConfigEntry>();
+    protected Vector<GUIConfigEntry> entries          = new Vector<GUIConfigEntry>();
 
     protected UIInterface          uiinterface;
 
