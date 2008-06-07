@@ -159,7 +159,9 @@ abstract public class DownloadInterface {
     abstract protected void writeChunkBytes(Chunk chunk);
 
     protected void writeBytes(Chunk chunk) {
+        
         writeChunkBytes(chunk);
+      
         if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
             error(ERROR_NIBBLE_LIMIT_REACHED);
         }

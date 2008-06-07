@@ -566,7 +566,7 @@ public class Rapidshare extends PluginForHost {
 
                     try {
                         progress.increase(1);
-                        RequestInfo ri = Plugin.getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
+                        RequestInfo ri = Plugin.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
                         progress.increase(1);
                         int sec = 300 - JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
 
@@ -584,7 +584,7 @@ public class Rapidshare extends PluginForHost {
 
                             SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-                            String html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                            String html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
                             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                         } else {
                             int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
@@ -593,7 +593,7 @@ public class Rapidshare extends PluginForHost {
 
                             SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
 
-                            String html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
+                            String html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhinactive.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
                             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                         }
                     } catch (Exception e) {
@@ -650,7 +650,7 @@ public class Rapidshare extends PluginForHost {
                         String trafficshare = Plugin.getSimpleMatch(ri, "<td>TrafficShare &uuml;brig:</td><td><b>°</b>", 0);
                         String usedHD = Plugin.getSimpleMatch(ri, "<td>Belegter Speicher:</td><td align=right style=\"padding-right:20px;\"><b>°</b>", 0);
 
-                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), validuntil, rapidPoints, days5traffic, usedHD + "/" + trafficshare, files);
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), validuntil, rapidPoints, days5traffic, usedHD + "/" + trafficshare, files);
                     }
 
                     JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
@@ -1368,10 +1368,10 @@ public class Rapidshare extends PluginForHost {
                 String strWaitTime = getSimpleMatch(ri.getHtmlCode(), patternErrorDownloadLimitReached, 0);
 
                 if (strWaitTime != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
-                    logger.info("Waittime detected. check happy hour via jdownloader.ath.cx");
-                    RequestInfo ch = Plugin.getRequest(new URL("http://jdownloader.ath.cx/hh.php?txt=1"));
+                    logger.info("Waittime detected. check happy hour via jdownloader.org");
+                    RequestInfo ch = Plugin.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
                     if (ch.containsHTML("happy")) {
-                        logger.info("jdownloader.ath.cx detected Happy Hour. Reconnect now");
+                        logger.info("jdownloader.org detected Happy Hour. Reconnect now");
                         logger.severe("wait " + strWaitTime + " minutes");
                         waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
@@ -1382,13 +1382,13 @@ public class Rapidshare extends PluginForHost {
                         step.setParameter((long) waitTime);
                         return step;
                     } else {
-                        logger.info("jdownloader.ath.cx detected NO Happy Hour, ...continue with Premium");
+                        logger.info("jdownloader.org detected NO Happy Hour, ...continue with Premium");
                         HAPPYHOUR_IS_SUPPOSED = false;
 
                     }
                 } else if (strWaitTime != null) {
                     HAPPYHOUR_IS_SUPPOSED = false;
-                    logger.info("jdownloader.ath.cx detected Happy Hour, but Reconnect is disabled..continue with Premium");
+                    logger.info("jdownloader.org detected Happy Hour, but Reconnect is disabled..continue with Premium");
                 } else {
                     if (ri.containsHTML(happyhour)) {
                         logger.info("happy Hour is active. Disable Force Free Download in happy hour to avoid this");

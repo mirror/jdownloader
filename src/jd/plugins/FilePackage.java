@@ -442,7 +442,7 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
                 next = it.next();
-                if (next.getFileOutput().endsWith(".sfv")) return next;
+                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) return next;
             }
         }
         return null;
