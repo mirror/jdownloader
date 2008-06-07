@@ -18,13 +18,20 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.LayoutManager;
 
-import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.InfoFileWriter;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class ConfigPanelInfoFileWriter extends ConfigPanel {
     /**
@@ -37,6 +44,7 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     private InfoFileWriter fileWriter;
     public ConfigPanelInfoFileWriter(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
+        panel.setLayout(new StackLayout(10));
        // this.configuration = configuration;
         fileWriter= InfoFileWriter.getInstance();
         initPanel();
@@ -51,12 +59,18 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
         GUIConfigEntry ce;
         for(int i=0; i<fileWriter.getConfig().getEntries().size();i++){
             ce = new GUIConfigEntry(fileWriter.getConfig().getEntries().get(i));
-            addGUIConfigEntry(ce);
+            if (!ce.isExpertEntry() || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
+                EmptyBorder eb = new EmptyBorder(0,0,0,0);
+                ce.setBorder(eb);
+//                Component[] components = ce.getComponents();
+//                for (Component c : components) {
+//                    ((JComponent) c).setBorder(eb);
+//                }
+                panel.add(ce);
+                entries.add(ce);
+            }
         }
-        JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBorder(null);
-        add(scrollPane, BorderLayout.NORTH);
+        add(panel, BorderLayout.CENTER);
     }
     @Override
     public void load() {
@@ -66,4 +80,55 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
     public String getName() {
         return JDLocale.L("gui.config.infoFileWriter.name","Info Datei");
     }
+    
+    class StackLayout implements LayoutManager {
+        private int gap = 0;
+        public int getGap() {return gap;}
+        public void setGap(int gap) {this.gap = gap;}
+        StackLayout() {
+            super();
+        }
+        StackLayout(int gap) {
+            this.gap = gap;
+        }
+        public void addLayoutComponent(String name, Component comp) {}
+        public void removeLayoutComponent(Component comp) {}
+        public Dimension preferredLayoutSize(Container parent) {
+            Insets insets = parent.getInsets();
+            Dimension pref = new Dimension(0, 0);
+
+            for (int i = 0, c = parent.getComponentCount(); i < c; i++) {
+              Component m = parent.getComponent(i);
+              if (m.isVisible()) {
+                Dimension componentPreferredSize = parent.getComponent(i).getPreferredSize(); 
+                pref.height += componentPreferredSize.height + gap;
+                pref.width = Math.max(pref.width, componentPreferredSize.width);
+              }
+            }
+
+            pref.width += insets.left + insets.right;
+            pref.height += insets.top + insets.bottom;
+
+            return pref;
+        }
+        public Dimension minimumLayoutSize(Container parent) {
+            return null;
+        }
+        public void layoutContainer(Container parent) {
+            Insets insets = parent.getInsets();
+            Dimension size = parent.getSize();
+            int width = size.width - insets.left - insets.right;
+            int height = insets.top;
+
+            for (int i = 0, c = parent.getComponentCount(); i < c; i++) {
+              Component m = parent.getComponent(i);
+              if (m.isVisible()) {
+                  if (i == c-1) m.setBounds(insets.left, height, width, size.height-height-insets.bottom);
+                  else m.setBounds(insets.left, height, width, m.getPreferredSize().height);
+                height += m.getSize().height + gap;
+              }
+            }
+        }
+    }
+
 }
