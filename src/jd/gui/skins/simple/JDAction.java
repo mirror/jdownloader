@@ -100,10 +100,11 @@ public class JDAction extends AbstractAction{
         this.actionID = actionID;
         this.actionListener = actionListener;
        
-     if(JDUtilities.getImage(iconName)!=null){
-        ImageIcon icon = new ImageIcon(JDUtilities.getImage(iconName));
-        putValue(Action.SMALL_ICON, icon);
-     }
+        Image image = JDUtilities.getImage(iconName);
+        if(image!=null){
+            ImageIcon icon = new ImageIcon(image);
+            putValue(Action.SMALL_ICON, icon);
+        }
         putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu."+ressourceName+".desc"));
         putValue(Action.NAME,              JDLocale.L("gui.menu."+ressourceName+".name"));
         char mnemonic = JDLocale.L("gui.menu."+ressourceName+".mnem").charAt(0);

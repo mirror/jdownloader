@@ -45,6 +45,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -57,7 +58,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
@@ -105,7 +105,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -792,16 +791,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(menConfig);
         menExtra.add(memDnD);
         menExtra.add(menUnrar);
+        menExtra.addSeparator();
         menExtra.add(menPasswordlist);
 
   
         menHelp.add(createMenuItem(actionHelp));
         menHelp.add(createMenuItem(actionWiki));
-        menExtra.add(new JSeparator());
         /*
          * TODO: ABout Frame
          */
         //menAbout.setEnabled(false);
+        menHelp.addSeparator();
         menHelp.add(createMenuItem(actionAbout));
 
         // menAction.add(menDownload);
@@ -844,7 +844,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private static JMenuItem createMenuItem(JDAction action) {
         JMenuItem menuItem = new JMenuItem(action);
-        menuItem.setIcon(null);
+        if (menuItem.getIcon() instanceof ImageIcon) {
+            ImageIcon icon = (ImageIcon) menuItem.getIcon();
+            menuItem.setIcon(JDUtilities.getscaledImageIcon(icon, 16, -1));
+        }
         if (action.getAccelerator() != null) menuItem.setAccelerator(action.getAccelerator());
         return menuItem;
     }

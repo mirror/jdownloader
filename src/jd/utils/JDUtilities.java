@@ -82,6 +82,7 @@ import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.xml.transform.OutputKeys;
@@ -2432,6 +2433,10 @@ public static boolean validateIP(String ip){
         }
 
         return fileOutput0;
+    }
+
+    public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
+        return new ImageIcon(icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
     }
 
     

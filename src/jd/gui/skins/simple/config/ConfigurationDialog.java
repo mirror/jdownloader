@@ -25,7 +25,6 @@ import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
@@ -320,7 +319,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         p.add(headerPanel , BorderLayout.NORTH);
         
         
-        tabbedPane.addTab(title, new ImageIcon(icon.getImage().getScaledInstance(20, -1, Image.SCALE_SMOOTH)), p);       
+        tabbedPane.addTab(title, JDUtilities.getscaledImageIcon(icon, 20, -1), p);       
     }
 
     /**
