@@ -76,7 +76,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     public static final String PROPERTY_SELECTED = "selected";
 
-    private static final long UPDATE_INTERVAL = 500;
+    private static final long UPDATE_INTERVAL = 50;
 
     private DownloadTreeTableModel model;
 

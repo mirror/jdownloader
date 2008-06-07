@@ -370,8 +370,9 @@ public class SingleDownloadController extends Thread {
             milliSeconds -= 1000;
         }
 
-        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-        downloadLink.setEndOfWaittime(0);
+        //downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        //downloadLink.setEndOfWaittime(0);
+        downloadLink.reset();
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 

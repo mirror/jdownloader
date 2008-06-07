@@ -121,6 +121,17 @@ public class Serienjunkies extends PluginForHost {
             logger.fine("using patternCaptcha:" + patternCaptcha);
             RequestInfo reqinfo = getRequest(url, null, null, true);
             if (reqinfo.getLocation() != null) reqinfo = getRequest(url, null, null, true);
+            if(reqinfo.containsHTML("Download-Limit")){
+                logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
+                if(Reconnecter.waitForNewIP(2*60*1000l)){
+                    logger.info("REconnect successfull. try again");
+                    reqinfo = getRequest(url, null, null, true);
+                    if (reqinfo.getLocation() != null) reqinfo = getRequest(url, null, null, true);
+                }else{
+                    logger.severe("Reconnect failed. abort.");
+                    return decryptedLinks;
+                }
+            }
             String furl = getSimpleMatch(reqinfo.getHtmlCode(), "<FRAME SRC=\"°" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", 0);
             if (furl != null) {
                 url = new URL(furl + modifiedURL);

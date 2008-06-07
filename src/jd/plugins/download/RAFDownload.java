@@ -62,14 +62,14 @@ public class RAFDownload extends DownloadInterface {
                 buffer.flip();
                 synchronized (bufferList) {
                     bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition()));
-                    logger.info("new  buffer. size: "+bufferList.size());
+                    // logger.info("new buffer. size: " + bufferList.size());
                 }
-              
+
                 if (this.writer == null) {
                     writer = new WriterWorker();
 
                 }
-                
+
                 synchronized (writer) {
                     if (writer.waitFlag) {
                         writer.waitFlag = false;
@@ -79,9 +79,10 @@ public class RAFDownload extends DownloadInterface {
                 }
             } else {
                 try {
-
-                    outputFile.seek(chunk.getWritePosition());
-                    outputChannel.write(chunk.buffer);
+                    synchronized (outputChannel) {
+                        outputFile.seek(chunk.getWritePosition());
+                        outputChannel.write(chunk.buffer);
+                    }
 
                 } catch (Exception e) {
 
@@ -246,12 +247,17 @@ public class RAFDownload extends DownloadInterface {
 
     @Override
     protected void onChunksReady() {
-        if(writer!=null){
-            
+        if (writer != null) {
+            synchronized (writer) {
+                if (writer.waitFlag) {
+                    writer.waitFlag = false;
+                    writer.notify();
+                }
+
+            }
             writer.interrupt();
-            
-            
-            while(writer.isAlive()&&bufferList.size()>0){
+
+            while (writer.isAlive() && bufferList.size() > 0) {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -260,19 +266,30 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
         }
-        
-        
+
         System.gc();
         System.runFinalization();
         //
+
         try {
-
             if (maxBytes < 0) this.outputChannel.force(false);
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        try {
             if (maxBytes < 0) outputFile.close();
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        try {
             if (maxBytes < 0) outputChannel.close();
-            if (!handleErrors()) {
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        if (!handleErrors()) {
 
-            return; }
+        return; }
+        try {
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
@@ -325,14 +342,15 @@ public class RAFDownload extends DownloadInterface {
 
         public void run() {
             ChunkBuffer buf;
-            while (!isInterrupted() ||bufferList.size()>0) {
+            while (!isInterrupted() || bufferList.size() > 0) {
                 synchronized (this) {
 
                     while (waitFlag) {
                         try {
                             wait();
                         } catch (Exception e) {
-                           return;
+                            e.printStackTrace();
+                            return;
                         }
                     }
                 }
@@ -345,7 +363,8 @@ public class RAFDownload extends DownloadInterface {
                             synchronized (outputChannel) {
                                 outputFile.seek(buf.position);
                                 outputChannel.write(buf.buffer);
-                                logger.info("Wrote  buffer. rest: "+bufferList.size());
+                                // logger.info("Wrote buffer. rest: " +
+                                // bufferList.size());
                             }
 
                         } catch (Exception e) {

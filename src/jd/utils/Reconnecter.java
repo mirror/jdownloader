@@ -142,7 +142,7 @@ public class Reconnecter {
         lastIPUpdate = System.currentTimeMillis();
         String tmp = CURRENT_IP;
         CURRENT_IP = JDUtilities.getIPAddress();
-        if (CURRENT_IP != null && !tmp.equals(CURRENT_IP)) {
+        if (CURRENT_IP != null &&tmp.length()>0&& !tmp.equals(CURRENT_IP)) {
             logger.info("Detected external IP Change.");
             return true;
         }
@@ -159,7 +159,7 @@ public class Reconnecter {
         if(i>0)
         i += System.currentTimeMillis();
         boolean ret;
-        while (!(ret = doReconnectIfRequested()) &&( System.currentTimeMillis() < i&&i>0)) {
+        while (!(ret = doReconnectIfRequested()) &&( System.currentTimeMillis() < i||i<=0)) {
 
             try {
                 Thread.sleep(300);

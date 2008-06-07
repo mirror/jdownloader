@@ -112,13 +112,15 @@ abstract public class DownloadInterface {
 
     private int preBytes = 0;
 
-    protected boolean speedDebug = false;
+    protected boolean speedDebug = true;
 
     private Vector<Exception> exceptions = null;
 
     // private int totalLoadedBytes = 0;
 
     private boolean aborted = false;
+
+    private boolean waitFlag = true;
 
     public static Logger logger = JDUtilities.getLogger();
 
@@ -466,19 +468,41 @@ abstract public class DownloadInterface {
      * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink
      * regelmäsig und fordert beim Controller eine aktualisierung des links an
      */
-    private void waitForChunks() {
-
-        while (chunksInProgress > 0) {
-            try {
-                Thread.sleep(200);
-
-            } catch (InterruptedException e) {
+    private void onChunkFinished() {
+        synchronized (this) {
+            if (this.waitFlag) {
+                this.waitFlag = false;
+                this.notify();
             }
+
+        }
+    }
+
+    private void waitForChunks() {
+        int i = 0;
+        int interval = 50;
+        while (chunksInProgress > 0) {
+            synchronized (this) {
+
+                if (waitFlag) {
+                    try {
+                        this.wait(interval);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            i++;
+            waitFlag = true;
             // checkChunkParts();
             downloadLink.setDownloadCurrent(this.totaleLinkBytesLoaded);
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-
-            assignChunkSpeeds();
+            downloadLink.requestGuiUpdate();
+            if (i == 1000 / interval) {
+             
+                assignChunkSpeeds();
+                
+                i = 0;
+            }
 
         }
 
@@ -492,9 +516,11 @@ abstract public class DownloadInterface {
         int allowedLinkSpeed = downloadLink.getMaximalspeed();
         int mChunk = (int) ((allowedLinkSpeed / chunkNum) * 0.4);
         int currentSpeed = 0;
-        long timeout = this.getReadTimeout();
+       
         Chunk next;
+       
         synchronized (chunks) {
+            
             Iterator<Chunk> it = chunks.iterator();
             while (it.hasNext()) {
                 next = it.next();
@@ -503,18 +529,23 @@ abstract public class DownloadInterface {
                 }
 
             }
+        
             int overhead = allowedLinkSpeed - currentSpeed;
             if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) return;
 
             it = chunks.iterator();
+          
             while (it.hasNext()) {
                 next = it.next();
                 if (next.isAlive()) {
+                    next.checkTimeout(120000);
                     next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
                 }
-                next.checkTimeout(timeout);
+
             }
+            
         }
+      
 
     }
 
@@ -735,7 +766,7 @@ abstract public class DownloadInterface {
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final int MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
-        private static final long MAX_BUFFERSIZE = 4 * 1024 * 1024;
+        private long MAX_BUFFERSIZE = 4 * 1024 * 1024;
 
         private static final long MIN_BUFFERSIZE = 1024;
 
@@ -784,27 +815,32 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             this.setPriority(Thread.MIN_PRIORITY);
+            MAX_BUFFERSIZE=JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4)*1024*1024l;
 
         }
 
         public void checkTimeout(long timeout) {
-            timeout=120000;
-            if (this.blockStart == 0 || interrupted()) return;
-            try {
-                if (this.inputStream.available() > 0) {
-                    blockStart = 0;
-                }
-            } catch (IOException e) {
+          long timer = blockStart;
+            if (interrupted() || !this.isAlive()) return;
+//            try {
+//                if (this.inputStream.available() > 0) {
+//                    blockStart = -1;
+//                }
+//            } catch (IOException e) {
+//            }
+            if (isExternalyAborted()) {
+                this.interrupt();
             }
-long dif=System.currentTimeMillis() - blockStart;
-            if (blockStart > 0 && (dif>= timeout) || isExternalyAborted()) {
-                logger.severe("Timeout or termination detected: interrupt: " + timeout);
+            if (timer <= 0) return;
+            long dif = System.currentTimeMillis() - timer;
+            logger.info(this + " " + dif);
+            if (dif >= timeout) {
+                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif);
                 this.interrupt();
 
-            } else if (blockStart > 0 &&dif >= 5000) {
+            } else if (dif >= 5000) {
                 downloadLink.setStatusText(JDLocale.L("download.connection.idle", "Idle"));
                 downloadLink.requestGuiUpdate();
-
             } else {
                 downloadLink.setStatusText(JDLocale.L("download.connection.normal", "Download"));
             }
@@ -1023,6 +1059,7 @@ long dif=System.currentTimeMillis() - blockStart;
             run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
+            onChunkFinished();
         }
 
         public void run0() {
@@ -1212,27 +1249,28 @@ long dif=System.currentTimeMillis() - blockStart;
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
                     if (speedDebug) logger.finer("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
-                    while (buffer.hasRemaining() &&  !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
+                    while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
                         // PrÃŒft ob bytes zum Lesen anliegen.
 
                         // kann den connectiontimeout nicht auswerten
-                        if (speedDebug) logger.finer("Read block");
+                        
 
                         try {
 
                             this.blockStart = System.currentTimeMillis();
-                           
+
                             if (miniBuffer.capacity() > buffer.remaining()) {
                                 block = source.read(buffer);
                             } else {
+                                miniBuffer.clear();
                                 block = source.read(miniBuffer);
                                 miniBuffer.flip();
                                 buffer.put(miniBuffer);
-                                miniBuffer.clear();
-                            }
 
+                            }
+                            this.blockStart = -1;
                         } catch (ClosedByInterruptException e) {
                             if (this.isExternalyAborted()) {
 
@@ -1240,12 +1278,11 @@ long dif=System.currentTimeMillis() - blockStart;
                                 logger.severe("Timeout detected");
                                 error(ERROR_TIMEOUT_REACHED);
                             }
-
+                            this.blockStart = -1;
                             block = -1;
                             break;
                         }
 
-                        this.blockStart = 0;
                         if (block == -1) {
 
                             break;
@@ -1344,7 +1381,7 @@ long dif=System.currentTimeMillis() - blockStart;
                 error(ERROR_SECURITY);
 
             } catch (IOException e) {
-                if (e.getMessage().indexOf("timed out") >= 0) {
+                if (e.getMessage()!=null&&e.getMessage().indexOf("timed out") >= 0) {
                     error(ERROR_TIMEOUT_REACHED);
                     ;
 
@@ -1370,7 +1407,7 @@ long dif=System.currentTimeMillis() - blockStart;
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
+            this.blockStart = -1;
         }
 
         /**

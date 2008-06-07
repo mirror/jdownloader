@@ -39,7 +39,7 @@ public class JACTest {
 
     private void go() {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "lix.in";
+        String hoster = "serienjunkies.org";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
         
@@ -47,18 +47,18 @@ public class JACTest {
 //        jac.setShowDebugGui(true);
 //     LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
-       jac.exportDB();
+       //jac.exportDB();
         // UTILITIES.getLogger().info("has method:
         // "+JAntiCaptcha.hasMethod(methodsPath, hoster));
 
         //
 
-     // jac.importDB();
+    // jac.importDB();
 
       
 
  
-        jac.displayLibrary();
+      jac.displayLibrary();
 
         // jac.getJas().set("preScanFilter", 0);
         // jac.trainCaptcha(new

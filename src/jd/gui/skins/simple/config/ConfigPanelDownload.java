@@ -165,7 +165,13 @@ public class ConfigPanelDownload extends ConfigPanel {
         extended.addEntry(ce);
         
 
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"),3,30);
+        ce.setDefaultValue(4);
+    
+        ce.setExpertEntry(true);
+        extended.addEntry(ce);
         
+       
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Proxy Verwenden"));
