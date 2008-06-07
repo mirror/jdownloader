@@ -983,7 +983,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (this.filePackage != null) this.filePackage.remove(this);
         this.filePackage = filePackage;
-        if (filePackage == null) {
+        if (filePackage == null&&this.filePackage!=null) {
             this.setDownloadPath(this.filePackage.getDownloadDirectory());
         }else{
             this.setDownloadPath(null);
