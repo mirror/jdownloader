@@ -28,16 +28,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class RapidshareComFolder extends PluginForDecrypt {
     static private final String host             = "rapidshare.com folder";
     private String              version          = "1.0.0.0";
-    //rapidshare.com/users/AM0F5G
-    static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.com/users/[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
+    //http://rapidshare.com/users/32P7CI
+    static private final Pattern patternSupported = getSupportPattern("http://[w]rapidshare.com/users/[+]");
     private String              password         = "";
     private Vector<DownloadLink>      decryptedLinks   = new Vector<DownloadLink>();
-    private URL                 url;
+    private String para = "";
+    private String cookie = "";
 
     public RapidshareComFolder() {
         super();
@@ -57,7 +59,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Rapidshare.com Folder-1.0.0.";
+        return "Rapidshare.com Folder-1.0.1.";
     }
 
     @Override
@@ -79,13 +81,12 @@ public class RapidshareComFolder extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
-                url = new URL(parameter);
+                URL url = new URL(parameter);
+                para = parameter;
                 RequestInfo reqinfo = getRequest(url);
 
                 while (true) {
-                    int check = countOccurences(reqinfo.getHtmlCode(), Pattern.compile("method=\"post\">Passwort:"));
-
-                    if (check > 0) {
+                    if (reqinfo.getHtmlCode().contains("input type=\"password\" name=\"password\"")) {
                         password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
 
                         if (password == null) {
@@ -99,16 +100,13 @@ public class RapidshareComFolder extends PluginForDecrypt {
                         break;
                     }
                 }
-
+                cookie = reqinfo.getCookie();
                 getLinks(reqinfo.getHtmlCode());
                 progress.setRange(decryptedLinks.size());
 
                 for (int i = 0; i < decryptedLinks.size(); i++) {
                     progress.increase(1);
                 }
-
-                // Decrypt abschliessen
-
                 step.setParameter(decryptedLinks);
             }
             catch (IOException e) {
@@ -124,27 +122,22 @@ public class RapidshareComFolder extends PluginForDecrypt {
         return false;
     }
 
-    // Rekursion zum auslesen der
     private void getLinks(String source) {
         RequestInfo reqhelp;
-        ArrayList<ArrayList<String>> ordner = getAllSimpleMatches(source, "fileicon.gif\"> <input type=\"submit\" name=\"browse\" value=\"°\"");
-
-        for (int i = 0; i < ordner.size(); i++) {
-            try {
-                String hpost = ordner.get(i).get(0);
-                hpost = hpost.replaceAll(" ", "+");
-                hpost = hpost.replaceAll("=", "%3D");
-                reqhelp = postRequest(url, "password" + password + "=&subpassword=&browse=" + hpost);
-                getLinks(reqhelp.getHtmlCode());
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        ArrayList<ArrayList<String>> links = getAllSimpleMatches(source, "<center> <a href=\"°\" target=\"_blank\"");
+        ArrayList<ArrayList<String>> links = getAllSimpleMatches(source, "<div style=\"text-align:right;\">°</div>");
         for (int i = 0; i < links.size(); i++) {
-            decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+            if(new Regexp(links.get(i).get(0), "javascript:folderoeffnen").count() > 0) {
+                try {
+                    reqhelp = postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + getBetween(links.get(i).get(0), "', '", "'"), false);
+                    getLinks(reqhelp.getHtmlCode());
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                decryptedLinks.add(this.createDownloadlink(getBetween(links.get(i).get(0), "href=\"", "\" ")));
+            }
         }
     }
 }
