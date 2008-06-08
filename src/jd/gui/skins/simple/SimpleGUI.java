@@ -71,6 +71,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
@@ -111,6 +112,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+import com.sun.xml.internal.bind.v2.TODO;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -839,8 +841,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         warning = new JLabel("", JDTheme.II("gui.images.warning", 16, 16), SwingConstants.RIGHT);
         warning.setVisible(false);
         warning.setIconTextGap(10);
-        warning.setHorizontalTextPosition(SwingConstants.LEFT);
+        warning.setHorizontalTextPosition(SwingConstants.RIGHT);
         JDUtilities.addToGridBag(menuBar, warning, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        
+        try {
+            ImageIcon icon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
+            JLinkButton linkButton = new JLinkButton("JD Website", icon, new URL("http://jdownloader.org"));
+            linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
+            linkButton.setBorder(null);
+            Dimension d = new Dimension(10, 0);
+            JDUtilities.addToGridBag(menuBar, new Box.Filler(d,d,d), m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            JDUtilities.addToGridBag(menuBar, linkButton, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            d = new Dimension(1, 0);
+            JDUtilities.addToGridBag(menuBar, new Box.Filler(d,d,d), m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        } catch (MalformedURLException e1) {}
 
         frame.setJMenuBar(menuBar);
 
@@ -1372,8 +1386,22 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             int n = 10;
             JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-            add(bundle(left, right));
+//            add(bundle(left, right));
+            JPanel panel = new JPanel(new BorderLayout(0,0));
+            add(panel, BorderLayout.WEST);
+            add(right, BorderLayout.EAST);
+            
+            
+            // TODO: Please replace with proper Icon that catches the users eye. 
+            // Icon could even change in case of a warning or error.
+            // gruener Haken - everything ok
+            // oranges Warnschild - ohoh
+            // roter Kreis - we are roally f#$%cked!
+            ImageIcon statusIcon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.jd_logo"), 16, -1);
+            
+            
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
+            lblMessage.setIcon(statusIcon);
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
             chbPremium.addChangeListener(this);
@@ -1400,15 +1428,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
 
-            left.add(lblMessage);
-            JLinkButton linkButton = new JLinkButton("http://jdownloader.org");
-            left.add(linkButton);
+            panel.add(lblMessage);
+//            JLinkButton linkButton = new JLinkButton("http://jdownloader.org");
+//            left.add(linkButton);
             right.add(chbPremium);
 //            right.add(bundle(lblSimu, spMaxDls));
             addItem(right, bundle(lblSimu, spMaxDls));
 //            right.add(bundle(lblSpeed, spMax));
             addItem(right, bundle(lblSpeed, spMax));
-
+            
             colorizeSpinnerSpeed(maxspeed);
             // JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new
             // Insets(0, 5,

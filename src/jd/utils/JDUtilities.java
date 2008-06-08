@@ -2436,7 +2436,16 @@ public static boolean validateIP(String ip){
     }
 
     public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
-        return new ImageIcon(icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH));
+        return getscaledImageIcon(icon.getImage(), width, height);
+    }
+    
+    public static ImageIcon getscaledImageIcon(Image image, int width, int height) {
+        return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    }
+
+
+    public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
+        return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
     
