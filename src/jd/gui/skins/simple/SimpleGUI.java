@@ -45,12 +45,12 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -67,6 +67,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
@@ -352,17 +353,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         initActions();
         initMenuBar();
         buildUI();
-        frame.pack();
+        frame.setPreferredSize(new Dimension(600, 600));
 
         // frame.getContentPane().add(desktop, BorderLayout.CENTER);
-        frame.setSize(600, 600);
-        frame.setVisible(true);
         frame.setName("MAINFRAME");
-        if (SimpleGUI.getLastDimension(frame, null) != null) frame.setSize(getLastDimension(frame, null));
+        if (SimpleGUI.getLastDimension(frame, null) != null) frame.setPreferredSize(getLastDimension(frame, null));
         // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
-
         frame.setLocation(getLastLocation(null, null, frame));
 
+        frame.pack();
         frame.setVisible(true);
         // DND
         dragNDrop = new Dropper(new JFrame());
@@ -808,9 +807,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // menAction.add(menDownload);
         // menAction.add(menAddLinks);
         menuBar.setLayout(new GridBagLayout());
-        menuBar.add(menFile);
         Insets insets = new Insets(1, 1, 1, 1);
         int m = 0;
+        
+        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+        imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
+        JLabel logo = new JLabel(imageIcon);
+        JDUtilities.addToGridBag(menuBar, logo,    m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         // menuBar.add(menEdit);
         // menuBar.add(menAction);
@@ -877,10 +881,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
         btnCes = createMenuButton(this.actionCes);
-      toolBar.setFloatable(false);
-        toolBar.add(createMenuButton(this.actionLoadDLC));
-        toolBar.add(createMenuButton(this.actionSaveDLC));
-        toolBar.addSeparator();
+        toolBar.setFloatable(false);
+//        toolBar.add(createMenuButton(this.actionLoadDLC));
+//        toolBar.add(createMenuButton(this.actionSaveDLC));
+//        toolBar.addSeparator();
         toolBar.add(btnStartStop);
         toolBar.add(btnPause);
         toolBar.add(createMenuButton(actionItemsAdd));
@@ -903,6 +907,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) toolBar.add(btnCes);
    
+        JPanel panel = new JPanel();
+        int n = 2;
+        toolBar.setBorder(new EmptyBorder(n,0,n,0));
+        n = 5;
+        panel.setBorder(new EmptyBorder(0,n,0,n));
+        n = 3;
+        statusBar.setBorder(new EmptyBorder(n,0,n,0));
+        frame.setContentPane(panel);
         frame.setLayout(new GridBagLayout());
         JDUtilities.addToGridBag(frame, toolBar, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(frame, splitpane, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -1353,7 +1365,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             setLayout(new BorderLayout());
             int n = 10;
             JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
+            JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
             add(bundle(left, right));
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
@@ -1382,14 +1394,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
 
-            Dimension d = new Dimension(5, 0);
-            left.add(new Box.Filler(d, d, d));
-            left.add(lblMessage);
+            addItem(left, lblMessage);
+//            left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.org");
-            left.add(linkButton);
+//            left.add(linkButton);
+            addItem(left, linkButton);
             right.add(chbPremium);
-            right.add(bundle(lblSimu, spMaxDls));
-            right.add(bundle(lblSpeed, spMax));
+            addItem(right, chbPremium);
+//            right.add(bundle(lblSimu, spMaxDls));
+            addItem(right, bundle(lblSimu, spMaxDls));
+//            right.add(bundle(lblSpeed, spMax));
+            addItem(right, bundle(lblSpeed, spMax));
 
             colorizeSpinnerSpeed(maxspeed);
             // JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new
@@ -1424,6 +1439,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // JDUtilities.addToGridBag(this, lblPluginDecryptActive, 6, 0, 1,
             // 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE,
             // GridBagConstraints.EAST);
+        }
+        
+        void addItem(JComponent where, Component component) {
+            Dimension d = new Dimension(5, 0);
+            where.add(new Box.Filler(d, d, d));
+            where.add(component);
         }
 
         private Component bundle(Component c1, Component c2) {
