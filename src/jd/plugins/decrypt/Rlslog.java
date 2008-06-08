@@ -27,7 +27,7 @@ public class Rlslog extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         this.setConfigEelements();
-        this.hosterList = JDUtilities.splitByNewline(getProperties().getStringProperty(HOSTER_LIST, ""));
+        this.hosterList = JDUtilities.splitByNewline(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
     }
 
     private boolean checkLink(String link) {
