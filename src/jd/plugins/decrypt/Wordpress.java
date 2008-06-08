@@ -28,7 +28,7 @@ public class Wordpress extends PluginForDecrypt {
         partpatterns();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         /*default_password.add("doku.cc");*/    
-   
+    }
     
     private void partpatterns(){
         /*Diese Pattern dienen zum auffinden der einzelnen Parts*/
