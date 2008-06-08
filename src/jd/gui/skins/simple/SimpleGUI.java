@@ -60,6 +60,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JToolBar;
@@ -1399,13 +1400,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
             // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
 
-            addItem(left, lblMessage);
-//            left.add(lblMessage);
+            left.add(lblMessage);
             JLinkButton linkButton = new JLinkButton("http://jdownloader.org");
-//            left.add(linkButton);
-            addItem(left, linkButton);
+            left.add(linkButton);
             right.add(chbPremium);
-            addItem(right, chbPremium);
 //            right.add(bundle(lblSimu, spMaxDls));
             addItem(right, bundle(lblSimu, spMaxDls));
 //            right.add(bundle(lblSpeed, spMax));
@@ -1447,8 +1445,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         
         void addItem(JComponent where, Component component) {
-            Dimension d = new Dimension(5, 0);
+            int n = 10;
+            Dimension d = new Dimension(n, 0);
+            JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+            separator.setPreferredSize(new Dimension(n,n));
             where.add(new Box.Filler(d, d, d));
+            where.add(separator);
             where.add(component);
         }
 
