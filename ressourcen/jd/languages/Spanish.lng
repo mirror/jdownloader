@@ -630,7 +630,7 @@ sys.ask.rlyclose = ¿Quieres cerrar Jdownloader realmente?
 sys.confirm.doRestart = Estos ajustes que requieren un reinicio. Ejecutar reiniciar ahora?
 sys.dlc.error_version = DLC encriptación fallida. Por favor, asegurese de que está utilizando la última versión de JDownload.
 sys.dlc.success = DLC encriprtación satisfactoria. ¿Prueba de extracción ahora? sys.header.jdownloader = jDownloader
-sys.message.welcome = Bienvenido a  jDownloader. Visitanos en http://jdownloader.ath.cx
+sys.message.welcome = Bienvenido a  jDownloader. 
 sys.warning.dlcerror = Descargar lista de contenido por defecto 
 sys.warning.dlcerror_io = DLC: Error de servidor (¿Desconectado?)
 sys.warning.dlcerror_version = DLC Error: Outdated jD Versión (1)

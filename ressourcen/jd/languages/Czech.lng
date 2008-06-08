@@ -962,7 +962,6 @@ sys.confirm.doRestart = Toto nastavení požaduje restart. Provést restart nyn�
 sys.dlc.error_version = DLC šifrování selhalo. Prosím ujistěte se zda používáte poslední verzi JD.
 sys.dlc.success = DLC šifrování úspešné. Extrahovat pro testování nyní?
 sys.header.jdownloader = jDownloader
-sys.message.welcome = Navštivte:
 sys.warning.dlcerror = Vadné DL-uložiště
 sys.warning.dlcerror.server = <b>Máte nainstalovánu nejnovější verzi jD?</b> <br>Odezva serveru:
 sys.warning.dlcerror_io = DLC: Chyba serveru (offline?)
