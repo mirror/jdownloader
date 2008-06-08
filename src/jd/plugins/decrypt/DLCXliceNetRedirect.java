@@ -93,7 +93,8 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
                 //logger.info(ri.getHeaders() + "");
                 if (ri.getLocation() != null&&!openedLinks.contains(ri.getLocation())) {
                     // ri.getLocation()
-
+                  
+                 
                     if (ri.getLocation().contains("folder")) {
                         if (getProperties().getBooleanProperty("REFRESH_DLC_BROWSER", true) ) {
 
@@ -122,7 +123,7 @@ public class DLCXliceNetRedirect extends PluginForDecrypt {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-
+           
             progress.increase(1);
        
             step.setParameter(decryptedLinks);
