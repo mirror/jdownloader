@@ -45,6 +45,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -570,6 +572,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void initMenuBar() {
         // file menu
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file"));
+//        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+//        imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
+//        menFile.setIcon(imageIcon);
         menFile.setMnemonic(JDLocale.L("gui.menu.file_mnem").charAt(0));
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
         JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
@@ -810,10 +815,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         Insets insets = new Insets(1, 1, 1, 1);
         int m = 0;
         
-        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
-        imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
-        JLabel logo = new JLabel(imageIcon);
-        JDUtilities.addToGridBag(menuBar, logo,    m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
+//        imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
+//        JLabel logo = new JLabel(imageIcon);
+//        JDUtilities.addToGridBag(menuBar, logo,    m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         // menuBar.add(menEdit);
