@@ -15,7 +15,7 @@ import jd.utils.JDUtilities;
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
-    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]doku.cc/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])" + "|(http://[*]best-movies.us/\\?p=[+])";
+    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]doku.cc/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])" + "|(http://[*]best-movies.us/\\?p=[+]) + |(http://[*]game-blog.us/game-[+].html)";
     private Pattern patternSupported = getSupportPattern(Supportpattern);
     private Vector<String> passwordpattern = new Vector<String>();
     private Vector<String> partpattern = new Vector<String>();
@@ -40,14 +40,16 @@ public class Wordpress extends PluginForDecrypt {
     private void add_partpatterns() {
         /* Diese Pattern dienen zum auffinden der einzelnen Parts */
         /* ACHTUNG: url muss an erster stelle im pattern sein*/
-        partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?Part\\s?\\d{0,3}\\s?<\\/a>");        
-        partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?.*?(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Uploaded|Share-Online|Netload|Bluehost|Crypt-it|Cryptload)+.*?\\s?<\\/a>");
+        //partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?Part\\s?\\d{0,3}\\s?<\\/a>");        
+        //partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>[^<]*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share|Netload|Bluehost|Crypt|File){1,}[^<]*<\\/a>");
+        //partpattern.add("href=\"?([^>\\s]*?)\"?\\s?(target=\"_blank\")?\\s?>[^<]*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts? [\\d]*)[^<]*<\\/a>");
     }
 
     private void add_passwordpatterns() {
         /* diese Pattern dienen zum auffinden des Passworts */
         /* ACHTUNG: passwort muss an erster stelle im pattern sein*/
         passwordpattern.add("<b>Passwort\\:<\\/b>\\s?(.*?)\\s?\\|");
+        passwordpattern.add("<b>Passwort\\:<\\/b>\\s?(.*?)\\s?\\<\\/p>");
         passwordpattern.add("<strong>Passwort\\:<\\/strong>\\s?(.*?)\\s?\\|");
         passwordpattern.add("<strong>Passwort\\:<\\/strong>\\s?(.*?)\\s?<\\/p>");
         passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>");
@@ -108,7 +110,7 @@ public class Wordpress extends PluginForDecrypt {
                     password = getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
-                            /*logger.info("PW:"+password.get(ii));*/
+                            logger.info("PW:"+password.get(ii));
                             default_password.add(JDUtilities.htmlDecode(password.get(ii)));                            
                         }
                         break;
@@ -122,8 +124,8 @@ public class Wordpress extends PluginForDecrypt {
                     parts = getAllSimpleMatches(reqinfo, Pattern.compile(partpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (parts.size() != 0) {
                         for (int ii = 0; ii < parts.size(); ii++) {
-                            /*logger.info("LINK:"+JDUtilities.htmlDecode(parts.get(ii)));*/
-                            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));                            
+                            logger.info("LINK:"+JDUtilities.htmlDecode(parts.get(ii)));
+                            /*decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));*/                            
                         };
                         break;
                     }
