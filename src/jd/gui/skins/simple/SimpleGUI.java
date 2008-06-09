@@ -349,6 +349,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
+//        toolBar.setOpaque(false);
 
         frame.addWindowListener(this);
 
@@ -948,6 +949,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JButton bt = new JButton(action);
         bt.setFocusPainted(false);
         bt.setBorderPainted(false);
+        bt.setOpaque(false);
         bt.setText(null);
         return bt;
     }
