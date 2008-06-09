@@ -137,6 +137,16 @@ public class Regexp {
             c++;
         return c;
     }
+    public boolean matches()
+    {
+        try {
+            if (matcher.find()) { return true; }
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
+        return false;
+    }
     /**
      * gibt den matcher aus
      */
