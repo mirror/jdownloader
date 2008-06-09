@@ -76,12 +76,12 @@ public class zShare extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-        if (aborted) {
-            logger.warning("Plugin abgebrochen");
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            step.setStatus(PluginStep.STATUS_TODO);
-            return step;
-        }
+//        if (aborted) {
+//            logger.warning("Plugin abgebrochen");
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            step.setStatus(PluginStep.STATUS_TODO);
+//            return step;
+//        }
         try {
             logger.info(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
             request= new CRequest();

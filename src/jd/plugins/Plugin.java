@@ -156,7 +156,7 @@ public abstract class Plugin implements ActionListener {
 
     protected CRequest request = new CRequest();
 
-    public boolean aborted = false;
+    //public boolean aborted = false;
 
     public boolean collectCaptchas() {
         return true;
@@ -384,11 +384,19 @@ public abstract class Plugin implements ActionListener {
     /**
      * Zeigt, daß diese Plugin gestoppt werden soll
      */
-    public void abort() {
-        aborted = true;
+//    public void abort() {
+//        aborted = true;
+//
+//    }
 
-    }
-
+//    public boolean hasBeenInterrupted(){
+//    
+//        if(Thread.currentThread().isInterrupted()){
+//            Thread.currentThread().interrupt();
+//            return true;
+//        }
+//        return false;
+//    }
     /**
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */

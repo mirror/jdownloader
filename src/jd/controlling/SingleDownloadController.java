@@ -50,7 +50,7 @@ public class SingleDownloadController extends Thread {
     /**
      * Wurde der Download abgebrochen?
      */
-    private boolean aborted = false;
+    //private boolean aborted = false;
 
     /**
      * Der Logger
@@ -63,6 +63,8 @@ public class SingleDownloadController extends Thread {
     private JDController controller;
 
     private DownloadLink downloadLink;
+
+    private boolean aborted;
 
     /**
      * Erstellt einen Thread zum Start des Downloadvorganges
@@ -84,8 +86,13 @@ public class SingleDownloadController extends Thread {
      */
     public SingleDownloadController abortDownload() {
         downloadLink.setStatusText(JDLocale.L("controller.status.termination", "termination..."));
-        aborted = true;
-        if (currentPlugin != null) currentPlugin.abort();
+        //aborted = true;
+        
+       // if (currentPlugin != null) currentPlugin.abort();
+        this.aborted=true;
+        this.interrupt();
+        //System.out.println("IS interrupted?: "+this+" - "+Thread.currentThread().isInterrupted()+" - "+isInterrupted());
+        
         return this;
     }
 
@@ -120,7 +127,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void handlePlugin() {
-
+try{
         if (downloadLink.getDownloadURL() == null) {
 
             downloadLink.setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
@@ -143,7 +150,7 @@ public class SingleDownloadController extends Thread {
         // Hier werden alle einzelnen Schritte des Plugins durchgegangen,
         // bis entweder null zurückgegeben wird oder ein Fehler auftritt
 
-        while (!aborted && step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
+        while (step != null && step.getStatus() != PluginStep.STATUS_ERROR) {
 
             // downloadLink.setStatusText(JDLocale.L("controller.status.running",
             // "running..."));
@@ -152,7 +159,7 @@ public class SingleDownloadController extends Thread {
                 case PluginStep.STEP_PENDING:
                     long wait = (Long) step.getParameter();
                     logger.info("Erzwungene Wartezeit: " + wait);
-                    while (wait > 0 && !aborted) {
+                    while (wait > 0 && !isInterrupted()) {
                         downloadLink.setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.mustWaittime", "Erzwungene Wartezeit: %s"), new String[] { JDUtilities.formatSeconds((int) (wait / 1000)) }));
                         fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                         try {
@@ -196,9 +203,7 @@ public class SingleDownloadController extends Thread {
                 }
 
             }
-            if (aborted) {
-                break;
-            }
+      
 
             if (step != null && downloadLink != null && currentPlugin != null) {
                 // Achtung. nextStep setzt den internen stepcounter weiter. Das
@@ -222,15 +227,17 @@ public class SingleDownloadController extends Thread {
 
         }
 
+
         PluginStep resultStep = step;
         int resultPluginStatus = step != null ? step.getStatus() : -1;
         int resultLinkStatus = downloadLink.getStatus();
         // Der Download ist an dieser Stelle entweder Beendet oder
         // Abgebrochen. Mögliche Ursachen können nun untersucht werden um
         // den download eventl neu zu starten
+       // System.out.println("IS interrupted?: "+this+" - "+Thread.currentThread().isInterrupted()+" - "+isInterrupted());
         if (aborted || downloadLink.isAborted()) {
 
-            currentPlugin.abort();
+            //currentPlugin.abort();
             logger.warning("Thread aborted");
             downloadLink.setStatus(DownloadLink.STATUS_TODO);
             
@@ -344,7 +351,11 @@ public class SingleDownloadController extends Thread {
             if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) controller.getUnrarModule().interact(downloadLink);
 
         }
-
+}catch(Exception e){
+    e.printStackTrace();
+   
+    
+}
     }
 
     private void fireControlEvent(int controlID, Object param) {
@@ -356,7 +367,7 @@ public class SingleDownloadController extends Thread {
         logger.severe("Error occurred: No Serverconnection");
         long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
       
-        while (milliSeconds > 0 && !this.aborted && !this.downloadLink.isAborted()) {
+        while (milliSeconds > 0 && !isInterrupted() && !this.downloadLink.isAborted()) {
 
             downloadLink.setStatusText(JDUtilities.formatSeconds((int) (milliSeconds / 1000)));
             downloadLink.requestGuiUpdate();
@@ -367,12 +378,12 @@ public class SingleDownloadController extends Thread {
             milliSeconds -= 1000;
         }
 
-        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-       downloadLink.setEndOfWaittime(0);
+       // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+      // downloadLink.setEndOfWaittime(0);
        // downloadLink.reset();
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-
+        onErrorRetry(downloadLink2,plugin,step);
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
@@ -714,7 +725,7 @@ public class SingleDownloadController extends Thread {
             long wait = plugin.getBotWaittime();
            
 
-            while (wait > 0 && !aborted) {
+            while (wait > 0 && !isInterrupted()) {
                 downloadLink.setStatusText(JDLocale.L("controller.status.botWait", "Botwait ")+JDUtilities.formatSeconds((int)wait/1000));
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 try {

@@ -3,14 +3,14 @@
 <!--
   yGuard Bytecode Obfuscator, v2.2.0, a Product of yWorks GmbH - http://www.yworks.com
 
-  Logfile created on Sun Jun 08 02:06:00 CEST 2008
+  Logfile created on Mon Jun 09 17:12:31 CEST 2008
 
   Jar file to be obfuscated:           JDownloaderContainer.jar
   Target Jar file for obfuscated code: JDownloaderContainer_obfuscated.jar
 
 -->
 <!--
-  Memory in use after class data structure built: 2598184 bytes
+  Memory in use after class data structure built: 2563064 bytes
   Total memory available                        : 5177344 bytes
 -->
 <!-- WARNING: Unresolved external dependency: jd.config.MenuItem not found! -->
@@ -450,7 +450,6 @@
   <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_INVALID_OUTPUTFILE"/>
   <field class="jd.plugins.Plugin" name="DOWNLOAD_SUCCESS"/>
   <field class="jd.plugins.Plugin" name="DOWNLOAD_ERROR_SECURITY"/>
-  <field class="jd.plugins.Plugin" name="aborted"/>
   <field class="jd.plugins.Plugin" name="requestInfo"/>
   <field class="jd.plugins.Plugin" name="END_OF_LINK"/>
   <field class="jd.plugins.Plugin" name="currentStep"/>
@@ -479,16 +478,15 @@
   <method class="jd.plugins.Plugin" name="int getCaptchaDetectionID()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.PluginStep getCurrentStep()"/>
   <method class="jd.plugins.Plugin" name="int countOccurences(java.lang.String, java.util.regex.Pattern)"/>
-  <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.HashMap getInputHiddenFields(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String getFirstMatch(java.lang.String, java.util.regex.Pattern, int)"/>
+  <method class="jd.plugins.Plugin" name="java.lang.String[] getHttpLinks(java.lang.String, java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.util.regex.Pattern getSupportedLinks()"/>
   <method class="jd.plugins.Plugin" name="jd.plugins.RequestInfo getRequestWithoutHtmlCode(java.net.URL, java.lang.String, java.lang.String, java.util.HashMap, boolean)"/>
   <method class="jd.plugins.Plugin" name="java.lang.String createPostParameterFromHashMap(java.util.HashMap)"/>
   <method class="jd.plugins.Plugin" name="void setLastCaptcha(jd.captcha.pixelgrid.Captcha)"/>
   <method class="jd.plugins.Plugin" name="java.util.ArrayList getAllSimpleMatches(java.lang.Object, java.lang.String, int)"/>
   <method class="jd.plugins.Plugin" name="void fireControlEvent(int, java.lang.Object)"/>
-  <method class="jd.plugins.Plugin" name="void abort()"/>
   <method class="jd.plugins.Plugin" name="void init()"/>
   <method class="jd.plugins.Plugin" name="java.lang.String cutMatches(java.lang.String)"/>
   <method class="jd.plugins.Plugin" name="java.io.File getLocalCaptchaFile(jd.plugins.Plugin, java.lang.String)"/>

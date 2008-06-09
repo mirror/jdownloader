@@ -61,7 +61,7 @@ public class RAFDownload extends DownloadInterface {
                 buffer.put(chunk.buffer);
                 buffer.flip();
                 synchronized (bufferList) {
-                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition()));
+                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),(int) chunk.getCurrentBytesPosition() - 1,chunk.getID()));
                     // logger.info("new buffer. size: " + bufferList.size());
                 }
 
@@ -82,12 +82,14 @@ public class RAFDownload extends DownloadInterface {
                     synchronized (outputChannel) {
                         outputFile.seek(chunk.getWritePosition());
                         outputChannel.write(chunk.buffer);
+                        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
+                        
                         return true;
                     }
 
                 } catch (Exception e) {
 
-                    e.printStackTrace();
+                    // e.printStackTrace();
                     error(ERROR_LOCAL_IO);
                     addException(e);
                     return false;
@@ -212,7 +214,7 @@ public class RAFDownload extends DownloadInterface {
         } catch (Exception e) {
             try {
                 outputChannel.force(false);
-logger.info("CLOSE HD FILE");
+                logger.info("CLOSE HD FILE");
                 outputFile.close();
                 outputChannel.close();
                 e.printStackTrace();
@@ -258,7 +260,10 @@ logger.info("CLOSE HD FILE");
                 }
 
             }
-            writer.interrupt();
+            if (!handleErrors()) {
+
+                writer.interrupt();
+            }
 
             while (writer.isAlive() && bufferList.size() > 0) {
                 try {
@@ -348,50 +353,57 @@ logger.info("CLOSE HD FILE");
             while (!isInterrupted() || bufferList.size() > 0) {
                 synchronized (this) {
 
-                    while (waitFlag) {
+                    while (!isInterrupted() && waitFlag) {
                         try {
                             wait();
                         } catch (Exception e) {
-                            e.printStackTrace();
-                            return;
+                            // e.printStackTrace();
+                            // return;
                         }
                     }
                 }
-                synchronized (bufferList) {
-                    if (bufferList.size() > 0) {
+
+                while (bufferList.size() > 0) {
+                    synchronized (bufferList) {
                         buf = bufferList.remove(0);
+                    }
+                    try {
 
-                        try {
-
-                            synchronized (outputChannel) {
-                                outputFile.seek(buf.position);
-                                outputChannel.write(buf.buffer);
-                                // logger.info("Wrote buffer. rest: " +
-                                // bufferList.size());
-                            }
-
-                        } catch (Exception e) {
-
-                            e.printStackTrace();
-                            error(ERROR_LOCAL_IO);
-                            addException(e);
+                        synchronized (outputChannel) {
+                            outputFile.seek(buf.position);
+                            outputChannel.write(buf.buffer);
+                            
+                            if (buf.chunkID >= 0) downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
+                            
+                            // logger.info("Wrote buffer. rest: " +
+                            // bufferList.size());
                         }
-                    } else {
-                        waitFlag = true;
 
+                    } catch (Exception e) {
+
+                        // e.printStackTrace();
+                        error(ERROR_LOCAL_IO);
+                        addException(e);
                     }
                 }
+                waitFlag = true;
+
             }
+
         }
     }
 
     class ChunkBuffer {
         public long position;
         public ByteBuffer buffer;
+        public int chunkPosition;
+        public int chunkID;
 
-        public ChunkBuffer(ByteBuffer buffer, long position) {
+        public ChunkBuffer(ByteBuffer buffer, long position, int chunkposition, int chunkid) {
             this.buffer = buffer;
             this.position = position;
+            this.chunkPosition=chunkposition;
+            this.chunkID=chunkid;
         }
     }
 

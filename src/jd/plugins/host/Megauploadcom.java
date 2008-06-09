@@ -155,9 +155,15 @@ public class Megauploadcom extends PluginForHost {
         if (!countryID.equals("-")) {
             logger.info("Use Country trick");
             // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
-
-            link = link.replace(".com/", ".com/" + countryID + "/");
-
+       
+            
+            try {
+                link = "http://"+new URL(link).getHost()+"/"+countryID+"/?d="+link.substring(link.indexOf("?d=")+3);
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
             logger.info("New link: " + link);
 
         }
@@ -347,8 +353,19 @@ public class Megauploadcom extends PluginForHost {
             // requestInfo=getRequest(new URL(url), cookie, link, false);
             // this.postRequest(string, cookie, referrer, requestProperties,
             // parameter, redirect)(, "login="+user+"&password="+pass);
-            Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
-            String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
+            Character l=null;
+            String i=null;
+            try{
+            l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
+            
+            
+             i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
+            }catch(Exception e){
+                e.printStackTrace();
+                logger.severe(requestInfo+"");
+               step.setStatus(PluginStep.STATUS_ERROR);
+               downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            }
             finalurl = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
 
             HTTPConnection urlConnection;

@@ -151,19 +151,19 @@ public class Serienjunkies extends PluginForHost {
             if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
                 logger.info("safe link");
                 helpstring = EinzelLinks(parameter);
-                if (aborted) return null;
+//                if (aborted) return null;
                 decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpstring), true));
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
-                if (aborted) return null;
+//                if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                 }
             } else if (parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
-                if (aborted) return null;
+//                if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                 }
@@ -171,14 +171,14 @@ public class Serienjunkies extends PluginForHost {
                 logger.info("else link");
                 // Kategorien
                 for (int i = 0; i < links.size(); i++) {
-                    if (aborted) return null;
+//                    if (aborted) return null;
                     if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                         helpstring = EinzelLinks(links.get(i).get(0));
-                        if (aborted) return null;
+//                        if (aborted) return null;
                         decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpstring), true));
                     } else if (links.get(i).get(0).indexOf("/sjsafe/") >= 0) {
                         helpvector = ContainerLinks(links.get(i).get(0));
-                        if (aborted) return null;
+//                        if (aborted) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                         }
@@ -208,7 +208,7 @@ public class Serienjunkies extends PluginForHost {
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
-                if (aborted) return null;
+//                if (aborted) return null;
                 reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
@@ -340,7 +340,7 @@ public class Serienjunkies extends PluginForHost {
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
-                if (aborted) return null;
+//                if (aborted) return null;
                 reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
@@ -394,7 +394,7 @@ public class Serienjunkies extends PluginForHost {
                 downloadLink.setStatusText("decrypt");
                 downloadLink.requestGuiUpdate();
                 Vector<DownloadLink> dls = getDLinks(link);
-                if (aborted) return null;
+//                if (aborted) return null;
                 FilePackage fp = downloadLink.getFilePackage();
                 int index= fp.indexOf(downloadLink);
                 fp.remove(downloadLink);
@@ -423,7 +423,7 @@ public class Serienjunkies extends PluginForHost {
 	                    if (down.size() > 0) {
 	                        try {
 	                            dls = getDLinks(mirrors[i]);
-	                            if (aborted) { return null; }
+//	                            if (aborted) { return null; }
 	
 	                            Iterator<Integer> iter = down.iterator();
 	                            while (iter.hasNext()) {

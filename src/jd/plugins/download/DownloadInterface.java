@@ -34,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
@@ -118,7 +117,7 @@ abstract public class DownloadInterface {
 
     // private int totalLoadedBytes = 0;
 
-    private boolean aborted = false;
+    // private boolean aborted = false;
 
     private boolean waitFlag = true;
 
@@ -165,7 +164,6 @@ abstract public class DownloadInterface {
             if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
                 error(ERROR_NIBBLE_LIMIT_REACHED);
             }
-            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
         }
         // 152857135
         // logger.info("Bytes " + totalLoadedBytes);
@@ -490,7 +488,13 @@ abstract public class DownloadInterface {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
+                        Iterator<Chunk> it = chunks.iterator();
+                        while (it.hasNext()) {
+                            it.next().interrupt();
+
+                        }
+                        return;
                     }
                 }
             }
@@ -1072,8 +1076,8 @@ abstract public class DownloadInterface {
             if ((startByte >= endByte && endByte > 0) || (startByte >= getFileSize() && endByte > 0)) {
 
                 // Korrektur Byte
-            //  logger.severe("correct -1 byte");
-              //  addToTotalLinkBytesLoaded(-1);
+                // logger.severe("correct -1 byte");
+                // addToTotalLinkBytesLoaded(-1);
 
                 return;
             }
@@ -1185,7 +1189,7 @@ abstract public class DownloadInterface {
                 if (speedDebug) logger.finer("Endbyte set to " + endByte);
             }
 
-            if (plugin.aborted || downloadLink.isAborted()) {
+            if (isInterrupted() || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
             addChunksDownloading(+1);
@@ -1195,7 +1199,7 @@ abstract public class DownloadInterface {
             this.desiredBps = 0;
             addChunksDownloading(-1);
 
-            if (plugin.aborted || downloadLink.isAborted()) {
+            if (isInterrupted() || downloadLink.isAborted()) {
                 error(ERROR_ABORTED_BY_USER);
             }
             logger.finer("Chunk finished " + chunks.indexOf(this) + " " + getBytesLoaded() + " bytes");
@@ -1225,7 +1229,7 @@ abstract public class DownloadInterface {
          * @return
          */
         private boolean isExternalyAborted() {
-            return aborted || plugin.aborted || abortByError || downloadLink.isAborted();
+            return isInterrupted()||abortByError;
         }
 
         /**
@@ -1272,11 +1276,17 @@ abstract public class DownloadInterface {
                 long addWait;
                 ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 128);
                 int ti = 0;
+                this.blockStart = System.currentTimeMillis();
                 while (!isExternalyAborted()) {
                     bytes = 0;
                     ti = getTimeInterval();
                     timer = System.currentTimeMillis();
                     if (speedDebug) logger.finer("load Block buffer: " + buffer.hasRemaining() + "/" + buffer.capacity() + " interval: " + ti);
+//                    boolean a1 = buffer.hasRemaining();
+//                    boolean a2 = isExternalyAborted();
+//                    long a4 = (System.currentTimeMillis() - timer);
+//                    boolean a3 = ((System.currentTimeMillis() - timer) < ti);
+//                    
                     while (buffer.hasRemaining() && !isExternalyAborted() && (System.currentTimeMillis() - timer) < ti) {
                         block = 0;
 
@@ -1286,9 +1296,11 @@ abstract public class DownloadInterface {
 
                         try {
 
-                            this.blockStart = System.currentTimeMillis();
+                           
 
                             if (miniBuffer.capacity() > buffer.remaining()) {
+//                                int j = buffer.remaining();
+//                                int c=buffer.capacity();
                                 block = source.read(buffer);
                             } else {
                                 miniBuffer.clear();
@@ -1297,15 +1309,18 @@ abstract public class DownloadInterface {
                                 buffer.put(miniBuffer);
 
                             }
-                            this.blockStart = -1;
+                            if(block>0){
+                                this.blockStart = System.currentTimeMillis();
+                            }
                         } catch (ClosedByInterruptException e) {
                             if (this.isExternalyAborted()) {
 
                             } else {
                                 logger.severe("Timeout detected");
                                 error(ERROR_TIMEOUT_REACHED);
+
                             }
-                            this.blockStart = -1;
+                       
                             block = -1;
                             break;
                         }
@@ -1321,7 +1336,9 @@ abstract public class DownloadInterface {
                         bytes += block;
 
                     }
+
                     if (block == -1 && bytes == 0) break;
+                    //if(bytes==0)continue;
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
                     desiredBps = (1000 * (long) bytes) / deltaTime;
                     if (speedDebug) logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
@@ -1339,7 +1356,7 @@ abstract public class DownloadInterface {
 
                     if (block == -1 || isExternalyAborted()) break;
 
-                    if (getCurrentBytesPosition() > this.endByte) {
+                    if (getCurrentBytesPosition() > this.endByte&&endByte>0) {
 
                         if (speedDebug) logger.severe(this.getID() + " OVERLOAD!!! " + (getCurrentBytesPosition() - this.endByte - 1));
                         break;
@@ -1349,17 +1366,18 @@ abstract public class DownloadInterface {
                      * War der download des buffers zu schnell, wird heir eine
                      * pause eingelegt
                      */
-                    tempBuff = getBufferSize(getMaximalSpeed());
+                    int sp = getMaximalSpeed();
+                    tempBuff = getBufferSize(sp);
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden
-                    if (tempBuff > endByte - getCurrentBytesPosition() + 1) {
+                    if (tempBuff > endByte - getCurrentBytesPosition() + 1&&endByte>0) {
                         tempBuff = (int) (endByte - getCurrentBytesPosition()) + 1;
                     }
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
                         try {
-                            buffer = ByteBuffer.allocateDirect(Math.max(1, bufferSize));
+                            buffer = ByteBuffer.allocateDirect(Math.max(128, bufferSize));
 
                         } catch (Exception e) {
                             error(ERROR_TOO_MUCH_BUFFERMEMORY);
@@ -1388,7 +1406,7 @@ abstract public class DownloadInterface {
 
                 }
                 buffer = null;
-                if (getCurrentBytesPosition() < endByte && endByte > 0) {
+                if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
 
                     inputStream.close();
                     source.close();
@@ -1434,7 +1452,7 @@ abstract public class DownloadInterface {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            this.blockStart = -1;
+           
         }
 
         /**
@@ -1530,10 +1548,10 @@ abstract public class DownloadInterface {
 
     }
 
-    public void abort() {
-        this.aborted = true;
-
-    }
+    // public void abort() {
+    // this.aborted = true;
+    //
+    // }
 
     public Vector<Chunk> getChunks() {
 

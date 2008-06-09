@@ -129,13 +129,13 @@ public class Netloadin extends PluginForHost {
             logger.info("Plugin Ende erreicht.");
             return null;
         }
-        if (aborted) {
-            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
-            logger.warning("Plugin aborted");
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            step.setStatus(PluginStep.STATUS_TODO);
-            return step;
-        }
+//        if (aborted) {
+//            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
+//            logger.warning("Plugin aborted");
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            step.setStatus(PluginStep.STATUS_TODO);
+//            return step;
+//        }
         logger.info("get Next Step " + step);
         // premium
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)&& this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {

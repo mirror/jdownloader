@@ -815,14 +815,14 @@ public class Rapidshare extends PluginForHost {
             newURL = null;
 
             try {
-                if (aborted) {
-                    // Häufige abbruchstellen sorgen für einen Zügigen
-                    // Downloadstop
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    // Häufige abbruchstellen sorgen für einen Zügigen
+//                    // Downloadstop
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 // Der Download wird bestätigt
                 String link = downloadLink.getDownloadURL();
                 if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL, false)) link = link.replaceFirst("http://", "http://ssl.");
@@ -867,12 +867,12 @@ public class Rapidshare extends PluginForHost {
                 step = this.nextStep(step);
             } else {
                 try {
-                    if (aborted) {
-                        logger.warning("Plugin abgebrochen");
-                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        step.setStatus(PluginStep.STATUS_TODO);
-                        return step;
-                    }
+//                    if (aborted) {
+//                        logger.warning("Plugin abgebrochen");
+//                        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                        step.setStatus(PluginStep.STATUS_TODO);
+//                        return step;
+//                    }
                     // Auswahl ob free oder prem
 
                     requestInfo = postRequest(new URL(newURL), null, null, null, "dl.start=free", true);
@@ -985,7 +985,7 @@ public class Rapidshare extends PluginForHost {
                         downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.waitForHappyHour", "Warte auf HappyHour"));
                         this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
 
-                        while (happyWaittime > 0 && !this.aborted) {
+                        while (happyWaittime > 0 && !Thread.currentThread().isInterrupted()) {
                             Thread.sleep(1000);
                             happyWaittime -= 1000;
                             p.setStatus(happyWaittime);
@@ -1573,14 +1573,14 @@ public class Rapidshare extends PluginForHost {
         case PluginStep.STEP_DOWNLOAD:
 
             try {
-                if (aborted) {
-                    // Häufige abbruchstellen sorgen für einen Zügigen
-                    // Downloadstop
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    // Häufige abbruchstellen sorgen für einen Zügigen
+//                    // Downloadstop
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 logger.info("Loading from: " + finalURL.substring(0, 30));
                 HashMap<String, String> ranger = new HashMap<String, String>();
                 ranger.put("Authorization", "Basic " + JDUtilities.Base64Encode(user + ":" + pass));

@@ -79,12 +79,12 @@ public class FileBaseTo extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
-        if (aborted) {
-            logger.warning("Plugin aborted");
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            step.setStatus(PluginStep.STATUS_TODO);
-            return step;
-        }
+//        if (aborted) {
+//            logger.warning("Plugin aborted");
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            step.setStatus(PluginStep.STATUS_TODO);
+//            return step;
+//        }
         try {
             String url = downloadLink.getDownloadURL();                    
             requestInfo = getRequest(new URL(url));

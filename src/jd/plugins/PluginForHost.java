@@ -66,7 +66,7 @@ public abstract class PluginForHost extends Plugin {
     public final void resetPlugin() {
         this.resetSteps();
         this.reset();
-        this.aborted = false;
+        //this.aborted = false;
     }
     /**
      * Setzt globale Plugineinstellungen wie eine Globale Hosterwartezeit zurück.
@@ -217,12 +217,12 @@ public abstract class PluginForHost extends Plugin {
         getProperties().save();
     }
     
-    public void abort(){
-        super.abort();
-        if(this.getDownloadInstance()!=null){
-            this.getDownloadInstance().abort(); 
-        }
-    }
+//    public void abort(){
+//        super.abort();
+//        if(this.getDownloadInstance()!=null){
+//            this.getDownloadInstance().abort(); 
+//        }
+//    }
     private DownloadInterface getDownloadInstance() {
         // TODO Auto-generated method stub
         return this.dl;

@@ -161,12 +161,12 @@ public class RapidShareDe extends PluginForHost {
                 requestInfo = form.getRequestInfo();
                 return step;
             case PluginStep.STEP_PENDING:
-                if (aborted) {
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 try {
                     waittime = Long.parseLong(new Regexp(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
                 }
@@ -217,12 +217,12 @@ public class RapidShareDe extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_SKIP);
                 return step;
             case PluginStep.STEP_DOWNLOAD:
-                if (aborted) {
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 HTTPConnection urlConnection = form.getConnection();
                 downloadLink.setName(getFileNameFormHeader(urlConnection));
                 downloadLink.setDownloadMax(urlConnection.getContentLength());

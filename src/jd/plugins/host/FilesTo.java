@@ -90,15 +90,15 @@ public class FilesTo extends PluginForHost {
     
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
     	
-    	if ( aborted ) {
-    		
-            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
-            logger.warning("Plugin abgebrochen");
-            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-            step.setStatus(PluginStep.STATUS_TODO);
-            return step;
-            
-        }
+//    	if ( aborted ) {
+//    		
+//            // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
+//            logger.warning("Plugin abgebrochen");
+//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            step.setStatus(PluginStep.STATUS_TODO);
+//            return step;
+//            
+//        }
     	
         RequestInfo requestInfo;
         

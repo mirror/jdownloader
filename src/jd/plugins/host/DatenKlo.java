@@ -228,12 +228,12 @@ public class DatenKlo extends PluginForHost {
                 form.put("down_captcha", Plugin.getCaptchaCode(captchaFile, this));
                 step = nextStep(step);
             case PluginStep.STEP_DOWNLOAD:
-                if (aborted) {
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 HTTPConnection urlConnection = form.getConnection();
                 int size = urlConnection.getContentLength();
                 if (urlConnection.getContentType().matches(".*html.*")) {

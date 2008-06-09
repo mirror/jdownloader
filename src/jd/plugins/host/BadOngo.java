@@ -174,12 +174,12 @@ public class BadOngo extends PluginForHost {
                 step.setParameter((long) 15000);
                 return step;
             case PluginStep.STEP_DOWNLOAD:
-                if (aborted) {
-                    logger.warning("Plugin abgebrochen");
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    step.setStatus(PluginStep.STATUS_TODO);
-                    return step;
-                }
+//                if (aborted) {
+//                    logger.warning("Plugin abgebrochen");
+//                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//                    step.setStatus(PluginStep.STATUS_TODO);
+//                    return step;
+//                }
                 form = null;
                 for (int i = 0; i < 10; i++) {
                     try {

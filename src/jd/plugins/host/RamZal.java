@@ -79,12 +79,12 @@ public class RamZal extends PluginForHost {
 	}
 
 	public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-		if (aborted) {
-			logger.warning("Plugin abgebrochen");
-			downloadLink.setStatus(DownloadLink.STATUS_TODO);
-			step.setStatus(PluginStep.STATUS_TODO);
-			return step;
-		}
+//		if (aborted) {
+//			logger.warning("Plugin abgebrochen");
+//			downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//			step.setStatus(PluginStep.STATUS_TODO);
+//			return step;
+//		}
 		try {
 			requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink
 					.getDownloadURL()), null, null, true);
