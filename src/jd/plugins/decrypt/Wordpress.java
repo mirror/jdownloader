@@ -4,15 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -45,16 +39,15 @@ public class Wordpress extends PluginForDecrypt {
 
     private void add_partpatterns() {
         /* Diese Pattern dienen zum auffinden der einzelnen Parts */
+        /* ACHTUNG: url muss an erster stelle im pattern sein*/
         partpattern.add("<a href=\"([^>]*?)\" target=\"_blank\">Part \\d{0,3}<\\/a>");
         partpattern.add("<a href=\"([^>]*?)\">Part \\d{0,3}<\\/a>");
-        // <a target="_blank"
-        // href=http://rs-layer.com/directory-91302-n7hvsswt.html>Rapidshare.com
-        // inkl. CCF &#038; RSDF</a>
-        // partpattern.add("<a target=\"_blank\" href=([^>]*?)>");
+        partpattern.add("href=\"?([^>]*?)\"?(target=\"_blank\")?\\s?>\\s?.*(Rapidshare.com|CCF|RSD|CCL|DLC|RSDF|Xirror.com|Uploaded.to|Share-Online.biz|Netload.in|Bluehost.to|Crypt-it.com){1,}.*\\s?<\\/a>");
     }
 
     private void add_passwordpatterns() {
         /* diese Pattern dienen zum auffinden des Passworts */
+        /* ACHTUNG: passwort muss an erster stelle im pattern sein*/
         passwordpattern.add("<b>Passwort\\:<\\/b> (.*?) \\|");
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) <\\/p>");
