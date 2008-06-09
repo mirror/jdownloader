@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -15,16 +16,16 @@ import jd.utils.JDUtilities;
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
-    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]doku.cc/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])" + "|(http://[*]best-movies.us/\\?p=[+]) + |(http://[*]game-blog.us/game-[+].html)";
-    private Pattern patternSupported = getSupportPattern(Supportpattern);
+//    private String Supportpattern = "(http://[*]movie-blog.org/[+]/[+]/[+]/[+])" + "|(http://[*]doku.cc/[+]/[+]/[+]/[+])" + "|(http://[*]xxx-blog.org/blog.php\\?id=[+])" + "|(http://[*]sky-porn.info/blog/\\?p=[+])" + "|(http://[*]best-movies.us/\\?p=[+]) + |(http://[*]game-blog.us/game-[+].html)";
+    private Pattern patternSupported = Pattern.compile("http://.*?(movie-blog.org/.+/.+/.+/.+|doku.cc/.+/.+/.+/.+|xxx-blog.org/blog.php\\?id=[\\d]+|sky-porn.info/blog/\\?p=.+|best-movies.us/\\?p=.+|game-blog.us/game-.+\\.html).*", Pattern.CASE_INSENSITIVE);
     private Vector<String> passwordpattern = new Vector<String>();
-    private Vector<String> partpattern = new Vector<String>();
+//    private Vector<String> partpattern = new Vector<String>();
     private ArrayList<String[]> defaultpasswords = new ArrayList<String[]>();
 
     public Wordpress() {
         super();
         add_passwordpatterns();
-        add_partpatterns();
+//        add_partpatterns();
         add_defaultpasswords();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
@@ -37,13 +38,14 @@ public class Wordpress extends PluginForDecrypt {
         defaultpasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
     }
 
-    private void add_partpatterns() {
+//    private void add_partpatterns() {
         /* Diese Pattern dienen zum auffinden der einzelnen Parts */
         /* ACHTUNG: url muss an erster stelle im pattern sein*/
+//        partpattern.add("");
         //partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?Part\\s?\\d{0,3}\\s?<\\/a>");        
         //partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>[^<]*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share|Netload|Bluehost|Crypt|File){1,}[^<]*<\\/a>");
-        //partpattern.add("href=\"?([^>\\s]*?)\"?\\s?(target=\"_blank\")?\\s?>[^<]*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts? [\\d]*)[^<]*<\\/a>");
-    }
+//        partpattern.add("href=\"?([^>\\s]*?)\"?\\s?(target=\"_blank\")?\\s?>[^<]*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts? [\\d]*)[^<]*<\\/a>");
+//    }
 
     private void add_passwordpatterns() {
         /* diese Pattern dienen zum auffinden des Passworts */
@@ -103,7 +105,6 @@ public class Wordpress extends PluginForDecrypt {
                         break;
                     }
                 }
-
                 ArrayList<String> password = null;
                 /* Passwort suchen */
                 for (int i = 0; i < passwordpattern.size(); i++) {
@@ -116,21 +117,32 @@ public class Wordpress extends PluginForDecrypt {
                         break;
                     }
                 }
-                ;
-
+                String[] links = reqinfo.getRegexp("(<a.*?</a>)").getMatches(1);
+                for (int i = 0; i < links.length; i++) {
+                    try {
+                        if(links[i].matches(".*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts?[\\s\\d]*?).*"))
+                        {
+//                            System.out.println(links[i]);
+                        decryptedLinks.add(this.createDownloadlink(Plugin.getHttpLinks(links[i], parameter)[0]));           
+                        }
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                }
                 /* Alle Parts suchen */
+                /*
                 ArrayList<String> parts = null;
                 for (int i = 0; i < partpattern.size(); i++) {
                     parts = getAllSimpleMatches(reqinfo, Pattern.compile(partpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (parts.size() != 0) {
                         for (int ii = 0; ii < parts.size(); ii++) {
                             logger.info("LINK:"+JDUtilities.htmlDecode(parts.get(ii)));
-                            /*decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));*/                            
-                        };
+//                            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));                          
+                        }
                         break;
                     }
                 }
-                ;
+                */
 
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
