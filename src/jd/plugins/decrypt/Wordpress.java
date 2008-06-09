@@ -41,7 +41,7 @@ public class Wordpress extends PluginForDecrypt {
         /* Diese Pattern dienen zum auffinden der einzelnen Parts */
         /* ACHTUNG: url muss an erster stelle im pattern sein*/
         partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?Part\\s?\\d{0,3}\\s?<\\/a>");        
-        partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?.*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Uploaded|Share-Online|Netload|Bluehost|Crypt-it|Cryptload){1,}.*\\s?<\\/a>");
+        partpattern.add("href=\"?([^>]*?)\"?\\s?(target=\"_blank\")?\\s?>\\s?.*?(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Uploaded|Share-Online|Netload|Bluehost|Crypt-it|Cryptload)+.*?\\s?<\\/a>");
     }
 
     private void add_passwordpatterns() {
