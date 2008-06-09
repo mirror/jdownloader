@@ -1618,9 +1618,9 @@ public class Rapidshare extends PluginForHost {
 
                 dl.setResume(true);
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
-                dl.startDownload();
+                if (dl.startDownload()){
 
-                if (dl.getErrors().size() == 0) {
+               
                     if (new File(downloadLink.getFileOutput()).length() < 6000 && JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())).indexOf(PATTERN_DOWNLOAD_ERRORPAGE) > 0) {
                         new File(downloadLink.getFileOutput()).delete();
 

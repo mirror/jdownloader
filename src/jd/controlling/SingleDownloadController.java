@@ -355,10 +355,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         logger.severe("Error occurred: No Serverconnection");
         long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
-        try {
-            milliSeconds = (Long) step.getParameter();
-        } catch (Exception e) {
-        }
+      
         while (milliSeconds > 0 && !this.aborted && !this.downloadLink.isAborted()) {
 
             downloadLink.setStatusText(JDUtilities.formatSeconds((int) (milliSeconds / 1000)));
@@ -370,9 +367,9 @@ public class SingleDownloadController extends Thread {
             milliSeconds -= 1000;
         }
 
-        //downloadLink.setStatus(DownloadLink.STATUS_TODO);
-        //downloadLink.setEndOfWaittime(0);
-        downloadLink.reset();
+        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+       downloadLink.setEndOfWaittime(0);
+       // downloadLink.reset();
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 

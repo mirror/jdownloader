@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.LogRecord;
@@ -87,10 +88,14 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         box.addActionListener(this);
         p.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")));
         p.add(box);
-        JDUtilities.addToGridBag(panel, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, new JSeparator(), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        btn.addActionListener(this);
+        
+        JDUtilities.addToGridBag(panel,new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")),0,0,1,1,0,0,new Insets(0,7,5,0),GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel,box,0,1,1,1,0,0,new Insets(0,7,5,0),GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        
+       JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), 1,1,1, 1, 0, 0, new Insets(0,5,5,0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+       JDUtilities.addToGridBag(panel, new JSeparator(),0, 3, 5, 1, 1, 1, new Insets(0,7,3,0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+       
+       btn.addActionListener(this);
 
         // panel.add(new JSeparator());
         if (reconnectType != null) box.setSelectedItem(reconnectType);
@@ -108,19 +113,19 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"))) {
             lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader());
 
-            JDUtilities.addToGridBag(panel, lh, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, lh, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         } else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
             er = new ConfigPanelDefault(uiinterface, ((Interaction) new ExternReconnect()).getConfig());
 
-            JDUtilities.addToGridBag(panel, er, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
 
         else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
             er = new ConfigPanelDefault(uiinterface, ((Interaction) new BatchReconnect()).getConfig());
 
-            JDUtilities.addToGridBag(panel, er, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
         this.validate();
@@ -152,6 +157,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
              mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"));
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
+            mld.setEnabled(true);
             JDUtilities.getController().addControlListener(this);
 
             logger.info("Start Reconnect");
@@ -172,6 +178,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
                     mld.getProgress().setValue(100);
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.close", "Fenster schließen"));
+                    mld.setEnabled(false);
                     JDUtilities.getController().removeControlListener(ConfigPanelReconnect.this);
                 }
             }.start();
@@ -182,7 +189,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
+        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED&&mld!=null&&mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
 
             if (l.getSourceClassName().startsWith("jd.controlling.interaction")) {

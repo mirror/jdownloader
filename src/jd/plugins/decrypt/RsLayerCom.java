@@ -88,7 +88,7 @@ public class RsLayerCom extends PluginForDecrypt {
             	
         		RequestInfo reqinfo = getRequest(new URL(parameter));
                 
-            	if ( parameter.indexOf("rs-layer.com/link-") != -1 ) {
+            	if ( parameter.indexOf("/link-") != -1 ) {
                     
                     String link = getBetween(reqinfo.getHtmlCode(),"<iframe src=\"", "\" ");
                     link = decryptEntities(link);
@@ -98,7 +98,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     progress.increase(1);
                     step.setParameter(decryptedLinks);
                     
-                } else if ( parameter.indexOf("rs-layer.com/directory-") != -1 ) {
+                } else if ( parameter.indexOf("/directory-") != -1 ) {
                 	
                     Form[] forms = Form.getForms(reqinfo);
 

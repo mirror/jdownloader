@@ -87,7 +87,7 @@ public class zShare extends PluginForHost {
             request= new CRequest();
             request = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
          
-             Regexp reg = request.getRegexp("<img src=\"(http://[^\"]*?zshare.net/download.*?)\"");
+             Regexp reg = request.getRegexp("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
             
             String url=reg.getMatches()[0][0];
             request.withHtmlCode = false;

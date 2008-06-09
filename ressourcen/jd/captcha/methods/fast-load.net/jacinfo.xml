@@ -1,5 +1,5 @@
 <jDownloader>
-  <method name="fast-load.net" author="Coalado" />
-  <format type="jpg" letterNum="3" />
+  <method name="fast-load.net" author="JD-Team" />
+  <format type="png" letterNum="3" />
 
 </jDownloader>

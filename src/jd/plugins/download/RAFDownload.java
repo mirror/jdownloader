@@ -53,7 +53,7 @@ public class RAFDownload extends DownloadInterface {
 
     private WriterWorker writer;
 
-    protected void writeChunkBytes(Chunk chunk) {
+    protected boolean writeChunkBytes(Chunk chunk) {
         if (maxBytes < 0) {
 
             if (writeType) {
@@ -82,6 +82,7 @@ public class RAFDownload extends DownloadInterface {
                     synchronized (outputChannel) {
                         outputFile.seek(chunk.getWritePosition());
                         outputChannel.write(chunk.buffer);
+                        return true;
                     }
 
                 } catch (Exception e) {
@@ -89,6 +90,7 @@ public class RAFDownload extends DownloadInterface {
                     e.printStackTrace();
                     error(ERROR_LOCAL_IO);
                     addException(e);
+                    return false;
                 }
 
             }
@@ -96,6 +98,7 @@ public class RAFDownload extends DownloadInterface {
         } else {
             chunk.buffer.clear();
         }
+        return true;
         // try {
         // // int limit = chunk.buffer.limit()-chunk.buffer.position();
         //
@@ -209,7 +212,7 @@ public class RAFDownload extends DownloadInterface {
         } catch (Exception e) {
             try {
                 outputChannel.force(false);
-
+logger.info("CLOSE HD FILE");
                 outputFile.close();
                 outputChannel.close();
                 e.printStackTrace();
@@ -270,7 +273,7 @@ public class RAFDownload extends DownloadInterface {
         System.gc();
         System.runFinalization();
         //
-
+        logger.info("CLOSE HD FILE");
         try {
             if (maxBytes < 0) this.outputChannel.force(false);
         } catch (Exception e) {

@@ -120,6 +120,7 @@ this.setPreferredSize(new Dimension(400,300));
 
     }
 
+  
     public void setText(String text) {
         this.htmlArea.setText(text);
     }

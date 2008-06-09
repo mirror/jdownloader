@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
+import java.util.logging.LogRecord;
 
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -45,6 +46,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
@@ -53,21 +55,23 @@ import javax.swing.event.DocumentListener;
 
 import org.jdesktop.swingx.graphics.ColorUtilities;
 
-
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.Interaction;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.ProgressDialog;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
+class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,ControlListener {
     /**
      * 
      */
@@ -89,12 +93,17 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
 
     private JButton btnSelectRouter;
 
+    private JButton btnFindIP;
+
+    private MiniLogDialog mld;
+
     public SubPanelLiveHeaderReconnect(UIInterface uiinterface, Interaction interaction) {
         super(uiinterface);
         // this.configuration = configuration;
         initPanel();
         this.lh = (HTTPLiveHeader) interaction;
         load();
+       
     }
 
     public void save() {
@@ -109,11 +118,16 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         // ConfigEntry cfg;
         btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen"));
         btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
+        btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
+
         btnSelectRouter.addActionListener(this);
         btnAutoConfig.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnAutoConfig, 1, 1, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
+        btnFindIP.addActionListener(this);
+        JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+        JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
         user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
@@ -133,18 +147,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(routerScript);
 
         add(panel);
-        if (routerip == null || routerip.trim().length() == 0) {
-            new Thread() {
-                public void run() {
-                    ip.setData(JDLocale.L("gui.config.liveaHeader.featchIP", "Suche nach RouterIP..."));
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                    if (ip != null) ip.setData(rinfo.getAdress());
-
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, rinfo.getAdress());
-                    JDUtilities.saveConfig();
-                }
-            }.start();
-        }
 
     }
 
@@ -159,6 +161,32 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
     }
 
     public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() == btnFindIP) {
+            JDUtilities.getController().addControlListener(this);
+          mld = new MiniLogDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
+            mld.getBtnOK().setEnabled(false);
+            mld.getProgress().setMaximum(100);
+            mld.getProgress().setValue(2);
+            mld.setEnabled(true);
+            new Thread() {
+                public void run() {
+                    ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
+                    mld.getProgress().setValue(60);
+                    GetRouterInfo rinfo = new GetRouterInfo(null);
+                    mld.getProgress().setValue(80);
+                    ip.setData(rinfo.getAdress());
+                    mld.getProgress().setValue(100);
+
+                    mld.getBtnOK().setEnabled(true);
+                    mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
+                    mld.setEnabled(true);
+                   
+                    JDUtilities.getController().addControlListener(SubPanelLiveHeaderReconnect.this);
+                }
+            }.start();
+
+        }
         if (e.getSource() == btnSelectRouter) {
             Vector<String[]> scripts = lh.getLHScripts();
 
@@ -194,17 +222,29 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                 d[i] = i + ". " + JDUtilities.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
             }
 
-//            String selected = (String) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte wähle deinen Router aus"), JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
-            JPanel panel = new JPanel(new BorderLayout(10,10));
+            // String selected = (String) JOptionPane.showInputDialog(this,
+            // JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte
+            // wähle deinen Router aus"),
+            // JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router
+            // importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
+            JPanel panel = new JPanel(new BorderLayout(10, 10));
             final DefaultListModel defaultListModel = new DefaultListModel();
             final String text = "Search Router Model";
             final JTextField searchField = new JTextField();
             searchField.setForeground(Color.lightGray);
             final JList list = new JList(defaultListModel);
-            searchField.getDocument().addDocumentListener(new DocumentListener(){
-                public void changedUpdate(DocumentEvent e) {}
-                public void insertUpdate(DocumentEvent e) {refreshList();}
-                public void removeUpdate(DocumentEvent e) {refreshList();}
+            searchField.getDocument().addDocumentListener(new DocumentListener() {
+                public void changedUpdate(DocumentEvent e) {
+                }
+
+                public void insertUpdate(DocumentEvent e) {
+                    refreshList();
+                }
+
+                public void removeUpdate(DocumentEvent e) {
+                    refreshList();
+                }
+
                 private void refreshList() {
                     String search = searchField.getText().toLowerCase();
                     String[] hits = search.split(" ");
@@ -214,7 +254,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                             if (!d[i].toLowerCase().contains(hits[j])) {
                                 break;
                             }
-                            if (j == hits.length-1) {
+                            if (j == hits.length - 1) {
                                 defaultListModel.addElement(d[i]);
                             }
                         }
@@ -222,15 +262,19 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                     list.setModel(defaultListModel);
                 }
             });
-            searchField.addFocusListener(new FocusAdapter(){
-                boolean onInit = true; 
+            searchField.addFocusListener(new FocusAdapter() {
+                boolean onInit = true;
+
                 public void focusGained(FocusEvent e) {
-                    if (onInit) {onInit=!onInit; return;} 
+                    if (onInit) {
+                        onInit = !onInit;
+                        return;
+                    }
                     searchField.setForeground(Color.black);
                     if (searchField.getText().equals(text)) searchField.setText("");
                 }
             });
-            
+
             // !!! Eclipse Clear Console Icon
             ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
@@ -239,7 +283,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             reset.setOpaque(false);
             reset.setContentAreaFilled(false);
             reset.setBorderPainted(false);
-            reset.addActionListener(new ActionListener(){
+            reset.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     searchField.setForeground(Color.lightGray);
                     searchField.setText(text);
@@ -251,7 +295,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             searchField.setText(text);
             // !!! Lupen-Icon
             Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
-            JPanel p = new JPanel(new BorderLayout(5,5));
+            JPanel p = new JPanel(new BorderLayout(5, 5));
             p.add(searchField, BorderLayout.CENTER);
             p.add(reset, BorderLayout.EAST);
             JLabel example = new JLabel("Example: 3Com ADSL");
@@ -260,15 +304,16 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             for (int i = 0; i < d.length; i++) {
                 defaultListModel.addElement(d[i]);
             }
-//            list.setPreferredSize(new Dimension(400, 500));
+            // list.setPreferredSize(new Dimension(400, 500));
             JScrollPane scrollPane = new JScrollPane(list);
             panel.add(p, BorderLayout.NORTH);
             panel.add(scrollPane, BorderLayout.CENTER);
             panel.setPreferredSize(new Dimension(400, 500));
             int n = 10;
-            panel.setBorder(new EmptyBorder(n,n,n,n));
+            panel.setBorder(new EmptyBorder(n, n, n, n));
             JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-//            JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
+            // JDialog dialog = new
+            // JDialog(SwingUtilities.getWindowAncestor(btnSelectRouter), );
             JDialog dialog = op.createDialog(this, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
             dialog.add(op);
             dialog.setModal(true);
@@ -276,8 +321,14 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             dialog.pack();
             dialog.setLocationRelativeTo(null);
             dialog.setVisible(true);
-            int answer = ((Integer)op.getValue()).intValue(); //JOptionPane.showConfirmDialog(this, panel, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"), JOptionPane.OK_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE);
-            if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue()!=null) {
+            int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.showConfirmDialog(this,
+                                                                // panel,
+                                                                // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
+                                                                // "Router
+                                                                // importieren"),
+                                                                // JOptionPane.OK_CANCEL_OPTION,
+                                                                // JOptionPane.INFORMATION_MESSAGE);
+            if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
                 String selected = (String) list.getSelectedValue();
                 int id = Integer.parseInt(selected.split("\\.")[0]);
                 String[] data = scripts.get(id);
@@ -291,7 +342,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                 if (pw == null || pw.matches("[\\s]*")) pass.setData(data[5]);
 
             }
-        } else {
+        }
+            if (e.getSource() == this.btnAutoConfig) {
 
             if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen. Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"))) {
                 Thread th;
@@ -301,6 +353,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
                     public void run() {
 
                         GetRouterInfo routerInfo = new GetRouterInfo(progress);
+                        routerInfo.setLoginPass((String)pass.getText());
+                        routerInfo.setLoginUser((String)user.getText());
                         String username = (String) user.getText();
                         if (username != null && !username.matches("[\\s]*")) routerInfo.username = username;
                         String pw = (String) pass.getText();
@@ -335,6 +389,19 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             }
         }
 
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED&&mld!=null&&mld.isEnabled()) {
+            LogRecord l = (LogRecord) event.getParameter();
+
+            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
+                mld.setText(JDUtilities.formatSeconds((int)l.getMillis()/1000)+" : "+ l.getMessage() + "\r\n"+mld.getText());
+                mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+                mld.getProgress().setValue(mld.getProgress().getValue()+1);
+            }
+        }
+        
     }
 
 }

@@ -156,17 +156,17 @@ abstract public class DownloadInterface {
      * @param currentBytePosition
      */
 
-    abstract protected void writeChunkBytes(Chunk chunk);
+    abstract protected boolean writeChunkBytes(Chunk chunk);
 
-    protected void writeBytes(Chunk chunk) {
-        
-        writeChunkBytes(chunk);
-      
-        if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
-            error(ERROR_NIBBLE_LIMIT_REACHED);
+    protected synchronized void writeBytes(Chunk chunk) {
+
+        if (writeChunkBytes(chunk)) {
+
+            if (maxBytes > 0 && getChunkNum() == 1 && this.totaleLinkBytesLoaded >= maxBytes) {
+                error(ERROR_NIBBLE_LIMIT_REACHED);
+            }
+            if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
         }
-        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
-
         // 152857135
         // logger.info("Bytes " + totalLoadedBytes);
     }
@@ -500,9 +500,9 @@ abstract public class DownloadInterface {
             downloadLink.setDownloadCurrent(this.totaleLinkBytesLoaded);
             downloadLink.requestGuiUpdate();
             if (i == 1000 / interval) {
-             
+
                 assignChunkSpeeds();
-                
+
                 i = 0;
             }
 
@@ -518,11 +518,11 @@ abstract public class DownloadInterface {
         int allowedLinkSpeed = downloadLink.getMaximalspeed();
         int mChunk = (int) ((allowedLinkSpeed / chunkNum) * 0.4);
         int currentSpeed = 0;
-       
+
         Chunk next;
-       
+
         synchronized (chunks) {
-            
+
             Iterator<Chunk> it = chunks.iterator();
             while (it.hasNext()) {
                 next = it.next();
@@ -531,12 +531,12 @@ abstract public class DownloadInterface {
                 }
 
             }
-        
+
             int overhead = allowedLinkSpeed - currentSpeed;
             if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) return;
 
             it = chunks.iterator();
-          
+
             while (it.hasNext()) {
                 next = it.next();
                 if (next.isAlive()) {
@@ -545,9 +545,8 @@ abstract public class DownloadInterface {
                 }
 
             }
-            
+
         }
-      
 
     }
 
@@ -817,27 +816,30 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             this.setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE=JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4)*1024*1024l;
+            MAX_BUFFERSIZE = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
 
         }
 
         public void checkTimeout(long timeout) {
-          long timer = blockStart;
+            long timer = blockStart;
             if (interrupted() || !this.isAlive()) return;
-//            try {
-//                if (this.inputStream.available() > 0) {
-//                    blockStart = -1;
-//                }
-//            } catch (IOException e) {
-//            }
+            // try {
+            // if (this.inputStream.available() > 0) {
+            // blockStart = -1;
+            // }
+            // } catch (IOException e) {
+            // }
             if (isExternalyAborted()) {
+                logger.severe("INTERRUPT");
+
                 this.interrupt();
+
             }
             if (timer <= 0) return;
             long dif = System.currentTimeMillis() - timer;
-            //logger.info(this + " " + dif);
+            // logger.info(this + " " + dif);
             if (dif >= timeout) {
-                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif+" - "+timer);
+                logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif + " - " + timer);
                 this.interrupt();
 
             } else if (dif >= 5000) {
@@ -1070,8 +1072,8 @@ abstract public class DownloadInterface {
             if ((startByte >= endByte && endByte > 0) || (startByte >= getFileSize() && endByte > 0)) {
 
                 // Korrektur Byte
-                if (speedDebug) logger.finer("correct -1 byte");
-                addToTotalLinkBytesLoaded(-1);
+            //  logger.severe("correct -1 byte");
+              //  addToTotalLinkBytesLoaded(-1);
 
                 return;
             }
@@ -1090,10 +1092,34 @@ abstract public class DownloadInterface {
                     return;
                 }
 
+                // sun.net.www.MessageHeader@a1a199{GET
+                // /files/120598559/Lunar_Strain.rar HTTP/1.1: null}{User-Agent:
+                // Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET
+                // CLR 1.1.4322; .NET CLR 2.0.50727)}{Authorization: Basic
+                // NDkxMjM4MDpUNFN6N2YySjZK}{Accept-Language: de, en-gb;q=0.9,
+                // en;q=0.8}{Referer:
+                // http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
+                // bytes=26282889-}{Host: rs305tl2.rapidshare.com}{Accept:
+                // text/html, image/gif, image/jpeg, *; q=.2, */*;
+                // q=.2}{Connection: keep-alive}{null: null}{null: null}{null:
+                // null}
+                // sun.net.www.MessageHeader@751d58{
+                // null: HTTP/1.1 200 OK}{
+                // Date: Sun, 08 Jun 2008 17:15:18 GMT}{
+                // Connection: close}{
+                // Content-Type: application/octet-stream}{
+                // Accept-Ranges: bytes}{
+                // Content-Disposition: Attachment; filename=Lunar_Strain.rar}{
+                // Content-Length
+                // 26282889
+                // : 26282889}{null: null}
+                // }
                 if ((startByte + getPreBytes(this)) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                    error(ERROR_CHUNKLOAD_FAILED);
-                    logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+                    if (connection.getHeaderField("Content-Length") == null && Integer.parseInt(connection.getHeaderField("Content-Length")) < startByte) {
 
+                        error(ERROR_CHUNKLOAD_FAILED);
+                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+                    }
                     return;
 
                 }
@@ -1257,7 +1283,6 @@ abstract public class DownloadInterface {
                         // PrÃŒft ob bytes zum Lesen anliegen.
 
                         // kann den connectiontimeout nicht auswerten
-                        
 
                         try {
 
@@ -1383,7 +1408,7 @@ abstract public class DownloadInterface {
                 error(ERROR_SECURITY);
 
             } catch (IOException e) {
-                if (e.getMessage()!=null&&e.getMessage().indexOf("timed out") >= 0) {
+                if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(ERROR_TIMEOUT_REACHED);
                     ;
 

@@ -18,8 +18,10 @@ package jd.router;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -30,6 +32,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
+
 import jd.gui.skins.simple.ProgressDialog;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
@@ -50,6 +53,10 @@ public class GetRouterInfo {
     private Vector<String[]> routerDatas = null;
 
     private ProgressDialog progressBar;
+
+    private String loginUser;
+
+    private String loginPass;
 
     public GetRouterInfo(ProgressDialog progress) {
         this.progressBar = progress;
@@ -178,20 +185,28 @@ public class GetRouterInfo {
         return null;
 
     }
-
+ 
     public Vector<String[]> getRouterDatas() {
         if (routerDatas != null) return routerDatas;
         
         if (getAdress() == null) return null;
         try {
             // progress.setStatusText("Load possible RouterDatas");
+            Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
+
             RequestInfo request = Plugin.getRequest(new URL("http://" + adress));
             String html = request.getHtmlCode().toLowerCase();
             Vector<String[]> routerData = new HTTPLiveHeader().getLHScripts();
             Vector<String[]> retRouterData = new Vector<String[]>();
             for (int i = 0; i < routerData.size(); i++) {
                 String[] dat = routerData.get(i);
-                if (html.matches(dat[3])) retRouterData.add(dat);
+                try{
+                if (html.contains(dat[0].toLowerCase())||html.contains(dat[1].toLowerCase())||html.matches(dat[3])) {
+                    retRouterData.add(dat);
+                }
+                }catch(Exception e){
+                  //  e.printStackTrace();
+                }
             }
             routerDatas = retRouterData;
             return retRouterData;
@@ -251,5 +266,24 @@ public class GetRouterInfo {
         setProgress(100);
         return null;
     }
+    private class InternalAuthenticator extends Authenticator {
+        private String username, password;
 
+        public InternalAuthenticator(String user, String pass) {
+            username = user;
+            password = pass;
+        }
+
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+        }
+    }
+    public void setLoginPass(String text) {
+        this.loginPass=text;
+        
+    }
+    public void setLoginUser(String text) {
+        this.loginUser=text;
+        
+    }
 }
