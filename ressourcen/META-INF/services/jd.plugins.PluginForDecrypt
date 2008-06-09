@@ -35,7 +35,6 @@ jd.plugins.decrypt.Stealth
 jd.plugins.decrypt.Tinyurl
 jd.plugins.decrypt.UpPicoasisNet
 jd.plugins.decrypt.Xirror
-jd.plugins.decrypt.XliceNet
 jd.plugins.decrypt.YoumirrorBiz
 jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.Filer
@@ -70,8 +69,6 @@ jd.plugins.decrypt.CryptItCom
 jd.plugins.decrypt.XupInFolder
 jd.plugins.decrypt.Wiireloaded
 jd.plugins.decrypt.LinkProtectorCom
-jd.plugins.decrypt.DLCXliceNet
-jd.plugins.decrypt.DLCXliceNetRedirect
 jd.plugins.decrypt.FTI6xto
 jd.plugins.decrypt.LinksaveIn
 jd.plugins.decrypt.RapidsafeDe

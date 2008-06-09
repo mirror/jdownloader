@@ -39,7 +39,7 @@ public class BestMovies extends PluginForDecrypt {
     private String VERSION = "0.0.1";
 
     private String CODER = "jD-Team";
-    static private final Pattern patternSupported = getSupportPattern("http://[*]best-movies.us/\\?p\\=[+]|http://crypt.best-movies.us/go.php\\?id\\=[+]");
+    static private final Pattern patternSupported = getSupportPattern("http://crypt.best-movies.us/go.php\\?id\\=[+]");
 
     public BestMovies() {
 

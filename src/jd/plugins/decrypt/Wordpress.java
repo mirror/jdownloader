@@ -108,7 +108,7 @@ public class Wordpress extends PluginForDecrypt {
                     password = getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
-                            logger.info("PW:"+password.get(ii));
+                            /*logger.info("PW:"+password.get(ii));*/
                             default_password.add(JDUtilities.htmlDecode(password.get(ii)));                            
                         }
                         break;
@@ -122,7 +122,7 @@ public class Wordpress extends PluginForDecrypt {
                     parts = getAllSimpleMatches(reqinfo, Pattern.compile(partpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (parts.size() != 0) {
                         for (int ii = 0; ii < parts.size(); ii++) {
-                            logger.info("LINK:"+JDUtilities.htmlDecode(parts.get(ii)));
+                            /*logger.info("LINK:"+JDUtilities.htmlDecode(parts.get(ii)));*/
                             decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(parts.get(ii))));                            
                         };
                         break;
