@@ -10,6 +10,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -122,8 +123,11 @@ public class Wordpress extends PluginForDecrypt {
                     try {
                         if(links[i].matches(".*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts?[\\s\\d]*?).*"))
                         {
-//                            System.out.println(links[i]);
-                        decryptedLinks.add(this.createDownloadlink(Plugin.getHttpLinks(links[i], parameter)[0]));           
+                        String lnk = Plugin.getHttpLinks(links[i], parameter)[0];
+                        if(!new Regexp(lnk, patternSupported).matches())
+                        {
+                        decryptedLinks.add(this.createDownloadlink(lnk));       
+                        }
                         }
                     } catch (Exception e) {
                         // TODO: handle exception
