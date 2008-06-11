@@ -14,11 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -30,33 +32,22 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
-/**
- * http://rs.xxx-blog.org/com-UmNkdzY1MjN/file.rar
- * http://rs.hoerbuch.in/com-UmY3YGNiRjN/PP-Grun.rar
- * 
- * 
+/** 
  * @author JD-Team
  * 
  */
 public class RsHoerbuchin extends PluginForDecrypt {
-    static private final String host             = "rs.hoerbuch.in";
+    static private final String host = "rs.hoerbuch.in";
 
-    private String              version          = "1.0.0.1";
-    private static final Pattern patternPost = Pattern.compile("http://(www\\.|)hoerbuch.in/blog.php\\?id=[\\d]+");
-    private static final Pattern patternLink = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternPost.pattern()+"|"+patternLink.pattern(), patternPost.flags()| patternLink.flags());
-    
-//    private static final Pattern patternPostName = Pattern.compile("<H1.*?><A HREF.*?>(.*?)</A></H1>");
-    private static final Pattern patternLinksHTMLSource = Pattern.compile("Dauer.*?(.*)Passwort:</B>\\s*(.*?)\\s*<");
-    
-
-
+    private String version = "1.0.0.1";
+    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[a-zA-Z0-9]{6}.html", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_UP.flags());
 
     public RsHoerbuchin() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        default_password.add("www.hoerbuch.in");
     }
 
     @Override
@@ -98,40 +89,31 @@ public class RsHoerbuchin extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
-            case PluginStep.STEP_DECRYPT:
-           
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-                try {
-                    URL url = new URL(cryptedLink);
-                    RequestInfo requestInfo = getRequest(url, null, null, false);
-                    
-                    if(cryptedLink.matches(patternLink.pattern())){
-                        HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                        String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                        decryptedLinks.add(this.createDownloadlink(newURL));                    	
-                    }else if( cryptedLink.matches(patternPost.pattern())){
-                    	Matcher matcher = patternLinksHTMLSource.matcher(requestInfo.getHtmlCode());
-                    	if( matcher.find() ){
-                    		String linksClaim = matcher.group(1);
-                    		String [] links = getHttpLinks( linksClaim, null);
-                    		
-                    		for( String link:links){
-                           		decryptedLinks.add( createDownloadlink(link) );
-                    		}
-                    	}else{
-                    		logger.severe("unable to find links - adapt patternLinksHTMLSource (see next INFO log line for details)");
-                    		logger.info(requestInfo.getHtmlCode());
-                    	}
+        case PluginStep.STEP_DECRYPT:
+
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            try {
+                URL url = new URL(cryptedLink);
+                RequestInfo requestInfo = getRequest(url, null, null, false);
+
+                if (cryptedLink.matches(patternLink_RS.pattern())) {
+                    HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                    String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
+                    decryptedLinks.add(this.createDownloadlink(newURL));
+                } else if (cryptedLink.matches(patternLink_UP.pattern())) {
+                    /*Uploaded.to links werden aus der action rausgelesen*/
+                    ArrayList<String> links = getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
+                    for (int i = 0; i < links.size(); i++) {                        
+                        decryptedLinks.add(this.createDownloadlink(links.get(i)));
                     }
                 }
-                catch (MalformedURLException e) {
-                   e.printStackTrace();
-                }
-                catch (IOException e) {
-                   e.printStackTrace();
-                }
-                step.setParameter(decryptedLinks);
-                break;
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            step.setParameter(decryptedLinks);
+            break;
 
         }
         return null;
