@@ -236,6 +236,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
         this.addWindowListener(list);
+        acceptAll.getRootPane().setDefaultButton(acceptAll);
 
         pack();
         this.setVisible(true);
@@ -570,6 +571,11 @@ private boolean isDupe(DownloadLink link){
         }
         return ret;
     }
+    
+    private void SetTitle()
+    {
+    	setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+    }
 
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
 
@@ -591,6 +597,7 @@ private boolean isDupe(DownloadLink link){
     protected void removePackageAt(int i) {
         tabList.remove(i);
         tabbedPane.removeTabAt(i);
+        SetTitle();
     }
 
     protected void removePackage(PackageTab tab) {
@@ -793,6 +800,7 @@ private boolean isDupe(DownloadLink link){
 
             addTab();
         }
+        SetTitle();
     }
 
     /**
