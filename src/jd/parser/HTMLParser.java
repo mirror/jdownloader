@@ -17,28 +17,13 @@
 
 package jd.parser;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Vector;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
-import jd.plugins.MultiPartFormOutputStream;
 import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
@@ -231,24 +216,25 @@ public class HTMLParser {
             protocolPattern += protocols[i] + ((i + 1 == protocols.length) ? ")" : "|");
         }
     
-        String[] patternStr = { "(?s)<[ ]?base[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?a[^>]*?href=['\"]([^>]*?)['\"]", "(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", "(?s)<[ ]?form[^>]*?action=['\"]([^>]*?)['\"]", "(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", "www[^\\s>'\"\\)]*", protocolPattern + "://[^\\s>'\"\\)]*" };
+
         url = url == null ? "" : url;
         Matcher m;
         String link;
-        Pattern[] pattern = new Pattern[patternStr.length];
-        for (int i = 0; i < patternStr.length; i++) {
-            pattern[i] = Pattern.compile(patternStr[i], Pattern.CASE_INSENSITIVE);
-        }
         String basename = "";
         String host = "";
         LinkedList<String> set = new LinkedList<String>();
-        for (int i = 0; i < 2; i++) {
-            m = pattern[i].matcher(data);
+        Pattern[] basePattern = new Pattern[] {
+       		 Pattern.compile("(?s)<[ ]?base[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE),
+    		 Pattern.compile("(?s)<[ ]?base[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE),
+    		 Pattern.compile("(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE),
+        };
+        for (int i = 0; i < basePattern.length; i++) {
+            m = basePattern[i].matcher(data);
             if (m.find()) {
                 url = JDUtilities.htmlDecode(m.group(1));
                 break;
             }
-        }
+		}
         if (url != null) {
             url = url.replace("http://", "");
             int dot = url.lastIndexOf('/');
@@ -264,8 +250,17 @@ public class HTMLParser {
             url = "http://" + url;
         } else
             url = "";
-        for (int i = 2; i < 6; i++) {
-            m = pattern[i].matcher(data);
+
+        Pattern[] linkAndFormPattern = new Pattern[] {
+          		 Pattern.compile("(?s)<[ ]?a[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE),
+       		 Pattern.compile("(?s)<[ ]?a[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE),
+       		 Pattern.compile("(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE),
+       		 Pattern.compile("(?s)<[ ]?form[^>]*?action=\"(.*?)\"", Pattern.CASE_INSENSITIVE),
+       		 Pattern.compile("(?s)<[ ]?form[^>]*?action='(.*?)'", Pattern.CASE_INSENSITIVE),
+       		 Pattern.compile("(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE),
+           };
+        for (int i = 0; i < linkAndFormPattern.length; i++) {
+            m = linkAndFormPattern[i].matcher(data);
             while (m.find()) {
                 link = JDUtilities.htmlDecode(m.group(1));
                 link = link.replaceAll(protocols[0] + "://", "http://");
@@ -294,7 +289,23 @@ public class HTMLParser {
             }
         }
         data = data.replaceAll("(?s)<.*?>", "");
-        m = pattern[6].matcher(data);
+        m = Pattern.compile(protocolPattern + "://.{5,100}?\\.(php|html?|cgi)", Pattern.CASE_INSENSITIVE).matcher(data);
+        while (m.find()) {
+
+            link = "http://" + m.group();
+            data=m.replaceFirst("");
+            link = JDUtilities.htmlDecode(link);
+            link = link.replaceAll(protocols[0] + "://", "http://");
+            link = link.replaceFirst("^www\\..*" + protocols[0] + "://", "http://");
+            link = link.replaceAll("https?://.*http://", "http://");
+            for (int j = 1; j < protocols.length; j++) {
+                link = link.replaceFirst("^www\\..*" + protocols[j] + "://", protocols[j] + "://");
+            }
+            if (!set.contains(link)) {
+                set.add(link);
+            }
+        }
+        m = Pattern.compile("www\\.[^\\s>'\"\\)]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
             link = JDUtilities.htmlDecode(link);
@@ -308,7 +319,23 @@ public class HTMLParser {
                 set.add(link);
             }
         }
-        m = pattern[7].matcher(data);
+        m = Pattern.compile(protocolPattern + "://.{5,100}?\\.(php|html?|cgi)", Pattern.CASE_INSENSITIVE).matcher(data);
+        while (m.find()) {
+            link = m.group();
+            data=m.replaceFirst("");
+            link = JDUtilities.htmlDecode(link);
+            link = link.replaceAll(protocols[0] + "://", "http://");
+            link = link.replaceAll("https?://.*http://", "http://");
+            for (int j = 1; j < protocols.length; j++) {
+                link = link.replaceAll("https?://.*" + protocols[j] + "://", protocols[j] + "://");
+            }
+            // .replaceFirst("h.*?://",
+            // "http://").replaceFirst("http://.*http://", "http://");
+            if (!set.contains(link)) {
+                set.add(link);
+            }
+        }
+        m = Pattern.compile(protocolPattern + "://[^\\s>'\"\\)]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group();
             link = JDUtilities.htmlDecode(link);
