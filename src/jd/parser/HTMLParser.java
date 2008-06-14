@@ -289,23 +289,7 @@ public class HTMLParser {
             }
         }
         data = data.replaceAll("(?s)<.*?>", "");
-        m = Pattern.compile(protocolPattern + "://.{5,100}?\\.(php|html?|cgi)", Pattern.CASE_INSENSITIVE).matcher(data);
-        while (m.find()) {
-
-            link = "http://" + m.group();
-            data=m.replaceFirst("");
-            link = JDUtilities.htmlDecode(link);
-            link = link.replaceAll(protocols[0] + "://", "http://");
-            link = link.replaceFirst("^www\\..*" + protocols[0] + "://", "http://");
-            link = link.replaceAll("https?://.*http://", "http://");
-            for (int j = 1; j < protocols.length; j++) {
-                link = link.replaceFirst("^www\\..*" + protocols[j] + "://", protocols[j] + "://");
-            }
-            if (!set.contains(link)) {
-                set.add(link);
-            }
-        }
-        m = Pattern.compile("www\\.[^\\s>'\"\\)]*", Pattern.CASE_INSENSITIVE).matcher(data);
+        m = Pattern.compile("www\\.[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
             link = JDUtilities.htmlDecode(link);
@@ -319,23 +303,7 @@ public class HTMLParser {
                 set.add(link);
             }
         }
-        m = Pattern.compile(protocolPattern + "://.{5,100}?\\.(php|html?|cgi)", Pattern.CASE_INSENSITIVE).matcher(data);
-        while (m.find()) {
-            link = m.group();
-            data=m.replaceFirst("");
-            link = JDUtilities.htmlDecode(link);
-            link = link.replaceAll(protocols[0] + "://", "http://");
-            link = link.replaceAll("https?://.*http://", "http://");
-            for (int j = 1; j < protocols.length; j++) {
-                link = link.replaceAll("https?://.*" + protocols[j] + "://", protocols[j] + "://");
-            }
-            // .replaceFirst("h.*?://",
-            // "http://").replaceFirst("http://.*http://", "http://");
-            if (!set.contains(link)) {
-                set.add(link);
-            }
-        }
-        m = Pattern.compile(protocolPattern + "://[^\\s>'\"\\)]*", Pattern.CASE_INSENSITIVE).matcher(data);
+        m = Pattern.compile(protocolPattern + "://[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group();
             link = JDUtilities.htmlDecode(link);
