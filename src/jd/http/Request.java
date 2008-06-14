@@ -24,17 +24,16 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
-import jd.plugins.HTTP;
+import jd.parser.Regex;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -145,7 +144,20 @@ public abstract class Request {
             cookies.put(st.nextToken().trim(), st.nextToken().trim());
     }
 
-    private String getCookieString() {
+    public String followRedirect() throws IOException {
+        if (getLocation() == null) return null;
+        try {
+            this.url = new URL(getLocation());
+
+            return this.load();
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public String getCookieString() {
         {
             if (!hasCookies()) return null;
 
@@ -166,7 +178,21 @@ public abstract class Request {
     }
 
     public HashMap<String, String> getCookies() {
+        if (cookies == null) cookies = new HashMap<String, String>();
         return cookies;
+    }
+
+    public boolean containsHTML(String html) {
+        if (htmlCode == null) return false;
+        return this.htmlCode.contains(html);
+    }
+
+    public boolean matches(String pat) {
+        return new Regex(htmlCode, pat).matches();
+    }
+
+    public boolean matches(Pattern pat) {
+        return new Regex(htmlCode, pat).matches();
     }
 
     public boolean isFollowRedirects() {
@@ -211,7 +237,7 @@ public abstract class Request {
                 String key;
                 while (iterator.hasNext()) {
                     key = iterator.next();
-        
+
                     httpConnection.setRequestProperty(key, headers.get(key));
                 }
             }
@@ -233,7 +259,7 @@ public abstract class Request {
 
     private void collectCookiesFromConnection() {
         Collection<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
-       if(cookieHeaders==null)return;
+        if (cookieHeaders == null) return;
         if (this.cookies == null) cookies = new HashMap<String, String>();
         ;
 

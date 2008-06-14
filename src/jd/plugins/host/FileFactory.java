@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.GetRequest;
+import jd.http.PostRequest;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -386,19 +388,27 @@ public class FileFactory extends PluginForHost {
             switch (step.getStep()) {
             
                 case PluginStep.STEP_WAIT_TIME :
-                	
-                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), null, null, null,
-                    		"email="+JDUtilities.urlEncode(user)+"&password="+JDUtilities.urlEncode(pass), true);
+                	//email=gandi_g%40gmx.net&password=test&login=Log+In
+//                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), null, null, null,
+//                    		"email="+JDUtilities.urlEncode(user)+"&password="+JDUtilities.urlEncode(pass)+"&login=Log+In", true);
+                    PostRequest req = new PostRequest(downloadLink.getDownloadURL());
+                    req.setPostVariable("email", JDUtilities.urlEncode(user));
+                    req.setPostVariable("password", JDUtilities.urlEncode(pass));
+                    req.setPostVariable("login", "Log+In");
+                    req.load();                    
                     
-                    String premCookie = requestInfo.getCookie();
+                    GetRequest greq = new GetRequest(downloadLink.getDownloadURL());
+                    greq.getCookies().putAll(req.getCookies());
+                    String page=greq.load();
+                    
                   	
-                  	if ( requestInfo.containsHTML(NOT_AVAILABLE) ) {
+                  	if ( greq.containsHTML(NOT_AVAILABLE) ) {
                         
                       	step.setStatus(PluginStep.STATUS_ERROR);
                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_ABUSED);
                     	return step;
                         
-                    } else if ( requestInfo.containsHTML(SERVER_DOWN) ) {
+                    } else if ( greq.containsHTML(SERVER_DOWN) ) {
                         
                       	step.setStatus(PluginStep.STATUS_ERROR);
                        	downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -406,8 +416,8 @@ public class FileFactory extends PluginForHost {
                         
                     } else {
                         
-                        String link = new Regex(requestInfo.getHtmlCode(), PREMIUM_LINK).getFirstMatch();
-                        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(link), premCookie, null, "", true);
+                        String link = new Regex(greq, PREMIUM_LINK).getFirstMatch();
+                        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(link), greq.getCookieString(), null, "", true);
                         
                     }
                     
