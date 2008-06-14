@@ -1716,174 +1716,77 @@ public class JDUtilities {
      *         ist
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-        if (command == null || command.trim().length() == 0) {
-            logger.severe("Execute Parameter error: No Command");
-            return "";
-        }
-        if (parameter == null) parameter = new String[] {};
-        String[] params = new String[parameter.length + 1];
-        params[0] = command;
-        System.arraycopy(parameter, 0, params, 1, parameter.length);
-        Vector<String> tmp = new Vector<String>();
-        String par = "";
-        for (int i = 0; i < params.length; i++) {
-            if (params[i] != null && params[i].trim().length() > 0) {
-                par += params[i] + " ";
-                tmp.add(params[i].trim());
-            }
-        }
-        params = tmp.toArray(new String[] {});
-        logger.info("RUN: " + tmp);
-        ProcessBuilder pb = new ProcessBuilder(params);
-        if (runIn != null && runIn.length() > 0) {
-            if (new File(runIn).exists()) {
-                pb.directory(new File(runIn));
-            } else {
-                logger.severe("Working drectory " + runIn + " does not exist!");
-            }
-        }
-
-        Process process;
-
-        try {
-            logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn);
-            System.out.println("START");
-            process = pb.start();
-            if (waitForReturn > 0 || waitForReturn < 0) {
-                long t = System.currentTimeMillis();
-                // while (true) {
-                // try {
-                // process.exitValue();
-                // break;
-                // } catch (Exception e) {
-                // long dif=System.currentTimeMillis() - t;
-                // if (waitForReturn > 0 && dif> waitForReturn * 1000) {
-                // logger.severe(command + ": Prozess ist nach " + waitForReturn
-                // + " Sekunden nicht beendet worden. Breche ab.");
-                // process.destroy();
-                // }
-                // }
-                // }
-                // Scanner s = new
-                // Scanner(process.getInputStream()).useDelimiter("\\Z");
-                // String ret = "";
-                // while (s.hasNext())
-                // ret += s.next();
-                System.out.println("READ");
-                BufferedReader f;
-                StringBuffer s = new StringBuffer();
-                System.out.println("READ2");
-                byte[] buffer = new byte[128];
-                InputStream i = process.getInputStream();
-
-                while (i.read(buffer) >= 0) {
-
-                    System.out.println("Read");
-                    System.out.println("line: " + new String(buffer));
-                    s.append(buffer);
-                    s.append("\r\n");
-                    if ((System.currentTimeMillis() - t) > (1000l * waitForReturn)) {
-                        logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
-
-                        break;
-                    }
-                    System.out.println("READ3");
-                }
-                // System.out.println("READ ERRORS");
-                //                
-                // f = new BufferedReader(new
-                // InputStreamReader(process.getErrorStream()));
-                // t = System.currentTimeMillis();
-                // while ((line = f.readLine()) != null) {
-                // System.out.println(line);
-                // s.append("ERROR: "+line + "\r\n");
-                // if ((System.currentTimeMillis() - t) > (1000l *
-                // waitForReturn)) {
-                // logger.severe(command + ": Prozess ist nach " + waitForReturn
-                // + " Sekunden nicht beendet worden. Breche ab.");
-                //
-                // break;
-                // }
-                // }
-
-                try {
-                    int l = process.exitValue();
-                } catch (Exception e) {
-                    process.destroy();
-                }
-
-                return s.toString();
-            }
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
-            return null;
-        }
+       Executer exec = new Executer(command);
+       exec.addParameters(parameter);
+       exec.setRunin(runIn);
+       exec.setWaitTimeout(waitForReturn);
+       exec.start();
+       exec.waitTimeout();
+       return exec.getStream()+" \r\n "+exec.getErrorStream();
     }
 
-    public static String runTestCommand(String command, String[] parameter, String runIn, int waitForReturn, boolean returnValue) {
-        if (command == null || command.trim().length() == 0) {
-            logger.severe("Execute Parameter error: No Command");
-            return "";
-        }
-        if (parameter == null) parameter = new String[] {};
-        String[] params = new String[parameter.length + 1];
-        params[0] = command;
-        System.arraycopy(parameter, 0, params, 1, parameter.length);
-        Vector<String> tmp = new Vector<String>();
-        String par = "";
-        for (int i = 0; i < params.length; i++) {
-            if (params[i] != null && params[i].trim().length() > 0) {
-                par += params[i] + " ";
-                tmp.add(params[i].trim());
-            }
-        }
-        params = tmp.toArray(new String[] {});
-        logger.info("RUN: " + tmp);
-        ProcessBuilder pb = new ProcessBuilder(params);
-        if (runIn != null && runIn.length() > 0) {
-            if (new File(runIn).exists()) {
-                pb.directory(new File(runIn));
-            } else {
-                logger.severe("Working drectory " + runIn + " does not exist!");
-            }
-        }
-
-        Process process;
-
-        try {
-            logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn + " trace: " + returnValue);
-            process = pb.start();
-            if (waitForReturn > 0 || waitForReturn < 0) {
-                long t = System.currentTimeMillis();
-                while (true) {
-                    try {
-                        process.exitValue();
-                        break;
-                    } catch (Exception e) {
-                        if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn * 1000) {
-                            logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
-                            process.destroy();
-                        }
-                    }
-                }
-                String ret = "";
-                if (returnValue) {
-                    Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-
-                    while (s.hasNext())
-                        ret += s.next();
-                }
-                return ret;
-            }
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
-            return null;
-        }
-    }
+//    public static String runTestCommand(String command, String[] parameter, String runIn, int waitForReturn, boolean returnValue) {
+//        if (command == null || command.trim().length() == 0) {
+//            logger.severe("Execute Parameter error: No Command");
+//            return "";
+//        }
+//        if (parameter == null) parameter = new String[] {};
+//        String[] params = new String[parameter.length + 1];
+//        params[0] = command;
+//        System.arraycopy(parameter, 0, params, 1, parameter.length);
+//        Vector<String> tmp = new Vector<String>();
+//        String par = "";
+//        for (int i = 0; i < params.length; i++) {
+//            if (params[i] != null && params[i].trim().length() > 0) {
+//                par += params[i] + " ";
+//                tmp.add(params[i].trim());
+//            }
+//        }
+//        params = tmp.toArray(new String[] {});
+//        logger.info("RUN: " + tmp);
+//        ProcessBuilder pb = new ProcessBuilder(params);
+//        if (runIn != null && runIn.length() > 0) {
+//            if (new File(runIn).exists()) {
+//                pb.directory(new File(runIn));
+//            } else {
+//                logger.severe("Working drectory " + runIn + " does not exist!");
+//            }
+//        }
+//
+//        Process process;
+//
+//        try {
+//            logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn + " trace: " + returnValue);
+//            process = pb.start();
+//            if (waitForReturn > 0 || waitForReturn < 0) {
+//                long t = System.currentTimeMillis();
+//                while (true) {
+//                    try {
+//                        process.exitValue();
+//                        break;
+//                    } catch (Exception e) {
+//                        if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn * 1000) {
+//                            logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
+//                            process.destroy();
+//                        }
+//                    }
+//                }
+//                String ret = "";
+//                if (returnValue) {
+//                    Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
+//
+//                    while (s.hasNext())
+//                        ret += s.next();
+//                }
+//                return ret;
+//            }
+//            return null;
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            logger.severe("Error executing " + command + ": " + e.getLocalizedMessage());
+//            return null;
+//        }
+//    }
 
     /**
      * Gibt den verwendeten Controller zurück

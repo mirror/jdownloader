@@ -132,7 +132,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         logger.info("Batch Verarbeitung aktiviert. Als Befehl muss der Interpreter eingetragen sein (windows: cmd.exe linux z.b. bash mac: teminal ?) Aktueller interpreter: " + command);
         for (int i = 0; i < lines.length; i++) {
             cmds[cmds.length - 1] = lines[i];
-            logger.finer("Execute Batchline: " + JDUtilities.runTestCommand(command, cmds, executeIn, waitForReturn, conf.getBooleanProperty(PROPERTY_DO_OUTPUT, false)));
+            logger.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, waitForReturn));
 
         }
 
