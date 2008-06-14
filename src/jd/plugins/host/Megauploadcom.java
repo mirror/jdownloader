@@ -26,7 +26,10 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -172,7 +175,7 @@ public class Megauploadcom extends PluginForHost {
             switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
                 logger.info("::" + new URL(link));
-                requestInfo = getRequest(new URL(link), COOKIE, null, true);
+                requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
                 if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -186,9 +189,9 @@ public class Megauploadcom extends PluginForHost {
                     return step;
                 }
 
-                this.captchaURL = "http://" + new URL(link).getHost() + "/capgen.php?" + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0);
-                this.fields = getInputHiddenFields(requestInfo.getHtmlCode(), "checkverificationform", "passwordhtml");
-                this.captchaPost = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL, 0);
+                this.captchaURL = "http://" + new URL(link).getHost() + "/capgen.php?" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0);
+                this.fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "checkverificationform", "passwordhtml");
+                this.captchaPost = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL, 0);
                 step.setParameter(captchaURL);
                 if (captchaURL.endsWith("null") || captchaPost == null) {
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -198,7 +201,7 @@ public class Megauploadcom extends PluginForHost {
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 File file = this.getLocalCaptchaFile(this);
                 logger.info("Captcha " + captchaURL);
-                requestInfo = getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
                 if (!requestInfo.isOK() || !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
                     step.setParameter(null);
@@ -211,14 +214,14 @@ public class Megauploadcom extends PluginForHost {
                     return step;
                 }
             case PluginStep.STEP_PENDING:
-                requestInfo = postRequest(new URL(captchaPost), COOKIE, null, null, joinMap(fields, "=", "&") + "&imagestring=" + steps.get(1).getParameter(), true);
-                if (getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
+                requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, joinMap(fields, "=", "&") + "&imagestring=" + steps.get(1).getParameter(), true);
+                if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                     return step;
                 }
 
-                String pwdata = this.getFormInputHidden(requestInfo.getHtmlCode(), "passwordbox", "passwordcountdown");
+                String pwdata =HTMLParser.getFormInputHidden(requestInfo.getHtmlCode(), "passwordbox", "passwordcountdown");
                 if (pwdata != null && pwdata.indexOf("passkey") > 0) {
                     logger.info("Password protected");
                     String pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password:");
@@ -230,9 +233,9 @@ public class Megauploadcom extends PluginForHost {
                     }
                     if (countryID.equals("-")) {
 
-                        requestInfo = postRequest(new URL("http://" + new URL(link).getHost() + "/de/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
+                        requestInfo = HTTP.postRequest(new URL("http://" + new URL(link).getHost() + "/de/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
                     } else {
-                        requestInfo = postRequest(new URL("http://" + new URL(link).getHost() + "/" + countryID + "/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
+                        requestInfo = HTTP.postRequest(new URL("http://" + new URL(link).getHost() + "/" + countryID + "/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
 
                     }
                     if (requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)) {
@@ -248,13 +251,13 @@ public class Megauploadcom extends PluginForHost {
                 return step;
             case PluginStep.STEP_DOWNLOAD:
 
-                Character l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
-                String i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
-                String url = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
+                Character l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
+                String i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
+                String url = (JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
                 logger.info(".." + url);
                 logger.info(requestInfo.getHtmlCode());
                 try {
-                    requestInfo = getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
                     if (!requestInfo.isOK()) {
                         logger.warning("Download Limit!");
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -326,7 +329,7 @@ public class Megauploadcom extends PluginForHost {
             h.put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
             h.put("X-MUTB", link);
             h.put("Content-Type", "application/x-www-form-urlencoded");
-            requestInfo = postRequest(new URL(url), null, link, h, "login=" + user + "&password=" + pass, false);
+            requestInfo = HTTP.postRequest(new URL(url), null, link, h, "login=" + user + "&password=" + pass, false);
             if (requestInfo.getCookie().indexOf("user=") < 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
@@ -340,8 +343,8 @@ public class Megauploadcom extends PluginForHost {
             // "http://"+requestInfo.getConnection().getURL().getHost()+"/"+url;
             // }
             // requestInfo=getRequest(new URL(link), cookie, link, false);
-            requestInfo = getRequestWithoutHtmlCode(new URL(link), cookie, url, h, false);
-            requestInfo = readFromURL(requestInfo.getConnection());
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), cookie, url, h, false);
+            requestInfo = HTTP.readFromURL(requestInfo.getConnection());
 
             // requestInfo=getRequest(new URL(url), cookie, link, false);
 
@@ -356,21 +359,21 @@ public class Megauploadcom extends PluginForHost {
             Character l=null;
             String i=null;
             try{
-            l = (char) Math.abs(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
+            l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
             
             
-             i = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
+             i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
             }catch(Exception e){
                 e.printStackTrace();
                 logger.severe(requestInfo+"");
                step.setStatus(PluginStep.STATUS_ERROR);
                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
             }
-            finalurl = (JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
+            finalurl = (JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
 
             HTTPConnection urlConnection;
             downloadLink.setStatusText("Premium");
-            requestInfo = getRequestWithoutHtmlCode(new URL(finalurl), cookie, link, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl), cookie, link, false);
             urlConnection = requestInfo.getConnection();
             String name = getFileNameFormHeader(urlConnection);
             downloadLink.setName(name);
@@ -420,7 +423,7 @@ public class Megauploadcom extends PluginForHost {
 
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));
         try {
-            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
             if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                 this.setStatusText("Temp. not available");
                 logger.info("Temp. unavailable");
@@ -432,8 +435,8 @@ public class Megauploadcom extends PluginForHost {
                 return false;
             }
 
-            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
-            String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
+            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
+            String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
             if (fileName == null || fileSize == null) { return false; }
             downloadLink.setName(fileName.trim());
             if (fileSize.indexOf("KB") > 0) {

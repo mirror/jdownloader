@@ -8,7 +8,7 @@ import javax.swing.Timer;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -29,7 +29,7 @@ public class rsswitcher implements ActionListener{
                 public void run() {
                     ProgressController progress = new ProgressController(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), 3);
                     try {
-                        RequestInfo ri = Plugin.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
+                        RequestInfo ri = HTTP.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
                         if (ri.containsHTML("Hour")) {
                             my_1 = true;
                         } 

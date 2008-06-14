@@ -23,7 +23,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -113,7 +115,7 @@ public class YourFilesBiz extends PluginForHost {
     	
         try {
         	
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             
             if ( requestInfo.getHtmlCode().equals("") ) {
             	logger.severe("download not found");
@@ -121,7 +123,7 @@ public class YourFilesBiz extends PluginForHost {
 				return false;
 			}
             
-            String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
+            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
             Integer length = getFileSize(requestInfo.getHtmlCode());
             
             // downloadinfos gefunden? -> download verfügbar
@@ -158,7 +160,7 @@ public class YourFilesBiz extends PluginForHost {
             	
                 case PluginStep.STEP_PAGE:
                 	
-                    requestInfo = getRequest(downloadUrl);
+                    requestInfo = HTTP.getRequest(downloadUrl);
 
                     // serverantwort leer (weiterleitung) -> download nicht verfügbar
                     if (requestInfo.getHtmlCode().equals("")) {
@@ -168,7 +170,7 @@ public class YourFilesBiz extends PluginForHost {
                         return step;
                     }
                     
-                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
+                    String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
                     downloadLink.setName(fileName);
                     
                     try {
@@ -181,7 +183,7 @@ public class YourFilesBiz extends PluginForHost {
                     }
                     
                     // downloadLink auslesen
-                    this.downloadURL = "http://"+JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+                    this.downloadURL = "http://"+JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
                     return step;
                     
                 case PluginStep.STEP_WAIT_TIME:
@@ -235,17 +237,17 @@ public class YourFilesBiz extends PluginForHost {
     private int getFileSize(String source) {
        
     	int size = 0;
-    	String sizeString = JDUtilities.htmlDecode(getSimpleMatch(source, DOWNLOAD_SIZE, 3));
+    	String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
 		if ( sizeString == null ) sizeString = "";
     	
 		if ( sizeString.contains("MB") ) {
-			sizeString = getSimpleMatch(sizeString, "° MB", 0);
+			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
 			size = (int) Math.round(Double.parseDouble(sizeString)*1024*1024);
 		} else if ( sizeString.contains("KB") ) {
-			sizeString = getSimpleMatch(sizeString, "° KB", 0);
+			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
 			size = (int) Math.round(Double.parseDouble(sizeString)*1024);
 		} else if ( sizeString.contains("Byte") ) {
-			sizeString = getSimpleMatch(sizeString, "° Byte", 0);
+			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
 			size = (int) Math.round(Double.parseDouble(sizeString));
 		}
     	

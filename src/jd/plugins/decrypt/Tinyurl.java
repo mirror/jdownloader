@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -83,17 +85,17 @@ public class Tinyurl extends PluginForDecrypt {
                 }
 
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
                 // Besonderen Link herausfinden
-                if (countOccurences(parameter, patternLink) > 0) {
+                if (SimpleMatches.countOccurences(parameter, patternLink) > 0) {
                     String[] result = parameter.split("/");
-                    reqinfo = getRequest(new URL("http://tinyurl.com/" + result[result.length - 1]));
+                    reqinfo = HTTP.getRequest(new URL("http://tinyurl.com/" + result[result.length - 1]));
                 }
 
                 // Link der Liste hinzufügen
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to")));
+                decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to")));
 
                 // Decrypt abschliessen
 

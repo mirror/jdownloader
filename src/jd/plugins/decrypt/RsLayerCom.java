@@ -24,12 +24,14 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -86,11 +88,11 @@ public class RsLayerCom extends PluginForDecrypt {
     		
             try {
             	
-        		RequestInfo reqinfo = getRequest(new URL(parameter));
+        		RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 
             	if ( parameter.indexOf("/link-") != -1 ) {
                     
-                    String link = getBetween(reqinfo.getHtmlCode(),"<iframe src=\"", "\" ");
+                    String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(),"<iframe src=\"", "\" ");
                     link = decryptEntities(link);
                     
                     progress.setRange(1);
@@ -105,7 +107,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     if ( forms != null && forms.length != 0 && forms[0] != null ) {
                     	Form captchaForm = forms[0];
 
-                    	String captchaFileName = new Regexp(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
+                    	String captchaFileName = new Regex(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
                     	
                     	if ( captchaFileName == null ){
                     		step.setStatus(PluginStep.STATUS_ERROR);
@@ -114,7 +116,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     	String captchaUrl =  "http://" + host + "/" + captchaFileName;
                     	File captchaFile = getLocalCaptchaFile(this, ".png");
                     	boolean fileDownloaded = JDUtilities.download(captchaFile,
-                                    getRequestWithoutHtmlCode(new URL(captchaUrl),
+                                    HTTP.getRequestWithoutHtmlCode(new URL(captchaUrl),
                                     reqinfo.getCookie(), null, true).getConnection()
                                     );
                     	
@@ -134,7 +136,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     	
                     	captchaForm.put("captcha_input", captchaCode);
                     	
-                    	reqinfo = readFromURL(captchaForm.getConnection());
+                    	reqinfo = HTTP.readFromURL(captchaForm.getConnection());
                     	
                     	if( reqinfo.containsHTML("Sicherheitscode<br />war nicht korrekt")){
                     		logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
@@ -152,15 +154,15 @@ public class RsLayerCom extends PluginForDecrypt {
                     
                     }
                     
-                    ArrayList<String> layerLinks = getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
+                    ArrayList<String> layerLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
                     progress.setRange(layerLinks.size());
                     
                     for(String fileId : layerLinks){
                     	
                     	String layerLink = "http://rs-layer.com/link-"+fileId + ".html";
                     	
-                    	RequestInfo request2 = getRequest(new URL(layerLink));
-                    	String link = getBetween(request2.getHtmlCode(),"<iframe src=\"", "\" ");
+                    	RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
+                    	String link = SimpleMatches.getBetween(request2.getHtmlCode(),"<iframe src=\"", "\" ");
                     	
                     	decryptedLinks.add(this.createDownloadlink(link));
                     	progress.increase(1);
@@ -189,7 +191,7 @@ public class RsLayerCom extends PluginForDecrypt {
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptEntities(String str) {
     	
-    	ArrayList<ArrayList<String>> codes = getAllSimpleMatches(str,"&#°;");
+    	ArrayList<ArrayList<String>> codes = SimpleMatches.getAllSimpleMatches(str,"&#°;");
         String decodedString = "";
         
         for( int i=0; i<codes.size(); i++ ) {

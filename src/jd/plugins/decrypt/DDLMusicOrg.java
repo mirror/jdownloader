@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -81,10 +83,10 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 if (parameter.indexOf("music_crypth.php") != -1) {
 
                     parameter = parameter.replace("music_crypth.php", "frame_crypth.php");
-                    RequestInfo reqinfo = getRequest(new URL(parameter));
+                    RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                     progress.setRange(1);
 
-                    decryptedLinks.add(this.createDownloadlink("http://" + getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                    decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
 
                     progress.increase(1);
                     step.setParameter(decryptedLinks);
@@ -92,27 +94,27 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 else if (parameter.indexOf("site=view_download") != -1) {
 
-                    RequestInfo reqinfo = getRequest(new URL(parameter));
+                    RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
 
                     // passwort auslesen
                     if (reqinfo.getHtmlCode().indexOf("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>") != -1) {
 
-                        String password = getBetween(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n" + "                      </tr>\n" + "                      <tr>\n" + "                      <td class=\"normal\"><div align=\"center\">", "</div></td>");
+                        String password = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n" + "                      </tr>\n" + "                      <tr>\n" + "                      <td class=\"normal\"><div align=\"center\">", "</div></td>");
 
                         default_password.add(password);
 
                     }
 
-                    ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
+                    ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
                     progress.setRange(ids.size());
 
                     int j = 0;
 
                     for (int i = 0; i < ids.size(); i++) {
 
-                        reqinfo = getRequest(new URL("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0)));
+                        reqinfo = HTTP.getRequest(new URL("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0)));
                         logger.info("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0));
-                        decryptedLinks.add(this.createDownloadlink("http://" + getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                        decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
                         progress.increase(1);
 
                         // nach 3 anfragen schnell hintereinander streikt der

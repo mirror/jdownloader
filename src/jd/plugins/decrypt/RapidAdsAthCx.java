@@ -23,7 +23,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -79,8 +81,8 @@ public class RapidAdsAthCx extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			
     			progress.setRange(1);
-    			RequestInfo reqinfo = getRequest(url, null, null, true);
-    			String[] helpa = getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
+    			RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+    			String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
     			String help = "";
     			
     			for(int i=0; i<helpa.length; i++) {

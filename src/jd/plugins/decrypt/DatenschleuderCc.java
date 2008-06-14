@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -105,16 +107,16 @@ public class DatenschleuderCc extends PluginForDecrypt {
             
             try {
             	
-                RequestInfo reqinfo = getRequest(new URL(parameter), null, null, true);
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(),
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(),
                 		"<a href=\"http://www.datenschleuder.cc/redir.php?id=°\"");
     			
                 progress.setRange( links.size() );
                 
                 for (int i = 0; i < links.size(); i++) {
                 	
-                	reqinfo = getRequest(new URL("http://www.datenschleuder.cc/redir.php?id="+links.get(i).get(0)));
-                	String link = getBetween(reqinfo.getHtmlCode(), "<frame src=\"", "\" name=\"dl\">");
+                	reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id="+links.get(i).get(0)));
+                	String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=\"", "\" name=\"dl\">");
     				link = link.replace("http://anonym.to?", "");
                 	progress.increase(1);
     				

@@ -149,7 +149,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
     
 
-            logger.finer("Execute Returns: " + JDUtilities.runTestCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn, false));
+            logger.finer("Execute Returns: " + JDUtilities.runCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn));
     
 
     }

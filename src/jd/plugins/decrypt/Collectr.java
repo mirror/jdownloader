@@ -22,10 +22,11 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -88,7 +89,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           progress.setRange(1);
           URL url = new URL(parameter);
           //Erster Request, der entweder zur Seite führt oder zur Altersabfrage.    
-          RequestInfo reqinfo = getRequest(url);
+          RequestInfo reqinfo = HTTP.getRequest(url);
           
           
           Matcher matcher = patternAb18.matcher(reqinfo.getHtmlCode());
@@ -105,7 +106,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
                     "Hast du das 18 Lebensjahr bereits abgeschlossen?\n  "))
               {
                   logger.finest("Nutzer hat das 18te Lebensjahr erreicht. Decrypten wird fortgesetzt.");
-                  reqinfo = postRequest(url, "o18=true"); 
+                  reqinfo = HTTP.postRequest(url, "o18=true"); 
               }
               else
               {  
@@ -118,7 +119,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
               logger.finest("CollectrDecrypt - Angeforderte Datei(en) ohne Jugendschutz."); 
           }
           
-          String link = new Regexp(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
+          String link = new Regex(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
           progress.increase(1);
           decryptedLinks.add(this.createDownloadlink(link));
 

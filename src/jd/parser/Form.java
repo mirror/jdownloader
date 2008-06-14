@@ -15,7 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-package jd.plugins;
+package jd.parser;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -31,6 +31,11 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
+import jd.plugins.MultiPartFormOutputStream;
+import jd.plugins.Plugin;
+import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Form {
@@ -154,7 +159,7 @@ public class Form {
 
     public static Form[] getForms(URL url) {
         try {
-            return getForms(Plugin.getRequest(url));
+            return getForms(HTTP.getRequest(url));
         }
         catch (IOException e) {
             // TODO Automatisch erstellter Catch-Block
@@ -414,7 +419,7 @@ public class Form {
                         // JOptionPane.showMessageDialog(null, output );
                     }
                     inStream.close();
-                    ri = new RequestInfo(output, connection.getHeaderField("Location"), Plugin.getCookieString(connection), connection.getHeaderFields(), responseCode);
+                    ri = new RequestInfo(output, connection.getHeaderField("Location"), HTTP.getCookieString(connection), connection.getHeaderFields(), responseCode);
                 }
                 catch (IOException ioex) {
                 }
@@ -422,7 +427,7 @@ public class Form {
             }
             else {
                 try {
-                    ri = Plugin.readFromURL(connection);
+                    ri = HTTP.readFromURL(connection);
                 }
                 catch (IOException e) {
                     // TODO Automatisch erstellter Catch-Block
@@ -431,7 +436,7 @@ public class Form {
             }
         }
         else
-            ri = new RequestInfo("", connection.getHeaderField("Location"), Plugin.getCookieString(connection), connection.getHeaderFields(), responseCode);
+            ri = new RequestInfo("", connection.getHeaderField("Location"), HTTP.getCookieString(connection), connection.getHeaderFields(), responseCode);
         if (ri != null) {
             ri.setConnection(connection);
             return ri;

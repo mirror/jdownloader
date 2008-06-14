@@ -20,7 +20,11 @@ package jd.config;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import jd.parser.HTMLParser;
 import jd.utils.JDUtilities;
 
 
@@ -52,6 +56,7 @@ public class SubConfiguration extends Property implements Serializable {
     public void save(){
         JDUtilities.saveObject(null, this.getProperties(),  JDUtilities.getResourceFile("config/"+name+".cfg"),null, null, false);
     }
+    
 
 
 }

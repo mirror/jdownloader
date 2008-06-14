@@ -25,7 +25,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -116,16 +118,16 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			// so lange, bis Captcha richtig eingegeben/erkannt
     			// so lange, bis Passwort richtig eingegeben
     			while (true) {
-	    			reqinfo = getRequest(url); // Seite aufrufen
+	    			reqinfo = HTTP.getRequest(url); // Seite aufrufen
 	    			
 	    			boolean hasPass = false;
 	    			boolean hasCaptcha = false;
 	    			String postData = "";
 	    			
 	    			// formular-elemente
-	    			String formID = getSimpleMatch(reqinfo.getHtmlCode(), FORM_ID, 0);
-	    			String formHash = getSimpleMatch(reqinfo.getHtmlCode(), FORM_HASH, 0);
-	    			String formSubmit = getSimpleMatch(reqinfo.getHtmlCode(), FORM_SUBMIT, 0);
+	    			String formID = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FORM_ID, 0);
+	    			String formHash = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FORM_HASH, 0);
+	    			String formSubmit = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FORM_SUBMIT, 0);
 	    			
 	    			// PASSWORD
 	    			if (formID != null && reqinfo.getHtmlCode().contains(PASSWORD)) {
@@ -138,7 +140,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	    			
 	    			// CAPTCHA
 	    			String CaptchaURL = null;
-	    			CaptchaURL = getSimpleMatch(reqinfo.getHtmlCode(), CAPTCHA, 0);
+	    			CaptchaURL = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), CAPTCHA, 0);
 	    			
 	    			// Captcha/Formulardaten vorhanden?
 	    			if (CaptchaURL != null && formID != null && formHash != null && formSubmit != null) {
@@ -171,7 +173,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	    			
 	    			// Passwort oder Captcha vorhanden? Dann Daten senden
 	    			if (hasPass || hasCaptcha) {
-	                	reqinfo = postRequest(url, reqinfo.getCookie(), strURL, null, postData, false);
+	                	reqinfo = HTTP.postRequest(url, reqinfo.getCookie(), strURL, null, postData, false);
 	                	
 	                    // Falsches Passwort
 		    			if (reqinfo.getHtmlCode().contains(WRONG_PASSWORD)) {
@@ -194,7 +196,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
 		    			// Passwort richtig und/oder Captcha richtig
 		    			// Seite erneut mir Cookies aufrufen
 	                	if (reqinfo.getLocation() != null) {
-	                		reqinfo = getRequest(url, reqinfo.getCookie(), strURL, false);
+	                		reqinfo = HTTP.getRequest(url, reqinfo.getCookie(), strURL, false);
 	                	}
                         if(captchaFile!=null && plainCaptcha != null){
                             JDUtilities.appendInfoToFilename(this, captchaFile,plainCaptcha, true);
@@ -219,7 +221,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			if (strURL.contains("?s=")==false) {
     				
  	    			// teilen sich Links auf mehrere Seiten auf?
-    				ArrayList<ArrayList<String>> pages = getAllSimpleMatches(reqinfo.getHtmlCode(), PAGES);
+    				ArrayList<ArrayList<String>> pages = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), PAGES);
 	    			// abzueglich der ersten Seiten, Notiz: Links kommen immer 2
                     // mal vor (oben und unten)
 	    			countSubPages = (pages.size() / 2) -1;
@@ -231,7 +233,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			}
     				
     			// Im HTML-Code nach Datei-Links suchen
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_URL);
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_URL);
     			countLinks += links.size();
     			progress.setRange( countLinks);
     			
@@ -245,13 +247,13 @@ public class LinkProtectOrg extends PluginForDecrypt {
     			// Fuer jeden gefundenen Link
     			for(int i=0; i<links.size(); i++) {
     				String currentLink = links.get(i).get(4);
-        			reqinfo = getRequest(new URL(currentLink)); // Seite
+        			reqinfo = HTTP.getRequest(new URL(currentLink)); // Seite
                                                                 // aufrufen
         			
-        			String frameLink = getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
+        			String frameLink = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
     				URL urlFrame = new URL(frameLink);
     				
-        			reqinfo = getRequest(urlFrame, null, currentLink, false);
+        			reqinfo = HTTP.getRequest(urlFrame, null, currentLink, false);
         			
     				// hier kann schon eine Weiterleitung zum Hoster kommen
         			if (reqinfo.getLocation() != null) {
@@ -275,7 +277,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
         			// ansonsten springe einen Schritt weiter
         			if (decodedHTML != null) {
 	        			// encrypteten String auslesen
-	        			String encCode = getSimpleMatch(decodedHTML, ENCRYPTED_STRING, 1);
+	        			String encCode = SimpleMatches.getSimpleMatch(decodedHTML, ENCRYPTED_STRING, 1);
 	        			String decCode = encCode.replaceAll("[^A-Za-z0-9\\+\\/\\=]", "");
 
 	        			// erste JS-Funktion aufrufen
@@ -283,9 +285,9 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	        			
 	        			// encrypteten String auslesen
 	        			String redirectURL = "";
-	        			String redirectURL1 = getSimpleMatch(b, REDIRECT_URL1, 0);
-	        			String redirectURL2 = getSimpleMatch(b, REDIRECT_URL2, 0);
-	        			String redirectURL3 = getSimpleMatch(b, REDIRECT_URL3, 0);
+	        			String redirectURL1 = SimpleMatches.getSimpleMatch(b, REDIRECT_URL1, 0);
+	        			String redirectURL2 = SimpleMatches.getSimpleMatch(b, REDIRECT_URL2, 0);
+	        			String redirectURL3 = SimpleMatches.getSimpleMatch(b, REDIRECT_URL3, 0);
 	        			
 	        			if (redirectURL1 != null)
 	        				redirectURL = redirectURL1;
@@ -296,13 +298,13 @@ public class LinkProtectOrg extends PluginForDecrypt {
 	        			if (redirectURL3 != null)
 	        				redirectURL = redirectURL3;
 	        			
-	        			reqinfo = getRequest(new URL(redirectURL), null, frameLink, false); // Seite
+	        			reqinfo = HTTP.getRequest(new URL(redirectURL), null, frameLink, false); // Seite
                                                                                             // aufrufen
         			}
         			
         			// encrypteten String auslesen (Nur bei RS encrypted ???)
-        			String encCode2 = getSimpleMatch(reqinfo.getHtmlCode(), ENCRYPTED_STRING2, 3);
-        			String encCode3 = getSimpleMatch(reqinfo.getHtmlCode(), ENCRYPTED_STRING3, 3);
+        			String encCode2 = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), ENCRYPTED_STRING2, 3);
+        			String encCode3 = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), ENCRYPTED_STRING3, 3);
         			
         			String newLink = "";
         			
@@ -310,7 +312,7 @@ public class LinkProtectOrg extends PluginForDecrypt {
         			if (encCode2 != null && encCode3 != null) {
         				String test = d(encCode2, encCode3);
         				// RS-Link suchen
-	        			newLink = "http://"+getSimpleMatch(test, RS_LINK, 0);
+	        			newLink = "http://"+SimpleMatches.getSimpleMatch(test, RS_LINK, 0);
         				
         			} else {
         				newLink = reqinfo.getLocation();

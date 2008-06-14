@@ -24,11 +24,13 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class RapidshareComFolder extends PluginForDecrypt {
@@ -83,7 +85,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
             try {
                 URL url = new URL(parameter);
                 para = parameter;
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
                 while (true) {
                     if (reqinfo.getHtmlCode().contains("input type=\"password\" name=\"password\"")) {
@@ -94,7 +96,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                             return null;
                         }
 
-                        reqinfo = postRequest(url, "password=" + password);
+                        reqinfo = HTTP.postRequest(url, "password=" + password);
                     }
                     else {
                         break;
@@ -124,11 +126,11 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
     private void getLinks(String source) {
         RequestInfo reqhelp;
-        ArrayList<ArrayList<String>> links = getAllSimpleMatches(source, "<div style=\"text-align:right;\">°</div>");
+        ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(source, "<div style=\"text-align:right;\">°</div>");
         for (int i = 0; i < links.size(); i++) {
-            if(new Regexp(links.get(i).get(0), "javascript:folderoeffnen").count() > 0) {
+            if(new Regex(links.get(i).get(0), "javascript:folderoeffnen").count() > 0) {
                 try {
-                    reqhelp = postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + getBetween(links.get(i).get(0), "', '", "'"), false);
+                    reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + SimpleMatches.getBetween(links.get(i).get(0), "', '", "'"), false);
                     getLinks(reqhelp.getHtmlCode());
                 }
                 catch (IOException e) {
@@ -136,7 +138,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                 }
             }
             else {
-                decryptedLinks.add(this.createDownloadlink(getBetween(links.get(i).get(0), "href=\"", "\" ")));
+                decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(links.get(i).get(0), "href=\"", "\" ")));
             }
         }
     }

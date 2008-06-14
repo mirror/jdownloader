@@ -23,11 +23,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 
 public class MediafireCom extends PluginForHost {
@@ -89,7 +91,7 @@ public class MediafireCom extends PluginForHost {
 //        }
         try {
             String url = downloadLink.getDownloadURL();                    
-            requestInfo = getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url));
             
             if(requestInfo.containsHTML(offlinelink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
@@ -97,11 +99,11 @@ public class MediafireCom extends PluginForHost {
                 return step;
             }
             
-            String[] para = new Regexp(requestInfo.getHtmlCode(), "cg\\(\'(.*?)\',\'(.*?)\',\'(.*?)\'\\)").getMatches(0);
+            String[] para = new Regex(requestInfo.getHtmlCode(), "cg\\(\'(.*?)\',\'(.*?)\',\'(.*?)\'\\)").getMatches(0);
             para = para[0].split("'");
-            requestInfo = getRequest(new URL("http://www.mediafire.com/dynamic/download.php?qk=" + para[1] + "&pk=" + para[3] + "&r=" + para[5]), requestInfo.getCookie(), url, true);
+            requestInfo = HTTP.getRequest(new URL("http://www.mediafire.com/dynamic/download.php?qk=" + para[1] + "&pk=" + para[3] + "&r=" + para[5]), requestInfo.getCookie(), url, true);
             
-            String finishURL = "http://" + getBetween(requestInfo.getHtmlCode(), "jn='", "'") + "/" + getBetween(requestInfo.getHtmlCode(), getBetween(requestInfo.getHtmlCode(), "jn\\+'/'\\+ ", " \\+'g/'") + " = '", "'") + "g/" + getBetween(requestInfo.getHtmlCode(), "jU='", "'") + "/" + getBetween(requestInfo.getHtmlCode(), "jK='", "'");
+            String finishURL = "http://" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn\\+'/'\\+ ", " \\+'g/'") + " = '", "'") + "g/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jU='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jK='", "'");
             
             HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
             if (!getFileInformation(downloadLink)) {
@@ -141,12 +143,12 @@ public class MediafireCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url));
             
             if(requestInfo.containsHTML(offlinelink))
                 return false;
             
-            downloadLink.setName(getBetween(requestInfo.getHtmlCode(), "<title>", "</title>"));
+            downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<title>", "</title>"));
             return true;
         }
         catch (Exception e) {

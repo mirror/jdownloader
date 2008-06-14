@@ -30,14 +30,16 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
+import jd.parser.Form;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -111,7 +113,7 @@ public class Serienjunkies extends PluginForHost {
         try {
 
             URL url = new URL(parameter);
-            subdomain = new Regexp(parameter, "http://(.*?)serienjunkies.org.*").getFirstMatch();
+            subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getFirstMatch();
             String modifiedURL = JDUtilities.htmlDecode(url.toString());
             modifiedURL = modifiedURL.replaceAll("safe/", "safe/f");
             modifiedURL = modifiedURL.replaceAll("save/", "save/f");
@@ -119,31 +121,31 @@ public class Serienjunkies extends PluginForHost {
 
             patternCaptcha = Pattern.compile(dynamicCaptcha);
             logger.fine("using patternCaptcha:" + patternCaptcha);
-            RequestInfo reqinfo = getRequest(url, null, null, true);
-            if (reqinfo.getLocation() != null) reqinfo = getRequest(url, null, null, true);
+            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+            if (reqinfo.getLocation() != null) reqinfo = HTTP.getRequest(url, null, null, true);
             if(reqinfo.containsHTML("Download-Limit")){
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
                 if(Reconnecter.waitForNewIP(2*60*1000l)){
                     logger.info("REconnect successfull. try again");
-                    reqinfo = getRequest(url, null, null, true);
-                    if (reqinfo.getLocation() != null) reqinfo = getRequest(url, null, null, true);
+                    reqinfo = HTTP.getRequest(url, null, null, true);
+                    if (reqinfo.getLocation() != null) reqinfo = HTTP.getRequest(url, null, null, true);
                 }else{
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
                 }
             }
-            String furl = getSimpleMatch(reqinfo.getHtmlCode(), "<FRAME SRC=\"°" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", 0);
+            String furl = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "<FRAME SRC=\"°" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", 0);
             if (furl != null) {
                 url = new URL(furl + modifiedURL);
                 logger.info("Frame found. frame url: " + furl + modifiedURL);
-                reqinfo = getRequest(url, null, null, true);
+                reqinfo = HTTP.getRequest(url, null, null, true);
                 parameter = furl + modifiedURL;
 
             }
 
             // logger.info(reqinfo.getHtmlCode());
 
-            ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), " <a href=\"http://°\"");
+            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), " <a href=\"http://°\"");
             Vector<String> helpvector = new Vector<String>();
             String helpstring = "";
             // Einzellink
@@ -202,7 +204,7 @@ public class Serienjunkies extends PluginForHost {
         }
         if (!url.startsWith("http://")) url = "http://" + url;
         try {
-            RequestInfo reqinfo = getRequest(new URL(url));
+            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
 
             String cookie = reqinfo.getCookie();
             File captchaFile = null;
@@ -215,7 +217,7 @@ public class Serienjunkies extends PluginForHost {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
-                    ArrayList<ArrayList<String>> gifs = getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
+                    ArrayList<ArrayList<String>> gifs = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), patternCaptcha);
 
                     String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs.get(0).get(1);
                     // for (int i = 0; i < gifs.size(); i++) {
@@ -227,11 +229,11 @@ public class Serienjunkies extends PluginForHost {
                     // logger.info(gifs.get(i).get(0));
                     // }
                     // }
-                    HTTPConnection con = getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
+                    HTTPConnection con = HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
 
                     if (con.getResponseCode() < 0) {
                         captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs.get(0).get(1);
-                        con = getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
+                        con = HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
 
                     }
                     if (con.getContentLength() < 1000) {
@@ -239,7 +241,7 @@ public class Serienjunkies extends PluginForHost {
                             return null;
                         }
                     
-                        reqinfo = getRequest(new URL(url));
+                        reqinfo = HTTP.getRequest(new URL(url));
                         cookie = reqinfo.getCookie();
 
                         continue;
@@ -252,7 +254,7 @@ public class Serienjunkies extends PluginForHost {
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
                         try {
                             Thread.sleep(1000);
-                            reqinfo = getRequest(new URL(url));
+                            reqinfo = HTTP.getRequest(new URL(url));
                             cookie = reqinfo.getCookie();
                         } catch (InterruptedException e) {
                         }
@@ -261,7 +263,7 @@ public class Serienjunkies extends PluginForHost {
                     logger.info("captchafile: " + captchaFile);
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
 
-                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+                    reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
                 } else {
                     if (captchaFile != null && capTxt != null) {
@@ -312,8 +314,8 @@ public class Serienjunkies extends PluginForHost {
             for (int i = 0; i < forms.length; i++) {
                 if (!forms[i].action.contains("firstload")) {
                     try {
-                        reqinfo = getRequest(new URL(forms[i].action));
-                        reqinfo = getRequest(new URL(getBetween(reqinfo.getHtmlCode(), "SRC=\"", "\"")), null, null, false);
+                        reqinfo = HTTP.getRequest(new URL(forms[i].action));
+                        reqinfo = HTTP.getRequest(new URL(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "SRC=\"", "\"")), null, null, false);
                         String loc = reqinfo.getLocation();
                         if (loc != null) links.add(loc);
                     } catch (Exception e) {
@@ -336,7 +338,7 @@ public class Serienjunkies extends PluginForHost {
         try {
             url = url.replaceAll("safe/", "safe/f");
             url = url.replaceAll("save/", "save/f");
-            RequestInfo reqinfo = getRequest(new URL(url));
+            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
@@ -355,13 +357,13 @@ public class Serienjunkies extends PluginForHost {
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
                         try {
                             Thread.sleep(1000);
-                            reqinfo = getRequest(new URL(url));
+                            reqinfo = HTTP.getRequest(new URL(url));
                         } catch (InterruptedException e) {
                         }
                         continue;
                     }
                     capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile, false);
-                    reqinfo = postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                    reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);

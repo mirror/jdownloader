@@ -25,10 +25,12 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -84,26 +86,26 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     		
     		try {
     			
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
     			
     			if ( reqinfo.getHtmlCode().contains("Ordner Passwort") ) {
     				
     				String url = parameter.substring(0,parameter.lastIndexOf("/")+1)
-    						+ new Regexp(reqinfo.getHtmlCode(),"action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getFirstMatch().trim();
+    						+ new Regex(reqinfo.getHtmlCode(),"action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getFirstMatch().trim();
     				String cookie = reqinfo.getCookie();
     				String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.decrypt.passwordProtected","Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
     				String post = "act=login&password="+password+"&login=Einloggen";
     				HashMap<String,String> reqinfoHeaders = new HashMap<String,String>();
     				reqinfoHeaders.put("Content-Type", "application/x-www-form-urlencoded");
     				
-    				reqinfo = postRequest(new URL(url), cookie, parameter, reqinfoHeaders, post, false);
+    				reqinfo = HTTP.postRequest(new URL(url), cookie, parameter, reqinfoHeaders, post, false);
     				
     				url = reqinfo.getConnection().getHeaderField("Location");
-    				reqinfo = getRequest(new URL(url), reqinfo.getCookie(), parameter, false);
+    				reqinfo = HTTP.getRequest(new URL(url), reqinfo.getCookie(), parameter, false);
     				
     			}
     			
-    			ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href='http://yourfiles.biz/?d=°'");
+    			ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href='http://yourfiles.biz/?d=°'");
     			progress.setRange(ids.size());
     			
     			for ( int i=0; i<ids.size(); i++ ) {

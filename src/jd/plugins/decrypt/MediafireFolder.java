@@ -24,11 +24,13 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class MediafireFolder extends PluginForDecrypt {
@@ -78,11 +80,11 @@ public class MediafireFolder extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
                 
-                reqinfo = getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
+                reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
                 
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
                 progress.setRange(links.size());
                 
                 for(int i=0; i<links.size(); i++) {

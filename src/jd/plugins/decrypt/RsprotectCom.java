@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -76,11 +78,11 @@ public class RsprotectCom extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
  			
     			progress.setRange( 1);
     			
-    			decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
+    			decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
     		progress.increase(1);
     			
     			// Decrypt abschliessen

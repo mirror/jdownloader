@@ -23,7 +23,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -81,8 +83,8 @@ public class TechnorockerInfo extends PluginForDecrypt {
             
     		try {
     			
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
-    			String link = getBetween(reqinfo.getHtmlCode(),"<a href=\"", "\"><b>here</b>");
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+    			String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(),"<a href=\"", "\"><b>here</b>");
     			progress.setRange(1);
     			decryptedLinks.add(this.createDownloadlink(link));
     			progress.increase(1);

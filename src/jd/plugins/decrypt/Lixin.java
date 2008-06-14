@@ -23,8 +23,10 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -93,16 +95,16 @@ public class Lixin extends PluginForDecrypt {
 
                     RequestInfo reqInfo;
                     if (COOKIE != null) {
-                        reqInfo = getRequest(url, COOKIE, null, false);
+                        reqInfo = HTTP.getRequest(url, COOKIE, null, false);
                     } else {
-                        reqInfo = getRequest(url);
+                        reqInfo = HTTP.getRequest(url);
                     }
                     Form[] forms = reqInfo.getForms();
                     RequestInfo reqInfoForm;
                     Matcher matcher;
                     if (forms.length == 0) {
-                        String param="submit=continue&tiny=" + getSimpleMatch(reqInfo, "name='tiny' value='°'>", 0);
-                        reqInfoForm = postRequest(url, COOKIE, null, null, param, false);
+                        String param="submit=continue&tiny=" + SimpleMatches.getSimpleMatch(reqInfo, "name='tiny' value='°'>", 0);
+                        reqInfoForm = HTTP.postRequest(url, COOKIE, null, null, param, false);
 
                     } else {
                         Form form = forms[0];

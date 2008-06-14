@@ -17,6 +17,8 @@
 
 package jd.plugins;
 
+import jd.parser.Form;
+
 public class testCRequest {
 
 	/**

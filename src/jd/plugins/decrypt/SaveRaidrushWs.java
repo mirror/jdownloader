@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -84,15 +86,15 @@ public class SaveRaidrushWs extends PluginForDecrypt {
             
     		try {
     			
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
 
-    			progress.setRange( countOccurences(reqinfo.getHtmlCode(), patternCount));
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
+    			progress.setRange( SimpleMatches.countOccurences(reqinfo.getHtmlCode(), patternCount));
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
     			
     			for(int i=0; i<links.size(); i++) {
     				
     				ArrayList<String> help = links.get(i);
-    				reqinfo = getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
+    				reqinfo = HTTP.getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
     				progress.increase(1);
     				decryptedLinks.add(this.createDownloadlink("http://"+reqinfo.getHtmlCode().trim()));
     				

@@ -25,7 +25,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -91,16 +93,16 @@ public class LinkSafeWs extends PluginForDecrypt {
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);
-                RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 
                 // Im HTML-Code nach "files"/"Forms" suchen
-                ArrayList<ArrayList<String>> files = getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
+                ArrayList<ArrayList<String>> files = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
                 progress.setRange(files.size());
 
                 for (int i = 0; i < files.size(); i++) {
-                    reqinfo = postRequest(new URL("http://www.linksafe.ws/go/"), reqinfo.getCookie(), strURL, null, "id=" + files.get(i).get(0) + "&f=" + files.get(i).get(2) + "&Download.x=5&Download.y=10&Download=Download", true);
+                    reqinfo = HTTP.postRequest(new URL("http://www.linksafe.ws/go/"), reqinfo.getCookie(), strURL, null, "id=" + files.get(i).get(0) + "&f=" + files.get(i).get(2) + "&Download.x=5&Download.y=10&Download=Download", true);
 
-                    String newLink = getSimpleMatch(reqinfo.getHtmlCode(), LINK, 0);
+                    String newLink = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), LINK, 0);
                     
                     String pattern = "\\&\\#[0-9]{1,3}";
                     for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(newLink); r.find();) {                     

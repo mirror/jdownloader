@@ -21,10 +21,11 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 public class LinkBucks extends PluginForDecrypt {
@@ -79,8 +80,8 @@ public class LinkBucks extends PluginForDecrypt {
                 progress.setRange(1);
 
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
-                String link = new Regexp(reqinfo.getHtmlCode(), "<a href=\"(.*?)\" id=\"[^\"]*?\">Click here to Continue</a></p>").getFirstMatch();
+                RequestInfo reqinfo = HTTP.getRequest(url);
+                String link = new Regex(reqinfo.getHtmlCode(), "<a href=\"(.*?)\" id=\"[^\"]*?\">Click here to Continue</a></p>").getFirstMatch();
                 progress.increase(1);
                 decryptedLinks.add(this.createDownloadlink(link));
 

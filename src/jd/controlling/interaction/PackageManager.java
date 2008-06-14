@@ -30,9 +30,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.unrar.UnZip;
 import jd.utils.JDLocale;
@@ -107,12 +108,12 @@ public class PackageManager extends Interaction implements Serializable {
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
             // null, null, true);
             if (JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
-                ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/betalist.php"), null, null, true);
+                ri = HTTP.getRequest(new URL("http://jdservice.ath.cx/update/packages/betalist.php"), null, null, true);
             } else {
-                ri = Plugin.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
+                ri = HTTP.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
             }
             progress.increase(1);
-            String xml = "<packages>" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
+            String xml = "<packages>" + SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
             DocumentBuilderFactory factory;
             InputSource inSource;
             Document doc;

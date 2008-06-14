@@ -23,11 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 
 //http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
@@ -96,7 +97,7 @@ public class ArchivTo extends PluginForHost {
         try {
             String url = downloadLink.getDownloadURL();
 
-            requestInfo = getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regexp(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
 
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
@@ -134,10 +135,10 @@ public class ArchivTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = getRequest(new URL(url));
-            downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+            requestInfo = HTTP.getRequest(new URL(url));
+            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadMax(Integer.parseInt(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
+                downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
             }
             else
                 return false;

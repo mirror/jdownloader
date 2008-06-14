@@ -34,9 +34,9 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
@@ -1118,15 +1118,15 @@ abstract public class DownloadInterface {
                 // 26282889
                 // : 26282889}{null: null}
                 // }
-                if ((startByte + getPreBytes(this)) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
-                    if (connection.getHeaderField("Content-Length") == null && Integer.parseInt(connection.getHeaderField("Content-Length")) < startByte) {
-
-                        error(ERROR_CHUNKLOAD_FAILED);
-                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
-                    }
-                    return;
-
-                }
+//                if ((startByte + getPreBytes(this)) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+//                    if (connection.getHeaderField("Content-Length") == null && Integer.parseInt(connection.getHeaderField("Content-Length")) < startByte) {
+//
+//                        error(ERROR_CHUNKLOAD_FAILED);
+//                        logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+//                    }
+//                    return;
+//
+//                }
             } else if (startByte > 0) {
                 this.connection = copyConnection(connection);
 
@@ -1148,7 +1148,7 @@ abstract public class DownloadInterface {
 
             // Content-Range=[133333332-199999999/200000000]}
             if ((startByte + getPreBytes(this)) > 0) {
-                String[] range = Plugin.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
+                String[] range = SimpleMatches.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
                 if (speedDebug) logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
 
                 if (range == null && chunkNum > 1) {

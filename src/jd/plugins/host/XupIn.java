@@ -23,11 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -133,19 +134,19 @@ public class XupIn extends PluginForHost {
     	
         try {
         	
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             
             if ( requestInfo.containsHTML(NOT_FOUND) ) {
             	
-            	if ( new Regexp(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null )
-            		downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+            	if ( new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null )
+            		downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
 				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
 				return false;
 				
 			}
             
-            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
+            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
             
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
@@ -190,12 +191,12 @@ public class XupIn extends PluginForHost {
             	
                 case PluginStep.STEP_PAGE:
                 	
-                    requestInfo = getRequest(downloadUrl);
+                    requestInfo = HTTP.getRequest(downloadUrl);
                     
                     if ( requestInfo.containsHTML(NOT_FOUND) ) {
                     	
-                    	if ( new Regexp(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null )
-                    		downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+                    	if ( new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null )
+                    		downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
         				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
         				step.setStatus(PluginStep.STATUS_ERROR);
         				return step;
@@ -209,12 +210,12 @@ public class XupIn extends PluginForHost {
                     	
                     }
                     
-                    String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+                    String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
                     downloadLink.setName(fileName);
                     
                     try {
                     	
-                    	int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
+                    	int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim())*1024*1024);
                         downloadLink.setDownloadMax(length);
                         
                     } catch (Exception e) {
@@ -245,24 +246,18 @@ public class XupIn extends PluginForHost {
                         
                     }
                     
-                    if ( !hasEnoughHDSpace(downloadLink) ) {
-                    	
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                        
-                    }
+              
                     
-                    vid = new Regexp(requestInfo.getHtmlCode(), VID).getFirstMatch();
-                    vtime = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                    captchaAddress = new Regexp(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+                    vid = new Regex(requestInfo.getHtmlCode(), VID).getFirstMatch();
+                    vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+                    captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
                 	return step;
                     
                 case PluginStep.STEP_GET_CAPTCHA_FILE :
                 	
                     File file = this.getLocalCaptchaFile(this);
                     
-                    requestInfo = getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"),
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"),
                 			cookie, downloadLink.getDownloadURL(), true);
                     
                     if ( !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists() ) {
@@ -287,9 +282,9 @@ public class XupIn extends PluginForHost {
                 	String vchep = (String) steps.get(1).getParameter();
                 	
                 	if ( vpass != "") {
-                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vpass="+vpass+"&vchep="+vchep, true);
+                		requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vpass="+vpass+"&vchep="+vchep, true);
                 	} else {
-                		requestInfo = postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vchep="+vchep, true);
+                		requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid="+vid+"&vtime="+vtime+"&vchep="+vchep, true);
                 	}
                 	
                 	HTTPConnection urlConnection = requestInfo.getConnection();

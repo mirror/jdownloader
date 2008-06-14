@@ -25,7 +25,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -84,9 +86,9 @@ public class XLSpreadCom extends PluginForDecrypt {
             try {
 
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
                 int count = 0;
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "</td></tr><tr><td><b>°</b>°downlink.php?id=°&amp;hoster");
                 System.out.println(links.size());
                 // Anzahl der Links zählen
                 for (int i = 0; i < links.size(); i++) {
@@ -126,7 +128,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Rapidshare")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=rapidshare")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=rapidshare")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -134,7 +136,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_UPLOADED", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Uploaded")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=uploaded")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=uploaded")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -142,7 +144,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_NETLOAD", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Netload")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=netload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=netload")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -150,7 +152,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_MEINUPLOAD", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("MeinUpload")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=meinupload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=meinupload")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -158,7 +160,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_SHAREONLINE", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Share-Online")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=share-online")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=share-online")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -166,7 +168,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_BLUEHOST", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Bluehost")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=bluehost")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=bluehost")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -174,7 +176,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_SIMPLEUPLOAD", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Simpleupload")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=simpleupload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=simpleupload")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -182,7 +184,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_FASTLOAD", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Fastload")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=fastload")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=fastload")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -190,7 +192,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_DATENKLO", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("Datenklo")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=datenklo")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=datenklo")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }
@@ -198,7 +200,7 @@ public class XLSpreadCom extends PluginForDecrypt {
                 if ((Boolean) this.getProperties().getProperty("USE_SHAREBASE", true)) {
                     for (int i = 0; i < links.size(); i++) {
                         if (links.get(i).get(0).equalsIgnoreCase("ShareBase")) {
-                            decryptedLinks.add(createDownloadlink(getBetween(getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=sharebase")).getHtmlCode(), "<iframe src=\"", "\"")));
+                            decryptedLinks.add(createDownloadlink(SimpleMatches.getBetween(HTTP.getRequest(new URL("http://www.xlspread.com/downlink.php?id=" + links.get(i).get(2) + "&hoster=sharebase")).getHtmlCode(), "<iframe src=\"", "\"")));
                             progress.increase(1);
                         }
                     }

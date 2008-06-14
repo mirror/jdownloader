@@ -24,7 +24,9 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -136,10 +138,10 @@ public class Gulli extends PluginForHost {
                 case PluginStep.STEP_GET_CAPTCHA_FILE:
                     // con.setRequestProperty("Cookie",
                     // Plugin.joinMap(cookieMap,"=","; "));
-                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-                    fileId = getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
-                    String captchaLocalUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
-                    dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                    requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+                    fileId = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
+                    String captchaLocalUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
+                    dlUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
                   
 
                     if (captchaLocalUrl == null) {
@@ -175,9 +177,9 @@ public class Gulli extends PluginForHost {
                         String captchaTxt = (String) steps.get(0).getParameter();
 
                         logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
-                        requestInfo = postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);
+                        requestInfo = HTTP.postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);
                     
-                    dlUrl = getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                    dlUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
                     
                     if (dlUrl == null) {
                         logger.finest("Error Page");
@@ -191,17 +193,17 @@ public class Gulli extends PluginForHost {
                     }
                     catch (InterruptedException e) {
                     }
-                    requestInfo = postRequestWithoutHtmlCode(new URL(HOST_URL + dlUrl), cookie, null, "action=download&file=" + fileId, false);
+                    requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(HOST_URL + dlUrl), cookie, null, "action=download&file=" + fileId, false);
                     String red;
                     String waittime = null;
                     String error = null;
                     String url = HOST_URL + dlUrl;
                     // Redirect folgen und dabei die Cookies weitergeben
                     // share.gulli.com/error
-                    while ((red = requestInfo.getConnection().getHeaderField("Location")) != null && (waittime = getFirstMatch(red, PAT_DOWNLOAD_LIMIT, 1)) == null && (error = getFirstMatch(red, PAT_DOWNLOAD_ERROR, 1)) == null) {
+                    while ((red = requestInfo.getConnection().getHeaderField("Location")) != null && (waittime = SimpleMatches.getFirstMatch(red, PAT_DOWNLOAD_LIMIT, 1)) == null && (error = SimpleMatches.getFirstMatch(red, PAT_DOWNLOAD_ERROR, 1)) == null) {
                         logger.info("red: " + red + " cookie: " + cookie);
                         url = red;
-                        requestInfo = getRequestWithoutHtmlCode(new URL(red), cookie, null, false);
+                        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(red), cookie, null, false);
                     }
                     logger.info("abbruch bei :" + red);
                     if (waittime != null) {
@@ -237,11 +239,7 @@ public class Gulli extends PluginForHost {
                     logger.info("dl " + finalDownloadURL);
                     int length = finalDownloadConnection.getContentLength();
                     downloadLink.setDownloadMax(length);
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+              
                     
                    dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
                     dl.startDownload();
@@ -282,26 +280,26 @@ public class Gulli extends PluginForHost {
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
         downloadLink.setName(name);
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
             }
-            requestInfo=readFromURL(requestInfo.getConnection());
+            requestInfo=HTTP.readFromURL(requestInfo.getConnection());
           
             int filesize=0;
             String size;
-            size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);  
+            size=SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);  
             
             if(size!=null)filesize=(int)(Double.parseDouble(size));
            
             if(size==null){
                
-                size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2); 
+                size=SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2); 
                
                 if(size!=null)filesize=(int)(Double.parseDouble(size.replaceAll(",", "."))*1024);
             }
             if(size==null){
-                size=getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
+                size=SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
             
                 if(size!=null)filesize=(int)(Double.parseDouble(size.replaceAll(",", "."))*1024*1024);
               

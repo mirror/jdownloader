@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -94,9 +96,9 @@ public class FTI6xto extends PluginForDecrypt {
             
             if(parameter.trim().toLowerCase().contains("file.php")){
                 try {
-                    RequestInfo ri = getRequest(new URL(parameter));
+                    RequestInfo ri = HTTP.getRequest(new URL(parameter));
                     
-                   parameter= "http://fucktheindustry.ru/store/file/dlc/forcedl.php?file="+getSimpleMatch(ri.getHtmlCode(), "<a href=\"http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=°.dlc",0)+".dlc";
+                   parameter= "http://fucktheindustry.ru/store/file/dlc/forcedl.php?file="+SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<a href=\"http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=°.dlc",0)+".dlc";
                 } catch (MalformedURLException e) {
                     return step;
                 } catch (IOException e) {

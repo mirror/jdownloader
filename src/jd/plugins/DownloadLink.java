@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.config.Property;
+import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.plugins.download.DownloadInterface;
@@ -309,6 +310,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int partID = -1;
 
     private int crcStatus = CRC_STATUS_UNCHECKED;
+
+    private transient SingleDownloadController downloadLinkController;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -825,6 +828,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadMax = 0;
         setEndOfWaittime(0);
         this.chunksProgress = null;
+        this.downloadLinkController=null;
         downloadCurrent = 0;
         this.waittime = 0;
         aborted = false;
@@ -946,8 +950,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true falls der download abgebrochen wurde
      */
     public boolean isAborted() {
-
-        return aborted;
+        if(this.getDownloadLinkController()==null){
+            return false;          
+            
+        }
+        return getDownloadLinkController().isAborted();
     }
 
     /**
@@ -956,7 +963,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param aborted
      */
     public void setAborted(boolean aborted) {
-        this.aborted = aborted;
+        if(aborted==false){
+            logger.severe("cannot unabort a link. use reset()");
+            return;
+        }
+        if(this.getDownloadLinkController()==null){
+            logger.severe("TRied to abort download even it has no downlaodController");
+            return;            
+            
+        }
+        getDownloadLinkController().abortDownload();
+        
     }
 
     /**
@@ -1240,4 +1257,19 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         // TODO Auto-generated method stub
         return !this.isInProgress() && this.getStatus() != DownloadLink.STATUS_DONE && this.getStatus() != DownloadLink.STATUS_TODO;
     }
+
+
+
+    public SingleDownloadController getDownloadLinkController() {
+        return downloadLinkController;
+    }
+
+    public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
+        this.downloadLinkController = downloadLinkController;
+    }
+
+  
+    
+    
+    
 }

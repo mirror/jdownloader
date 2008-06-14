@@ -103,7 +103,9 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
@@ -121,20 +123,20 @@ import sun.misc.BASE64Encoder;
 
 /**
  * @author astaldo/JD-Team
- */ 
+ */
 public class JDUtilities {
 
-    /** 
-     * Parametername für den Konfigpath 
+    /**
+     * Parametername für den Konfigpath
      */
     public static final String CONFIG_PATH = "jDownloader.config";
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
     /**
-     * Name des Loggers 
+     * Name des Loggers
      */
-    public static String LOGGER_NAME = "java_downloader"; 
+    public static String LOGGER_NAME = "java_downloader";
 
     /**
      * Titel der Applikation
@@ -915,9 +917,7 @@ public class JDUtilities {
                 // Object15475dea4e088fe0e9445da30604acd1
                 // Object80d11614908074272d6b79abe91eeca1
                 // logger.info("Loaded Object (" + hash + "): ");
-                
-            
-                
+
                 return objectLoaded;
             } catch (ClassNotFoundException e) {
                 logger.severe(e.getMessage());
@@ -1003,13 +1003,13 @@ public class JDUtilities {
                 // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
                 // " + hashPost);
             }
-          
+
             // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
             // false));
         } else {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
-    } 
+    }
 
     /**
      * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
@@ -1631,14 +1631,18 @@ public class JDUtilities {
         wu.run();
         return wu.getUpdatedFiles();
     }
+
     /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der config editiert werden.
+     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
+     * config editiert werden.
+     * 
      * @param ip
      * @return
      */
-public static boolean validateIP(String ip){
-    return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
-} 
+    public static boolean validateIP(String ip) {
+        return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
+    }
+
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
      * 
@@ -1655,7 +1659,7 @@ public static boolean validateIP(String ip){
 
         try {
             logger.finer("IP Check via " + site);
-            RequestInfo requestInfo = Plugin.getRequest(new URL(site), null, null, true);
+            RequestInfo requestInfo = HTTP.getRequest(new URL(site), null, null, true);
             Pattern pattern = Pattern.compile(patt);
             Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
             if (matcher.find()) {
@@ -1681,8 +1685,8 @@ public static boolean validateIP(String ip){
             logger.finer("IP Check via jdownloaderipcheck.ath.cx");
             RequestInfo ri;
 
-            ri = Plugin.getRequest(new URL(site), null, null, true);
-            String ip = Plugin.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
+            ri = HTTP.getRequest(new URL(site), null, null, true);
+            String ip = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
             if (ip == null) {
                 logger.info("Sec. IP Check failed.");
                 return "offline";
@@ -1743,6 +1747,7 @@ public static boolean validateIP(String ip){
 
         try {
             logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn);
+            System.out.println("START");
             process = pb.start();
             if (waitForReturn > 0 || waitForReturn < 0) {
                 long t = System.currentTimeMillis();
@@ -1764,20 +1769,43 @@ public static boolean validateIP(String ip){
                 // String ret = "";
                 // while (s.hasNext())
                 // ret += s.next();
-
+                System.out.println("READ");
                 BufferedReader f;
                 StringBuffer s = new StringBuffer();
-                f = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                while ((line = f.readLine()) != null) {
+                System.out.println("READ2");
+                byte[] buffer = new byte[128];
+                InputStream i = process.getInputStream();
 
-                    s.append(line + "\r\n");
+                while (i.read(buffer) >= 0) {
+
+                    System.out.println("Read");
+                    System.out.println("line: " + new String(buffer));
+                    s.append(buffer);
+                    s.append("\r\n");
                     if ((System.currentTimeMillis() - t) > (1000l * waitForReturn)) {
                         logger.severe(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
 
                         break;
                     }
+                    System.out.println("READ3");
                 }
+                // System.out.println("READ ERRORS");
+                //                
+                // f = new BufferedReader(new
+                // InputStreamReader(process.getErrorStream()));
+                // t = System.currentTimeMillis();
+                // while ((line = f.readLine()) != null) {
+                // System.out.println(line);
+                // s.append("ERROR: "+line + "\r\n");
+                // if ((System.currentTimeMillis() - t) > (1000l *
+                // waitForReturn)) {
+                // logger.severe(command + ": Prozess ist nach " + waitForReturn
+                // + " Sekunden nicht beendet worden. Breche ab.");
+                //
+                // break;
+                // }
+                // }
+
                 try {
                     int l = process.exitValue();
                 } catch (Exception e) {
@@ -2424,12 +2452,12 @@ public static boolean validateIP(String ip){
 
     public static String validatePath(String fileOutput0) {
         if (OSDetector.isWindows()) {
-            String hd="";
-            if(new File(fileOutput0).isAbsolute()){
-                hd=fileOutput0.substring(0,3);
-                fileOutput0=fileOutput0.substring(3);
+            String hd = "";
+            if (new File(fileOutput0).isAbsolute()) {
+                hd = fileOutput0.substring(0, 3);
+                fileOutput0 = fileOutput0.substring(3);
             }
-            fileOutput0 = hd+fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?])+", "_");
+            fileOutput0 = hd + fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?])+", "_");
         }
 
         return fileOutput0;
@@ -2438,16 +2466,13 @@ public static boolean validateIP(String ip){
     public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
         return getscaledImageIcon(icon.getImage(), width, height);
     }
-    
+
     public static ImageIcon getscaledImageIcon(Image image, int width, int height) {
         return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
     }
 
-
     public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
         return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
-
-    
 
 }

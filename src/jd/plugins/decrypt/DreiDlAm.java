@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -137,8 +139,8 @@ public class DreiDlAm extends PluginForDecrypt {
     	try {
     		parameter.replace("&quot;", "\"");
     		
-    		RequestInfo request = getRequest(new URL(parameter));
-			String layer = getBetween(request.getHtmlCode(),
+    		RequestInfo request = HTTP.getRequest(new URL(parameter));
+			String layer = SimpleMatches.getBetween(request.getHtmlCode(),
 				"<form action=\"http://3dl.am/download/start/", "/\"");
 			link = "http://3dl.am/download/start/"+layer+"/";
 			
@@ -146,7 +148,7 @@ public class DreiDlAm extends PluginForDecrypt {
 			if ( request.getHtmlCode().indexOf(
 				"<b>Passwort:</b></td><td><input type='text' value='") != -1 ) {
 				
-				String password = getBetween(request.getHtmlCode(),
+				String password = SimpleMatches.getBetween(request.getHtmlCode(),
 					"<b>Passwort:</b></td><td><input type='text' value='", "'");
 				
 				if ( !password.contains("kein") && !password.contains("kein P") ) default_password.add(password);
@@ -165,8 +167,8 @@ public class DreiDlAm extends PluginForDecrypt {
     	ArrayList<String> linksReturn = new ArrayList<String>();
     	
     	try {
-    		RequestInfo request = getRequest(new URL(parameter));
-    		links = getAllSimpleMatches(request.getHtmlCode(),
+    		RequestInfo request = HTTP.getRequest(new URL(parameter));
+    		links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(),
 				"value='http://3dl.am/link/°/'");
     		
     		for(int i=0; i<links.size(); i++) {
@@ -184,8 +186,8 @@ public class DreiDlAm extends PluginForDecrypt {
 		String link = new String();
 		
     	try {
-    		RequestInfo request = getRequest(new URL(parameter));
-			String layer = getBetween(request.getHtmlCode(),
+    		RequestInfo request = HTTP.getRequest(new URL(parameter));
+			String layer = SimpleMatches.getBetween(request.getHtmlCode(),
 				"<frame src=\"", "\" width=\"100%\"");
 			link = layer;
 			

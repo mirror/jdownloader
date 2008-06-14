@@ -50,8 +50,10 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
@@ -755,7 +757,7 @@ public class JDController implements ControlListener, UIListener {
         // int tc=Plugin.getConnectTimeoutFromConfiguration();
         // int tr=Plugin.getReadTimeoutFromConfiguration();
 
-        RequestInfo ri = Plugin.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
+        RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
 
         if (!ri.isOK() || ri.getLocation() == null) {
 
@@ -763,7 +765,7 @@ public class JDController implements ControlListener, UIListener {
 
         logger.finer("Call Redirect: " + ri.getLocation());
 
-        ri = Plugin.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
+        ri = HTTP.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
 
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
@@ -772,7 +774,7 @@ public class JDController implements ControlListener, UIListener {
         } else {
             String dlcKey = ri.getHtmlCode();
 
-            dlcKey = Plugin.getBetween(dlcKey, "<rc>", "</rc>");
+            dlcKey = SimpleMatches.getBetween(dlcKey, "<rc>", "</rc>");
             if (dlcKey.trim().length() < 80) {
 
             return null; }

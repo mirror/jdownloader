@@ -19,7 +19,8 @@ import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.Plugin;
+import jd.parser.SimpleMatches;
+import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 
 import org.w3c.dom.Document;
@@ -42,15 +43,15 @@ public class CLRLoader {
         Vector<String[]> res = new Vector<String[]>();
         try {
             @SuppressWarnings("unused")
-            RequestInfo ri = Plugin.getRequest(new URL("http://cryptload.info/clr/"));
+            RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
 
             logger.info("" + ri);
-            ArrayList<ArrayList<String>> matches = Plugin.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
+            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
 
             for (int i=matches.size()-1;i>=0;i--) {
                 ArrayList<String> next = matches.get(i);
                 if (IDS.contains(next.get(0))) continue;
-                ri = Plugin.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
+                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
 
                 String[] ret = createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
                 if (ret != null) {

@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
+
+
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -25,6 +26,7 @@ import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.parser.SimpleMatches;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -40,25 +42,29 @@ public abstract class PluginForHost extends Plugin {
     private static final String AGB_CHECKED = "AGB_CHECKED";
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
+    private static long END_OF_DOWNLOAD_LIMIT = 0;
     // public abstract URLConnection getURLConnection();
 
-   private int retryCount=0;
-   private int retryOnErrorCount=0;
-    private int maxConnections=50;
-    private static int currentConnections=0;
-    protected DownloadInterface dl=null;
+    private int retryCount = 0;
+    private int retryOnErrorCount = 0;
+    private int maxConnections = 50;
+    private static int currentConnections = 0;
+    protected DownloadInterface dl = null;
 
     /**
      * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
      * etc)
      */
     public abstract void reset();
-    public  ArrayList<MenuItem> createMenuitems(){
+
+    public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
-    public String getPluginNameExtension(DownloadLink link){
+
+    public String getPluginNameExtension(DownloadLink link) {
         return "";
     }
+
     /**
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
      * Neustart vor. Sollte nicht überschrieben werden
@@ -66,69 +72,73 @@ public abstract class PluginForHost extends Plugin {
     public final void resetPlugin() {
         this.resetSteps();
         this.reset();
-        //this.aborted = false;
+        // this.aborted = false;
     }
-    /**
-     * Setzt globale Plugineinstellungen wie eine Globale Hosterwartezeit zurück.
-     */
-    public abstract void resetPluginGlobals();
+    
+    public void resetPluginGlobals() {
+      
+        setEndOfDownloadLimit(0);
+    }
+    
+
+  
 
     /**
      * Diese methode führt den Nächsten schritt aus. Der gerade ausgeführte
      * Schritt wir zurückgegeben
      * 
-     * @param parameter Ein Übergabeparameter
+     * @param parameter
+     *            Ein Übergabeparameter
      * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
      */
     public PluginStep doNextStep(Object parameter) {
-     
+
         nextStep(currentStep);
-        
-        
-       
+
         if (currentStep == null) {
             logger.info(this + " Pluginende erreicht!");
             return null;
         }
-        logger.finer("Current Step:  " + currentStep+"/"+steps);
-        if(!this.isAGBChecked()){
+        logger.finer("Current Step:  " + currentStep + "/" + steps);
+        if (!this.isAGBChecked()) {
             currentStep.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe("AGB not signed : "+this.getPluginID());
-            ((DownloadLink)parameter).setStatus(DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED);
+            logger.severe("AGB not signed : " + this.getPluginID());
+            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED);
             return currentStep;
         }
         currentStep = doStep(currentStep, parameter);
-        logger.finer("got/return step: "+currentStep+" Linkstatus: "+((DownloadLink)parameter).getStatus());
-        
+        logger.finer("got/return step: " + currentStep + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+
         return currentStep;
     }
-    
-   
-    public boolean isListOffline(){
+
+    public boolean isListOffline() {
         return true;
     }
- 
-    public boolean[] checkLinks(String[] urls){
+
+    public boolean[] checkLinks(String[] urls) {
         return null;
-        
+
     }
+
     /**
      * Hier werden Treffer für Downloadlinks dieses Anbieters in diesem Text
      * gesucht. Gefundene Links werden dann in einem Vector zurückgeliefert
      * 
-     * @param data Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
+     * @param data
+     *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
      * @return Ein Vector mit den gefundenen Downloadlinks
      */
-    public Vector<DownloadLink> getDownloadLinks(String data,FilePackage fp) {
-      
-        Vector<DownloadLink> links = null; 
+    public Vector<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
 
-        Vector<String> hits = getMatches(data, getSupportedLinks());
+        Vector<DownloadLink> links = null;
+
+        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
         if (hits != null && hits.size() > 0) {
             links = new Vector<DownloadLink>();
             for (int i = 0; i < hits.size(); i++) {
                 String file = hits.get(i);
-            
+
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
@@ -138,37 +148,18 @@ public abstract class PluginForHost extends Plugin {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
                     PluginForHost plg = this.getClass().newInstance();
-                
-                    DownloadLink link=new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
+
+                    DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
-                   if(fp!=null)link.setFilePackage(fp);
-                }
-                catch (InstantiationException e) {
-                     e.printStackTrace();
-                }
-                catch (IllegalAccessException e) {
-                     e.printStackTrace();
+                    if (fp != null) link.setFilePackage(fp);
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
                 }
             }
         }
         return links;
-    }
-
-    /**
-     * prüft ob genug Speicherplatz für den download zur Verfügung steht
-     * 
-     * @param downloadLink
-     * @return true/false
-     */
-    protected boolean hasEnoughHDSpace(DownloadLink downloadLink) {
-        return true;
-        // File file = new File(downloadLink.getFileOutput());
-        // if (file.getParentFile() != null && file.getParentFile().exists()) {
-        // file = file.getParentFile();
-        // }
-        // return file.getFreeSpace()-downloadLink.getDownloadMax() > ((long)
-        // JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_MIN_FREE_SPACE,
-        // 100)) * 1024l * 1024l;
     }
 
     /**
@@ -203,61 +194,66 @@ public abstract class PluginForHost extends Plugin {
     public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
 
     public abstract int getMaxSimultanDownloadNum();
+
     public abstract String getAGBLink();
-    public boolean isAGBChecked(){
-        if(!this.getProperties().hasProperty(AGB_CHECKED)){
-            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_"+this.getPluginID(), false)
-            || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_"+this.getHost(), false));
+
+    public boolean isAGBChecked() {
+        if (!this.getProperties().hasProperty(AGB_CHECKED)) {
+            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + this.getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + this.getHost(), false));
             getProperties().save();
         }
-       return  getProperties().getBooleanProperty(AGB_CHECKED,false);
+        return getProperties().getBooleanProperty(AGB_CHECKED, false);
     }
-    public void setAGBChecked(boolean value){
+
+    public void setAGBChecked(boolean value) {
         getProperties().setProperty(AGB_CHECKED, value);
         getProperties().save();
     }
-    
-//    public void abort(){
-//        super.abort();
-//        if(this.getDownloadInstance()!=null){
-//            this.getDownloadInstance().abort(); 
-//        }
-//    }
+
+    // public void abort(){
+    // super.abort();
+    // if(this.getDownloadInstance()!=null){
+    // this.getDownloadInstance().abort();
+    // }
+    // }
     private DownloadInterface getDownloadInstance() {
         // TODO Auto-generated method stub
         return this.dl;
     }
-    public int getMaxRetries(){
+
+    public int getMaxRetries() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
     }
-    public int getMaxRetriesOnError(){
+
+    public int getMaxRetriesOnError() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_ERROR_RETRIES, 0);
     }
+
     /**
      * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
      * die Plugins. Und fängt übrige Exceptions ab.
      * 
-     * @param parameter Downloadlink
+     * @param parameter
+     *            Downloadlink
      */
     public PluginStep doStep(PluginStep step, Object parameter) {
 
         try {
-           PluginStep ret = doStep(step, (DownloadLink) parameter);
-           logger.finer("got/return step: "+step+" Linkstatus: "+((DownloadLink)parameter).getStatus());
-           return ret;
-//           if(ret==null){
-//               return step;
-//           }else{
-//               return ret;
-//           }
-        }
-        catch (Exception e) {
-             e.printStackTrace();
+            PluginStep ret = doStep(step, (DownloadLink) parameter);
+            logger.finer("got/return step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+            return ret;
+            // if(ret==null){
+            // return step;
+            // }else{
+            // return ret;
+            // }
+        } catch (Exception e) {
+            e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
             ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-          step.setParameter(e.getLocalizedMessage());
-          logger.finer("got/return 2 step: "+step+" Linkstatus: "+((DownloadLink)parameter).getStatus());
-          
+            step.setParameter(e.getLocalizedMessage());
+            logger.finer("got/return 2 step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+
             return step;
         }
     }
@@ -275,30 +271,27 @@ public abstract class PluginForHost extends Plugin {
      */
     protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
 
             int length = requestInfo.getConnection().getContentLength();
             downloadLink.setDownloadMax(length);
             logger.finer("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-           
+
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-           dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+            dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                
+
                 step.setStatus(PluginStep.STATUS_ERROR);
-                
-                
+
             }
             return true;
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
 
-             e.printStackTrace();
-        }
-        catch (IOException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
 
-             e.printStackTrace();
+            e.printStackTrace();
         }
 
         step.setStatus(PluginStep.STATUS_ERROR);
@@ -315,55 +308,89 @@ public abstract class PluginForHost extends Plugin {
 
         return null;
     }
-/**
- * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei -1 wird ein reconnect durchgeführt
- * @return
- */
+
+    /**
+     * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei
+     * -1 wird ein reconnect durchgeführt
+     * 
+     * @return
+     */
     public long getBotWaittime() {
-       
+
         return -1;
     }
-public void clean(){
-   this.requestInfo=null;
-   this.request=null;
-   this.dl=null;
-   
-      super.clean();
-}
-public int getMaxConnections() {
-    return maxConnections;
-}
 
-public void setMaxConnections(int maxConnections) {
-    this.maxConnections = maxConnections;
-}
+    public void clean() {
+        this.requestInfo = null;
+        this.request = null;
+        this.dl = null;
 
-public int getCurrentConnections() {
-    return currentConnections;
-}
+        super.clean();
+    }
 
-public synchronized void setCurrentConnections(int currentConnections) {
-    this.currentConnections = currentConnections;
-}
-public int getChunksPerFile(){
-    return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3);
-}
-public int getFreeConnections(){
-    return Math.max(1, maxConnections-currentConnections);
-}
-public int getRetryCount() {
-    return retryCount;
-}
-public void setRetryCount(int retryCount) {
-    this.retryCount = retryCount;
-}
-public int getRetryOnErrorCount() {
-    return retryOnErrorCount;
-}
-public void setRetryOnErrorCount(int retryOnErrorcount) {
-    this.retryOnErrorCount = retryOnErrorcount;
-}
+    public int getMaxConnections() {
+        return maxConnections;
+    }
 
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
 
+    public int getCurrentConnections() {
+        return currentConnections;
+    }
 
+    public synchronized void setCurrentConnections(int currentConnections) {
+        this.currentConnections = currentConnections;
+    }
+
+    public int getChunksPerFile() {
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3);
+    }
+
+    public int getFreeConnections() {
+        return Math.max(1, maxConnections - currentConnections);
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public int getRetryOnErrorCount() {
+        return retryOnErrorCount;
+    }
+
+    public void setRetryOnErrorCount(int retryOnErrorcount) {
+        this.retryOnErrorCount = retryOnErrorcount;
+    }
+
+    public static long getEndOfDownloadLimit() {
+        return END_OF_DOWNLOAD_LIMIT;
+    }
+
+    public static void setEndOfDownloadLimit(long end_of_download_limit) {
+        END_OF_DOWNLOAD_LIMIT = end_of_download_limit;
+    }
+
+    public static void setDownloadLimitTime(long downloadlimit) {
+        END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + downloadlimit;
+    }
+
+    public static long getRemainingWaittime() {
+        return Math.max(0, END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis());
+    }
+
+    public PluginStep handleDownloadLimit(PluginStep step, DownloadLink downloadLink) {
+        long waitTime = getRemainingWaittime();
+        logger.finer("wait (intern) " + waitTime + " minutes");
+        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+        step.setStatus(PluginStep.STATUS_ERROR);
+        logger.info(" Waittime(intern) set to " + step + " : " + waitTime);
+        step.setParameter((long) waitTime);
+        return step;
+    }
 }

@@ -23,7 +23,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -125,10 +127,10 @@ public class LoadTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
 
-String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
-String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
+String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
 
 
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
@@ -165,7 +167,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
 
             switch (step.getStep()) {
                 case PluginStep.STEP_PAGE:
-                    requestInfo = getRequest(downloadUrl);
+                    requestInfo = HTTP.getRequest(downloadUrl);
 
                     // Datei nicht gefunden?
                     if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_NOT_FOUND) > 0) {
@@ -174,8 +176,8 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-                    String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
-                    String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
+                    String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+                    String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
                    
                     try {
                         int length = Integer.parseInt(fileSize.trim());
@@ -190,7 +192,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                     downloadLink.setName(fileName);
                     // downloadLink auslesen
                  
-                    this.downloadURL = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+                    this.downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
                     return step;
 
@@ -214,12 +216,7 @@ String fileSize = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(
                     return step;
 
                 case PluginStep.STEP_DOWNLOAD:
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
-      
+              
                    
                   dl = new RAFDownload(this, downloadLink,  urlConnection);
               

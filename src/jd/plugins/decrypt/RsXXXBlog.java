@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -94,7 +95,7 @@ public class RsXXXBlog extends PluginForDecrypt {
                 // Zählen aller verfügbaren Treffer
                 try {
                     URL url = new URL(cryptedLink.replaceFirst("http://.*?xxx-blog.org", "http://xxx-blog.org/frame"));
-                    RequestInfo requestInfo = getRequestWithoutHtmlCode(url, null, null, false);
+                    RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
                     decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                 }
                 catch (MalformedURLException e) {

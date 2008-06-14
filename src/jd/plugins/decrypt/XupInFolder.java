@@ -23,10 +23,11 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 // http://www.xup.in/a,7220/Test4JD/list/
@@ -96,8 +97,8 @@ public class XupInFolder extends PluginForDecrypt {
     		
     		try {
     			
-    			RequestInfo requestInfo = getRequest(new URL(parameter));
-    			String[][] links = new Regexp(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
+    			RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));
+    			String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
     			progress.setRange(links.length);
     			
     			for ( String[] link : links ) {

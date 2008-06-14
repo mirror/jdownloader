@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -92,8 +94,8 @@ public class LeecherWs extends PluginForDecrypt {
     				
     			} else {
     				
-    				reqinfo = getRequest(new URL(parameter));
-    				outLinks = getAllSimpleMatches(reqinfo.getHtmlCode(),
+    				reqinfo = HTTP.getRequest(new URL(parameter));
+    				outLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(),
 					"href=\"http://www.leecher.ws/out/°\"");
     				
     			}
@@ -102,9 +104,9 @@ public class LeecherWs extends PluginForDecrypt {
     			
     			for ( int i=0; i<outLinks.size(); i++ ) {
     				
-    				reqinfo = getRequest(new URL(
+    				reqinfo = HTTP.getRequest(new URL(
     						"http://leecher.ws/out/"+outLinks.get(i).get(0)));
-    				String cryptedLink = getBetween(reqinfo.getHtmlCode(),"<iframe src=\"","\"");
+    				String cryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(),"<iframe src=\"","\"");
     				decryptedLinks.add(this.createDownloadlink(decryptAsciiEntities(cryptedLink)));
     				progress.increase(1);
     				
@@ -129,7 +131,7 @@ public class LeecherWs extends PluginForDecrypt {
     
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptAsciiEntities(String str) {
-    	ArrayList<ArrayList<String>> codes = getAllSimpleMatches(str,"&#°;");
+    	ArrayList<ArrayList<String>> codes = SimpleMatches.getAllSimpleMatches(str,"&#°;");
     	String decodedString = "";
     	
     	for( int i=0; i<codes.size(); i++ ) {

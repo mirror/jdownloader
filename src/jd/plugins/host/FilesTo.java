@@ -24,11 +24,13 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -110,7 +112,7 @@ public class FilesTo extends PluginForHost {
             
                 case PluginStep.STEP_WAIT_TIME :
                 	
-                    requestInfo = getRequest(new URL(parameterString));
+                    requestInfo = HTTP.getRequest(new URL(parameterString));
                     
                     // Datei gelöscht?
                     if ( requestInfo.getHtmlCode().contains(FILE_NOT_FOUND) ) {
@@ -124,8 +126,8 @@ public class FilesTo extends PluginForHost {
                     
                     if ( requestInfo.getHtmlCode() != null ) {
                     	
-                    	session = new Regexp(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
-                    	captchaAddress = getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1) + "?" + session;
+                    	session = new Regex(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
+                    	captchaAddress = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1) + "?" + session;
                         return step;
                         
                     } else {
@@ -166,7 +168,7 @@ public class FilesTo extends PluginForHost {
                     HashMap<String,String> requestHeaders = new HashMap<String,String>();
             		requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
                     
-                    requestInfo = postRequest(new URL(parameterString+"?"),
+                    requestInfo = HTTP.postRequest(new URL(parameterString+"?"),
                     			session,
                     			parameterString+"?"+session,
                     			requestHeaders,
@@ -188,21 +190,17 @@ public class FilesTo extends PluginForHost {
                         
                     }
                     
-                    finalURL = new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
+                    finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
                     logger.info(finalURL);
                     
                     // Download vorbereiten
                     urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
                     int fileSize = urlConnection.getContentLength();
                     downloadLink.setDownloadMax(fileSize);
-                    String fileName = JDUtilities.htmlDecode(getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));
+                    String fileName = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));
                     downloadLink.setName(fileName);
                     
-                    if ( !hasEnoughHDSpace(downloadLink) ) {
-                    	downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+             
                     
                     // Download starten
                    dl = new RAFDownload(this, downloadLink, urlConnection);
@@ -246,7 +244,7 @@ public class FilesTo extends PluginForHost {
         
         try {
         	
-        	requestInfo = getRequest(new URL(downloadLink.getDownloadURL().toString()));
+        	requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().toString()));
         	
             if ( requestInfo.getHtmlCode() == null ) {
                 return false;
@@ -257,8 +255,8 @@ public class FilesTo extends PluginForHost {
                     return false;
                 }
 
-                String fileName = JDUtilities.htmlDecode(getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));
-                int fileSize = getFileSize(JDUtilities.htmlDecode(getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_SIZE, 1)));
+                String fileName = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1));
+                int fileSize = getFileSize(JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_SIZE, 1)));
                 downloadLink.setName(fileName);
                 
                 try {
@@ -296,10 +294,10 @@ public class FilesTo extends PluginForHost {
     	int size = 0;
     	
     	if ( source.contains("KB") ) {
-    		source = getSimpleMatch(source, "° KB", 0);
+    		source = SimpleMatches.getSimpleMatch(source, "° KB", 0);
     		size = Integer.parseInt(source)*1024;
     	} else if ( source.contains("MB") ) {
-    		source = getSimpleMatch(source, "° MB", 0);
+    		source = SimpleMatches.getSimpleMatch(source, "° MB", 0);
     		size = (int) (Integer.parseInt(source)*1024*1024);
     	}
     	

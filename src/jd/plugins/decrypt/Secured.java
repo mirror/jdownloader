@@ -23,7 +23,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -127,7 +129,7 @@ public class Secured extends PluginForDecrypt {
         request.put("Cache-Control", "no-cache");
         request.put("Pragma", "no-cache");
 
-        RequestInfo info = postRequest(new URL(AJAX_URL), null, cryptedLink, request, "cmd=" + DOWNLOAD_CMD + "&download_id=" + id, true);
+        RequestInfo info = HTTP.postRequest(new URL(AJAX_URL), null, cryptedLink, request, "cmd=" + DOWNLOAD_CMD + "&download_id=" + id, true);
 
         return new Cypher().cypher(info.getHtmlCode());
     }
@@ -147,12 +149,12 @@ public class Secured extends PluginForDecrypt {
                 this.cryptedLink = cryptedLink;
 
                 try {
-                    RequestInfo requestInfo = getRequest(new URL(JS_URL));
-                    DOWNLOAD_CMD = getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
+                    RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
+                    DOWNLOAD_CMD = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
 
                     progress.setRange(1);
                     URL url = new URL(cryptedLink);
-                    requestInfo = getRequest(url);
+                    requestInfo = HTTP.getRequest(url);
 
                     String html = requestInfo.getHtmlCode();
                     File captchaFile = null;
@@ -176,7 +178,7 @@ public class Secured extends PluginForDecrypt {
                             capTxt = Plugin.getCaptchaCode(captchaFile, this);
                             String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
 
-                            requestInfo = postRequest(url, postData);
+                            requestInfo = HTTP.postRequest(url, postData);
                             html = requestInfo.getHtmlCode();
                         }
                         else {

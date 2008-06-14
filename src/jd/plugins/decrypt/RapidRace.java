@@ -7,6 +7,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -60,14 +61,14 @@ public class RapidRace extends PluginForDecrypt {
                 String finalUrl = "";
                 String quellcode = "";
                 progress.setRange(1);
-                RequestInfo reqinfo = getRequest(url, null, null, false);
+                RequestInfo reqinfo = HTTP.getRequest(url, null, null, false);
                 quellcode = reqinfo.getHtmlCode();
                 while (quellcode.indexOf("http://www.rapidrace.org/load.php?ID") != -1) {
                     finalUrl = "";
                     quellcode = quellcode.substring(quellcode.indexOf("http://www.rapidrace.org/load.php?ID"));
                     String tmp = quellcode.substring(0, quellcode.indexOf("\""));
                     progress.increase(1);
-                    reqinfo = getRequest(new URL(tmp), null, null, true);
+                    reqinfo = HTTP.getRequest(new URL(tmp), null, null, true);
                     tmp = reqinfo.getHtmlCode().substring(reqinfo.getHtmlCode().indexOf("document.write(fu('") + 19);
                     tmp = tmp.substring(0, tmp.indexOf("'"));
                     for (int i = 0; i < tmp.length(); i += 2) {

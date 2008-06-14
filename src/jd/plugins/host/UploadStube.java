@@ -23,11 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
@@ -87,9 +88,9 @@ public class UploadStube extends PluginForHost {
 //		}
 		try {
 			
-			requestInfo = getRequest(new URL(downloadLink
+			requestInfo = HTTP.getRequest(new URL(downloadLink
 					.getDownloadURL()));
-			String dlurl = new Regexp(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getFirstMatch();
+			String dlurl = new Regex(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getFirstMatch();
 			if(dlurl==null)
 			{
 				logger.severe("Datei nicht gefunden");
@@ -98,16 +99,12 @@ public class UploadStube extends PluginForHost {
 				step.setStatus(PluginStep.STATUS_ERROR);
 				return step;
 			}
-			requestInfo=getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink
+			requestInfo=HTTP.getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink
 					.getDownloadURL(), true);
 			HTTPConnection urlConnection = requestInfo.getConnection();
 			downloadLink.setName(getFileNameFormHeader(urlConnection));
 			downloadLink.setDownloadMax(urlConnection.getContentLength());
-			if (!hasEnoughHDSpace(downloadLink)) {
-				downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-				step.setStatus(PluginStep.STATUS_ERROR);
-				return step;
-			}
+		
 		   dl = new RAFDownload(this, downloadLink, urlConnection);
 		  
             dl.startDownload();
@@ -129,13 +126,13 @@ public class UploadStube extends PluginForHost {
 	@Override
 	public boolean getFileInformation(DownloadLink downloadLink) {
 		try {
-			requestInfo = getRequest(new URL(downloadLink
+			requestInfo = HTTP.getRequest(new URL(downloadLink
 					.getDownloadURL()));
-			downloadLink.setName(new Regexp(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getFirstMatch());
+			downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getFirstMatch());
 
 
 				try {
-					String[] fileSize = new Regexp(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
+					String[] fileSize = new Regex(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
 					double length = Double.parseDouble(fileSize[0]
 							.trim());
 					int bytes;

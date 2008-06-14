@@ -30,10 +30,12 @@ import java.util.regex.Pattern;
 
 import jd.controlling.JDController;
 import jd.crypt.AESdecrypt;
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -109,19 +111,19 @@ public class CryptItCom extends PluginForDecrypt {
             try {
                 String url = parameter;
                 if (!url.endsWith("/")) url += "/";
-                String mode = getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
-                String folder = getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
-                RequestInfo ri = getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
+                String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
+                String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
+                RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
                 String pass = "";
                 while (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                     pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
                     if (pass == null) { return null; }
                     String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                    ri = postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
+                    ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
                 }
                 String cookie = ri.getCookie();
-                String packagename = getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
-                String password = getSimpleMatch(ri, PATTERN_PASSWORD, 0);
+                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
+                String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
                 HashMap<String, String> header = new HashMap<String, String>();
                 header.put("Content-Type", "application/x-amf");
@@ -132,8 +134,8 @@ public class CryptItCom extends PluginForDecrypt {
                 // 0x00, 0x01, 0x02, 0x00, 0x06 };
                 byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
                 byte[] b2 = new byte[] { 0x02, 0x00 };
-                ri = postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[]{(byte)pass.length()}) + pass, false);
-                ArrayList<String> ciphers = getAllSimpleMatches(ri, "url°size", 1);
+                ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[]{(byte)pass.length()}) + pass, false);
+                ArrayList<String> ciphers = SimpleMatches.getAllSimpleMatches(ri, "url°size", 1);
                 progress.setRange(ciphers.size());
                 FilePackage fp = new FilePackage();
                 fp.setName(packagename);
@@ -146,7 +148,7 @@ public class CryptItCom extends PluginForDecrypt {
                     progress.increase(1);
                     String[] links;
 
-                    links = Plugin.getHttpLinks(linktext, null);
+                    links = HTMLParser.getHttpLinks(linktext, null);
                     if (links.length > 0 && links[0].startsWith("http")) {
                         DownloadLink link = this.createDownloadlink(links[0]);
                         link.setSourcePluginPasswords(p);
@@ -184,16 +186,16 @@ public class CryptItCom extends PluginForDecrypt {
 
             try {
 
-                requestInfo = getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
 
                 if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
-                    requestInfo = readFromURL(requestInfo.getConnection());
+                    requestInfo = HTTP.readFromURL(requestInfo.getConnection());
                     String cookie = requestInfo.getCookie();
                     if (requestInfo.containsHTML(PATTERN_PW)) {
 
                         String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
                         String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                        requestInfo = postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
+                        requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                         if (requestInfo.containsHTML(PATTERN_PW)) {
 
                             logger.warning("Password wrong");
@@ -205,7 +207,7 @@ public class CryptItCom extends PluginForDecrypt {
                     }
 
                     parameter = parameter.replace("/c/", "/d/");
-                    requestInfo = getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
                 }
 
                 String folder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -322,7 +324,7 @@ public class CryptItCom extends PluginForDecrypt {
 
         httpConnection.post(parameter);
 
-        RequestInfo requestInfo = readFromURL(httpConnection);
+        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
 
         requestInfo.setConnection(httpConnection);
         // logger.finer("postRequest " + url + ": " +

@@ -48,7 +48,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -399,6 +399,8 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDShutdown", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLowSpeed", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
+        
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         Double version = JDUtilities.getJavaVersion();
@@ -620,7 +622,7 @@ public class JDInit {
 
                                         try {
 
-                                            String update = JDUtilities.UTF8Decode(Plugin.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
+                                            String update = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
 
                                             JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
                                         } catch (IOException e) {

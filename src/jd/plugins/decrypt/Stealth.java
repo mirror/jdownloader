@@ -24,11 +24,13 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.CRequest.CaptchaInfo;
 import jd.utils.JDUtilities;
@@ -100,7 +102,7 @@ public class Stealth extends PluginForDecrypt {
                     // wird
                     if (request.toString().contains("captcha_img.php")) {
                         
-                        String sessid = new Regexp(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
+                        String sessid = new Regex(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
                         if(sessid==null){
                             logger.severe("Error sessionid: "+request.getCookie());
                         
@@ -123,13 +125,13 @@ public class Stealth extends PluginForDecrypt {
                     }
                 }
     			//
-    			RequestInfo reqhelp = postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
+    			RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + SimpleMatches.getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
     			progress.setRange( links.size());
 				
 				for(int j=0; j<links.size(); j++) {
-					reqhelp = getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
-    				decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\""))));
+					reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
+    				decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\""))));
     			progress.increase(1);
 				}
     			

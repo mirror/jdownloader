@@ -24,9 +24,12 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -82,9 +85,9 @@ public class DDLWarez extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url); // Seite aufrufen
-                String title = getSimpleMatch(reqinfo, "<title>DDL-Warez v3.0 // °</title>", 0);
-                String pass = getSimpleMatch(reqinfo, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
+                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
+                String title = SimpleMatches.getSimpleMatch(reqinfo, "<title>DDL-Warez v3.0 // °</title>", 0);
+                String pass = SimpleMatches.getSimpleMatch(reqinfo, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
                 if (pass.equals("kein Passwort")) pass = null;
                 logger.info("Password=" + pass);
                 Form[] forms = reqinfo.getForms();
@@ -107,9 +110,9 @@ public class DDLWarez extends PluginForDecrypt {
 
                     // System.out.println(formInfo.getHtmlCode());
 
-                    for (Iterator<String> it = getAllSimpleMatches(formInfo, this.patternFrame, 1).iterator(); it.hasNext();) {
+                    for (Iterator<String> it = SimpleMatches.getAllSimpleMatches(formInfo, this.patternFrame, 1).iterator(); it.hasNext();) {
 
-                        String[] links = getHttpLinks(it.next().trim(), null);
+                        String[] links = HTMLParser.getHttpLinks(it.next().trim(), null);
 
                         for (String link : links) {
                             try {

@@ -23,11 +23,12 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -116,7 +117,7 @@ public class FastLoadNet extends PluginForHost {
 
         try {
 
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
 
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
@@ -126,8 +127,8 @@ public class FastLoadNet extends PluginForHost {
 
             }
 
-            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
 
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
@@ -175,7 +176,7 @@ public class FastLoadNet extends PluginForHost {
 
                 downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
 
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
                 cookie = requestInfo.getCookie();
 
                 if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
@@ -186,12 +187,12 @@ public class FastLoadNet extends PluginForHost {
 
                 }
 
-                String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
                 downloadLink.setName(fileName);
 
                 try {
 
-                    int length = (int) Math.round(Double.parseDouble(new Regexp(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+                    int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
                     downloadLink.setDownloadMax(length);
 
                 } catch (Exception e) {
@@ -208,7 +209,7 @@ public class FastLoadNet extends PluginForHost {
 
                 File file = this.getLocalCaptchaFile(this);
 
-                requestInfo = getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
 
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
 
@@ -231,7 +232,7 @@ public class FastLoadNet extends PluginForHost {
                 String code = (String) steps.get(1).getParameter();
                 String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
 
-                requestInfo = postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);
+                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);
 
                 // Download vorbereiten
                 HTTPConnection urlConnection = requestInfo.getConnection();
@@ -280,8 +281,8 @@ public class FastLoadNet extends PluginForHost {
 
                 // Download starten
                 dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setResume(true);
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+                dl.setResume(false);
+                dl.setChunkNum(1);
                 dl.startDownload();
 
                 return step;

@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -80,15 +82,15 @@ public class ScumIn extends PluginForDecrypt {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                RequestInfo reqinfo = getRequest(new URL(parameter));
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 String cookie = reqinfo.getCookie();
                 String id = parameter.split("=")[1];
 
                 String urlString = URLDecoder.decode("http://scum.in/share/includes/captcha.php?t=", "UTF-8");
                 URL url = new URL(urlString);
                 HTTPConnection con = new HTTPConnection(url.openConnection());
-                con.setReadTimeout(getReadTimeoutFromConfiguration());
-                con.setConnectTimeout(getConnectTimeoutFromConfiguration());
+                con.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
+                con.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
                 con.setInstanceFollowRedirects(false);
                 con.setRequestProperty("Referer", parameter);
                 con.setRequestProperty("Cookie", cookie);
@@ -106,9 +108,9 @@ public class ScumIn extends PluginForDecrypt {
                 }
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                 
-                reqinfo = postRequest(new URL("http://scum.in/plugins/home/links.old.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
+                reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.old.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
                 
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"°\"");
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"°\"");
 
                 progress.setRange(links.size());
                 

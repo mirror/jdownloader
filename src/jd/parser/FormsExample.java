@@ -15,7 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-package jd.plugins;
+package jd.parser;
+
+import jd.plugins.RequestInfo;
 
 public class FormsExample {
 

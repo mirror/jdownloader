@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.Plugin;
+import jd.parser.SimpleMatches;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -60,7 +60,7 @@ public class JDLocale {
             File java = it.next();
             String c = JDUtilities.getLocalFile(java);
             logger.info(java.getAbsolutePath());
-            ArrayList<ArrayList<String>> res = Plugin.getAllSimpleMatches(c, "JDLocale.L(°,°)");
+            ArrayList<ArrayList<String>> res = SimpleMatches.getAllSimpleMatches(c, "JDLocale.L(°,°)");
           logger.info("Found "+res.size()+" entries");
             for (Iterator<ArrayList<String>> it2 = res.iterator(); it2.hasNext();) {
                 ArrayList<String> entry = it2.next();

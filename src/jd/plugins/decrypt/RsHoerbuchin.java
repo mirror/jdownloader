@@ -23,10 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -94,15 +96,15 @@ public class RsHoerbuchin extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
-                RequestInfo requestInfo = getRequest(url, null, null, false);
+                RequestInfo requestInfo = HTTP.getRequest(url, null, null, false);
 
                 if (cryptedLink.matches(patternLink_RS.pattern())) {
-                    HashMap<String, String> fields = this.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                    HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                     String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
                     decryptedLinks.add(this.createDownloadlink(newURL));
                 } else if (cryptedLink.matches(patternLink_UP.pattern())) {
                     /*Uploaded.to links werden aus der action rausgelesen*/
-                    ArrayList<String> links = getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
+                    ArrayList<String> links = SimpleMatches.getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
                     for (int i = 0; i < links.size(); i++) {                        
                         decryptedLinks.add(this.createDownloadlink(links.get(i)));
                     }

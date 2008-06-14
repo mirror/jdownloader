@@ -22,13 +22,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -137,9 +139,9 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            String filename = getSimpleMatch(requestInfo, PATTERN_FILENAME, 0);
-            String[] sizev = getSimpleMatches(requestInfo, PATTERN_FILESIZE);
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            String filename = SimpleMatches.getSimpleMatch(requestInfo, PATTERN_FILENAME, 0);
+            String[] sizev = SimpleMatches.getSimpleMatches(requestInfo, PATTERN_FILESIZE);
             double size = Double.parseDouble(sizev[0].trim());
             String type = sizev[1].trim().toLowerCase();
             int filesize = 0;
@@ -168,7 +170,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
             switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
                 http://www.share-online.biz/download.php?id=D90258d485
                 logger.info(requestInfo + "");
                 if(requestInfo.getLocation()!=null){
@@ -177,7 +179,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                dlink = JDUtilities.Base64Decode(getSimpleMatch(requestInfo, PATTERN_DLINK, 0));
+                dlink = JDUtilities.Base64Decode(SimpleMatches.getSimpleMatch(requestInfo, PATTERN_DLINK, 0));
              
                 return step;
 
@@ -187,7 +189,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
             case PluginStep.STEP_DOWNLOAD:
 
-                requestInfo = getRequestWithoutHtmlCode(new URL(dlink), requestInfo.getCookie(), null, false);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(dlink), requestInfo.getCookie(), null, false);
                 if(requestInfo.getLocation()!=null){
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setParameter(requestInfo.getLocation().substring(requestInfo.getLocation().lastIndexOf("=")+1));

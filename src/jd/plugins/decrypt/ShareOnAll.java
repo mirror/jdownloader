@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -92,11 +94,11 @@ public class ShareOnAll extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 parameter = parameter.replace("\\?.*", "");
-                URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + getFirstMatch(parameter, Pattern.compile("http://.*?shareonall.com/(.*)", Pattern.CASE_INSENSITIVE), 1));
-                RequestInfo reqinfo = getRequest(url);
+                URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + SimpleMatches.getFirstMatch(parameter, Pattern.compile("http://.*?shareonall.com/(.*)", Pattern.CASE_INSENSITIVE), 1));
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
                 // Links herausfiltern
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
                 progress.setRange(links.size());
                 for (int i = 0; i < links.size(); i++) {
                     if (checkLink(links.get(i).get(0))) decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));

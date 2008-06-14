@@ -6,11 +6,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
+import jd.parser.HTMLParser;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -84,7 +87,7 @@ public class Wordpress extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
                 /* Defaultpasswörter der Seite setzen */
                 for (int j = 0; j < defaultpasswords.size(); j++) {
@@ -102,7 +105,7 @@ public class Wordpress extends PluginForDecrypt {
                 ArrayList<String> password = null;
                 /* Passwort suchen */
                 for (int i = 0; i < passwordpattern.size(); i++) {
-                    password = getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
+                    password = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
                             /* logger.info("PW: " + password.get(ii)); */
@@ -112,12 +115,12 @@ public class Wordpress extends PluginForDecrypt {
                     }
                 }
                 /* Alle Parts suchen */
-                ArrayList<String> links = getAllSimpleMatches(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE), 2);
+                ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE), 2);
                 for (int i = 0; i < links.size(); i++) {
                     try {
                         if (links.get(i).matches(".*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts?[\\s\\d]*?).*")) {
-                            String lnk = Plugin.getHttpLinks(links.get(i), parameter)[0];
-                            if (!new Regexp(lnk, patternSupported).matches()) {
+                            String lnk = HTMLParser.getHttpLinks(links.get(i), parameter)[0];
+                            if (!new Regex(lnk, patternSupported).matches()) {
                                 /* logger.info("ADD: " + lnk); */
                                 decryptedLinks.add(this.createDownloadlink(lnk));
                             }

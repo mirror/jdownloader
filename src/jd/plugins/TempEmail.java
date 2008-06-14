@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.parser.Regex;
+
 /**
  * @author jDTeam
  *
@@ -42,8 +44,8 @@ public class TempEmail {
 	public String[][] getMailInfos() throws MalformedURLException, IOException {
 		if(emails!=null)
 		return emails;
-		RequestInfo requestInfo = Plugin.getRequest(new URL("http://mailin8r.com/maildir.jsp?email="+emailname));
-		emails = new Regexp(requestInfo.getHtmlCode(), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
+		RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com/maildir.jsp?email="+emailname));
+		emails = new Regex(requestInfo.getHtmlCode(), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
 		return emails;
 	}
 	/**
@@ -57,7 +59,7 @@ public class TempEmail {
 	{
 		if(getEmailAdress()==null || emails.length<=index)
 		return null;
-		RequestInfo requestInfo = Plugin.getRequest(new URL("http://mailin8r.com"+emails[index][1].replaceFirst("showmail", "showmail2")));
+		RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com"+emails[index][1].replaceFirst("showmail", "showmail2")));
 		return requestInfo.getHtmlCode();
 	}
 	/**

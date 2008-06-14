@@ -27,7 +27,10 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -172,9 +175,9 @@ public class Netloadin extends PluginForHost {
                         logger.info("Intern: " + END_OF_DOWNLOAD_LIMIT + " - " + System.currentTimeMillis());
                         
                         
-                        requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
+                        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                         this.sessionID = requestInfo.getCookie();
-                        String url = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
+                        String url = "http://" + HOST + "/" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                         url = url.replaceAll("\\&amp\\;", "&");
                         
                         if(requestInfo.containsHTML(FILE_NOT_FOUND)) {
@@ -201,7 +204,7 @@ public class Netloadin extends PluginForHost {
                             return step;
                         }
                         logger.info(url);
-                        requestInfo = getRequest(new URL(url), sessionID, null, true);
+                        requestInfo = HTTP.getRequest(new URL(url), sessionID, null, true);
                         
                         if(requestInfo.containsHTML(FILE_DAMAGED)) {
                             logger.warning("File is on a damaged server");
@@ -223,9 +226,9 @@ public class Netloadin extends PluginForHost {
                             return step;
                         }
                         // logger.info(requestInfo.getHtmlCode());
-                        this.captchaURL = "http://" + HOST + "/share/includes/captcha.php?t=" + getSimpleMatch(requestInfo.getHtmlCode(), CAPTCHA_URL, 0);
-                        this.fileID = this.getInputHiddenFields(requestInfo.getHtmlCode()).get("file_id");
-                        this.postURL = "http://" + HOST + "/" + getSimpleMatch(requestInfo.getHtmlCode(), POST_URL, 0);
+                        this.captchaURL = "http://" + HOST + "/share/includes/captcha.php?t=" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), CAPTCHA_URL, 0);
+                        this.fileID = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode()).get("file_id");
+                        this.postURL = "http://" + HOST + "/" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), POST_URL, 0);
                         logger.info(captchaURL + " - " + fileID + " - " + postURL);
                         if (captchaURL == null || fileID == null || postURL == null) {
                             if (requestInfo.getHtmlCode().indexOf("download_load.tpl") >= 0) {
@@ -246,7 +249,7 @@ public class Netloadin extends PluginForHost {
                         
                         
                         
-                        requestInfo = postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + (String) steps.get(1).getParameter() + "&start=", false);
+                        requestInfo = HTTP.postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + (String) steps.get(1).getParameter() + "&start=", false);
                         if(requestInfo.containsHTML(FILE_NOT_FOUND)) {
                         	step.setStatus(PluginStep.STATUS_ERROR);
                         	downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
@@ -268,7 +271,7 @@ public class Netloadin extends PluginForHost {
                         if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
                             step.setStatus(PluginStep.STATUS_ERROR);
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                            waitTime = Long.parseLong(getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
+                            waitTime = Long.parseLong(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
                             waitTime = waitTime*10L;
                             step.setParameter(waitTime);
                             END_OF_DOWNLOAD_LIMIT=System.currentTimeMillis()+waitTime;
@@ -279,7 +282,7 @@ public class Netloadin extends PluginForHost {
                             downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                             return step;
                         }
-                        this.finalURL = getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
+                        this.finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
                         return step;
                     }
                 case PluginStep.STEP_PENDING:
@@ -292,7 +295,7 @@ public class Netloadin extends PluginForHost {
                     catch (InterruptedException e) {
                     }
                     File file = this.getLocalCaptchaFile(this);
-                    requestInfo = getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
                     if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                         logger.severe("Captcha donwload failed: " + captchaURL);
                         step.setParameter(null);
@@ -307,16 +310,12 @@ public class Netloadin extends PluginForHost {
                     }
                 case PluginStep.STEP_DOWNLOAD:
                     logger.info("Download " + finalURL);
-                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
                     logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+            
                    dl = new RAFDownload(this, downloadLink,  requestInfo.getConnection());
                     dl.startDownload();
                     return step;
@@ -348,7 +347,7 @@ public class Netloadin extends PluginForHost {
                
                 //SessionID holen
                 
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
                 this.sessionID = requestInfo.getCookie();
                 logger.finer("sessionID: "+sessionID);
                 
@@ -378,11 +377,11 @@ public class Netloadin extends PluginForHost {
                 }
                     
                    //Login Cookie abholen
-                    requestInfo= postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getDownloadURL(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
+                    requestInfo= HTTP.postRequest(new URL("http://" + HOST + "/index.php"),sessionID,downloadLink.getDownloadURL(),null,"txtuser="+user+"&txtpass="+pass+"&txtcheck=login&txtlogin=", false);
                     this.userCookie= requestInfo.getCookie();
                     
                     //Vorbereitungsseite laden
-                    requestInfo=getRequest(new URL("http://" + HOST + "/"+requestInfo.getLocation()), sessionID+" "+userCookie, null, false);
+                    requestInfo=HTTP.getRequest(new URL("http://" + HOST + "/"+requestInfo.getLocation()), sessionID+" "+userCookie, null, false);
                     
                     if(requestInfo.containsHTML(FILE_DAMAGED)) {
                         logger.warning("File is on a damaged server");
@@ -403,7 +402,7 @@ public class Netloadin extends PluginForHost {
                         logger.info("Directdownload aktiviert");
                         finalURL=requestInfo.getLocation();
                     }else{
-                    this.finalURL = getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
+                    this.finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
                     }
                     if(finalURL==null){ 
                         logger.info(requestInfo+"");
@@ -431,7 +430,7 @@ public class Netloadin extends PluginForHost {
             case PluginStep.STEP_DOWNLOAD:
                 //logger.info("Download " + finalURL);
            
-                requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
                 int length = requestInfo.getConnection().getContentLength();
                 downloadLink.setDownloadMax(length);
                 logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
@@ -481,7 +480,7 @@ public class Netloadin extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), null, null, false);
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, false);
             
             String name = downloadLink.getName();
             if (name.toLowerCase().matches(".*\\..{1,5}\\.htm$")) name = name.replaceFirst("\\.htm$", "");

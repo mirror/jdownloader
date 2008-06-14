@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -79,11 +81,11 @@ public class Rapidsafenet extends PluginForDecrypt {
             progress.setRange(1);
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
                 // Links auslesen und konvertieren
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
+                decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
             }
             catch (IOException e) {
                 e.printStackTrace();

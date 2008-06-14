@@ -28,10 +28,12 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 
@@ -144,32 +146,32 @@ public class YoumirrorBiz extends PluginForDecrypt {
 				Scriptable scope = null;
 
 				URL url = new URL(parameter);
-				RequestInfo reqinfo = getRequest(url, null, null, true);
+				RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
 
 				//just to fetch the link count
-				String[] links = new Regexp(reqinfo.getHtmlCode(), patternLink )
+				String[] links = new Regex(reqinfo.getHtmlCode(), patternLink )
 						.getMatches(1);
 				progress.setRange(links.length);
 				
-				String[] rowCandidates = new Regexp(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
+				String[] rowCandidates = new Regex(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
 				
 				for (String rowCandiate : rowCandidates) {
 					
 					//check if there is a link in rowCandidate
-					String link = new Regexp(rowCandiate, patternLink).getFirstMatch(1);
+					String link = new Regex(rowCandiate, patternLink).getFirstMatch(1);
 
 					if(null == link){
 						continue;
 					}
 					
 					//check if there is a filename in row Candidate
-					String fileName = new Regexp(rowCandiate, patternFileName).getFirstMatch();
+					String fileName = new Regex(rowCandiate, patternFileName).getFirstMatch();
 					
 					URL mirrorUrl = new URL("http://" + (getHost() + link));
-					RequestInfo mirrorInfo = getRequest(mirrorUrl, null, null,
+					RequestInfo mirrorInfo = HTTP.getRequest(mirrorUrl, null, null,
 							true);
 
-					ArrayList<ArrayList<String>> groups = getAllSimpleMatches(
+					ArrayList<ArrayList<String>> groups = SimpleMatches.getAllSimpleMatches(
 							mirrorInfo.getHtmlCode(), patternMirrorLink);
 
 					for (ArrayList<String> pair : groups) {
@@ -185,7 +187,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 								+ pair.get(0));
 						
 						//System.out.println(fileURL);
-						RequestInfo fileInfo = getRequest(fileURL, null, null,
+						RequestInfo fileInfo = HTTP.getRequest(fileURL, null, null,
 								true);
 
 						if (null == cx) {
@@ -195,12 +197,12 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
 							// fetch the file that contains the JavaScript
 							// Implementation of DES
-							String jsDESLink = new Regexp(fileInfo
+							String jsDESLink = new Regex(fileInfo
 									.getHtmlCode(), patternJSDESFile)
 									.getFirstMatch();
 							URL jsDESURL = new URL("http://" + getHost() + "/"
 									+ jsDESLink);
-							RequestInfo desInfo = getRequest(jsDESURL);
+							RequestInfo desInfo = HTTP.getRequest(jsDESURL);
 
 							// compile the script and load it into context and
 							// scope
@@ -226,7 +228,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 						// fetch the result of the javascript interpreter and
 						// finally find the link :)
 						String iframe = Context.toString(result);
-						String hosterURL = new Regexp(iframe,
+						String hosterURL = new Regex(iframe,
 								patternHosterIframe).getFirstMatch();
 						
 						if( null == hosterURL ){

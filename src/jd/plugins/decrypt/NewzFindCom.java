@@ -21,17 +21,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class NewzFindCom extends PluginForDecrypt {
 
@@ -85,11 +84,11 @@ public class NewzFindCom extends PluginForDecrypt {
     		try {
     			
     			String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/")+1);
-    			RequestInfo reqinfo = getRequest(new URL(url));
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<link title=\"°\"");
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(url));
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<link title=\"°\"");
                 
-    			reqinfo = getRequest(new URL(parameter));
-    			Vector<String> pws = findPasswords(reqinfo.getHtmlCode());
+    			reqinfo = HTTP.getRequest(new URL(parameter));
+    			Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
                 default_password.addAll(pws);
                 
     			progress.setRange(links.size());

@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -80,14 +82,14 @@ public class AnimeANet extends PluginForDecrypt {
             
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
 
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=javascript:reqLink(\'°\')>");
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=javascript:reqLink(\'°\')>");
     			progress.setRange( links.size());
     			
     			for(int i=0; i<links.size(); i++) {
-    				reqinfo = postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links.get(i).get(0)), "submit=Open");
-    				decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "width=\"12\" height=\"11\" /><a href=\"", "\" target=\"_blank\">Download")));
+    				reqinfo = HTTP.postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links.get(i).get(0)), "submit=Open");
+    				decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "width=\"12\" height=\"11\" /><a href=\"", "\" target=\"_blank\">Download")));
     				progress.increase(1);
     			}
     			

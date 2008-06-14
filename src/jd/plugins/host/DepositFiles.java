@@ -25,8 +25,10 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.parser.Form;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -169,7 +171,7 @@ public class DepositFiles extends PluginForHost {
                     downloadLink.setUrlDownload(link);
 
                     finalURL = link;
-                    requestInfo = getRequest(new URL(finalURL));
+                    requestInfo = HTTP.getRequest(new URL(finalURL));
                     cookie = requestInfo.getCookie();
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                         logger.severe("File already is in progress. " + downloadLink.getFileOutput());
@@ -213,17 +215,17 @@ public class DepositFiles extends PluginForHost {
                     cookie += "; " + requestInfo.getCookie();
                   
                  
-                    finalURL = getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_PREMIUM_REDIRECT, 0);
-                    requestInfo = getRequest(new URL(finalURL), cookie, finalURL, true);
+                    finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_PREMIUM_REDIRECT, 0);
+                    requestInfo = HTTP.getRequest(new URL(finalURL), cookie, finalURL, true);
                     if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
 
                         String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-                        requestInfo = postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
+                        requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
 
                     }else{
                         logger.info(requestInfo.getHtmlCode());
                     }
-                    finalURL = getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL, 0);
+                    finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL, 0);
                    
                     if (finalURL == null) {
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -245,7 +247,7 @@ public class DepositFiles extends PluginForHost {
 
                 case PluginStep.STEP_DOWNLOAD:
 
-                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), cookie, finalURL, true);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), cookie, finalURL, true);
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
 
@@ -314,7 +316,7 @@ public class DepositFiles extends PluginForHost {
                     downloadLink.setUrlDownload(link);
 
                     finalURL = link;
-                    requestInfo = getRequest(new URL(finalURL));
+                    requestInfo = HTTP.getRequest(new URL(finalURL));
 
                     if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
 
@@ -354,12 +356,12 @@ public class DepositFiles extends PluginForHost {
 
                     }
 
-                    requestInfo = postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "x=15&y=7&gateway_result=" + getFirstMatch(requestInfo.getHtmlCode(), HIDDENPARAM, 1), true);
+                    requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "x=15&y=7&gateway_result=" + SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), HIDDENPARAM, 1), true);
 
                     if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
 
                         String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-                        requestInfo = postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
+                        requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
 
                     }
 
@@ -374,7 +376,7 @@ public class DepositFiles extends PluginForHost {
                     }
                     else {
 
-                        icid = getFirstMatch(requestInfo.getHtmlCode(), ICID, 1);
+                        icid = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), ICID, 1);
 
                         if (icid == null) {
 
@@ -437,7 +439,7 @@ public class DepositFiles extends PluginForHost {
 
                     }
 
-                    requestInfo = postRequestWithoutHtmlCode(new URL(finalURL + "#"), cookie, finalURL, "img_code=" + code + "&icid=" + icid + "&file_password&gateway_result=1&go=1", true);
+                    requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(finalURL + "#"), cookie, finalURL, "img_code=" + code + "&icid=" + icid + "&file_password&gateway_result=1&go=1", true);
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
 
@@ -463,13 +465,7 @@ public class DepositFiles extends PluginForHost {
 
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
-                    if (!hasEnoughHDSpace(downloadLink)) {
-
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-
-                    }
+          
 
                    dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
@@ -521,7 +517,7 @@ public class DepositFiles extends PluginForHost {
 
         try {
 
-            requestInfo = getRequestWithoutHtmlCode(new URL(link), null, null, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, null, false);
 
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 return false;
@@ -529,10 +525,10 @@ public class DepositFiles extends PluginForHost {
             else {
 
                 if (requestInfo.getConnection().getHeaderField("Location") != null) {
-                    requestInfo = getRequest(new URL("http://" + HOST + requestInfo.getConnection().getHeaderField("Location")), null, null, true);
+                    requestInfo = HTTP.getRequest(new URL("http://" + HOST + requestInfo.getConnection().getHeaderField("Location")), null, null, true);
                 }
                 else {
-                    requestInfo = readFromURL(requestInfo.getConnection());
+                    requestInfo = HTTP.readFromURL(requestInfo.getConnection());
                 }
 
                 // Datei geloescht?
@@ -540,9 +536,9 @@ public class DepositFiles extends PluginForHost {
                     return false;
                 }
 
-                String fileName = getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1);
+                String fileName = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_NAME, 1);
                 downloadLink.setName(fileName);
-                String fileSizeString = getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_SIZE, 1);
+                String fileSizeString = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILE_INFO_SIZE, 1);
                 int indexOfSpace = fileSizeString.length();
                 if (fileSizeString.indexOf("&nbsp;") != -1) indexOfSpace = fileSizeString.indexOf("&nbsp;");
                 double fileSize = Double.parseDouble(fileSizeString.substring(0, indexOfSpace));

@@ -24,13 +24,14 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -168,11 +169,11 @@ public class RapidShareDe extends PluginForHost {
 //                    return step;
 //                }
                 try {
-                    waittime = Long.parseLong(new Regexp(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
+                    waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
                 }
                 catch (Exception e) {
                     try {
-                        waittime = Long.parseLong(new Regexp(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
+                        waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                     }
@@ -186,14 +187,14 @@ public class RapidShareDe extends PluginForHost {
                 step.setParameter((long) waittime);
                 return step;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
-                String ticketCode = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
+                String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
                 RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
                 req.setConnection(requestInfo.getConnection());
                 form = Form.getForms(req)[0];
                 captchaFile = getLocalCaptchaFile(this, ".png");
-                String captchaAdress = new Regexp(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
+                String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
                 logger.info("CaptchaAdress:" + captchaAdress);
-                boolean fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
+                boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
                 if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                     logger.severe("Captcha not found");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -226,11 +227,7 @@ public class RapidShareDe extends PluginForHost {
                 HTTPConnection urlConnection = form.getConnection();
                 downloadLink.setName(getFileNameFormHeader(urlConnection));
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+          
                dl = new RAFDownload(this, downloadLink, urlConnection);
 
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
@@ -254,7 +251,7 @@ public class RapidShareDe extends PluginForHost {
         if (forms.length < 2) return false;
         requestInfo = forms[1].getRequestInfo();
         try {
-            String[][] regExp = new Regexp(requestInfo.getHtmlCode(), "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
+            String[][] regExp = new Regex(requestInfo.getHtmlCode(), "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
             downloadLink.setDownloadMax(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
             return true;

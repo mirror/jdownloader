@@ -23,6 +23,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
@@ -84,7 +86,7 @@ public class CRequest {
             for (int i = 0; i < bCookie.length; i++) {
                 if (!bCookie[i].matches("[\\s]*")) {
                     try {
-                        String[] vals = new Regexp(bCookie[i], "(.*?\\=)(.*)").getMatches()[0];
+                        String[] vals = new Regex(bCookie[i], "(.*?\\=)(.*)").getMatches()[0];
                         clist.put(vals[0], vals[1]);
                     } catch (Exception e) {
                         clist.put(bCookie[i], "");
@@ -111,9 +113,9 @@ public class CRequest {
         try {
             URL mURL = new URL(url);
             if (withHtmlCode)
-                setRequestInfo(Plugin.getRequest(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
+                setRequestInfo(HTTP.getRequest(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
             else
-                setRequestInfo(Plugin.getRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
+                setRequestInfo(HTTP.getRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -137,9 +139,9 @@ public class CRequest {
         try {
             URL mURL = new URL(url);
             if (withHtmlCode)
-                setRequestInfo(Plugin.postRequest(mURL, getCookie(mURL.getHost()), urlToString(), null, parameter, redirect));
+                setRequestInfo(HTTP.postRequest(mURL, getCookie(mURL.getHost()), urlToString(), null, parameter, redirect));
             else
-                setRequestInfo(Plugin.postRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), parameter, redirect));
+                setRequestInfo(HTTP.postRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), parameter, redirect));
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -185,7 +187,7 @@ public class CRequest {
      * @param pattern
      * @return
      */
-    public Regexp getRegexp(String pattern) {
+    public Regex getRegexp(String pattern) {
         try {
             return requestInfo.getRegexp(pattern);
         } catch (Exception e) {

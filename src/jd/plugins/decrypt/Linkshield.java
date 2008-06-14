@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -80,10 +82,10 @@ public class Linkshield extends PluginForDecrypt {
     			
 				progress.setRange( 1);
 				
-				RequestInfo reqinfo = getRequest(new URL(parameter), null, null, true);
+				RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
 
 			progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink((getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
+    			decryptedLinks.add(this.createDownloadlink((SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
     			
     			// Decrypten abschliessen
     			

@@ -23,7 +23,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -77,12 +79,12 @@ public class NixPopOrg extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
 
-    			String links[] = getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
+    			String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
     			
     			progress.setRange(links.length);
-    			this.default_password.add(getBetween(reqinfo.getHtmlCode(), "<p><strong>Passwort</strong>:", "<").trim());
+    			this.default_password.add(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><strong>Passwort</strong>:", "<").trim());
     			
     			// Link der Liste hinzufügen
     			for(int i=0; i<links.length; i++) {

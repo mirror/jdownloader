@@ -24,11 +24,13 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -86,11 +88,11 @@ public class ShareBaseDe extends PluginForHost {
         
     	try {
         	
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            String fileSize = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
-            boolean sim_dl = new Regexp(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
-            boolean dl_limit = new Regexp(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+            String fileSize = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
+            boolean sim_dl = new Regex(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
+            boolean dl_limit = new Regex(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
             //Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
                 
@@ -140,9 +142,9 @@ public class ShareBaseDe extends PluginForHost {
             
                 case PluginStep.STEP_PAGE:
                 	
-                    requestInfo = getRequest(downloadUrl);
+                    requestInfo = HTTP.getRequest(downloadUrl);
                
-                    String fileName = JDUtilities.htmlDecode(new Regexp(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+                    String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
                     
                     if(requestInfo.containsHTML(DOWLOAD_RUNNING)){
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -153,9 +155,9 @@ public class ShareBaseDe extends PluginForHost {
                     // Download-Limit erreicht
                     if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
                     	
-                        String hours = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 0);
-                        String minutes = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 1);
-                        String seconds = getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 2);
+                        String hours = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 0);
+                        String minutes = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 1);
+                        String seconds = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 2);
                     	int waittime = 0;
                     	
                         if (hours != null && minutes != null && seconds != null) {
@@ -194,7 +196,7 @@ public class ShareBaseDe extends PluginForHost {
                 case PluginStep.STEP_DOWNLOAD:
                 	
                     try {
-                        requestInfo = postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
+                        requestInfo = HTTP.postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
                         finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         if (finishURL == null) {
@@ -217,11 +219,7 @@ public class ShareBaseDe extends PluginForHost {
                         downloadLink.setDownloadMax(length);
                         String filename = URLDecoder.decode(this.getFileNameFormHeader(urlConnection),"UTF-8");
                         downloadLink.setName(filename);
-                        if (!hasEnoughHDSpace(downloadLink)) {
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
+                    
                       
                         //Download starten
                        dl = new RAFDownload(this, downloadLink, urlConnection);

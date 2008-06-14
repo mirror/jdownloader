@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -84,9 +86,9 @@ public class FileFactoryFolder extends PluginForDecrypt {
     		
     		try {
     			
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
     			
-    			ArrayList<ArrayList<String>> ids = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
+    			ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
     			progress.setRange(ids.size());
     			
     			for ( int i=0; i<ids.size(); i++ ) {

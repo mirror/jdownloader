@@ -13,6 +13,9 @@ import java.util.logging.Logger;
 
 import jd.captcha.CES;
 import jd.config.SubConfiguration;
+import jd.parser.SimpleMatches;
+import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPPost;
 import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
@@ -108,6 +111,7 @@ public class CESClient implements Serializable {
     private Plugin plugin;
     private boolean banned;
     private boolean penaltyWarned=false;
+    private DownloadLink downloadLink;
 
     public CESClient(File captcha) {
         this.file = captcha;
@@ -132,7 +136,7 @@ public class CESClient implements Serializable {
     public void sendCaptchaWrong() {
         try {
 
-            RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
+            RequestInfo ri = HTTP.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Wrong=" + captchaID, true);
             if (checkBanned(ri)) return;
             config.setProperty(LASTEST_INSTANCE, this);
             printMessage(ri.getHtmlCode());
@@ -152,15 +156,15 @@ public class CESClient implements Serializable {
                 if (this.abortFlag == FLAG_ABORT_RECEIVING) {
                    return;
                 }
-                RequestInfo ri = Plugin.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
+                RequestInfo ri = HTTP.getRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"));
                 if (checkBanned(ri)) return;
                 printMessage(ri.getHtmlCode());
                 config.setProperty(LASTEST_INSTANCE, this);
                 // PATTERN_IMAGE
-                String img = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_IMAGE, 0);
+                String img = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), PATTERN_IMAGE, 0);
                 if (img != null) {
-                    String id = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_ID, 0);
-                    String state = Plugin.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_STATE, 0);
+                    String id = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_ID, 0);
+                    String state = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), PATTERN_CAPTCHA_STATE, 0);
 
                     printMessage(ri.getHtmlCode());
                     this.askUserForCode(server + img, id, state);
@@ -175,7 +179,7 @@ public class CESClient implements Serializable {
                 // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67618],
                 // [01.05.08 22:48, coalado, bla und so,
                 // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
-                ArrayList<ArrayList<String>> messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MESSAGES);
+                ArrayList<ArrayList<String>> messages = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MESSAGES);
                 boolean n = false;
                 for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
                     ArrayList<String> message = it.next();
@@ -195,7 +199,7 @@ public class CESClient implements Serializable {
                     config.setProperty(MESSAGES, savedMessages);
                     config.save();
                 }
-                messages = Plugin.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_SYSTEMMESSAGE);
+                messages = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_SYSTEMMESSAGE);
                 n = false;
                 for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
                     ArrayList<String> tmp = it.next();
@@ -224,7 +228,7 @@ public class CESClient implements Serializable {
 
                 String[] answer;
 
-                answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_QUEUE);
+                answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), PATTERN_QUEUE);
 
                 if (answer != null) {
                     this.balance = answer[1];
@@ -312,7 +316,7 @@ public class CESClient implements Serializable {
     }
 
     private void printMessage(String htmlCode) {
-        String msg = Plugin.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
+        String msg = SimpleMatches.getSimpleMatch(htmlCode, PATTERN_MESSAGE, 0);
         if (msg == null) msg = htmlCode;
         msg = msg.replaceAll(user, "*****");
         msg = msg.replaceAll(pass, "*****");
@@ -342,7 +346,7 @@ public class CESClient implements Serializable {
         nick = JDUtilities.urlEncode(HTMLEntities.htmlentities(JDUtilities.htmlDecode(nick)));
 
         try {
-            RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass), "State=&Message=" + message + "&ToNick=" + nick + "&Nick=" + user + "&Pass=" + pass);
+            RequestInfo ri = HTTP.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass), "State=&Message=" + message + "&ToNick=" + nick + "&Nick=" + user + "&Pass=" + pass);
             if (checkBanned(ri)) return false;
             if (ri.containsHTML(ERROR_MESSAGE_NOT_SENT)) { return false;
 
@@ -376,7 +380,7 @@ public class CESClient implements Serializable {
         if (code != null && code.length() > 0) {
             try {
                 penaltyWarned=false;
-                RequestInfo ri = Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "Code=" + code + "&enter=OK&Captcha=" + id + "&State=" + state + "&Nick=" + user + "&Pass=" + pass);
+                RequestInfo ri = HTTP.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "Code=" + code + "&enter=OK&Captcha=" + id + "&State=" + state + "&Nick=" + user + "&Pass=" + pass);
                 if (checkBanned(ri)) return;
                 config.setProperty(LASTEST_INSTANCE, this);
                 printMessage(ri.getHtmlCode());
@@ -403,7 +407,7 @@ public class CESClient implements Serializable {
         this.abortFlag = FLAG_ABORT_RECEIVING;
         
         try {
-           this.printMessage( Plugin.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass).getHtmlCode());
+           this.printMessage( HTTP.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass).getHtmlCode());
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -424,30 +428,30 @@ public class CESClient implements Serializable {
         RequestInfo ri;
         try {
 
-            ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
+            ri = HTTP.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=" + pass, true);
             if (checkBanned(ri)) return false;
-            String error = Plugin.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
+            String error = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
             printMessage(ri.getHtmlCode());
             this.statusText = error;
             if (error != null) {
 
             return false; }
 
-            String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_TITLE);
+            String[] answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), PATTERN_TITLE);
             this.cesVersion = answer[0];
             this.cesDate = answer[1];
-            answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_RECEIVE);
+            answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_RECEIVE);
             this.balance = answer[0];
             this.receivedCaptchas = answer[1];
             this.recognizedCaptchas = answer[2];
             this.receiveErrors = answer[3];
             this.receiveErrorsPercent = answer[4];
-            answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_SENT);
+            answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_SENT);
             this.sentCaptchasNum = answer[0];
             this.sendRecognized = answer[1];
             this.sentErrors = answer[2];
             this.sendErrorsPercent = answer[3];
-            answer = Plugin.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_QUEUE);
+            answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), PATTERN_STATS_QUEUE);
 
             this.queueLength = answer[0];
 
@@ -469,11 +473,11 @@ public class CESClient implements Serializable {
 
         RequestInfo ri;
         try {
-            ri = Plugin.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=RapidByeByeBye", true);
-            String pass = Plugin.getSimpleMatch(ri.getHtmlCode(), "You password is <b>°<b></h2>", 0);
+            ri = HTTP.postRequest(new URL(server), null, null, null, "Nick=" + user + "&Pass=RapidByeByeBye", true);
+            String pass = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "You password is <b>°<b></h2>", 0);
             if (pass == null) {
 
-                String error = Plugin.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
+                String error = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<font color=\"red\"><h2>°</h2></font>", 0);
                 this.statusText = error;
             }
             return pass;
@@ -501,18 +505,27 @@ public class CESClient implements Serializable {
             logger.info("WAIT FOR REC");
             while (true) {
                 config.setProperty(LASTEST_INSTANCE, this);
-                Thread.sleep(CHECK_INTERVAL);
+             
+                long wait=CHECK_INTERVAL;
+                while(wait>0){
+                    if(getDownloadLink()!=null&&getDownloadLink().getDownloadLinkController().isAborted()){
+                        return null;
+                    }
+                    Thread.sleep(1000);
+                    wait-=1000;
+                    
+                }
                 if (System.currentTimeMillis() - startTime > MAX_TIME) {
                     cesStatus = false;
                     statusText = "Timeout of " + MAX_TIME;
                     return null;
                 }
-                RequestInfo ri = Plugin.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Test=" + captchaID, true);
+                RequestInfo ri = HTTP.postRequest(new URL(server + "test.php"), null, null, null, "Nick=" + user + "&Pass=" + pass + "&Test=" + captchaID, true);
                 if (checkBanned(ri)) return null;
                 printMessage(ri.getHtmlCode());
                 if (ri.containsHTML("dvk_ok002")) {
 
-                    String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok002; AccessCode(°), price ° point, \"°\" recognized in ° seconds early, balance (°).<br></body></html>");
+                    String[] answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok002; AccessCode(°), price ° point, \"°\" recognized in ° seconds early, balance (°).<br></body></html>");
                     this.cesVersion = answer[0];
                     this.cesDate = answer[1];
                     this.cesStatus = true;
@@ -579,7 +592,7 @@ public class CESClient implements Serializable {
             up.close();
             printMessage(ri.getHtmlCode());
             if (ri.containsHTML("dvk_ok001")) {
-                String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok°; Captcha is loaded with ID(°), your balance (°), please wait recognition...<br></body></html>");
+                String[] answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v° (°) by DVK<br>dvk_ok°; Captcha is loaded with ID(°), your balance (°), please wait recognition...<br></body></html>");
                 this.cesVersion = answer[0];
                 this.cesDate = answer[1];
                 this.cesStatus = true;
@@ -589,7 +602,7 @@ public class CESClient implements Serializable {
                 return true;
             } else {
                 this.cesStatus = false;
-                String[] answer = Plugin.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08 02:00) by DVK<br>dvk_°;°<br></body></html>");
+                String[] answer = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "<html><head></head><body>CaptchaExchangeServer - v2.06 (29-04-08 02:00) by DVK<br>dvk_°;°<br></body></html>");
                 this.cesVersion = answer[0];
                 this.cesDate = answer[1];
 
@@ -769,6 +782,15 @@ public class CESClient implements Serializable {
 
     public boolean isBanned() {
         return banned;
+    }
+
+    public void setDownloadLink(DownloadLink downloadLink) {
+       this.downloadLink=downloadLink;
+        
+    }
+
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
     }
 
 }

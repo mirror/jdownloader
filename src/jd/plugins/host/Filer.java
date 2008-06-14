@@ -23,7 +23,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -100,20 +102,20 @@ public class Filer extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
             switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
-                String strId = getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
+                String strId = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
                 if (strId != null) {
                     int id = Integer.parseInt(strId);
                     url = downloadLink.getDownloadURL().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
                     url = url.replaceFirst("\\/filename\\/.*", "");
-                    requestInfo = getRequest(new URL(url));
+                    requestInfo = HTTP.getRequest(new URL(url));
                     // Datei geloescht?
                     if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND2)) { return step; }
-                    ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
+                    ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
                     if (matches.size() < id) return step;
                     ArrayList<String> link = matches.get(id);
                     url = "http://www.filer.net" + link.get(0);
                     cookie = requestInfo.getCookie();
-                    requestInfo = getRequest(new URL(url));
+                    requestInfo = HTTP.getRequest(new URL(url));
                     if(cookie==null)cookie = requestInfo.getCookie();
                 } else
                     url = downloadLink.getDownloadURL();
@@ -121,7 +123,7 @@ public class Filer extends PluginForHost {
                 break;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 File file = this.getLocalCaptchaFile(this);
-                requestInfo = getRequestWithoutHtmlCode(new URL(CAPTCHAADRESS), cookie, url, false);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(CAPTCHAADRESS), cookie, url, false);
                 //cookie = requestInfo.getConnection().getHeaderField("Set-Cookie");
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha Download fehlgeschlagen: " + CAPTCHAADRESS);
@@ -136,8 +138,8 @@ public class Filer extends PluginForHost {
                 break;
             case PluginStep.STEP_PENDING:
                 String code = (String) steps.get(1).getParameter();
-                requestInfo = postRequest(new URL(url), cookie, url, null, "captcha=" + code + "&Download=Download", true);
-                dlink = getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD, 1);
+                requestInfo = HTTP.postRequest(new URL(url), cookie, url, null, "captcha=" + code + "&Download=Download", true);
+                dlink = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD, 1);
 
                 if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
                     logger.severe("Free User Limit reached");
@@ -153,7 +155,7 @@ public class Filer extends PluginForHost {
                     return step;
                 }
 
-                String strWaitTime = getFirstMatch(requestInfo.getHtmlCode(), WAITTIME, 1);
+                String strWaitTime = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), WAITTIME, 1);
                 if (strWaitTime != null) {
                     logger.severe("wait " + strWaitTime + " minutes");
                     waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
@@ -183,7 +185,7 @@ public class Filer extends PluginForHost {
                 break;
             case PluginStep.STEP_DOWNLOAD:
 
-                requestInfo = postRequestWithoutHtmlCode(new URL(dlink), cookie, url, "Download!=Download!", true);
+                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(dlink), cookie, url, "Download!=Download!", true);
                 if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
@@ -200,11 +202,7 @@ public class Filer extends PluginForHost {
                     return step;
                 }
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+        
                 dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                 dl.startDownload();
 
@@ -235,15 +233,15 @@ public class Filer extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            String strId = getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
+            String strId = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
             if (strId == null) return true;
             int id = Integer.parseInt(strId);
             url = downloadLink.getDownloadURL().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
             url = url.replaceFirst("\\/filename\\/.*", "");
-            requestInfo = getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url));
             // Datei geloescht?
             if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND2)) { return false; }
-            ArrayList<ArrayList<String>> matches = getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
+            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
             if (matches.size() < id) return false;
             ArrayList<String> link = matches.get(id);
             downloadLink.setName(link.get(1));

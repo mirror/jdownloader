@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -97,9 +99,9 @@ public class SafeTo extends PluginForDecrypt {
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);
-                RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 
-                String frameURL = getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
+                String frameURL = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
 
                 if (frameURL == null) {
                     logger.severe("Cannot find frame-URL!");
@@ -107,7 +109,7 @@ public class SafeTo extends PluginForDecrypt {
                 }
 
                 // frame aufrufen
-                reqinfo = getRequest(new URL(frameURL));
+                reqinfo = HTTP.getRequest(new URL(frameURL));
 
                 boolean password = false;
                 if (reqinfo.getHtmlCode().contains(PASSWORD)) password = true;
@@ -116,14 +118,14 @@ public class SafeTo extends PluginForDecrypt {
                 // gefunden)
                 while (true) {
                     // Im HTML-Code nach "file-ids"/"Form-Inputs" suchen
-                    fileIDs = getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_ID);
+                    fileIDs = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_ID);
 
                     // Passwort-Abfrage?
                     if (fileIDs.isEmpty() && password) {
                         // Passwort abfragen
                         String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
                         // Passwort senden
-                        reqinfo = postRequest(new URL(frameURL), "pw=" + pwd + "&chk=Check");
+                        reqinfo = HTTP.postRequest(new URL(frameURL), "pw=" + pwd + "&chk=Check");
                     }
                     else {
                         break;
@@ -132,7 +134,7 @@ public class SafeTo extends PluginForDecrypt {
                progress.setRange(fileIDs.size());
 
                 for (int i = 0; i < fileIDs.size(); i++) {
-                    reqinfo = getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
+                    reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
 
                     String newLink = reqinfo.getLocation();
 

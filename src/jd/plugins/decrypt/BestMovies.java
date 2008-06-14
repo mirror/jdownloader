@@ -22,8 +22,10 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -90,11 +92,11 @@ public class BestMovies extends PluginForDecrypt {
                     Vector<DownloadLink> links = loadCryptLinks(parameter, null, null);
                     if (links != null) decryptedLinks.addAll(links);
                 } else {
-                    RequestInfo ri = getRequest(new URL(parameter));
-                    String packageName = JDUtilities.htmlDecode(getSimpleMatch(ri, "<h1>°</h1>", 0));
-                    String password = JDUtilities.htmlDecode(getSimpleMatch(ri, " <p><strong>Passwort:</strong>°</p>", 0));
+                    RequestInfo ri = HTTP.getRequest(new URL(parameter));
+                    String packageName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(ri, "<h1>°</h1>", 0));
+                    String password = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(ri, " <p><strong>Passwort:</strong>°</p>", 0));
 
-                    ArrayList<String> matches = getAllSimpleMatches(ri, "http://crypt.best-movies.us/go.php?id=°\"", 1);
+                    ArrayList<String> matches = SimpleMatches.getAllSimpleMatches(ri, "http://crypt.best-movies.us/go.php?id=°\"", 1);
                     for (String match : matches) {
                         Vector<DownloadLink> links = loadCryptLinks("http://crypt.best-movies.us/go.php?id="+match, packageName, password);
                         if (links != null) decryptedLinks.addAll(links);
@@ -121,10 +123,10 @@ public class BestMovies extends PluginForDecrypt {
         fp.setPassword(pass);
 
         @SuppressWarnings("unused")
-        RequestInfo ri = getRequest(new URL(parameter));
-        String url = getSimpleMatch(ri, "document.write('°' frameborder=0", 0);
+        RequestInfo ri = HTTP.getRequest(new URL(parameter));
+        String url = SimpleMatches.getSimpleMatch(ri, "document.write('°' frameborder=0", 0);
         if (url == null) return null;
-        url = getSimpleMatch(url.replaceAll("'\\+'", ""), "<iframe src=\\'°\\", 0);
+        url = SimpleMatches.getSimpleMatch(url.replaceAll("'\\+'", ""), "<iframe src=\\'°\\", 0);
         // String url2=getSimpleMatch(ri,"<div style=\"display: none;\"><iframe
         // name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\"
         // src=\"°\"></iframe>",0);

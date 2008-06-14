@@ -27,11 +27,12 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.event.ControlEvent;
+import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -116,7 +117,7 @@ public class DistributeData extends ControlBroadcaster {
         if ( links.size() == 0 && !clipboard ) {
 
         	logger.info("No supported links found -> search for links in source code of all urls");
-        	String[] urls = Plugin.getHttpLinks(data, null);
+        	String[] urls = HTMLParser.getHttpLinks(data, null);
         	
         	if ( urls.length > 0 ) this.data = "";
         	
@@ -124,7 +125,7 @@ public class DistributeData extends ControlBroadcaster {
         		
                 try {
                 	
-					RequestInfo requestInfo = Plugin.getRequest(new URL(url));
+					RequestInfo requestInfo = HTTP.getRequest(new URL(url));
 					data += requestInfo.getHtmlCode() + " ";
 					
 				} catch (MalformedURLException e) {
@@ -165,7 +166,7 @@ public class DistributeData extends ControlBroadcaster {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
-        Vector<String> foundpassword = Plugin.findPasswords(data);
+        Vector<String> foundpassword = HTMLParser.findPasswords(data);
         
         // Zuerst wird data durch die Such Plugins geschickt.
         // decryptedLinks.addAll(handleSearchPlugins());
@@ -284,7 +285,7 @@ public class DistributeData extends ControlBroadcaster {
             String url = link.getDownloadURL();
 
             if (url != null) {
-                url = Plugin.getHttpLinkList(url);
+                url = HTMLParser.getHttpLinkList(url);
 
                 try {
                     url = URLDecoder.decode(url, "UTF-8");
@@ -340,7 +341,7 @@ public class DistributeData extends ControlBroadcaster {
      */
     private void reformDataString() {
         if (data != null) {
-            data = Plugin.getHttpLinkList(data);
+            data = HTMLParser.getHttpLinkList(data);
             
             try {
                 this.data = URLDecoder.decode(this.data, "UTF-8");

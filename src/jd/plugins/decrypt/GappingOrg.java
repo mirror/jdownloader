@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -84,16 +86,16 @@ public class GappingOrg extends PluginForDecrypt {
     			
     			if ( parameter.indexOf("index.php") != -1 ) {
     			
-    				RequestInfo request = getRequest(new URL(parameter));
-    				ArrayList<ArrayList<String>> ids = getAllSimpleMatches(
+    				RequestInfo request = HTTP.getRequest(new URL(parameter));
+    				ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(
     						request.getHtmlCode(), "href=\"http://gapping.org/file.php?id=°\" >");
     				
     				progress.setRange(ids.size());
     				
     				for ( int i=0; i<ids.size(); i++ ) {
     					
-    					request = getRequest(new URL("http://gapping.org/decry.php?fileid="+ids.get(i).get(0)));
-    					String link = getBetween(request.getHtmlCode(),"src=\"","\"");
+    					request = HTTP.getRequest(new URL("http://gapping.org/decry.php?fileid="+ids.get(i).get(0)));
+    					String link = SimpleMatches.getBetween(request.getHtmlCode(),"src=\"","\"");
     					decryptedLinks.add(this.createDownloadlink(link));
     					progress.increase(1);
     					
@@ -102,21 +104,21 @@ public class GappingOrg extends PluginForDecrypt {
     			} else if ( parameter.indexOf("file.php") != -1 ) {
     				
     				parameter = parameter.replace("file.php?id=","decry.php?fileid=");
-    				RequestInfo request = getRequest(new URL(parameter));
-    				String link = getBetween(request.getHtmlCode(),"src=\"","\"");
+    				RequestInfo request = HTTP.getRequest(new URL(parameter));
+    				String link = SimpleMatches.getBetween(request.getHtmlCode(),"src=\"","\"");
     				progress.setRange(1);
     				decryptedLinks.add(this.createDownloadlink(link));
     				progress.increase(1);
     				
     			}else{
-    			    RequestInfo request = getRequest(new URL(parameter));
+    			    RequestInfo request = HTTP.getRequest(new URL(parameter));
     			    
-    			  ArrayList<String> links = getAllSimpleMatches(request, "<a target=\"_blank\" onclick=\"image°.src='http://www.gapping.org/img/°';\" href=\"°http://gapping.org/d/°\" >", 4);
+    			  ArrayList<String> links = SimpleMatches.getAllSimpleMatches(request, "<a target=\"_blank\" onclick=\"image°.src='http://www.gapping.org/img/°';\" href=\"°http://gapping.org/d/°\" >", 4);
     			
     			  
     			  for(String link:links){
-    			     RequestInfo ri = getRequest(new URL("http://gapping.org/d/"+link));
-    			    String url=getSimpleMatch(ri, "<iframe height=° width=°  name=° src=\"°\" frameborder=\"0\"   />", 3);
+    			     RequestInfo ri = HTTP.getRequest(new URL("http://gapping.org/d/"+link));
+    			    String url=SimpleMatches.getSimpleMatch(ri, "<iframe height=° width=°  name=° src=\"°\" frameborder=\"0\"   />", 3);
     			    decryptedLinks.add(this.createDownloadlink(url.trim()));
     			  }
     			  logger.info("");

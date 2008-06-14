@@ -27,7 +27,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -111,15 +113,15 @@ public class MirrorItDe extends PluginForDecrypt {
     		Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		
     		try {
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), CRYPTLINK);
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), CRYPTLINK);
     			progress.setRange(links.size());
     			
     			for ( int i=0; i<links.size(); i++ ) {
-	    			reqinfo = getRequest(new URL("http://www.mirrorit.de/Out?id="
+	    			reqinfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id="
 	    					+ URLDecoder.decode(links.get(i).get(0), "UTF-8") + "&num=" + links.get(i).get(1)));
 	    			String link = reqinfo.getLocation();
-	    			reqinfo = getRequest(new URL(link));
+	    			reqinfo = HTTP.getRequest(new URL(link));
 	    			link = reqinfo.getLocation();
 	    			
 	    			if ( getHosterUsed(link) ) {

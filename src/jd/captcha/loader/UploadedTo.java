@@ -24,7 +24,8 @@ import java.net.URL;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import jd.plugins.Plugin;
+import jd.parser.SimpleMatches;
+import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -75,9 +76,9 @@ public class UploadedTo {
     private void load(File file, String link) {
 
         try {
-            ri = Plugin.getRequest(new URL(link));
+            ri = HTTP.getRequest(new URL(link));
 
-            String captchaURL = "http://uploaded.to/" + Plugin.getSimpleMatch(ri.getHtmlCode(), "<img name=\"img_captcha\" src=\"°\"", 0);
+            String captchaURL = "http://uploaded.to/" + SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<img name=\"img_captcha\" src=\"°\"", 0);
             JDUtilities.download(new File(file, getCaptchaName()), captchaURL);
 
             logger.info(captchaURL+" - "+new File(file, getCaptchaName()));

@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -93,17 +95,17 @@ public class CodedTo extends PluginForDecrypt {
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);
-                RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 
                 // solange bis Passwort eingegeben und Links gefunden wurden
                 while (true) {
                     // Im HTML-Code nach "files"/"Forms" suchen
-                    files = getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
+                    files = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILES);
 
                     // Passwort-Abfrage vorhanden und keine Links gefunden
                     if (reqinfo.getHtmlCode().contains(PASSWORD) && files.isEmpty()) {
                         String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                        reqinfo = postRequest(url, null, strURL, null, "pwd=" + pwd + "&pwsub=OK", true);
+                        reqinfo = HTTP.postRequest(url, null, strURL, null, "pwd=" + pwd + "&pwsub=OK", true);
                     }
                     else {
                         break; // keine Passwort-Abfrage
@@ -114,10 +116,10 @@ public class CodedTo extends PluginForDecrypt {
                 progress.setRange(files.size());
 
                 for (int i = 0; i < files.size(); i++) {
-                    reqinfo = getRequest(new URL("http://www.coded.to/down.php?id=" + files.get(i).get(0)));
+                    reqinfo = HTTP.getRequest(new URL("http://www.coded.to/down.php?id=" + files.get(i).get(0)));
 
                     String html = JDUtilities.htmlDecode(reqinfo.getHtmlCode());
-                    String newLink = getSimpleMatch(html, LINK, 0);
+                    String newLink = SimpleMatches.getSimpleMatch(html, LINK, 0);
 
                     decryptedLinks.add(this.createDownloadlink(newLink));
                     progress.increase(1);

@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -75,12 +77,12 @@ public class DipurlCom extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
     			
     			progress.setRange( 1);
     			
     		progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink(getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\"")));
+    			decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\"")));
     			
     			// Decrypt abschliessen
     			

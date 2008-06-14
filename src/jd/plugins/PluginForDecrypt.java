@@ -25,6 +25,7 @@ import java.util.Vector;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.parser.SimpleMatches;
 import jd.utils.JDUtilities;
 
 /**
@@ -176,7 +177,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @return
      */
     public Vector<String> getDecryptableLinks(String data) {
-        Vector<String> hits = getMatches(data, getSupportedLinks());
+        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
         if (hits != null && hits.size() > 0) {
 
             for (int i = hits.size() - 1; i >= 0; i--) {

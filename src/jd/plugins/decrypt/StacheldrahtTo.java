@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -78,15 +80,15 @@ public class StacheldrahtTo extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             
             try {
-                RequestInfo ri = getRequest(new URL(parameter));
+                RequestInfo ri = HTTP.getRequest(new URL(parameter));
                 String cookie = ri.getCookie().split(";")[0];
-                ArrayList<ArrayList<String>> links = getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
                 
                 progress.setRange(links.size()/2);
                 for(int i=0; i<links.size(); i=i+2) {
                     HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?"+links.get(i).get(0)).openConnection());
-                    httpConnection.setReadTimeout(getReadTimeoutFromConfiguration());
-                    httpConnection.setConnectTimeout(getConnectTimeoutFromConfiguration());
+                    httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
+                    httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
                     httpConnection.setRequestMethod("GET");
                     httpConnection.setInstanceFollowRedirects(true);
                     httpConnection.setRequestProperty("Host", "stacheldraht.to");
@@ -100,7 +102,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
                     httpConnection.setRequestProperty("X-Prototype-Version", "1.6.0.2");
                     httpConnection.setRequestProperty("Referer", parameter);
                     httpConnection.setRequestProperty("Cookie", cookie);
-                    RequestInfo reqinfo = readFromURL(httpConnection);
+                    RequestInfo reqinfo = HTTP.readFromURL(httpConnection);
                     reqinfo.setConnection(httpConnection);
                     
                     progress.increase(1);

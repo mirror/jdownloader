@@ -27,12 +27,14 @@ import java.util.List;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.plugins.Regexp;
 import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
@@ -83,26 +85,26 @@ public class RapidsafeDe extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             if (!parameter.endsWith("/")) parameter += "/";
             try {
-                setReadTimeout(120000);
-                setConnectTimeout(120000);
+                HTTP.setReadTimeout(120000);
+                HTTP.setConnectTimeout(120000);
                 JDUtilities.getSubConfig("DOWNLOAD").save();
 
-                RequestInfo ri = getRequest(new URL(parameter));
+                RequestInfo ri = HTTP.getRequest(new URL(parameter));
                 @SuppressWarnings("unused")
                 String cookie = ri.getCookie();
                 @SuppressWarnings("unused")
-                String[] dat = getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°=°&t=°','°');");
-                ri = postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
+                String[] dat = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°=°&t=°','°');");
+                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
                 
-                dat = getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°&adminlogin='");
-                ri = postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1", false);
+                dat = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°&adminlogin='");
+                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1", false);
                 
-                ArrayList<ArrayList<String>> flash = getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
+                ArrayList<ArrayList<String>> flash = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
                 
-                ArrayList<ArrayList<String>> helpsites = getAllSimpleMatches(ri.getHtmlCode(), "onclick=\"RapidSafePSC('°&start=°','");
+                ArrayList<ArrayList<String>> helpsites = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "onclick=\"RapidSafePSC('°&start=°','");
                 for(int i=0; i<helpsites.size(); i++) {
-                    ri = postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites.get(i).get(1), false);
-                    ArrayList<ArrayList<String>> helpflash = getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
+                    ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites.get(i).get(1), false);
+                    ArrayList<ArrayList<String>> helpflash = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
                     
                     for(int j=0; j<helpflash.size(); j++)
                         flash.add(helpflash.get(j));
@@ -137,8 +139,8 @@ public class RapidsafeDe extends PluginForDecrypt {
                             int index2 = c.indexOf("67657455524c", index1 + 8);
                             c = c.substring(c.indexOf("67657455524c"), index2);
                             //Suchen der zahlen
-                            ArrayList<ArrayList<String>> search1 = getAllSimpleMatches(c, "96070008°07°3c");
-                            search2 = getAllSimpleMatches(c, "070007°08021c960200");
+                            ArrayList<ArrayList<String>> search1 = SimpleMatches.getAllSimpleMatches(c, "96070008°07°3c");
+                            search2 = SimpleMatches.getAllSimpleMatches(c, "070007°08021c960200");
                             //Umwandlen der Hexwerte
                             for (int i = 0; i < 7; i++) {                        
                                 zaehler[i] = (int) Long.parseLong(spin(search1.get(i).get(1).toUpperCase()), 16);
@@ -171,9 +173,9 @@ public class RapidsafeDe extends PluginForDecrypt {
                         postdata += String.valueOf((char) (zahl ^ (ax3 ^ ax2 + 2 + 9 ^ ccax4 + 12) ^ 2 ^ 41 - 12 ^ 112 ^ ax1 ^ ax5 ^ 41 ^ ax6 ^ ax7));
                     }
                     
-                    postdata = getSimpleMatch(postdata, "RapidSafePSC('°'", 0);
+                    postdata = SimpleMatches.getSimpleMatch(postdata, "RapidSafePSC('°'", 0);
     
-                    ri = postRequest(new URL(parameter), cookie, parameter, null, postdata, false);
+                    ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, postdata, false);
                     Map<String, List<String>> headers = ri.getHeaders();
                     String content = "";
     
@@ -194,14 +196,14 @@ public class RapidsafeDe extends PluginForDecrypt {
                         content1 += String.valueOf((char) Integer.parseInt(content.substring(i, i + 2), 16));
                     }
                     
-                    String[][] help = new Regexp(content1, "\\(([\\d]+).([\\d]+).([\\d]+)\\)").getMatches();
+                    String[][] help = new Regex(content1, "\\(([\\d]+).([\\d]+).([\\d]+)\\)").getMatches();
     
                     content = "";
                     for (int i = 0; i < help.length; i++) {
                         content += String.valueOf((char) (Integer.parseInt(help[i][0]) ^ Integer.parseInt(help[i][1]) ^ Integer.parseInt(help[i][2])));
                     }
                     progress.increase(1);
-                    decryptedLinks.add(this.createDownloadlink(getSimpleMatch(content, "action=\"°\" id", 0)));
+                    decryptedLinks.add(this.createDownloadlink(SimpleMatches.getSimpleMatch(content, "action=\"°\" id", 0)));
                 }
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {

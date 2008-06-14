@@ -100,6 +100,7 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
@@ -1083,7 +1084,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ABOUT:
             String txt;
                 try {
-                    txt = Plugin.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
+                    txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
          
             
             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
@@ -1597,7 +1598,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             switch (event.getID()) {
             case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
                 p = (Property) event.getSource();
-                if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
+                if (spMax!=null&&event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
 
                     spMax.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
                     colorizeSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));

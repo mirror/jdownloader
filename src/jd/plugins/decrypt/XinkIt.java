@@ -25,10 +25,12 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -82,10 +84,10 @@ public class XinkIt extends PluginForDecrypt {
     		
     		try {
     			
-    			RequestInfo reqinfo = getRequest(new URL(parameter));
+    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
     			File captchaFile = null;
     			String capTxt = "";
-    			String session = "PHPSESSID=" + new Regexp(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
+    			String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
         		
                 while ( true ) { // läuft bis kein Captcha mehr abgefragt wird
                 	
@@ -98,7 +100,7 @@ public class XinkIt extends PluginForDecrypt {
                 		}
                 		
                 		String captchaAdress = "http://xink.it/captcha-" +
-                				getBetween(reqinfo.getHtmlCode(), "src=\"captcha-", "\"");
+                				SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"captcha-", "\"");
                 		captchaAdress += "?"+session;
                 		
                 		captchaFile = getLocalCaptchaFile(this);
@@ -111,7 +113,7 @@ public class XinkIt extends PluginForDecrypt {
                 		HashMap<String,String> requestHeaders = new HashMap<String,String>();
                 		requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
                 		
-                		reqinfo = postRequest(new URL(parameter),
+                		reqinfo = HTTP.postRequest(new URL(parameter),
                 				null,
                 				parameter,
                 				requestHeaders,
@@ -130,14 +132,14 @@ public class XinkIt extends PluginForDecrypt {
                 		
                 }
     			
-                ArrayList<ArrayList<String>> ids = getAllSimpleMatches(
+                ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(
     					reqinfo.getHtmlCode(), "startDownload('°');");
     			
     			progress.setRange(ids.size());
     			
     			for ( int i=0; i<ids.size(); i++ ) {
     				
-    				reqinfo = getRequest(new URL("http://xink.it/encd_"+ids.get(i).get(0)));
+    				reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_"+ids.get(i).get(0)));
     				decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
     				progress.increase(1);
     				
@@ -175,11 +177,11 @@ public class XinkIt extends PluginForDecrypt {
     	
     	String evalCode = JDUtilities.Base64Decode(source);
     	
-    	String l010 = JDUtilities.Base64Decode(new Regexp(evalCode,
+    	String l010 = JDUtilities.Base64Decode(new Regex(evalCode,
     			"l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
-    	String gt = new Regexp(evalCode,
+    	String gt = new Regex(evalCode,
 				"gt\\=\"(.*?)\";").getFirstMatch();
-    	String l011 = JDUtilities.Base64Decode(new Regexp(evalCode,
+    	String l011 = JDUtilities.Base64Decode(new Regex(evalCode,
 				"l011 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
     	String l012 = JDUtilities.Base64Decode(gt);
     	

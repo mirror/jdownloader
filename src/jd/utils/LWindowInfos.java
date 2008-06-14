@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
-import jd.plugins.Regexp;
+import jd.parser.Regex;
 
 public class LWindowInfos {
 	private static LinkedList<WindowInformations> windowInformations = new LinkedList<WindowInformations>();
@@ -30,7 +30,7 @@ public class LWindowInfos {
 		String str = JDUtilities.runCommand("xprop", new String[] { "-root" },
 				"/usr/bin", 1000);
 		try {
-			String[] LIST_IDS = new Regexp(str, Pattern
+			String[] LIST_IDS = new Regex(str, Pattern
 					.compile("_NET_CLIENT_LIST\\(.*?\\): window id \\# (.*)"))
 					.getFirstMatch().split(", ");
 			LinkedList<WindowInformations> windowInformations2 = new LinkedList<WindowInformations>();
@@ -47,7 +47,7 @@ public class LWindowInfos {
 		String str = JDUtilities.runCommand("xprop", new String[] { "-root" },
 				"/usr/bin", 1000);
 		try {
-			String ACTIVE_WINDOW_ID = new Regexp(str, Pattern
+			String ACTIVE_WINDOW_ID = new Regex(str, Pattern
 					.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)"))
 					.getFirstMatch().split(", ")[0];
 			return getWindowInformation(ACTIVE_WINDOW_ID);
@@ -68,26 +68,26 @@ public class LWindowInfos {
 		WindowInformations info = new WindowInformations();
 		info.ID=id;
 		try {
-			info.WM_CLASS = new Regexp(str, Pattern
+			info.WM_CLASS = new Regex(str, Pattern
 					.compile("WM_CLASS\\(.*?\\) = \"(.*)")).getFirstMatch()
 					.replaceFirst("\"$", "").split("\", \"");
 		} catch (Exception e) {
 		}
 		try {
-			info.WM_NAME = new Regexp(str, Pattern
+			info.WM_NAME = new Regex(str, Pattern
 					.compile("WM_NAME\\(.*?\\) = \"(.*)")).getFirstMatch()
 					.replaceFirst("\"$", "");
 		} catch (Exception e) {
 		}
 		try {
-			info.WM_ICON_NAME = new Regexp(str, Pattern
+			info.WM_ICON_NAME = new Regex(str, Pattern
 					.compile("WM_ICON_NAME\\(.*?\\) = \"(.*)")).getFirstMatch()
 					.replaceFirst("\"$", "");
 		} catch (Exception e) {
 		}
 		try {
 			// _NET_WM_PID(CARDINAL) = 5324
-			info.WM_PID = Integer.parseInt(new Regexp(str, Pattern
+			info.WM_PID = Integer.parseInt(new Regex(str, Pattern
 					.compile("_NET_WM_PID\\(CARDINAL\\) = ([\\d]*)"))
 					.getFirstMatch());
 		} catch (Exception e) {

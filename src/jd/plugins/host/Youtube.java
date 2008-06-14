@@ -25,7 +25,9 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.controlling.ProgressController;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -92,7 +94,7 @@ public class Youtube extends PluginForHost {
     }
 
     public String getPluginNameExtension(DownloadLink link) {
-        int convert = Integer.parseInt(getFirstMatch(link.getDownloadURL(), CONVERT, 1));
+        int convert = Integer.parseInt(SimpleMatches.getFirstMatch(link.getDownloadURL(), CONVERT, 1));
         switch (convert) {
         case CONVERT_ID_AUDIO:
             return JDLocale.L("plugins.host.YouTube.pluginextensions.audio", "->mp3");
@@ -112,16 +114,16 @@ public class Youtube extends PluginForHost {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                final int convert = Integer.parseInt(getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
-                requestInfo = getRequest(new URL(getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
+                final int convert = Integer.parseInt(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
+                requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
                     return step;
                 }
-                String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
-                String downloadfile = getFirstMatch(downloadLink.getDownloadURL(), DOWNLOADFILE, 1).trim();
+                String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
+                String downloadfile = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), DOWNLOADFILE, 1).trim();
 
                 if ((name == null) || (downloadfile == null)) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -145,7 +147,7 @@ public class Youtube extends PluginForHost {
                 logger.info(downloadfile);
 
                 HTTPConnection urlConnection;
-                requestInfo = getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
                 urlConnection = requestInfo.getConnection();
 
                 dl = new RAFDownload(this, downloadLink, urlConnection);
@@ -228,8 +230,8 @@ public class Youtube extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequest(new URL(getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
-            String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
+            requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
+            String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
             downloadLink.setName(name);
 
             if (name == null) return false;

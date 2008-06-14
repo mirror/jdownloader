@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -75,11 +77,11 @@ public class RockHouseIn extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
     			
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
 
-    			default_password.add(jd.utils.JDUtilities.htmlDecode(getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
+    			default_password.add(jd.utils.JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
     			for(int i=0; i<links.size(); i++) {
     				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0).replaceAll("\n", "")));
     			}

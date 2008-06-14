@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -78,10 +80,10 @@ public class Filer extends PluginForDecrypt {
             try {
 
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
-                ArrayList<ArrayList<String>> matches = getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+                ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
                 progress.setRange(matches.size());
-                String link = getFirstMatch(parameter, patternSupported, 1);
+                String link = SimpleMatches.getFirstMatch(parameter, patternSupported, 1);
                 for (int i = 0; i < matches.size(); i++) {
                     decryptedLinks.add(this.createDownloadlink("http://www.filer.net/file" + i + "/" + link + "/filename/" + matches.get(i).get(0)));
                     progress.increase(1);

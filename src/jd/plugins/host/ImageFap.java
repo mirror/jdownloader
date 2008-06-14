@@ -22,7 +22,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -114,16 +116,16 @@ public class ImageFap extends PluginForHost {
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
 
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
                 if (requestInfo.getHtmlCode() == null||requestInfo.getHtmlCode().trim().length()==0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     step.setParameter(JDLocale.L("plugins.host.imagefap.imageerror", "Bildfehler"));
                     return step;
                 }
-                String Imagelink = DecryptLink(getFirstMatch(requestInfo.getHtmlCode(), IMAGELINK, 1));
-                String gallery = getSimpleMatch(requestInfo.getHtmlCode(), GALLERY, 2).trim();
-                String Imagename = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
+                String Imagelink = DecryptLink(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), IMAGELINK, 1));
+                String gallery = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), GALLERY, 2).trim();
+                String Imagename = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
 
                 if (Imagename == null || gallery == null) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
@@ -134,9 +136,9 @@ public class ImageFap extends PluginForHost {
                 }
                 File file = new File(downloadLink.getFilePackage().getDownloadDirectory(), JDUtilities.validatePath(gallery));
 
-                requestInfo = postRequestWithoutHtmlCode(new URL(Imagelink), requestInfo.getCookie(), null, null, false);
+                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(Imagelink), requestInfo.getCookie(), null, null, false);
                 if (requestInfo.getLocation() != null) {
-                    requestInfo = getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), null, false);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), null, false);
                 }
 
                 downloadLink.setName(JDUtilities.validatePath(gallery + " - " + Imagename));
@@ -177,9 +179,9 @@ public class ImageFap extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
-            requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            String name = getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
-            String gallery = getSimpleMatch(requestInfo.getHtmlCode(), GALLERY, 2);
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
+            String gallery = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), GALLERY, 2);
             downloadLink.setName(gallery + "/" + gallery + " - " + name);
             
             if(name==null||gallery==null)return false;

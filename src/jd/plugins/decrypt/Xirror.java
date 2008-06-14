@@ -27,7 +27,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -82,7 +84,7 @@ public class Xirror extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
     			int count = 0;
     			
     			// Anzahl der Links zählen
@@ -101,7 +103,7 @@ public class Xirror extends PluginForDecrypt {
     			progress.setRange( count);
     			
     			// Links auslesen und umdrehen
-    			ArrayList<ArrayList<String>> g = getAllSimpleMatches(reqinfo.getHtmlCode(), "popup(\"°\", \"°\")");
+    			ArrayList<ArrayList<String>> g = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "popup(\"°\", \"°\")");
     			// Rapidshare Link speichern
     			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
     				for( int i=0; i<g.size();i++){

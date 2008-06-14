@@ -15,7 +15,7 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.plugins.Regexp;
+import jd.parser.Regex;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Link.JLinkButton;
 
@@ -24,7 +24,7 @@ public class CheckJava {
         String runtimeName = System.getProperty("java.runtime.name").toLowerCase();
         String runtimeVersion = System.getProperty("java.runtime.version").toLowerCase();
         
-        if(new Regexp(runtimeVersion,"1\\.5").count() < 0 || new Regexp(runtimeVersion,"1\\.6").count() < 0 || new Regexp(runtimeName,"IcedTea").count() > 0) {
+        if(new Regex(runtimeVersion,"1\\.5").count() < 0 || new Regex(runtimeVersion,"1\\.6").count() < 0 || new Regex(runtimeName,"IcedTea").count() > 0) {
             String html = String.format(JDLocale.L("gui.javacheck.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>"), runtimeName, runtimeVersion);
             HTMLDialog tda = new HTMLDialog(null, JDLocale.L("gui.javacheck.title", "Wrong Java Version"), html);
             return tda.success;

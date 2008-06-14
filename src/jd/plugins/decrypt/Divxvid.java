@@ -22,7 +22,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -105,26 +107,26 @@ public class Divxvid extends PluginForDecrypt {
                 try {
                     url = new URL(cryptedLink);
 
-                    String cookie = postRequestWithoutHtmlCode(url, null, null, null, false).getCookie();
+                    String cookie = HTTP.postRequestWithoutHtmlCode(url, null, null, null, false).getCookie();
 
                     String hash = url.getFile();
                     hash = hash.substring(1, hash.lastIndexOf("."));
-                    RequestInfo requestInfo = getRequest((new URL("http://dxp.divxvid.org/script/old_loader.php")), cookie, cryptedLink, false);
+                    RequestInfo requestInfo = HTTP.getRequest((new URL("http://dxp.divxvid.org/script/old_loader.php")), cookie, cryptedLink, false);
 
                     String input = requestInfo.getHtmlCode();
-                    String strgate = getFirstMatch(input, gate, 1);
-                    String outl = getFirstMatch(input, outputlocation, 1);
+                    String strgate = SimpleMatches.getFirstMatch(input, gate, 1);
+                    String outl = SimpleMatches.getFirstMatch(input, outputlocation, 1);
 
-                    requestInfo = postRequest((new URL("http://dxp.divxvid.org/" + strgate)), null, cryptedLink, null, "hash=" + hash, false);
+                    requestInfo = HTTP.postRequest((new URL("http://dxp.divxvid.org/" + strgate)), null, cryptedLink, null, "hash=" + hash, false);
 
                     /*
                      * es werden dank divxvid.org hier nur die menge der links
                      * gezaehlt
                      */
-                    int countHits = countOccurences(requestInfo.getHtmlCode(), premiumdownload);
+                    int countHits = SimpleMatches.countOccurences(requestInfo.getHtmlCode(), premiumdownload);
                     progress.setRange(countHits);
                     for (int i = 0; i < countHits; i++) {
-                        requestInfo = postRequestWithoutHtmlCode((new URL(getFirstMatch(getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
+                        requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(SimpleMatches.getFirstMatch(HTTP.getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
                         if (requestInfo != null) {progress.increase(1);
                             decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                         }

@@ -7,8 +7,9 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.HTMLParser;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -85,9 +86,9 @@ public class Rlslog extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = getRequest(url);
-                String[] Links = Plugin.getHttpLinks(reqinfo.getHtmlCode(), null);
-                Vector<String> passs = findPasswords(reqinfo.getHtmlCode());
+                RequestInfo reqinfo = HTTP.getRequest(url);
+                String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
+                Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
                 for (int i = 0; i < Links.length; i++) {
 
                     if (checkLink(Links[i])) {
@@ -100,9 +101,9 @@ public class Rlslog extends PluginForDecrypt {
                     if (Links[i].contains(followcomments) == true) {
                         /* weitere comment pages abrufen */
                         URL url2 = new URL(Links[i]);
-                        RequestInfo reqinfo2 = getRequest(url2);
-                        String[] Links2 = Plugin.getHttpLinks(reqinfo2.getHtmlCode(), null);
-                        Vector<String> passs2 = findPasswords(reqinfo2.getHtmlCode());
+                        RequestInfo reqinfo2 = HTTP.getRequest(url2);
+                        String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
+                        Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
                         for (int j = 0; j < Links2.length; j++) {
 
                             if (checkLink(Links2[j])) {

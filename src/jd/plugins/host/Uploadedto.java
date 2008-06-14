@@ -26,8 +26,9 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -143,7 +144,7 @@ public class Uploadedto extends PluginForHost {
             switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
 
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
                 // /?view=error_traffic_exceeded_free
                 if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
@@ -179,12 +180,12 @@ public class Uploadedto extends PluginForHost {
                     if (lastPassword != null) {
                         logger.info("Try last pw: " + lastPassword);
                         pass = lastPassword;
-                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                     } else {
                         pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
                     }
 
                 }
@@ -192,14 +193,14 @@ public class Uploadedto extends PluginForHost {
                     logger.info("File is Password protected (2)");
                     pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                     logger.info("Password: " + pass);
-                    requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                 }
                 if (requestInfo.containsHTML("file_key")) {
                     logger.info("File is Password protected (3)");
                     pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                     logger.info("Password: " + pass);
-                    requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
 
                 }
                 if (requestInfo.containsHTML("file_key")) {
@@ -216,18 +217,18 @@ public class Uploadedto extends PluginForHost {
                 }
 
                 // logger.info(requestInfo.getHtmlCode());
-                this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1);
+                this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1);
 
-                this.postTarget = getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD, 1);
-                String url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
+                this.postTarget = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD, 1);
+                String url = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                 if (url == null) {
                     this.useCaptchaVersion = false;
                     // Captcha deaktiviert
                     // 
 
-                    url = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_WITHOUT_CAPTCHA, 0);
+                    url = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_WITHOUT_CAPTCHA, 0);
                     logger.finer("Use Captcha free Plugin: " + url);
-                    requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
+                    requestInfo = HTTP.postRequest(new URL(url), "lang=de", null, null, null, false);
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
@@ -247,7 +248,7 @@ public class Uploadedto extends PluginForHost {
                 } else {
                     useCaptchaVersion = true;
                     logger.finer("Use Captcha Plugin");
-                    requestInfo = postRequest(new URL(url), "lang=de", null, null, null, false);
+                    requestInfo = HTTP.postRequest(new URL(url), "lang=de", null, null, null, false);
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
@@ -299,7 +300,7 @@ public class Uploadedto extends PluginForHost {
                     this.finalURL = finalURL + (String) steps.get(1).getParameter();
                     logger.info("dl " + finalURL);
                     postParameter.put(postTarget, (String) steps.get(1).getParameter());
-                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
@@ -338,11 +339,7 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+                 
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
@@ -351,7 +348,7 @@ public class Uploadedto extends PluginForHost {
                     this.finalURL = finalURL + "";
                     logger.info("dl " + finalURL);
 
-                    requestInfo = getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
+                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -391,11 +388,7 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                    if (!hasEnoughHDSpace(downloadLink)) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
-                    }
+               
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
@@ -437,7 +430,7 @@ public class Uploadedto extends PluginForHost {
             // Wird als login verwendet
             case PluginStep.STEP_WAIT_TIME:
                 logger.info("login");
-                requestInfo = Plugin.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=" + user + "&password=" + pass, false);
+                requestInfo = HTTP.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=" + user + "&password=" + pass, false);
 
                 if (requestInfo.getCookie().indexOf("auth") < 0) {
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -456,7 +449,7 @@ public class Uploadedto extends PluginForHost {
 
             case PluginStep.STEP_DOWNLOAD:
 
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
                 // Datei geloescht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                     logger.severe("download not found");
@@ -481,12 +474,12 @@ public class Uploadedto extends PluginForHost {
                     if (lastPassword != null) {
                         logger.info("Try last pw: " + lastPassword);
                         filepass = lastPassword;
-                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                     } else {
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                         logger.info("Password: " + pass);
-                        requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
                     }
 
                 }
@@ -494,14 +487,14 @@ public class Uploadedto extends PluginForHost {
                     logger.info("File is Password protected (2)");
                     filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                     logger.info("Password: " + pass);
-                    requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                 }
                 if (requestInfo.containsHTML("file_key")) {
                     logger.info("File is Password protected (3)");
                     filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                     logger.info("Password: " + pass);
-                    requestInfo = postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
                 }
                 if (requestInfo.containsHTML("file_key")) {
@@ -518,7 +511,7 @@ public class Uploadedto extends PluginForHost {
                 }
                 String newURL = null;
                 if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
-                    newURL = getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
+                    newURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
 
                     if (newURL == null) {
                         logger.severe("Indirekter Link konnte nicht gefunden werden");
@@ -529,7 +522,7 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
 
-                    requestInfo = postRequest(new URL(newURL), cookie, null, null, null, false);
+                    requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
 
                     if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
                         if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
@@ -552,7 +545,7 @@ public class Uploadedto extends PluginForHost {
 
                 }
 
-                requestInfo = getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
                 int length = requestInfo.getConnection().getContentLength();
                 downloadLink.setDownloadMax(length);
                 logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
@@ -564,11 +557,7 @@ public class Uploadedto extends PluginForHost {
                     return step;
                 }
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+              
                 dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
                 dl.setResume(true);
@@ -624,15 +613,15 @@ public class Uploadedto extends PluginForHost {
         RequestInfo requestInfo;
         correctURL(downloadLink);
         try {
-            requestInfo = getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 this.setStatusText("Error");
                 return false;
             } else {
                 if (requestInfo.getConnection().getHeaderField("Location") != null) {
-                    requestInfo = getRequest(new URL("http://" + HOST + requestInfo.getConnection().getHeaderField("Location")), null, null, true);
+                    requestInfo = HTTP.getRequest(new URL("http://" + HOST + requestInfo.getConnection().getHeaderField("Location")), null, null, true);
                 } else {
-                    requestInfo = readFromURL(requestInfo.getConnection());
+                    requestInfo = HTTP.readFromURL(requestInfo.getConnection());
                 }
 
                 // Datei geloescht?
@@ -641,9 +630,9 @@ public class Uploadedto extends PluginForHost {
                     return false;
                 }
 
-                String fileName = JDUtilities.htmlDecode(getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
-                String ext = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
-                String fileSize = getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 7);
+                String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
+                String ext = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
+                String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 7);
                 downloadLink.setName(fileName.trim() + "" + ext.trim());
                 if (fileSize != null) {
                     try {

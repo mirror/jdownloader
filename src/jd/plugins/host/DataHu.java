@@ -23,7 +23,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -87,14 +89,14 @@ public class DataHu extends PluginForHost {
 //        }
         try {
             String url = downloadLink.getDownloadURL();                    
-            requestInfo = getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url));
             
-            String link = getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'");
+            String link = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'");
             String[] test = link.split("/");
             String name = test[test.length-1];
             downloadLink.setName(name);
             
-            requestInfo = getRequestWithoutHtmlCode(new URL(link), null, url, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, url, false);
             
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
@@ -136,11 +138,11 @@ public class DataHu extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url));
             if(requestInfo.getHtmlCode().length() == 0)
                 return false;
             
-            String[] test = getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'").split("/");
+            String[] test = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'").split("/");
             String name = test[test.length-1];
             downloadLink.setName(name);
             return true;

@@ -21,7 +21,9 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -76,12 +78,12 @@ public class LinkProtectorCom extends PluginForDecrypt {
 			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 			try {
 				URL url = new URL(parameter);
-				RequestInfo reqinfo = getRequest(url); // Seite aufrufen
+				RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 				
-				String decryptedLink = getBetween(reqinfo.getHtmlCode(), "write\\(stream\\('", "'\\)");
-				int charCode = Integer.parseInt(getBetween(reqinfo.getHtmlCode(), "fromCharCode\\(yy\\[i\\]-", "\\)\\;"));
+				String decryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "write\\(stream\\('", "'\\)");
+				int charCode = Integer.parseInt(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "fromCharCode\\(yy\\[i\\]-", "\\)\\;"));
 
-				String link = getBetween(decryptCode(decryptedLink,charCode),"<iframe src=\"", "\" ");
+				String link = SimpleMatches.getBetween(decryptCode(decryptedLink,charCode),"<iframe src=\"", "\" ");
 				decryptedLinks.add(this.createDownloadlink(link));
 				progress.increase(1);
 				step.setParameter(decryptedLinks);

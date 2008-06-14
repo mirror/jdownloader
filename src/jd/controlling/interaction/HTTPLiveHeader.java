@@ -43,8 +43,9 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.parser.SimpleMatches;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -226,7 +227,7 @@ public class HTTPLiveHeader extends Interaction {
                             String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            ArrayList<String> params = Plugin.getAllSimpleMatches(value, "%%%°%%%", 1);
+                            ArrayList<String> params = SimpleMatches.getAllSimpleMatches(value, "%%%°%%%", 1);
                             if (params.size() > 0) {
                                 String req;
                                 if (value.startsWith(params.get(0))) {
@@ -389,19 +390,19 @@ public class HTTPLiveHeader extends Interaction {
         String[] cScript = null;
         try {
 
-            RequestInfo requestInfo = Plugin.getRequest(new URL("http://reconnect.thau-ex.de/"));
-            ArrayList<ArrayList<String>> cats = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+            RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
+            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
 
             for (int i = 0; i < cats.size(); i++) {
-                requestInfo = Plugin.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats.get(i).get(0)));
-                ArrayList<ArrayList<String>> router = Plugin.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats.get(i).get(0)));
+                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
 
                 for (int t = 0; t < router.size(); t++) {
                     String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router.get(t).get(0) + "&show=" + router.get(t).get(1);
-                    requestInfo = Plugin.getRequest(new URL(endURL));
+                    requestInfo = HTTP.getRequest(new URL(endURL));
                     // s logger.info(requestInfo.getHtmlCode() + "");
 
-                    String code = Plugin.getSimpleMatch(requestInfo.getHtmlCode(), "<textarea name=\"ReconnectCode\" °>°</textarea", 1);
+                    String code = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), "<textarea name=\"ReconnectCode\" °>°</textarea", 1);
 
                     String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router.get(t).get(2)));
                     if (script == null) {
@@ -593,7 +594,7 @@ public class HTTPLiveHeader extends Interaction {
       
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-        ArrayList<String> params = Plugin.getAllSimpleMatches(request, "%%%°%%%", 1);
+        ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request, "%%%°%%%", 1);
         if (params.size() > 0) {
             String req;
             if (request.startsWith(params.get(0))) {
@@ -687,7 +688,7 @@ public class HTTPLiveHeader extends Interaction {
                 httpConnection.setConnectTimeout(5000);
                 httpConnection.setReadTimeout(5000);
                 httpConnection.setInstanceFollowRedirects(false);
-                requestInfo = Plugin.readFromURL(httpConnection);
+                requestInfo = HTTP.readFromURL(httpConnection);
                 requestInfo.setConnection(httpConnection);
 
             }
@@ -714,7 +715,7 @@ public class HTTPLiveHeader extends Interaction {
                 OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
                 if (post != null) wr.write(post);
                 wr.flush();
-                requestInfo = Plugin.readFromURL(httpConnection);
+                requestInfo = HTTP.readFromURL(httpConnection);
                 wr.close();
                 requestInfo.setConnection(httpConnection);
             }

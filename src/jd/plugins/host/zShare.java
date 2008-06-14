@@ -19,12 +19,12 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.CRequest;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
@@ -87,7 +87,7 @@ public class zShare extends PluginForHost {
             request= new CRequest();
             request = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
          
-             Regexp reg = request.getRegexp("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
+             Regex reg = request.getRegexp("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
             
             String url=reg.getMatches()[0][0];
             request.withHtmlCode = false;

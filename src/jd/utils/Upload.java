@@ -26,10 +26,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jd.plugins.Form;
+import jd.parser.Form;
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPPost;
-import jd.plugins.Plugin;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 
 
@@ -38,7 +39,7 @@ public class Upload {
    public static String toPastebinCom(String str,String name){
        RequestInfo requestInfo=null;
        try {
-         requestInfo = Plugin.postRequestWithoutHtmlCode(new URL("http://jd_"+JDUtilities.getMD5(str)+".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2="+URLEncoder.encode(str,"UTF-8")+"&poster="+URLEncoder.encode(name,"UTF-8")+"&paste=Send&expiry=f&email=", false);
+         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://jd_"+JDUtilities.getMD5(str)+".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2="+URLEncoder.encode(str,"UTF-8")+"&poster="+URLEncoder.encode(name,"UTF-8")+"&paste=Send&expiry=f&email=", false);
      }
      catch (MalformedURLException e1) {
          
@@ -60,7 +61,7 @@ public class Upload {
    }
    public static String toJDownloader(String str, String desc){
        try {
-       RequestInfo ri = Plugin.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc="+JDUtilities.urlEncode(desc)+"&log="+JDUtilities.urlEncode(str));
+       RequestInfo ri = HTTP.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc="+JDUtilities.urlEncode(desc)+"&log="+JDUtilities.urlEncode(str));
     
        return "http://jdservice.ath.cx/tools/log.php?id="+ri.getHtmlCode();
        } catch (MalformedURLException e) {
@@ -102,7 +103,7 @@ public class Upload {
            //
            if(!ri.containsHTML("Ihr Paste wurde angenommen"))return null;
            
-           String ret=Plugin.getSimpleMatch(ri.getHtmlCode(), "Die URL lautet:</p><p><a href=\"/°\">http://pastebin", 0);
+           String ret=SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "Die URL lautet:</p><p><a href=\"/°\">http://pastebin", 0);
      
       return "http://pastebin.ca/"+ret;
        }catch(Exception e){
@@ -116,7 +117,7 @@ public class Upload {
        try {
            Form form= Form.getForms("http://ramzal.com/upload")[0];
            form.fileToPost=file;
-           return new Regexp(form.getRequestInfo(), "URL:</b> <a href=(http://ramzal.com//?upload_files/.*?)>http://ramzal.com//?upload_files/.*?</a></font>").getFirstMatch();
+           return new Regex(form.getRequestInfo(), "URL:</b> <a href=(http://ramzal.com//?upload_files/.*?)>http://ramzal.com//?upload_files/.*?</a></font>").getFirstMatch();
            //
        } catch (Exception e) {
            // TODO: handle exception
@@ -127,7 +128,7 @@ return "";
        try {
            Form form= Form.getForms("http://rapidshare.com/")[0];
            form.fileToPost=file;
-           return new Regexp(form.getRequestInfo(), ":</td><td><a href=\"(http://rapidshare.com/files/.*?)\" target=\"_blank\">http://rapidshare.com/files/").getFirstMatch();
+           return new Regex(form.getRequestInfo(), ":</td><td><a href=\"(http://rapidshare.com/files/.*?)\" target=\"_blank\">http://rapidshare.com/files/").getFirstMatch();
        } catch (Exception e) {
            // TODO: handle exception
        }
@@ -144,13 +145,13 @@ return "";
            form.put("password", password);
            form.withHtmlCode=false;
            String cookie = form.getRequestInfo(false).getCookie();
-           RequestInfo reqestinfo = Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
+           RequestInfo reqestinfo = HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
            form = Form.getForms(reqestinfo)[0];
            form.fileToPost=file;
            form.setRequestPopertie("Cookie", cookie);
-           form.action=new Regexp(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch()+Math.round(10000*Math.random())+"0"+Math.round(10000*Math.random());
+           form.action=new Regex(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch()+Math.round(10000*Math.random())+"0"+Math.round(10000*Math.random());
            reqestinfo = form.getRequestInfo();
-           return new Regexp(Plugin.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
+           return new Regex(HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
        } catch (Exception e) {
            e.printStackTrace();
        }
@@ -198,7 +199,7 @@ return "";
            up.sendVariable("inline", "on");
            up.close();
            String code = up.getRequestInfo().getHtmlCode();          
-           ArrayList<ArrayList<String>> matches = Plugin.getAllSimpleMatches(code,"name=\"upload_form\" °_filesize' value='°' />° <input type='hidden' name='°_filename' value='°' />");
+           ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(code,"name=\"upload_form\" °_filesize' value='°' />° <input type='hidden' name='°_filename' value='°' />");
                  
            ArrayList<String> match = matches.get(0);
     

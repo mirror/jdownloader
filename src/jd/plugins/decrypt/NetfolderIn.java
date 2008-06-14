@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -77,11 +79,11 @@ public class NetfolderIn extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
     			String password = "";
     			
     			while (true) {
-                 	int check = countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
+                 	int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
                  	
                  	if (check > 0) {
                  		password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
@@ -91,13 +93,13 @@ public class NetfolderIn extends PluginForDecrypt {
                  			return null;
                  		}
                  		
-                 		reqinfo = postRequest(url, "password=" + password + "&save=Absenden");
+                 		reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
                  	} else {
                  		break;
                  	}
      			}
     			
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
     			
     			progress.setRange( links.size());
     			

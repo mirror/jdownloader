@@ -24,10 +24,12 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -82,7 +84,7 @@ private String getSingleLink(String link) {
 
 	RequestInfo reqinfosinglelink = null;
 	try {
-		reqinfosinglelink = getRequest(new URL(link));
+		reqinfosinglelink = HTTP.getRequest(new URL(link));
 	} catch (MalformedURLException e) {
 		
 		e.printStackTrace();
@@ -91,7 +93,7 @@ private String getSingleLink(String link) {
 		e.printStackTrace();
 	}
 	
-	return (new Regexp(reqinfosinglelink.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch()).toString();	
+	return (new Regex(reqinfosinglelink.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch()).toString();	
 }
 
 @Override
@@ -103,7 +105,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           progress.setRange(1);
           URL url = new URL(parameter);
           //Erster Request, der entweder zur Seite führt oder zur Altersabfrage.    
-          RequestInfo reqinfo = getRequest(url);
+          RequestInfo reqinfo = HTTP.getRequest(url);
           
           Matcher passmatcher = patternPass.matcher(reqinfo.getHtmlCode());
           
@@ -121,7 +123,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
          	      return null;
      	      }
     
-              reqinfo = postRequest(url, "Password=" + password + "&submit=weiter");
+              reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
           }
           
           Matcher foldermatcher = patternFolder.matcher(reqinfo.getHtmlCode());
@@ -129,7 +131,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           if(foldermatcher.find())
           {
         	  logger.info("foldermatch");
-              ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "id=\"FileDownload_°\"");
+              ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "id=\"FileDownload_°\"");
               logger.info("size: " + links.size());
               
               progress.setRange(links.size());
@@ -144,7 +146,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           {
               progress.increase(1);
               decryptedLinks.add(this.createDownloadlink(
-            		  new Regexp(reqinfo.getHtmlCode(), 
+            		  new Regex(reqinfo.getHtmlCode(), 
             				  "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>")
             		  .getFirstMatch()));        	  
           }

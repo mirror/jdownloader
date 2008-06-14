@@ -23,13 +23,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -103,7 +104,7 @@ public class BadOngo extends PluginForHost {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                     return null;
                 }
-                requestInfo = getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
+                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
                 String[] linksArray = requestInfo.getRegexp("Teil #[\\d]+:.nbsp.<a href=\"(.*?)\">").getMatches(1);
                 if (linksArray != null && linksArray.length > 0) {
                     for (int i = 1; i < linksArray.length; i++) {
@@ -121,13 +122,13 @@ public class BadOngo extends PluginForHost {
                 if (cookie == null) {
                     cookie = requestInfo.getCookie();
                     rsrnd = System.currentTimeMillis();
-                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/en/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/en/vid") + "?rs=refreshImage&rst=&rsrnd=" + rsrnd + "&rsargs[]=0"), cookie, requestInfo.getConnection().getURL().toString(), true);
+                    requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/en/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/en/vid") + "?rs=refreshImage&rst=&rsrnd=" + rsrnd + "&rsargs[]=0"), cookie, requestInfo.getConnection().getURL().toString(), true);
                     form = requestInfo.getForm();
                     form.action = form.action.replaceAll("\\\\\"", "");
                     captchaFile = getLocalCaptchaFile(this, ".jpg");
                     String captchaAdress = "http://www.badongo.com" + requestInfo.getRegexp("<img src=\\\\\"(.*?)\\\\\" />").getFirstMatch();
                     logger.info("CaptchaAdress:" + captchaAdress);
-                    boolean fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
+                    boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
                     if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                         logger.severe("Captcha not found");
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -166,7 +167,7 @@ public class BadOngo extends PluginForHost {
                     return step;
                 }
                 else {
-                    requestInfo = getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/cfile").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/cfile")), cookie, requestInfo.getConnection().getURL().toString(), false);
+                    requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/cfile").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/cfile")), cookie, requestInfo.getConnection().getURL().toString(), false);
                     cookie += "; " + requestInfo.getCookie();
                 }
                 return step;
@@ -183,7 +184,7 @@ public class BadOngo extends PluginForHost {
                 form = null;
                 for (int i = 0; i < 10; i++) {
                     try {
-                        requestInfo = getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)", "http://www.badongo.com/de/cfile") + "?rs=getFileLink&rst=&rsrnd=" + rsrnd + "&rsargs[]=0"), cookie, requestInfo.getConnection().getURL().toString(), true);
+                        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)", "http://www.badongo.com/de/cfile") + "?rs=getFileLink&rst=&rsrnd=" + rsrnd + "&rsargs[]=0"), cookie, requestInfo.getConnection().getURL().toString(), true);
                         form = requestInfo.getForm();
                     }
                     catch (Exception e) {
@@ -222,12 +223,7 @@ public class BadOngo extends PluginForHost {
                     fileOutput = new File(downloadLink.getFileOutput());
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    downloadLink.saveObjects.addFirst(downloadLink.getDownloadURL());
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+            
                dl = new RAFDownload(this, downloadLink, urlConnection);
 
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
@@ -248,8 +244,8 @@ public class BadOngo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            requestInfo = getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
-            String[] fileInfo = new Regexp(requestInfo.getHtmlCode(), "<td valign=\"top\"><b>Datei.</b></td>.*?<td>.nbsp.(.*?)</td>.*?<td valign=\"top\"><b>Dateigr.sse.</b></td>.*?<td>.nbsp.([0-9\\.]*)(.*?)</td>").getMatches()[0];
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
+            String[] fileInfo = new Regex(requestInfo.getHtmlCode(), "<td valign=\"top\"><b>Datei.</b></td>.*?<td>.nbsp.(.*?)</td>.*?<td valign=\"top\"><b>Dateigr.sse.</b></td>.*?<td>.nbsp.([0-9\\.]*)(.*?)</td>").getMatches()[0];
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             downloadLink.setName(fileInfo[0]);
             try {

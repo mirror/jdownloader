@@ -26,7 +26,9 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -105,17 +107,17 @@ public class FrozenRomsIn extends PluginForDecrypt {
     		try {
     			if ( parameter.indexOf("get") != -1 ) {
     				ArrayList<String> tempVector = new ArrayList<String>();
-    				tempVector.add(getBetween(parameter,"http://frozen-roms.in/get_",".html"));
+    				tempVector.add(SimpleMatches.getBetween(parameter,"http://frozen-roms.in/get_",".html"));
     				getLinks.add(tempVector);
     			} else {
-    				reqinfo = getRequest(new URL(parameter));
-    				getLinks = getAllSimpleMatches(reqinfo.getHtmlCode(),
+    				reqinfo = HTTP.getRequest(new URL(parameter));
+    				getLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(),
     						"href=\"http://frozen-roms.in/get_°.html\"");
     			}
     			progress.setRange(getLinks.size());
     			
     			for ( int i=0; i<getLinks.size(); i++ ) {
-    				reqinfo = getRequest(new URL(
+    				reqinfo = HTTP.getRequest(new URL(
     						"http://frozen-roms.in/get_"+getLinks.get(i).get(0)+".html"));
     				String link = reqinfo.getConnection().getHeaderField("Location");
     				if ( getHosterUsed(link) ) decryptedLinks.add(this.createDownloadlink(link));

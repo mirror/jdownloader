@@ -37,8 +37,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -248,10 +250,10 @@ public PluginStep doStep(PluginStep step, String parameter) {
           
           progress.setRange(1);
           URL url = new URL(parameter);
-          RequestInfo reqinfo = getRequest(url);
+          RequestInfo reqinfo = HTTP.getRequest(url);
 
           FilePackage fp = new FilePackage();
-          String filename = JDUtilities.htmlDecode(getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
+          String filename = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
           String video_id="";
           String t="";
 String cookies = reqinfo.getCookie();
@@ -260,7 +262,7 @@ String cookies = reqinfo.getCookie();
           //logger.info(reqinfo.getHtmlCode());
 
           //logger.info(getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1));
-          String match=getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1);
+          String match=SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1);
           if(match==null)return null;
           String[] lineSub = match.split(",|:");    
  

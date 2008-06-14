@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -76,13 +78,13 @@ public class MovieloadTo extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
-    			RequestInfo reqinfo = getRequest(url);
+    			RequestInfo reqinfo = HTTP.getRequest(url);
     			
-    			ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
+    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
     			progress.setRange(links.size());
     			for(int i=0; i<links.size(); i++) {
     				progress.increase(1);
-    				reqinfo = getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links.get(i).get(0)));
+    				reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links.get(i).get(0)));
     				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
     			}
     			

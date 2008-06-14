@@ -97,6 +97,10 @@ public class PluginStep {
      * Schritt wird übersprungen
      */
     public final static int STATUS_SKIP           = 6;
+/**
+ * Dieser Schritt kann verwendet werden wennd as PLugin die Stepstruktur nicht nutzen will
+ */
+    public static final int STEP_COMPLETE = 10;
 
     /**
      * Status dieses Schrittes

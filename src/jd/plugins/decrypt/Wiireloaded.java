@@ -23,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -86,15 +88,15 @@ public class Wiireloaded extends PluginForDecrypt {
 
                 progress.setRange(3);
                 if (COOKIE == null) {
-                    requestInfo = getRequest(url);
+                    requestInfo = HTTP.getRequest(url);
                     COOKIE = requestInfo.getCookie();
                 }
-                requestInfo = getRequest(url, COOKIE, url + "", false);
+                requestInfo = HTTP.getRequest(url, COOKIE, url + "", false);
                 progress.increase(1);
                 while (requestInfo.containsHTML("captcha/captcha.php")) {
                     String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
                     File captchaFile = getLocalCaptchaFile(this, ".jpg");
-                    HTTPConnection con = getRequestWithoutHtmlCode(new URL(adr), COOKIE, null, true).getConnection();
+                    HTTPConnection con = HTTP.getRequestWithoutHtmlCode(new URL(adr), COOKIE, null, true).getConnection();
 
                     boolean fileDownloaded = JDUtilities.download(captchaFile, con);
                     progress.addToMax(1);
@@ -105,16 +107,16 @@ public class Wiireloaded extends PluginForDecrypt {
                         logger.info("captchafile: " + captchaFile);
 
                         String capTxt = Plugin.getCaptchaCode(captchaFile, this);
-                        String postAdr = "http://wii-reloaded.ath.cx/protect/get.php?i=" + getSimpleMatch(requestInfo.getHtmlCode(), "<form method=\"post\" action=\"get.php?i=°\">", 0);
+                        String postAdr = "http://wii-reloaded.ath.cx/protect/get.php?i=" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), "<form method=\"post\" action=\"get.php?i=°\">", 0);
 
-                        requestInfo = postRequest(new URL(postAdr), COOKIE + "; " + con.getHeaderField("Set-Cookie"), url + "", null, "sicherheitscode=" + capTxt + "&submit=Weiter", false);
+                        requestInfo = HTTP.postRequest(new URL(postAdr), COOKIE + "; " + con.getHeaderField("Set-Cookie"), url + "", null, "sicherheitscode=" + capTxt + "&submit=Weiter", false);
                     }
-                    ArrayList<String> ids = getAllSimpleMatches(requestInfo.getHtmlCode(), "onClick=\"popup_dl(°)\"", 1);
+                    ArrayList<String> ids = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "onClick=\"popup_dl(°)\"", 1);
 
                     progress.addToMax(ids.size());
                     for (int i = 0; i < ids.size(); i++) {
                         String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids.get(i);
-                        requestInfo = postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + 17 + "&senden=Download", false);
+                        requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + 17 + "&senden=Download", false);
 
                         if (requestInfo.getLocation() != null)
 {decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));

@@ -23,8 +23,9 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -83,7 +84,7 @@ public class MyRef extends PluginForDecrypt {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-             RequestInfo ri = getRequest(new URL(parameter));
+             RequestInfo ri = HTTP.getRequest(new URL(parameter));
              
              
              logger.info("cds"); 

@@ -21,8 +21,8 @@ import java.io.File;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Form;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.utils.JDUtilities;

@@ -21,6 +21,10 @@ package jd.plugins;
 import java.util.List;
 import java.util.Map;
 
+import jd.http.Request;
+import jd.parser.Form;
+import jd.parser.Regex;
+
 /**
  * Diese Klasse bildet alle Informationen ab, die bei einem Request herausgefunden werden können
  *
@@ -48,6 +52,7 @@ public class RequestInfo {
      * Cookie
      */
     private String cookie   = null;
+    private Request request;
 
     public RequestInfo(String htmlCode, String location, String cookie, Map<String,List<String>> headers, int responseCode){
         this.htmlCode = htmlCode;
@@ -102,9 +107,9 @@ public class RequestInfo {
      * @param pattern
      * @return
      */
-    public Regexp getRegexp(String pattern)
+    public Regex getRegexp(String pattern)
     {
-    	return new Regexp(this, pattern);
+    	return new Regex(this, pattern);
     }
     /**
      * gibt die Forms der requestInfo aus
@@ -122,5 +127,12 @@ public class RequestInfo {
     public Form getForm()
     {
     	return getForms()[0];
+    }
+    public void setRequest(Request request) {
+       this.request=request;
+        
+    }
+    public Request getRequest() {
+        return request;
     }
 }

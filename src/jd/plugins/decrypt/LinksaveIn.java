@@ -23,7 +23,10 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -104,7 +107,7 @@ public class LinksaveIn extends PluginForDecrypt {
                 folder = true;
                 RequestInfo ri;
                 try {
-                    ri = getRequest(new URL(parameter));
+                    ri = HTTP.getRequest(new URL(parameter));
                     
                     Matcher matcher = patternCaptcha.matcher(ri.getHtmlCode());
                     String cookie = ri.getCookie();
@@ -125,13 +128,13 @@ public class LinksaveIn extends PluginForDecrypt {
                         reqpro.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
                         
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                        String postdata = getFormInputHidden(getBetween(ri.getHtmlCode(), "form name=\"captchaform\" method=\"post\"", "/form")) + "&code=" + captchaCode + "&x=0&y=0";
-                        ri = postRequest(new URL(parameter), cookie, parameter, reqpro, postdata, false);
+                        String postdata = HTMLParser.getFormInputHidden(SimpleMatches.getBetween(ri.getHtmlCode(), "form name=\"captchaform\" method=\"post\"", "/form")) + "&code=" + captchaCode + "&x=0&y=0";
+                        ri = HTTP.postRequest(new URL(parameter), cookie, parameter, reqpro, postdata, false);
                         
                         if(ri.getHtmlCode().contains("Der eingegebene Captcha-code ist falsch"))
-                            ri = getRequest(new URL(parameter));
+                            ri = HTTP.getRequest(new URL(parameter));
                         else
-                            ri = getRequest(new URL(parameter), ri.getCookie(), parameter, false);
+                            ri = HTTP.getRequest(new URL(parameter), ri.getCookie(), parameter, false);
                         matcher = patternCaptcha.matcher(ri.getHtmlCode());
                     }
 

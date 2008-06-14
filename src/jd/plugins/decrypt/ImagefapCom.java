@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -96,17 +98,17 @@ public class ImagefapCom extends PluginForDecrypt {
                     parameter=parameter.replaceAll("view\\=[0-9]+", "view=2");
                     if(!parameter.contains("view=2"))parameter+="&view=2";
                     url = new URL(parameter + "&view=2");
-                    RequestInfo reqinfo = getRequest(url);
+                    RequestInfo reqinfo = HTTP.getRequest(url);
 
-                    ArrayList<ArrayList<String>> links = getAllSimpleMatches(reqinfo.getHtmlCode(), "image.php?id=°\">");
+                    ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "image.php?id=°\">");
                     logger.info("size: " + links.size());
 
                     progress.setRange(links.size());
 
                     FilePackage fp = new FilePackage();
-                    RequestInfo reqinfo2 = getRequest(new URL("http://imagefap.com/image.php?id=" + links.get(0).get(0)));
+                    RequestInfo reqinfo2 = HTTP.getRequest(new URL("http://imagefap.com/image.php?id=" + links.get(0).get(0)));
 
-                    String gallery = getFirstMatch(reqinfo2.getHtmlCode(), GALLERY, 1);
+                    String gallery = SimpleMatches.getFirstMatch(reqinfo2.getHtmlCode(), GALLERY, 1);
                     logger.info("Galleryname: " + gallery);
                     fp.setName(gallery);
 

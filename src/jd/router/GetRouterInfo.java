@@ -34,7 +34,7 @@ import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 
 import jd.gui.skins.simple.ProgressDialog;
-import jd.plugins.Plugin;
+import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -194,7 +194,7 @@ public class GetRouterInfo {
             // progress.setStatusText("Load possible RouterDatas");
             Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
 
-            RequestInfo request = Plugin.getRequest(new URL("http://" + adress));
+            RequestInfo request = HTTP.getRequest(new URL("http://" + adress));
             String html = request.getHtmlCode().toLowerCase();
             Vector<String[]> routerData = new HTTPLiveHeader().getLHScripts();
             Vector<String[]> retRouterData = new Vector<String[]>();

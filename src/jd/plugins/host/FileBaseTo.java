@@ -23,7 +23,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -87,11 +90,11 @@ public class FileBaseTo extends PluginForHost {
 //        }
         try {
             String url = downloadLink.getDownloadURL();                    
-            requestInfo = getRequest(new URL(url));
-            String name = getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>");
+            requestInfo = HTTP.getRequest(new URL(url));
+            String name = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>");
             downloadLink.setName(name);
             
-            requestInfo = postRequestWithoutHtmlCode(new URL(getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"")), "", url, getFormInputHidden(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "</form>") + "&wait=Download+" + name, false);
+            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"")), "", url, HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "</form>") + "&wait=Download+" + name, false);
             
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
@@ -131,9 +134,9 @@ public class FileBaseTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = getRequest(new URL(url));
-            downloadLink.setName(getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>"));
-            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(getBetween(getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim())*1024*1024));
+            requestInfo = HTTP.getRequest(new URL(url));
+            downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>"));
+            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim())*1024*1024));
             
             return true;
         }

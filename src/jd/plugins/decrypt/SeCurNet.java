@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -84,14 +86,14 @@ public class SeCurNet extends PluginForDecrypt {
     		try {
 
     			URL url = new URL(parameter);
-    			RequestInfo requestInfo = getRequest(url);
-    			ArrayList<ArrayList<String>> layerLinks = getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
+    			RequestInfo requestInfo = HTTP.getRequest(url);
+    			ArrayList<ArrayList<String>> layerLinks = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
     			progress.setRange(layerLinks.size());
     			
     			for ( int i = 0; i < layerLinks.size(); i++ ) {
     				
-    				requestInfo = getRequest( new URL(LINK_OUT_TEMPLATE + layerLinks.get(i).get(0)) );
-    				String link = getSimpleMatch(requestInfo.getHtmlCode(), FRAME, 0);
+    				requestInfo = HTTP.getRequest( new URL(LINK_OUT_TEMPLATE + layerLinks.get(i).get(0)) );
+    				String link = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FRAME, 0);
     				link = JDUtilities.htmlDecode(link);
     				decryptedLinks.add(this.createDownloadlink(link));
     				progress.increase(1);

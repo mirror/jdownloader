@@ -25,13 +25,14 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Form;
+import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
-import jd.plugins.Regexp;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -145,7 +146,7 @@ public class DatenKlo extends PluginForHost {
         switch (step.getStep()) {
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 String loginURL = "http://www.datenklo.net/index.php?inc=login";
-                requestInfo = getRequest(new URL(loginURL));
+                requestInfo = HTTP.getRequest(new URL(loginURL));
                 String cookie = requestInfo.getCookie();
                 Form[] forms = Form.getForms(requestInfo);
                 if (forms == null || forms.length == 0 || forms[0] == null) {
@@ -160,9 +161,9 @@ public class DatenKlo extends PluginForHost {
                 requestInfo = forms[0].getRequestInfo();
                 cookie = cookie + ";" + requestInfo.getCookie();
                 String dlurl = downloadLink.getDownloadURL();
-                String password = new Regexp(dlurl, "\\&down_passwort\\=(.*)").getFirstMatch();
+                String password = new Regex(dlurl, "\\&down_passwort\\=(.*)").getFirstMatch();
                 if (password != null) dlurl = dlurl.replaceFirst("\\&down_passwort.*", "");
-                requestInfo = getRequest(new URL(dlurl), cookie, requestInfo.getConnection().getURL().toString(), true);
+                requestInfo = HTTP.getRequest(new URL(dlurl), cookie, requestInfo.getConnection().getURL().toString(), true);
                 forms = Form.getForms(requestInfo);
                 if (forms == null || forms.length == 0 || forms[0] == null) {
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -191,9 +192,9 @@ public class DatenKlo extends PluginForHost {
             case PluginStep.STEP_GET_CAPTCHA_FILE:
 
                 String dlurl = downloadLink.getDownloadURL();
-                String password = new Regexp(dlurl, "\\&down_passwort\\=(.*)").getFirstMatch();
+                String password = new Regex(dlurl, "\\&down_passwort\\=(.*)").getFirstMatch();
                 if (password != null) dlurl = dlurl.replaceFirst("\\&down_passwort.*", "");
-                requestInfo = getRequest(new URL(dlurl));
+                requestInfo = HTTP.getRequest(new URL(dlurl));
                 if (requestInfo.getHtmlCode().contains(">Offline</span>")) {
                     logger.info("Server is offline");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -216,9 +217,9 @@ public class DatenKlo extends PluginForHost {
                         form.put("down_passwort", JDUtilities.getController().getUiInterface().showUserInputDialog("Please enter the password!"));
                 }
                 captchaFile = getLocalCaptchaFile(this, ".gif");
-                String captchaAdress = "http://" + HOST + new Regexp(requestInfo.getHtmlCode(), "(/lib/captcha/CaptchaImage.php.*?)\"").getFirstMatch();
+                String captchaAdress = "http://" + HOST + new Regex(requestInfo.getHtmlCode(), "(/lib/captcha/CaptchaImage.php.*?)\"").getFirstMatch();
                 logger.info("CaptchaAdress:" + captchaAdress);
-                boolean fileDownloaded = JDUtilities.download(captchaFile, getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
+                boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
                 if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                     logger.severe("Captcha not found");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -253,11 +254,7 @@ public class DatenKlo extends PluginForHost {
                 }
                 downloadLink.setName(getFileNameFormHeader(urlConnection));
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
-                if (!hasEnoughHDSpace(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_NO_FREE_SPACE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+              
                dl = new RAFDownload(this, downloadLink, urlConnection);
 
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
@@ -276,9 +273,9 @@ public class DatenKlo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = getRequest(new URL(downloadLink.getDownloadURL()));
-            String fileName = new Regexp(requestInfo.getHtmlCode(), "<td>Datei: </td>.*?<td>(.*?)</td>").getFirstMatch();
-            String[][] fileSize = new Regexp(requestInfo.getHtmlCode(), "<td>Dateigr.*?: </td>.*?<td>(.*?) (.*?)</td>").getMatches();
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            String fileName = new Regex(requestInfo.getHtmlCode(), "<td>Datei: </td>.*?<td>(.*?)</td>").getFirstMatch();
+            String[][] fileSize = new Regex(requestInfo.getHtmlCode(), "<td>Dateigr.*?: </td>.*?<td>(.*?) (.*?)</td>").getMatches();
             String password = "";
             if (requestInfo.getHtmlCode().contains("type=\"text\" name=\"down_passwort\"")) password = "&down_passwort=" + JDUtilities.getController().getUiInterface().showUserInputDialog("Please enter the password!");
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
