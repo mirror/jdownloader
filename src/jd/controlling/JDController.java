@@ -816,10 +816,11 @@ public class JDController implements ControlListener, UIListener {
         String cipher = encryptDLC(xml);
         if (cipher != null) {
             SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
+            JDUtilities.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {
-                JDUtilities.writeLocalFile(file, cipher);
+               
                 if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
                     loadContainerFile(file);
                     return;

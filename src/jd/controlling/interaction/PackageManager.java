@@ -70,7 +70,7 @@ public class PackageManager extends Interaction implements Serializable {
             dat = data.get(i);
             installed = managerConfig.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + dat.get("id"), 0);
             if (dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
-                logger.info(dat + "");
+             
                 DistributeData distributeData = new DistributeData(dat.get("url"));
                 Vector<DownloadLink> links = distributeData.findLinks();
 
@@ -177,7 +177,7 @@ public class PackageManager extends Interaction implements Serializable {
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
         String[] dat = downloadLink.getSourcePluginComment().split("_");
-        logger.info(dat[0] + " - " + dat[1]);
+       
         UnZip u = new UnZip(new File(downloadLink.getFileOutput()), JDUtilities.getResourceFile("."));
         File[] files;
         try {

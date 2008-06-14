@@ -57,8 +57,8 @@ public class FileFactory extends PluginForHost {
     private static final String NOT_AVAILABLE = "this file is no longer available";
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String NO_SLOT = "no free download slots";
-    private static final String FILENAME = "<tr valign='top' style='color:green;'><td>(.*?)</td>";
-    private static final String FILESIZE = "<td style=\"text-align:right;\">(.*?) (B|KB|MB)</td>";
+    private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
+    private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
     //<p style="margin:30px 0 20px"><a href="http://dl054.filefactory.com/dlp/6a1dad/"><img src="/images/begin_download.gif"
     private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/)\"";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
@@ -540,17 +540,19 @@ public class FileFactory extends PluginForHost {
             	String fileName = JDUtilities.htmlDecode(new Regex(
             			requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getFirstMatch());
             	int length = 0;
-            	
-                // Dateiname ist auf der Seite nur gekürzt auslesbar -> linkchecker
-                // http://www.filefactory.com/file/d0b032/
-					
-				requestInfo = HTTP.postRequest(new URL("http://www.filefactory.com/tools/link_checker.php"), null,
-						null, null, "link_text="+fileFactoryUrlEncode(downloadLink.getDownloadURL()), true);
-				fileName = new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch();
-				if(fileName==null)return false;
-				fileName = fileName.replaceAll(" <br>", "").trim();
-				
-				Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
+            	Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
+//                
+//                // Dateiname ist auf der Seite nur gekürzt auslesbar -> linkchecker
+//                // http://www.filefactory.com/file/d0b032/
+//					/http://www.filefactory.com/file/0f4d0c/
+//				requestInfo = HTTP.postRequest(new URL("http://www.filefactory.com/tools/link_checker.php"), null,
+//						null, null, "link_text="+fileFactoryUrlEncode(downloadLink.getDownloadURL()), true);
+//				String f2 = new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch();
+//				if(f2!=null)fileName=f2;
+//				if(fileName==null)return false;
+//				fileName = fileName.replaceAll(" <br>", "").trim();
+//				
+//				Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
 				String unit = new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(2);
 				
 				if ( unit.equals("B") )  length = (int) Math.round(fileSize);

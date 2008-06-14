@@ -38,7 +38,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     private String               version          = "1.0.0.0";
 
-    //
+    //http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
     static private final Pattern patternSupported = getSupportPattern("http://wii-reloaded.ath.cx/protect/get\\.php\\?i=[+]");
 
     private static String        COOKIE           = null;
@@ -116,7 +116,7 @@ public class Wiireloaded extends PluginForDecrypt {
                     progress.addToMax(ids.size());
                     for (int i = 0; i < ids.size(); i++) {
                         String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids.get(i);
-                        requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + 17 + "&senden=Download", false);
+                        requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + 20 + "&senden=Download", false);
 
                         if (requestInfo.getLocation() != null)
 {decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
