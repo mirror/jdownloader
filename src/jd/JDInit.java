@@ -400,6 +400,8 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLowSpeed", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDChat", 1.5));
+        
         
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 

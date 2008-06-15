@@ -968,3 +968,4 @@ plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh = JD-LiveHeader
 plugins.optional.httpliveheaderscripter.gui.menu.file.save = Datei speichern
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script Ersteller
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
+plugin.rapidshare.tickettime= %s min bis zum Download

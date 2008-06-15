@@ -20,7 +20,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
-import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
@@ -81,9 +80,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return 0;
     }
 
-    private TrayIcon trayIcon;
 
-    private TrayIconPopup popup;
 
     private JFrame frame;
 

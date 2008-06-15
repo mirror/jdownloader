@@ -159,13 +159,24 @@
 	              </fileset>
 				 
 	        </jar>
+		
 		<manifest file="Manifest.MF">
 				<attribute name="Created-By" value="JD-Team" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
-	        <jar jarfile="${dist}/JDShutdown.jar" manifest="Manifest.MF">
+	        <jar jarfile="${dist}/JDLowSpeed.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/JDShutdown*" />                
+	                <include name="jd/plugins/optional/JDLowSpeed*" />                
+	              </fileset>
+				 
+	        </jar>
+		<manifest file="Manifest.MF">
+				<attribute name="Created-By" value="JD-Team" />
+				<attribute name="Main-Class" value="jd.update.Main" />
+		    </manifest>
+	        <jar jarfile="${dist}/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+	            <fileset dir="${cls}">
+	                <include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />                
 	              </fileset>
 				 
 	        </jar>
