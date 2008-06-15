@@ -113,16 +113,16 @@ gui.config.captcha.ces.btn_messages = Meine Nachrichten anzeigen
 gui.config.captcha.ces.btn_register = Registrieren
 gui.config.captcha.ces.btn_sendmessages = Nachricht senden
 gui.config.captcha.ces.btn_stats = Meine Statistiken
-gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Passwort
 gui.config.captcha.ces.user = C.E.S. Benutzername
 gui.config.captcha.extendedCaptcha = Captchaverarbeitung anzeigen
-gui.config.captcha.extendedCaptcha.instanthelp = http://jdownloader.ath.cx/faq.php
+gui.config.captcha.extendedCaptcha.instanthelp = http://jdownloader.org/faq.php
 gui.config.captcha.jac_disable = Automatische Bilderkennung abschalten
 gui.config.captcha.jac_methods = Automatische Bilderkennung verwenden für:
 gui.config.captcha.show_input_dialog = Zeige das Eingabefeld
 gui.config.captcha.train.level = Anzeigeschwelle
-gui.config.captcha.train.level.instanthelp = http://jdownloader.ath.cx/page.php?id=3
+gui.config.captcha.train.level.instanthelp = http://jdownloader.org/page.php?id=3
 gui.config.captcha.train.show_timeout = Anzeigedauer des Eingabefensters
 gui.config.captcha.useCESPenaltyWarning = Durch frühzeitige Rückfrage Punktstrafen vermeiden
 gui.config.captcha.use_Ces = CaptchaExchangeServer verwenden (Neustart nötig)
@@ -314,7 +314,7 @@ gui.config.popup.title = Konfiguration
 gui.config.reconnect.name = Reconnect
 gui.config.reloadContainer = Heruntergeladene Container einlesen
 gui.config.showContainerOnLoadInfo = Detailierte Containerinformationen beim Öffnen anzeigen
-gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.subPanel.btn_cancel = Abbrechen
 gui.config.subPanel.btn_ok = OK
 gui.config.tabLables.containerPlugin = Link-Container
@@ -694,7 +694,7 @@ interaction.resetLink.whichLink = Welcher Link soll zurückgesetzt werden?
 interaction.simpleExecute.cmd = Befehl
 interaction.simpleExecute.executein = Ausführen in (Ordner)
 interaction.simpleExecute.extended = Erweiterte Einstellungen
-interaction.simpleExecute.helpLink = http://jdownloader.ath.cx/page.php?id=119
+interaction.simpleExecute.helpLink = http://jdownloader.org/page.php?id=119
 interaction.simpleExecute.name = Programm/Script ausführen
 interaction.simpleExecute.parameter = Parameter (1 Parameter pro Zeile)
 interaction.simpleExecute.test = Jetzt ausführen
@@ -754,14 +754,14 @@ main.start.logwarning.body = ACHTUNG. Das Loglevel steht auf %s und der Dateisch
 main.start.logwarning.title = Logwarnung
 main.status.active = an
 main.status.inactive = aus
-main.urls.faq = http://jdownloader.ath.cx/faq.php?lng=deutsch
+main.urls.faq = http://jdownloader.org/faq.php?lng=deutsch
 modules.packagemanager.loadednewpackage.title = Paket Update installiert
 modules.packagemanager.packagename = JD-Update
 modules.reconnect.pleaseSelect = Bitte Methode auswählen:
 modules.reconnect.types.batch = Batch
 modules.reconnect.types.extern = Extern
 modules.reconnect.types.liveheader = LiveHeader/Curl
-modules.unrar.enabled.instanthelp = http://jdownloader.ath.cx/page.php?id=17
+modules.unrar.enabled.instanthelp = http://jdownloader.org/page.php?id=17
 plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 plugins.container.ccf.useCCF2RSDF = CCF2RSDF statt Onlinedecrypter verwenden
 plugins.container.decrypt = Decrypt link %s
@@ -795,11 +795,11 @@ plugins.hoster.general.passwordProtectedInput = Die Links sind mit einem Passwor
 plugins.hoster.rapidshare.com.extendedTab = Erweiterte Einstellungen
 plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached = Premium: Free Download wenn Limit noch nicht erreicht wurde
 plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
-plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
+plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
 plugins.hoster.rapidshare.com.increaseTicketTime = Ticketwartezeit verlängern (0%-500%)
 plugins.hoster.rapidshare.com.info.error = <font color='red'><p>Account nicht gefunden</p></font>
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Accountinfo für %s
 plugins.hoster.rapidshare.com.loadinfo = Lade RS.com Account Informationen:
 plugins.hoster.rapidshare.com.loadpreBytes = Nur die ersten * Bytes jeder Datei laden[-1 to disable]
@@ -922,9 +922,9 @@ gui.config.download.connectionlost.wait = Wartezeit nach Verbindungsabbruch [s]
 gui.config.download.ipcheck.mask = Erlaubte IPs
 gui.config.general.link.wiki = Wiki - häufige Fragen
 gui.config.plugin.optional.btn_openDir = Addon Ordner öffnen
-gui.config.plugin.optional.link_help =   http://jdownloader.ath.cx/page.php?id=122
+gui.config.plugin.optional.link_help =   http://jdownloader.org/page.php?id=122
 gui.config.plugin.optional.linktext_help = Hilfe
-gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.ath.cx/wiki/index.php?title=Konfig:
+gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig:
 gui.menu.action.wiki.accel = -
 gui.menu.action.wiki.desc = Hilfe aus dem Wikipedia
 gui.menu.action.wiki.mnem = -
@@ -940,6 +940,31 @@ gui.dialog.about.title = Über JDownloader
 gui.reconnect.confirm = Wollen Sie sicher eine neue Verbindung aufbauen?
 gui.reconnect.success = Reconnect erfolgreich
 gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=316
-gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php
+gui.support.wikiurl = http://wiki.jdownloader.org/index.php
 gui.warning.reconnect.hasbeendisabled = Reconnect deaktiviert!
 gui.warning.reconnect.hasbeendisabled.tooltip = Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden.
+controller.status.retryonerror = Neuer Versuch(%s/%s) in 3 Sekunden
+download.connection.normal = Download
+gui.config.download.buffersize = Max. Buffersize[MB]
+gui.config.download.downloadThread = Gleichzeitig downloaden und auf Festplatte schreiben
+gui.config.liveHeader.btnFindIP = Router IP ermitteln
+gui.download.kbps = kb/s
+gui.table.contextmenu.resume = fortsetzen
+interaction.packagemanager.progress.loadpackages = Paketdaten laden
+plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = Die Datei konnte nicht gefunden. Bitte prüfen Sie den Downloadlink.
+plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Diese Datei steht im Verdacht illegal zu sein und ist gesperrt. Nach 7 Tagen Sperrzeit wird diese Datei automatisch gelöscht, falls die Sperre nicht durch RapidShare aufgehoben wird. Ein Download ist deshalb derzeit leider nicht möglich.
+plugins.optional.httpliveheaderscripter.action.start = Scripter starten
+plugins.optional.httpliveheaderscripter.gui.menu.edit = Bearbeiten
+plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine = DEFINE hinzufügen
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest = REQUEST hinzufügen
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable = Variable einfügen
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait = WAIT hinzufügen
+plugins.optional.httpliveheaderscripter.gui.menu.edit.validate = Gültigkeit des Scripts prüfen
+plugins.optional.httpliveheaderscripter.gui.menu.file = Datei
+plugins.optional.httpliveheaderscripter.gui.menu.file.exit = Beenden
+plugins.optional.httpliveheaderscripter.gui.menu.file.importfile = Datei öffnen
+plugins.optional.httpliveheaderscripter.gui.menu.file.importhhtplive = Firefox LiveHeader Log importieren
+plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh = JD-LiveHeader Script importieren
+plugins.optional.httpliveheaderscripter.gui.menu.file.save = Datei speichern
+plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script Ersteller
+plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
