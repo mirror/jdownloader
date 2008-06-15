@@ -1816,7 +1816,7 @@ public class JDUtilities {
         int majorVersion = JDUtilities.filterInt(version.substring(0, version.indexOf(".")));
         int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
         return Double.parseDouble(majorVersion + "." + subversion);
-    }
+    } 
 
     /**
      * Ersetzt die Platzhalter in einem String

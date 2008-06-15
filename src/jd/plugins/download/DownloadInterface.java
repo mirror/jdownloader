@@ -544,7 +544,7 @@ abstract public class DownloadInterface {
             while (it.hasNext()) {
                 next = it.next();
                 if (next.isAlive()) {
-                    next.checkTimeout(120000);
+                    next.checkTimeout(180000);
                     next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
                 }
 

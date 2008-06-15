@@ -848,7 +848,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
         try {
             ImageIcon icon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
-            JLinkButton linkButton = new JLinkButton("JD Website", icon, new URL("http://jdownloader.org"));
+            JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org","jDownloader.org"), icon, new URL("http://jdownloader.org"));
             linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
             linkButton.setBorder(null);
             Dimension d = new Dimension(10, 0);

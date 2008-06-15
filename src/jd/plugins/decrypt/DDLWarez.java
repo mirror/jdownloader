@@ -24,12 +24,12 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.GetRequest;
 import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -85,12 +85,17 @@ public class DDLWarez extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
-                String title = SimpleMatches.getSimpleMatch(reqinfo, "<title>DDL-Warez v3.0 // °</title>", 0);
-                String pass = SimpleMatches.getSimpleMatch(reqinfo, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
+                GetRequest req = new GetRequest(parameter);
+                req.setReadTimeout(5*60*1000);
+                req.setConnectTimeout(5*60*1000);
+                String page=req.load();
+                //RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
+                String title = SimpleMatches.getSimpleMatch(page, "<title>DDL-Warez v3.0 // °</title>", 0);
+                String pass = SimpleMatches.getSimpleMatch(page, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
                 if (pass.equals("kein Passwort")) pass = null;
                 logger.info("Password=" + pass);
-                Form[] forms = reqinfo.getForms();
+               
+                Form[] forms =  Form.getForms(page);
 
                 // first form is the search form, not needed
                 progress.setRange(forms.length - 1);
