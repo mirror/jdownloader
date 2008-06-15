@@ -524,11 +524,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
-        actionTester = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.tester", JDAction.APP_TESTER);
-        actionUnrar = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.unrar", JDAction.APP_UNRAR);
+        actionTester = new JDAction(this, null, "action.tester", JDAction.APP_TESTER);
+        actionUnrar = new JDAction(this, null, "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
         actionCes = new JDAction(this, CES.getCesImageString(), "action.ces", JDAction.APP_CES);
-        actionPasswordlist = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.passwordlist", JDAction.APP_PASSWORDLIST);
+        actionPasswordlist = new JDAction(this, null, "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
@@ -542,7 +542,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
 //        actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"), "action.wiki", JDAction.WIKI);
-        actionWiki = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.wiki", JDAction.WIKI);
+        actionWiki = new JDAction(this, null, "action.wiki", JDAction.WIKI);
 //        actionAbout = new JDAction(this, JDTheme.V("gui.images.about"), "action.about", JDAction.ABOUT);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
 
