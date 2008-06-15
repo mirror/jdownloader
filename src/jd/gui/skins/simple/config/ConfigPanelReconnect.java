@@ -40,6 +40,7 @@ import jd.event.ControlListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.MiniLogDialog;
+import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -152,12 +153,19 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (e.getSource() == btn) {
             save();
 
-            mld = new MiniLogDialog(SimpleGUI.CURRENTGUI.getFrame(), "Reconnect");
+            
+
+            
+            
+            
+            
+            
+            mld = new MiniLogDialog("Reconnect");
              mld.getBtnOK().setEnabled(false);
              mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"));
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
-            mld.setEnabled(true);
+            //mld.setEnabled(true);
             JDUtilities.getController().addControlListener(this);
 
             logger.info("Start Reconnect");
@@ -178,7 +186,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
                     mld.getProgress().setValue(100);
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.close", "Fenster schließen"));
-                    mld.setEnabled(false);
+                    //mld.setEnabled(false);
                     JDUtilities.getController().removeControlListener(ConfigPanelReconnect.this);
                 }
             }.start();

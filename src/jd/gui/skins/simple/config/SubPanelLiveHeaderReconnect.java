@@ -164,11 +164,11 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
         if (e.getSource() == btnFindIP) {
             JDUtilities.getController().addControlListener(this);
-          mld = new MiniLogDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
+          mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
             mld.getBtnOK().setEnabled(false);
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
-            mld.setEnabled(true);
+           //mld.setEnabled(true);
             new Thread() {
                 public void run() {
                     ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
@@ -180,7 +180,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
-                    mld.setEnabled(true);
+                    //mld.setEnabled(true);
                    
                     JDUtilities.getController().addControlListener(SubPanelLiveHeaderReconnect.this);
                 }

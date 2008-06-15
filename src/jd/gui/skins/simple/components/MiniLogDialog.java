@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -35,7 +36,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class MiniLogDialog extends JDialog implements ActionListener {
+public class MiniLogDialog extends JFrame implements ActionListener {
     public static void main(String args[]) {
 
         //MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message", Thread.currentThread(), true, true);
@@ -72,12 +73,14 @@ public class MiniLogDialog extends JDialog implements ActionListener {
 
     private static int REM = GridBagConstraints.REMAINDER;
 
-    public MiniLogDialog(Frame owner, String message) {
-        super(owner);
-        setModal(false);
+    public MiniLogDialog(String message) {
+        super();
+      
         setLayout(new GridBagLayout());
         this.setVisible(true);
         //this.thread = ob;
+        this.setTitle(message);
+        this.setAlwaysOnTop(true);
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         lblMessage = new JLabel(message);
@@ -87,7 +90,7 @@ public class MiniLogDialog extends JDialog implements ActionListener {
         htmlArea.setLineWrap(false);
         //htmlArea.setContentType("text/html");
         htmlArea.setText("");
-        htmlArea.requestFocusInWindow();
+       // htmlArea.requestFocusInWindow();
 
 this.setPreferredSize(new Dimension(400,300));
         progress = new JProgressBar();
