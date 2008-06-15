@@ -253,6 +253,8 @@ public class HTMLParser {
 
         Pattern[] linkAndFormPattern = new Pattern[] {
           		 Pattern.compile("(?s)<[ ]?a[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE),
+          		 Pattern.compile("(?s)\\[link\\](.*?)\\[/link\\]", Pattern.CASE_INSENSITIVE),
+          		 Pattern.compile("(?s)\\[url\\](.*?)\\[/url\\]", Pattern.CASE_INSENSITIVE),
        		 Pattern.compile("(?s)<[ ]?a[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE),
        		 Pattern.compile("(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE),
        		 Pattern.compile("(?s)<[ ]?form[^>]*?action=\"(.*?)\"", Pattern.CASE_INSENSITIVE),
@@ -289,6 +291,7 @@ public class HTMLParser {
             }
         }
         data = data.replaceAll("(?s)<.*?>", "");
+        data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]","");
         m = Pattern.compile("www\\.[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
