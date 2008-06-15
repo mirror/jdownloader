@@ -124,7 +124,7 @@ gui.config.captcha.ces.btn_messages = Show my messages
 gui.config.captcha.ces.btn_register = Register
 gui.config.captcha.ces.btn_sendmessages = Send message
 gui.config.captcha.ces.btn_stats = My statistics
-gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Password
 gui.config.captcha.ces.user = C.E.S. Username
 gui.config.captcha.extendedCaptcha = Captchaverarbeitung anzeigen
@@ -333,7 +333,7 @@ gui.config.plugin.optional.column_needs = Needs
 gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Status
 gui.config.plugin.optional.column_version = Version
-gui.config.plugin.optional.link_help = http://www.jdownloader.ath.cx/wiki/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
 gui.config.plugin.optional.linktext_help = Help
 gui.config.plugin.optional.name = Optional Plugins
 gui.config.plugin.optional.statusActive = On
@@ -349,7 +349,7 @@ gui.config.popup.title = Configuration
 gui.config.reconnect.name = Reconnect
 gui.config.reloadContainer = Reload Download Container
 gui.config.showContainerOnLoadInfo = Show detailed containerinformation on load
-gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.tabLables.containerPlugin = Link Containers
 gui.config.tabLables.decryptPlugin = Decryption
 gui.config.tabLables.download = Download/Network
@@ -430,7 +430,7 @@ gui.frame.packageinfo.entryname = Name
 gui.frame.packageinfo.entrypackagesize = Packagesize
 gui.helpLocale.title = Support helps alot!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Wrong Java Version
 gui.linkInfo.Available = Available
 gui.linkInfo.Comment = Comment
@@ -876,10 +876,10 @@ plugins.hoster.rapidshare.com.concernsPremiumUser = (*1) Premium user must selec
 plugins.hoster.rapidshare.com.extendedTab = Advanced Settings
 plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached = Free download-limit not reached
 plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Important!
 plugins.hoster.rapidshare.com.increaseTicketTime = Increase ticket time (0%-500%)
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Accountinformation for %s
 plugins.hoster.rapidshare.com.loadFirstBytes = Load only first * kilobytes for each file (-1 = disable)
 plugins.hoster.rapidshare.com.loadinfo = Loading account information for rapidshare.com
@@ -977,7 +977,7 @@ system.download.triggerfileexists.skip = Skip Link
 gui.config.download.connectionlost.wait = Waittime after loosing connection [s]
 gui.config.download.ipcheck.mask = Allowed IPs
 gui.config.general.link.wiki = Wiki - frequently asked questions
-gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.ath.cx/wiki/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
 gui.menu.action.wiki.accel = -
 gui.menu.action.wiki.desc = Find help in the wikipedia
 gui.menu.action.wiki.mnem = -
@@ -988,7 +988,33 @@ gui.dialog.about.title = About JDownloader
 gui.reconnect.confirm = Do you want to reconnect your connection?
 gui.reconnect.success = Reconnect successfull
 gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
 gui.warning.reconnect.hasbeendisabled = Reconnect disabled!
 gui.warning.reconnect.hasbeendisabled.tooltip = To allow JDownloader to perform automated reconnects, you should enable this feature!
 plugins.optional.RemoteControl.port = Port:
+controller.status.retryonerror = Retry (%s/%s) in 3 seconds
+download.connection.normal = Download
+interaction.packagemanager.progress.loadpackages = Load packagedata
+interaction.simpleExecute.name = Execute Programm/Script
+linkinformation.available.error = Error!
+main.start.logwarning.body = ATTENTION. Your Loglevel is set to %s and the Logfilewriter is turned %s. This settings are only recommended for debugging.
+main.start.logwarning.title = Logwarning
+main.status.inactive = off
+main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = File not found. Please check your downloadlink.
+plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = This file seems to be illegal and is locked. Downloading this file is prohibited by Rapidshare.
+plugins.optional.httpliveheaderscripter.action.start = Start Scripter
+plugins.optional.httpliveheaderscripter.gui.menu.edit = Edit
+plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine = Add define tag
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest = Add request tag
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable = Add variable
+plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait = Add wait tag
+plugins.optional.httpliveheaderscripter.gui.menu.edit.validate = Validate current script
+plugins.optional.httpliveheaderscripter.gui.menu.file = File
+plugins.optional.httpliveheaderscripter.gui.menu.file.exit = Exit
+plugins.optional.httpliveheaderscripter.gui.menu.file.importfile = Open file
+plugins.optional.httpliveheaderscripter.gui.menu.file.importhhtplive = Import Firefox LiveHeader Script
+plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh = Import JD-LiveHeader Script
+plugins.optional.httpliveheaderscripter.gui.menu.file.save = Save file
+plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script creater
+plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
