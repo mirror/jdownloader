@@ -170,7 +170,6 @@ public class JLinkButton extends JButton {
 
         if (url != null) {
             String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
-            System.out.println(Browser);
             if (Browser == null) {
                 BrowserLauncher launcher;
                 List ar = null;
