@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional;
+package jd.plugins.optional.jdchat;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -37,6 +38,8 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LocationListener;
@@ -44,30 +47,33 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
-import jd.utils.HTMLEntities;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.OSDetector;
 
 import org.schwering.irc.lib.IRCConnection;
-import org.schwering.irc.lib.IRCEventListener;
-import org.schwering.irc.lib.IRCModeParser;
-import org.schwering.irc.lib.IRCUser;
 
 public class JDChat extends PluginOptional {
     private static final String HOST = "PARAM_" + "HOST";
     private static final String PORT = "PARAM_" + "PORT";;
     private static final String NICK = "PARAM_" + "NICK";;
-
+    private static final String PERFORM = "PARAM_" + "PERFORM";;
     private static final String CHANNEL = "#jDownloader";
-    public static final int REPLY_NAMES_LIST = 353;
-    public static final int REPLY_END_OF_NAMES = 366;
-    public static final int REPLY_MOD = 332;
     public static final String COLOR_CHAT = "000000";
     public static final String COLOR_PM = "FFcc00";
-    private static final String COLOR_SYSTEM = "cccccc";
-    private static final String COLOR_SELF = "55cc55";
+    public static final String COLOR_SYSTEM = "cccccc";
+    public static final String COLOR_SELF = "55cc55";
+    public static final String COLOR_ERROR = "ff0000";
+    private static final Pattern CMD_PM = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_SLAP = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
+    private static final String COLOR_ACTION = "442222";
+    private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    public static final String COLOR_NOTICE = "bbbbbb";
+    private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+  
 
     public static int getAddonInterfaceVersion() {
         return 0;
@@ -84,6 +90,7 @@ public class JDChat extends PluginOptional {
     private JLabel top;
     private JTextPane right;
     private ArrayList<User> NAMES;
+    private int nickCount=0;
 
     @Override
     public String getCoder() {
@@ -109,6 +116,7 @@ public class JDChat extends PluginOptional {
     public boolean initAddon() {
         this.NAMES = new ArrayList<User>();
         this.sb = new StringBuffer();
+        initConfigs();
         initGUI();
         new Thread() {
             public void run() {
@@ -119,6 +127,20 @@ public class JDChat extends PluginOptional {
         return true;
     }
 
+    private void initConfigs() {
+        SubConfiguration subConfig = JDUtilities.getSubConfig("JDCHAT");
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, NICK, JDLocale.L("plugins.optional.jdchat.user", "Nickname")));
+        
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
+        
+        
+    }
+public void perform(){
+     String[] perform = JDUtilities.splitByNewline(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
+     if(perform==null)return;
+     for(String cmd:perform)this.sendMessage(CHANNEL, cmd);
+}
     private void initGUI() {
 
         this.frame = new JFrame();
@@ -132,25 +154,30 @@ public class JDChat extends PluginOptional {
         frame.setLayout(new BorderLayout());
         top = new JLabel();
         textArea = new JTextPane();
-        textArea.addHyperlinkListener(new HyperlinkListener(){
+        HyperlinkListener hyp = new HyperlinkListener() {
 
             public void hyperlinkUpdate(HyperlinkEvent e) {
-             if(e.getEventType()==HyperlinkEvent.EventType.ACTIVATED){
-                 
-                 if(e.getDescription().startsWith("intern")){
-                     String[][] m = new Regex(e.getDescription()+"?","intern:([\\w]*?)\\|(.*?)\\?").getMatches();
-                     if(m.length==1){
-                         doAction(m[0],m[1]);
-                         return;
-                     }
-                 }else{
-                     JLinkButton.openURL( e.getURL());
-                 }
-             }
-                
+                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+
+                    if (e.getDescription().startsWith("intern")) {
+                        String[][] m = new Regex(e.getDescription() + "?", "intern:([\\w]*?)\\|(.*?)\\?").getMatches();
+                        if (m.length == 1) {
+                            doAction(m[0][0], m[0][1]);
+                            return;
+                        }
+                    } else {
+                        JLinkButton.openURL(e.getURL());
+                    }
+                }
+
             }
-            
-        });
+
+        };
+        right = new JTextPane();
+        right.setContentType("text/html");
+        right.setEditable(false);
+        textArea.addHyperlinkListener(hyp);
+        right.addHyperlinkListener(hyp);
         scrollPane = new JScrollPane(textArea);
         textField = new JTextField();
         textField.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, Collections.EMPTY_SET);
@@ -201,9 +228,7 @@ public class JDChat extends PluginOptional {
             }
 
         });
-        right = new JTextPane();
-        right.setContentType("text/html");
-        right.setEditable(false);
+
         // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         textArea.setContentType("text/html");
         textArea.setEditable(false);
@@ -218,31 +243,74 @@ public class JDChat extends PluginOptional {
         frame.setVisible(true);
     }
 
-    protected void doAction(String[] strings, String[] strings2) {
-        // TODO Auto-generated method stub
-        
+    protected void doAction(String type, String name) {
+        if (textField.getText().length() == 0) {
+            textField.setText("/msg " + name + " ");
+        } else {
+
+            textField.setText(textField.getText().trim() + " " + name + " ");
+        }
+
+        textField.requestFocus();
     }
 
     protected void sendMessage(String channel2, String text) {
-        conn.doPrivmsg(channel2, text);
-        this.addToText(COLOR_SELF, conn.getNick() + ":" + prepareMsg(text));
+        if (text.startsWith("/")) {
+            int end = text.indexOf(" ");
+            if (end < 0) end = text.length();
+            String cmd = text.substring(1, end);
+            String rest = text.substring(end).trim();
+            if (Regex.matches(cmd, CMD_PM)) {
+                end = rest.indexOf(" ");
+                if (end < 0) end = rest.length();
 
+                conn.doPrivmsg(rest.substring(0, end).trim(), rest.substring(end).trim());
+
+                this.addToText(COLOR_PM, ">" + rest.substring(0, end).trim() + ":" + Utils.prepareMsg(rest.substring(end).trim()));
+            } else if (Regex.matches(cmd, CMD_SLAP)) {
+                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
+                this.addToText(COLOR_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
+            } else if (Regex.matches(cmd, CMD_ACTION)) {
+
+                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + rest.trim() + new String(new byte[] { 1 }));
+                this.addToText(COLOR_ACTION, conn.getNick() + " " + rest.trim());
+
+            } else if (Regex.matches(cmd, CMD_VERSION)) {
+
+                String msg = " is using JD " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
+                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + msg + new String(new byte[] { 1 }));
+                this.addToText(COLOR_ACTION, conn.getNick() + " " + msg);
+
+            } else if (Regex.matches(cmd, CMD_NICK)) {
+                conn.doNick(rest.trim());
+                
+                
+                JDUtilities.getSubConfig("JDCHAT").setProperty(NICK,rest.trim());
+                JDUtilities.getSubConfig("JDCHAT").save();
+            } else {
+                this.addToText(COLOR_ERROR, "Command /" + cmd + " is not available");
+            }
+
+        } else {
+            conn.doPrivmsg(channel2, text);
+            this.addToText(COLOR_SELF, conn.getNick() + ":" + Utils.prepareMsg(text));
+        }
     }
 
     private void initIRC() {
-        while (true) {
-            SubConfiguration conf = JDUtilities.getSubConfig("IRC");
+        
+            SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
             String host = conf.getStringProperty(HOST, "irc.freenode.net");
             int port = conf.getIntegerProperty(PORT, 6667);
             String pass = null;
-            String nick = getNick();
-            String user = getNick();
-            String name = getNick();
+            String nick = getNickname();
+            String user = getNickname();
+            String name = getNickname();
             addToText(COLOR_SYSTEM, "Connecting to JDChat...");
             conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
             conn.setTimeout(1000 * 60 * 60);
 
-            conn.addIRCEventListener(new IRCListener());
+            conn.addIRCEventListener(new IRCListener(this));
             conn.setEncoding("UTF-8");
             conn.setPong(true);
             conn.setDaemon(false);
@@ -250,28 +318,32 @@ public class JDChat extends PluginOptional {
             try {
                 conn.connect();
 
-                conn.doJoin(CHANNEL, null);
+             
                 // conn.doPrivmsg("#jdDev", "JDChat Addon 0.1");
-                break;
+              
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 addToText(COLOR_SYSTEM, "Connect Timeout. Server not reachable...");
                 e.printStackTrace();
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(15000);
                 } catch (InterruptedException e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
+                initIRC();
             }
-        }
+        
 
     }
 
-    private String getNick() {
+    String getNickname() {
         // TODO Auto-generated method stub
-        String def = "JD-[" + JDLocale.getLocale() + "]_" + ("" + System.currentTimeMillis()).substring(6);
-        nick = JDUtilities.getSubConfig("IRC").getStringProperty(NICK, def);
+        String def = "JD-[" + JDLocale.getLocale().substring(0,2) + "]_" + ("" + System.currentTimeMillis()).substring(6);
+        nick = JDUtilities.getSubConfig("JDCHAT").getStringProperty(NICK, def);
+        if(getNickCount()>0){
+            nick+="["+getNickCount()+"]";
+        }
         return nick;
     }
 
@@ -312,35 +384,32 @@ public class JDChat extends PluginOptional {
 
     }
 
-    public String getRandomColor() {
-        String col = Long.toHexString((long) (Math.random() * 0xffffff));
-        while (col.length() < 6)
-            col = "0" + col;
-        return col;
-    }
-
     public void setMOD(final String msg) {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
-frame.setTitle(getPluginName()+" : "+msg);
+                frame.setTitle(getPluginName() + " : " + msg);
                 frame.pack();
             }
         });
 
     }
 
-    public void addToText(String col, String string) {
+    public void addToText(String col, final String string) {
         Date dt = new Date();
-     
-     SimpleDateFormat df = new SimpleDateFormat( "HH:mm:ss" );
-     
- 
-        this.sb.append("<font color='#" + col + "'>[" + df.format( dt )+"] "+string + "</font><br>");
+
+        SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+
+        this.sb.append("<font color='#" + col + "'>[" + df.format(dt) + "] " + string + "</font><br>");
         changed = true;
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 if (changed) {
+
+                    if (!frame.isActive() && string.contains(conn.getNick())) {
+                        JDSounds.PT("sound.gui.selectPackage");
+                        frame.toFront();
+                    }
                     textArea.setText(sb.toString());
                     logger.info(sb.toString());
 
@@ -356,9 +425,14 @@ frame.setTitle(getPluginName()+" : "+msg);
     }
 
     public void updateNames(String[] split) {
+        User user;
         for (String name : split) {
 
-            if (getUser(name) == null) NAMES.add(new User(name));
+            if ((user=getUser(name)) == null) {
+                NAMES.add(new User(name));
+            }else if(user.rank!=new User(name).rank){
+                user.rank=new User(name).rank;
+            }
         }
 
     }
@@ -370,7 +444,7 @@ frame.setTitle(getPluginName()+" : "+msg);
             User name = it.next();
             sb.append("<a href='intern:query|" + name + "'><font color='#" + name.color + "'> " + name + "</font></a><br>");
         }
-
+        logger.info(sb + "");
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 right.setText(sb.toString());
@@ -378,206 +452,42 @@ frame.setTitle(getPluginName()+" : "+msg);
             }
         });
 
-    }public String prepareMsg(String msg){
-        msg=HTMLEntities.htmlAngleBrackets(msg);
-        return msg.replaceAll("http://[^\\s\"]*","﻿<a href=\\'$0\\'>﻿$0</a>");
-       
     }
 
-    class IRCListener implements IRCEventListener {
+    public void resetNamesList() {
 
-        public void onRegistered() {
-            logger.info("Connected");
-            addToText("000000", "Connection estabilished");
-        }
-
-        public void onDisconnected() {
-            logger.info("Disconnected");
-            addToText("000000", "Connection lost");
-            initIRC();
-        }
-
-        public void onError(String msg) {
-            logger.info("Error: " + msg);
-        }
-
-        public void onError(int num, String msg) {
-            logger.info("Error #" + num + ": " + msg);
-        }
-
-        public void onInvite(String chan, IRCUser u, String nickPass) {
-            logger.info(chan + "> " + u.getNick() + " invites " + nickPass);
-        }
-
-        public void onJoin(String chan, IRCUser u) {
-            logger.info(chan + "> " + u.getNick() + " joins");
-
-            resetNamesList();
-            conn.doNames(CHANNEL);
-        }
-
-        public void onKick(String chan, IRCUser u, String nickPass, String msg) {
-            logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
-        }
-
-        public void onMode(IRCUser u, String nickPass, String mode) {
-            logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " + nickPass);
-        }
-
-        public void onMode(String chan, IRCUser u, IRCModeParser mp) {
-            logger.info(chan + "> " + u.getNick() + " sets mode: " + mp.getLine());
-        }
-
-        public void onNick(IRCUser u, String nickNew) {
-            logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
-        }
-
-        public void onNotice(String target, IRCUser u, String msg) {
-            logger.info(target + "> " + u.getNick() + " (notice): " + msg);
-        }
-
-        public void onPart(String chan, IRCUser u, String msg) {
-            logger.info(chan + "> " + u.getNick() + " parts");
-            resetNamesList();
-            conn.doNames(CHANNEL);
-
-        }
-
-        public void resetNamesList() {
-
-            NAMES = new ArrayList<User>();
-            if (getUser(conn.getNick().trim()) == null) NAMES.add(new User(conn.getNick().trim()));
-        }
-
-        public void onPrivmsg(String chan, IRCUser u, String msg) {
-            User user = getUser(u.getNick());
-            if (user == null) { return; }
-            if (chan.equals(conn.getNick())) {
-                addToText(COLOR_PM, user.getNickLink("pmnick") + "> " + prepareMsg(msg));
-                
-                if(!frame.isActive()){
-                    JDSounds.PT("sound.gui.selectPackage");
-                    frame.toFront();
-                }
-                // resetNamesList();
-                // conn.doNames(CHANNEL);
-            } else {
-                addToText(COLOR_CHAT, user.getNickLink("channick") + ": " + prepareMsg(msg));
-                if(!frame.isActive()&&msg.contains(conn.getNick())){
-                    JDSounds.PT("sound.gui.selectPackage");
-                    frame.toFront();
-                }
-            }
-
-            logger.info(chan + "> " + u.getNick() + ": " + msg);
-        }
-
-        public void onQuit(IRCUser u, String msg) {
-            logger.info("Quit: " + u.getNick());
-        }
-
-        public void onReply(int num, String value, String msg) {
-            
-            logger.info("Reply #" + num + ": " + value + " " + msg);
-            if (num == REPLY_NAMES_LIST) {
-                updateNames(msg.trim().split(" "));
-            }
-
-            if (num == REPLY_END_OF_NAMES) {
-                updateNamesPanel();
-
-            }
-            if (num == REPLY_MOD) {
-                setMOD(msg);
-
-            }
-
-        }
-
-        public void onTopic(String chan, IRCUser u, String topic) {
-            logger.info(chan + "> " + u.getNick() + " changes topic into: " + topic);
-        }
-
-        public void onPing(String p) {
-
-        }
-
-        public void unknown(String a, String b, String c, String d) {
-            logger.info("UNKNOWN: " + a + " b " + c + " " + d);
-        }
+        NAMES = new ArrayList<User>();
+        if (getUser(conn.getNick().trim()) == null) NAMES.add(new User(conn.getNick().trim()));
     }
 
-    class User implements Comparable {
-        private static final int RANK_OP = 0;
-        private static final int RANK_VOICE = 1;
-        public int rank = -1;
-        public String name;
-        public String color;
+    public void requestNameList() {
+        resetNamesList();
+        conn.doNames(CHANNEL);
+    }
 
-        public User(String name) {
-            this(name, null);
-        }
+    public String getNick() {
+        // TODO Auto-generated method stub
+        return conn.getNick();
+    }
 
-        public boolean isUser(String name) {
-            if (name.startsWith("@")) {
+    public void setNickCount(int nickCount) {
+        this.nickCount = nickCount;
+    }
 
-                name = name.substring(1);
-            }
-            if (name.startsWith("+")) {
+    public int getNickCount() {
+        return nickCount;
+    }
 
-                name = name.substring(1);
-            }
-            return name.equals(this.name);
+    public void setNick(String nickname) {
+        addToText(JDChat.COLOR_SYSTEM, "Rename to "+nickname);
+       conn.doNick(nickname);
+        
+    }
 
-        }
-
-        public User(String name, String color) {
-            if (name.startsWith("@")) {
-                this.rank = RANK_OP;
-                name = name.substring(1);
-            }
-            if (name.startsWith("+")) {
-                this.rank = RANK_VOICE;
-                name = name.substring(1);
-            }
-            this.name = name;
-            if (color == null) color = getRandomColor();
-            this.color = color;
-
-        }
-
-        public String getNickLink(String id) {
-            return "<a href='intern:" + id + "|" + name + "'><font color='#" + color + "'>" + name + "</font></a>";
-        }
-
-        private String getRangName() {
-            switch (rank) {
-            case RANK_OP:
-                return "!!!" + name;
-            case RANK_VOICE:
-                return "!!" + name;
-            }
-            return name;
-
-        }
-
-        public String toString() {
-            switch (rank) {
-            case RANK_OP:
-                return "@" + name;
-            case RANK_VOICE:
-                return "+" + name;
-            }
-            return name;
-
-        }
-
-        public int compareTo(Object o) {
-            // TODO Auto-generated method stub
-
-            return getRangName().compareTo(((User) o).getRangName());
-        }
-
+    public void onConnected() {
+        conn.doJoin(CHANNEL, null);
+        perform();
+        
     }
 
 }
