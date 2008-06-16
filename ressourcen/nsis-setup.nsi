@@ -3,9 +3,11 @@
 
 Name JDownloader
 
-; Definitions for Java 1.6 Detection
-!define JRE_VERSION "1.6"
-!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=18714&/jre-6u5-windows-i586-p.exe"
+; Definitions for Java 6.0
+!define JRE_VERSION "6.0"
+!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=20287"
+;!define JRE_VERSION "5.0"
+;!define JRE_URL "http://javadl.sun.com/webapps/download/AutoDL?BundleId=18675&/jre-1_5_0_15-windows-i586-p.exe"
 
 # Defines
 !define REGKEY "SOFTWARE\$(^Name)"
@@ -23,12 +25,20 @@ Name JDownloader
 !define MUI_FINISHPAGE_RUN $INSTDIR\JD-WinLauncher.exe
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\orange-uninstall.ico"
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
+!define MUI_LANGDLL_REGISTRY_ROOT HKLM
+!define MUI_LANGDLL_REGISTRY_KEY ${REGKEY}
+!define MUI_LANGDLL_REGISTRY_VALUENAME InstallerLanguage
+
+#Warum fehlen anscheinend einige Sprachen?
+#Antwort:
+#http://nsis.sourceforge.net/Why_does_the_language_selection_dialog_hide_some_languages
 
 # Included files
 !include Sections.nsh
 !include MUI.nsh
 
 # Reserved Files
+!insertmacro MUI_RESERVEFILE_LANGDLL
 ReserveFile "${NSISDIR}\Plugins\AdvSplash.dll"
 
 # Variables
@@ -44,12 +54,23 @@ Var StartMenuGroup
 !insertmacro MUI_UNPAGE_INSTFILES
 
 # Installer languages
-!insertmacro MUI_LANGUAGE German
 !insertmacro MUI_LANGUAGE English
+!insertmacro MUI_LANGUAGE German
+!insertmacro MUI_LANGUAGE Russian
 !insertmacro MUI_LANGUAGE Spanish
 !insertmacro MUI_LANGUAGE Turkish
 !insertmacro MUI_LANGUAGE Polish
 !insertmacro MUI_LANGUAGE Czech
+!insertmacro MUI_LANGUAGE Ukrainian
+!insertmacro MUI_LANGUAGE French
+!insertmacro MUI_LANGUAGE Italian
+!insertmacro MUI_LANGUAGE Dutch
+!insertmacro MUI_LANGUAGE Bulgarian
+!insertmacro MUI_LANGUAGE Danish
+!insertmacro MUI_LANGUAGE Finnish
+!insertmacro MUI_LANGUAGE Norwegian
+!insertmacro MUI_LANGUAGE Portuguese
+!insertmacro MUI_LANGUAGE Greek
 
 # Installer attributes
 OutFile JDownloader-Install.exe
@@ -176,6 +197,7 @@ Function .onInit
     advsplash::show 1000 600 400 -1 $PLUGINSDIR\spltmp
     Pop $R1
     Pop $R1
+    !insertmacro MUI_LANGDLL_DISPLAY
 FunctionEnd
 
 Function CreateSMGroupShortcut
@@ -197,6 +219,7 @@ FunctionEnd
 Function un.onInit
     ReadRegStr $INSTDIR HKLM "${REGKEY}" Path
     !insertmacro MUI_STARTMENU_GETFOLDER Application $StartMenuGroup
+    !insertmacro MUI_UNGETLANGUAGE
     !insertmacro SELECT_UNSECTION JDownloader ${UNSEC0000}
 FunctionEnd
 
@@ -214,12 +237,23 @@ FunctionEnd
 # Installer Language Strings
 # TODO Update the Language Strings with the appropriate translations.
 
-LangString ^UninstallLink ${LANG_GERMAN} "Uninstall $(^Name)"
 LangString ^UninstallLink ${LANG_ENGLISH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_GERMAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_RUSSIAN} "Uninstall $(^Name)"
 LangString ^UninstallLink ${LANG_SPANISH} "Uninstall $(^Name)"
 LangString ^UninstallLink ${LANG_TURKISH} "Uninstall $(^Name)"
 LangString ^UninstallLink ${LANG_POLISH} "Uninstall $(^Name)"
 LangString ^UninstallLink ${LANG_CZECH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_UKRAINIAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_FRENCH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_ITALIAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_DUTCH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_BULGARIAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_DANISH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_FINNISH} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_NORWEGIAN} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_PORTUGUESE} "Uninstall $(^Name)"
+LangString ^UninstallLink ${LANG_GREEK} "Uninstall $(^Name)"
 
 Function GetJRE
         MessageBox MB_OK "JDownloader uses Java ${JRE_VERSION}, it will now \
