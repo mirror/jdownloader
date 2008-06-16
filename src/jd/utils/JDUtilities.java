@@ -2237,7 +2237,7 @@ public class JDUtilities {
         } catch (JavaLayerException e) {
 
             e.printStackTrace();
-        }
+        } 
     }
 
     public static String Base64Encode(String plain) {

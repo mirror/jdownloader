@@ -42,7 +42,7 @@ public class User implements Comparable {
     }
 
     public String getNickLink(String id) {
-        return "<a href='intern:" + id + "|" + name + "'><font color='#" + color + "'>" + name + "</font></a>";
+        return "<a href='intern:" + id + "|" + name + "'><font color='#" + color + "'><b>" + name + "</b></font></a>";
     }
 
     private String getRangName() {

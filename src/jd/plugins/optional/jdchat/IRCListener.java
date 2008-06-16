@@ -24,7 +24,9 @@ class IRCListener implements IRCEventListener {
 
     public void onDisconnected() {
         logger.info("Disconnected");
-        owner.addToText(JDChat.COLOR_SYSTEM, "Connection lost");
+        owner.setLoggedIn(false);
+        owner.addToText(JDChat.COLOR_SYSTEM, "Connection lost. type /connect if jd does not connect by itself");
+   
         
     }
 
@@ -38,8 +40,10 @@ class IRCListener implements IRCEventListener {
         logger.info("Error #" + num + ": " + Utils.prepareMsg(msg));
         switch (num){
         case IRCConstants.ERR_NICKNAMEINUSE:
+            if(!owner.isLoggedIn()){
             owner.setNickCount(owner.getNickCount() + 1);
             owner.setNick(owner.getNickname());
+            }
             break;
             
                 

@@ -42,6 +42,9 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.controlling.interaction.Interaction;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
@@ -51,29 +54,31 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.OSDetector;
 
 import org.schwering.irc.lib.IRCConnection;
 
-public class JDChat extends PluginOptional {
+public class JDChat extends PluginOptional implements ControlListener {
     private static final String HOST = "PARAM_" + "HOST";
     private static final String PORT = "PARAM_" + "PORT";;
     private static final String NICK = "PARAM_" + "NICK";;
     private static final String PERFORM = "PARAM_" + "PERFORM";;
     private static final String CHANNEL = "#jDownloader";
-    public static final String COLOR_CHAT = "000000";
-    public static final String COLOR_PM = "FFcc00";
-    public static final String COLOR_SYSTEM = "cccccc";
-    public static final String COLOR_SELF = "55cc55";
+    public static final String COLOR_CHAT = "222222";
+    public static final String COLOR_PM = "ff0066";
+    public static final String COLOR_SYSTEM = "666666";
+    public static final String COLOR_SELF = "0000cc";
     public static final String COLOR_ERROR = "ff0000";
+    private static final String COLOR_ACTION = "009900";
+    public static final String COLOR_NOTICE = "33cccc";
     private static final Pattern CMD_PM = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_SLAP = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
-    private static final String COLOR_ACTION = "442222";
+    
     private static final Pattern CMD_ACTION = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
-    public static final String COLOR_NOTICE = "bbbbbb";
+
     private static final Pattern CMD_VERSION = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
-  
+    private static final Pattern CMD_CONNECT = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
 
     public static int getAddonInterfaceVersion() {
         return 0;
@@ -90,7 +95,8 @@ public class JDChat extends PluginOptional {
     private JLabel top;
     private JTextPane right;
     private ArrayList<User> NAMES;
-    private int nickCount=0;
+    private int nickCount = 0;
+    private boolean loggedIn;
 
     @Override
     public String getCoder() {
@@ -118,6 +124,7 @@ public class JDChat extends PluginOptional {
         this.sb = new StringBuffer();
         initConfigs();
         initGUI();
+        JDUtilities.getController().addControlListener(this);
         new Thread() {
             public void run() {
 
@@ -131,16 +138,18 @@ public class JDChat extends PluginOptional {
         SubConfiguration subConfig = JDUtilities.getSubConfig("JDCHAT");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, NICK, JDLocale.L("plugins.optional.jdchat.user", "Nickname")));
-        
+
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
-        
-        
+
     }
-public void perform(){
-     String[] perform = JDUtilities.splitByNewline(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
-     if(perform==null)return;
-     for(String cmd:perform)this.sendMessage(CHANNEL, cmd);
-}
+
+    public void perform() {
+        String[] perform = JDUtilities.splitByNewline(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
+        if (perform == null) return;
+        for (String cmd : perform)
+            this.sendMessage(CHANNEL, cmd);
+    }
+
     private void initGUI() {
 
         this.frame = new JFrame();
@@ -277,16 +286,20 @@ public void perform(){
 
             } else if (Regex.matches(cmd, CMD_VERSION)) {
 
-                String msg = " is using JD " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
+                String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + msg + new String(new byte[] { 1 }));
                 this.addToText(COLOR_ACTION, conn.getNick() + " " + msg);
 
             } else if (Regex.matches(cmd, CMD_NICK)) {
                 conn.doNick(rest.trim());
-                
-                
-                JDUtilities.getSubConfig("JDCHAT").setProperty(NICK,rest.trim());
+
+                JDUtilities.getSubConfig("JDCHAT").setProperty(NICK, rest.trim());
                 JDUtilities.getSubConfig("JDCHAT").save();
+
+            } else if (Regex.matches(cmd, CMD_CONNECT)) {
+                initIRC();
+            } else if (Regex.matches(cmd, CMD_DISCONNECT)) {
+                conn.close();
             } else {
                 this.addToText(COLOR_ERROR, "Command /" + cmd + " is not available");
             }
@@ -298,7 +311,7 @@ public void perform(){
     }
 
     private void initIRC() {
-        
+        for (int i = 0; i < 20; i++) {
             SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
             String host = conf.getStringProperty(HOST, "irc.freenode.net");
             int port = conf.getIntegerProperty(PORT, 6667);
@@ -318,9 +331,8 @@ public void perform(){
             try {
                 conn.connect();
 
-             
                 // conn.doPrivmsg("#jdDev", "JDChat Addon 0.1");
-              
+                break;
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 addToText(COLOR_SYSTEM, "Connect Timeout. Server not reachable...");
@@ -333,16 +345,16 @@ public void perform(){
                 }
                 initIRC();
             }
-        
+        }
 
     }
 
     String getNickname() {
         // TODO Auto-generated method stub
-        String def = "JD-[" + JDLocale.getLocale().substring(0,2) + "]_" + ("" + System.currentTimeMillis()).substring(6);
+        String def = "JD-[" + JDLocale.getLocale().substring(0, 2) + "]_" + ("" + System.currentTimeMillis()).substring(6);
         nick = JDUtilities.getSubConfig("JDCHAT").getStringProperty(NICK, def);
-        if(getNickCount()>0){
-            nick+="["+getNickCount()+"]";
+        if (getNickCount() > 0) {
+            nick += "[" + getNickCount() + "]";
         }
         return nick;
     }
@@ -410,8 +422,9 @@ public void perform(){
                         JDSounds.PT("sound.gui.selectPackage");
                         frame.toFront();
                     }
-                    textArea.setText(sb.toString());
-                    logger.info(sb.toString());
+                    
+                  
+                    textArea.setText("  <font size='3' face='Verdana, Arial, Helvetica, sans-serif'>"+sb.toString()+"</font>");
 
                     int max = scrollPane.getVerticalScrollBar().getMaximum();
 
@@ -428,10 +441,10 @@ public void perform(){
         User user;
         for (String name : split) {
 
-            if ((user=getUser(name)) == null) {
+            if ((user = getUser(name)) == null) {
                 NAMES.add(new User(name));
-            }else if(user.rank!=new User(name).rank){
-                user.rank=new User(name).rank;
+            } else if (user.rank != new User(name).rank) {
+                user.rank = new User(name).rank;
             }
         }
 
@@ -442,12 +455,12 @@ public void perform(){
         Collections.sort(NAMES);
         for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
             User name = it.next();
-            sb.append("<a href='intern:query|" + name + "'><font color='#" + name.color + "'> " + name + "</font></a><br>");
+            sb.append("<a href='intern:query|" + name + "'><font color='#" + name.color + "'><b>" + name + "</b></font></a><br>");
         }
-        logger.info(sb + "");
+       
         EventQueue.invokeLater(new Runnable() {
             public void run() {
-                right.setText(sb.toString());
+                right.setText("  <font size='3' face='Verdana, Arial, Helvetica, sans-serif'>"+sb.toString()+"</font>");
                 frame.pack();
             }
         });
@@ -479,15 +492,49 @@ public void perform(){
     }
 
     public void setNick(String nickname) {
-        addToText(JDChat.COLOR_SYSTEM, "Rename to "+nickname);
-       conn.doNick(nickname);
-        
+        if (nickname == null) return;
+        addToText(JDChat.COLOR_SYSTEM, "Rename to " + nickname);
+
+        conn.doNick(nickname);
+
     }
 
     public void onConnected() {
         conn.doJoin(CHANNEL, null);
+        setLoggedIn(true);
         perform();
-        
+
+    }
+
+    public void reconnect() {
+        initIRC();
+
+    }
+
+    public boolean isLoggedIn() {
+        // TODO Auto-generated method stub
+        return loggedIn;
+    }
+
+    public void setLoggedIn(boolean loggedIn) {
+        this.loggedIn = loggedIn;
+    }
+
+    public void controlEvent(ControlEvent e) {
+
+        if (e.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
+
+            if (e.getSource() == Interaction.INTERACTION_AFTER_RECONNECT) {
+                initIRC();
+
+            }
+            if (e.getSource() == Interaction.INTERACTION_BEFORE_RECONNECT) {
+                sendMessage(CHANNEL, "/me is reconnecting...");
+                conn.close();
+
+            }
+
+        }
     }
 
 }

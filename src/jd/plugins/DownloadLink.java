@@ -964,7 +964,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setAborted(boolean aborted) {
         if(aborted==false){
-            logger.severe("cannot unabort a link. use reset()");
+           // logger.severe("cannot unabort a link. use reset()");
             return;
         }
         if(this.getDownloadLinkController()==null){
