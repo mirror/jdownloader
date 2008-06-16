@@ -148,7 +148,7 @@ return "";
            RequestInfo reqestinfo = HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
            form = Form.getForms(reqestinfo)[0];
            form.fileToPost=file;
-           form.setRequestPopertie("Cookie", cookie);
+           form.setRequestPoperty("Cookie", cookie);
            form.action=new Regex(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch()+Math.round(10000*Math.random())+"0"+Math.round(10000*Math.random());
            reqestinfo = form.getRequestInfo();
            return new Regex(HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();

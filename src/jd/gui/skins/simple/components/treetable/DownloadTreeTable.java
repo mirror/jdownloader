@@ -521,13 +521,15 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 if (disabled == 0) tmp.setEnabled(false);
                 popup.add(tmp);
                 tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + enabled + ")", TreeTableAction.DOWNLOAD_DISABLE, new Property("downloadlinks", getSelectedDownloadLinks())));
-                if (enabled == 0) tmp.setEnabled(false);
+                if (enabled == 0) {
+                    tmp.setEnabled(false);
+                }
                 popup.add(tmp);
 
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.DOWNLOAD_RESET, new Property("downloadlinks", getSelectedDownloadLinks()))));
 //                tmp = (new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.abort", "abbrechen") + " (" + progress + ")", TreeTableAction.DOWNLOAD_ABORT, new Property("downloadlinks", getSelectedDownloadLinks()))));
 //                popup.add(tmp);
-                if (progress == 0) tmp.setEnabled(false);
+                //if (progress == 0) tmp.setEnabled(false);
                 tmp = (new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", getSelectedDownloadLinks()))));
                 popup.add(tmp);
                 if (resumeable == 0) tmp.setEnabled(false);

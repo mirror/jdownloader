@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.GetRequest;
+import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
@@ -86,16 +87,16 @@ public class DDLWarez extends PluginForDecrypt {
             try {
                 URL url = new URL(parameter);
                 GetRequest req = new GetRequest(parameter);
-                req.setReadTimeout(5*60*1000);
-                req.setConnectTimeout(5*60*1000);
-                String page=req.load();
-                //RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
+                req.setReadTimeout(5 * 60 * 1000);
+                req.setConnectTimeout(5 * 60 * 1000);
+                String page = req.load();
+                // RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
                 String title = SimpleMatches.getSimpleMatch(page, "<title>DDL-Warez v3.0 // °</title>", 0);
                 String pass = SimpleMatches.getSimpleMatch(page, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
                 if (pass.equals("kein Passwort")) pass = null;
                 logger.info("Password=" + pass);
-               
-                Form[] forms =  Form.getForms(page);
+
+                Form[] forms = Form.getForms(req.getRequestInfo());
 
                 // first form is the search form, not needed
                 progress.setRange(forms.length - 1);
@@ -105,7 +106,30 @@ public class DDLWarez extends PluginForDecrypt {
                 fp.setPassword(pass);
 
                 for (int i = 1; i < forms.length; ++i) {
-                    RequestInfo formInfo = forms[i].getRequestInfo();
+                    // forms[i].setRequestPoperty("User-Agent","Mozilla/5.0
+                    // (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
+                    // Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
+                    //                    
+                    // forms[i].setRequestPoperty("Accept","text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
+                    //                    
+                    // forms[i].setRequestPoperty("Accept-Language","de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+                    //
+                    // forms[i].setRequestPoperty("Accept-Encoding","gzip,deflate");
+                    // forms[i].setRequestPoperty("Accept-Charset","ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+                    //                
+                    //   
+                    String action = forms[i].getAction();
+                    PostRequest r = new PostRequest(action);
+                    r.setPostVariable("dont", forms[i].vars.get("dont"));
+                    r.setPostVariable("do", forms[i].vars.get("do"));
+                    r.setPostVariable("this", forms[i].vars.get("this"));
+                    r.setPostVariable("now", forms[i].vars.get("now"));
+                    r.getHeaders().put("Referer", parameter);
+                    r.load();
+
+                    RequestInfo formInfo = r.getRequestInfo();
+
+                    // r= new PostRequest(forms[i].)
 
                     // signed: the 2nd redirection layer was removed
                     // URL urlredirector = new
@@ -139,7 +163,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                 // Decrypt abschliessen
                 step.setParameter(decryptedLinks);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

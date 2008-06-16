@@ -78,7 +78,7 @@ public abstract class Request {
         return htmlCode;
     }
 
-    protected RequestInfo getRequestInfo() throws IOException {
+    public RequestInfo getRequestInfo() throws IOException {
         RequestInfo requestInfo;
 
         requestInfo = new RequestInfo(htmlCode, httpConnection.getHeaderField("Location"), this.getCookieString(), httpConnection.getHeaderFields(), httpConnection.getResponseCode());

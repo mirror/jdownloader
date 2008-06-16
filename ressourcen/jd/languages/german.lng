@@ -953,6 +953,7 @@ gui.table.contextmenu.resume = fortsetzen
 interaction.packagemanager.progress.loadpackages = Paketdaten laden
 plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = Die Datei konnte nicht gefunden. Bitte prüfen Sie den Downloadlink.
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Diese Datei steht im Verdacht illegal zu sein und ist gesperrt. Nach 7 Tagen Sperrzeit wird diese Datei automatisch gelöscht, falls die Sperre nicht durch RapidShare aufgehoben wird. Ein Download ist deshalb derzeit leider nicht möglich.
+plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Die Download-Session ist abgelaufen.
 plugins.optional.httpliveheaderscripter.action.start = Scripter starten
 plugins.optional.httpliveheaderscripter.gui.menu.edit = Bearbeiten
 plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine = DEFINE hinzufügen

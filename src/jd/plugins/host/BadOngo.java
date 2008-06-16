@@ -211,7 +211,7 @@ public class BadOngo extends PluginForHost {
                 }
                 form.action = form.action.replaceAll("\\\\\"", "");
                 form.put("Datei runterladen", "");
-                form.setRequestPopertie("Cookie", cookie);
+                form.setRequestPoperty("Cookie", cookie);
                 logger.info(form.toString());
                 HTTPConnection urlConnection = form.getConnection();
                 int c = 1;

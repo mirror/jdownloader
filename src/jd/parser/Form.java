@@ -479,7 +479,44 @@ public class Form {
         vars.remove(key);
     }
 
-    public void setRequestPopertie(String key, String value) {
+    public void setRequestPoperty(String key, String value) {
         requestPoperties.put(key, value);
+    }
+
+    public String getAction() {
+        URL baseurl = baseRequest.getConnection().getURL();
+        String ret=action;
+        if (action == null || action.matches("[\\s]*")) {
+            if (baseurl == null) return null;
+            ret = baseurl.toString();
+        }
+        else if (!ret.matches("http://.*")) {
+            if (baseurl == null) return null;
+            if (ret.charAt(0) == '/')
+                ret = "http://" + baseurl.getHost() + ret;
+            else if (ret.charAt(0) == '&') {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*"))
+                    ret = base + ret;
+                else
+                    ret = base + "/" + ret;
+            }
+            else if (ret.charAt(0) == '?') {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*")) {
+                    ret = base.replaceFirst("\\?.*", "") + ret;
+                }
+                else
+                    ret = base + "/" + ret;
+            }
+            else {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*"))
+                    ret = base.substring(0, base.lastIndexOf("/")) + "/" + ret;
+                else
+                    ret = base + "/" + ret;
+            }
+        }
+        return ret;
     }
 }

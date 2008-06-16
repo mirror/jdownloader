@@ -861,7 +861,7 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                         downloadLink.setStatusText("Download error(>log)");
-
+step.setParameter(error);
                         logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
                         new File(downloadLink.getFileOutput()).delete();
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -879,6 +879,7 @@ public class Rapidshare extends PluginForHost {
         } catch (IOException e) {
             logger.severe("URL could not be opened. " + e.toString());
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            step.setParameter(JDUtilities.convertExceptionReadable(e));
             downloadLink.setStatusText(JDUtilities.convertExceptionReadable(e));
             step.setStatus(PluginStep.STATUS_ERROR);
             return step;
@@ -1210,7 +1211,7 @@ public class Rapidshare extends PluginForHost {
                   
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                         downloadLink.setStatusText(error);
-                  
+                  step.setParameter(error);
 
                     return step;
                 } else {
@@ -1243,7 +1244,7 @@ public class Rapidshare extends PluginForHost {
 
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     downloadLink.setStatusText("Download error(>log)");
-
+step.setParameter("Download error(>log)");
                     logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
 
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -1603,6 +1604,7 @@ public class Rapidshare extends PluginForHost {
                     } else {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                         downloadLink.setStatusText(error);
+                        step.setParameter(error);
                     }
 
                     return step;

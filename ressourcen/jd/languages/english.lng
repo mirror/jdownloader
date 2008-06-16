@@ -1019,3 +1019,4 @@ plugins.optional.httpliveheaderscripter.gui.menu.file.save = Save file
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script creater
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugin.rapidshare.tickettime= Wait %s min. for ticket
+plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Downloadsession expired. Try again.
