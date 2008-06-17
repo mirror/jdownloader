@@ -3,9 +3,10 @@ package jd.plugins.optional.jdchat;
 
 
 public class User implements Comparable {
-    private static final int RANK_OP = 0;
-    private static final int RANK_VOICE = 1;
-    public int rank = -1;
+    public static final int RANK_DEFAULT = -1;
+    public static final int RANK_OP = 0;
+    public static final int RANK_VOICE = 1;
+    public int rank = RANK_DEFAULT;
     public String name;
     public String color;
 

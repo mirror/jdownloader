@@ -58,8 +58,8 @@ class IRCListener implements IRCEventListener {
     public void onJoin(String chan, IRCUser u) {
         logger.info(chan + "> " + u.getNick() + " joins");
         owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " joins");
-       
-        owner.requestNameList();
+       owner.addUser(u.getNick());
+       // owner.requestNameList();
     }
 
     public void onKick(String chan, IRCUser u, String nickPass, String msg) {
@@ -71,10 +71,15 @@ class IRCListener implements IRCEventListener {
     public void onMode(IRCUser u, String nickPass, String mode) {
         logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " + nickPass);
         owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " sets modes " + mode + " " + nickPass);
+        
+       
     }
 
     public void onMode(String chan, IRCUser u, IRCModeParser mp) {
         logger.info(chan + "> " + u.getNick() + " sets mode: " + mp.getLine());
+      
+        for( int i=1; i<=mp.getCount();i++){
+            owner.onMode(u,mp.getOperatorAt(i),mp.getModeAt(i),mp.getArgAt(i));}
         
         owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " sets mode: " + mp.getLine());
     }
@@ -82,23 +87,30 @@ class IRCListener implements IRCEventListener {
     public void onNick(IRCUser u, String nickNew) {
         logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
         owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " is now known as " + nickNew);
-        owner.requestNameList();
+        owner.renameUser(u.getNick(),nickNew);
     }
 
     public void onNotice(String target, IRCUser u, String msg) {
         logger.info(target + "> " + u.getNick() + " (notice): " + msg);
         if(u.getNick()==null){
-            owner.addToText(JDChat.COLOR_NOTICE,"System" + " (notice): " + Utils.prepareMsg(msg));
+            //owner.addToText(JDChat.COLOR_NOTICE,"System" + " (notice): " + Utils.prepareMsg(msg));
         }else{
         owner.addToText(JDChat.COLOR_NOTICE, u.getNick() + " (notice): " + Utils.prepareMsg(msg));
+        }
+        if(msg.endsWith("has been ghosted.")){
+            owner.removeUser(msg.substring(0,msg.indexOf("has been ghosted.")).trim());
         }
     }
 
     public void onPart(String chan, IRCUser u, String msg) {
         logger.info(chan + "> " + u.getNick() + " parts");
-        
-        owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " parts");
-      owner.requestNameList();
+        if(msg!=null&&msg.trim().length()>0){
+            owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " has left the channel ("+msg+")"); 
+        }else{
+        owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " has left the channel");
+    }
+        owner.removeUser(u.getNick());
+      //owner.requestNameList();
 
     }
  
@@ -106,7 +118,10 @@ class IRCListener implements IRCEventListener {
     public void onPrivmsg(String chan, IRCUser u, String msg) {
         User user = owner.getUser(u.getNick());
         if (user == null) { return; }
-        if (chan.equals(owner.getNick())) {
+        if(msg.trim().startsWith("ACTION ")){
+            owner.addToText(JDChat.COLOR_ACTION, user.getNickLink("pmnick") +" "+ Utils.prepareMsg(msg.trim().substring(6).trim()));
+            
+        }else   if (chan.equals(owner.getNick())) {
             owner.addToText(JDChat.COLOR_PM, user.getNickLink("pmnick") + "> " + Utils.prepareMsg(msg));
             
          
@@ -122,13 +137,19 @@ class IRCListener implements IRCEventListener {
 
     public void onQuit(IRCUser u, String msg) {
         logger.info("Quit: " + u.getNick());
+        if(msg!=null&&msg.trim().length()>0){
+            owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " has left the channel ("+msg+")"); 
+        }else{
+        owner.addToText(JDChat.COLOR_SYSTEM, u.getNick() + " has left the channel");
+    }
+        owner.removeUser(u.getNick());
     }
 
     public void onReply(int num, String value, String msg) {
         
         logger.info("Reply #" + num + ": " + value + " " + msg);
         if (num == IRCConstants.RPL_NAMREPLY) {
-            owner.updateNames(msg.trim().split(" "));
+            owner.addUsers(msg.trim().split(" "));
         }
 
         if (num == IRCConstants.RPL_ENDOFNAMES) {
@@ -136,7 +157,7 @@ class IRCListener implements IRCEventListener {
 
         }
         if (num == IRCConstants.RPL_TOPIC) {
-            owner.setMOD(msg);
+            owner.setTopic(msg);
 
         }
 

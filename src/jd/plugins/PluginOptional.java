@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
-public abstract class PluginOptional extends Plugin implements ActionListener,ControlListener {
+public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 0;
     @Override
