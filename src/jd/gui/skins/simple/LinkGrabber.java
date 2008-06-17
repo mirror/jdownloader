@@ -42,6 +42,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -158,6 +159,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JMenuItem mRemoveOfflineAll;
 
     private JButton sortPackages;
+
+    private ArrayList<DownloadLink> totalLinkList= new ArrayList<DownloadLink>();
 
     /**
      * @param parent
@@ -366,6 +369,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         for (int i = 0; i < linkList.length; i++) {
             if(isDupe(linkList[i]))continue;
+            this.totalLinkList.add(linkList[i]);
             if (linkList[i].isAvailabilityChecked()) {
                 attachLinkTopackage(linkList[i]);
             } else {
@@ -378,23 +382,28 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 private boolean isDupe(DownloadLink link){
   //  http://anonym.to/?http://www.anonymz.com/?http://rapidshare.com/files/117903695/284.Das.Ende.der.Bauplaene.HD.720P.x264.by.M3lloW.part1.rar
-    
-    for(DownloadLink l:waitingLinkList){
+   
+//    if(link.getDownloadURL().equals("http://rapidshare.com/files/120989674/JCm.part1.rar")){
+//        logger.info(link.getDownloadURL()); 
+//    }
+    for(DownloadLink l:totalLinkList){
         String a=l.getDownloadURL();
         String b=link.getDownloadURL();
         if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
         
     }
     
-    for(PackageTab p:this.tabList){
-        for( DownloadLink l:p.getLinkList()){
-            if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
-        }
-        
-    }
+//    for(PackageTab p:this.tabList){
+//        for( DownloadLink l:p.getLinkList()){
+//            if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
+//        }
+//        
+//    }
     return false;
 }
     private void startLinkGatherer() {
+        
+        
         progress.setMaximum(waitingLinkList.size());
         progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) return;
@@ -631,13 +640,16 @@ private boolean isDupe(DownloadLink link){
     }
 
     protected void removePackageAt(int i) {
-        tabList.remove(i);
+        PackageTab tab = tabList.remove(i);
         tabbedPane.removeTabAt(i);
+        totalLinkList.removeAll(tab.getLinkList());
         SetTitle();
     }
 
     protected void removePackage(PackageTab tab) {
         removePackageAt(tabList.indexOf(tab));
+        
+        totalLinkList.removeAll(tab.getLinkList());
     }
 
     protected PackageTab getSelectedTab() {
@@ -814,7 +826,9 @@ private boolean isDupe(DownloadLink link){
             Vector<DownloadLink> list = tab.getLinkList();
             for (int i = list.size() - 1; i >= 0; --i) {
                 if (!list.get(i).isAvailable()) {
-                    tab.removeLinkAt(i);
+                   ;
+                    
+                    totalLinkList.remove( tab.removeLinkAt(i));
                 }
             }
             this.onPackageNameChanged(tab);
@@ -1582,7 +1596,8 @@ private boolean isDupe(DownloadLink link){
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
                     int id = rows[i];// table.convertRowIndexToModel(rows[i]);
-                    this.linkList.remove(id);
+                   
+                    totalLinkList.remove( this.linkList.remove(id));
                 }
                 this.refreshTable();
 

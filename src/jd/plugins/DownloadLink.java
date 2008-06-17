@@ -1015,7 +1015,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return STring
      */
     public String toString() {
-        return this.getName() + "-> " + this.getFileOutput();
+        return this.getName() + "-> " + this.getFileOutput()+"("+this.getHost()+")";
     }
 
     /**

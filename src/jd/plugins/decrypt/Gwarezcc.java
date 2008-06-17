@@ -92,6 +92,8 @@ public class Gwarezcc extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            
+            
             step.setParameter(decryptedLinks);
         }
         return null;
