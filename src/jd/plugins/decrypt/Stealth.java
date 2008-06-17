@@ -48,7 +48,7 @@ public class Stealth extends PluginForDecrypt {
 
     private String              version          = "1.0.0.4";
 
-    private Pattern             patternSupported = getSupportPattern("http://[*]stealth\\.to/\\?id\\=[a-zA-Z0-9]+");
+    private Pattern             patternSupported = getSupportPattern("(http://[*]stealth\\.to/\\?id\\=[a-zA-Z0-9]+)|(http://[*]stealth\\.to/index.php\\?id\\=[a-zA-Z0-9]+)");
 
 
     public Stealth() {
