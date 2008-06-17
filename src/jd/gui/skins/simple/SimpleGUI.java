@@ -1486,7 +1486,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         private Component bundle(Component c1, Component c2) {
-            JPanel panel = new JPanel(new BorderLayout(0, 0));
+            JPanel panel = new JPanel(new BorderLayout(2, 0));
             panel.add(c1, BorderLayout.WEST);
             panel.add(c2, BorderLayout.EAST);
             return panel;
