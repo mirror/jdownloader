@@ -17,6 +17,9 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -28,8 +31,10 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -84,7 +89,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         
         this.owner = owner;
         setModal(true);
-        setLayout(new GridBagLayout());
+//        setLayout(new GridBagLayout());
         setTitle(JDLocale.L("gui.menu.action.add.name","Links hinzufügen"));
         getRootPane().setDefaultButton(btnOK);
         // funzt nicht
@@ -101,15 +106,25 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         textArea.setEditable(true);
         textScrollPane.setAutoscrolls(true);
         textArea.setText(clipboard);
+        textArea.setCaretPosition(0);
         
-        JDUtilities.addToGridBag(this, textScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnOK,          1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnCancel,      0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, textScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnOK,          1, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(this, btnCancel,      0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n,n));
+        panel.setBorder(new EmptyBorder(n,n,n,n));
+        setContentPane(panel);
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n,0));
+        getContentPane().add(bpanel, BorderLayout.SOUTH);
+        panel.add(textScrollPane, BorderLayout.CENTER);
+        bpanel.add(btnOK);
+        bpanel.add(btnCancel);
+        setPreferredSize(new Dimension(400,300));
         pack();
         setLocation(JDUtilities.getCenterOfComponent(owner, this));
         setVisible(true);
-
     }
     
     /**

@@ -26,6 +26,7 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
@@ -183,13 +184,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.addComponentListener(list);
         this.addWindowListener(list);
         pack();
-
-        this.setVisible(true);
         SimpleGUI.restoreWindow(null, null, this);
+        this.setVisible(true);
     }
 
     private void initGUI() {
-        setLayout(new GridBagLayout());
+//        setLayout(new GridBagLayout());
         buildMenu();
         this.tabbedPane = new JTabbedPane();
         this.sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
@@ -221,37 +221,27 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // th.exportAsDrag(c, e, TransferHandler.COPY);
         // }
         // });
-        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-
-        JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
-        JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-
-        JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+//        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+//        JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+//
+//        JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
+//        JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+//
+//        JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
         this.setName("LINKGRABBER");
-        this.setPreferredSize(new Dimension(600, 400));
-        // http://serienfreaks.tv/?id=6523
-        if (SimpleGUI.getLastDimension(this, null) != null) {
-            this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
-        }
-        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
-            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
-        }
 
-        LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-        this.addWindowListener(list);
-        acceptAll.getRootPane().setDefaultButton(acceptAll);
-        
-        
-        
-        
+//        LocationListener list = new LocationListener();
+//        this.addComponentListener(list);
+//        this.addWindowListener(list);
+//        acceptAll.getRootPane().setDefaultButton(acceptAll);
         
         int n = 5;
         JPanel panel = new JPanel(new BorderLayout(n,n));
-        JPanel inner = new JPanel(new BorderLayout(n,n));
         panel.setBorder(new EmptyBorder(n,n,n,n));
+        setContentPane(panel);
+        
+        JPanel inner = new JPanel(new BorderLayout(n,n));
         
         JPanel south = new JPanel(new BorderLayout(n,n));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
@@ -267,17 +257,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         panel.add(south, BorderLayout.SOUTH);
 
         setPreferredSize(new Dimension(640,480));
-
-        
-        setContentPane(panel);
         setLocationRelativeTo(null);
-        
-        
-        
-        
-        
-
         pack();
+        
+        if (SimpleGUI.getLastDimension(this, null) != null) {
+            this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
+        }
+        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
+            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
+        }
+        
         this.setVisible(true);
     }
 
@@ -1408,20 +1397,42 @@ private boolean isDupe(DownloadLink link){
 
                 }
             }
-            JDUtilities.addToGridBag(this, lblName, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, txtName, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(this, lblSaveto, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, brwSaveto, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(this, lblPassword, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, txtPassword, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            JDUtilities.addToGridBag(this, lblComment, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(this, txtComment, REL, REL, REM, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, lblName, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, txtName, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//            JDUtilities.addToGridBag(this, lblSaveto, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, brwSaveto, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//            JDUtilities.addToGridBag(this, lblPassword, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, txtPassword, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//            JDUtilities.addToGridBag(this, lblComment, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//            JDUtilities.addToGridBag(this, txtComment, REL, REL, REM, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+//
+//            JDUtilities.addToGridBag(this, new JSeparator(), REL, REL, REM, 1, 1, 0, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH, GridBagConstraints.WEST);
+//            JScrollPane scrollpane = new JScrollPane(table);
+//            scrollpane.setPreferredSize(new Dimension(400, 200));
+//            JDUtilities.addToGridBag(this, scrollpane, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-            JDUtilities.addToGridBag(this, new JSeparator(), REL, REL, REM, 1, 1, 0, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH, GridBagConstraints.WEST);
-            JScrollPane scrollpane = new JScrollPane(table);
-            scrollpane.setPreferredSize(new Dimension(400, 200));
-            JDUtilities.addToGridBag(this, scrollpane, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
+            int n = 10;
+            JPanel north = new JPanel(new BorderLayout(n,n));
+            JPanel east = new JPanel(new GridLayout(0,1,n/2,n/2));
+            JPanel center = new JPanel(new GridLayout(0,1,n/2,n/2));
+            north.add(east, BorderLayout.WEST);
+            north.add(center, BorderLayout.CENTER);
+            
+            east.add(lblName);
+            east.add(lblSaveto);
+            east.add(lblPassword);
+            east.add(lblComment);
+            
+            center.add(txtName);
+            center.add(brwSaveto);
+            center.add(txtPassword);
+            center.add(txtComment);
+            
+            setLayout(new BorderLayout(n,n));
+            setBorder(new EmptyBorder(n,n,n,n));
+            add(north, BorderLayout.NORTH);
+            add(new JScrollPane(table), BorderLayout.CENTER);
+            
         }
 
         public void actionPerformed(ActionEvent e) {

@@ -149,7 +149,6 @@ public class LogDialog extends JFrame implements ActionListener {
         bpanel.add(btnUpload);
 
         setPreferredSize(new Dimension(640,480));
-        setContentPane(panel);
 
         pack();
         setLocationRelativeTo(null);
