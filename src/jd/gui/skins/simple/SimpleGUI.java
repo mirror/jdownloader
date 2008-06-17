@@ -1109,7 +1109,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 //            p.add(titledSeparator, BorderLayout.NORTH);
 
             String[][] devs = new String[][]{
-                        {"jago","","Zustaendig fuer die GUI - also das Aussehen von JDownloader."},
+                        {"jago","","Zuständig fuer die GUI - also das Aussehen von JDownloader."}                        
                      // {"neuer Eintrag","xxx@xxx.com","blabla"},
             };
             
@@ -1145,8 +1145,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Thread t = new Thread() {
                 @Override
                 public void run() {
-                    try {
-                        final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
+                    try {                        
+                        final String txt = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode());
 //                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
