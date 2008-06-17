@@ -17,10 +17,7 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
+import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -29,6 +26,7 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -56,30 +54,28 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     public BrowseFile(int width) {
         super();
-        txtInput = new JTextField(width);
-        txtInput.setEditable(editable);
-        txtInput.addActionListener(this);
-        this.setLayout(new GridBagLayout());
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
-        btnBrowse.addActionListener(this);
-    
-        JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-
+        initGUI(width);
     }
 
     public BrowseFile() {
         super();
-        txtInput = new JTextField();
+        initGUI(0);
+    }
+
+    private void initGUI(int width) {
+        int n = 5;
+        setLayout(new BorderLayout(n,n));
+        txtInput = new JTextField(width);
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
-        this.setLayout(new GridBagLayout());
         btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
         btnBrowse.addActionListener(this);
       
-        JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-        txtInput.setMinimumSize(new Dimension(150,20));
+//        JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
+        
+        add(txtInput, BorderLayout.CENTER);
+        add(btnBrowse, BorderLayout.EAST);
     }
 
     public void setButtonText(String text) {
