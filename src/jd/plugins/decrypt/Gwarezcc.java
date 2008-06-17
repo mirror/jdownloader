@@ -10,6 +10,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -19,6 +21,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
@@ -28,9 +31,13 @@ public class Gwarezcc extends PluginForDecrypt {
     private static final Pattern patternLink_Details_Main = Pattern.compile("http://.*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Download = Pattern.compile("http://.*?gwarez\\.cc/game_\\d{1,}_download\\#details", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern(), patternLink_Details_Main.flags() | patternLink_Details_Download.flags());
+    private static final String USE_RSDF = "USE_RSDF";
+    private static boolean load_rsdf = false;
 
     public Gwarezcc() {
         super();
+        this.setConfigEelements();
+        this.load_rsdf = getProperties().getBooleanProperty(USE_RSDF, false);
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
@@ -59,18 +66,20 @@ public class Gwarezcc extends PluginForDecrypt {
                         default_password.add(JDUtilities.htmlDecode(password.get(0)));
                     } else
                         logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-                    /* RSDF Suchen */
-                    ArrayList<String> rsdf = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img\\/dl\\.gif\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download_" + downloadid + "_5.html\"><b>.rsdf</b>", Pattern.CASE_INSENSITIVE), 0);
-                    if (rsdf.size() == 1) {
-                        /* RSDF gefunden */
-                        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-                        URL rsdf_url = new URL("http://gwarez.cc/download_" + downloadid + "_5.html");
-                        HTTPConnection rsdf_con = new HTTPConnection(rsdf_url.openConnection());
-                        rsdf_con.setRequestProperty("Referer", cryptedLink);
-                        JDUtilities.download(container, rsdf_con);
-                        JDUtilities.getController().loadContainerFile(container);
-                    } else
-                        logger.severe("Please Update Gwarez Plugin(Download Pattern)");
+                    if (load_rsdf == true) {
+                        /* RSDF Suchen */
+                        ArrayList<String> rsdf = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img\\/dl\\.gif\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download_" + downloadid + "_5.html\"><b>.rsdf</b>", Pattern.CASE_INSENSITIVE), 0);
+                        if (rsdf.size() == 1) {
+                            /* RSDF gefunden */
+                            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
+                            URL rsdf_url = new URL("http://gwarez.cc/download_" + downloadid + "_5.html");
+                            HTTPConnection rsdf_con = new HTTPConnection(rsdf_url.openConnection());
+                            rsdf_con.setRequestProperty("Referer", cryptedLink);
+                            JDUtilities.download(container, rsdf_con);
+                            JDUtilities.getController().loadContainerFile(container);
+                        } else
+                            logger.severe("Please Update Gwarez Plugin(Download Pattern)");
+                    }
                     /* Mirrors suchen */
                     ArrayList<String> mirror_pages = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img\\/dl\\.gif\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download_" + downloadid + "_(.*)_check.html\" onmouseover", Pattern.CASE_INSENSITIVE), 1);
                     for (int i = 0; i < mirror_pages.size(); i++) {
@@ -80,7 +89,7 @@ public class Gwarezcc extends PluginForDecrypt {
                         /* Parts suchen */
                         ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(mirrorInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
                         for (int ii = 0; ii < parts.size(); ii++) {
-                            /*Parts decrypten und adden*/
+                            /* Parts decrypten und adden */
                             decryptedLinks.add(this.createDownloadlink(gwarezdecrypt(parts.get(ii))));
                         }
                     }
@@ -92,8 +101,7 @@ public class Gwarezcc extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
-            
+
             step.setParameter(decryptedLinks);
         }
         return null;
@@ -147,6 +155,10 @@ public class Gwarezcc extends PluginForDecrypt {
     @Override
     public String getVersion() {
         return version;
+    }
+
+    private void setConfigEelements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_RSDF, JDLocale.L("plugins.decrypt.gwarezcc.usersdf", "Use RSDF Container")).setDefaultValue(false));
     }
 
     @Override
