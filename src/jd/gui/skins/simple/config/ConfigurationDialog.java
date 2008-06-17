@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
@@ -227,6 +228,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // questionable if one needs this call to pack since restoreWindow does
         // a similar job. Only way this may hurt is by increasing the time it takes to 
         // make the dialog visible.
+        setPreferredSize(new Dimension(640,480));
+        setLocationRelativeTo(null);
         pack();
         // pack already calls validate implicitely. 
         // this.validate();
