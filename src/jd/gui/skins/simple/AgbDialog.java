@@ -17,6 +17,7 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -27,6 +28,8 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.DownloadLink;
@@ -73,6 +76,8 @@ public class AgbDialog extends JDialog implements ActionListener {
     public AgbDialog(DownloadLink downloadLink) {
         
     	super();
+    	JPanel panel = new JPanel();
+        setContentPane(panel);
 
         this.plugin = (PluginForHost) downloadLink.getPlugin();
         this.downloadLink = downloadLink;
@@ -111,8 +116,11 @@ public class AgbDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, labelInfo2, 		1, 2, 2, 1, 1, 1, new Insets(5,5,10,5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, linkAgb, 		1, 3, 2, 1, 1, 1, new Insets(5,5,10,5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, checkAgbAccepted,1, 4, 2, 1, 1, 1, new Insets(5,5,15,5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(this, btnOK,     		2, 5, 1, 1, 1, 1, new Insets(5,5,5,5), GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(this, btnCancel, 		1, 5, 1, 1, 1, 1, new Insets(5,5,5,5), GridBagConstraints.NONE, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(this, btnCancel,     		2, 5, 1, 1, 1, 1, new Insets(5,5,5,5), GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(this, btnOK, 		1, 5, 1, 1, 1, 1, new Insets(5,5,5,5), GridBagConstraints.NONE, GridBagConstraints.EAST);
+        
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n,n,n,n));
         
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
