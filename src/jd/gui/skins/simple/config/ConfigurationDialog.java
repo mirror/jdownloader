@@ -229,8 +229,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // a similar job. Only way this may hurt is by increasing the time it takes to 
         // make the dialog visible.
         setPreferredSize(new Dimension(640,480));
-        setLocationRelativeTo(null);
         pack();
+        setLocationRelativeTo(null);
         // pack already calls validate implicitely. 
         // this.validate();
         SimpleGUI.restoreWindow(parent, null, this);
