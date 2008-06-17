@@ -19,6 +19,7 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -53,6 +54,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -60,9 +62,12 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -76,6 +81,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+import javax.swing.table.TableColumn;
+
+import org.jdesktop.swingx.JXHyperlink;
+import org.jdesktop.swingx.JXTitledSeparator;
 
 import jd.JDFileFilter;
 import jd.captcha.CES;
@@ -114,6 +123,11 @@ import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 import com.sun.xml.internal.bind.v2.TODO;
+
+import edu.stanford.ejalbert.BrowserLauncher;
+import edu.stanford.ejalbert.exception.BrowserLaunchingExecutionException;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -1082,19 +1096,72 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             this.toggleDnD();
             break;
         case JDAction.ABOUT:
-            String txt;
-                try {
-                    txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
-         
+            JFrame dialog = new JFrame();
+            dialog.setResizable(false);
+            dialog.setAlwaysOnTop(true);
+            dialog.setTitle(JDLocale.L("gui.dialog.about.title","About JDownloader"));
+            int n = 10;
+            JPanel p = new JPanel(new BorderLayout(n ,n));
+            p.setBorder(new EmptyBorder(n,n,n,n));
+            dialog.setContentPane(p);
+//            JXTitledSeparator titledSeparator = new JXTitledSeparator("JDownloader Entwickler Team");
+//            titledSeparator.setForeground(Color.BLUE);
+//            p.add(titledSeparator, BorderLayout.NORTH);
+
+            String[][] devs = new String[][]{
+                        {"jago","","Zustaendig fuer die GUI - also das Aussehen von JDownloader."},
+                     // {"neuer Eintrag","xxx@xxx.com","blabla"},
+            };
             
-            JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
-                } catch (MalformedURLException e2) {
-                    // TODO Auto-generated catch block
-                    e2.printStackTrace();
-                } catch (IOException e2) {
-                    // TODO Auto-generated catch block
-                    e2.printStackTrace();
+            JTable table = new JTable(devs, new String[]{"Entwickler","Email","Ressort"});
+            setWidth(table.getColumnModel().getColumn(0), 100);
+            setWidth(table.getColumnModel().getColumn(1), 100);
+            
+            
+            JPanel links = new JPanel();
+            links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
+            links.add(new JSeparator());
+            links.add(new JXHyperlink(new LinkAction("Supportboard", "http://jdownloader.net/support_en.php")));
+            links.add(new JSeparator());
+            links.add(new JXHyperlink(new LinkAction("Chat", "http://jdownloader.net/chat_en.php")));
+            
+            JPanel s = new JPanel(new BorderLayout(n ,n));
+            s.add(new JScrollPane(table), BorderLayout.CENTER);
+            s.add(links, BorderLayout.SOUTH);
+            p.add(s,BorderLayout.SOUTH);
+            s.setPreferredSize(new Dimension(800,200));
+            
+            final JTextPane textPane = new JTextPane();
+            textPane.setContentType("text/html");
+            textPane.setEditable(false);
+            textPane.setPreferredSize(new Dimension(800,400));
+            p.add(new JScrollPane(textPane), BorderLayout.CENTER);
+            p.setPreferredSize(new Dimension(800,600));
+            
+            dialog.pack();
+            dialog.setLocationRelativeTo(null);
+            dialog.setVisible(true);
+            
+            Thread t = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
+//                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                textPane.setText(txt);     
+                            }
+                        });               
+                        } catch (MalformedURLException e2) {
+                            e2.printStackTrace();
+                        } catch (IOException e2) {
+                            e2.printStackTrace();
+                        }
                 }
+            };
+            t.start();
+            
             break;
         case JDAction.ITEMS_ADD:
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -1145,6 +1212,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         }
         
+    }
+
+
+    private void setWidth(TableColumn column, int width) {
+        column.setMinWidth(width);
+        column.setPreferredWidth(width);
+        column.setMaxWidth(width);
     }
 
     public void toggleDnD() {
@@ -1330,6 +1404,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Iterator<UIListener> recIt = uiListener.iterator();
             while (recIt.hasNext()) {
                 ((UIListener) recIt.next()).uiEvent(uiEvent);
+            }
+        }
+    }
+
+    private final class LinkAction extends AbstractAction {
+        private String url;
+        private LinkAction(String label, String url) {
+            super(label);
+            this.url = url;
+        }
+        public void actionPerformed(ActionEvent e) {
+            try {
+                BrowserLauncher.openURL(url);
+            } catch (UnsupportedOperatingSystemException e1) {
+                e1.printStackTrace();
+            } catch (BrowserLaunchingExecutionException e1) {
+                e1.printStackTrace();
+            } catch (BrowserLaunchingInitializingException e1) {
+                e1.printStackTrace();
             }
         }
     }
