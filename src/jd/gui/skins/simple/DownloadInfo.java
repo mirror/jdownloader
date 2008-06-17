@@ -33,6 +33,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
@@ -64,10 +65,10 @@ public class DownloadInfo extends JFrame {
         super(JDLocale.L("gui.linkinformation.title","Link Information: ")+dlink.getName());
         downloadLink = dlink;
         //setModal(true);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(2,2));
         this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
-        
-this.setAlwaysOnTop(true);
+        this.setResizable(false);
+        this.setAlwaysOnTop(true);
        
         // this.getContentPane().setBackground(Color.WHITE);
         // this.getContentPane().setForeground(Color.WHITE);
@@ -101,6 +102,8 @@ this.setAlwaysOnTop(true);
 
     private void initDialog() {
         panel = new JPanel(new GridBagLayout());
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n,n,n,n));
         panel.setBackground(Color.WHITE);
         panel.setForeground(Color.WHITE);
         if (sp != null) this.remove(sp);
