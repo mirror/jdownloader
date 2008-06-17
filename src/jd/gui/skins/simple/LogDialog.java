@@ -16,7 +16,10 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -37,12 +40,15 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.plugins.LogFormatter;
+import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -89,7 +95,6 @@ public class LogDialog extends JFrame implements ActionListener {
      *            The connected Logger
      */
     public LogDialog(JFrame owner, Logger logger) {
-
         this.owner = owner;
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
@@ -119,20 +124,36 @@ public class LogDialog extends JFrame implements ActionListener {
         logScrollPane = new JScrollPane(logField);
         logField.setEditable(true);
 
-        JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         // JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null,
         // GridBagConstraints.NONE, GridBagConstraints.EAST);
-        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+//        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         LocationListener list = new LocationListener();
         this.addComponentListener(list);
         this.addWindowListener(list);
+        
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n,n));
+        panel.setBorder(new EmptyBorder(n,n,n,n));
+        setContentPane(panel);
+        
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n,0));
+        getContentPane().add(bpanel, BorderLayout.SOUTH);
+        panel.add(logScrollPane, BorderLayout.CENTER);
+        
+        bpanel.add(btnOK);
+        bpanel.add(btnSave);
+        bpanel.add(btnUpload);
+
+        setPreferredSize(new Dimension(640,480));
+        setContentPane(panel);
 
         pack();
+        setLocationRelativeTo(null);
         SimpleGUI.restoreWindow(null, null, this);
-
     }
 
     /*
