@@ -18,10 +18,12 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -63,6 +65,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
@@ -237,6 +240,39 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.addComponentListener(list);
         this.addWindowListener(list);
         acceptAll.getRootPane().setDefaultButton(acceptAll);
+        
+        
+        
+        
+        
+        int n = 5;
+        JPanel panel = new JPanel(new BorderLayout(n,n));
+        JPanel inner = new JPanel(new BorderLayout(n,n));
+        panel.setBorder(new EmptyBorder(n,n,n,n));
+        
+        JPanel south = new JPanel(new BorderLayout(n,n));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
+        
+        south.add(sortPackages, BorderLayout.WEST);
+        bpanel.add(acceptAll);
+        bpanel.add(accept);
+        south.add(bpanel, BorderLayout.CENTER);
+        
+        panel.add(inner, BorderLayout.CENTER);
+        inner.add(tabbedPane, BorderLayout.CENTER);
+        inner.add(progress, BorderLayout.SOUTH);
+        panel.add(south, BorderLayout.SOUTH);
+
+        setPreferredSize(new Dimension(640,480));
+
+        
+        setContentPane(panel);
+        setLocationRelativeTo(null);
+        
+        
+        
+        
+        
 
         pack();
         this.setVisible(true);
