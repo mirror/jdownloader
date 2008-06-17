@@ -65,7 +65,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    private String version = "0.5.0.3";
+    private String version = "0.5.0.5";
     private DecimalFormat f = new DecimalFormat("#0.00"); 
     
     private Server server;
@@ -930,21 +930,20 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestURI(),
                      "[\\s\\S]*/action/set/reconnectenabled/(.*)")
                      .getFirstMatch());
-                logger.fine("RemoteControl - Set ReConnect: " + newrc );
-                if((!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) ^ (newrc)) /*C++ User:^ is equivalent to XOR*/
+                boolean disprc = newrc;
+                if(newrc==false){newrc=true;}else{newrc=false;};
+                logger.fine("RemoteControl - Set ReConnect: " + disprc );
+                if((!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) == (newrc)) /*C++ User:^ is equivalent to XOR*/
                 {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
 
                     JDUtilities.saveConfig();
                     
-                    response.getWriter().println("reconnect=" + newrc + " (CHANGED=true)");
+                    response.getWriter().println("reconnect=" + disprc + " (CHANGED=true)");
                 }
                 else
                 {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-
-                    JDUtilities.saveConfig();
-                    response.getWriter().println("reconnect=" + newrc + " (CHANGED=false)");
+                    response.getWriter().println("reconnect=" + disprc + " (CHANGED=false)");
                 } 
             }
             
