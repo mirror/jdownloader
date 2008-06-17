@@ -21,6 +21,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -33,6 +34,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -61,8 +63,8 @@ public class PackageInfo extends JFrame {
         super();
         this.fp = fp;
      
-        setLayout(new BorderLayout());
-     
+        setLayout(new BorderLayout(2,2));
+        this.setResizable(false);
         this.setTitle(JDLocale.L("gui.frame.packageinfo.title","Package Information: "+fp.getName()));
         this.setAlwaysOnTop(true);
         
@@ -94,8 +96,9 @@ public class PackageInfo extends JFrame {
         setVisible(true);
     }
     private void initDialog() {
-        
         panel = new JPanel(new GridBagLayout());
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n,n,n,n));
         panel.setBackground(Color.WHITE);
         panel.setForeground(Color.WHITE);
         if (sp != null) this.remove(sp);
@@ -107,6 +110,7 @@ public class PackageInfo extends JFrame {
        addEntry("packagesize",JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize())+" "+fp.getTotalEstimatedPackageSize()+" KB");
        addEntry("loaded",JDUtilities.formatKbReadable(fp.getTotalKBLoaded())+" "+fp.getTotalKBLoaded()+" KB");
        addEntry("links","");
+       if (!fp.getPassword().equals("")) addEntry("Password",fp.getPassword());
        DownloadLink next=null;
        int i=1;
        for(Iterator<DownloadLink> it = fp.getDownloadLinks().iterator();it.hasNext();i++){
@@ -124,20 +128,20 @@ public class PackageInfo extends JFrame {
        //addEntry(null,null);
       // addEntry("properties",fp.getProperties()+"");
     }
-    
-    private void addEntry2(String label, String data) {
-     
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        JLabel value;
-        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setHorizontalAlignment(SwingConstants.RIGHT);
-        value.setForeground(Color.DARK_GRAY);
-
-        i++;
-    }
+//    
+//    private void addEntry2(String label, String data) {
+//     
+//        JLabel key;
+//        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+//        JLabel value;
+//        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+//        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+//        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+//        value.setHorizontalAlignment(SwingConstants.RIGHT);
+//        value.setForeground(Color.DARK_GRAY);
+//
+//        i++;
+//    }
     private void addEntry(String label, String data) {
         if (label == null && data == null) {
             JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -160,8 +164,10 @@ public class PackageInfo extends JFrame {
         JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
         JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+//        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+//        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        key.setBorder(new EmptyBorder(0,0,0,5));
+        value.setBorder(new EmptyBorder(0,5,0,0));
 
         i++;
 
