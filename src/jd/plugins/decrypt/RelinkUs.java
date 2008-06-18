@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.SimpleMatches;
@@ -42,7 +41,7 @@ public class RelinkUs extends PluginForDecrypt {
     private String version = "1.0.0.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
-
+    // http://relink.us/go.php?id=227399
     private static final String USE_RSDF = "USE_RSDF";
     private static final String USE_CCF = "USE_CCF";
     private static final String USE_DLC = "USE_DLC";
@@ -103,27 +102,38 @@ public class RelinkUs extends PluginForDecrypt {
                     add_relinkus_container(reqinfo, cryptedLink, "dlc");
                 }
 
-                ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
-                progress.setRange(links.size());
-                for (int i = 0; i < links.size(); i++) {
-                    reqinfo = HTTP.postRequest(new URL("http://relink.us/" + links.get(i)), "submit=Open");
-                    String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
-
-                    if (link.contains("yourlayer")) {
-                        /*CHECKME: wann passiert das hier? */
-                        reqinfo = HTTP.getRequest(new URL(link));
-                        link = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
-                    }
-                    
-                    decryptedLinks.add(this.createDownloadlink(link));
-                    progress.increase(1);
+                add_relinkus_links(reqinfo, decryptedLinks);
+                ArrayList<String> more_links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"go\\.php\\?id\\=(\\d*)\\&seite\\=(\\d*)\">", Pattern.CASE_INSENSITIVE), 0);
+                for (int i = 0; i < more_links.size(); i++) {
+                    url = new URL("http://relink.us/" + JDUtilities.htmlDecode(SimpleMatches.getBetween(more_links.get(i), "<a href=\"", "\">")));
+                    reqinfo = HTTP.getRequest(url);
+                    add_relinkus_links(reqinfo, decryptedLinks);
                 }
+
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         return null;
+    }
+
+    private void add_relinkus_links(RequestInfo reqinfo, Vector<DownloadLink> decryptedLinks) throws IOException {
+        ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
+        progress.setRange(links.size());
+        for (int i = 0; i < links.size(); i++) {
+            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(links.get(i))), "submit=Open");
+            String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
+
+            if (link.contains("yourlayer")) {
+                /* CHECKME: wann passiert das hier? */
+                reqinfo = HTTP.getRequest(new URL(JDUtilities.htmlDecode(link)));
+                link = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
+            }
+
+            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
+            progress.increase(1);
+        }
     }
 
     private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
