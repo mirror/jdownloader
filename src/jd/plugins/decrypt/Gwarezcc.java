@@ -29,14 +29,14 @@ public class Gwarezcc extends PluginForDecrypt {
 
     private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/game_\\d{1,}_download\\#details", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern(), patternLink_Details_Main.flags() | patternLink_Details_Download.flags());
+    private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download_\\d{1,}_\\d{1,}_check.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download_\\d{1,}_\\d{1,}_parts.html", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern(), patternLink_Details_Main.flags() | patternLink_Details_Download.flags() | patternLink_Details_Mirror_Check.flags() | patternLink_Details_Mirror_Parts.flags());
     private static final String USE_RSDF = "USE_RSDF";
-    private static boolean load_rsdf = false;
 
     public Gwarezcc() {
         super();
         this.setConfigEelements();
-        load_rsdf = getProperties().getBooleanProperty(USE_RSDF, false);
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
@@ -55,17 +55,15 @@ public class Gwarezcc extends PluginForDecrypt {
                     String downloadid = url.getFile().substring(1);
                     /* weiterleiten zur Download Info Seite */
                     decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/game_" + downloadid + "_download#details"));
+                } else if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
+                    /* Link aus der Download Info Seite */
+                    String downloadid = url.getFile().replaceAll("check", "parts");
+                    /* weiterleiten zur Mirror Parts Seite */
+                    decryptedLinks.add(this.createDownloadlink("http://gwarez.cc" + downloadid));
                 } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
-                    /* Download Info Seite */
+                    /* Link auf die Download Info Seite */
                     String downloadid = new Regex(url.getFile(), "\\/game_([\\d].*)_download").getFirstMatch();
-                    /* Passwort suchen */
-                    ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"150\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
-                    if (password.size() == 1) {
-                        /* Passwort gefunden */
-                        default_password.add(JDUtilities.htmlDecode(password.get(0)));
-                    } else
-                        logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-                    if (load_rsdf == true) {
+                    if (getProperties().getBooleanProperty(USE_RSDF, false) == true) {
                         /* RSDF Suchen */
                         ArrayList<String> rsdf = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img\\/dl\\.gif\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download_" + downloadid + "_5.html\"><b>.rsdf</b>", Pattern.CASE_INSENSITIVE), 0);
                         if (rsdf.size() == 1) {
@@ -82,17 +80,28 @@ public class Gwarezcc extends PluginForDecrypt {
                     /* Mirrors suchen */
                     ArrayList<String> mirror_pages = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img\\/dl\\.gif\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download_" + downloadid + "_(.*)_check.html\" onmouseover", Pattern.CASE_INSENSITIVE), 1);
                     for (int i = 0; i < mirror_pages.size(); i++) {
-                        /* Mirror Page verarbeiten */
-                        URL mirror = new URL("http://gwarez.cc/download_" + downloadid + "_" + mirror_pages.get(i) + "_parts.html");
-                        RequestInfo mirrorInfo = HTTP.getRequest(mirror, null, null, false);
-                        /* Parts suchen */
-                        ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(mirrorInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
-                        for (int ii = 0; ii < parts.size(); ii++) {
-                            /* Parts decrypten und adden */
-                            decryptedLinks.add(this.createDownloadlink(gwarezdecrypt(parts.get(ii))));
-                        }
+                        /* Mirror Page zur weiteren Verarbeitung adden */
+                        decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/download_" + downloadid + "_" + mirror_pages.get(i) + "_parts.html"));
                     }
 
+                } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
+                    /* Link zu den Parts des Mirrors */
+                    String downloadid = new Regex(url.getFile(), "\\/download_([\\d].*)_([\\d].*)_parts").getFirstMatch();                    
+                    /* Parts suchen */
+                    ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
+                    for (int ii = 0; ii < parts.size(); ii++) {
+                        /* Parts decrypten und adden */
+                        decryptedLinks.add(this.createDownloadlink(gwarezdecrypt(parts.get(ii))));
+                    }                    
+                    /* Passwort suchen */
+                    url = new URL("http://gwarez.cc/" + downloadid + "#details");
+                    requestInfo = HTTP.getRequest(url, null, null, false);
+                    ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"150\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
+                    if (password.size() == 1) {
+                        /* Passwort gefunden */
+                        default_password.add(JDUtilities.htmlDecode(password.get(0)));
+                    } else
+                        logger.severe("Please Update Gwarez Plugin(PW Pattern)");
                 }
 
             } catch (MalformedURLException e) {
