@@ -1,4 +1,4 @@
-# ----------------------------------------------------------------------------------------------------------------
+﻿# ----------------------------------------------------------------------------------------------------------------
 # Version: 0.0.0.3 sweet BETA Original Turkish Translation BY FREELOADER 
 # JD version 0.1.613
 # free.loader.tx@gmail.com
@@ -1060,3 +1060,4 @@ addons.schedule.menu.start_stop =  İndirme Başlat/Durdur
 addons.schedule.menu.stop = Dur
 addons.schedule.menu.time =  Zamanı seç:
 addons.schedule.name = Zamanlanmış Görevler
+
