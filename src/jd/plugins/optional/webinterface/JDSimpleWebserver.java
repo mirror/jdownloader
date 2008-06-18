@@ -61,10 +61,6 @@ public class JDSimpleWebserver extends Thread {
 
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
-                /*
-                 * JDSimpleStatusPage requestThread = new
-                 * JDSimpleStatusPage(Client_Socket); requestThread.start();
-                 */
 
             } catch (IOException e) {
                 logger.info("WebInterface: Client-Connection failed");
@@ -97,9 +93,6 @@ public class JDSimpleWebserver extends Thread {
                 HashMap<String, String> headers = new HashMap<String, String>();
 
                 while ((line = reader.readLine()) != null && line.trim().length() > 0) {
-                    // GET
-                    // /cgi-bin/uploadjs.cgi?uploadid=130439095897968957&r=31
-                    // HTTP/1.1
                     String key = null;
                     String value = null;
                     if (line.indexOf(": ") > 0) {
@@ -111,7 +104,6 @@ public class JDSimpleWebserver extends Thread {
                     }
                     headers.put(key, value);
                 }
-                ;
 
                 if (headers.containsKey(null)) {
                     String Method = headers.get(null).split(" ")[0];
@@ -150,12 +142,10 @@ public class JDSimpleWebserver extends Thread {
                                              * alter POST aus Header Liste
                                              * entfernen
                                              */
-                                            headers.remove(null); /*
-                                                                     * FIXME:
-                                                                     * ist
-                                                                     * remove
-                                                                     * nötig
-                                                                     */
+                                            headers.remove(null);
+                                            /*
+                                             * FIXME: ist remove nötig
+                                             */
                                             /*
                                              * neuer POST mit RequestParams in
                                              * Header-Liste einfügen

@@ -14,6 +14,7 @@ import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForHost;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -451,12 +452,50 @@ public class JDSimpleWebserverRequestHandler {
 
                 if (requestParameter.containsKey("addlinks")) {
                     /*
-                     * TODO: mehr add features
+                     * TODO: offline links markieren, dupe check
                      */
                     String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
-                    Vector<DownloadLink> LinkstoAdd = new DistributeData(AddLinks).findLinks();
-                    for (int i = 0; i < LinkstoAdd.size(); i++) {
-                        attachLinkTopackage(LinkstoAdd.get(i));
+                    Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
+
+                    DownloadLink link;
+                    DownloadLink next;
+                    while (waitingLinkList.size() > 0) {
+                        link = waitingLinkList.remove(0);
+                        if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)) {
+                            attachLinkTopackage(link);
+                            try {
+                                Thread.sleep(5);
+                            } catch (InterruptedException e) {
+                            }
+                        } else {
+                            if (!link.isAvailabilityChecked()) {
+                                Iterator<DownloadLink> it = waitingLinkList.iterator();
+                                Vector<String> links = new Vector<String>();
+                                Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
+                                links.add(link.getDownloadURL());
+                                dlLinks.add(link);
+                                while (it.hasNext()) {
+                                    next = it.next();
+                                    if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
+                                        dlLinks.add(next);
+                                        links.add(next.getDownloadURL());
+                                    }
+                                }
+                                if (links.size() > 1) {
+                                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
+                                    if (ret != null) {
+                                        for (int ii = 0; ii < links.size(); ii++) {
+                                            dlLinks.get(ii).setAvailable(ret[ii]);
+                                        }
+                                    }
+                                }
+                            }
+                            if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+
+                                attachLinkTopackage(link);
+
+                            }
+                        }
                     }
                 }
             }
