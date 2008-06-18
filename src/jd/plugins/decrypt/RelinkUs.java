@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -24,24 +23,33 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class RelinkUs extends PluginForDecrypt {
 
-    final static String host             = "relink.us";
+    final static String host = "relink.us";
 
-    private String      version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]relink\\.us/go\\.php\\?id=[0-9]+");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
+
+    private static final String USE_RSDF = "USE_RSDF";
+    private static final String USE_CCF = "USE_CCF";
+    private static final String USE_DLC = "USE_DLC";
 
     public RelinkUs() {
         super();
+        this.setConfigEelements();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
     }
@@ -76,45 +84,65 @@ public class RelinkUs extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			
-    			String title=SimpleMatches.getSimpleMatch(reqinfo, "<div class='ordner_head'>°</div>", 0);
-    			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "action='°' method='post' target='_blank'");
-    			progress.setRange( links.size());
-    			FilePackage fp= new FilePackage();
-    			fp.setName(title);
-    			for(int i=0; i<links.size(); i++) {
-    				reqinfo = HTTP.postRequest(new URL("http://relink.us/" + links.get(i).get(0)), "submit=Open");
-    				String link=SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
-    				
-    				if(link.contains("yourlayer")){
-    				    reqinfo=HTTP.getRequest(new URL(link));
-    				    link=SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
-    				}
-    				
-    				
-    				
-    				
-    				decryptedLinks.add(this.createDownloadlink(link));
-    				fp.add(decryptedLinks.lastElement());
-    			progress.increase(1);
-    			}
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                if (getProperties().getBooleanProperty(USE_RSDF, true)) {
+                    add_relinkus_container(reqinfo, cryptedLink, "rsdf");
+                }
+                if (getProperties().getBooleanProperty(USE_CCF, true)) {
+                    add_relinkus_container(reqinfo, cryptedLink, "ccf");
+                }
+                if (getProperties().getBooleanProperty(USE_DLC, true)) {
+                    add_relinkus_container(reqinfo, cryptedLink, "dlc");
+                }
+
+                ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
+                progress.setRange(links.size());
+                for (int i = 0; i < links.size(); i++) {
+                    reqinfo = HTTP.postRequest(new URL("http://relink.us/" + links.get(i)), "submit=Open");
+                    String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
+
+                    if (link.contains("yourlayer")) {
+                        /*CHECKME: wann passiert das hier? */
+                        reqinfo = HTTP.getRequest(new URL(link));
+                        link = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
+                    }
+                    
+                    decryptedLinks.add(this.createDownloadlink(link));
+                    progress.increase(1);
+                }
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
+        ArrayList<String> container_link = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE), 1);
+        if (container_link.size() == 1) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + ContainerFormat);
+            URL container_url = new URL("http://relink.us/" + JDUtilities.htmlDecode(container_link.get(0)));
+            HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
+            container_con.setRequestProperty("Referer", cryptedLink);
+            JDUtilities.download(container, container_con);
+            JDUtilities.getController().loadContainerFile(container);
+        } else
+            logger.severe("Please Update RelinkUs Plugin(Container Pattern)");
+    }
+
+    private void setConfigEelements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));
     }
 
     @Override

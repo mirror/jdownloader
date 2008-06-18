@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -28,8 +27,8 @@ public class Gwarezcc extends PluginForDecrypt {
     static private final String host = "Gwarez Decrypter";
     private String version = "1.0.0.0";
 
-    private static final Pattern patternLink_Details_Main = Pattern.compile("http://.*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Details_Download = Pattern.compile("http://.*?gwarez\\.cc/game_\\d{1,}_download\\#details", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/game_\\d{1,}_download\\#details", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern(), patternLink_Details_Main.flags() | patternLink_Details_Download.flags());
     private static final String USE_RSDF = "USE_RSDF";
     private static boolean load_rsdf = false;
@@ -37,7 +36,7 @@ public class Gwarezcc extends PluginForDecrypt {
     public Gwarezcc() {
         super();
         this.setConfigEelements();
-        this.load_rsdf = getProperties().getBooleanProperty(USE_RSDF, false);
+        load_rsdf = getProperties().getBooleanProperty(USE_RSDF, false);
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 

@@ -20,7 +20,7 @@ import jd.utils.JDUtilities;
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://.*?(movie-blog.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch.in/blog.php\\?id=[\\d]+|doku.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog.org/blog.php\\?id=[\\d]+|sky-porn.info/blog/\\?p=[\\d]+|best-movies.us/\\?p=[\\d]+|game-blog.us/game-.+\\.html).*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(movie-blog.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch.in/blog.php\\?id=[\\d]+|doku.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog.org/blog.php\\?id=[\\d]+|sky-porn.info/blog/\\?p=[\\d]+|best-movies.us/\\?p=[\\d]+|game-blog.us/game-.+\\.html).*", Pattern.CASE_INSENSITIVE);
     private ArrayList<String[]> defaultpasswords = new ArrayList<String[]>();
     private Vector<String> passwordpattern = new Vector<String>();
 
@@ -45,6 +45,7 @@ public class Wordpress extends PluginForDecrypt {
         passwordpattern.add("<b>Passwort\\:<\\/b> (.*?) \\|"); /* hörbuch,xxx-blog */
         passwordpattern.add("<b>Passwort\\:<\\/b> (.*?)<\\/p>");/* game-blog */
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");/* sky-porn */
+        passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>"); /* movie-blog */
         passwordpattern.add("<strong>Passwort<\\/strong>\\: (.*?) <strong>"); /* movie-blog */
         passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<\\/p>"); /* movie-blog */
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?)<\\/p>"); /* best-movies */
@@ -108,7 +109,7 @@ public class Wordpress extends PluginForDecrypt {
                     password = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
-                            /* logger.info("PW: " + password.get(ii)); */
+                            logger.info("PW: " + password.get(ii));
                             default_password.add(JDUtilities.htmlDecode(password.get(ii)));
                         }
                         break;
@@ -122,7 +123,7 @@ public class Wordpress extends PluginForDecrypt {
                             String lnk = HTMLParser.getHttpLinks(links.get(i), parameter)[0];
                             if (!new Regex(lnk, patternSupported).matches()) {
                                 /* logger.info("ADD: " + lnk); */
-                                decryptedLinks.add(this.createDownloadlink(lnk));
+                                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(lnk)));
                             }
                         }
                     } catch (Exception e) {
