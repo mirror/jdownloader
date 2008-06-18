@@ -47,7 +47,7 @@ public class JDAboutDialog {
         titledSeparator2.setForeground(Color.BLUE);
 
         String[][] devs = new String[][]{
-                   {" jago"," java.jago@gmail.com"," Senior software architect in real life. Responsible for the Swing GUI design of JD."},
+                   {" jago"," jago@jdownloader.org"," Senior software architect in real life. Responsible for the Swing GUI design of JD."},
                       
                   // See how I added myself above. Every string starts with a single white space.
                   // This improves the way the entries look in the table (without fiddleing with the tablecellrenderer)
