@@ -41,7 +41,7 @@ public class RelinkUs extends PluginForDecrypt {
     private String version = "1.0.0.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
-    // http://relink.us/go.php?id=227399
+    
     private static final String USE_RSDF = "USE_RSDF";
     private static final String USE_CCF = "USE_CCF";
     private static final String USE_DLC = "USE_DLC";
