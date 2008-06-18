@@ -1096,72 +1096,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             this.toggleDnD();
             break;
         case JDAction.ABOUT:
-            JFrame dialog = new JFrame();
-            dialog.setResizable(false);
-            dialog.setAlwaysOnTop(true);
-            dialog.setTitle(JDLocale.L("gui.dialog.about.title","About JDownloader"));
-            int n = 10;
-            JPanel p = new JPanel(new BorderLayout(n ,n));
-            p.setBorder(new EmptyBorder(n,n,n,n));
-            dialog.setContentPane(p);
-//            JXTitledSeparator titledSeparator = new JXTitledSeparator("JDownloader Entwickler Team");
-//            titledSeparator.setForeground(Color.BLUE);
-//            p.add(titledSeparator, BorderLayout.NORTH);
-
-            String[][] devs = new String[][]{
-                        {"jago","","Zuständig fuer die GUI - also das Aussehen von JDownloader."}                        
-                     // {"neuer Eintrag","xxx@xxx.com","blabla"},
-            };
-            
-            JTable table = new JTable(devs, new String[]{"Entwickler","Email","Ressort"});
-            setWidth(table.getColumnModel().getColumn(0), 100);
-            setWidth(table.getColumnModel().getColumn(1), 100);
-            
-            
-            JPanel links = new JPanel();
-            links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
-            links.add(new JSeparator());
-            links.add(new JXHyperlink(new LinkAction("Supportboard", "http://jdownloader.net/support_en.php")));
-            links.add(new JSeparator());
-            links.add(new JXHyperlink(new LinkAction("Chat", "http://jdownloader.net/chat_en.php")));
-            
-            JPanel s = new JPanel(new BorderLayout(n ,n));
-            s.add(new JScrollPane(table), BorderLayout.CENTER);
-            s.add(links, BorderLayout.SOUTH);
-            p.add(s,BorderLayout.SOUTH);
-            s.setPreferredSize(new Dimension(800,200));
-            
-            final JTextPane textPane = new JTextPane();
-            textPane.setContentType("text/html");
-            textPane.setEditable(false);
-            textPane.setPreferredSize(new Dimension(800,400));
-            p.add(new JScrollPane(textPane), BorderLayout.CENTER);
-            p.setPreferredSize(new Dimension(800,600));
-            
-            dialog.pack();
-            dialog.setLocationRelativeTo(null);
-            dialog.setVisible(true);
-            
-            Thread t = new Thread() {
-                @Override
-                public void run() {
-                    try {                        
-                        final String txt = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode());
-//                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About JDownloader"), txt);
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                textPane.setText(txt);     
-                            }
-                        });               
-                        } catch (MalformedURLException e2) {
-                            e2.printStackTrace();
-                        } catch (IOException e2) {
-                            e2.printStackTrace();
-                        }
-                }
-            };
-            t.start();
-            
+            JDAboutDialog.getDialog().setVisible(true);            
             break;
         case JDAction.ITEMS_ADD:
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -1214,12 +1149,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         
     }
 
-
-    private void setWidth(TableColumn column, int width) {
-        column.setMinWidth(width);
-        column.setPreferredWidth(width);
-        column.setMaxWidth(width);
-    }
 
     public void toggleDnD() {
         if (dragNDrop.isVisible()) {
@@ -1404,25 +1333,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             Iterator<UIListener> recIt = uiListener.iterator();
             while (recIt.hasNext()) {
                 ((UIListener) recIt.next()).uiEvent(uiEvent);
-            }
-        }
-    }
-
-    private final class LinkAction extends AbstractAction {
-        private String url;
-        private LinkAction(String label, String url) {
-            super(label);
-            this.url = url;
-        }
-        public void actionPerformed(ActionEvent e) {
-            try {
-                BrowserLauncher.openURL(url);
-            } catch (UnsupportedOperatingSystemException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingExecutionException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingInitializingException e1) {
-                e1.printStackTrace();
             }
         }
     }
