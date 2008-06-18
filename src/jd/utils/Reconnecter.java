@@ -15,7 +15,7 @@ import jd.plugins.PluginForHost;
 
 public class Reconnecter {
 
-    private static final int EXTERNAL_IP_CHECK_INTERVAL = 60 * 10;
+
     private static String CURRENT_IP = "";
     private static long lastIPUpdate = 0;
     private static boolean LAST_RECONNECT_SUCCESS = false;
@@ -63,7 +63,7 @@ public class Reconnecter {
         IS_RECONNECTING = true;
         if (isGlobalDisabled()) {
 
-            if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * EXTERNAL_IP_CHECK_INTERVAL)) {
+            if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60*10))) {
                 ipChangeSuccess = checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
 

@@ -148,6 +148,16 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         ce.setExpertEntry(true);
         extended.addEntry(ce);
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config,"EXTERNAL_IP_CHECK_INTERVAL", JDLocale.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"),10,60*60);
+        ce.setDefaultValue(10*60);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        ce.setExpertEntry(true);
+        extended.addEntry(ce);
+        
+        
+        
+        
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen"));
         ce.setDefaultValue(false);
         container.addEntry(ce);
@@ -171,7 +181,11 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setExpertEntry(true);
         extended.addEntry(ce);
         
-       
+
+     
+        
+        
+        
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Proxy Verwenden"));
