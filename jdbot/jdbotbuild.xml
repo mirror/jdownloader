@@ -1,0 +1,27 @@
+<project default="standardBuild" basedir="">
+	<property environment="env" />
+	<property name="src" value="src" />
+	<property name="cls" value="bin" />
+	<property name="dist" value="dist" />
+	<property name="class-path" value="pircbot.jar" />
+	<target name="compile">
+		<javac srcdir="/usr/lib/jvm/java-6-sun-1.6.0.06/jre" destdir="${cls}" encoding="UTF-8" source="1.5" />
+	</target>
+
+	<target name="jar">
+		<!-- jDbot -->
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="DwD" />
+			<attribute name="Main-Class" value="myIrcBot.Main" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
+		<jar jarfile="${dist}/jDbot.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="**/*.class" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+	</target>
+	<target name="standardBuild" depends="compile,jar">
+	</target>
+</project>
