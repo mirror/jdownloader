@@ -134,8 +134,10 @@ public static Insets INSETS=new Insets(5,5,5,5);
         addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
         
      
-
+        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());} catch (Exception e1) {e1.printStackTrace();}
+        
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         boolean all = false;
