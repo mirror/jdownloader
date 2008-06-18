@@ -10,7 +10,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -25,8 +24,6 @@ public class JDSimpleWebserverRequestHandler {
     private JDSimpleWebserverResponseCreator response;
 
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-    private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
-
     public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
 
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK";
@@ -39,18 +36,15 @@ public class JDSimpleWebserverRequestHandler {
     }
 
     private String removeExtension(String a) {
-        // logger.finer("file " + a);
         if (a == null) return a;
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
-        // logger.info("FOund . " + i);
         String ret;
         if (i <= 1 || (a.length() - i) > 5) {
             ret = a.toLowerCase().trim();
         } else {
-            // logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
@@ -67,8 +61,6 @@ public class JDSimpleWebserverRequestHandler {
         }
 
         if (Math.min(a.length(), b.length()) == 0) return 0;
-        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
-        // (b.length()) + ")");
         return (c * 100) / (b.length());
     }
 
@@ -89,7 +81,6 @@ public class JDSimpleWebserverRequestHandler {
         synchronized (JDWebinterface.Link_Adder_Packages) {
             int bestSim = 0;
             int bestIndex = -1;
-            // logger.info("link: " + link.getName());
             for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
 
                 int sim = comparepackages(JDWebinterface.Link_Adder_Packages.get(i).getName(), removeExtension(link.getName()));
@@ -98,7 +89,6 @@ public class JDSimpleWebserverRequestHandler {
                     bestIndex = i;
                 }
             }
-            // logger.info("Best sym: "+bestSim);
             if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
 
                 FilePackage fp = new FilePackage();
@@ -106,8 +96,6 @@ public class JDSimpleWebserverRequestHandler {
                 fp.add(link);
                 JDWebinterface.Link_Adder_Packages.add(fp);
             } else {
-                // logger.info("Found package "
-                // +JDWebinterface.Link_Adder_Packages.get(bestIndex).getName());
                 String newpackageName = getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), removeExtension(link.getName()));
                 JDWebinterface.Link_Adder_Packages.get(bestIndex).setName(newpackageName);
                 JDWebinterface.Link_Adder_Packages.get(bestIndex).add(link);
@@ -120,7 +108,7 @@ public class JDSimpleWebserverRequestHandler {
     public void handle() {
 
         String request = headers.get(null);
-        // logger.info(request);
+
         String[] requ = request.split(" ");
 
         String method = requ[0];
@@ -165,25 +153,22 @@ public class JDSimpleWebserverRequestHandler {
                         requestParameter.put(key + "_counter", keycounter.toString());
                         requestParameter.put(key + "_" + keycounter.toString(), value);
                     }
-                    ;
 
                 } else
                     requestParameter.put(key, value);
             }
         }
-        /* logger.info(requestParameter.toString()); */
+
         String url = path.replaceAll("\\.\\.", "");
 
         /* parsen der paramter */
         if (requestParameter.containsKey("do")) {
             if (requestParameter.get("do").compareToIgnoreCase("submit") == 0) {
-                logger.info("submit wurde gedrückt");
                 if (requestParameter.containsKey("speed")) {
                     int setspeed = JDUtilities.filterInt(requestParameter.get("speed"));
                     if (setspeed < 0) setspeed = 0;
                     JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
                 }
-                ;
 
                 if (requestParameter.containsKey("maxdls")) {
                     int maxdls = JDUtilities.filterInt(requestParameter.get("maxdls"));
@@ -217,10 +202,9 @@ public class JDSimpleWebserverRequestHandler {
                         }
                         if (requestParameter.containsKey("selected_dowhat_link_adder")) {
                             String dowhat = requestParameter.get("selected_dowhat_link_adder");
-
                             /* packages-namen des link-adders aktuell halten */
                             synchronized (JDWebinterface.Link_Adder_Packages) {
-                                for (int i = 0; i <= JDWebinterface.Link_Adder_Packages.size(); i++) {
+                                for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
                                     if (requestParameter.containsKey("adder_package_name_" + i)) {
                                         JDWebinterface.Link_Adder_Packages.get(i).setName(JDUtilities.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
                                     }
@@ -228,14 +212,23 @@ public class JDSimpleWebserverRequestHandler {
                             }
                             if (dowhat.compareToIgnoreCase("remove") == 0) {
                                 /* entfernen */
-                                logger.info("entfernen aus add liste");
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                     link = it.next();
                                     link.getFilePackage().remove(link);
                                 }
+                            } else if (dowhat.compareToIgnoreCase("remove+offline") == 0) {
+                                /* entfernen(offline) */
+                                for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
+                                    for (int ii = 0; ii < JDWebinterface.Link_Adder_Packages.get(i).size(); ii++) {
+                                        links.add(JDWebinterface.Link_Adder_Packages.get(i).get(ii));
+                                    }
+                                }
+                                for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
+                                    link = it.next();
+                                    if (link.isAvailabilityChecked() == true && link.isAvailable() == false) link.getFilePackage().remove(link);
+                                }
                             } else if (dowhat.compareToIgnoreCase("add") == 0) {
                                 /* link adden */
-                                logger.info("adden aus add liste");
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                     link = it.next();
                                     FilePackage fp = null;
@@ -286,9 +279,9 @@ public class JDSimpleWebserverRequestHandler {
                                 if (JDWebinterface.Link_Adder_Packages.get(index).size() == 0) JDWebinterface.Link_Adder_Packages.remove(index);
                             }
                         }
+
                     }
                 }
-                ;
 
                 if (requestParameter.containsKey("package_single_download_counter")) {
                     /* aktionen in der download-liste ausführen */
@@ -362,7 +355,6 @@ public class JDSimpleWebserverRequestHandler {
                 }
 
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
-                logger.info("reconnect now wurde gedrückt");
                 class JDReconnect implements Runnable {
                     /*
                      * zeitverzögertes neustarten
@@ -378,11 +370,9 @@ public class JDSimpleWebserverRequestHandler {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        logger.info("manual reconnect now");
                         boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                         if (JDUtilities.getController().getRunningDownloadNum() > 0) {
-                            logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
                             JDUtilities.getController().stopDownloads();
                         }
                         if (Reconnecter.waitForNewIP(1)) {
@@ -397,7 +387,6 @@ public class JDSimpleWebserverRequestHandler {
                 JDReconnect jdrc = new JDReconnect();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("close") == 0) {
-                logger.info("close jd wurde gedrückt");
                 class JDClose implements Runnable { /* zeitverzögertes beenden */
                     JDClose() {
                         new Thread(this).start();
@@ -410,7 +399,6 @@ public class JDSimpleWebserverRequestHandler {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        logger.info("close jd now");
                         JDUtilities.getController().exit();
                     }
                 }
@@ -418,13 +406,10 @@ public class JDSimpleWebserverRequestHandler {
                 JDClose jdc = new JDClose();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
-                logger.info("start wurde gedrückt");
                 JDUtilities.getController().startDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
-                logger.info("stop wurde gedrückt");
                 JDUtilities.getController().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
-                logger.info("restart wurde gedrückt");
                 class JDRestart implements Runnable {
                     /*
                      * zeitverzögertes neustarten
@@ -440,7 +425,6 @@ public class JDSimpleWebserverRequestHandler {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
-                        logger.info("restart jd now");
                         JDUtilities.restartJD();
                     }
                 }
@@ -448,8 +432,6 @@ public class JDSimpleWebserverRequestHandler {
                 JDRestart jdrs = new JDRestart();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
-                logger.info("add wurde gedrückt");
-
                 if (requestParameter.containsKey("addlinks")) {
                     /*
                      * TODO: offline links markieren, dupe check
@@ -499,13 +481,11 @@ public class JDSimpleWebserverRequestHandler {
                     }
                 }
             }
-            ;
 
         }
         /* passwortliste verändern */
         if (requestParameter.containsKey("passwd")) {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
-                logger.info("passwd save wurde gedrückt");
                 if (requestParameter.containsKey("password_list")) {
                     String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));
                     JUnrar unrar = new JUnrar(false);
@@ -526,7 +506,7 @@ public class JDSimpleWebserverRequestHandler {
                 url = tempurl;
                 fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
             }
-            ;
+
         }
 
         if (!fileToRead.exists()) {
@@ -541,9 +521,8 @@ public class JDSimpleWebserverRequestHandler {
                 filerequest = new JDSimpleWebserverStaticFileRequestHandler(this.response);
                 filerequest.handleRequest(url, requestParameter);
             }
-            ;
+
         }
-        // logger.info("RequestParams: " + requestParameter);
 
     }
 }

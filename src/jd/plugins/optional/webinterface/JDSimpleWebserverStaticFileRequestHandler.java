@@ -77,11 +77,11 @@ public class JDSimpleWebserverStaticFileRequestHandler {
                     out.write(nextByte);
                 }
                 out.close();
-                logger.info("size " + out.size());
+                /*logger.info("size " + out.size());*/
                 response.setBinaryContent(out.toByteArray());
             }
         } catch (Exception e) {
-            logger.info("error reading file" + e);
+            logger.severe("error reading file" + e);
             response.setError(e);
             return;
         } finally {
@@ -89,7 +89,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
                 try {
                     in.close();
                 } catch (IOException e) {
-                    logger.info("failed to close stream" + e);
+                    logger.severe("failed to close stream" + e);
                 }
             }
         }

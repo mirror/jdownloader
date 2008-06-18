@@ -40,7 +40,7 @@ public class JDSimpleWebserver extends Thread {
             logger.info("Webinterface: Server started");
             start();
         } catch (IOException e) {
-            logger.info("WebInterface: Server failed to start!");
+            logger.severe("WebInterface: Server failed to start!");
         }
     }
 
@@ -49,7 +49,7 @@ public class JDSimpleWebserver extends Thread {
             try {
                 while (getCurrentClientCounter() >= max_clientCounter) {
                     try {
-                        logger.info("warte");
+                        /*logger.info("warte");*/
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
                     }
@@ -63,7 +63,7 @@ public class JDSimpleWebserver extends Thread {
                 client_thread.start();
 
             } catch (IOException e) {
-                logger.info("WebInterface: Client-Connection failed");
+                logger.severe("WebInterface: Client-Connection failed");
             }
         }
     }
@@ -117,7 +117,7 @@ public class JDSimpleWebserver extends Thread {
                                      * damit der RequestParams Parser nicht
                                      * geändert werden muss
                                      */
-                                    logger.info("get post data length " + headers.get("content-length"));
+                                    /*logger.info("get post data length " + headers.get("content-length"));*/
                                     Integer post_len = new Integer(headers.get("content-length"));
                                     Integer post_len_toread = new Integer(post_len);
                                     Integer post_len_read = new Integer(0);
@@ -128,7 +128,7 @@ public class JDSimpleWebserver extends Thread {
                                         if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
                                         indexstart = indexstart + post_len_read;
                                         post_len_toread = post_len_toread - post_len_read;
-                                        logger.info("gelesen " + post_len_read + " index " + indexstart + " noch zu lesen " + post_len_toread);
+                                        /*logger.info("gelesen " + post_len_read + " index " + indexstart + " noch zu lesen " + post_len_toread);*/
                                     }
 
                                     String RequestParams = String.copyValueOf(cbuf);
@@ -136,7 +136,7 @@ public class JDSimpleWebserver extends Thread {
                                         /* alten POST aus Header Liste holen */
                                         String request = headers.get(null);
                                         String[] requ = request.split(" ");
-                                        logger.info(requ[0]);
+                                        /*logger.info(requ[0]);*/
                                         if (Method.compareToIgnoreCase("post") == 0) {
                                             /*
                                              * alter POST aus Header Liste
@@ -152,10 +152,10 @@ public class JDSimpleWebserver extends Thread {
                                              */
                                             headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
                                         } else
-                                            logger.info("POST Daten bei nem GET aufruf???");
+                                            logger.severe("POST Daten bei nem GET aufruf???");
 
                                     } else {
-                                        logger.info("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
+                                        logger.severe("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
                                     }
 
                                 }
@@ -171,7 +171,7 @@ public class JDSimpleWebserver extends Thread {
                                     /*
                                      * send authorization granted
                                      */
-                                    logger.info("pass stimmt");
+                                    /*logger.info("pass stimmt");*/
                                     request.handle();
 
                                 } else { /* send authorization failed */
@@ -189,14 +189,14 @@ public class JDSimpleWebserver extends Thread {
                     }
                 } else {
                     /* kein get oder post header */
-                    logger.info("kein post oder get header");
+                    logger.severe("kein post oder get header");
                 }
                 Current_Socket.close();
 
             } catch (SocketException e) {
-                logger.info("WebInterface: Socket error");
+                logger.severe("WebInterface: Socket error");
             } catch (IOException e) {
-                logger.info("WebInterface: I/O Error");
+                logger.severe("WebInterface: I/O Error");
             }
         }
 
