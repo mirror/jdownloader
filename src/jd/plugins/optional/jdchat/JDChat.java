@@ -30,6 +30,7 @@ import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -69,13 +70,17 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String NICK = "PARAM_" + "NICK";;
     private static final String PERFORM = "PARAM_" + "PERFORM";;
     private static final String CHANNEL = "#jDownloader";
-    public static final String COLOR_CHAT = "222222";
-    public static final String COLOR_PM = "ff0066";
-    public static final String COLOR_SYSTEM = "666666";
-    public static final String COLOR_SELF = "0000cc";
-    public static final String COLOR_ERROR = "ff0000";
-    static final String COLOR_ACTION = "009900";
-    public static final String COLOR_NOTICE = "33cccc";
+
+    public static final String STYLE_PM = "pm";
+    public static final String STYLE_SYSTEM_MESSAGE = "system";
+    public static final String STYLE_SELF = "self";
+    public static final String STYLE_ERROR = "error";
+    static final String STYLE_ACTION = "action";
+    public static final String STYLE_NOTICE = "notice";
+    public static final String STYLE_HIGHLIGHT = "highlight";
+    public static final String STYLE = JDUtilities.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
+    public static final String USERLIST_STYLE = JDUtilities.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
+
     private static final Pattern CMD_PM = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_SLAP = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
@@ -89,7 +94,60 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_MODE = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_TOPIC = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
     private static final int TEXT_BUFFER = 1024 * 600;
+    private static final Pattern CMD_TRANSLATE = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
+    protected static final  ArrayList<String> COMMANDS =  new ArrayList<String>();
 
+    
+    public JDChat(){
+        COMMANDS.add("/msg ");
+        COMMANDS.add("/topic ");
+        COMMANDS.add("/op ");
+        COMMANDS.add("/deop ");
+        COMMANDS.add("/query");
+        COMMANDS.add("/nick ");
+        COMMANDS.add("/mode ");
+        COMMANDS.add("/translate detoen ");
+        COMMANDS.add("/translate detoes ");
+        COMMANDS.add("/translate detofr ");
+        COMMANDS.add("/translate detotu ");
+      
+        
+        
+        COMMANDS.add("/translate ");
+        COMMANDS.add("/translate entoes ");
+        COMMANDS.add("/translate entofr ");
+        COMMANDS.add("/translate entotu ");
+        COMMANDS.add("/translate entode ");
+        
+        
+        
+        COMMANDS.add("/translate estoen ");
+       
+        COMMANDS.add("/translate estofr ");
+        COMMANDS.add("/translate estotu ");
+        COMMANDS.add("/translate estode ");
+        
+        
+        
+        COMMANDS.add("/translate frtoen ");
+        COMMANDS.add("/translate frtoes ");
+   
+        COMMANDS.add("/translate frtotu ");
+        COMMANDS.add("/translate frtode ");
+        
+        
+        
+        COMMANDS.add("/translate tutoen ");
+        COMMANDS.add("/translate tutoes ");
+        COMMANDS.add("/translate tutofr ");
+      
+        COMMANDS.add("/translate tutode ");
+        
+    
+        
+        
+        
+    }
     public static int getAddonInterfaceVersion() {
         return 0;
     }
@@ -110,6 +168,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private long lastAction;
     private boolean nickaway;
     private String orgNick;
+    private String lastCommand;
 
     @Override
     public String getCoder() {
@@ -247,7 +306,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.addKeyListener(new KeyListener() {
 
             private int counter = 0;
-            private String last=null;
+            private String last = null;
 
             public void keyPressed(KeyEvent e) {
                 // TODO Auto-generated method stub
@@ -260,23 +319,38 @@ public class JDChat extends PluginOptional implements ControlListener {
                     if (textField.getText().length() == 0) return;
 
                     sendMessage(CHANNEL, textField.getText());
-                    textField.setText("");
-                    textField.requestFocus();
+                 
 
                 } else if (e.getKeyCode() == KeyEvent.VK_TAB) {
-                    if (textField.getText().length() == 0) return;
+                    if (textField.getText().length() == 0){
+                        if(lastCommand!=null){
+                            textField.setText(lastCommand);
+                            textField.requestFocus(); 
+                        }
+                        return;
+                    }
                     String txt = textField.getText();
-if(last!=null&& txt.toLowerCase().startsWith(last.toLowerCase())){
-    txt=last;
-}
+                    if (last != null && txt.toLowerCase().startsWith(last.toLowerCase())) {
+                        txt = last;
+                    }
 
-String org=txt;
+                    String org = txt;
                     int last = Math.max(0, txt.lastIndexOf(" "));
                     txt = txt.substring(last).trim();
-                    ArrayList<User> users = new ArrayList<User>();
+                    ArrayList<String> users = new ArrayList<String>();
+                    
+                    ArrayList<String> strings =  new ArrayList<String>();
+                    strings.addAll(COMMANDS);
                     for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
                         User user = it.next();
-                        if (user.name.toLowerCase().startsWith(txt.toLowerCase())) {
+                        strings.add(user.name);
+                     
+                    }
+                    
+                    
+                    for (Iterator<String> it = strings.iterator(); it.hasNext();) {
+                        String user = it.next();
+                        if (user.length()>=txt.length()&&user.toLowerCase().startsWith(txt.toLowerCase())) {
                             users.add(user);
                             // return;
 
@@ -286,14 +360,26 @@ String org=txt;
 
                     counter++;
                     if (this.counter > users.size() - 1) counter = 0;
-                    User user = users.get(counter);
-                    this.last=org;
-                    textField.setText((textField.getText().substring(0, last) + " " + user.name).trim());
+                    String user = users.get(counter);
+                    this.last = org;
+                    textField.setText((textField.getText().substring(0, last) + " " + user).trim());
                     textField.requestFocus();
 
+                }   else if (e.getKeyCode() == KeyEvent.VK_UP) {
+                    if (textField.getText().length() == 0){
+                        if(lastCommand!=null){
+                            textField.setText(lastCommand);
+                            textField.requestFocus(); 
+                        }
+                        return;
+                    }
+                    
+                    
+                }else{
+                    last=null; 
                 }
 
-            }
+            }    
 
             public void keyTyped(KeyEvent e) {
                 // TODO Auto-generated method stub
@@ -380,10 +466,10 @@ String org=txt;
             return;
         }
         if (textField.getText().length() == 0) {
-            textField.setText("/msg " + name + " ");
+            textField.setText("/msg " + getUser(name).name + " ");
         } else {
 
-            textField.setText(textField.getText().trim() + " " + name + " ");
+            textField.setText(textField.getText().trim() + " " + getUser(name).name + " ");
         }
 
         textField.requestFocus();
@@ -398,36 +484,51 @@ String org=txt;
             String cmd = text.substring(1, end);
             String rest = text.substring(end).trim();
             if (Regex.matches(cmd, CMD_PM)) {
+                textField.setText("");
                 end = rest.indexOf(" ");
                 if (end < 0) end = rest.length();
 
-                conn.doPrivmsg(rest.substring(0, end).trim(), rest.substring(end).trim());
-
-                this.addToText(COLOR_PM, ">" + rest.substring(0, end).trim() + ":" + Utils.prepareMsg(rest.substring(end).trim()));
+                conn.doPrivmsg(rest.substring(0, end).trim(), prepareToSend(rest.substring(end).trim()));
+                lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
+                this.addToText(null, STYLE_PM, "MSG>" + rest.substring(0, end).trim() + ":" + Utils.prepareMsg(rest.substring(end).trim()));
             } else if (Regex.matches(cmd, CMD_SLAP)) {
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
-                this.addToText(COLOR_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
-            } else if (Regex.matches(cmd, CMD_ACTION)) {
+                this.addToText(null, STYLE_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
 
-                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + rest.trim() + new String(new byte[] { 1 }));
-                this.addToText(COLOR_ACTION, conn.getNick() + " " + rest.trim());
+                lastCommand = "/slap ";
+            } else if (Regex.matches(cmd, CMD_ACTION)) {
+                lastCommand = "/me ";
+                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(rest.trim()) + new String(new byte[] { 1 }));
+                this.addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
 
             } else if (Regex.matches(cmd, CMD_VERSION)) {
 
                 String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
-                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + msg + new String(new byte[] { 1 }));
-                this.addToText(COLOR_ACTION, conn.getNick() + " " + msg);
+                conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(msg) + new String(new byte[] { 1 }));
+                this.addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (Regex.matches(cmd, CMD_MODE)) {
                 end = rest.indexOf(" ");
                 if (end < 0) end = rest.length();
-
+                lastCommand = "/mode ";
                 conn.doMode(CHANNEL, rest.trim());
+            } else if (Regex.matches(cmd, CMD_TRANSLATE)) {
+                end = rest.indexOf(" ");
+                if (end < 0) end = rest.length();
+                String[] tofrom = rest.substring(0, end).trim().split("to");
+                if (tofrom == null || tofrom.length != 2) {
+                    this.addToText(null, STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
+                    return;
+                }
+                String t;
+                t = JDLocale.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim()));
+                lastCommand="/translate "+ rest.substring(0, end).trim()+" ";
+                textField.setText(t);
             } else if (Regex.matches(cmd, CMD_TOPIC)) {
-                conn.doTopic(CHANNEL, rest);
-
+                conn.doTopic(CHANNEL, prepareToSend(rest));
+                lastCommand="/topic ";
             } else if (Regex.matches(cmd, CMD_NICK)) {
                 conn.doNick(rest.trim());
-
+                lastCommand="/nick ";
                 JDUtilities.getSubConfig("JDCHAT").setProperty(NICK, rest.trim());
                 JDUtilities.getSubConfig("JDCHAT").save();
 
@@ -436,13 +537,21 @@ String org=txt;
             } else if (Regex.matches(cmd, CMD_DISCONNECT)) {
                 if (conn != null && conn.isConnected()) conn.close();
             } else {
-                this.addToText(COLOR_ERROR, "Command /" + cmd + " is not available");
+                this.addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
             }
-
+           
+            textField.requestFocus();
         } else {
-            conn.doPrivmsg(channel2, text);
-            this.addToText(COLOR_SELF, conn.getNick() + ":" + Utils.prepareMsg(text));
+            conn.doPrivmsg(channel2, prepareToSend(text));
+            this.addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
+            textField.setText("");
+            textField.requestFocus();
         }
+    }
+
+    private String prepareToSend(String trim) {
+        // TODO Auto-generated method stub
+        return trim;
     }
 
     private void initIRC() {
@@ -454,7 +563,7 @@ String org=txt;
             String nick = getNickname();
             String user = "jdChatuser";
             String name = "jdChatuser";
-            addToText(COLOR_SYSTEM, "Connecting to JDChat...");
+            addToText(null, STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
             conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
             conn.setTimeout(1000 * 60 * 60);
 
@@ -470,7 +579,7 @@ String org=txt;
                 break;
             } catch (IOException e) {
                 // TODO Auto-generated catch block
-                addToText(COLOR_SYSTEM, "Connect Timeout. Server not reachable...");
+                addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
                 e.printStackTrace();
                 try {
                     Thread.sleep(15000);
@@ -497,6 +606,7 @@ String org=txt;
                 nick += "[" + loc + "]";
             }
             JDUtilities.getSubConfig("JDCHAT").setProperty(NICK, nick.trim());
+            JDUtilities.getSubConfig("JDCHAT").save();
         }
         if (nick == null) {
             nick = def;
@@ -553,7 +663,7 @@ String org=txt;
     }
 
     public void setTopic(final String msg) {
-        addToText(COLOR_SYSTEM, "<b>Topic is: " + msg + "</b>");
+        addToText(null, STYLE_SYSTEM_MESSAGE, "<b>Topic is: " + msg + "</b>");
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
@@ -564,26 +674,44 @@ String org=txt;
 
     }
 
-    public void addToText(String col, final String string) {
+    public void addToText(final User user, String style, final String msg) {
         Date dt = new Date();
 
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
+        this.sb.append("<!---->");
+        this.sb.append("<li>");
+        if (user != null) {
+            this.sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (style == JDChat.STYLE_PM ? ">> " : ": ") + "</span>");
+        } else {
+            this.sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
 
-        this.sb.append("<font color='#" + col + "'>[" + df.format(dt) + "] " + string + "</font><br>");
+        }
+        if (conn != null && msg.contains(conn.getNick())) {
+            style = STYLE_HIGHLIGHT;
+        }
+        if (style != null) {
+            this.sb.append("<span class='" + style + "'>" + msg + "</span>");
+        } else {
+            this.sb.append("<span>" + msg + "</span>");
+        }
+
         if (sb.length() > TEXT_BUFFER) {
-            sb.indexOf("</font><br>", sb.length() / 3);
+            String tmp = sb.toString();
+            tmp = tmp.substring(tmp.indexOf("<!---->", sb.length() / 3)).trim();
+            sb = new StringBuffer();
+            sb.append(tmp);
         }
         changed = true;
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 if (changed) {
 
-                    if (!frame.isActive() && conn != null && string.contains(conn.getNick())) {
+                    if (!frame.isActive() && conn != null && msg.contains(conn.getNick())) {
                         JDSounds.PT("sound.gui.selectPackage");
                         frame.toFront();
                     }
 
-                    textArea.setText("  <font size='3' face='Verdana, Arial, Helvetica, sans-serif'>" + sb.toString() + "</font>");
+                    textArea.setText(STYLE + "<ul>" + sb.toString() + "</ul>");
 
                     int max = scrollPane.getVerticalScrollBar().getMaximum();
 
@@ -643,14 +771,21 @@ String org=txt;
     public void updateNamesPanel() {
         final StringBuffer sb = new StringBuffer();
         Collections.sort(NAMES);
+        
+      //  USERLIST_STYLE
+        sb.append("<ul>");
         for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
             User name = it.next();
-            sb.append("<a href='intern:query|" + name + "'><font color='#" + name.color + "'>" + name + "</font></a><br>");
-        }
-
+            sb.append("<li>");
+            sb.append("<span style='color:#"+name.color+(name.name.equals(conn.getNick())?";font-weight:bold;":"")+"'>");
+            sb.append(name.getRank()+ name.getNickLink("query"));
+            sb.append("</span></li>");
+         }
+        sb.append("</ul>");
+       
         EventQueue.invokeLater(new Runnable() {
             public void run() {
-                right.setText("  <font size='3' face='Verdana, Arial, Helvetica, sans-serif'>" + sb.toString() + "</font>");
+                right.setText(USERLIST_STYLE+sb);
                 frame.pack();
             }
         });
@@ -683,7 +818,7 @@ String org=txt;
 
     public void setNick(String nickname) {
         if (nickname == null) return;
-        addToText(JDChat.COLOR_SYSTEM, "Rename to " + nickname);
+        addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
         conn.doNick(nickname);
 
@@ -718,7 +853,7 @@ String org=txt;
                 if (frame.isActive() && !nickaway) {
                     initIRC();
                 } else {
-                    this.addToText(COLOR_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
+                    this.addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
 
                 }
 
@@ -726,7 +861,7 @@ String org=txt;
             if (e.getSource() == Interaction.INTERACTION_BEFORE_RECONNECT) {
                 // sendMessage(CHANNEL, "/me is reconnecting...");
                 if (conn != null && conn.isConnected()) {
-                    this.addToText(COLOR_SYSTEM, "closing connection due to requested reconnect.");
+                    this.addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
                     conn.doPart(CHANNEL, "reconnecting...");
                     conn.close();
                     conn = null;

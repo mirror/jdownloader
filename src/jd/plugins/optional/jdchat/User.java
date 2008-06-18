@@ -43,7 +43,7 @@ public class User implements Comparable {
     }
 
     public String getNickLink(String id) {
-        return "<a href='intern:" + id + "|" + name + "'><font color='#" + color + "'><b>" + name + "</b></font></a>";
+        return "<a href='intern:" + id + "|" + name + "'>" + name + "</a>";
     }
 
     private String getRangName() {
@@ -72,6 +72,22 @@ public class User implements Comparable {
         // TODO Auto-generated method stub
 
         return getRangName().compareTo(((User) o).getRangName());
+    }
+
+    public String getStyle() {
+        // TODO Auto-generated method stub
+        
+        return "color:#"+color;
+    }
+
+    public String getRank() {
+        switch (rank) {
+        case RANK_OP:
+            return "@";
+        case RANK_VOICE:
+            return "+";
+        }
+        return "";
     }
 
 }

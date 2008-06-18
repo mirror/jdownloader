@@ -1470,6 +1470,7 @@ public class JDUtilities {
      * @return str als UTF8Decodiert
      */
     public static String UTF8Decode(String str) {
+        if(str==null)return null;
         try {
             return new String(str.getBytes(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
