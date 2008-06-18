@@ -109,7 +109,7 @@ public class Wordpress extends PluginForDecrypt {
                     password = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
-                            logger.info("PW: " + password.get(ii));
+                            /*logger.info("PW: " + password.get(ii));*/
                             default_password.add(JDUtilities.htmlDecode(password.get(ii)));
                         }
                         break;
