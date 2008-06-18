@@ -120,7 +120,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     private void add_relinkus_links(RequestInfo reqinfo, Vector<DownloadLink> decryptedLinks) throws IOException {
         ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
-        progress.setRange(links.size());
+        progress.addToMax(links.size());
         for (int i = 0; i < links.size(); i++) {
             reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(links.get(i))), "submit=Open");
             String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
