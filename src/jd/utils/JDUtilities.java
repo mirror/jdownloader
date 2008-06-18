@@ -1478,7 +1478,7 @@ public class JDUtilities {
             return null;
         }
     }
-
+ 
     /**
      * @author JD-Team
      * @param str

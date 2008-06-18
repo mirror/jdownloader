@@ -161,10 +161,10 @@ public class JDLocale {
     }
 
     private static void saveData(File lc, HashMap<String, String> dat) {
-        logger.info("saveto "+lc);
+      
         if (lc == null) lc = localeFile;
         if (dat == null) dat = data;
-       // if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
+        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
         Iterator<Entry<String, String>> iterator;
         if (dat == null) return;
         iterator = dat.entrySet().iterator();

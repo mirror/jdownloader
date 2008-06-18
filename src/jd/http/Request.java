@@ -88,7 +88,7 @@ public abstract class Request {
 
     }
 
-    public void connect() throws IOException {
+    public Request connect() throws IOException {
         this.requested = true;
         this.openConnection();
         postRequest(this.httpConnection);
@@ -103,6 +103,7 @@ public abstract class Request {
             openConnection();
             postRequest(this.httpConnection);
         }
+        return this;
     }
 
     public long getContentLength() {

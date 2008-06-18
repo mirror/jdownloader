@@ -19,8 +19,10 @@ package jd.http;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import jd.parser.Form;
 import jd.plugins.HTTPConnection;
 
 public class PostRequest extends Request {
@@ -29,6 +31,12 @@ public class PostRequest extends Request {
     public PostRequest(String url) {
         super(url);
 
+    }
+
+    public PostRequest(Form form) {
+      super(form.getAction());
+      
+      this.postData=form.vars;
     }
 
     public void setPostVariable(String key, String value) {
@@ -73,6 +81,15 @@ public class PostRequest extends Request {
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
         
+    }
+
+    public Map<String, List<String>> getResponseHeaders() {
+      if(httpConnection==null)return null;
+        return httpConnection.getHeaderFields();
+    }
+    public String getResponseHeader(String key){
+        if(httpConnection==null)return null;
+        return httpConnection.getHeaderField(key);
     }
 
 
