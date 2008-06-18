@@ -1479,7 +1479,7 @@ public class JDUtilities {
         }
     }
  
-    /**
+    /** 
      * @author JD-Team
      * @param str
      * @return str als UTF8 Kodiert
