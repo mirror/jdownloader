@@ -42,7 +42,7 @@ public class UCMS extends PluginForDecrypt {
             + "|(http://[*]porn-traffic.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]chili-warez.net(/\\?id=[+]|/[+]/[+].html))" + "|(http://[*]game-freaks.net(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]isos.at(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]your-load.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]mov-world.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]xtreme-warez.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]sceneload.to(/\\?id=[+]|/download/[+]/[+].html))"
             + "|(http://[*]oxygen-warez.com(/\\?id=[+]|/category/[+]/[+].html))" 
             
-            + "|(http://[*]serienfreaks.to(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]serienfreaks.in(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]warez-load.com(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]ddl-scene.com(/\\?id=[+]|/category/[+]/[+].html))"
+            + "|(http://[*]serienfreaks.to(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]serienfreaks.in(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]warez-load.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]ddl-scene.com(/\\?id=[+]|/category/[+]/[+].html))"
             + "|(http://[*]mp3king.cinipac-hosting.biz/\\?id=[+])");
 
     private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/");
@@ -99,7 +99,7 @@ public class UCMS extends PluginForDecrypt {
 
                 ArrayList<String> pass = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE), 1);
                 if (pass.size() > 0) {
-                    if (!pass.get(0).equals("n/a") && !pass.get(0).equals("-")) this.default_password.add(pass.get(0));
+                    if (!pass.get(0).equals("n/a") && !pass.get(0).equals("-") && !pass.get(0).equals("-kein Passwort-")) this.default_password.add(pass.get(0));
                 }
 
                 ArrayList<ArrayList<String>> forms = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"([^\"]*)\"(.*?)<\\/FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));

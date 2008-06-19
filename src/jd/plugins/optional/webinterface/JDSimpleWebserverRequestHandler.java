@@ -111,9 +111,7 @@ public class JDSimpleWebserverRequestHandler {
 
         String[] requ = request.split(" ");
 
-        String method = requ[0];
         String cPath = requ[1];
-        String protocol = requ[2];
         String path, querry;
         path = cPath.substring(1);
         String[] params;
