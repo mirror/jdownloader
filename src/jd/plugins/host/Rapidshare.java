@@ -88,6 +88,8 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(Bitte versuchen Sie es in 2 Minuten)");
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} --><p>(.*?)<\\/p>", Pattern.DOTALL);
+   // <!-- E#7 --><p>Der Server 162.rapidshare.com ist momentan nicht verf&uuml;gbar. Wir arbeiten an der Fehlerbehebung.</p>
 
     /**
      * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
@@ -895,7 +897,11 @@ step.setParameter(error);
     private String findError(String string) {
         String error = null;
         error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getFirstMatch();
-        if (error == null) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
+        
+        if (error == null||error.length()==0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
+        if (error == null||error.length()==0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
+        
+        
         error = JDUtilities.htmlDecode(error);
         String[] er = JDUtilities.splitByNewline(error);
 

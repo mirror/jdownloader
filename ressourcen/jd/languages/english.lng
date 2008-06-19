@@ -1003,6 +1003,7 @@ main.status.inactive = off
 main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
 plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = File not found. Please check your downloadlink.
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = This file seems to be illegal and is locked. Downloading this file is prohibited by Rapidshare.
+plugins.host.rapidshare.errors.811d7f115500de90d1495ef963040930 = The server, the file is stored on, is offline. Try again later.
 plugins.optional.httpliveheaderscripter.action.start = Start Scripter
 plugins.optional.httpliveheaderscripter.gui.menu.edit = Edit
 plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine = Add define tag
