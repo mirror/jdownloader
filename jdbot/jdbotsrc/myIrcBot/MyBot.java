@@ -28,7 +28,7 @@ public class MyBot extends PircBot {
 	public Settings settings = new Settings();
 	public String[] Channel = new String[] { "#jDownloader","#jDDev" };
 	public String name = "jDownloader";
-	public String password = "jdbot0815";
+	public String password = "jd";
 	public String server = "irc.freenode.org";
 	private HashMap<Integer, String> serverResponse = new HashMap<Integer, String>();
 	public int version = 1162;
