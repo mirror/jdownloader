@@ -18,19 +18,16 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class MyRef extends PluginForDecrypt {
 
@@ -38,10 +35,7 @@ public class MyRef extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
 
-    private static String COOKIE = null;
-    // http://myref.de?158152                                              http://myref.de?158152
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myref\\.de\\?[0-9]{0,10}", Pattern.CASE_INSENSITIVE);
-
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}", Pattern.CASE_INSENSITIVE);
 
     public MyRef() {
         super();
@@ -61,7 +55,7 @@ public class MyRef extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -81,19 +75,22 @@ public class MyRef extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-             RequestInfo ri = HTTP.getRequest(new URL(parameter));
-             
-             
-             logger.info("cds"); 
-
-            } catch (Exception e) {
+                URL url = new URL(cryptedLink);
+                String downloadid = new Regex(url.getFile(), "\\?([\\d].*)").getFirstMatch();
+                url = new URL("http://myref.de/go_counter.php?id=" + downloadid);
+                RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
+                decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
+            step.setParameter(decryptedLinks);
         }
-
         return null;
     }
 
