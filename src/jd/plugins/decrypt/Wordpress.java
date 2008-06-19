@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.controlling.DistributeData;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -20,7 +22,7 @@ import jd.utils.JDUtilities;
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
     private String version = "1.0.0.0";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(movie-blog.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch.in/blog.php\\?id=[\\d]+|doku.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog.org/blog.php\\?id=[\\d]+|sky-porn.info/blog/\\?p=[\\d]+|best-movies.us/\\?p=[\\d]+|game-blog.us/game-.+\\.html).*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(movie-blog.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch.in/blog.php\\?id=[\\d]+|doku.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog.org/blog.php\\?id=[\\d]+|sky-porn.info/blog/\\?p=[\\d]+|best-movies.us/\\?p=[\\d]+|game-blog.us/game-.+\\.html|pressefreiheit.ws/\\?p=[\\d]+).*", Pattern.CASE_INSENSITIVE);
     private ArrayList<String[]> defaultpasswords = new ArrayList<String[]>();
     private Vector<String> passwordpattern = new Vector<String>();
 
@@ -109,7 +111,7 @@ public class Wordpress extends PluginForDecrypt {
                     password = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
-                            /*logger.info("PW: " + password.get(ii));*/
+                            /* logger.info("PW: " + password.get(ii)); */
                             default_password.add(JDUtilities.htmlDecode(password.get(ii)));
                         }
                         break;
@@ -119,13 +121,29 @@ public class Wordpress extends PluginForDecrypt {
                 ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE), 2);
                 for (int i = 0; i < links.size(); i++) {
                     try {
-                        if (links.get(i).matches(".*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts?[\\s\\d]*?).*")) {
-                            String lnk = HTMLParser.getHttpLinks(links.get(i), parameter)[0];
-                            if (!new Regex(lnk, patternSupported).matches()) {
-                                /* logger.info("ADD: " + lnk); */
-                                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(lnk)));
+                        /*
+                         * Neue bessere Methode, da automatisch alle passenden
+                         * Links gesucht werden
+                         */
+                        if (!new Regex(links.get(i), patternSupported).matches()) {
+                            Vector<DownloadLink> LinkList = new DistributeData(links.get(i)).findLinks();
+                            for (int ii = 0; ii < LinkList.size(); ii++) {
+                                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL())));
                             }
                         }
+//                        /*
+//                         * Alte schlechte Methode, da Pattern aktuell gehalten
+//                         * werden muss
+//                         */
+//                        Pattern p = Pattern.compile(".*(Rapidshare|CCF|RSD|CCL|DLC|RSDF|Xirror|Upload|Share-Online|Netload|Bluehost|Crypt|Parts?[\\s\\d]*?).*", Pattern.CASE_INSENSITIVE);
+//                        Matcher m = p.matcher(links.get(i));
+//                        if (m.matches()) {
+//                            String lnk = HTMLParser.getHttpLinks(links.get(i), parameter)[0];
+//                            if (!new Regex(lnk, patternSupported).matches()) {
+//                                /* logger.info("ADD: " + lnk); */
+//                                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(lnk)));
+//                            }
+//                        }
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
