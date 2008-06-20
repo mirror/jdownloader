@@ -467,7 +467,7 @@ public class JDUtilities {
      * @param key
      *            Identifier der gewünschten Zeichenkette
      * @return Die gewünschte Zeichnenkette
-     */
+     */ 
     public static String getResourceString(String key) {
         if (resourceBundle == null) {
             if (locale == null) {
@@ -477,6 +477,7 @@ public class JDUtilities {
         }
         String result = key;
         try {
+       
             result = resourceBundle.getString(key);
         } catch (MissingResourceException e) {
             logger.warning("resource missing:" + e.getKey());

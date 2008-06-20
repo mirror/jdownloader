@@ -638,7 +638,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
-        cfg.setDefaultValue(false);
+        cfg.setDefaultValue(true);
         ConfigEntry conditionEntry = cfg;
 
         map = new HashMap<String, String>();
@@ -681,7 +681,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         // JDLocale.L("interaction.infoFileWriter.variables","Available
         // variables")));
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDLocale.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
-        cfg.setDefaultValue(false);
+        cfg.setDefaultValue(true);
         conditionEntry = cfg;
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.deslanguage", "to: ")));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
@@ -1032,7 +1032,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         // TODO Auto-generated method stub
 
         SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
-        String dest = conf.getStringProperty(PARAM_DESLANGUAGE);
+        String dest = conf.getStringProperty(PARAM_DESLANGUAGE,map.get(System.getProperty("user.country")));
         if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLATSELF) && dest != null) {
 
             for (Iterator<String> it = map.keySet().iterator(); it.hasNext();) {
@@ -1178,7 +1178,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         
         
         SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
-        String dest = conf.getStringProperty(PARAM_NATIVELANGUAGE);
+        String dest = conf.getStringProperty(PARAM_NATIVELANGUAGE,map.get(System.getProperty("user.country")));
         if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLAT) && dest != null&&!msg.contains("<")) {
 
             for (Iterator<String> it = map.keySet().iterator(); it.hasNext();) {

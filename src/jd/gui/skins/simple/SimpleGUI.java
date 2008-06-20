@@ -364,7 +364,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
-        toolBar.setBackground(Color.orange);
+       // toolBar.setBackground(Color.orange);
 //        toolBar.setOpaque(false);
 
         frame.addWindowListener(this);
@@ -918,7 +918,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
         btnCes = createMenuButton(this.actionCes);
-        toolBar.setFloatable(false);
+        toolBar.setFloatable(true);
 //        toolBar.add(createMenuButton(this.actionLoadDLC));
 //        toolBar.add(createMenuButton(this.actionSaveDLC));
 //        toolBar.addSeparator();
@@ -965,7 +965,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         advert.setBorder(new EmptyBorder(0,n,0,n));
         toolbar2.setBackground(Color.orange);
         toolbar2.add(toolBar, BorderLayout.CENTER);
-        toolbar2.add(advert, BorderLayout.EAST);
+       // toolbar2.add(advert, BorderLayout.EAST);
         panel.add(toolbar2, BorderLayout.NORTH);
         panel.add(splitpane, BorderLayout.CENTER);
         panel.add(statusBar, BorderLayout.SOUTH);
