@@ -364,6 +364,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // tabbedPane = new JTabbedPane();
         menuBar = new JMenuBar();
         toolBar = new JToolBar();
+        toolBar.setBackground(Color.orange);
 //        toolBar.setOpaque(false);
 
         frame.addWindowListener(this);
@@ -943,18 +944,32 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) toolBar.add(btnCes);
    
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new BorderLayout());
         int n = 2;
         toolBar.setBorder(new EmptyBorder(n,0,n,0));
         n = 5;
         panel.setBorder(new EmptyBorder(0,n,0,n));
+        JPanel toolbar2 = new JPanel(new BorderLayout(n,n));
         n = 3;
         statusBar.setBorder(new EmptyBorder(n,0,n,0));
         frame.setContentPane(panel);
-        frame.setLayout(new GridBagLayout());
-        JDUtilities.addToGridBag(frame, toolBar, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-        JDUtilities.addToGridBag(frame, splitpane, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(frame, statusBar, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+//        frame.setLayout(new GridBagLayout());
+//        JDUtilities.addToGridBag(frame, toolBar, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
+//        JDUtilities.addToGridBag(frame, splitpane, 0, 1, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//        JDUtilities.addToGridBag(frame, statusBar, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        
+        JLabel advert = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.jd_logo"), -1, 32));
+        advert.setOpaque(true);
+        toolbar2.setOpaque(true);
+        advert.setBackground(Color.orange);
+        advert.setBorder(new EmptyBorder(0,n,0,n));
+        toolbar2.setBackground(Color.orange);
+        toolbar2.add(toolBar, BorderLayout.CENTER);
+        toolbar2.add(advert, BorderLayout.EAST);
+        panel.add(toolbar2, BorderLayout.NORTH);
+        panel.add(splitpane, BorderLayout.CENTER);
+        panel.add(statusBar, BorderLayout.SOUTH);
+        
         // Einbindung des Log Dialogs
         logDialog = new LogDialog(frame, logger);
         logDialog.addWindowListener(new LogDialogWindowAdapter());
