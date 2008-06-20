@@ -400,17 +400,17 @@ public class Rapidshare extends PluginForHost {
                         progress.increase(1);
                         RequestInfo ri = HTTP.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
                         progress.increase(1);
-                        int sec = 300 - JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[3]);
+                        int sec = 300 - JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[3]);
 
-                        int lastStart = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[4]);
-                        int lastEnd = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[5]);
+                        int lastStart = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[4]);
+                        int lastEnd = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[5]);
                         Date lastStartDate = new Date(lastStart * 1000L);
                         lastStartDate.setTime(lastStart * 1000L);
 
                         Date lastEndDate = new Date(lastEnd * 1000L);
                         lastEndDate.setTime(lastEnd * 1000L);
                         if (ri.containsHTML("Hour")) {
-                            int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                            int activ = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[1]);
                             Date d = new Date(activ * 1000L);
                             d.setTime(activ * 1000L);
 
@@ -419,7 +419,7 @@ public class Rapidshare extends PluginForHost {
                             String html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.hhactive.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"), df.format(d), JDUtilities.formatSeconds(sec), df.format(lastStartDate), df.format(lastEndDate));
                             JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                         } else {
-                            int activ = JDUtilities.filterInt(JDUtilities.splitByNewline(ri.getHtmlCode())[1]);
+                            int activ = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[1]);
                             Date d = new Date(activ * 1000L);
                             d.setTime(activ * 1000L);
 
@@ -903,7 +903,7 @@ step.setParameter(error);
         
         
         error = JDUtilities.htmlDecode(error);
-        String[] er = JDUtilities.splitByNewline(error);
+        String[] er = SimpleMatches.getLines(error);
 
         if (er == null || er.length == 0) return null;
         error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]), er[0]);

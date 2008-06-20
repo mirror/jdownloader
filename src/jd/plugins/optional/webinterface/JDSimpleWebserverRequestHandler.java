@@ -11,6 +11,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -487,7 +488,7 @@ public class JDSimpleWebserverRequestHandler {
                 if (requestParameter.containsKey("password_list")) {
                     String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));
                     JUnrar unrar = new JUnrar(false);
-                    unrar.editPasswordlist(JDUtilities.splitByNewline(password_list));
+                    unrar.editPasswordlist(SimpleMatches.getLines(password_list));
                 }
             }
         }

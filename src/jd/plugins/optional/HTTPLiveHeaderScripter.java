@@ -63,6 +63,7 @@ import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.parser.SimpleMatches;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -430,7 +431,7 @@ textArea.setText(sb+"");
         StringBuffer sb = new StringBuffer();
         main: for (String request : requests) {
 
-            String[] lines = JDUtilities.splitByNewline(request.trim());
+            String[] lines = SimpleMatches.getLines(request.trim());
             if (lines.length < 3) continue;
             String url = lines[0];
             if (url.indexOf("?") > 0) {

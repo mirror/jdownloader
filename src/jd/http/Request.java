@@ -52,6 +52,8 @@ public abstract class Request {
     private int followCounter = 0;
     private String htmlCode;
     private boolean requested = false;
+    private String proxyip;
+    private String proxyport;
 
     public Request(String url) {
         try {
@@ -66,7 +68,16 @@ public abstract class Request {
         initDefaultHeader();
 
     }
-
+    public void setProxy(String ip, String port) {
+        this.proxyip=ip;
+        this.proxyport=port;
+        try {
+            url=new URL("http",proxyip,Integer.parseInt(proxyport),url.toString());
+        } catch (Exception e) {         
+            e.printStackTrace();
+        } 
+        
+    }
     private void initDefaultHeader() {
         headers = new HashMap<String, String>();
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
@@ -231,6 +242,7 @@ public abstract class Request {
             this.requestTime = System.currentTimeMillis() - tima;
             httpConnection.setReadTimeout(this.readTimeout);
             httpConnection.setConnectTimeout(this.connectTimeout);
+      
             httpConnection.setInstanceFollowRedirects(false);
             if (this.headers != null) {
                 Set<String> keys = headers.keySet();

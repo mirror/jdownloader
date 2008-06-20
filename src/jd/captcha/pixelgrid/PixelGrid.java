@@ -1279,7 +1279,7 @@ public class PixelGrid extends Property {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
-                float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[3]);
+                float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[2]);
                 ret += "y(" + y + ")x(" + x + ")=" + hsb[0] * 100 + "\n";
             }
         }

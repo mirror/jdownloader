@@ -23,6 +23,7 @@ import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.SimpleMatches;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
@@ -72,7 +73,7 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
         logger.info(getStringProperty(PROPERTY_COMMAND));
      
   
-       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, JDUtilities.splitByNewline(parameter), executeIn, waitForReturn));
+       logger.finer("Execute Returns: "+ JDUtilities.runCommand(command, SimpleMatches.getLines(parameter), executeIn, waitForReturn));
        return true;
     
     }

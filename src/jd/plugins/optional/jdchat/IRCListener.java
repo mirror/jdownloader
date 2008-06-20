@@ -17,13 +17,13 @@ class IRCListener implements IRCEventListener {
     }
     public static Logger logger = JDUtilities.getLogger();
     public void onRegistered() {
-        logger.info("Connected");
+        //logger.info("Connected");
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, "Connection estabilished");
         owner.onConnected();
     }
 
     public void onDisconnected() {
-        logger.info("Disconnected");
+        //logger.info("Disconnected");
         owner.setLoggedIn(false);
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
    
@@ -32,12 +32,12 @@ class IRCListener implements IRCEventListener {
 
     public void onError(String msg) {
         owner.addToText(null,JDChat.STYLE_ERROR, Utils.prepareMsg(msg));
-        logger.info("Error: " + msg);
+        //logger.info("Error: " + msg);
     }
 
     public void onError(int num, String msg) {
         owner.addToText(null,JDChat.STYLE_ERROR, msg);
-        logger.info("Error #" + num + ": " + Utils.prepareMsg(msg));
+        //logger.info("Error #" + num + ": " + Utils.prepareMsg(msg));
         switch (num){
         case IRCConstants.ERR_NICKNAMEINUSE:
             if(!owner.isLoggedIn()){
@@ -52,31 +52,31 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onInvite(String chan, IRCUser u, String nickPass) {
-        logger.info(chan + "> " + u.getNick() + " invites " + nickPass);
+        //logger.info(chan + "> " + u.getNick() + " invites " + nickPass);
     }
 
     public void onJoin(String chan, IRCUser u) {
-        logger.info(chan + "> " + u.getNick() + " joins");
+        //logger.info(chan + "> " + u.getNick() + " joins");
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " joins");
        owner.addUser(u.getNick());
        // owner.requestNameList();
     }
 
     public void onKick(String chan, IRCUser u, String nickPass, String msg) {
-        logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
+        //logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
         
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass);
     }
 
     public void onMode(IRCUser u, String nickPass, String mode) {
-        logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " + nickPass);
+        //logger.info("Mode: " + u.getNick() + " sets modes " + mode + " " + nickPass);
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " sets modes " + mode + " " + nickPass);
         
        
     }
 
     public void onMode(String chan, IRCUser u, IRCModeParser mp) {
-        logger.info(chan + "> " + u.getNick() + " sets mode: " + mp.getLine());
+        //logger.info(chan + "> " + u.getNick() + " sets mode: " + mp.getLine());
       
         for( int i=1; i<=mp.getCount();i++){
             owner.onMode(u,mp.getOperatorAt(i),mp.getModeAt(i),mp.getArgAt(i));}
@@ -85,13 +85,13 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onNick(IRCUser u, String nickNew) {
-        logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
+        //logger.info("Nick: " + u.getNick() + " is now known as " + nickNew);
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " is now known as " + nickNew);
         owner.renameUser(u.getNick(),nickNew);
     }
 
     public void onNotice(String target, IRCUser u, String msg) {
-        logger.info(target + "> " + u.getNick() + " (notice): " + msg);
+        //logger.info(target + "> " + u.getNick() + " (notice): " + msg);
         if(u.getNick()==null){
             //owner.addToText(JDChat.COLOR_NOTICE,"System" + " (notice): " + Utils.prepareMsg(msg));
         }else{
@@ -103,7 +103,7 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onPart(String chan, IRCUser u, String msg) {
-        logger.info(chan + "> " + u.getNick() + " parts");
+        //logger.info(chan + "> " + u.getNick() + " parts");
         if(msg!=null&&msg.trim().length()>0){
             owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel ("+msg+")"); 
         }else{
@@ -132,11 +132,11 @@ class IRCListener implements IRCEventListener {
            
         }
 
-        logger.info(chan + "> " + u.getNick() + ": " + msg);
+        //logger.info(chan + "> " + u.getNick() + ": " + msg);
     }
 
     public void onQuit(IRCUser u, String msg) {
-        logger.info("Quit: " + u.getNick());
+        //logger.info("Quit: " + u.getNick());
         if(msg!=null&&msg.trim().length()>0){
             owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " has left the channel ("+msg+")"); 
         }else{
@@ -147,7 +147,7 @@ class IRCListener implements IRCEventListener {
 
     public void onReply(int num, String value, String msg) {
         
-        logger.info("Reply #" + num + ": " + value + " " + msg);
+        //logger.info("Reply #" + num + ": " + value + " " + msg);
         if (num == IRCConstants.RPL_NAMREPLY) {
             owner.addUsers(msg.trim().split(" "));
         }
@@ -164,14 +164,14 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onTopic(String chan, IRCUser u, String topic) {
-        logger.info(chan + "> " + u.getNick() + " changes topic into: " + topic);
+        //logger.info(chan + "> " + u.getNick() + " changes topic into: " + topic);
     }
 
     public void onPing(String p) {
-logger.info("ping: "+p);
+//logger.info("ping: "+p);
     }
 
     public void unknown(String a, String b, String c, String d) {
-        logger.info("UNKNOWN: " + a + " b " + c + " " + d);
+        //logger.info("UNKNOWN: " + a + " b " + c + " " + d);
     }
 }

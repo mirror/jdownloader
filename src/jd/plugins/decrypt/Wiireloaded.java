@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -30,23 +32,40 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Wiireloaded extends PluginForDecrypt {
 
-    static private final String  host             = "wii-reloaded.ath.cx";
+    static private final String host = "wii-reloaded.ath.cx";
 
-    private String               version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    //http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
+    // http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
     static private final Pattern patternSupported = getSupportPattern("http://wii-reloaded.ath.cx/protect/get\\.php\\?i=[+]");
 
-    private static String        COOKIE           = null;
+    private static final String PARAM_CALCCODE = "PARAM_CALCCODE";
+
+    private static int CALCCODE = 0;
+
+    private static String COOKIE = null;
 
     public Wiireloaded() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
+        CALCCODE=getProperties().getIntegerProperty(PARAM_CALCCODE);
+        setConfigEntries();
+            
+        
+    }
+
+    private void setConfigEntries() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PARAM_CALCCODE, JDLocale.L("gui.plugins.decrypt.wiireloaded.calcresult","Ergebnis der Rechenaufgabe"),-99999,99999));
+        cfg.setDefaultValue(5);
+        
+        
     }
 
     @Override
@@ -102,8 +121,7 @@ public class Wiireloaded extends PluginForDecrypt {
                     progress.addToMax(1);
                     if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
 
-                    }
-                    else {
+                    } else {
                         logger.info("captchafile: " + captchaFile);
 
                         String capTxt = Plugin.getCaptchaCode(captchaFile, this);
@@ -116,11 +134,26 @@ public class Wiireloaded extends PluginForDecrypt {
                     progress.addToMax(ids.size());
                     for (int i = 0; i < ids.size(); i++) {
                         String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids.get(i);
-                        requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + 20 + "&senden=Download", false);
-
-                        if (requestInfo.getLocation() != null)
-{decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
-                        logger.finer(requestInfo.getLocation());
+                        requestInfo = null;
+                        int tmp=CALCCODE;
+                        while (requestInfo == null || requestInfo.containsHTML("Bitte Ergebnis eingeben")) {
+                            requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + CALCCODE + "&senden=Download", false);
+                            CALCCODE++;
+                            if (CALCCODE > 200) {
+                                CALCCODE = 1;
+                                break;
+                            }
+                        }
+                        CALCCODE--;
+                        
+                        if(tmp!=CALCCODE){
+                        getProperties().setProperty(PARAM_CALCCODE, CALCCODE);
+                        getProperties().save();
+                        }
+                        
+                        if (requestInfo.getLocation() != null) {
+                            decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                            logger.finer(requestInfo.getLocation());
                         }
                         progress.increase(1);
                     }
@@ -141,8 +174,7 @@ public class Wiireloaded extends PluginForDecrypt {
                 step.setParameter(decryptedLinks);
                 return step;
 
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }

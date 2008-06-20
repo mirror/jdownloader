@@ -204,7 +204,55 @@ public class JDLocale {
         missingData = parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
     }
+    public static String translate(String to, String msg) {
 
+        PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + "auto" + "&tl=" + to);
+
+        r.setPostVariable("hl", "de");
+        r.setPostVariable("text", msg);
+        r.setPostVariable("sl", "auto");
+        r.setPostVariable("tl", to);
+        r.setPostVariable("ie", "UTF8");
+
+        
+        r.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)");
+        r.getHeaders().put("Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
+        r.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        r.getHeaders().put("Accept-Encoding", "gzip,deflate");
+        r.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        r.getHeaders().put("Referer", "http://translate.google.com/translate_t?sl=en&tl=de");
+        r.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        String page;
+        try {
+            page = r.load();
+
+
+            return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return msg;
+        }
+
+        // POST /translate_t?sl=en&tl=de HTTP/1.1
+        // Host: translate.google.com
+        // User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
+        // Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0
+        // Accept:
+        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+        // Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
+        // Accept-Encoding: gzip,deflate
+        // Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
+        // Keep-Alive: 300
+        // Connection: keep-alive
+        // Referer: http://translate.google.com/translate_t?sl=en&tl=de
+        // Cookie:
+        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        // Content-Type: application/x-www-form-urlencoded
+        // Content-Length: 38
+        // hl=de&ie=UTF8&text=testing&sl=en&tl=de
+
+    }
     public static String translate(String from, String to, String msg) {
 
         PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
@@ -255,7 +303,7 @@ public class JDLocale {
             return dat;
         }
         String str = JDUtilities.getLocalFile(file);
-        String[] lines = JDUtilities.splitByNewline(str);
+        String[] lines = SimpleMatches.getLines(str);
         boolean dupes = false;
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");

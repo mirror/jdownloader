@@ -33,7 +33,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ShareOnAll extends PluginForDecrypt {
     final static String host             = "shareonall.com";
@@ -47,7 +46,7 @@ public class ShareOnAll extends PluginForDecrypt {
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigEelements();
-        this.ignoreList=JDUtilities.splitByNewline(getProperties().getStringProperty(IGNORE_LIST, ""));
+        this.ignoreList=SimpleMatches.getLines(getProperties().getStringProperty(IGNORE_LIST, ""));
     }
 
     @Override

@@ -8,13 +8,13 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.HTMLParser;
+import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class Rlslog extends PluginForDecrypt {
     static private final String host = "Rlslog Comment Parser";
@@ -28,7 +28,7 @@ public class Rlslog extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         this.setConfigEelements();
-        this.hosterList = JDUtilities.splitByNewline(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
+        this.hosterList = SimpleMatches.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
     }
 
     private boolean checkLink(String link) {

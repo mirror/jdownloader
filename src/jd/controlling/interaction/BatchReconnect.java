@@ -24,6 +24,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.parser.SimpleMatches;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -128,7 +129,7 @@ public class BatchReconnect extends Interaction implements Serializable {
        
         String batch = conf.getStringProperty("BATCH_TEXT", "");
 
-        String[] lines = JDUtilities.splitByNewline(batch);
+        String[] lines = SimpleMatches.getLines(batch);
         logger.info("Batch Verarbeitung aktiviert. Als Befehl muss der Interpreter eingetragen sein (windows: cmd.exe linux z.b. bash mac: teminal ?) Aktueller interpreter: " + command);
         for (int i = 0; i < lines.length; i++) {
             cmds[cmds.length - 1] = lines[i];

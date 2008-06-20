@@ -461,11 +461,6 @@ public class JDUtilities {
         return center;
     }
 
-    public static String[] splitByNewline(String arg) {
-        if (arg == null) return new String[] {};
-        return arg.split("[\r|\n|\r\n]{1,2}");
-    }
-
     /**
      * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
      * 

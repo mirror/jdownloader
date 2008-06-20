@@ -492,7 +492,7 @@ public class HTTPLiveHeader extends Interaction {
             ret += "    [[[STEP]]]" + SEPARATOR + "";
             ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
             ret += "    [[[/STEP]]]" + SEPARATOR;
-            String[] lines = JDUtilities.splitByNewline(code);
+            String[] lines = SimpleMatches.getLines(code);
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].trim().toLowerCase().startsWith("curl")) {
                     try {
