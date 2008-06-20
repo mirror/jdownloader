@@ -281,6 +281,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionWiki;
 
+    private JDAction actioninstallJDU;
+
+
+
     // private SwingWorker warningWorker;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
@@ -533,7 +537,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionPause = new JDAction(this, getPauseImage(), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-
+        actioninstallJDU = new JDAction(this, JDTheme.V("gui.images.load"), "action.install", JDAction.APP_INSTALL_JDU);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
 
@@ -600,6 +604,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
         JMenuItem menFileSave = createMenuItem(actionSaveDLC);
         JMenuItem menFileExit = createMenuItem(actionExit);
+        JMenuItem menFileInstall=createMenuItem(actioninstallJDU);
         // edit menu
         // JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
         menFile.setMnemonic(JDLocale.L("gui.menu.edit_mnem").charAt(0));
@@ -809,6 +814,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         menFile.add(menFileLoad);
         menFile.add(menFileSave);
+        menFile.add(menFileInstall);
         menFile.addSeparator();
         menFile.add(menFileExit);
         menExtra.add(menViewLog);

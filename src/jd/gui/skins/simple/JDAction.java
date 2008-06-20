@@ -83,6 +83,8 @@ public class JDAction extends AbstractAction{
     public static final int ABOUT = 32;
 
     public static final int WIKI = 33;
+
+    public static final int APP_INSTALL_JDU = 34;
     private ActionListener actionListener;
     private int actionID;
     private KeyStroke accelerator;

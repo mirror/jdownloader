@@ -126,12 +126,10 @@ public class DistributeData extends ControlBroadcaster {
                 try {
                 	
 					RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-					data += requestInfo.getHtmlCode() + " ";
+					data += requestInfo.getHtmlCode() + " ";					
+			
+				} catch (Exception e) {
 					
-				} catch (MalformedURLException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
 				}
         		
         	}

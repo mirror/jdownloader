@@ -1,4 +1,4 @@
-﻿addons.jdlowspeed.statusmessage.enabled = Low Speederkennung einschalten
+addons.jdlowspeed.statusmessage.enabled = Low Speederkennung einschalten
 addons.jdshutdown.menu.enable = Herunterfahren aktivieren
 addons.schedule.menu.abort = Abbrechen
 addons.schedule.menu.add = Hinzufügen
@@ -432,6 +432,12 @@ gui.menu.action.about.accel = -
 gui.menu.action.about.desc = Informationen zu jDownloader
 gui.menu.action.about.mnem = -
 gui.menu.action.about.name = Über jDownloader
+gui.menu.action.install.desc= Addon(*.jdu) installieren
+gui.menu.action.install.name=Addon installieren
+gui.menu.action.install.mnem -
+gui.menu.action.install.accel -
+
+
 gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Einen oder mehrere Downloadlinks hinzufügen
 gui.menu.action.add.mnem = H

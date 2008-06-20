@@ -536,6 +536,11 @@ gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Adds one or more download links
 gui.menu.action.add.mnem = H
 gui.menu.action.add.name = Add links
+
+gui.menu.action.install.desc= Install Addon(*.jdu)
+gui.menu.action.install.name=Install Addon
+gui.menu.action.install.mnem -
+gui.menu.action.install.accel -
 gui.menu.action.ces.accel = 
 gui.menu.action.ces.desc = Use Captcha Exchange Service
 gui.menu.action.ces.mnem = C
