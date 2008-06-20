@@ -27,6 +27,7 @@ import java.io.FileWriter;
 import java.util.Scanner;
 import java.util.Vector;
 
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -34,6 +35,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -136,6 +138,8 @@ public static Insets INSETS=new Insets(5,5,5,5);
      
         try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());} catch (Exception e1) {e1.printStackTrace();}
         
+        int n = 5;
+        ((JComponent) frame.getContentPane()).setBorder(new EmptyBorder(n,n,n,n));
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
