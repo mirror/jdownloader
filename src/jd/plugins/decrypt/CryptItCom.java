@@ -42,8 +42,6 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-// http://crypt-it.com/s/BXYMBR
-// http://crypt-it.com/s/B44Z4A
 
 public class CryptItCom extends PluginForDecrypt {
 
@@ -57,13 +55,11 @@ public class CryptItCom extends PluginForDecrypt {
 
     private static final String PATTERN_PW = "Passworteingabe";
 
-    private static final String PATTERN_PACKAGENAME = "<div class=\"folder\">°</div>";
+    private static final String PATTERN_PACKAGENAME = "class=\"folder\">°</";
 
     private static final String PATTERN_PASSWORD = "<b>Password:</b>°<";
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
-
-    private String PASSWORD_PROTECTED = "Passworteingabe erforderlich";
 
     public CryptItCom() {
 
@@ -115,14 +111,19 @@ public class CryptItCom extends PluginForDecrypt {
                 String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
                 RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
                 String pass = "";
+                int retrycounter = 1;
                 while (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                     pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
                     if (pass == null) { return null; }
                     String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
                     ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
+                    if (retrycounter < 5)
+                        retrycounter++;
+                    else
+                        return null;
                 }
                 String cookie = ri.getCookie();
-                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
+                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);                
                 String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
                 HashMap<String, String> header = new HashMap<String, String>();
@@ -134,13 +135,14 @@ public class CryptItCom extends PluginForDecrypt {
                 // 0x00, 0x01, 0x02, 0x00, 0x06 };
                 byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
                 byte[] b2 = new byte[] { 0x02, 0x00 };
-                ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[]{(byte)pass.length()}) + pass, false);
+                ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass, false);
                 ArrayList<String> ciphers = SimpleMatches.getAllSimpleMatches(ri, "url°size", 1);
+                progress.setRange(ciphers.size());
+                Vector<String> p = new Vector<String>();
                 progress.setRange(ciphers.size());
                 FilePackage fp = new FilePackage();
                 fp.setName(packagename);
                 fp.setPassword(password);
-                Vector<String> p = new Vector<String>();
                 p.add(password);
                 for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
                     String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
@@ -292,9 +294,6 @@ public class CryptItCom extends PluginForDecrypt {
     }
 
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, byte[] parameter, boolean redirect) throws IOException {
-        // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
-        // "+parameter+")");
-        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
 
         httpConnection.setInstanceFollowRedirects(redirect);
