@@ -39,12 +39,9 @@ public class EinsKhDe extends PluginForDecrypt {
     static private String host = "1kh.de";
 
     private String version = "1.0.0.0";
-    final static private Pattern patternSupported_File = Pattern.compile("http://.*?1kh\\.de/[0-9]*", Pattern.CASE_INSENSITIVE);
-    final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9/]*.*?", Pattern.CASE_INSENSITIVE);
-    final static private Pattern patternSupported = Pattern.compile("("+patternSupported_Folder.pattern()+"|"+patternSupported_File.pattern()+")", Pattern.CASE_INSENSITIVE);
-
-    // Testlinks: http://www.the-lounge.org/viewtopic.php?p=138217#p138217
-    // TODO: link geht net http://1kh.de/f/12435/
+    final static private Pattern patternSupported_File = Pattern.compile("http://.*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9/]+", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
     public EinsKhDe() {
         super();
@@ -73,7 +70,6 @@ public class EinsKhDe extends PluginForDecrypt {
 
     @Override
     public Pattern getSupportedLinks() {
-    	System.out.println(patternSupported.pattern());
         return patternSupported;
     }
 
@@ -91,11 +87,9 @@ public class EinsKhDe extends PluginForDecrypt {
                 progress.setRange(1);
                 URL url = new URL(cryptedLink);
                 RequestInfo reqinfo = HTTP.getRequest(url);
-                logger.info(cryptedLink);
                 if (cryptedLink.matches(patternSupported_File.pattern())) {
                     /* eine einzelne Datei */
                     String link = new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString();
-                    logger.info(JDUtilities.htmlDecode(link));
                     decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
                 } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                     /* ein Folder */
@@ -112,7 +106,6 @@ public class EinsKhDe extends PluginForDecrypt {
                             if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) break;
                         }
                     }
-
                     ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "id=\"FileDownload_°\"");
                     progress.setRange(links.size());
                     for (int i = 0; i < links.size(); i++) {
