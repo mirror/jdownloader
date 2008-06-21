@@ -172,7 +172,7 @@ public class LinksaveIn extends PluginForDecrypt {
 
             if (JDUtilities.download(container, con)) {
 
-                JDUtilities.getController().loadContainerFile(container);
+                //JDUtilities.getController().loadContainerFile(container);
 
             }
         }

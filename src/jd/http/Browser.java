@@ -24,6 +24,8 @@ import java.util.HashMap;
 public class Browser {
     private URL currentURL;
     private Request request;
+    private int limit=-1;
+    private boolean doRedirects=true;
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
 
     public Browser() {
@@ -32,12 +34,20 @@ public class Browser {
 
     public String getPage(String string) {
         try {
-            this.currentURL = new URL(string);
+           if(currentURL==null) this.currentURL = new URL(string);
             GetRequest request = new GetRequest(string);
+            request.setFollowRedirects(doRedirects);
             forwardCookies(request);
-
-            String ret = request.load();
+            request.getHeaders().put("Referer", currentURL.toString());
+            request.connect();
+            String ret =null;
+            if(request.getHttpConnection().getHeaderField("Content-Length")==null||Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length"))<=limit){
+                ret = request.read();
+            }
+         
             updateCookies(request);
+            this.request=request;
+            this.currentURL = new URL(string);
             return ret;
 
         } catch (MalformedURLException e) {
@@ -49,7 +59,7 @@ public class Browser {
         return null;
     }
 
-    private void forwardCookies(Request request) {
+    public static void forwardCookies(Request request) {
         if (request == null) return;
         String host = request.getUrl().getHost();
         HashMap<String, String> cookies = COOKIES.get(host);
@@ -58,7 +68,7 @@ public class Browser {
 
     }
 
-    private void updateCookies(Request request) {
+    public static  void updateCookies(Request request) {
         if (request == null) return;
         String host = request.getUrl().getHost();
         HashMap<String, String> cookies = COOKIES.get(host);
@@ -68,5 +78,30 @@ public class Browser {
         }
         cookies.putAll(request.getCookies());
 
+    }
+
+    public Request getRequest() {
+        // TODO Auto-generated method stub
+        return request;
+    }
+
+    public void setCurrentURL(String string) {
+        try {
+            currentURL= new URL(string);
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+    }
+
+    public void setLoadLimit(int i) {
+        this.limit=i;
+        
+    }
+
+    public void setFollowRedirects(boolean b) {
+      this.doRedirects=b;
+        
     }
 }

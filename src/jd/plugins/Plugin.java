@@ -541,7 +541,7 @@ public abstract class Plugin implements ActionListener {
         ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
         while (ret.startsWith("\"") || ret.startsWith("'"))
             ret = ret.substring(1);
-        while (ret.endsWith("\"") || ret.endsWith("'"))
+        while (ret.endsWith("\"") || ret.endsWith("'")|| ret.endsWith(";"))
             ret = ret.substring(0, ret.length() - 1);
         try {
 

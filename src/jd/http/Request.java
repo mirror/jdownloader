@@ -232,6 +232,7 @@ public abstract class Request {
         }
         rd.close();
         this.readTime = System.currentTimeMillis() - tima;
+        this.htmlCode=htmlCode.toString();
         return htmlCode.toString();
     }
 
