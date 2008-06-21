@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -33,10 +32,12 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class NetfolderIn extends PluginForDecrypt {
-    static private String host             = "netfolder.in";
-    private String        version          = "1.0.0.0";
-    //netfolder.in/folder.php?folder_id=b8b3b0b 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
+    static private String host = "netfolder.in";
+    private String version = "1.0.0.0";
+    // netfolder.in/folder.php?folder_id=b8b3b0b
+    static private final Pattern patternSupported_1 = Pattern.compile("http://.*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported_2 = Pattern.compile("http://.*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
     public NetfolderIn() {
         super();
@@ -74,50 +75,49 @@ public class NetfolderIn extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			String password = "";
-    			
-    			while (true) {
-                 	int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
-                 	
-                 	if (check > 0) {
-                 		password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                 		
-                 		if(password == null) {
-                 			step.setParameter(decryptedLinks);
-                 			return null;
-                 		}
-                 		
-                 		reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
-                 	} else {
-                 		break;
-                 	}
-     			}
-    			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
-    			
-    			progress.setRange( links.size());
-    			
-    			// Link der Liste hinzufügen
-    			for(int i=0; i<links.size(); i++) {
-    				decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
-    			progress.increase(1);
-    			}   			
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(cryptedLink);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                if (cryptedLink.matches(patternSupported_2.pattern())) {
+                    /* weiterleitung */
+                    decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+                } else if (cryptedLink.matches(patternSupported_1.pattern())) {
+                    /* richtiger folder */
+                    String password = "";
+                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                        int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
+                        if (check > 0) {
+                            password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
+                            if (password == null) {
+                                step.setParameter(decryptedLinks);
+                                return null;
+                            }
+                            reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
+                        } else {
+                            break;
+                        }
+                    }
+
+                    ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
+                    progress.setRange(links.size());
+                    // Link der Liste hinzufügen
+                    for (int i = 0; i < links.size(); i++) {
+                        decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
+                        progress.increase(1);
+                    }
+                }
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override
