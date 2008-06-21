@@ -42,7 +42,6 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-
 public class CryptItCom extends PluginForDecrypt {
 
     static private final String HOST = "crypt-it.com";
@@ -110,20 +109,22 @@ public class CryptItCom extends PluginForDecrypt {
                 String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
                 String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
                 RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-                String pass = "";
-                int retrycounter = 1;
-                while (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
-                    pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
-                    if (pass == null) { return null; }
-                    String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                    ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
-                    if (retrycounter < 5)
-                        retrycounter++;
-                    else
-                        return null;
+                String pass="";
+                if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {                        
+                        pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
+                        if (pass == null) {
+                            /* auf abbruch geklickt */
+                            step.setParameter(decryptedLinks);
+                            return null;
+                        }
+                        String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                        ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
+                        if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) break;
+                    }
                 }
                 String cookie = ri.getCookie();
-                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);                
+                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
                 String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
                 if (password != null) password = password.trim();
                 HashMap<String, String> header = new HashMap<String, String>();

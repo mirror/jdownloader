@@ -14,8 +14,9 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,133 +36,102 @@ import jd.utils.JDUtilities;
 
 public class EinsKhDe extends PluginForDecrypt {
 
-static private String host = "1kh.de";
+    static private String host = "1kh.de";
 
-private String version = "1.0.0.0";
-private Pattern patternSupported           = Pattern.compile("http://.*?1kh\\.de/(f/)?[0-9]*", Pattern.CASE_INSENSITIVE);
-static private final Pattern patternFolder = Pattern.compile("<ul class=\"FolderHeader\">");
-static private final Pattern patternPass   = Pattern.compile("Der Ordner ist Passwortgesch&uuml;tzt.");
+    private String version = "1.0.0.0";
+    final static private Pattern patternSupported_File = Pattern.compile("http://.*?1kh\\.de/[0-9]*", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9]*.*?", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported = Pattern.compile(patternSupported_File.pattern() + "|" + patternSupported_Folder.pattern(), patternSupported_File.flags() | patternSupported_Folder.flags());
 
-//Testlinks: http://www.the-lounge.org/viewtopic.php?p=138217#p138217
+    // Testlinks: http://www.the-lounge.org/viewtopic.php?p=138217#p138217
+    // TODO: link geht net http://1kh.de/f/12435/
 
-public EinsKhDe() {
-  super();
-  steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-  currentStep = steps.firstElement();
-}
+    public EinsKhDe() {
+        super();
+        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+    }
 
-@Override
-public String getCoder() {
-  return "b0ffed";
-}
+    @Override
+    public String getCoder() {
+        return "JD-Team,b0ffed";
+    }
 
-@Override
-public String getHost() {
-  return host;
-}
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-@Override
-public String getPluginID() {
-  return host+"-"+version;
-}
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
+    }
 
-@Override
-public String getPluginName() {
-  return host;
-}
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-@Override
-public Pattern getSupportedLinks() {
-  return patternSupported;
-}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-@Override
-public String getVersion() {
-  return version;
-}
+    @Override
+    public String getVersion() {
+        return version;
+    }
 
-private String getSingleLink(String link) {
+    public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            try {
 
-	RequestInfo reqinfosinglelink = null;
-	try {
-		reqinfosinglelink = HTTP.getRequest(new URL(link));
-	} catch (MalformedURLException e) {
-		
-		e.printStackTrace();
-	} catch (IOException e) {
-		
-		e.printStackTrace();
-	}
-	
-	return (new Regex(reqinfosinglelink.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch()).toString();	
-}
+                progress.setRange(1);
+                URL url = new URL(cryptedLink);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+                logger.info(cryptedLink);
+                if (cryptedLink.matches(patternSupported_File.pattern())) {
+                    /* eine einzelne Datei */
+                    String link = new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString();
+                    logger.info(JDUtilities.htmlDecode(link));
+                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
+                } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
+                    /* ein Folder */
+                    if (reqinfo.containsHTML("Der Ordner ist Passwortgesch&uuml;tzt.")) {
+                        for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                            logger.finest("1kh.de - Ordnerpasswort benötigt");
+                            String password = JDUtilities.getGUI().showUserInputDialog("1kh.de - Ordnerpasswort?");
+                            if (password == null) {
+                                /* auf abbruch geklickt */
+                                step.setParameter(decryptedLinks);
+                                return null;
+                            }
+                            reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
+                            if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) break;
+                        }
+                    }
 
-@Override
-public PluginStep doStep(PluginStep step, String parameter) {
-  if (step.getStep() == PluginStep.STEP_DECRYPT) {
-      Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-      try {
-          
-          progress.setRange(1);
-          URL url = new URL(parameter);
-          //Erster Request, der entweder zur Seite führt oder zur Altersabfrage.    
-          RequestInfo reqinfo = HTTP.getRequest(url);
-          
-          Matcher passmatcher = patternPass.matcher(reqinfo.getHtmlCode());
-          
-          
-          if( passmatcher.find())  // = Passwort vorhanden
-          {  
-              logger.finest("1kh.de - Ordnerpasswort benötigt");
-    
-    
-              String password = "";
-              password = JDUtilities.getGUI().showUserInputDialog("1kh.de - Ordnerpasswort?");
-                
-              if(password == null) {
-         	      step.setParameter(decryptedLinks);
-         	      return null;
-     	      }
-    
-              reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
-          }
-          
-          Matcher foldermatcher = patternFolder.matcher(reqinfo.getHtmlCode());
-          
-          if(foldermatcher.find())
-          {
-        	  logger.info("foldermatch");
-              ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "id=\"FileDownload_°\"");
-              logger.info("size: " + links.size());
-              
-              progress.setRange(links.size());
-              
-              for(int i=0; i<links.size(); i++) {
-            	  //logger.info("http://1kh.de/" + links.get(i).get(1));
-                  decryptedLinks.add(this.createDownloadlink(getSingleLink("http://1kh.de/" + links.get(i).get(0))));
-                  progress.increase(1);
-              }        	  
-          }
-          else
-          {
-              progress.increase(1);
-              decryptedLinks.add(this.createDownloadlink(
-            		  new Regex(reqinfo.getHtmlCode(), 
-            				  "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>")
-            		  .getFirstMatch()));        	  
-          }
+                    ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "id=\"FileDownload_°\"");
+                    progress.setRange(links.size());
+                    for (int i = 0; i < links.size(); i++) {
+                        decryptedLinks.add(this.createDownloadlink("http://1kh.de/" + links.get(i).get(0)));
+                        progress.increase(1);
+                    }
+                }
 
-          // Decrypt abschliessen
+                // Decrypt abschliessen
 
-          step.setParameter(decryptedLinks);
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
-  }
-  return null;
-}
-@Override
-public boolean doBotCheck(File file) {
-  return false;
-}
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 }

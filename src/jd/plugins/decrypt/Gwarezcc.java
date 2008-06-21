@@ -15,6 +15,7 @@ import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
@@ -136,6 +137,9 @@ public class Gwarezcc extends PluginForDecrypt {
                     String downloadlink_url = new Regex(requestInfo.getHtmlCode(), "http\\:\\/\\/(.*)\">").getFirstMatch();
                     DownloadLink downloadlink_link=createDownloadlink(downloadlink_url);
                     downloadlink_link.setSourcePluginPasswords(downloadlink_passwds);
+                    FilePackage fp = new FilePackage();
+                    fp.setName("bla bla");
+                    downloadlink_link.setFilePackage(fp);
                     decryptedLinks.add(downloadlink_link);
                 }
 
