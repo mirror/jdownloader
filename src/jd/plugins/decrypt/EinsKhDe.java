@@ -40,8 +40,8 @@ public class EinsKhDe extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
     final static private Pattern patternSupported_File = Pattern.compile("http://.*?1kh\\.de/[0-9]*", Pattern.CASE_INSENSITIVE);
-    final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9]*.*?", Pattern.CASE_INSENSITIVE);
-    final static private Pattern patternSupported = Pattern.compile(patternSupported_File.pattern() + "|" + patternSupported_Folder.pattern(), patternSupported_File.flags() | patternSupported_Folder.flags());
+    final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9/]*.*?", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported = Pattern.compile("("+patternSupported_Folder.pattern()+"|"+patternSupported_File.pattern()+")", Pattern.CASE_INSENSITIVE);
 
     // Testlinks: http://www.the-lounge.org/viewtopic.php?p=138217#p138217
     // TODO: link geht net http://1kh.de/f/12435/
@@ -73,6 +73,7 @@ public class EinsKhDe extends PluginForDecrypt {
 
     @Override
     public Pattern getSupportedLinks() {
+    	System.out.println(patternSupported.pattern());
         return patternSupported;
     }
 
