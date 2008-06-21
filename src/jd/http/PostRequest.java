@@ -83,14 +83,7 @@ public class PostRequest extends Request {
         
     }
 
-    public Map<String, List<String>> getResponseHeaders() {
-      if(httpConnection==null)return null;
-        return httpConnection.getHeaderFields();
-    }
-    public String getResponseHeader(String key){
-        if(httpConnection==null)return null;
-        return httpConnection.getHeaderField(key);
-    }
+  
 
 
 

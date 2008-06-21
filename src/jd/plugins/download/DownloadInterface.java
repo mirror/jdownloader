@@ -1562,4 +1562,9 @@ abstract public class DownloadInterface {
         return exceptions;
     }
 
+    public File getFile() {
+        return new File(downloadLink.getFileOutput());
+        
+    }
+
 }

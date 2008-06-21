@@ -33,7 +33,7 @@ public class DLC extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
     // http://anon0098.anonhost.biz/store/file/dlc/forcedl.php?file=Clubland.Das.Ganze.Leben.Ist.Eine.Show.German.2007.DL.PAL.REPACK.DVDR-RSG.dlc
-    private Pattern patternSupported = Pattern.compile("(http|dlc|ccf|rsdf)://.*(dlc|ccf|rsdf).*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("(dlc|ccf|rsdf)://([^'\"]*){10,}", Pattern.CASE_INSENSITIVE);
 
     public DLC() {
         super();
@@ -92,13 +92,14 @@ public class DLC extends PluginForDecrypt {
         Browser.updateCookies(req);
 
         String name = this.getFileNameFormHeader(req.getHttpConnection());
-
+        int index = Math.max(req.getHttpConnection().getURL().getFile().lastIndexOf("/"), req.getHttpConnection().getURL().getFile().lastIndexOf("\\"));
+        String name2= req.getHttpConnection().getURL().getFile().substring(index + 1).toLowerCase();
         File res;
-        if (name.toLowerCase().endsWith("dlc")) {
+        if (name.toLowerCase().endsWith("dlc")||parameter.toLowerCase().endsWith("dlc")) {
             res = JDUtilities.getResourceFile("container/DecryptDLC_" + System.currentTimeMillis() + ".dlc");
-        } else if (name.toLowerCase().endsWith("rsdf")) {
+        } else if (name.toLowerCase().endsWith("rsdf")||parameter.toLowerCase().endsWith("rsdf")) {
             res = JDUtilities.getResourceFile("container/DecryptDLC_" + System.currentTimeMillis() + ".rsdf");
-        } else if (name.toLowerCase().endsWith("ccf")) {
+        } else if (name.toLowerCase().endsWith("ccf")||parameter.toLowerCase().endsWith("ccf")) {
             res = JDUtilities.getResourceFile("container/DecryptDLC_" + System.currentTimeMillis() + ".ccf");
         } else {
             return null;

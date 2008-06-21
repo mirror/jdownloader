@@ -24,6 +24,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -337,5 +338,12 @@ public abstract class Request {
     public HTTPConnection getHttpConnection() {
         return httpConnection;
     }
-
+    public Map<String, List<String>> getResponseHeaders() {
+        if(httpConnection==null)return null;
+          return httpConnection.getHeaderFields();
+      }
+      public String getResponseHeader(String key){
+          if(httpConnection==null)return null;
+          return httpConnection.getHeaderField(key);
+      }
 }
