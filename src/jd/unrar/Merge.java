@@ -15,7 +15,7 @@ public class Merge {
         String name = file.getName();
         boolean unix = false;
         if (name.matches(".*\\.\\a.$")) unix = true;
-        if (!unix && !name.matches(".*\\.[\\d]{3,20}($|\\..*)")) { return null; }
+        if (!unix && (!name.matches(".*\\.[\\d]{3,20}($|\\..*)")||name.matches("(?is).*\\.7z\\.[\\d]+$"))) { return null; }
         File mergeFile = null;
         if (unix)
             mergeFile = new File(file.getParentFile(), name.replaceFirst("\\.a.$", ".aa"));
