@@ -1506,7 +1506,7 @@ public class JDUtilities {
      * @param file
      * @param urlString
      * @return Erfolg true/false
-     */
+     */ 
     public static boolean download(File file, String urlString) {
         try {
             urlString = URLDecoder.decode(urlString, "UTF-8");
