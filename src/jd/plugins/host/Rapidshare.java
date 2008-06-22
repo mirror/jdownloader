@@ -224,22 +224,23 @@ public class Rapidshare extends PluginForHost {
         super();
 
         steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-
-        serverMap.put("TeliaSonera #2", "tl2");
-        serverMap.put("TeliaSonera #3", "tl3");
-        serverMap.put("GlobalCrossing", "gc");
-        serverMap.put("GlobalCrossing #2", "gc2");
-        serverMap.put("Cogent", "cg");
-        serverMap.put("Cogent #2", "cg2");
-        serverMap.put("Teleglobe", "tg");
-        serverMap.put("Level(3)", "l3");
+//      serverMap.put("Cogent", "cg");
+        //serverMap.put("Cogent #2", "cg2");        
+        serverMap.put("Deutsche Telekom", "dt");        
+        serverMap.put("GlobalCrossing #1", "gc");
+        serverMap.put("GlobalCrossing #2", "gc2");          
+        serverMap.put("Level(3) #1", "l3");
         serverMap.put("Level(3) #2", "l32");
         serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");
+        serverMap.put("Level(3) #4", "l34");        
+        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com. #2", "tg2");        
         serverMap.put("TeliaSonera", "tl");
-        serverMap.put("Deutsche Telekom", "dt");
-        serverList1 = new String[] { "tl", "tl2", "gc", "gc2", "cg", "cg2", "tg", "l3", "l32", "l33", "l34", "tl", "dt" };
-        serverList2 = new String[] { "tl", "tl2", "tl3", "gc", "gc2", "l32", "tg", "l3", "cg" };
+        serverMap.put("TeliaSonera #2", "tl2");
+        serverMap.put("TeliaSonera #3", "tl3");
+        
+        serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };        
+        serverList2 = new String[] { "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         this.setConfigElements();
     }
 
