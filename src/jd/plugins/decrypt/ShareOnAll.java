@@ -117,10 +117,10 @@ public class ShareOnAll extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        ConfigEntry cfg;
+//        ConfigEntry cfg;
        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(domain1.com;domain2.com;...)")));
 
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), IGNORE_LIST,JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(Eine Domain/Zeile)")) );
+        config.addEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), IGNORE_LIST,JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(Eine Domain/Zeile)")) );
     
    
     }

@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.GetRequest;
@@ -85,7 +83,7 @@ public class DDLWarez extends PluginForDecrypt {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                URL url = new URL(parameter);
+//                URL url = new URL(parameter);
                 GetRequest req = new GetRequest(parameter);
                 req.setReadTimeout(5 * 60 * 1000);
                 req.setConnectTimeout(5 * 60 * 1000);
@@ -100,7 +98,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                 // first form is the search form, not needed
                 progress.setRange(forms.length - 1);
-                Matcher frameMatcher = null;
+//                Matcher frameMatcher = null;
                 FilePackage fp = new FilePackage();
                 fp.setName(title);
                 fp.setPassword(pass);
@@ -139,7 +137,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                     // System.out.println(formInfo.getHtmlCode());
 
-                    for (Iterator<String> it = SimpleMatches.getAllSimpleMatches(formInfo, this.patternFrame, 1).iterator(); it.hasNext();) {
+                    for (Iterator<String> it = SimpleMatches.getAllSimpleMatches(formInfo, patternFrame, 1).iterator(); it.hasNext();) {
 
                         String[] links = HTMLParser.getHttpLinks(it.next().trim(), null);
 

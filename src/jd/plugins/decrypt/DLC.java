@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.GetRequest;
-import jd.http.Request;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.utils.JDUtilities;
@@ -77,7 +76,7 @@ public class DLC extends PluginForDecrypt {
 
         logger.info("");
 
-        Browser br = new Browser();
+//        Browser br = new Browser();
 
         // br.setCurrentURL("http://rs-layer.com/directory-95259-c8cw68wh.dlc");
         GetRequest req = new GetRequest(parameter);
@@ -92,8 +91,8 @@ public class DLC extends PluginForDecrypt {
         Browser.updateCookies(req);
 
         String name = this.getFileNameFormHeader(req.getHttpConnection());
-        int index = Math.max(req.getHttpConnection().getURL().getFile().lastIndexOf("/"), req.getHttpConnection().getURL().getFile().lastIndexOf("\\"));
-        String name2= req.getHttpConnection().getURL().getFile().substring(index + 1).toLowerCase();
+//        int index = Math.max(req.getHttpConnection().getURL().getFile().lastIndexOf("/"), req.getHttpConnection().getURL().getFile().lastIndexOf("\\"));
+//        String name2= req.getHttpConnection().getURL().getFile().substring(index + 1).toLowerCase();
         File res;
         if (name.toLowerCase().endsWith("dlc")||parameter.toLowerCase().endsWith("dlc")) {
             res = JDUtilities.getResourceFile("container/DecryptDLC_" + System.currentTimeMillis() + ".dlc");

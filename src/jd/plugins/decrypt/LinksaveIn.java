@@ -94,7 +94,7 @@ public class LinksaveIn extends PluginForDecrypt {
         String id = sp[3];
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             File container = null;
-            boolean folder = false;
+//            boolean folder = false;
             if (parameter.endsWith(".rsdf")) {
                 container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
             } else if (parameter.endsWith(".ccf")) {
@@ -104,7 +104,7 @@ public class LinksaveIn extends PluginForDecrypt {
                 container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
 
             } else {
-                folder = true;
+//                folder = true;
                 RequestInfo ri;
                 try {
                     ri = HTTP.getRequest(new URL(parameter));

@@ -15,7 +15,6 @@ import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;

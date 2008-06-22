@@ -53,7 +53,7 @@ static private String host = "youtube.com";
 
 private static final String VIDEO_ID = "video_id";
 private static final String T = "\"t\"";
-private static final String HOST = "BASE_YT_URL";
+//private static final String HOST = "BASE_YT_URL";
 private static final String PLAYER = "get_video";
 
 public static final int CONVERT_ID_AUDIO = 0;
@@ -256,7 +256,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           String filename = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
           String video_id="";
           String t="";
-String cookies = reqinfo.getCookie();
+//          String cookies = reqinfo.getCookie();
           fp.setName(filename);
           
           //logger.info(reqinfo.getHtmlCode());

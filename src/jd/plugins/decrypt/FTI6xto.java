@@ -17,22 +17,18 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
-import jd.controlling.JDController;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 // http://crypt-it.com/s/BXYMBR
