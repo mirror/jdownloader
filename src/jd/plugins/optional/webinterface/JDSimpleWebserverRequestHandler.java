@@ -157,7 +157,7 @@ public class JDSimpleWebserverRequestHandler {
                     requestParameter.put(key, value);
             }
         }
-
+        logger.info(requestParameter.toString());
         String url = path.replaceAll("\\.\\.", "");
 
         /* parsen der paramter */
@@ -175,11 +175,12 @@ public class JDSimpleWebserverRequestHandler {
                     JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
                 }
 
-                if (requestParameter.containsKey("autoreconnect")) {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                } else
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-
+                if (!requestParameter.containsKey("selected_dowhat_link_adder")) {
+                    if (requestParameter.containsKey("autoreconnect")) {
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                    } else
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                }
                 if (requestParameter.containsKey("package_single_add_counter")) {
                     synchronized (JDWebinterface.Link_Adder_Packages) {
                         /* aktionen in der adder liste ausführen */
