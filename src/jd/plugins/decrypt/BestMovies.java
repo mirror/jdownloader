@@ -20,19 +20,21 @@ import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.PostRequest;
+import jd.parser.Form;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
-
-// http://crypt-it.com/s/BXYMBR
-// http://crypt-it.com/s/B44Z4A
 
 public class BestMovies extends PluginForDecrypt {
 
@@ -41,8 +43,10 @@ public class BestMovies extends PluginForDecrypt {
     private String VERSION = "0.0.1";
 
     private String CODER = "jD-Team";
-    static private final Pattern patternSupported = getSupportPattern("http://crypt.best-movies.us/go.php\\?id\\=[+]");
-
+    static private final Pattern patternSupported = getSupportPattern("http://crypt.best-movies.us/go.php\\?id\\=\\d{1,}");
+    static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
+    static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
+    
     public BestMovies() {
 
         super();
@@ -83,28 +87,51 @@ public class BestMovies extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        // surpress jd warning
+        String cryptedLink = (String) parameter;
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        step.setParameter(decryptedLinks);
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
-                if (parameter.contains("go.php")) {
-                    Vector<DownloadLink> links = loadCryptLinks(parameter, null, null);
-                    if (links != null) decryptedLinks.addAll(links);
-                } else {
-                    RequestInfo ri = HTTP.getRequest(new URL(parameter));
-                    String packageName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(ri, "<h1>°</h1>", 0));
-                    String password = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(ri, " <p><strong>Passwort:</strong>°</p>", 0));
-
-                    ArrayList<String> matches = SimpleMatches.getAllSimpleMatches(ri, "http://crypt.best-movies.us/go.php?id=°\"", 1);
-                    for (String match : matches) {
-                        Vector<DownloadLink> links = loadCryptLinks("http://crypt.best-movies.us/go.php?id="+match, packageName, password);
-                        if (links != null) decryptedLinks.addAll(links);
+                URL url = new URL(cryptedLink);
+                RequestInfo reqInfo = null;                
+                Matcher matcher;
+                Form form;
+                reqInfo = HTTP.getRequest(url);
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {                   
+                    
+                    matcher = patternCaptcha_Wrong.matcher(reqInfo.getHtmlCode());
+                    if (matcher.find()){
+                        /*Falscher Captcha, Seite neu laden*/
+                        reqInfo = HTTP.getRequest(url);
                     }
-
+                    
+                    matcher = patternCaptcha_Needed.matcher(reqInfo.getHtmlCode());                    
+                    if (matcher.find()) {
+                        /*Captcha vorhanden*/
+                        form = reqInfo.getForms()[0];
+                        String captchaAddress = "http://crypt.best-movies.us/captcha.php";
+                        File captchaFile = this.getLocalCaptchaFile(this);
+                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                            /* Fehler beim Captcha */
+                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        if (captchaCode == null) {
+                            /* abbruch geklickt */
+                            step.setParameter(decryptedLinks);
+                            return null;
+                        }
+                        form.put("sicherheitscode", captchaCode);                        
+                        form.put("submit","Submit+Query");
+                        reqInfo=form.getRequestInfo();
+                    } else {
+                        /*Kein Captcha*/
+                        break;
+                    }
                 }
 
-                return step;
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -115,42 +142,6 @@ public class BestMovies extends PluginForDecrypt {
         return null;
     }
 
-    private Vector<DownloadLink> loadCryptLinks(String parameter, String name, String pass) throws Exception {
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        
-        FilePackage fp= new FilePackage();
-        fp.setName(name);
-        fp.setPassword(pass);
-
-        @SuppressWarnings("unused")
-        RequestInfo ri = HTTP.getRequest(new URL(parameter));
-        String url = SimpleMatches.getSimpleMatch(ri, "document.write('°' frameborder=0", 0);
-        if (url == null) return null;
-        url = SimpleMatches.getSimpleMatch(url.replaceAll("'\\+'", ""), "<iframe src=\\'°\\", 0);
-        // String url2=getSimpleMatch(ri,"<div style=\"display: none;\"><iframe
-        // name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\"
-        // src=\"°\"></iframe>",0);
-        if (url.endsWith(".ccf")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-            JDUtilities.download(container, url);
-            JDUtilities.getController().loadContainerFile(container);
-        } else if (url.endsWith(".rsdf")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-            JDUtilities.download(container, url);
-            JDUtilities.getController().loadContainerFile(container);
-        } else if (url.endsWith(".dlc")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            JDUtilities.download(container, url);
-            JDUtilities.getController().loadContainerFile(container);
-        } else {
-            decryptedLinks.add(this.createDownloadlink(url));
-            if(name!=null && pass!=null)decryptedLinks.lastElement().setFilePackage(fp);
-                
-        }
-        return decryptedLinks;
-    }
-
-    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
