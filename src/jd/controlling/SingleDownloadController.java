@@ -757,6 +757,7 @@ public class SingleDownloadController extends Thread {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
+        onErrorRetry(downloadLink, plugin, step);
     }
 
     /**

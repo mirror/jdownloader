@@ -1512,6 +1512,7 @@ public class JDUtilities {
             urlString = URLDecoder.decode(urlString, "UTF-8");
             URL url = new URL(urlString);
             HTTPConnection con = new HTTPConnection(url.openConnection());
+            con.setInstanceFollowRedirects(true);
             return download(file, con);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -1978,6 +1979,7 @@ public class JDUtilities {
      */
     public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
         String dest = file.getAbsolutePath();
+        if(captchaCode==null)captchaCode="null";
         String isGoodText;
         if (isGood)
             isGoodText = "_GOOD";

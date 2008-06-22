@@ -64,12 +64,17 @@ public class Rapidshare extends PluginForHost {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
-
-    private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL = Pattern.compile("<form *name *= *\"dlf\" (?s).*<img *src *= *\"([^\\n\"]*\\.jpg)\">");
+//<center><table><tr><td><img src="http://rs235.rapidshare.com/access1216288.gif"></td>
+    
+//    
+//    '<form name="dlf" action="http://rs235gc2.rapidshare.com/files/123613963/1216288/webinterface8.jdu" method="post">' +        
+//    '<center><table><tr><td><img src="http://rs235.rapidshare.com/access1216288.gif"></td>' +
+    
+    private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL = Pattern.compile("<center><table><tr><td><img src\\=\"(.*?)\"></td>");
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
-    private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("wrong [acces ]*?code");
+    private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(bereits eine Datei runter)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_MATCHER_HAPPY_HOUR = Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
@@ -760,6 +765,9 @@ public class Rapidshare extends PluginForHost {
 
                 captchaCode = getCaptchaCode(step, downloadLink, captchaFile, captchaAddress);
 
+                if( downloadLink.getStatus()==DownloadLink.STATUS_ERROR_BOT_DETECTED){
+                    return step;
+                }
                 timer = System.currentTimeMillis() - timer;
 
                 // War Captchaerkennung Fehlerhaft?
@@ -1046,7 +1054,19 @@ step.setParameter(error);
      * @return
      */
     private String getCaptchaCode(PluginStep step, DownloadLink downloadLink, File captchaFile, String captchaAddress) {
-        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+        GetRequest r = new GetRequest(captchaAddress);
+        r.setFollowRedirects(false);
+        try {
+            r.connect();
+        } catch (IOException e1) {
+            return null;
+        }
+        if(r.getResponseHeader("Location")!=null){
+            downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+            step.setStatus(PluginStep.STATUS_ERROR);
+            return null;
+        }
+        if (!JDUtilities.download(captchaFile, r.getHttpConnection()) || !captchaFile.exists()) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             step.setParameter(null);
             step.setStatus(PluginStep.STATUS_ERROR);
@@ -1082,7 +1102,7 @@ step.setParameter(error);
             e.printStackTrace();
         }
 
-        if (captchaCode != null && captchaCode.trim().length() != 4) {
+        if (captchaCode == null || captchaCode.trim().length() != 4) {
             hashFound = false;
             // CES Methode
             if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false) && !CES.isEnabled()) {
