@@ -975,20 +975,27 @@ public class JDUtilities {
 			}
 			try {
 				FileInputStream fis = new FileInputStream(fileInput);
+				BufferedInputStream buff = new BufferedInputStream(fis);
 				if (asXML) {
 					XMLDecoder xmlDecoder = new XMLDecoder(
-							new BufferedInputStream(fis));
+							new BufferedInputStream(buff));
 					objectLoaded = xmlDecoder.readObject();
 					xmlDecoder.close();
 				} else {
-					ObjectInputStream ois = new ObjectInputStream(fis);
+					ObjectInputStream ois = new ObjectInputStream(buff);
 					objectLoaded = ois.readObject();
 					ois.close();
 				}
+				fis.close();
+				buff.close();
 				// Object15475dea4e088fe0e9445da30604acd1
 				// Object80d11614908074272d6b79abe91eeca1
 				// logger.info("Loaded Object (" + hash + "): ");
-
+				try {
+					saveReadObject.remove(fileInput);
+				} catch (Exception e) {
+					// TODO: handle exception
+				}
 				return objectLoaded;
 			} catch (ClassNotFoundException e) {
 				logger.severe(e.getMessage());
@@ -1029,7 +1036,7 @@ public class JDUtilities {
 	 */
 	public static void saveObject(JFrame frame, Object objectToSave,
 			File fileOutput, String name, String extension, boolean asXML) {
-		String hashPre;
+//		String hashPre;
 		if (fileOutput == null) {
 			JDFileFilter fileFilter = new JDFileFilter(name, extension, true);
 			JFileChooser fileChooserSave = new JFileChooser();
@@ -1054,22 +1061,22 @@ public class JDUtilities {
 			} catch (Exception e) {
 				// TODO: handle exception
 			}
-			hashPre = getLocalHash(fileOutput);
+//			hashPre = getLocalHash(fileOutput);
 			if (fileOutput.exists())
 				fileOutput.delete();
 			try {
 				FileOutputStream fos = new FileOutputStream(fileOutput);
+				BufferedOutputStream buff = new BufferedOutputStream(fos);
 				if (asXML) {
-					XMLEncoder xmlEncoder = new XMLEncoder(
-							new BufferedOutputStream(fos));
+					XMLEncoder xmlEncoder = new XMLEncoder(buff);
 					xmlEncoder.writeObject(objectToSave);
 					xmlEncoder.close();
 				} else {
-					ObjectOutputStream oos = new ObjectOutputStream(
-							new BufferedOutputStream(fos));
+					ObjectOutputStream oos = new ObjectOutputStream(buff);
 					oos.writeObject(objectToSave);
 					oos.close();
 				}
+				buff.close();
 				fos.close();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -1077,20 +1084,20 @@ public class JDUtilities {
 				e.printStackTrace();
 			}
 			String hashPost = getLocalHash(fileOutput);
-			if (fileOutput.exists()) {
-				// logger.info(fileOutput.delete()+"");
-			}
+			// if (fileOutput.exists()) {
+			// logger.info(fileOutput.delete()+"");
+			// }
 			// logger.info(""+objectToSave);
 			if (hashPost == null) {
 				logger.severe("Schreibfehler: " + fileOutput
 						+ " Datei wurde nicht erstellt");
-			} else if (hashPost.equals(hashPre)) {
-				// logger.warning("Schreibvorgang: " + fileOutput + " Datei
-				// wurde nicht überschrieben "+hashPost+" - "+hashPre);
-			} else {
-				// logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
-				// " + hashPost);
-			}
+			} // else if (hashPost.equals(hashPre)) {
+			// logger.warning("Schreibvorgang: " + fileOutput + " Datei
+			// wurde nicht überschrieben "+hashPost+" - "+hashPre);
+			// } else {
+			// logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
+			// " + hashPost);
+			// }
 			try {
 				saveReadObject.remove(fileOutput);
 			} catch (Exception e) {
