@@ -89,6 +89,7 @@ public class Wordpress extends PluginForDecrypt {
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
+                Vector<String> link_passwds=new Vector<String>();
 
                 /* Defaultpasswörter der Seite setzen */
                 for (int j = 0; j < defaultpasswords.size(); j++) {
@@ -98,7 +99,7 @@ public class Wordpress extends PluginForDecrypt {
                              * logger.info("defaul PW: " +
                              * defaultpasswords.get(j)[jj]);
                              */
-                            default_password.add(defaultpasswords.get(j)[jj]);
+                            link_passwds.add(defaultpasswords.get(j)[jj]);
                         }
                         break;
                     }
@@ -110,7 +111,7 @@ public class Wordpress extends PluginForDecrypt {
                     if (password.size() != 0) {
                         for (int ii = 0; ii < password.size(); ii++) {
                             /* logger.info("PW: " + password.get(ii)); */
-                            default_password.add(JDUtilities.htmlDecode(password.get(ii)));
+                            link_passwds.add(JDUtilities.htmlDecode(password.get(ii)));
                         }
                         break;
                     }
@@ -126,7 +127,9 @@ public class Wordpress extends PluginForDecrypt {
                         if (!new Regex(links.get(i), patternSupported).matches()) {
                             Vector<DownloadLink> LinkList = new DistributeData(links.get(i)).findLinks();
                             for (int ii = 0; ii < LinkList.size(); ii++) {
-                                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL())));
+                                DownloadLink link=this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
+                                link.setSourcePluginPasswords(link_passwds);
+                                decryptedLinks.add(link);
                             }
                         }
 //                        /*

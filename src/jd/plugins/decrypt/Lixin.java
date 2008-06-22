@@ -22,9 +22,7 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.Form;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
@@ -39,12 +37,9 @@ public class Lixin extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
 
-    private static String COOKIE = null;
-    // lix.in/cc1d28
-    static private final Pattern patternSupported = Pattern.compile("http://.{0,5}lix\\.in/[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternCaptcha = Pattern.compile("<img\\s+src=\"(.*?captcha.*?)\"");
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?lix\\.in/[-]{0,1}[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternCaptcha = Pattern.compile("<img src=\"(.*?captcha.*?)\"");
     static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
-    static private final Pattern patternCaptchaWrong = Pattern.compile("<title>Lix.in - Linkprotection</title>");
 
     public Lixin() {
         super();
@@ -84,94 +79,67 @@ public class Lixin extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                int tries = 0;
-
-                while (tries < 8) {
-                    URL url = new URL(parameter);
-                    progress.setRange(1);
-
-                    RequestInfo reqInfo;
-                    if (COOKIE != null) {
-                        reqInfo = HTTP.getRequest(url, COOKIE, null, false);
-                    } else {
-                        reqInfo = HTTP.getRequest(url);
-                    }
-                    Form[] forms = reqInfo.getForms();
-                    RequestInfo reqInfoForm;
-                    Matcher matcher;
-                    if (forms.length == 0) {
-                        String param="submit=continue&tiny=" + SimpleMatches.getSimpleMatch(reqInfo, "name='tiny' value='°'>", 0);
-                        reqInfoForm = HTTP.postRequest(url, COOKIE, null, null, param, false);
-
-                    } else {
-                        Form form = forms[0];
-
-                        form.method = Form.METHOD_POST;
-
-                        // check if this link is captcha protected
-                        // funny thing is, even the same link can have a captcha
-                        // if
-                        // you open
-                        // it the first time, and the second time there is no
-                        // captcha, therefore
-                        // we have to check
-                        matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
-
-                        if (matcher.find()) {
-                            logger.info("has captcha");
-                            String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-
-                            File captchaFile = this.getLocalCaptchaFile(this);
-                            if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                                logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                                step.setParameter(null);
-                                step.setStatus(PluginStep.STATUS_ERROR);
-                                return step;
-                            }
-                            String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                            if (captchaCode == null) return null;
-                            captchaCode = captchaCode.toUpperCase();
-                            form.put("capt", captchaCode);
-                        } else {
-                            logger.info("no captcha");
+                URL url = new URL(cryptedLink);
+                RequestInfo reqInfo = null;
+                boolean lix_continue = false;
+                Matcher matcher;
+                Form form;
+                /* zuerst mal den evtl captcha abarbeiten */
+                reqInfo = HTTP.getRequest(url);
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
+                    if (matcher.find()) {
+                        form = reqInfo.getForms()[0];
+                        String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+                        File captchaFile = this.getLocalCaptchaFile(this);
+                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                            /* Fehler beim Captcha */
+                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
                         }
-                        COOKIE = reqInfo.getCookie();
-
-                        reqInfoForm = form.getRequestInfo();
-                    }
-                    // Link herausfiltern
-                    matcher = patternIframe.matcher(reqInfoForm.getHtmlCode());
-                    if (!matcher.find()) {
-
-                        step.setStatus(PluginStep.STATUS_ERROR);
-
-                        matcher = patternCaptchaWrong.matcher(reqInfoForm.getHtmlCode());
-
-                        if (matcher.find()) {
-                            // http://lix.in/12029ce2
-                            logger.info("entered captcha code seems to be wrong...retry?");
-                            tries++;
-                            continue;
-                        } else {
-                            logger.severe("unable to detect Link in iframe (see next INFO log line) - adapt patternIframe");
-                            logger.info(reqInfoForm.getHtmlCode());
-                            break;
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        if (captchaCode == null) {
+                            /* abbruch geklickt */
+                            step.setParameter(decryptedLinks);
+                            return null;
                         }
-
+                        captchaCode = captchaCode.toUpperCase();
+                        form.put("capt", captchaCode);
+                        reqInfo = form.getRequestInfo();
+                    } else {
+                        lix_continue = true;
+                        break;
                     }
-
-                    String link = matcher.group(1);
-                    decryptedLinks.add(this.createDownloadlink((link)));
-                    progress.increase(1);
-
-                    // Decrypten abschliessen
-                    step.setParameter(decryptedLinks);
-                    break;
                 }
-                logger.severe("decrypterror");
+                if (lix_continue == true) {
+                    /* EinzelLink filtern */
+                    matcher = patternIframe.matcher(reqInfo.getHtmlCode());
+                    if (matcher.find()) {
+                        /* EinzelLink gefunden */
+                        String link = matcher.group(1);
+                        decryptedLinks.add(this.createDownloadlink((link)));
+                    } else {
+                        /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
+                        Form[] forms = reqInfo.getForms();
+                        for (int i = 0; i < forms.length; i++) {
+                            RequestInfo reqInfo2 = forms[i].getRequestInfo();
+                            matcher = patternIframe.matcher(reqInfo2.getHtmlCode());
+                            if (matcher.find()) {
+                                /* EinzelLink gefunden */
+                                String link = matcher.group(1);
+                                decryptedLinks.add(this.createDownloadlink((link)));
+                            }
+                        }
+                    }
+
+                }
+                step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
                 e.printStackTrace();
