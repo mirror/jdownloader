@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-//TODO: offline check und passwort abfrage
+//TODO: passwort abfrage
 package jd.plugins.host;
 
 import java.io.File;
@@ -86,11 +86,18 @@ public class FileBaseTo extends PluginForHost {
         try {
             String url = downloadLink.getDownloadURL();
             if (url.endsWith(".avi")) url = url + "&dl=1";
+
+            if (!getFileInformation(downloadLink)) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                step.setStatus(PluginStep.STATUS_ERROR);
+                return step;
+            }
+
             requestInfo = HTTP.getRequest(new URL(url));
             String name = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>");
             downloadLink.setName(name);
-            
-            /*Postdaten zusammenbaun*/
+
+            /* Postdaten zusammenbaun */
             String linkurl = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"");
             String submit_wait_value = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "wait.value = \"Download ", "\";");
             HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
@@ -99,18 +106,13 @@ public class FileBaseTo extends PluginForHost {
             postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
             postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
             postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
-            
+
             requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", url, postdata, false);
             HTTPConnection urlConnection = requestInfo.getConnection();
-            if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
-            }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             final long length = downloadLink.getDownloadMax();
 
-            dl = new RAFDownload(this, downloadLink, urlConnection);            
+            dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
 
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
@@ -138,6 +140,10 @@ public class FileBaseTo extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             if (url.endsWith(".avi")) url = url + "&dl=1";
             requestInfo = HTTP.getRequest(new URL(url));
+            if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
+                downloadLink.setAvailable(false);
+                return false;
+            }
             downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>"));
             downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim()) * 1024 * 1024));
 
