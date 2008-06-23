@@ -495,7 +495,7 @@ public class Netloadin extends PluginForHost {
             if (page != null) 
             	break;
         	try {
-				Thread.sleep(20);
+				Thread.sleep(150);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
