@@ -40,6 +40,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     static private final String host             = "save.raidrush.ws";
 
     private String              version          = "1.1.0";
+    //http://raidrush.org/ext/?fid=200634
     private Pattern             patternSupported = getSupportPattern("http://[*]save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+");
     private Pattern             patternCount     = Pattern.compile("\',\'FREE\',\'");
 

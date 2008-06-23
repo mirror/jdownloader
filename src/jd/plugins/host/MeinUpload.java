@@ -97,7 +97,11 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            return 20;
+        } else {
+            return 2;
+        }
     }
 
     @Override
@@ -113,18 +117,23 @@ public class MeinUpload extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
 
         try {
-
-            PostRequest r = new PostRequest(downloadLink.getDownloadURL());
-
-            r.setPostVariable("submit", "Kostenlos");
-            r.setPostVariable("sent", "1");
-            String page = r.load();
-            // http://meinupload.com/dl/3407292519/Bios.part03.rar
-            // if(!Regex.matches(page, PATTERN_FIND))
-
-            Form[] forms = Form.getForms(r.getRequestInfo());
-
-            if (forms.length == 1 && forms[0].vars.containsKey("download")) return true;
+            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if(id==null)return false;
+           // http://meinupload.com/infos.api?get_id=3794082988
+        
+            String page= new GetRequest("http://meinupload.com/infos.api?get_id="+id).load();
+            
+           String status=new Regex(page,"<status>([\\d]*?)</status>").getFirstMatch();
+           String filesize=new Regex(page,"<filesize>([\\d]*?)</filesize>").getFirstMatch();
+           String name=new Regex(page,"<name>(.*?)</name>").getFirstMatch();
+           if(status==null||!status.equals("1"))return false;
+           
+            if(filesize==null||name==null)return false;
+            
+            downloadLink.setDownloadMax(Integer.parseInt(filesize));
+            downloadLink.setName(name);
+            return true;
+         
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
