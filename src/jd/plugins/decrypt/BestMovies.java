@@ -18,18 +18,12 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.http.Browser;
-import jd.http.PostRequest;
-import jd.parser.Form;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -40,13 +34,14 @@ public class BestMovies extends PluginForDecrypt {
 
     static private final String HOST = "best-movies.us";
 
-    private String VERSION = "0.0.1";
+    private String VERSION = "1.0.0";
 
     private String CODER = "jD-Team";
     static private final Pattern patternSupported = getSupportPattern("http://crypt.best-movies.us/go.php\\?id\\=\\d{1,}");
     static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
     static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
-    
+    static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
+
     public BestMovies() {
 
         super();
@@ -92,27 +87,32 @@ public class BestMovies extends PluginForDecrypt {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(cryptedLink);
-                RequestInfo reqInfo = null;                
+                RequestInfo reqInfo = null;
                 Matcher matcher;
-                Form form;
+                boolean bestmovies_continue = false;                
                 reqInfo = HTTP.getRequest(url);
-                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {                   
-                    
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+
                     matcher = patternCaptcha_Wrong.matcher(reqInfo.getHtmlCode());
-                    if (matcher.find()){
-                        /*Falscher Captcha, Seite neu laden*/
+                    if (matcher.find()) {
+                        /* Falscher Captcha, Seite neu laden */
                         reqInfo = HTTP.getRequest(url);
                     }
-                    
-                    matcher = patternCaptcha_Needed.matcher(reqInfo.getHtmlCode());                    
+                    /* Alle Requests müssen mit Cookie und Referer stattfinden */
+                    String cookie = reqInfo.getCookie();
+                    cookie = cookie.substring(0, cookie.indexOf(";") + 1);
+
+                    matcher = patternCaptcha_Needed.matcher(reqInfo.getHtmlCode());
                     if (matcher.find()) {
-                        /*Captcha vorhanden*/
-                        form = reqInfo.getForms()[0];
-                        String captchaAddress = "http://crypt.best-movies.us/captcha.php";
+                        /* Captcha vorhanden */                        
                         File captchaFile = this.getLocalCaptchaFile(this);
-                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        URL captcha_url = new URL("http://crypt.best-movies.us/captcha.php");
+                        HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
+                        captcha_con.setRequestProperty("Referer", cryptedLink);
+                        captcha_con.setRequestProperty("Cookie", cookie);
+                        if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
-                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                            logger.severe("Captcha Download fehlgeschlagen!");
                             step.setParameter(null);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
@@ -123,12 +123,20 @@ public class BestMovies extends PluginForDecrypt {
                             step.setParameter(decryptedLinks);
                             return null;
                         }
-                        form.put("sicherheitscode", captchaCode);                        
-                        form.put("submit","Submit+Query");
-                        reqInfo=form.getRequestInfo();
+                        reqInfo = HTTP.postRequest(new URL(cryptedLink), cookie, cryptedLink, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
+
                     } else {
-                        /*Kein Captcha*/
+                        /* Kein Captcha */
+                        bestmovies_continue = true;
                         break;
+                    }
+                }
+                if (bestmovies_continue == true) {
+                    matcher = patternIframe.matcher(reqInfo.getHtmlCode());
+                    if (matcher.find()) {
+                        /* EinzelLink gefunden */
+                        String link = matcher.group(1);                       
+                        decryptedLinks.add(this.createDownloadlink((link)));
                     }
                 }
 
@@ -138,7 +146,7 @@ public class BestMovies extends PluginForDecrypt {
             }
 
         }
-
+        step.setParameter(decryptedLinks);
         return null;
     }
 
