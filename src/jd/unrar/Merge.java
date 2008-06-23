@@ -55,6 +55,8 @@ public class Merge {
 
             }
         }
+        if(FileSignatures.fileSignatureEquals(new Integer[][]{FileSignatures.SIGNATURE_RAR, FileSignatures.SIGNATURE_7Z}, FileSignatures.getFileSignature(mergeFile)))
+        	return null;
         final ProgressController progress = new ProgressController("Default HJMerge", 100);
         try {
 
