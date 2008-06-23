@@ -14,15 +14,15 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+//TODO: offline check und passwort abfrage
 package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -31,14 +31,15 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDUtilities;
 
 public class FileBaseTo extends PluginForHost {
 
-    private static final String  HOST             = "filebase.to";
+    private static final String HOST = "filebase.to";
 
-    private static final String  VERSION          = "1.0.0";
+    private static final String VERSION = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[w]filebase.to/files/[+]/[+]");
+    static private final Pattern patternSupported = getSupportPattern("http://[w]filebase.to/files/\\d{1,}/[+]");
 
     //
     @Override
@@ -82,20 +83,24 @@ public class FileBaseTo extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
-//        if (aborted) {
-//            logger.warning("Plugin aborted");
-//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-//            step.setStatus(PluginStep.STATUS_TODO);
-//            return step;
-//        }
         try {
-            String url = downloadLink.getDownloadURL();                    
+            String url = downloadLink.getDownloadURL();
+            if (url.endsWith(".avi")) url = url + "&dl=1";
             requestInfo = HTTP.getRequest(new URL(url));
             String name = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>");
             downloadLink.setName(name);
             
-            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"")), "", url, HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "</form>") + "&wait=Download+" + name, false);
+            /*Postdaten zusammenbaun*/
+            String linkurl = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"");
+            String submit_wait_value = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "wait.value = \"Download ", "\";");
+            HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
+            String postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
+            postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
+            postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
+            postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
+            postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
             
+            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", url, postdata, false);
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
@@ -104,11 +109,10 @@ public class FileBaseTo extends PluginForHost {
             }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             final long length = downloadLink.getDownloadMax();
-            
 
-            dl = new RAFDownload(this, downloadLink, urlConnection);
+            dl = new RAFDownload(this, downloadLink, urlConnection);            
             dl.setFilesize(length);
-            
+
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -117,11 +121,9 @@ public class FileBaseTo extends PluginForHost {
             }
             return step;
 
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
@@ -134,13 +136,13 @@ public class FileBaseTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
+            if (url.endsWith(".avi")) url = url + "&dl=1";
             requestInfo = HTTP.getRequest(new URL(url));
             downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>"));
-            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim())*1024*1024));
-            
+            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim()) * 1024 * 1024));
+
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -152,10 +154,12 @@ public class FileBaseTo extends PluginForHost {
     }
 
     @Override
-    public void reset() {}
+    public void reset() {
+    }
 
     @Override
-    public void resetPluginGlobals() {}
+    public void resetPluginGlobals() {
+    }
 
     @Override
     public String getAGBLink() {
