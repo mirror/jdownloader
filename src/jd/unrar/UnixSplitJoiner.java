@@ -42,7 +42,7 @@ public class UnixSplitJoiner extends JAxeJoiner
 		File fToJoin, fTemp = null;
 		InputStream is = null;
 		BufferedOutputStream bos;
-		int i = 1, nCurr, nLength;
+		int i = 1, nLength;
 		byte[] ba = new byte[BUFFER_SIZE];
 
 		bStopped= false;
