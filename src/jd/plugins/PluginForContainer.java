@@ -68,7 +68,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
      */
 
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
-       // logger.info("EXTRACT " + downloadLink);
+        // logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
         return downloadLinksURL.get(downloadLink.getContainerIndex());
@@ -150,7 +150,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
     public synchronized void initContainer(String filename) {
         if (filename == null) return;
-        if (CONTAINER.containsKey(filename) &&CONTAINER.get(filename)!=null&& CONTAINER.get(filename).size() > 0) {
+        if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
             containedLinks = CONTAINER.get(filename);
             if (containedLinks != null) {
@@ -162,7 +162,6 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
             downloadLinksURL = CONTAINERLINKS.get(filename);
 
-
             return;
 
         }
@@ -170,17 +169,17 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         if (containedLinks == null || containedLinks.size() == 0) {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
-            if(progress!=null)progress.finalize();
-            progress = new ProgressController(JDLocale.L("plugins.container.open","Open Container"), 10);
+            if (progress != null) progress.finalize();
+            progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
-          
+
             doDecryptStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
             progress.increase(1);
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.found","Prozess %s links"),""+containedLinks.size()));
+            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
             logger.info(filename + " Parse");
-            if (containedLinks != null&&downloadLinksURL!=null) {
+            if (containedLinks != null && downloadLinksURL != null) {
                 decryptLinkProtectorLinks();
-                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit","Finished. Found %s links"),""+containedLinks.size()));
+                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + containedLinks.size()));
                 Iterator<DownloadLink> it = containedLinks.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
@@ -201,9 +200,11 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         }
     }
-/**
- * geht die containedLinks liste durch und decrypted alle links die darin sind.
- */
+
+    /**
+     * geht die containedLinks liste durch und decrypted alle links die darin
+     * sind.
+     */
     private void decryptLinkProtectorLinks() {
         Vector<DownloadLink> tmpDlink = new Vector<DownloadLink>();
         ;
@@ -211,17 +212,19 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         int i = 0;
         int c = 0;
-//        Vector<DownloadLink> containedLinks = new Vector<DownloadLink>(this.containedLinks);
-//        Vector<String> downloadLinksURL = new Vector<String>(this.downloadLinksURL);
+        // Vector<DownloadLink> containedLinks = new
+        // Vector<DownloadLink>(this.containedLinks);
+        // Vector<String> downloadLinksURL = new
+        // Vector<String>(this.downloadLinksURL);
         progress.addToMax(downloadLinksURL.size());
-       // logger.info("PRE: "+downloadLinksURL);
+        // logger.info("PRE: "+downloadLinksURL);
         for (Iterator<String> it1 = downloadLinksURL.iterator(); it1.hasNext();) {
             progress.increase(1);
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt","Decrypt link %s"),""+i));
-            
+            progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt", "Decrypt link %s"), "" + i));
+
             DistributeData distributeData = new DistributeData(it1.next());
             Vector<DownloadLink> links = distributeData.findLinks();
-         
+
             DownloadLink srcLink = containedLinks.get(i);
             Iterator<DownloadLink> it = links.iterator();
             progress.addToMax(links.size());
@@ -231,32 +234,39 @@ public abstract class PluginForContainer extends PluginForDecrypt {
                 DownloadLink next = it.next();
                 tmpDlink.add(next);
                 tmpURL.add(next.getDownloadURL());
-             
+
                 next.setContainerFile(srcLink.getContainerFile());
                 next.setContainerIndex(c++);
-           
-                    next.setName(srcLink.getName());
-              
-                if(next.getDownloadMax()<10){
-                    next.setDownloadMax((int)srcLink.getDownloadMax());
+
+                next.setName(srcLink.getName());
+
+                if (next.getDownloadMax() < 10) {
+                    next.setDownloadMax((int) srcLink.getDownloadMax());
                 }
-                
+
                 next.getSourcePluginPasswords().addAll(srcLink.getSourcePluginPasswords());
-             
-                next.setSourcePluginComment(srcLink.getSourcePluginComment()+"->"+next.getSourcePluginComment());
-                
+                String comment = "";
+                if (srcLink.getSourcePluginComment() != null) comment += srcLink.getSourcePluginComment();
+                if (next.getSourcePluginComment() != null) {
+                    if (comment.length() == 0) {
+                        comment += "->" + next.getSourcePluginComment();
+                    } else {
+                        comment += next.getSourcePluginComment();
+                    }
+                }
+                next.setSourcePluginComment(comment);
+
                 next.setLoadedPluginForContainer(this);
                 next.setFilePackage(srcLink.getFilePackage());
                 next.setUrlDownload(null);
                 next.setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                
 
             }
             i++;
         }
-        containedLinks=tmpDlink;
-        downloadLinksURL=tmpURL;
-       // logger.info("downloadLinksURL: "+downloadLinksURL);
+        containedLinks = tmpDlink;
+        downloadLinksURL = tmpURL;
+        // logger.info("downloadLinksURL: "+downloadLinksURL);
     }
 
     /**

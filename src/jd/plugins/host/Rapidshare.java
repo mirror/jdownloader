@@ -64,12 +64,16 @@ public class Rapidshare extends PluginForHost {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
-//<center><table><tr><td><img src="http://rs235.rapidshare.com/access1216288.gif"></td>
-    
-//    
-//    '<form name="dlf" action="http://rs235gc2.rapidshare.com/files/123613963/1216288/webinterface8.jdu" method="post">' +        
-//    '<center><table><tr><td><img src="http://rs235.rapidshare.com/access1216288.gif"></td>' +
-    
+    // <center><table><tr><td><img
+    // src="http://rs235.rapidshare.com/access1216288.gif"></td>
+
+    //    
+    // '<form name="dlf"
+    // action="http://rs235gc2.rapidshare.com/files/123613963/1216288/webinterface8.jdu"
+    // method="post">' +
+    // '<center><table><tr><td><img
+    // src="http://rs235.rapidshare.com/access1216288.gif"></td>' +
+
     private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL = Pattern.compile("<center><table><tr><td><img src\\=\"(.*?)\"></td>");
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
@@ -78,7 +82,9 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(bereits eine Datei runter)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_MATCHER_HAPPY_HOUR = Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
-    //<form name="dl" action="http://rs363cg.rapidshare.com/files/119944363/814136/NG_-_001_-_TaN.part2.rar" method="post">
+    // <form name="dl"
+    // action="http://rs363cg.rapidshare.com/files/119944363/814136/NG_-_001_-_TaN.part2.rar"
+    // method="post">
     private static final Pattern PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
     private static final Pattern PATTERN_FIND_MIRROR_URLS = Pattern.compile("<input.*?type=\"radio\" name=\"mirror\" onclick=\"document.dlf?.action=\\\\'(.*)\\\\';\" /> (.*?)<br />'");
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
@@ -94,7 +100,8 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} --><p>(.*?)<\\/p>", Pattern.DOTALL);
-   // <!-- E#7 --><p>Der Server 162.rapidshare.com ist momentan nicht verf&uuml;gbar. Wir arbeiten an der Fehlerbehebung.</p>
+    // <!-- E#7 --><p>Der Server 162.rapidshare.com ist momentan nicht
+    // verf&uuml;gbar. Wir arbeiten an der Fehlerbehebung.</p>
 
     /**
      * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
@@ -224,22 +231,22 @@ public class Rapidshare extends PluginForHost {
         super();
 
         steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-//      serverMap.put("Cogent", "cg");
-        //serverMap.put("Cogent #2", "cg2");        
-        serverMap.put("Deutsche Telekom", "dt");        
+        // serverMap.put("Cogent", "cg");
+        // serverMap.put("Cogent #2", "cg2");
+        serverMap.put("Deutsche Telekom", "dt");
         serverMap.put("GlobalCrossing #1", "gc");
-        serverMap.put("GlobalCrossing #2", "gc2");          
+        serverMap.put("GlobalCrossing #2", "gc2");
         serverMap.put("Level(3) #1", "l3");
         serverMap.put("Level(3) #2", "l32");
         serverMap.put("Level(3) #3", "l33");
-        serverMap.put("Level(3) #4", "l34");        
+        serverMap.put("Level(3) #4", "l34");
         serverMap.put("Tata Com. #1", "tg");
-        serverMap.put("Tata Com. #2", "tg2");        
+        serverMap.put("Tata Com. #2", "tg2");
         serverMap.put("TeliaSonera", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
-        
-        serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };        
+
+        serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         this.setConfigElements();
     }
@@ -678,14 +685,13 @@ public class Rapidshare extends PluginForHost {
             pReq.load();
             String error = null;
 
-           
             if ((error = findError(req + "")) != null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                 step.setParameter(error);
                 return step;
             }
-      
+
             // Wartezeit (Downloadlimit) wird gesucht
             String strWaitTime = new Regex(pReq, PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
             int waitTime;
@@ -766,9 +772,7 @@ public class Rapidshare extends PluginForHost {
 
                 captchaCode = getCaptchaCode(step, downloadLink, captchaFile, captchaAddress);
 
-                if( downloadLink.getStatus()==DownloadLink.STATUS_ERROR_BOT_DETECTED){
-                    return step;
-                }
+                if (downloadLink.getStatus() == DownloadLink.STATUS_ERROR_BOT_DETECTED) { return step; }
                 timer = System.currentTimeMillis() - timer;
 
                 // War Captchaerkennung Fehlerhaft?
@@ -872,7 +876,7 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                         downloadLink.setStatusText("Download error(>log)");
-step.setParameter(error);
+                        step.setParameter(error);
                         logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
                         new File(downloadLink.getFileOutput()).delete();
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -906,11 +910,10 @@ step.setParameter(error);
     private String findError(String string) {
         String error = null;
         error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getFirstMatch();
-        
-        if (error == null||error.length()==0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
-        if (error == null||error.length()==0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
-        
-        
+
+        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
+        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
+
         error = JDUtilities.htmlDecode(error);
         String[] er = SimpleMatches.getLines(error);
 
@@ -1062,7 +1065,7 @@ step.setParameter(error);
         } catch (IOException e1) {
             return null;
         }
-        if(r.getResponseHeader("Location")!=null){
+        if (r.getResponseHeader("Location") != null) {
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
             step.setStatus(PluginStep.STATUS_ERROR);
             return null;
@@ -1159,7 +1162,7 @@ step.setParameter(error);
         // 5 Minuten Warten und dann einenj Neuversuch starten
 
         int happyWaittime = 5 * 60 * 1000;
-        ProgressController p = new ProgressController(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext", "Warte auf HappyHour. Nächster Versuch in %s min"),JDUtilities.formatSeconds(happyWaittime / 1000)), happyWaittime);
+        ProgressController p = new ProgressController(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext", "Warte auf HappyHour. Nächster Versuch in %s min"), JDUtilities.formatSeconds(happyWaittime / 1000)), happyWaittime);
         p.setStatus(happyWaittime);
         downloadLink.setStatusText(JDLocale.L("plugins.rapidshare.waitForHappyHour", "Warte auf HappyHour"));
         downloadLink.requestGuiUpdate();
@@ -1171,7 +1174,7 @@ step.setParameter(error);
             Thread.sleep(1000);
             happyWaittime -= 1000;
             p.setStatus(happyWaittime);
-            p.setStatusText(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext", "Warte auf HappyHour. Nächster Versuch in %s min"),JDUtilities.formatSeconds(happyWaittime / 1000)));
+            p.setStatusText(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext", "Warte auf HappyHour. Nächster Versuch in %s min"), JDUtilities.formatSeconds(happyWaittime / 1000)));
         }
 
         step.setStatus(PluginStep.STATUS_ERROR);
@@ -1235,10 +1238,10 @@ step.setParameter(error);
 
                     logger.warning(error);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                  
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                        downloadLink.setStatusText(error);
-                  step.setParameter(error);
+
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatusText(error);
+                    step.setParameter(error);
 
                     return step;
                 } else {
@@ -1271,7 +1274,7 @@ step.setParameter(error);
 
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     downloadLink.setStatusText("Download error(>log)");
-step.setParameter("Download error(>log)");
+                    step.setParameter("Download error(>log)");
                     logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
 
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -1828,47 +1831,67 @@ step.setParameter("Download error(>log)");
      * kann das über diese Funktion gemacht werden. Beir s.com istd as derzeitd
      * eaktiviert, weild er Linkchecker nicht mehr über ssl erreichbar ist.
      */
-    public boolean[] checkLinks(String[] urls) {
-        return null;
-        // if (urls == null) return null;
-        // boolean[] ret = new boolean[urls.length];
-        // String post = "";
-        // for (int i = 0; i < urls.length; i++) {
-        //
-        // if (!this.canHandle(urls[i])) return null;
-        //
-        // if (urls[i].contains("://ssl.") ||
-        // !urls[i].startsWith("http://rapidshare.com")) {
-        // urls[i] = "http://rapidshare.com" +
-        // urls[i].substring(urls[i].indexOf("rapidshare.com") + 14);
-        //
-        // }
-        // post += urls[i].trim() + "%0a";
-        // }
-        // try {
-        // RequestInfo ri = HTTP.getRequest(new
-        // URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" +
-        // post));
-        // Regex reg = ri.getRegexp("<font color=\"(red|green)\">Datei
-        // [\\d]{3,9} \\((.*?)\\) (.*?)</font><br>");
-        // String[][] res = reg.getMatches();
-        //
-        // if (res == null) return null;
-        // if (res.length != urls.length) return null;
-        // for (int i = 0; i < res.length; i++) {
-        // ret[i] = res[i][0].equals("green");
-        // }
-        //
-        // return ret;
-        // } catch (MalformedURLException e) {
-        //
-        // e.printStackTrace();
-        // return null;
-        // } catch (IOException e) {
-        //
-        // e.printStackTrace();
-        // return null;
-        // }
+    public boolean[] checkLinks(DownloadLink[] urls) {
+        try {
+            if (urls == null) return null;
+            boolean[] ret = new boolean[urls.length];
+            int c = 0;
+            while (true) {
+                String post = "";
+                int i=0;
+                for (i = c; i < urls.length; i++) {
+
+                    if (!this.canHandle(urls[i].getDownloadURL())) return null;
+
+                    if (urls[i].getDownloadURL().contains("://ssl.") || !urls[i].getDownloadURL().startsWith("http://rapidshare.com")) {
+                        urls[i].setUrlDownload("http://rapidshare.com" + urls[i].getDownloadURL().substring(urls[i].getDownloadURL().indexOf("rapidshare.com") + 14));
+
+                    }
+                    if((post+urls[i].getDownloadURL().trim() + "%0a").length()>10000)break;
+                    post += urls[i].getDownloadURL().trim() + "%0a";
+                    
+                }
+
+                PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
+                r.setPostVariable("urls", post);
+                r.setPostVariable("toolmode", "1");
+                String page = r.load();
+
+                String[] lines = SimpleMatches.getLines(page);
+                if (lines.length != i-c) return null;
+               
+                for (String line : lines) {
+
+                    String[] erg = line.split(",");
+                    /*
+                     * 1: Normal online -1: date nicht gefunden 3: Drect
+                     * download
+                     */
+                    ret[c] = true;
+                    if (erg.length < 6 || (!erg[2].equals("1") && !erg[2].equals("3"))) {
+                        ret[c] = false;
+                    } else {
+                        urls[c].setDownloadMax(Integer.parseInt(erg[4]));
+                        urls[c].setName(erg[5].trim());
+                    }
+                    c++;
+
+                }
+                if(c>=urls.length){
+                    return ret;
+                }
+                Thread.sleep(400);
+            }
+          
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+            return null;
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return null;
+        }
 
     }
 

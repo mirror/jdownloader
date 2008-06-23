@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.PostRequest;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -629,6 +630,7 @@ public class Uploadedto extends PluginForHost {
                     this.setStatusText("File Not Found");
                     return false;
                 }
+
 
                 String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
                 String ext = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);

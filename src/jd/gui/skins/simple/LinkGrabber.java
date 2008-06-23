@@ -27,7 +27,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -62,7 +61,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -84,6 +82,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.ContextMenu;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.SimpleMatches;
@@ -413,19 +412,19 @@ private boolean isDupe(DownloadLink link){
                     } else {
                         if (!link.isAvailabilityChecked()) {
                             Iterator<DownloadLink> it = waitingLinkList.iterator();
-                            Vector<String> links = new Vector<String>();
+                            Vector<DownloadLink> links = new Vector<DownloadLink>();
                             Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
-                            links.add(link.getDownloadURL());
+                            links.add(link);
                             dlLinks.add(link);
                             while (it.hasNext()) {
                                 next = it.next();
                                 if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
                                     dlLinks.add(next);
-                                    links.add(next.getDownloadURL());
+                                    links.add(next);
                                 }
                             }
                             if (links.size() > 1) {
-                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
+                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
                                 if (ret != null) {
                                     for (int i = 0; i < links.size(); i++) {
                                         dlLinks.get(i).setAvailable(ret[i]);
@@ -1098,7 +1097,7 @@ private boolean isDupe(DownloadLink link){
 
         private JTextField txtComment;
 
-        private BrowseFile brwSaveto;
+        private ComboBrowseFile brwSaveto;
 
         private JTable table;
 
@@ -1319,7 +1318,7 @@ private boolean isDupe(DownloadLink link){
             this.txtPassword = new JTextField();
             this.txtComment = new JTextField();
 
-            this.brwSaveto = new BrowseFile();
+            this.brwSaveto = new ComboBrowseFile("DownloadSaveTo");
             brwSaveto.setEditable(true);
             brwSaveto.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveto.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());

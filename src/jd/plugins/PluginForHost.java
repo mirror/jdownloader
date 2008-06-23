@@ -116,7 +116,7 @@ public abstract class PluginForHost extends Plugin {
         return true;
     }
 
-    public boolean[] checkLinks(String[] urls) {
+    public boolean[] checkLinks(DownloadLink[] urls) {
         return null;
 
     }

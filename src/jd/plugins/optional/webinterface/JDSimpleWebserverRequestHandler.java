@@ -452,19 +452,19 @@ public class JDSimpleWebserverRequestHandler {
                         } else {
                             if (!link.isAvailabilityChecked()) {
                                 Iterator<DownloadLink> it = waitingLinkList.iterator();
-                                Vector<String> links = new Vector<String>();
+                                Vector<DownloadLink> links = new Vector<DownloadLink>();
                                 Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
-                                links.add(link.getDownloadURL());
+                                links.add(link);
                                 dlLinks.add(link);
                                 while (it.hasNext()) {
                                     next = it.next();
                                     if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
                                         dlLinks.add(next);
-                                        links.add(next.getDownloadURL());
+                                        links.add(next);
                                     }
                                 }
                                 if (links.size() > 1) {
-                                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new String[] {}));
+                                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
                                     if (ret != null) {
                                         for (int ii = 0; ii < links.size(); ii++) {
                                             dlLinks.get(ii).setAvailable(ret[ii]);
