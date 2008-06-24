@@ -69,7 +69,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink("http://gwarez.cc" + downloadid));
                 } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
                     /* Link auf die Download Info Seite */
-                    requestInfo = HTTP.getRequest(url, null, null, false);
+                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                     String downloadid = new Regex(url.getFile(), "\\/game_([\\d].*)_download").getFirstMatch();
                     if (getProperties().getBooleanProperty(USE_RSDF, false) == true) {
                         /* RSDF Suchen */
@@ -100,7 +100,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
                     /* Link zu den Parts des Mirrors (Verschlüsselt) */
-                    requestInfo = HTTP.getRequest(url, null, null, false);
+                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                     String downloadid = new Regex(url.getFile(), "\\/download_([\\d].*)_([\\d].*)_parts").getFirstMatch();
                     /* Parts suchen */
                     ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
@@ -110,7 +110,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     }
                     /* Passwort suchen */
                     url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                    requestInfo = HTTP.getRequest(url, null, null, false);
+                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                     ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"150\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() == 1) {
                         /* Passwort gefunden */
@@ -123,7 +123,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     /* Passwort suchen */
                     Vector<String> downloadlink_passwds=new Vector<String>();
                     url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                    requestInfo = HTTP.getRequest(url, null, null, false);
+                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                     ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"150\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
                     if (password.size() == 1) {
                         /* Passwort gefunden */
