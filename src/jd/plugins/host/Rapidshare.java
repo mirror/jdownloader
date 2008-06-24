@@ -32,6 +32,9 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 import jd.captcha.CES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -189,6 +192,8 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("Dieses Konto ist am .*? abgelaufen");
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("haben Sie <b>50 GB</b> heruntergeladen");
+
+    private static final Pattern PATTERN_FIND_CAPTCHA_ID = Pattern.compile("<table><tr><td><img id\\=\"(.*?)\" src\\=\"\">");
 
     private static boolean FORCE_FREE_USER = true;
 
@@ -736,8 +741,28 @@ public class Rapidshare extends PluginForHost {
             if (ticketTime != null && ticketTime.equals("0")) ticketTime = null;
 
             String ticketCode = pReq.getHtmlCode();
+    
+            String tt=new Regex(ticketCode,"var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getFirstMatch();
+            
+            String fun="function f(){ return "+tt+"} f()";
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
 
+            // Collect the arguments into a single string.
+          
+          
+
+            // Now evaluate the string we've colected.
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+
+            // Convert the result to a string and print it.
+            ticketCode=Context.toString(result);
+            Context.exit();
+            
             // captchaadresse wird gesucht
+//            String cid=new Regex(ticketCode,PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch();
+//            Pattern p=Pattern.compile("getElementById\\(\""+cid+"\"\\)\\.src\\=\"(.*?)\"");
+//            
             String captchaAddress = new Regex(ticketCode, PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch();
 
             // Happy Hour check
@@ -766,6 +791,30 @@ public class Rapidshare extends PluginForHost {
                     return step;
                 }
 
+                
+                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                // step.setParameter(1000l);
+                // step.setStatus(PluginStep.STATUS_ERROR);
+
+                // if(true)return step;
+
+                long pendingTime = 0;
+                if (ticketTime != null) {
+                    pendingTime = Long.parseLong(ticketTime);
+
+                    if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+                        logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
+                        pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+
+                    }
+                    pendingTime *= 1000;
+                   // pendingTime -= timer;
+
+                    // downloadLink.setEndOfWaittime(System.currentTimeMillis()
+                    // + pendingTime);
+                }
+
+                waitTicketTime(step, downloadLink, pendingTime);
                 captchaFile = this.getLocalCaptchaFile(this);
 
                 long timer = System.currentTimeMillis();
@@ -790,29 +839,7 @@ public class Rapidshare extends PluginForHost {
 
                 logger.info("captcha detection duration: " + JDUtilities.formatSeconds((int) (timer / 1000)));
 
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                // step.setParameter(1000l);
-                // step.setStatus(PluginStep.STATUS_ERROR);
-
-                // if(true)return step;
-
-                long pendingTime = 0;
-                if (ticketTime != null) {
-                    pendingTime = Long.parseLong(ticketTime);
-
-                    if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
-                        logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
-                        pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
-
-                    }
-                    pendingTime *= 1000;
-                    pendingTime -= timer;
-
-                    // downloadLink.setEndOfWaittime(System.currentTimeMillis()
-                    // + pendingTime);
-                }
-
-                waitTicketTime(step, downloadLink, pendingTime);
+                
             }
             // get Downloadserverurl
             String postTarget = getDownloadTarget(step, downloadLink, ticketCode);
