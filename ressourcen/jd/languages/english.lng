@@ -52,7 +52,6 @@ addons.schedule.menu.edit = Edit
 addons.schedule.menu.remove = Remove
 addons.schedule.menu.settings = Settings
 addons.schedule.name = Schedule
-captcha.ces.infostring = C.E.S
 config.container.defaultname = General
 container.message.comment = Comment
 container.message.created = Created with
@@ -536,7 +535,7 @@ gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Adds one or more download links
 gui.menu.action.add.mnem = H
 gui.menu.action.add.name = Add links
-
+captcha.ces.infostring = C.E.S |points: %s |users total: %s |position in queue: %s |est. waittime: %s"
 gui.menu.action.install.desc= Install Addon(*.jdu)
 gui.menu.action.install.name=Install Addon
 gui.menu.action.install.mnem -

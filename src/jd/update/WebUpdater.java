@@ -104,7 +104,9 @@ public class WebUpdater implements Serializable {
             }
 
         }
-        
+//        
+//        this.listPath = "http://jdbetaupdate.ath.cx/extern.php";
+//        this.onlinePath = listPath + "/bin";
 
     }
 
@@ -321,7 +323,7 @@ public class WebUpdater implements Serializable {
             }
          
             if (progresslist != null) progresslist.setValue(80);
-            String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;(.*?)";
+            String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
 
             if (source == null) {
                 log(listPath + " nicht verfüpgbar");
