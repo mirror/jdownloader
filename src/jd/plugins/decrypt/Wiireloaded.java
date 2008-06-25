@@ -44,9 +44,9 @@ public class Wiireloaded extends PluginForDecrypt {
     // http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
     static private final Pattern patternSupported = getSupportPattern("http://wii-reloaded.ath.cx/protect/get\\.php\\?i=[+]");
 
-    private static final String PARAM_CALCCODE = "PARAM_CALCCODE";
+    private static final String PARAM_CALCCODE = "PARAM_CALCCODES";
 
-    private static int CALCCODE = 0;
+    private static String CALCCODE = "V";
 
     private static String COOKIE = null;
 
@@ -54,7 +54,7 @@ public class Wiireloaded extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        CALCCODE=getProperties().getIntegerProperty(PARAM_CALCCODE);
+        CALCCODE=getProperties().getStringProperty(PARAM_CALCCODE,"V");
         setConfigEntries();
             
         
@@ -62,7 +62,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     private void setConfigEntries() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PARAM_CALCCODE, JDLocale.L("gui.plugins.decrypt.wiireloaded.calcresult","Ergebnis der Rechenaufgabe"),-99999,99999));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PARAM_CALCCODE, JDLocale.L("gui.plugins.decrypt.wiireloaded.calcresult","Ergebnis der Rechenaufgabe")));
         cfg.setDefaultValue(5);
         
         
@@ -135,21 +135,11 @@ public class Wiireloaded extends PluginForDecrypt {
                     for (int i = 0; i < ids.size(); i++) {
                         String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids.get(i);
                         requestInfo = null;
-                        int tmp=CALCCODE;
-                        while (requestInfo == null || requestInfo.containsHTML("Bitte Ergebnis eingeben")) {
-                            requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + CALCCODE + "&senden=Download", false);
-                            CALCCODE++;
-                            if (CALCCODE > 200) {
-                                CALCCODE = 1;
-                                break;
-                            }
-                        }
-                        CALCCODE--;
+                     logger.info("scode=" + CALCCODE + "&senden=Download");
+                        requestInfo = HTTP.postRequest(new URL(u), COOKIE + "; " + con.getHeaderField("Set-Cookie"), u, null, "scode=" + CALCCODE + "&senden=Download", false);
+                      
                         
-                        if(tmp!=CALCCODE){
-                        getProperties().setProperty(PARAM_CALCCODE, CALCCODE);
-                        getProperties().save();
-                        }
+                       
                         
                         if (requestInfo.getLocation() != null) {
                             decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));

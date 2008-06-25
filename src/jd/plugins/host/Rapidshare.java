@@ -756,7 +756,8 @@ public class Rapidshare extends PluginForHost {
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
 
             // Convert the result to a string and print it.
-            ticketCode=Context.toString(result);
+            String code=Context.toString(result);
+          if(tt!=null)  ticketCode=code;
             Context.exit();
             
             // captchaadresse wird gesucht
