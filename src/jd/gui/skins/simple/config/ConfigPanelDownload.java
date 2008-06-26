@@ -83,12 +83,12 @@ public class ConfigPanelDownload extends ConfigPanel {
         container.addEntry(ce); 
        
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 120000);
-        ce.setDefaultValue(10000);
+        ce.setDefaultValue(60000);
         ce.setStep(500);
         ce.setExpertEntry(true);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 0, 120000);
-        ce.setDefaultValue(10000);
+        ce.setDefaultValue(60000);
         ce.setStep(500);
         ce.setExpertEntry(true);
         network.addEntry(ce);
