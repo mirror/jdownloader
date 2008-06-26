@@ -101,6 +101,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(Bitte versuchen Sie es in 2 Minuten)");
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p>(.*?)<", Pattern.DOTALL);
+    
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} --><p>(.*?)<\\/p>", Pattern.DOTALL);
     
@@ -192,9 +194,11 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("Dieses Konto ist am .*? abgelaufen");
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("haben Sie <b>50 GB</b> heruntergeladen");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("Sie haben heute");
 
     private static final Pattern PATTERN_FIND_CAPTCHA_ID = Pattern.compile("<table><tr><td><img id\\=\"(.*?)\" src\\=\"\">");
+
+    private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("anderen IP gerade genutzt");
 
     private static boolean FORCE_FREE_USER = true;
 
@@ -501,12 +505,15 @@ public class Rapidshare extends PluginForHost {
                         String validuntil = SimpleMatches.getSimpleMatch(ri, "<td>G&uuml;ltig bis:</td><td style=\"padding-right:20px;\"><b>°</b></td>", 0);
                         String files = SimpleMatches.getSimpleMatch(ri, " <td>Dateien:</td><td><b>°</b></td> ", 0);
                         String days5traffic = SimpleMatches.getSimpleMatch(ri, "<td>5 Tage Traffic:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
+                        
+                        String days1traffic = SimpleMatches.getSimpleMatch(ri, "<td>Traffic heute:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
+                        
                         String rapidPoints = SimpleMatches.getSimpleMatch(ri, " <td>RapidPoints:</td><td style=\"padding-right:20px;\"><b>°</b>", 0);
 
                         String trafficshare = SimpleMatches.getSimpleMatch(ri, "<td>TrafficShare &uuml;brig:</td><td><b>°</b>", 0);
                         String usedHD = SimpleMatches.getSimpleMatch(ri, "<td>Belegter Speicher:</td><td align=right style=\"padding-right:20px;\"><b>°</b>", 0);
 
-                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), validuntil, rapidPoints, days5traffic, usedHD + "/" + trafficshare, files);
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), validuntil, rapidPoints, days1traffic, usedHD + "/" + trafficshare, files);
                     }
 
                     JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
@@ -942,7 +949,9 @@ public class Rapidshare extends PluginForHost {
 
         if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
         if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
-
+        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getFirstMatch();
+        
+        
         error = JDUtilities.htmlDecode(error);
         String[] er = SimpleMatches.getLines(error);
 
@@ -1657,6 +1666,11 @@ public class Rapidshare extends PluginForHost {
                         step.setParameter(premium);
                         downloadLink.setStatusText(error);
                     } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
+                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
+                        step.setParameter(premium);
+                        downloadLink.setStatusText(error);
+                        
+                    } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_OVERLAP)) {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
                         step.setParameter(premium);
                         downloadLink.setStatusText(error);

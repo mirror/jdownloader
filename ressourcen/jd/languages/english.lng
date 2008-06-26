@@ -1025,3 +1025,4 @@ plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script crea
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugin.rapidshare.tickettime= Wait %s min. for ticket
 plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Downloadsession expired. Try again.
+plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = 10 GB limit reached.
