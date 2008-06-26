@@ -156,8 +156,7 @@ public class JDSimpleWebserverRequestHandler {
                 } else
                     requestParameter.put(key, value);
             }
-        }
-        logger.info(requestParameter.toString());
+        }        
         String url = path.replaceAll("\\.\\.", "");
 
         /* parsen der paramter */

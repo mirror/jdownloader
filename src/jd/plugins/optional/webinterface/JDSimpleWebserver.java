@@ -57,7 +57,7 @@ public class JDSimpleWebserver extends Thread {
                 }
                 ;
                 Socket Client_Socket = Server_Socket.accept();
-                logger.info("WebInterface: Client[" + getCurrentClientCounter() + "/" + max_clientCounter + "] connecting from " + Client_Socket.getInetAddress());
+                //logger.info("WebInterface: Client[" + getCurrentClientCounter() + "/" + max_clientCounter + "] connecting from " + Client_Socket.getInetAddress());
 
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
