@@ -103,9 +103,10 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_3 = Pattern.compile("<!-- E#[\\d]{1,2} --><p>(.*?)<\\/p>", Pattern.DOTALL);
+    
     // <!-- E#7 --><p>Der Server 162.rapidshare.com ist momentan nicht
     // verf&uuml;gbar. Wir arbeiten an der Fehlerbehebung.</p>
-
+    // <!-- E#9 -->Sie haben heute <b>10011 MB</b> heruntergeladen und damit das Limit &uuml;berschritten.</p>
     /**
      * s Das DownloadLimit wurde erreicht (?s)Downloadlimit.*Oder warte ([0-9]+)
      */
