@@ -13,17 +13,13 @@ public class Schedule extends PluginOptional implements ControlListener {
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    ScheduleControl b = new ScheduleControl();
     
-    public void initschedule(){
-        b.status.start();
-    }
+    ScheduleControl sControl = new ScheduleControl();
     
     @Override
     public boolean initAddon() {
       
                logger.info("Schedule OK");
-               this.initschedule();
                JDUtilities.getController().addControlListener(this);
                return true;
           
@@ -49,12 +45,12 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public String getPluginID() {
-        return "0.4";
+        return "0.5";
     }
 
     @Override
     public String getVersion() {
-        return "0.4";
+        return "0.5";
     }
 
     public String getPluginName() {
@@ -62,7 +58,9 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
     
     public void actionPerformed(ActionEvent e) {
-        this.b.setVisible(true);
+        this.sControl.status.start();
+        this.sControl.status.setInitialDelay(1000);
+        this.sControl.setVisible(true);
     }
 
     @Override
