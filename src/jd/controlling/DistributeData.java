@@ -17,8 +17,6 @@
 
 package jd.controlling;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Collections;
@@ -28,7 +26,6 @@ import java.util.logging.Logger;
 
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;

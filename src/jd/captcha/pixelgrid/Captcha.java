@@ -1164,7 +1164,7 @@ public class Captcha extends PixelGrid {
             logger.info("Get directLetterDetection");
             Vector<PixelObject> objectsret = new Vector<PixelObject>();
 
-            double iaww = owner.getJas().getDouble("intersectionAWidthWeight");
+//            double iaww = owner.getJas().getDouble("intersectionAWidthWeight");
             int bx = owner.getJas().getInteger("borderVarianceX");
             int by = owner.getJas().getInteger("borderVarianceY");
 

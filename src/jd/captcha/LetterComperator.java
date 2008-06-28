@@ -103,7 +103,6 @@ public class LetterComperator {
     private double intersectionDimensionWeight;
     private int overlayNoiseSize;
     private double reliability;
-    @SuppressWarnings("unused")
     private Logger logger = UTILITIES.getLogger();
     private int detectionType;
     private int bothElementsNum;

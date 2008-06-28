@@ -173,7 +173,7 @@ public class PackageManager extends Interaction implements Serializable {
     }
 
     public void onDownloadedPackage(DownloadLink downloadLink) {
-        File dir = JDUtilities.getResourceFile("packages");
+//        File dir = JDUtilities.getResourceFile("packages");
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
         String[] dat = downloadLink.getSourcePluginComment().split("_");

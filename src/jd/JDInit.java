@@ -18,11 +18,9 @@ package jd;
 
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.CookieHandler;
 import java.net.URL;

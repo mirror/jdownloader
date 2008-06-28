@@ -21,11 +21,9 @@ import javax.swing.JProgressBar;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import javax.swing.event.TableModelEvent;
 
 import jd.gui.skins.simple.SimpleGUI;
 
-import jd.utils.JDLocale;
 
 /**
  * <p>

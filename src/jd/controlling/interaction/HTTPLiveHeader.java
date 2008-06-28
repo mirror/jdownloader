@@ -500,7 +500,7 @@ public class HTTPLiveHeader extends Interaction {
                         if (params.length < 2) continue;
                         String url = params[1];
                         logger.info(lines[i] + " : " + url);
-                        String host = new URL(url).getHost();
+//                        String host = new URL(url).getHost();
                         String path = new URL(url).getFile();
 
                         // String[] login=new URL(url).getUserInfo().split(":");

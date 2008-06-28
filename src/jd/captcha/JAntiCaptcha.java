@@ -143,13 +143,10 @@ public class JAntiCaptcha {
      * fenster die eigentlich nur zur entwicklung sind um Basic GUI Elemente zu
      * haben
      */
-    @SuppressWarnings("unused")
-    private BasicWindow bw1;
+//    private BasicWindow bw1;
 
-    @SuppressWarnings("unused")
     private BasicWindow bw2;
 
-    @SuppressWarnings("unused")
     private BasicWindow bw3;
 
     @SuppressWarnings("unused")

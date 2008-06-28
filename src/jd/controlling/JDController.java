@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -32,15 +31,10 @@ import java.util.Vector;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import jd.JDInit;
 import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.BatchReconnect;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
@@ -61,11 +55,6 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -153,15 +142,15 @@ public class JDController implements ControlListener, UIListener {
 
     private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
-    private boolean isReconnecting;
+//    private boolean isReconnecting;
     private int downloadListChangeID = 0;
-    private boolean lastReconnectSuccess;
+//    private boolean lastReconnectSuccess;
     private FilePackage fp;
     private ArrayList<ControlEvent> eventQueue;
     private EventSender eventSender;
     private BufferedWriter fileLogger = null;
-    private long lastIPUpdate;
-    private static String CURRENT_IP;
+//    private long lastIPUpdate;
+//    private static String CURRENT_IP;
 
     public JDController() {
 
@@ -175,7 +164,7 @@ public class JDController implements ControlListener, UIListener {
 
         JDUtilities.setController(this);
         initInteractions();
-        CURRENT_IP = JDUtilities.getIPAddress();
+//        CURRENT_IP = JDUtilities.getIPAddress();
     }
 
     private EventSender getEventSender() {
@@ -477,7 +466,6 @@ public class JDController implements ControlListener, UIListener {
      * @param uiEvent
      *            UIEent
      */
-    @SuppressWarnings("unchecked")
     public void uiEvent(UIEvent uiEvent) {
 
         switch (uiEvent.getActionID()) {
@@ -674,6 +662,7 @@ public class JDController implements ControlListener, UIListener {
      * @param oldLinks
      * @param newLinks
      */
+    /*
     private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink> newLinks) {
         logger.info("abort " + oldLinks.size() + " - " + newLinks.size());
         if (watchdog == null) return;
@@ -688,7 +677,7 @@ public class JDController implements ControlListener, UIListener {
         }
 
     }
-
+*/
     /**
      * Speichert die Linksliste ab
      * 

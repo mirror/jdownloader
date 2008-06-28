@@ -20,11 +20,6 @@ package jd.config;
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Vector;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import jd.parser.HTMLParser;
 import jd.utils.JDUtilities;
 
 

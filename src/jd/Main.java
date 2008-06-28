@@ -16,7 +16,6 @@ package jd;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Image;
 import java.awt.MediaTracker;
@@ -25,8 +24,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.Naming;

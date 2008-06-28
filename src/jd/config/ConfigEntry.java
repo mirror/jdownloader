@@ -61,7 +61,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     private Object conditionValue;
 
-    private Object newValue;
+//    private Object newValue;
 
     private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
 

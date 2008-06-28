@@ -36,7 +36,7 @@ public class SpeedMeter {
 	private int[] speeds = new int[capacity];
 
 
-    private Logger logger;
+//    private Logger logger;
 	/**
 	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
 	 * eführt wird
@@ -44,7 +44,7 @@ public class SpeedMeter {
 	 * @param average
 	 */
 	public SpeedMeter() {
-	    logger=JDUtilities.getLogger();
+//	    logger=JDUtilities.getLogger();
 		for (int i = 0; i < capacity; i++) {
 		    speeds[i]=-1;
 		

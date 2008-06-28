@@ -42,7 +42,7 @@ public class ClipboardHandler extends Thread {
 
     private Clipboard clipboard;
 
-    private Logger logger;
+//    private Logger logger;
 
     private List oldList;
 
@@ -56,7 +56,7 @@ public class ClipboardHandler extends Thread {
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
-        logger = JDUtilities.getLogger();
+//        logger = JDUtilities.getLogger();
         this.start();
     }
 
