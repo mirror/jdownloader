@@ -178,7 +178,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
-    private transient boolean aborted = false;
+//    private transient boolean aborted = false;
 
     private transient String statusText = "";
 
@@ -831,7 +831,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.downloadLinkController=null;
         downloadCurrent = 0;
         this.waittime = 0;
-        aborted = false;
+//        aborted = false;
         this.crcStatus = CRC_STATUS_UNCHECKED;
     }
 

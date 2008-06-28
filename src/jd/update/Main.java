@@ -36,8 +36,6 @@ import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.metal.MetalLookAndFeel;
-
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 

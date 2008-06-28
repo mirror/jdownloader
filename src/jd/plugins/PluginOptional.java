@@ -17,7 +17,6 @@
 
 package jd.plugins;
 
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.regex.Pattern;
 

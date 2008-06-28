@@ -99,7 +99,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private JMenuItem menEditValidate;
 
-    private JMenuItem menEditTest;
+//    private JMenuItem menEditTest;
 
     private JMenuItem menEditAddRequest;
 
@@ -381,7 +381,7 @@ textArea.setText(sb+"");
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                 return false;
             }
-            RequestInfo requestInfo = null;
+//            RequestInfo requestInfo = null;
             NodeList steps = root.getChildNodes();
 
             for (int step = 0; step < steps.getLength(); step++) {
@@ -398,7 +398,7 @@ textArea.setText(sb+"");
                     JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                     return false;
                 }
-                NodeList toDos = current.getChildNodes();
+//                NodeList toDos = current.getChildNodes();
 
             }
 
@@ -426,10 +426,10 @@ textArea.setText(sb+"");
         String[] forbiddenHeaders = new String[] { "accept", "user-agent", "If-Modified-Since", "Cache-Control" };
 
         ArrayList<String> ips = new ArrayList<String>();
-        ArrayList<String> vars = new ArrayList<String>();
+//        ArrayList<String> vars = new ArrayList<String>();
         String[] requests = script.split("----------------------------------------------------------");
         StringBuffer sb = new StringBuffer();
-        main: for (String request : requests) {
+         for (String request : requests) {
 
             String[] lines = SimpleMatches.getLines(request.trim());
             if (lines.length < 3) continue;

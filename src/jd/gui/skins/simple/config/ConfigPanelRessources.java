@@ -58,7 +58,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
      * 
      */
 
-    private Configuration configuration;
+//    private Configuration configuration;
 
     private SubConfiguration config;
 
@@ -68,7 +68,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
+//        this.configuration = configuration;
         initPanel();
 
         load();

@@ -42,7 +42,6 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
     /**
      * serialVersionUID
      */
-    @SuppressWarnings("unused")
     private Logger            logger           = JDUtilities.getLogger();
 
     private Plugin            plugin;

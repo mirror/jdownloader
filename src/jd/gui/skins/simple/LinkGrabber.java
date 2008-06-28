@@ -81,7 +81,6 @@ import javax.swing.text.PlainDocument;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.ContextMenu;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -376,8 +375,8 @@ private boolean isDupe(DownloadLink link){
 //        logger.info(link.getDownloadURL()); 
 //    }
     for(DownloadLink l:totalLinkList){
-        String a=l.getDownloadURL();
-        String b=link.getDownloadURL();
+//        String a=l.getDownloadURL();
+//        String b=link.getDownloadURL();
         if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
         
     }

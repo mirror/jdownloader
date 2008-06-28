@@ -17,26 +17,16 @@
 
 package jd.plugins;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Scanner;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
@@ -47,7 +37,6 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-@SuppressWarnings("serial")
 public class HTTP {
 
     /**
@@ -112,7 +101,7 @@ public class HTTP {
      */
     public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
         // logger.finer("post: "+link);
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
@@ -154,7 +143,7 @@ public class HTTP {
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
@@ -244,7 +233,7 @@ public class HTTP {
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
@@ -290,7 +279,7 @@ public class HTTP {
 
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("get: "+link);
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
@@ -342,7 +331,7 @@ public class HTTP {
 
     public static RequestInfo headRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
@@ -379,7 +368,7 @@ public class HTTP {
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        long timer = System.currentTimeMillis();
+//        long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());

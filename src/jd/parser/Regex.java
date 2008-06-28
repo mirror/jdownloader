@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.plugins.RequestInfo;
-
 public class Regex {
     private Matcher matcher;
     public Regex(Matcher matcher) {

@@ -47,7 +47,7 @@ public class JDGetter extends PluginOptional implements ControlListener {
         return 0;
     }
     private Server server;
-    private AbstractHandler serverHandler;
+//    private AbstractHandler serverHandler;
 
     @Override
     public String getCoder() {

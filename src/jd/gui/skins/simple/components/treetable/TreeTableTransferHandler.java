@@ -22,7 +22,6 @@ import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
-import jd.utils.JDUtilities;
 
 public class TreeTableTransferHandler extends TransferHandler {
     private TreePath[] draggingPathes;
@@ -247,7 +246,7 @@ public class TreeTableTransferHandler extends TransferHandler {
 
     public int getSourceActions(JComponent c) {
 
-        return this.MOVE;
+        return MOVE;
     }
 
     protected Transferable createTransferable(JComponent c) {

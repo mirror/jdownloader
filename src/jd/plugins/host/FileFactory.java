@@ -399,7 +399,7 @@ public class FileFactory extends PluginForHost {
                     
                     GetRequest greq = new GetRequest(downloadLink.getDownloadURL());
                     greq.getCookies().putAll(req.getCookies());
-                    String page=greq.load();
+//                    String page=greq.load();
                     
                   	
                   	if ( greq.containsHTML(NOT_AVAILABLE) ) {
@@ -509,6 +509,7 @@ public class FileFactory extends PluginForHost {
     
     // codierung ist nicht standardkonform
     // http%3A%2F%2Fwww.filefactory.com%2Ffile%2Fd0b032%2F
+    /*
     private static String fileFactoryUrlEncode(String str) {
     	
         String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.\\&=;";
@@ -530,7 +531,7 @@ public class FileFactory extends PluginForHost {
         return ret;
 
     }
-    
+    */
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         

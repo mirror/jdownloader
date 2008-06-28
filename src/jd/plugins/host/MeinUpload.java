@@ -46,7 +46,7 @@ public class MeinUpload extends PluginForHost {
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
     static private final Pattern PATTERN_SUPPORTED = getSupportPattern("http://[*]meinupload.com/dl/[+]/[+]");
-    private static final int MAX_SIMULTAN_DOWNLOADS = 1;
+//    private static final int MAX_SIMULTAN_DOWNLOADS = 1;
 
     public MeinUpload() {
 

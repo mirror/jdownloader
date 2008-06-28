@@ -38,9 +38,7 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.MiniLogDialog;
-import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -61,7 +59,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     private JButton btn;
 
-    private StringBuffer buffer;
+//    private StringBuffer buffer;
 
     private MiniLogDialog mld;
 

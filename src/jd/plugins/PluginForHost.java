@@ -216,11 +216,12 @@ public abstract class PluginForHost extends Plugin {
     // this.getDownloadInstance().abort();
     // }
     // }
+    /*
     private DownloadInterface getDownloadInstance() {
         // TODO Auto-generated method stub
         return this.dl;
     }
-
+*/
     public int getMaxRetries() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
     }
@@ -340,8 +341,8 @@ public abstract class PluginForHost extends Plugin {
         return currentConnections;
     }
 
-    public synchronized void setCurrentConnections(int currentConnections) {
-        this.currentConnections = currentConnections;
+    public synchronized void setCurrentConnections(int CurrentConnections) {
+        currentConnections = CurrentConnections;
     }
 
     public int getChunksPerFile() {

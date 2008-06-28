@@ -27,11 +27,7 @@ import javax.swing.JTabbedPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
-import jd.controlling.interaction.Interaction;
 import jd.gui.UIInterface;
-import jd.plugins.Plugin;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -50,7 +46,6 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
     /**
      * serialVersionUID
      */
-    @SuppressWarnings("unused")
     private Logger            logger           = JDUtilities.getLogger();
 
    

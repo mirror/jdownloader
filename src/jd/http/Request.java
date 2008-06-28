@@ -144,7 +144,7 @@ public abstract class Request {
     }
 
     public abstract void postRequest(HTTPConnection httpConnection) throws IOException;
-
+/*
     private void setCookies(HashMap<String, String> cookies) {
         this.cookies = cookies;
     }
@@ -156,7 +156,7 @@ public abstract class Request {
         while (st.hasMoreTokens())
             cookies.put(st.nextToken().trim(), st.nextToken().trim());
     }
-
+*/
     public String followRedirect() throws IOException {
         if (getLocation() == null) return null;
         try {

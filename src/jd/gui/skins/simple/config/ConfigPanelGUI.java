@@ -16,15 +16,12 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.List;
 import java.util.Locale;
 
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;

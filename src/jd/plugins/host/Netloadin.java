@@ -166,7 +166,6 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    @SuppressWarnings("static-access")
     private PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
 
         try {

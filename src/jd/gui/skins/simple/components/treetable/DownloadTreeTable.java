@@ -48,7 +48,6 @@ import jd.gui.skins.simple.DownloadLinksView;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.PackageInfo;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.config.GetExplorer;
@@ -101,7 +100,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private TreeTableTransferHandler transferHandler;
 
-    private Vector<DownloadLink> moved;
+//    private Vector<DownloadLink> moved;
 
     private long ignoreSelectionsAndExpansionsUntil;
 
@@ -252,7 +251,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             if (e.isAddedPath(path)) {
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
-                    DownloadLink link = ((DownloadLink) path.getLastPathComponent());
+//                    DownloadLink link = ((DownloadLink) path.getLastPathComponent());
                     logger.info("SELECTED " + ((DownloadLink) path.getLastPathComponent()));
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
@@ -564,7 +563,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 // Property("downloadlinks",getSelectedDownloadLinks()))));
                 popup.show(this, point.x, point.y);
             } else {
-                TreeTableAction action;
+//                TreeTableAction action;
                 JPopupMenu popup = new JPopupMenu();
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packageinfo", "Detailansicht"), TreeTableAction.PACKAGE_INFO, new Property("package", obj))));
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", obj))));
@@ -630,7 +629,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         FilePackage fp;
         Vector<DownloadLink> links;
         Vector<FilePackage> fps;
-        BrowseFile homeDir;
+//        BrowseFile homeDir;
         switch (e.getID()) {
 
         case TreeTableAction.DOWNLOAD_INFO:
@@ -1162,7 +1161,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     public void moveSelectedItems(int id) {
         Vector<DownloadLink> links = getSelectedDownloadLinks();
         Vector<FilePackage> fps = getSelectedFilePackages();
-        this.moved = links;
+//        this.moved = links;
         this.ignoreSelectionsAndExpansions(2000);
         logger.info(links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {

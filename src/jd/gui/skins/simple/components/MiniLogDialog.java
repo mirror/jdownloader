@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -69,9 +68,9 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     private JScrollPane scrollPane;
 
-    private static int REL = GridBagConstraints.RELATIVE;
+//    private static int REL = GridBagConstraints.RELATIVE;
 
-    private static int REM = GridBagConstraints.REMAINDER;
+//    private static int REM = GridBagConstraints.REMAINDER;
 
     public MiniLogDialog(String message) {
         super();

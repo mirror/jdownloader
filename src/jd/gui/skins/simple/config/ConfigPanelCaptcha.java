@@ -42,7 +42,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.utils.CESClient;

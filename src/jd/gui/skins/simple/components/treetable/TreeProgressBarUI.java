@@ -983,10 +983,11 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * 
      * @return the cycle time, in milliseconds
      */
+    /*
     private int getCycleTime() {
         return cycleTime;
     }
-
+*/
     private int initCycleTime() {
         cycleTime = DefaultLookup.getInt(progressBar, this, "ProgressBar.cycleTime", 3000);
         return cycleTime;
@@ -1086,7 +1087,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
 
         private long  previousDelay;    // used to tune the repaint interval
 
-        private int   interval;         // the fixed repaint interval
+//        private int   interval;         // the fixed repaint interval
 
         private long  lastCall;         // the last time actionPerformed was
 

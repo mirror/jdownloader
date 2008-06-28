@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.UnknownHostException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -96,8 +95,8 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_MATCHER_BOT = Pattern.compile("(Too many wrong codes)");
 
     private static final Pattern PATTERN_MATCHER_DOWNLOAD_ERRORPAGE = Pattern.compile("(RapidShare)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_FIND_ERROR_CODES = Pattern.compile("<!-- E#([\\d]{1,3}) -->(.*?)div");
-    private static final Pattern PATTERN_MATCHER_FIND_ERROR = Pattern.compile("(<h1>Fehler</h1>)");
+//    private static final Pattern PATTERN_FIND_ERROR_CODES = Pattern.compile("<!-- E#([\\d]{1,3}) -->(.*?)div");
+//    private static final Pattern PATTERN_MATCHER_FIND_ERROR = Pattern.compile("(<h1>Fehler</h1>)");
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(Bitte versuchen Sie es in 2 Minuten)");
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
@@ -171,7 +170,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_USE_PREMIUM_3 = "USE_PREMIUM_3";
 
-    private static final String PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
+//    private static final String PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
     private static final String PARAM_FORRCEFREE_WHILE_HAPPYHOURS = "FORRCEFREE_WHILE_HAPPYHOURS";
 
     private static final int ACTION_TOGGLE_PREMIUM_1 = 1;
@@ -190,13 +189,13 @@ public class Rapidshare extends PluginForHost {
 
     private static final int ACTION_HAPPY_HOURS_FORCE_FREE = 9;
 
-    private static final int ERROR_ID_ACCOUNTEXPIRED = 4;
+//    private static final int ERROR_ID_ACCOUNTEXPIRED = 4;
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("Dieses Konto ist am .*? abgelaufen");
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("Sie haben heute");
 
-    private static final Pattern PATTERN_FIND_CAPTCHA_ID = Pattern.compile("<table><tr><td><img id\\=\"(.*?)\" src\\=\"\">");
+//    private static final Pattern PATTERN_FIND_CAPTCHA_ID = Pattern.compile("<table><tr><td><img id\\=\"(.*?)\" src\\=\"\">");
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("anderen IP gerade genutzt");
 
@@ -504,7 +503,7 @@ public class Rapidshare extends PluginForHost {
                     } else {
                         String validuntil = SimpleMatches.getSimpleMatch(ri, "<td>G&uuml;ltig bis:</td><td style=\"padding-right:20px;\"><b>°</b></td>", 0);
                         String files = SimpleMatches.getSimpleMatch(ri, " <td>Dateien:</td><td><b>°</b></td> ", 0);
-                        String days5traffic = SimpleMatches.getSimpleMatch(ri, "<td>5 Tage Traffic:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
+//                        String days5traffic = SimpleMatches.getSimpleMatch(ri, "<td>5 Tage Traffic:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
                         
                         String days1traffic = SimpleMatches.getSimpleMatch(ri, "<td>Traffic heute:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
                         
@@ -1184,11 +1183,12 @@ public class Rapidshare extends PluginForHost {
      * @param downloadLink
      * @return
      */
+    /*
     private PluginStep doHappyHourDownload(PluginStep step, DownloadLink downloadLink) {
         // TODO Auto-generated method stub
         return null;
     }
-
+*/
     /**
      * Wartet 5 minuten und startet den Downlaod anschließend neu.
      * 
@@ -1377,7 +1377,7 @@ public class Rapidshare extends PluginForHost {
                 PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
                 pReq.setPostVariable("dl.start", "free");
                 pReq.load();
-                String error = null;
+//                String error = null;
                 // Fehlersuche
                 // if ((error = new Regex(pReq,
                 // PATTERN_FIND_ERROR_CODES).getFirstMatch()) != null) {

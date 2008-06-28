@@ -18,14 +18,14 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     private DownloadTreeTable internalTreeTable;
 
-    private DownloadTreeTableModel treeModel;
+//    private DownloadTreeTableModel treeModel;
 
-    private long lockTimer = 0;
+//    private long lockTimer = 0;
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
         this.setVisible(false);
-        internalTreeTable = new DownloadTreeTable(treeModel = new DownloadTreeTableModel(this));
+        internalTreeTable = new DownloadTreeTable( new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);

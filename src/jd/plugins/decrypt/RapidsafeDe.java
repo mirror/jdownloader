@@ -90,9 +90,9 @@ public class RapidsafeDe extends PluginForDecrypt {
                 JDUtilities.getSubConfig("DOWNLOAD").save();
 
                 RequestInfo ri = HTTP.getRequest(new URL(parameter));
-                @SuppressWarnings("unused")
+           
                 String cookie = ri.getCookie();
-                @SuppressWarnings("unused")
+    
                 String[] dat = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°=°&t=°','°');");
                 ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
                 

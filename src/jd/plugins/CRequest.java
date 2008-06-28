@@ -332,7 +332,7 @@ public class CRequest {
         } else {
             ct = "jpg";
         }
-        File captchaFile = plugin.getLocalCaptchaFile(plugin, "." + ct);
+        File captchaFile = Plugin.getLocalCaptchaFile(plugin, "." + ct);
         JDUtilities.download(captchaFile, con);
         withHtmlCode = withHtmlCodeBak;
         return new CaptchaInfo<File, String>(captchaFile, Plugin.getCaptchaCode(captchaFile, plugin));

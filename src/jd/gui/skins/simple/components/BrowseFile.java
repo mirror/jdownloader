@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

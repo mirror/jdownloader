@@ -18,7 +18,6 @@ package jd.gui.skins.simple.config;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;

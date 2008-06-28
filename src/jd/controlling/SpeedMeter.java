@@ -17,10 +17,6 @@
 
 package jd.controlling;
 
-import java.util.logging.Logger;
-
-import jd.utils.JDUtilities;
-
 
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen

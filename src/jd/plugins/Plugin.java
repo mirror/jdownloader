@@ -251,7 +251,7 @@ public abstract class Plugin implements ActionListener {
 
     public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
 
-    private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
+//    private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
     public static final int CAPTCHA_JAC = 0;
 
@@ -281,7 +281,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Properties zum abspeichern der einstellungen
      */
-    private Property properties;
+//    private Property properties;
 
     private String statusText;
 

@@ -39,7 +39,6 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-@SuppressWarnings("serial")
 public class HTTPPost {
     /**
      * Vollständige Request URL

@@ -101,7 +101,6 @@ public class RapidShareDe extends PluginForHost {
         setConfigElements();
     }
 
-    @SuppressWarnings("unused")
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));

@@ -19,7 +19,6 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
@@ -46,15 +45,12 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -62,12 +58,9 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
-import javax.swing.JTable;
-import javax.swing.JTextPane;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -76,16 +69,10 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-import javax.swing.table.TableColumn;
-
-import org.jdesktop.swingx.JXHyperlink;
-import org.jdesktop.swingx.JXTitledSeparator;
-
 import jd.JDFileFilter;
 import jd.captcha.CES;
 import jd.config.Configuration;
@@ -109,7 +96,6 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
@@ -122,13 +108,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-import com.sun.xml.internal.bind.v2.TODO;
-
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.exception.BrowserLaunchingExecutionException;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
      * serialVersionUID
@@ -1411,8 +1390,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         public StatusBar() {
             setLayout(new BorderLayout());
-            int n = 10;
-            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+//            int n = 10;
+//            JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
             JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
 //            add(bundle(left, right));
             JPanel panel = new JPanel(new BorderLayout(0,0));
@@ -1889,7 +1868,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                        String img = getDoReconnectImage();
                        logger.info("JJJ"+img);
                        Image img2 = JDUtilities.getImage(img);
-                      boolean sel = btnReconnect.isSelected();
+//                      boolean sel = btnReconnect.isSelected();
                         btnReconnect.setIcon(new ImageIcon(img2));
                         //btnReconnect.setSelected(p.getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
                         //btnReconnect.setSelected(true);

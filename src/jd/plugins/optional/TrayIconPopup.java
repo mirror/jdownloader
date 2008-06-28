@@ -40,7 +40,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private static final Insets INSETS = new Insets(1, 1, 1, 1);
     private static final int FILL_NONE = GridBagConstraints.NONE;
     private static final int ANCHOR_NORTH_WEST = GridBagConstraints.NORTHWEST;
-    private static final int FILL_BOTH = GridBagConstraints.BOTH;
+//    private static final int FILL_BOTH = GridBagConstraints.BOTH;
     private static final int MENUENTRY_HEIGHT = 16;
     private static final int MENUENTRY_LABEL_WIDTH = 220;
     private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT+12;
@@ -64,7 +64,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JPanel rightPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
-    private JDLightTray owner;
+//    private JDLightTray owner;
     private int midPanelCounter = 0;
     private Point point;
     private int mouseOverRow;
@@ -73,7 +73,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JSpinner spMaxDls;
 
     TrayIconPopup(JDLightTray tracIcon) {
-        this.owner = tracIcon;
+//        this.owner = tracIcon;
         setLayout(new GridBagLayout());
         addMouseMotionListener(this);
         addMouseListener(this);

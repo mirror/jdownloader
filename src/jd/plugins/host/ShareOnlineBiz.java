@@ -18,21 +18,16 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.parser.Form;
-import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ShareOnlineBiz extends PluginForHost {
@@ -59,17 +54,17 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private static final String PATTERN_DLINK = "loadfilelink.decode(\"°\"); document.";
 
-    private static String ERROR_DOWNLOAD_NOT_FOUND = "Invalid download link";
+//    private static String ERROR_DOWNLOAD_NOT_FOUND = "Invalid download link";
 
-    private static Pattern firstIFrame = Pattern.compile("<iframe src=\"(http://.*?share-online\\.biz/dl_page.php\\?file=.*?)\" style=\"border", Pattern.CASE_INSENSITIVE);
+//    private static Pattern firstIFrame = Pattern.compile("<iframe src=\"(http://.*?share-online\\.biz/dl_page.php\\?file=.*?)\" style=\"border", Pattern.CASE_INSENSITIVE);
 
-    private static Pattern dlButtonFrame = Pattern.compile("<iframe name=.download..*?src=.(dl_button.php\\?file=.*?). marginwidth\\=", Pattern.CASE_INSENSITIVE);
-
-    private static Pattern countDown = Pattern.compile("<script language=\"Javascript\">[\n\r]+.*?\\=([0-9]+)", Pattern.CASE_INSENSITIVE);
-
-    private static Pattern filename = Pattern.compile("<center>.*?(File Name.*?|Dateiname.*?)</center>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-
-    private static Pattern dloc = Pattern.compile("src=\'(dl.php?.*?)\'", Pattern.CASE_INSENSITIVE);
+//    private static Pattern dlButtonFrame = Pattern.compile("<iframe name=.download..*?src=.(dl_button.php\\?file=.*?). marginwidth\\=", Pattern.CASE_INSENSITIVE);
+//
+//    private static Pattern countDown = Pattern.compile("<script language=\"Javascript\">[\n\r]+.*?\\=([0-9]+)", Pattern.CASE_INSENSITIVE);
+//
+//    private static Pattern filename = Pattern.compile("<center>.*?(File Name.*?|Dateiname.*?)</center>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+//
+//    private static Pattern dloc = Pattern.compile("src=\'(dl.php?.*?)\'", Pattern.CASE_INSENSITIVE);
 
     // src='dl.php?a=48DQA0U39&b=344f4df81f101a8393e73fe5c61a6fe2'
     private long ctime = 0;
@@ -171,7 +166,7 @@ public class ShareOnlineBiz extends PluginForHost {
             switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-                http://www.share-online.biz/download.php?id=D90258d485
+//                http://www.share-online.biz/download.php?id=D90258d485
                 logger.info(requestInfo + "");
                 if(requestInfo.getLocation()!=null){
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);

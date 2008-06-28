@@ -5,7 +5,6 @@ package jd.utils;
 // Decompiler options: packimports(3) 
 // Source File Name:   Runner3.java
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;

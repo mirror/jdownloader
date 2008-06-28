@@ -2,19 +2,15 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.text.DecimalFormat;
-import java.util.Random;
 
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 import javax.swing.JTable;
-import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.tree.TreePath;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -81,11 +77,11 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private Component co;
 
-    private DownloadTreeTable treeTable;
+//    private DownloadTreeTable treeTable;
 
-    private TreePath path;
+//    private TreePath path;
 
-    private DownloadLink link;
+//    private DownloadLink link;
 
     private Double version;
 
@@ -93,7 +89,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
-        this.treeTable = downloadTreeTable;
+//        this.treeTable = downloadTreeTable;
         FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");
 
         //

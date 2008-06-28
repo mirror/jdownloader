@@ -17,14 +17,11 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -36,27 +33,17 @@ import java.util.Vector;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
-import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jdesktop.swingx.JXPanel;
 import org.jdesktop.swingx.JXTitledSeparator;
-import org.jdesktop.swingx.painter.PinstripePainter;
-import org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeelAddons;
-
-import com.sun.org.apache.xalan.internal.xsltc.compiler.FlowList;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;

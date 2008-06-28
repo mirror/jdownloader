@@ -22,8 +22,6 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.util.List;
-import java.util.logging.Logger;
-
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
