@@ -249,7 +249,7 @@ if(img==null)return;
      */
 
     public static BasicWindow showImage(File file, String title) {
-        new JFrame().getToolkit().getScreenSize();
+//        new JFrame().getToolkit().getScreenSize();
         Image img = UTILITIES.loadImage(file);
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
@@ -293,7 +293,7 @@ if(img==null)return;
      * @return BasicWindow das neue fenster
      */
     public static BasicWindow showImage(Image img, String title) {
-        new JFrame().getToolkit().getScreenSize();
+//        new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
@@ -329,7 +329,7 @@ if(img==null)return;
      * @return Neues Fenster
      */
     public static BasicWindow showImage(Image img, int width, int height) {
-        new JFrame().getToolkit().getScreenSize();
+//        new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
@@ -361,7 +361,7 @@ if(img==null)return;
      * @return neues Fenster
      */
     public static BasicWindow getWindow(String title, int width, int height) {
-        new JFrame().getToolkit().getScreenSize();
+//        new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
 

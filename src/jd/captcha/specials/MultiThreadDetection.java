@@ -93,9 +93,9 @@ public class MultiThreadDetection {
        
         int ths = Runtime.getRuntime().availableProcessors();
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
-        new Vector<Letter>();
+  
 
-        jac.getJas().getInteger("borderVarianceX");
+//        jac.getJas().getInteger("borderVarianceX");
 
         for (Letter l : org) {
             mtd.queueDetection(l);

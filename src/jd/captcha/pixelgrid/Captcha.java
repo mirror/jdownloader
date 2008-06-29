@@ -944,8 +944,8 @@ public class Captcha extends PixelGrid {
             ret.setPixel((int[]) pg.getPixels());
         } else {
 
-            ; // UTILITIES.trace("COLORS: "+numColors);
-            pg.getPixels();
+//            ; // UTILITIES.trace("COLORS: "+numColors);
+//            pg.getPixels();
             ret.setPixel((byte[]) pg.getPixels());
         }
 

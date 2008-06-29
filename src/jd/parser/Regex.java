@@ -114,7 +114,7 @@ public class Regex {
         return ar.toArray(new String[][]{});
     }
     
-   
+   /*
     public static void main(String args[]) {
        String txt="http://oxygen-warez.com/category/XVID/10'000_BC_DVD_Rip_AC3_104902.html";
 //        //
@@ -125,7 +125,7 @@ public class Regex {
         
         
     }
-     
+     */
 
     /**
      * gibt alle Treffer in einer group als Array aus

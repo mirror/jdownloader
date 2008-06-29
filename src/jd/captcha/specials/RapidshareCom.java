@@ -56,7 +56,7 @@ public class RapidshareCom {
         int newWidth = (int) Math.ceil((double) captcha.getWidth() / faktor);
         int newHeight = (int) Math.ceil((double) captcha.getHeight() / faktor);
 
-        captcha.getAverage();
+//        captcha.getAverage();
 
         int[][] newGrid = new int[newWidth][newHeight];
 
@@ -231,11 +231,11 @@ public class RapidshareCom {
         jac.jas.set("errorAWeight", eaw);
         jac.jas.set("intersectionAWidthWeight", iaww);
         jac.jas.set("intersectionDimensionWeight", idw);
-        for (Iterator<Letter> it = ret.iterator(); it.hasNext();) {
+//        for (Iterator<Letter> it = ret.iterator(); it.hasNext();) {
 
-            Letter l = it.next();
-            getWhiteObjects(l, jac);
-        }
+//            Letter l = it.next();
+//            getWhiteObjects(l, jac);
+//        }
         // for (Iterator<Letter> it = ret.iterator(); it.hasNext();) {
         // if (it.next().detected.getValityPercent() >= 90) {
         // // it.remove();
@@ -280,7 +280,7 @@ public class RapidshareCom {
         map.add(new byte[] { 0, 1, 1, 0, 1, 0, 1 });
         map.add(new byte[] { 1, 0, 1, 0, 1, 0, 1 });
         map.add(new byte[] { 0, 1, 0, 1, 0, 1, 1 });
-        new ArrayList<Byte>();
+//        new ArrayList<Byte>();
         Vector<Letter> lets = new Vector<Letter>();
         int id = 0;
         for (Letter l : letters) {
@@ -494,7 +494,6 @@ public class RapidshareCom {
 
     public static void comparatorExtension(LetterComperator lc, Double currentValue) {
         Letter db = lc.getB();
-        lc.getA();
         //logger.info(""+currentValue);
         if (currentValue > 0.4) return;
         // Prüfe Füllungen
