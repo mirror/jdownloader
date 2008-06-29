@@ -17,35 +17,29 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Vector;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-
-import jd.parser.HTMLParser;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+
+/*Die Api von Linksavein verursacht *falsche* DLC's*/
+/*Am ende einer DLC wird "No database selected" angehängt*/
 
 public class LinksaveIn extends PluginForDecrypt {
 
     static private final String HOST = "Linksave.in";
 
-    private String VERSION = "0.0.1";
+    private String VERSION = "1.0.0";
 
-    private String CODER = "jD-Team";
+    private String CODER = "JD-Team";
 
-    // http://xlice.net/getdlc/a50d323947054cc204362a47ddd5bc49/
-    static private final Pattern patternSupported = getSupportPattern("http://linksave.in/[+]/[+].[+]|http://linksave.in/[+]");
-    
-    static private final Pattern patternCaptcha = Pattern.compile("img id=\"captcha\" src=\"\\./captcha/captcha\\.php(.+?)\"");
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public LinksaveIn() {
         super();
@@ -85,100 +79,31 @@ public class LinksaveIn extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        // surpress jd warning
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        step.setParameter(decryptedLinks);
-        String url = parameter;
-        String[] sp = parameter.split("[/|\\\\]");
-        if (sp.length < 3) return step;
-        String id = sp[3];
+        String cryptedLink = (String) parameter;
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            File container = null;
-//            boolean folder = false;
-            if (parameter.endsWith(".rsdf")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-            } else if (parameter.endsWith(".ccf")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-
-            } else if (parameter.endsWith(".dlc")) {
-                container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-
-            } else {
-//                folder = true;
-                RequestInfo ri;
-                try {
-                    ri = HTTP.getRequest(new URL(parameter));
-                    
-                    Matcher matcher = patternCaptcha.matcher(ri.getHtmlCode());
-                    String cookie = ri.getCookie();
-                    while (matcher.find()) {
-                        logger.info("Captcha protected");
-                        String captchaAddress = "http://www.linksave.in/captcha/captcha.php" + matcher.group(1);
-
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            step.setParameter(null);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
-                        HashMap<String, String> reqpro = new HashMap<String, String>();
-                        reqpro.put("Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
-                        reqpro.put("Accept-Encoding", "gzip,deflate");
-                        reqpro.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-                        
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                        String postdata = HTMLParser.getFormInputHidden(SimpleMatches.getBetween(ri.getHtmlCode(), "form name=\"captchaform\" method=\"post\"", "/form")) + "&code=" + captchaCode + "&x=0&y=0";
-                        ri = HTTP.postRequest(new URL(parameter), cookie, parameter, reqpro, postdata, false);
-                        
-                        if(ri.getHtmlCode().contains("Der eingegebene Captcha-code ist falsch"))
-                            ri = HTTP.getRequest(new URL(parameter));
-                        else
-                            ri = HTTP.getRequest(new URL(parameter), ri.getCookie(), parameter, false);
-                        matcher = patternCaptcha.matcher(ri.getHtmlCode());
-                    }
-
-                    if (ri.containsHTML(".dlc")) {
-                        url = parameter + "/" + id + ".dlc";
-                        container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                    } else if (ri.containsHTML(".rsdf")) {
-                        url = parameter + "/" + id + ".rsdf";
-                        container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-
-                    } else if (ri.containsHTML(".ccf")) {
-                        url = parameter + "/" + id + ".ccf";
-                        container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-
-                    } else {
-                        return step;
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return step;
-                }
-
-            }
-
-            HTTPConnection con;
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            URL url;
             try {
-                con = new HTTPConnection(new URL(url).openConnection());
-                con.setRequestProperty("Referer", "http://linksave.in/" + id);
-            } catch (Exception e) {
-
+                if (cryptedLink.matches(patternSupported.pattern())) {
+                    cryptedLink = cryptedLink + ".dlc";
+                    url = new URL(cryptedLink);
+                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                    HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+                    dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
+                    JDUtilities.download(container, dlc_con);
+                    JDUtilities.getController().loadContainerFile(container);
+                }
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
-                return step;
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
 
-            if (JDUtilities.download(container, con)) {
-
-                //JDUtilities.getController().loadContainerFile(container);
-
-            }
+            step.setParameter(decryptedLinks);
         }
-
-        return step;
-
+        return null;
     }
 
     @Override
