@@ -123,7 +123,6 @@ public class JUnrar {
 	 * 
 	 * @param folders
 	 */
-	@SuppressWarnings("unchecked")
 	public void setFolders(LinkedList<String> folders) {
 
 		loadUnpackedList();

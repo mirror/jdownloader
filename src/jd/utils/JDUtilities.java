@@ -2537,7 +2537,6 @@ public class JDUtilities {
 	 * @param packageData
 	 * @param key
 	 */
-	@SuppressWarnings("unchecked")
 	public static void sortHashVectorOn(
 			Vector<HashMap<String, String>> packageData, final String key) {
 		if (packageData.size() == 0 || !packageData.get(0).containsKey(key))

@@ -1292,7 +1292,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    @SuppressWarnings("unchecked")
 	public void updateNamesPanel() {
         final StringBuffer sb = new StringBuffer();
         Collections.sort(NAMES);

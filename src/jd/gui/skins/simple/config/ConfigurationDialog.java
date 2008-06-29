@@ -77,7 +77,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JButton btnCancel;
 
-    @SuppressWarnings("unused")
     private UIInterface uiinterface;
 
     private Vector<ConfigPanel> configPanels = new Vector<ConfigPanel>();

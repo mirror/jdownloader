@@ -42,7 +42,6 @@ public class CLRLoader {
         IDS = new Vector<String>();
         Vector<String[]> res = new Vector<String[]>();
         try {
-            @SuppressWarnings("unused")
             RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
 
             logger.info("" + ri);

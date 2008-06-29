@@ -264,7 +264,7 @@ public class Megauploadcom extends PluginForHost {
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         String wait = requestInfo.getConnection().getHeaderField("Retry-After");
                         logger.finer("Warten: " + wait + " minuten");
-                        if (wait == null) {
+                        if (wait != null) {
                             step.setParameter(Long.parseLong(wait.trim()) * 60l * 1000l);
                         } else {
                             step.setParameter(120l * 60l * 1000l);
