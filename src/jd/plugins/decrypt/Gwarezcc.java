@@ -24,16 +24,15 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
-    static private final String host = "Gwarez Decrypter";
+    static private final String host = "gwarez.cc Decrypter";
     private String version = "1.0.0.0";
 
-    private static final Pattern patternLink_Top10 = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/game_\\d{1,}.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Top10.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
 
     public Gwarezcc() {
@@ -53,12 +52,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 RequestInfo requestInfo;
                 boolean dlc_found = false;
 
-                if (cryptedLink.matches(patternLink_Top10.pattern())) {
-                    /* Link aus den Top10 */
-                    String downloadid = new Regex(url.getFile(), "\\/game_([\\d].*).html").getFirstMatch();
-                    /* weiterleiten zur Download Info Seite */
-                    decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "#details"));
-                } else if (cryptedLink.matches(patternLink_Details_Main.pattern())) {
+                if (cryptedLink.matches(patternLink_Details_Main.pattern())) {
                     /* Link aus der Übersicht */
                     String downloadid = url.getFile().substring(1);
                     /* weiterleiten zur Download Info Seite */
@@ -112,7 +106,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     for (int ii = 0; ii < parts.size(); ii++) {
                         /* Parts decrypten und adden */
                         DownloadLink link = this.createDownloadlink(gwarezdecrypt(parts.get(ii)));
-                        link.setSourcePluginComment("sponsored by gwarez.cc - every game on 5 mirror");
+                        link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
                         link.setSourcePluginPasswords(link_passwds);
                         decryptedLinks.add(link);
                     }
@@ -137,21 +131,53 @@ public class Gwarezcc extends PluginForDecrypt {
     }
 
     private String gwarezdecrypt(String link) {
-        HashMap<String, Integer> replace = new HashMap<String, Integer>();
-        replace.put("JA", 1);
-        replace.put("IB", 2);
-        replace.put("HC", 3);
-        replace.put("GD", 4);
-        replace.put("FE", 5);
-        replace.put("EF", 6);
-        replace.put("DG", 7);
-        replace.put("CH", 8);
-        replace.put("BI", 9);
-        replace.put("AJ", 0);
+        HashMap<String, String> replace = new HashMap<String, String>();
+        replace.put("JA\\|", "1");
+        replace.put("IB\\|", "2");
+        replace.put("HC\\|", "3");
+        replace.put("GD\\|", "4");
+        replace.put("FE\\|", "5");
+        replace.put("EF\\|", "6");
+        replace.put("DG\\|", "7");
+        replace.put("CH\\|", "8");
+        replace.put("BI\\|", "9");
+        replace.put("AJ\\|", "0");
+        
+        replace.put("\\|JQ\\|", "a"); 
+        replace.put("\\|GR\\|", "b"); 
+        replace.put("\\|JK\\|", "c"); 
+        replace.put("\\|VH\\|", "d"); 
+        replace.put("\\|ND\\|", "e"); 
+        replace.put("\\|YK\\|", "f"); 
+        replace.put("\\|ZB\\|", "g"); 
+        replace.put("\\|FJ\\|", "h"); 
+        replace.put("\\|FK\\|", "i"); 
+        replace.put("\\|ZD\\|", "j"); 
+        replace.put("\\|ZS\\|", "k"); 
+        replace.put("\\|KI\\|", "l"); 
+        replace.put("\\|GI\\|", "m"); 
+        replace.put("\\|SI\\|", "n"); 
+        replace.put("\\|KA\\|", "o"); 
+        replace.put("\\|SU\\|", "p"); 
+        replace.put("\\|PO\\|", "q"); 
+        replace.put("\\|OP\\|", "r"); 
+        replace.put("\\|YX\\|", "s"); 
+        replace.put("\\|SX\\|", "t"); 
+        replace.put("\\|UY\\|", "u"); 
+        replace.put("\\|UM\\|", "v"); 
+        replace.put("\\|QS\\|", "w"); 
+        replace.put("\\|AK\\|", "x"); 
+        replace.put("\\|VP\\|", "y"); 
+        replace.put("\\|YY\\|", "z"); 
+         
+        replace.put("\\|DD\\|", ":"); 
+        replace.put("\\|SS\\|", "/"); 
+        replace.put("\\|OO\\|", ".");
 
         for (Iterator<String> it = replace.keySet().iterator(); it.hasNext();) {
             String key = it.next();
-            link = link.replaceAll(key + "\\|", replace.get(key) + "");
+            String with=replace.get(key);
+            link = link.replaceAll(key , with);
         }
         return link;
     }
@@ -168,7 +194,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Gwarez Decrypter";
+        return "gwarez.cc Decrypter";
     }
 
     @Override
