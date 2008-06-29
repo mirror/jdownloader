@@ -55,7 +55,11 @@ public class BaseDecoder {
 
 
     public static class IllegalAlphabetException extends Exception {
-        public IllegalAlphabetException() {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public IllegalAlphabetException() {
             super();
         }
         public IllegalAlphabetException(char ch) {
@@ -68,7 +72,11 @@ public class BaseDecoder {
 
 
     public static class BadPaddingException extends Exception {
-        public BadPaddingException() {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		public BadPaddingException() {
             super("Bad padding");
         }
         public BadPaddingException(String message) {

@@ -52,6 +52,11 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
 public class Captcha extends PixelGrid {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
      * Speichert die Positiond es letzten erkannten Letters
      */
     private int lastletterX = 0;
@@ -462,7 +467,8 @@ public class Captcha extends PixelGrid {
         return ret;
     }
 
-    public Letter[] getLetters0(int letterNum) {
+    @SuppressWarnings("unchecked")
+	public Letter[] getLetters0(int letterNum) {
 
         
         if (letterNum == 1) {
@@ -567,7 +573,7 @@ public class Captcha extends PixelGrid {
         Iterator<PixelObject> iter = objects.iterator();
         int i = 0;
         while (iter.hasNext()) {
-            PixelObject pixelObject = (PixelObject) iter.next();
+            PixelObject pixelObject = iter.next();
 
             letters[i] = pixelObject.toLetter();
             letters[i].toBlackAndWhite();
@@ -939,7 +945,7 @@ public class Captcha extends PixelGrid {
         } else {
 
             ; // UTILITIES.trace("COLORS: "+numColors);
-            Object b = pg.getPixels();
+            pg.getPixels();
             ret.setPixel((byte[]) pg.getPixels());
         }
 
@@ -1115,7 +1121,7 @@ public class Captcha extends PixelGrid {
 
                     try {
 
-                        Integer[] integers = (Integer[]) bpiter.next();
+                        Integer[] integers = bpiter.next();
                         if (pixelObject.getWidth() > (x + integers[0]) && pixelObject.getHeight() > (y + integers[1])) {
                             if (isElement(getPixelValue(x + integers[0], y + integers[1]), avg)) {
                                 right++;
@@ -1264,7 +1270,7 @@ public class Captcha extends PixelGrid {
             Iterator<PixelObject> iterr = objects.iterator();
             int r = 0;
             while (iterr.hasNext()) {
-                PixelObject pixelObject = (PixelObject) iterr.next();
+                PixelObject pixelObject = iterr.next();
                 if (pixelObject.getArea() > minArea) {
                     r++;
 

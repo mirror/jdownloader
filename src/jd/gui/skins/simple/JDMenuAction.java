@@ -24,7 +24,11 @@ import jd.config.MenuItem;
 import jd.utils.JDUtilities;
 
 public class JDMenuAction extends AbstractAction {
-    private MenuItem menuItem;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private MenuItem menuItem;
 
     public JDMenuAction(MenuItem mi) {
         super();

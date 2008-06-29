@@ -85,7 +85,7 @@ public class DnDWebBrowser extends JDialog {
     }
 
     private class DropTargetHandler implements DropTargetListener {
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({ "unchecked", "deprecation" })
         public void drop(DropTargetDropEvent event) {
             Transferable transferable = event.getTransferable();
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {

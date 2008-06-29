@@ -51,6 +51,11 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
 public class PixelGrid extends Property {
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
      * Logger
      */
     public Logger logger = UTILITIES.getLogger();

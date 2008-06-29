@@ -32,7 +32,11 @@ import jd.captcha.utils.UTILITIES;
  */
 public class Letter extends PixelGrid {
 
-    /*
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	/*
      * der decoded Value wird heir abgelegt
      */
     private String decodedValue;

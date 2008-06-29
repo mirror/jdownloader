@@ -30,7 +30,11 @@ import jd.utils.Replacer;
 
 public class SimpleExecute extends Interaction implements Serializable, ActionListener {
 
-    public static final String CONFIGNAME = "INTERACTION_SIMPLEEXECUTE";
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public static final String CONFIGNAME = "INTERACTION_SIMPLEEXECUTE";
     public static String PROPERTY_COMMAND = "PROPERTY_COMMAND";
 
     public static String PROPERTY_WAIT_TERMINATION = "PROPERTY_WAIT_TERMINATION";

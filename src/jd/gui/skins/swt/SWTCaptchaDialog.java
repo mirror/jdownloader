@@ -20,13 +20,9 @@ import org.eclipse.swt.widgets.Shell;
 public class SWTCaptchaDialog extends Dialog {
     
     private Image image;
-    private Plugin plugin;
-    private File file;
     public SWTCaptchaDialog(Shell parent, Plugin plugin, File file, int style) {
         super(parent, style);
         image = parent.getDisplay().getSystemImage(SWT.ICON_WARNING);
-        this.plugin = plugin;
-        this.file = file;
     }
 
     public SWTCaptchaDialog(Shell parent, Plugin plugin, File file) {

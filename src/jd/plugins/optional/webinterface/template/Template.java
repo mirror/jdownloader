@@ -80,9 +80,7 @@ import jd.plugins.optional.webinterface.template.Tmpl.Parsers.Parser;
 public class Template 
 {
     private If __template__ = new If("__template__");
-    private Hashtable params = new Hashtable();
-
-    private boolean dirty = true;
+    private Hashtable<String, Object> params = new Hashtable<String, Object>();
 
     private boolean strict = true;
     private boolean die_on_bad_params = false;
@@ -100,7 +98,7 @@ public class Template
     private Reader filehandle = null;
     private Filter [] filters = null;
 
-    private Stack elements = new Stack();
+    private Stack<Element> elements = new Stack<Element>();
     private Parser parser;
     
     
@@ -377,14 +375,14 @@ public class Template
      *
      * @see #Template(Object [])
      */
-    public Template(Hashtable args)
+    public Template(Hashtable<?, ?> args)
             throws FileNotFoundException,
                 IllegalArgumentException,
                 IllegalStateException,
                 IOException
                 
     {
-        Enumeration e = args.keys();
+        Enumeration<?> e = args.keys();
         while(e.hasMoreElements()) {
             String key = (String)e.nextElement();
             Object value = args.get(key);
@@ -438,12 +436,12 @@ public class Template
      *          Illegal parameters will not be set, but
      *          no error/exception will be thrown.
      */
-    public int setParams(Hashtable params) 
+    public int setParams(Hashtable<?, ?> params) 
     {
         if(params == null || params.isEmpty())
             return 0;
         int count=0;
-        for(Enumeration e = params.keys(); e.hasMoreElements();) {
+        for(Enumeration<?> e = params.keys(); e.hasMoreElements();) {
             Object key = e.nextElement();
             if(key.getClass().getName().endsWith(".String")) {
                 Object value = params.get(key);
@@ -458,7 +456,6 @@ public class Template
             }
         }
         if(count>0) {
-            dirty=true;
             Util.debug_print("Now dirty: set params");
         }
 
@@ -591,11 +588,11 @@ public class Template
      *
      * @see #setParams(Hashtable)
      */
-    public Vector setParam(String name, Vector value) 
+    public Vector<?> setParam(String name, Vector<?> value) 
             throws IllegalArgumentException, NullPointerException
     {
         try {
-            return (Vector)setParam(name, (Object)value);
+            return (Vector<?>)setParam(name, (Object)value);
         } catch(ClassCastException iae) {
             return null;
         }
@@ -775,12 +772,12 @@ public class Template
                 IOException, 
                 EmptyStackException
     {
-        Vector parts;
+        Vector<?> parts;
 
         parts = parser.parseLine(line);
         Util.debug_print("Items: " + parts.size());
 
-        for(Enumeration pt = parts.elements(); pt.hasMoreElements();) 
+        for(Enumeration<?> pt = parts.elements(); pt.hasMoreElements();) 
         {
             Object o = pt.nextElement();
             
@@ -985,33 +982,33 @@ public class Template
         name=case_sensitive?name:name.toLowerCase();
 
         if(!case_sensitive && type.equals("Vector")) {
-            value = lowerCaseAll((Vector)value);
+            value = lowerCaseAll((Vector<?>)value);
         }
             
         Util.debug_print("setting: " + name);
         params.put(name, value);
 
-        dirty=true;
         return value;
     }
 
-    private static Vector lowerCaseAll(Vector v)
+    @SuppressWarnings("unchecked")
+	private static Vector<Hashtable<String, Object>> lowerCaseAll(Vector<?> v)
     {
-        Vector v2 = new Vector();
-        for(Enumeration e = v.elements(); e.hasMoreElements(); ) {
-            Hashtable h = (Hashtable)e.nextElement();
+        Vector<Hashtable<String, Object>> v2 = new Vector<Hashtable<String, Object>>();
+        for(Enumeration<?> e = v.elements(); e.hasMoreElements(); ) {
+            Hashtable<String, Object> h = (Hashtable<String, Object>)e.nextElement();
             if(h == null) {
                 v2.addElement(h);
                 continue;
             }
-            Hashtable h2 = new Hashtable();
-            for(Enumeration e2 = h.keys(); e2.hasMoreElements(); ) {
+            Hashtable<String, Object> h2 = new Hashtable<String, Object>();
+            for(Enumeration<String> e2 = h.keys(); e2.hasMoreElements(); ) {
                 String key = (String)e2.nextElement();
                 Object value = h.get(key);
                 String value_type = value.getClass().getName();
                 Util.debug_print("to lower case: " + key + "(" + value_type + ")");
                 if(value_type.endsWith(".Vector"))
-                    value = lowerCaseAll((Vector)value);
+                    value = lowerCaseAll((Vector<?>)value);
                 h2.put(key.toLowerCase(), value);
             }
             v2.addElement(h2);

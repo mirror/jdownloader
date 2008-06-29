@@ -46,7 +46,12 @@ import org.xml.sax.InputSource;
 
 public class PackageManager extends Interaction implements Serializable {
 
-    private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
 
     private SubConfiguration managerConfig;
 

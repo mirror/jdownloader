@@ -42,7 +42,7 @@ public class ClipboardHandler extends Thread {
 
 //    private Logger logger;
 
-    private List oldList;
+    private List<?> oldList;
 
     private Thread saveConfig = null;
 

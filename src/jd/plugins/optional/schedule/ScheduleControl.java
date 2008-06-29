@@ -9,7 +9,11 @@ import java.util.Vector;
 
 public class ScheduleControl extends JDialog implements ActionListener {
     
-    Choice list = new Choice();
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	Choice list = new Choice();
     JButton add = new JButton(JDLocale.L("addons.schedule.menu.add","Add"));
     JButton remove = new JButton(JDLocale.L("addons.schedule.menu.remove","Remove"));
     JButton show = new JButton(JDLocale.L("addons.schedule.menu.edit","Edit"));    
@@ -18,7 +22,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
     JPanel menu = new JPanel();
     JPanel panel = new JPanel();
 
-    Vector v = new Vector();
+    Vector<ScheduleFrame> v = new Vector<ScheduleFrame>();
     
     boolean visible = false;
     

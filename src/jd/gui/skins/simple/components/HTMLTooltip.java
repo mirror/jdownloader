@@ -24,7 +24,11 @@ import jd.utils.JDTheme;
 
 public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListener{
    
-    private HashMap<String,HashMap<String,String>> styles=null;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private HashMap<String,HashMap<String,String>> styles=null;
     private JTextPane htmlArea;
     private Color BORDER_COLOR;
     public HTMLTooltip(){

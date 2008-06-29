@@ -89,8 +89,6 @@ public class ConfigPanelGUI extends ConfigPanel {
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
         ConfigEntry ce;
-        ConfigEntry conditionEntry;
-
         ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
 
         look.addEntry(ce);
@@ -131,7 +129,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         if (BrowserArray == null) {
             BrowserLauncher launcher;
-            List ar = null;
+            List<?> ar = null;
             try {
                 launcher = new BrowserLauncher();
                 ar = launcher.getBrowserList();

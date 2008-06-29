@@ -24,7 +24,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     private JDSimpleWebserverResponseCreator response;
     private DecimalFormat f = new DecimalFormat("#0");
 
-    private Vector v_info = new Vector();
+    private Vector<Object> v_info = new Vector<Object>();
 
     /**
      * Create a new handler that serves files from a base directory
@@ -57,7 +57,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             DownloadLink next = null;
             int i = 1;
             for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
-                Hashtable h_info = new Hashtable();
+                Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                 next = it.next();
                 if (next.isEnabled()) {
                     switch (next.getStatus()) {
@@ -162,7 +162,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 addEntry(JDLocale.L("linkinformation.download.chunks.label", "Chunks"), "");
                 int i = 1;
                 for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
-                    Hashtable h_info = new Hashtable();
+                    Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                     Chunk next = it.next();
                     double percent = next.getBytesLoaded() * 100.0 / Math.max(1, next.getChunkSize());
                     h_info.put("download_status", Single_Status);
@@ -180,24 +180,24 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     private void addEntry(String var, String value) {
-        Hashtable h_info = new Hashtable();
+        Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
         h_info.put("info_var", var);
         h_info.put("info_value", value);
         v_info.addElement(h_info);
     }
-
+/*
     private void addEntryandPercent(String var, String value, double percent) {
-        Hashtable h_info = new Hashtable();
+        Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
         h_info.put("info_var", var);
         h_info.put("info_value", value);
         h_info.put("info_percent", f.format(percent));
         v_info.addElement(h_info);
     }
-
+*/
     private void add_status_page(Template t, HashMap<String, String> requestParameter) {
-        Vector v, v2 = new Vector();
-        Hashtable h, h2 = new Hashtable();
-        v = new Vector();
+        Vector<Object> v, v2 = new Vector<Object>();
+        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
+        v = new Vector<Object>();
         String value;
         FilePackage filePackage;
         DownloadLink dLink;
@@ -207,7 +207,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         for (Package_ID = 0; Package_ID < JDUtilities.getController().getPackages().size(); Package_ID++) {
             filePackage = JDUtilities.getController().getPackages().get(Package_ID);
 
-            h = new Hashtable();
+            h = new Hashtable<Object, Object>();
             int status[] = { 0, 0, 0, 0 };
             /* Paket Infos */
             h.put("download_name", filePackage.getName());
@@ -225,7 +225,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             h.put("download_hoster", value);
             h.put("download_status_text", f.format(percent) + " % (" + JDUtilities.formatKbReadable(filePackage.getTotalKBLoaded()) + " / " + JDUtilities.formatKbReadable(filePackage.getTotalEstimatedPackageSize()) + ")");
 
-            v2 = new Vector();
+            v2 = new Vector<Object>();
 
             for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
                 dLink = filePackage.getDownloadLinks().get(Download_ID);
@@ -234,7 +234,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 percent = (double) (dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax()));
 
-                h2 = new Hashtable();
+                h2 = new Hashtable<Object, Object>();
                 h2.put("download_status_percent", f.format(percent));
                 h2.put("package_id", Package_ID.toString());
                 h2.put("download_id", Download_ID.toString());
@@ -306,9 +306,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     private void add_linkadder_page(Template t, HashMap<String, String> requestParameter) {
-        Vector v, v2 = new Vector();
-        Hashtable h, h2 = new Hashtable();
-        v = new Vector();
+        Vector<Object> v, v2 = new Vector<Object>();
+        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
+        v = new Vector<Object>();
 
         FilePackage filePackage;
         DownloadLink dLink;
@@ -318,20 +318,20 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
             filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
 
-            h = new Hashtable();
+            h = new Hashtable<Object, Object>();
             /* Paket Infos */
             h.put("download_name", filePackage.getName());
 
             h.put("package_id", Package_ID.toString());
 
-            v2 = new Vector();
+            v2 = new Vector<Object>();
 
             for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
                 dLink = filePackage.getDownloadLinks().get(Download_ID);
 
                 /* Download Infos */
 
-                h2 = new Hashtable();
+                h2 = new Hashtable<Object, Object>();
 
                 h2.put("package_id", Package_ID.toString());
                 h2.put("download_id", Download_ID.toString());

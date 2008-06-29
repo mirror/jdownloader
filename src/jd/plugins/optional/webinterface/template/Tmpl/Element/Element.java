@@ -38,7 +38,7 @@ public abstract class Element
 	protected String type;
 	protected String name="";
 
-	public abstract String parse(Hashtable params);
+	public abstract String parse(Hashtable<?, ?> params);
 	public abstract String typeOfParam(String param)
 			throws NoSuchElementException;
 

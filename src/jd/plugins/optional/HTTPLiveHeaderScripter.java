@@ -65,7 +65,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.SimpleMatches;
 import jd.plugins.PluginOptional;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -221,7 +220,8 @@ textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
 
     }
 
-    public void actionPerformed(ActionEvent e) {
+    @SuppressWarnings("unchecked")
+	public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.menImportHTTPLive) {
             this.importFF();
             return;

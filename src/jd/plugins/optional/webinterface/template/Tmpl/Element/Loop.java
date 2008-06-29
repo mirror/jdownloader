@@ -39,14 +39,14 @@ public class Loop extends Element
 	private boolean loop_context_vars=false;
 	private boolean global_vars=false;
 
-	private Vector control_val = null;
-	private Vector data;
+	private Vector<?> control_val = null;
+	private Vector<Object> data;
 
 	public Loop(String name)
 	{
 		this.type = "loop";
 		this.name = name;
-		this.data = new Vector();
+		data = new Vector<Object>();
 	}
 
 	public Loop(String name, boolean loop_context_vars)
@@ -64,7 +64,7 @@ public class Loop extends Element
 
 	public void add(String text)
 	{
-		data.addElement(text);
+		this.data.addElement(text);
 	}
 
 	public void add(Element node)
@@ -72,13 +72,14 @@ public class Loop extends Element
 		data.addElement(node);
 	}
 
-	public void setControlValue(Vector control_val)
+	public void setControlValue(Vector<?> control_val)
 			throws IllegalArgumentException
 	{
 		this.control_val = process_var(control_val);
 	}
 
-	public String parse(Hashtable p)
+	@SuppressWarnings("unchecked")
+	public String parse(Hashtable<?, ?> p)
 	{
 		if(!p.containsKey(this.name))
 			this.control_val = null;
@@ -88,14 +89,14 @@ public class Loop extends Element
 					!o.getClass().getName().endsWith(".List"))
 				throw new ClassCastException(
 					"Attempt to set <tmpl_loop> with a non-list.  tmpl_loop=" + this.name);
-			setControlValue((Vector)p.get(this.name));
+			setControlValue((Vector<?>)p.get(this.name));
 		}
 
 		if(control_val == null)
 			return "";
 
 		StringBuffer output = new StringBuffer();
-		Enumeration iterator = control_val.elements();
+		Enumeration<?> iterator = control_val.elements();
 
 		boolean first=true;
 		boolean last=false;
@@ -104,13 +105,13 @@ public class Loop extends Element
 		int counter=1;
 
 		while(iterator.hasMoreElements()) {
-			Hashtable params = (Hashtable)iterator.nextElement();
+			Hashtable<Object, Object> params = (Hashtable<Object, Object>)iterator.nextElement();
 
 			if(params==null)
-				params = new Hashtable();
+				params = new Hashtable<Object, Object>();
 
 			if(global_vars) {
-				for(Enumeration e = p.keys(); e.hasMoreElements();) {
+				for(Enumeration<?> e = p.keys(); e.hasMoreElements();) {
 					Object key = e.nextElement();
 					if(!params.containsKey(key))
 						params.put(key, p.get(key));
@@ -129,7 +130,7 @@ public class Loop extends Element
 				params.put("__COUNTER__", "" + (counter++));
 			}
 				
-			Enumeration de = data.elements();
+			Enumeration<?> de = data.elements();
 			while(de.hasMoreElements()) {
 
 				Object e = de.nextElement();
@@ -148,7 +149,7 @@ public class Loop extends Element
 	public String typeOfParam(String param)
 			throws NoSuchElementException
 	{
-		for(Enumeration e = data.elements(); e.hasMoreElements();)
+		for(Enumeration<?> e = data.elements(); e.hasMoreElements();)
 		{
 			Object o = e.nextElement();
 			if(o.getClass().getName().endsWith(".String"))
@@ -159,7 +160,7 @@ public class Loop extends Element
 		throw new NoSuchElementException(param);
 	}
 
-	private Vector process_var(Vector control_val) 
+	private Vector<?> process_var(Vector<?> control_val) 
 			throws IllegalArgumentException 
 	{
 		String control_class = "";

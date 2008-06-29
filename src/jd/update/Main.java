@@ -142,12 +142,12 @@ public static Insets INSETS=new Insets(5,5,5,5);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        boolean all = false;
         boolean restart = false;
         int runtype = 1;
         for (int i = 0; i < args.length; i++) {
 
-            if (args[i].trim().equalsIgnoreCase("/all")) all = true;
+            if (args[i].trim().equalsIgnoreCase("/all")) {
+			}
             if (args[i].trim().equalsIgnoreCase("/restart")) restart = true;
             if (args[i].trim().equalsIgnoreCase("/rt0")) runtype = 0;
             if (args[i].trim().equalsIgnoreCase("/rt1")) runtype = 1;

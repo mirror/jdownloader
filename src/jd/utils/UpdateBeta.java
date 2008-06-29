@@ -82,7 +82,7 @@ private void upload(String list){
 }
     public static void main(String args[]) {
 
-        UpdateBeta run = new UpdateBeta();
+        new UpdateBeta();
 
         // MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message",
         // Thread.currentThread(), true, true);

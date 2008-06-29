@@ -35,7 +35,11 @@ import jd.utils.JDUtilities;
 
 public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener {
 
-    private static final Color BACKGROUNDCOLOR = Color.WHITE;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private static final Color BACKGROUNDCOLOR = Color.WHITE;
     private static final int MARGIN = 2; 
     private static final Insets INSETS = new Insets(1, 1, 1, 1);
     private static final int FILL_NONE = GridBagConstraints.NONE;

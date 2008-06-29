@@ -226,12 +226,10 @@ return table.getSelectedRow();
         if (interaction == null) return;
         InteractionTrigger trigger = interaction.getTrigger();
 
-        int indexT = 0;
         int i;
 
         for (i = 0; i < triggers.length; i++) {
             if (triggers[i].getID() == trigger.getID()) {
-                indexT = i;
                 break;
             }
         }

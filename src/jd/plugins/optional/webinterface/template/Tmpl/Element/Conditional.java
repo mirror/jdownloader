@@ -37,8 +37,9 @@ import java.util.Vector;
 public class Conditional extends Element
 {
 	private boolean control_val = false;
-	private Vector [] data;
+	private Vector<Object>[] data;
 
+	@SuppressWarnings("unchecked")
 	public Conditional(String type, String name) 
 			throws IllegalArgumentException
 	{
@@ -52,7 +53,7 @@ public class Conditional extends Element
 
 		this.name = name;
 		this.data = new Vector[2];
-		this.data[0] = new Vector();
+		this.data[0] = new Vector<Object>();
 	}
 
 	public void addBranch() throws IndexOutOfBoundsException
@@ -61,9 +62,9 @@ public class Conditional extends Element
 			throw new IndexOutOfBoundsException("Already have two branches");
 
 		if(data[0] == null)
-			data[0] = new Vector();
+			data[0] = new Vector<Object>();
 		else if(data[1] == null)
-			data[1] = new Vector();
+			data[1] = new Vector<Object>();
 	}
 
 	public void add(String text)
@@ -88,7 +89,7 @@ public class Conditional extends Element
 		this.control_val = process_var(control_val);
 	}
 
-	public String parse(Hashtable params)
+	public String parse(Hashtable<?, ?> params)
 	{
 		if(!params.containsKey(this.name))
 			this.control_val = false;
@@ -97,7 +98,7 @@ public class Conditional extends Element
 
 		StringBuffer output = new StringBuffer();
 
-		Enumeration de;
+		Enumeration<?> de;
 		if(type.equals("if") && control_val ||
 			type.equals("unless") && !control_val)
 			de = data[0].elements();
@@ -124,7 +125,7 @@ public class Conditional extends Element
 		{
 			if(data[i] == null)
 				continue;
-			for(Enumeration e = data[i].elements(); 
+			for(Enumeration<?> e = data[i].elements(); 
 				e.hasMoreElements();)
 			{
 				Object o = e.nextElement();
@@ -154,7 +155,7 @@ public class Conditional extends Element
 			return !(((String)control_val).equals("") || 
 				((String)control_val).equals("0"));
 		} else if(control_class.equals("Vector")) {
-			return !((Vector)control_val).isEmpty();
+			return !((Vector<?>)control_val).isEmpty();
 		} else if(control_class.equals("Boolean")) {
 			return ((Boolean)control_val).booleanValue();
 		} else if(control_class.equals("Integer")) {

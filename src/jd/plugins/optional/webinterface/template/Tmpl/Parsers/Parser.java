@@ -107,11 +107,10 @@ public class Parser
 			throw new NoSuchElementException(type);
 	}
 
-	public Vector parseLine(String line)
+	public Vector<Object> parseLine(String line)
 			throws IllegalArgumentException
 	{
-		int pos=0, endpos;
-		Vector parts = new Vector();
+		Vector<Object> parts = new Vector<Object>();
 
 		char [] c = line.toCharArray();
 		int i=0;

@@ -34,12 +34,22 @@ public class JDEventQueue extends EventQueue {
         JTextComponent t = (JTextComponent) c;
         JPopupMenu menu = new JPopupMenu();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"),JDTheme.II("gui.icons.cut",16,16),JDLocale.L("gui.textcomponent.context.cut.acc","ctrl X")) {
-            public void actionPerformed(ActionEvent e) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
                 c.cut();
             }
         });
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy","Kopieren"),JDTheme.II("gui.icons.copy",16,16),JDLocale.L("gui.textcomponent.context.copy.acc","ctrl C")) {
-            public void actionPerformed(ActionEvent e) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
                 c.copy();
             }
 
@@ -48,7 +58,12 @@ public class JDEventQueue extends EventQueue {
             }
         });
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste","Einfügen"),JDTheme.II("gui.icons.paste",16,16),JDLocale.L("gui.textcomponent.context.paste.acc","ctrl V")) {
-            public void actionPerformed(ActionEvent e) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
                 c.paste();
             }
 
@@ -61,13 +76,23 @@ public class JDEventQueue extends EventQueue {
             }
         });
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete","Löschen"),JDTheme.II("gui.icons.delete",16,16),JDLocale.L("gui.textcomponent.context.delete.acc","DELETE")) {
-            public void actionPerformed(ActionEvent e) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
                 c.replaceSelection(null);
             }
         });
         menu.addSeparator();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall","Alles auswählen"),JDTheme.II("gui.icons.select_all",16,16),JDLocale.L("gui.textcomponent.context.selectall.acc","ctrl A")) {
-            public void actionPerformed(ActionEvent e) {
+            /**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e) {
                 c.selectAll();
             }
 
@@ -81,7 +106,11 @@ public class JDEventQueue extends EventQueue {
     }
 
     abstract class MenuAbstractAction extends AbstractAction {
-        JTextComponent c;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		JTextComponent c;
        
 
         public MenuAbstractAction(JTextComponent c, String text,ImageIcon icon, String acc) {

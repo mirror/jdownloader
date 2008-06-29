@@ -327,7 +327,8 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     }
 
-    public void actionPerformed(ActionEvent e) {
+    @SuppressWarnings("unchecked")
+	public void actionPerformed(ActionEvent e) {
         logger.info(e.getActionCommand());
         if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))) {
             JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);

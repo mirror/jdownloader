@@ -17,7 +17,11 @@ import jd.utils.JDUtilities;
 
 public abstract class DownloadLinksView extends JPanel implements ControlListener {
 
-    protected SimpleGUI parent;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	protected SimpleGUI parent;
     protected JPopupMenu popup;
     public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public final static int REFRESH_ALL_DATA_CHANGED = 1;

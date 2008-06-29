@@ -55,6 +55,11 @@ import jd.utils.JDUtilities;
 public class ConfigPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
      * 
      */
 
@@ -188,7 +193,12 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     private class InternalTableModel extends AbstractTableModel {
 
-        public Class<?> getColumnClass(int columnIndex) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public Class<?> getColumnClass(int columnIndex) {
 
             return getValueAt(0, columnIndex).getClass();
 
@@ -281,6 +291,11 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     }
 
     private class InternalTable extends JTable {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 
     }
 

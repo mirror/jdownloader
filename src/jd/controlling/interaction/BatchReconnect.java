@@ -30,7 +30,12 @@ import jd.utils.JDUtilities;
 
 public class BatchReconnect extends Interaction implements Serializable {
 
-    public static String        PROPERTY_TERMINAL                 = "TERMINAL";
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public static String        PROPERTY_TERMINAL                 = "TERMINAL";
 
     public static final String  PROPERTY_IP_WAIT_FOR_RETURN       = "WAIT_FOR_RETURN";
 

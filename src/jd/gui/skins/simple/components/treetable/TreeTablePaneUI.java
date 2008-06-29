@@ -221,7 +221,12 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     class OpaqueRenderPane extends CellRendererPane {
 
-        public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
             if (c instanceof JComponent) {
                 JComponent vComponent = (JComponent) c;
                 vComponent.setOpaque(false);

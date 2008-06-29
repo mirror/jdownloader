@@ -11,7 +11,11 @@ import java.util.Calendar;
 
 public class ScheduleFrame extends JPanel implements ActionListener{
     
-    //Objekte werden erzeugt
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	//Objekte werden erzeugt
     Timer t = new Timer(10000,this); 
     Timer c = new Timer(1000,this);
     JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN),1,10,1));

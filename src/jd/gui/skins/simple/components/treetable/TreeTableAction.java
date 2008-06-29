@@ -29,7 +29,11 @@ import jd.config.Property;
 public class TreeTableAction extends AbstractAction{
 
 
-    public static final int DOWNLOAD_INFO = 0;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public static final int DOWNLOAD_INFO = 0;
     public static final int DOWNLOAD_DOWNLOAD_DIR = 1;
     public static final int DOWNLOAD_DELETE = 2;
     public static final int DOWNLOAD_FORCE = 3;

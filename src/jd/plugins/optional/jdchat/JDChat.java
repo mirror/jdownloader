@@ -716,7 +716,8 @@ public class JDChat extends PluginOptional implements ControlListener {
             if (cmd.trim().length() > 0) this.sendMessage(CHANNEL, cmd);
     }
 
-    private void initGUI() {
+    @SuppressWarnings("unchecked")
+	private void initGUI() {
 
         this.frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"));
@@ -1291,7 +1292,8 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    public void updateNamesPanel() {
+    @SuppressWarnings("unchecked")
+	public void updateNamesPanel() {
         final StringBuffer sb = new StringBuffer();
         Collections.sort(NAMES);
 

@@ -940,7 +940,8 @@ public class JDController implements ControlListener, UIListener {
      */
     public void loadContainerFile(final File file) {
         new Thread() {
-            public void run() {
+            @SuppressWarnings("unchecked")
+			public void run() {
 
                 Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
                 Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();

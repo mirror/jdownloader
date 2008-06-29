@@ -68,7 +68,8 @@ public class Property implements Serializable {
      * @param key
      * @param value
      */
-    public void setProperty(String key, Object value) {
+    @SuppressWarnings("unchecked")
+	public void setProperty(String key, Object value) {
 //        if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
 //            logger.info("II");
 //        }
@@ -85,7 +86,7 @@ public class Property implements Serializable {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
 
             } else if (value instanceof Comparable) {
-                if (((Comparable) value).compareTo((Comparable) old) != 0) {
+                if (((Comparable<Comparable<?>>) value).compareTo((Comparable<?>) old) != 0) {
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
                 }
             } else if (value instanceof Object) {

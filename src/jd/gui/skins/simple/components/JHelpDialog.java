@@ -41,7 +41,12 @@ import jd.utils.JDUtilities;
 
 public class JHelpDialog extends JDialog implements ActionListener {
 
-    protected Insets  insets            = new Insets(5, 5, 5, 5);
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	protected Insets  insets            = new Insets(5, 5, 5, 5);
 
     protected Logger  logger            = JDUtilities.getLogger();
 

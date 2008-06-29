@@ -77,8 +77,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JButton btnCancel;
 
-    private boolean configChanged = false;
-
     @SuppressWarnings("unused")
     private UIInterface uiinterface;
 
@@ -332,7 +330,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             for (int i = 0; i < configPanels.size(); i++) {
                 if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
             }
-            configChanged = true;
             JDUtilities.setConfiguration(configuration);
             JDUtilities.saveConfig();
             JDUtilities.restartJD();
@@ -343,7 +340,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             for (int i = 0; i < configPanels.size(); i++) {
                 if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
             }
-            configChanged = true;
             JDUtilities.setConfiguration(configuration);
             JDUtilities.saveConfig();
 

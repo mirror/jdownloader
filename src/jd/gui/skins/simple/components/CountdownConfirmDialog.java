@@ -40,6 +40,11 @@ import jd.utils.JDUtilities;
 public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	/**
      * Bestätigungsknopf
      */
     private JButton btnOK;

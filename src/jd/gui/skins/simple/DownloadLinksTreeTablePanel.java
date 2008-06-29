@@ -16,7 +16,11 @@ import jd.utils.JDUtilities;
 
 public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
-    private DownloadTreeTable internalTreeTable;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private DownloadTreeTable internalTreeTable;
 
 //    private DownloadTreeTableModel treeModel;
 

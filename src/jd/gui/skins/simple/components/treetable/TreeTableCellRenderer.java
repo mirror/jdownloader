@@ -19,7 +19,12 @@ import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 //TreeCellRenderer
 public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
-    private JLabel lbl_link;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private JLabel lbl_link;
 
     private JLabel lbl_fp_closed;
 

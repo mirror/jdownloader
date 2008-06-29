@@ -23,7 +23,11 @@ import java.io.Serializable;
 public class BackupLink implements Serializable {
   
 
-    public static final int LINKTYPE_NORMAL = 0;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public static final int LINKTYPE_NORMAL = 0;
     public static final int LINKTYPE_CONTAINER = 1;
   
 

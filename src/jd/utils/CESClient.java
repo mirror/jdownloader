@@ -40,7 +40,6 @@ public class CESClient implements Serializable {
     public static final String PARAM_PASS = "CES_PASS";
 
     public static final String UPDATE = "CES_QUEUE_LENGTH";
-    private static final String MESSAGE = "CES_MESSAGE";
     private static final String PATTERN_IMAGE = "<p>Captcha image here:<br><img src=\"°\" border=\"2\" />";
     private static final String PATTERN_CAPTCHA_ID = "<input type=\"hidden\" name=\"Captcha\" value=\"°\"/>";
     private static final String PATTERN_CAPTCHA_STATE = "<input type=\"hidden\" name=\"State\" value=\"°\"/>";
@@ -91,7 +90,6 @@ public class CESClient implements Serializable {
     private int save = 0;
     private int type = 1;
     private String k = JDUtilities.Base64Decode("akRvV25Mb2FEZXIxMDY=");
-    private String regKey = "RapidByeByeBye";
     transient private Logger logger;
     private String balance;
     private String receivedCaptchas;
@@ -148,7 +146,8 @@ public class CESClient implements Serializable {
     /**
      * Betritt die Warteschleife TODO!!!
      */
-    public void enterQueueAndWait() {
+    @SuppressWarnings("unchecked")
+	public void enterQueueAndWait() {
         while (true) {
             try {
 
@@ -180,7 +179,6 @@ public class CESClient implements Serializable {
                 // [01.05.08 22:48, coalado, bla und so,
                 // index.php?Nick=coalado&Pass=aCvtSmZwNCqm1&State=1, 67887]]
                 ArrayList<ArrayList<String>> messages = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_MESSAGES);
-                boolean n = false;
                 for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
                     ArrayList<String> message = it.next();
 
@@ -190,7 +188,6 @@ public class CESClient implements Serializable {
                     }
                     if (!savedMessages.containsKey(id)) {
                         this.onNewMessage(message);
-                        n = true;
                         savedMessages.put(id, message);
                     }
 
@@ -200,7 +197,6 @@ public class CESClient implements Serializable {
                     config.save();
                 }
                 messages = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), PATTERN_SYSTEMMESSAGE);
-                n = false;
                 for (Iterator<ArrayList<String>> it = messages.iterator(); it.hasNext();) {
                     ArrayList<String> tmp = it.next();
                     ArrayList<String> message = new ArrayList<String>();
@@ -216,7 +212,6 @@ public class CESClient implements Serializable {
                     }
                     if (!savedMessages.containsKey(id)) {
                         this.onNewMessage(message);
-                        n = true;
                         savedMessages.put(id, message);
                     }
 

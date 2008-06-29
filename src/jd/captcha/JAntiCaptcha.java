@@ -164,11 +164,6 @@ public class JAntiCaptcha {
 
     private int[][] letterMap = null;
     
-    //TODO noch nicht implementiert
-    private int maxLetterNum;
-
-    private int minLetterNum;
-
     private Captcha workingCaptcha;
 
     /**
@@ -467,12 +462,10 @@ public class JAntiCaptcha {
     }
 
     private void setLetterMaxNum(int parseInt) {
-        this.maxLetterNum = parseInt;
 
     }
 
     private void setLetterMinNum(int parseInt) {
-        this.minLetterNum = parseInt;
 
     }
 

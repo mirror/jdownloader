@@ -175,8 +175,8 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
                 btPreferences.setToolTipText(JDSWTUtilities.getSWTResourceString("MainGui.btPreferences.desc"));
                 btInfo = JDSWTUtilities.toolBarItem(display, toolBar, "info", SWT.DROP_DOWN);
                 btInfo.addListener(SWT.Selection, guiListeners.initBtInfoListener());
-                MenuItem btInfoHelp = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoHelp.name"));
-                MenuItem btInfoUpdate = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoUpdate.name"));
+                guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoHelp.name"));
+                guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoUpdate.name"));
                 MenuItem btInfoAbout = guiListeners.addListenerMenu("btInfo", JDSWTUtilities.getSWTResourceString("MainGui.btInfoAbout.name"));
                 btInfoAbout.addListener(SWT.Selection, guiListeners.initBtInfoAboutListener());
             }
@@ -428,49 +428,40 @@ public class MainGui extends org.eclipse.swt.widgets.Composite implements UIInte
         // TODO Auto-generated method stub
         return null;
     }
-	@Override
 	public void displayMiniWarning(String shortWarn, String longWarn,
 			int showtime) {
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
 	public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,
 			String def) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	@Override
 	public void onJDInitComplete() {
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
 	public void setGUIStatus(int id) {
 		// TODO Auto-generated method stub
 		
 	}
-	@Override
 	public boolean showCountdownConfirmDialog(String string, int sec) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	@Override
 	public boolean showHTMLDialog(String title, String htmlQuestion) {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	@Override
 	public int showHelpMessage(String title, String message, String url) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
-	@Override
 	public String showTextAreaDialog(String title, String question, String def) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	@Override
 	public void controlEvent(ControlEvent event) {
 		// TODO Auto-generated method stub
 		

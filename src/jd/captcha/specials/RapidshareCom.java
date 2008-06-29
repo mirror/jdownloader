@@ -39,17 +39,9 @@ import jd.utils.JDUtilities;
  */
 public class RapidshareCom {
 
-    private static final Byte CAT = 1;
-
-    private static final Byte DOG = 0;
-
     private static Logger logger = JDUtilities.getLogger();
 
     private static int fak = 2;
-
-    private static int cats;
-
-    private static JAntiCaptcha JAC;
 
     public static void prepareCaptcha(Captcha captcha) {
 //BasicWindow.showImage(captcha.getImage());
@@ -64,7 +56,7 @@ public class RapidshareCom {
         int newWidth = (int) Math.ceil((double) captcha.getWidth() / faktor);
         int newHeight = (int) Math.ceil((double) captcha.getHeight() / faktor);
 
-        int avg = captcha.getAverage();
+        captcha.getAverage();
 
         int[][] newGrid = new int[newWidth][newHeight];
 
@@ -129,7 +121,6 @@ public class RapidshareCom {
     }
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
-        JAC = jac;
         int ths = Runtime.getRuntime().availableProcessors();
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
         Vector<Letter> ret = new Vector<Letter>();
@@ -141,7 +132,6 @@ public class RapidshareCom {
         int count = org.length;
 
         Letter ll;
-        LetterComperator resletter;
         int bx = jac.getJas().getInteger("borderVarianceX");
 
         for (Letter l : org) {
@@ -244,7 +234,7 @@ public class RapidshareCom {
         for (Iterator<Letter> it = ret.iterator(); it.hasNext();) {
 
             Letter l = it.next();
-            Vector<PixelObject> objects = getWhiteObjects(l, jac);
+            getWhiteObjects(l, jac);
         }
         // for (Iterator<Letter> it = ret.iterator(); it.hasNext();) {
         // if (it.next().detected.getValityPercent() >= 90) {
@@ -290,11 +280,7 @@ public class RapidshareCom {
         map.add(new byte[] { 0, 1, 1, 0, 1, 0, 1 });
         map.add(new byte[] { 1, 0, 1, 0, 1, 0, 1 });
         map.add(new byte[] { 0, 1, 0, 1, 0, 1, 1 });
-        ArrayList<Byte> catList = new ArrayList<Byte>();
-        LetterComperator dummy;
-        int cats = 0;
-        int count = 0;
-
+        new ArrayList<Byte>();
         Vector<Letter> lets = new Vector<Letter>();
         int id = 0;
         for (Letter l : letters) {
@@ -416,6 +402,7 @@ public class RapidshareCom {
     // }
     // return org;
     // }
+    /*
     private static Vector<PixelObject> getBorderObjects(Letter l, JAntiCaptcha jac) {
 
         int limit = 200;
@@ -449,7 +436,7 @@ public class RapidshareCom {
         return ret;
 
     }
-
+*/
     private static Vector<PixelObject> getWhiteObjects(Letter l, JAntiCaptcha jac) {
 
         int limit = 200;
@@ -507,7 +494,7 @@ public class RapidshareCom {
 
     public static void comparatorExtension(LetterComperator lc, Double currentValue) {
         Letter db = lc.getB();
-        Letter ca = lc.getA();
+        lc.getA();
         //logger.info(""+currentValue);
         if (currentValue > 0.4) return;
         // Prüfe Füllungen

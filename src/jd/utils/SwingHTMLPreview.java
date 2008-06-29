@@ -25,14 +25,19 @@ import javax.swing.event.DocumentListener;
  *
  */
 public class SwingHTMLPreview extends javax.swing.JFrame implements DocumentListener {
-    JTextArea top;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	JTextArea top;
     JEditorPane bottom;
     
     /** Creates a new instance of SwingHTMLPreview */
     public SwingHTMLPreview() {
     }
     
-    public static void main(String args[]) {
+    @SuppressWarnings("deprecation")
+	public static void main(String args[]) {
         SwingHTMLPreview instance = new SwingHTMLPreview();
         instance.init();
         instance.show();

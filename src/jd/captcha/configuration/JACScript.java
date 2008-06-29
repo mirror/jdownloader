@@ -745,7 +745,8 @@ public class JACScript {
     /**
      * @param letter
      */
-    public void executeLetterPrepareCommands(Letter letter) {
+    @SuppressWarnings("unchecked")
+	public void executeLetterPrepareCommands(Letter letter) {
 
         if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Letter Prepare scripts");
 

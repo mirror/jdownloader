@@ -120,12 +120,17 @@ public class JDAboutDialog {
     
 
     private final static class LinkAction extends AbstractAction {
-        private String url;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		private String url;
         private LinkAction(String label, String url) {
             super(label);
             this.url = url;
         }
-        public void actionPerformed(ActionEvent e) {
+        @SuppressWarnings("deprecation")
+		public void actionPerformed(ActionEvent e) {
             try {
                 BrowserLauncher.openURL(url);
             } catch (UnsupportedOperatingSystemException e1) {

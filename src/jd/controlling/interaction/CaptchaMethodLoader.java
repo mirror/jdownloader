@@ -28,7 +28,12 @@ import jd.utils.JDUtilities;
 
 public class CaptchaMethodLoader extends Interaction implements Serializable {
 
-    private static final String NAME              = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private static final String NAME              = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
 
     public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
 

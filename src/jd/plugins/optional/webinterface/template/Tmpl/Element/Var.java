@@ -56,6 +56,7 @@ public class Var extends Element
 		this.type = "var";
 		this.name = name;
 		this.escape = escape;
+		
 	}
 
 	public Var(String name, String escape)
@@ -83,7 +84,7 @@ public class Var extends Element
 		this(name, escape?ESCAPE_HTML:ESCAPE_NONE);
 	}
 
-	public String parse(Hashtable params)
+	public String parse(Hashtable<?, ?> params)
 	{
 		String value = null;
 
