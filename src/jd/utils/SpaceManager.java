@@ -17,7 +17,7 @@ public class SpaceManager {
             reflectOnUsableSpace = null;
         }
         try {
-            return ((Long) reflectOnUsableSpace.invoke(f, null)).longValue();
+            return ((Long) reflectOnUsableSpace.invoke(f)).longValue();
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
