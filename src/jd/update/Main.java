@@ -36,9 +36,8 @@ import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
-
 
 
 public class Main {
@@ -56,11 +55,20 @@ public static int NORTHWEST= GridBagConstraints.NORTHWEST;
 public static Insets INSETS=new Insets(5,5,5,5);
     public static void main(String args[]) {
         final StringBuffer log = new StringBuffer();
-
+        
             UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
             SubConfiguration guiConfig = SubConfiguration.getSubConfig("simpleGUI");
             String paf = guiConfig.getStringProperty("PLAF", null);
             boolean plafisSet = false;
+            
+            System.setProperty("proxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_HOST"));
+            System.setProperty("proxyPort", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_PORT") + "");
+            System.setProperty("http.proxyUser", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_USER"));
+            System.setProperty("http.proxyPassword", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_PASS"));
+            System.setProperty("proxySet", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("USE_PROXY"));
+            if (!Boolean.parseBoolean(SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("USE_PROXY"))) System.setProperty("proxyHost", "");
+                
+            
             if(paf!=null)
             {
             for (int i = 0; i < info.length; i++) {
