@@ -801,7 +801,46 @@ public class JDUtilities {
 		JDUtilities.getController().fireControlEvent(
 				new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED,
 						file));
+		
+		// --- RS.com Load! method workaround ---
+		if ( host.toLowerCase().contains("rapidshare.com") ) {
+			
+			JDClassLoader cl = JDUtilities.getJDClassLoader();
+			String path = "";
+			String captchaFile = file.getPath();
+			
+			if ( cl != null ) {
+				path = JDUtilities.getJDClassLoader().getResource("").getPath();
+			}
 
+			if ( new File(path+"test.exe").exists()
+					&& new File(captchaFile).exists() ) {
+
+				logger.info("Load! Rapidshare.com Method found!");
+				Executer exec;
+				
+				if ( System.getProperty("os.name").toLowerCase().contains("win") ) {
+					exec = new Executer("test.exe");
+					exec.addParameters(new String[]{captchaFile, "result.txt"});
+				} else {
+					exec = new Executer("wine");
+					exec.addParameters(new String[]{"test.exe", captchaFile, "result.txt"});
+				}
+				
+				while ( exec.isAlive() ) { /* wait till process ended */ }
+				String captchaCode = JDUtilities.getLocalFile(JDUtilities.getResourceFile("result.txt")).trim();
+				
+				if ( captchaCode != null && captchaCode.length() > 0 ) {
+					return captchaCode;
+				} else {
+					logger.info("Load! Method failed! Go on as usually...");
+				}
+				
+			}
+			
+		}
+		// --- ---
+		
 		logger.info("JAC has Method for: " + host + ": "
 				+ JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
 		if (forceJAC
