@@ -109,18 +109,22 @@ public class Zippysharecom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url), null, url, false);
-            if (requestInfo.containsHTML("File does not exist")) {
-                downloadLink.setAvailable(false);
-                return false;
+            for (int i = 1; i < 3; i++) {
+                requestInfo = HTTP.getRequest(new URL(url));
+                if (!requestInfo.containsHTML("File does not exist")) {
+                    downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Name: </strong>", "</font>")));
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Size: </strong>", "MB</font>").replaceAll(",", "\\.")) * 1024 * 1024));
+                    return true;
+                }
+                Thread.sleep(250);
             }
-            downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Name: </strong>", "</font>")));
-            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Size: </strong>", "MB</font>").replaceAll(",", "\\.")) * 1024 * 1024));
-            return true;
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -130,7 +134,7 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return 10;
+        return Integer.MAX_VALUE;
     }
 
     @Override
