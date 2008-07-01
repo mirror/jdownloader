@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
+
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -71,15 +73,16 @@ public class Zippysharecom extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
-            /* Dateiname und Link holen */
+            /* Link holen */
             RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-            downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Name: </strong>", "</font>")));
             String linkurl = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "downloadlink = unescape\\(\\'", "\\'\\);"));
-
             /* Datei herunterladen */
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
             HTTPConnection urlConnection = requestInfo.getConnection();
+            String filename = JDUtilities.htmlDecode(new Regex(requestInfo.getHeaders().get("Content-Disposition").get(0), "attachment; filename=(.*)").getFirstMatch());
             downloadLink.setDownloadMax(urlConnection.getContentLength());
+            downloadLink.setStaticFileName(filename);
+            downloadLink.setName(filename);
             final long length = downloadLink.getDownloadMax();
             dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
@@ -106,7 +109,7 @@ public class Zippysharecom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
+            requestInfo = HTTP.getRequest(new URL(url), null, url, false);
             if (requestInfo.containsHTML("File does not exist")) {
                 downloadLink.setAvailable(false);
                 return false;
@@ -127,8 +130,7 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        /*FIXME: es sind mehrere gleichzeitig möglich jedoch gibts ohne ne kleine pause viele files, die fälschlicherweise offline sind*/
-        return 1;
+        return 10;
     }
 
     @Override
