@@ -821,16 +821,20 @@ public class JDUtilities {
 				
 				if ( System.getProperty("os.name").toLowerCase().contains("win") ) {
 					exec = new Executer("test.exe");
-					exec.addParameters(new String[]{captchaFile, "result.txt"});
+					exec.addParameters(new String[]{captchaFile, path+"result.txt"});
 				} else {
 					exec = new Executer("wine");
-					exec.addParameters(new String[]{"test.exe", captchaFile, "result.txt"});
+					exec.addParameters(new String[]{path+"test.exe", captchaFile, path+"result.txt"});
 				}
+
+				JDUtilities.writeLocalFile(JDUtilities.getResourceFile("result.txt"), "");
+				exec.run();
 				
 				while ( exec.isAlive() ) { /* wait till process ended */ }
 				String captchaCode = JDUtilities.getLocalFile(JDUtilities.getResourceFile("result.txt")).trim();
 				
 				if ( captchaCode != null && captchaCode.length() > 0 ) {
+					logger.info("Load! Method returned: "+captchaCode);
 					return captchaCode;
 				} else {
 					logger.info("Load! Method failed! Go on as usually...");
