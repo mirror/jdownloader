@@ -1304,7 +1304,7 @@ public class Rapidshare extends PluginForHost {
             dl = new RAFDownload(this, downloadLink, urlConnection);
 
             dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             if (dl.startDownload()) {
 
                 if (new File(downloadLink.getFileOutput()).length() < 6000 && Regex.matches(JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())), PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
@@ -1703,7 +1703,7 @@ public class Rapidshare extends PluginForHost {
             dl = new RAFDownload(this, downloadLink, urlConnection);
 
             dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             if (dl.startDownload()) {
                 // Dieses Konto ist am Mon, 2. Jun 2008 abgelaufen
 

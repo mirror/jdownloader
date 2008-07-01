@@ -204,7 +204,7 @@ public class FilesTo extends PluginForHost {
                     
                     // Download starten
                    dl = new RAFDownload(this, downloadLink, urlConnection);
-                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,2));
                     dl.startDownload();
                     
                     return step;

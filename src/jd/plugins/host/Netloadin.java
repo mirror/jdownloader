@@ -442,7 +442,7 @@ public class Netloadin extends PluginForHost {
 
             dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
             dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 
             dl.setLoadPreBytes(1);
             dl.startDownload();

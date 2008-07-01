@@ -346,7 +346,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public int getChunksPerFile() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3);
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
     }
 
     public int getFreeConnections() {

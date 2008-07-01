@@ -388,7 +388,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
 		t.setParam("config_max_downloads", JDUtilities.getSubConfig("DOWNLOAD")
 				.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
-						0));
+						2));
 		t.setParam("config_max_speed", JDUtilities.getSubConfig("DOWNLOAD")
 				.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
 

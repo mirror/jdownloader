@@ -242,7 +242,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      * @return
      */
     public int getSimultanDownloadNum() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 3);
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
     }
 
     /**

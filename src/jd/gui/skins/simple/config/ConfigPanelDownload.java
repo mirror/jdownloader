@@ -101,11 +101,11 @@ public class ConfigPanelDownload extends ConfigPanel {
         
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20);
-        ce.setDefaultValue(3);
+        ce.setDefaultValue(2);
         ce.setStep(1);
         download.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, JDLocale.L("gui.config.download.chunks", "Anzahl der Verbindungen/Datei(Chunkload)"), 1, 20);
-        ce.setDefaultValue(3);
+        ce.setDefaultValue(2);
         ce.setStep(1);
         conditionEntry = ce;
         download.addEntry(ce);

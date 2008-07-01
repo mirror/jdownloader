@@ -379,7 +379,7 @@ public class Megauploadcom extends PluginForHost {
             downloadLink.setName(name);
             dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 3));
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             dl.setResume(true);
             dl.startDownload();
             step = nextStep(step);

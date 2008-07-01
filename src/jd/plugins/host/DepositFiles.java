@@ -272,7 +272,7 @@ public class DepositFiles extends PluginForHost {
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
                    dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,3));
+                    dl.setResume(true);dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,2));
                     
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
