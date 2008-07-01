@@ -11,8 +11,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Zippysharecom extends PluginForHost {
@@ -62,7 +62,7 @@ public class Zippysharecom extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
             /* Nochmals das File überprüfen */
@@ -71,9 +71,8 @@ public class Zippysharecom extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
-            sleep(5000, downloadLink);
             /* Dateiname und Link holen */
-            requestInfo = HTTP.getRequest(new URL(url));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
             downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Name: </strong>", "</font>")));
             String linkurl = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "downloadlink = unescape\\(\\'", "\\'\\);"));
 
@@ -95,9 +94,6 @@ public class Zippysharecom extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
@@ -125,12 +121,14 @@ public class Zippysharecom extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        downloadLink.setAvailable(false);
         return false;
     }
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
+        /*FIXME: es sind mehrere gleichzeitig möglich jedoch gibts ohne ne kleine pause viele files, die fälschlicherweise offline sind*/
+        return 1;
     }
 
     @Override
@@ -146,15 +144,4 @@ public class Zippysharecom extends PluginForHost {
         return "http://www.zippyshare.com/terms.html";
     }
 
-    private void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0) {
-
-            i -= 1000;
-            downloadLink.setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
-            downloadLink.requestGuiUpdate();
-            Thread.sleep(1000);
-
-        }
-
-    }
 }
