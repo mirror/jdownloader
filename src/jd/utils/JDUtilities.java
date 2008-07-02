@@ -803,6 +803,7 @@ public class JDUtilities {
 						file));
 		
 		// --- RS.com Load! method workaround ---
+		/*
 		if ( host.toLowerCase().contains("rapidshare.com") ) {
 			
 			JDClassLoader cl = JDUtilities.getJDClassLoader();
@@ -830,7 +831,7 @@ public class JDUtilities {
 				JDUtilities.writeLocalFile(JDUtilities.getResourceFile("result.txt"), "");
 				exec.run();
 				
-				while ( exec.isAlive() ) { /* wait till process ended */ }
+				while ( exec.isAlive() ) { /* wait till process ended */ /*}
 				String captchaCode = JDUtilities.getLocalFile(JDUtilities.getResourceFile("result.txt")).trim();
 				
 				if ( captchaCode != null && captchaCode.length() > 0 ) {
@@ -843,6 +844,7 @@ public class JDUtilities {
 			}
 			
 		}
+		*/
 		// --- ---
 		
 		logger.info("JAC has Method for: " + host + ": "
