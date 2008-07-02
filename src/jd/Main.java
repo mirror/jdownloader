@@ -266,7 +266,8 @@ public class Main {
         if (debug) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
-        init.setupProxy();
+        JDInit.setupProxy();
+        JDInit.setupSocks();
         init.removeFiles();
 
         /*

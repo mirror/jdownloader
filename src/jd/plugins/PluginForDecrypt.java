@@ -85,7 +85,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    @SuppressWarnings("unchecked")
     public Vector<DownloadLink> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
         if (progress != null && !progress.isFinished()) {

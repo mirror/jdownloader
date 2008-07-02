@@ -400,8 +400,7 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("jdchat.JDChat", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
-        
-        
+
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         Double version = JDUtilities.getJavaVersion();
@@ -430,7 +429,7 @@ public class JDInit {
                     int id = (Integer) f.invoke(null, new Object[] {});
 
                     if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
-                        logger.severe("Addon "+cl+" is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
+                        logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
 
                     } else {
 
@@ -445,7 +444,7 @@ public class JDInit {
                         logger.finer("Successfull!. Loaded " + cl);
                     }
                 } catch (Exception e) {
-                    logger.severe("Addon "+cl+" is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
+                    logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
 
                 }
 
@@ -557,12 +556,14 @@ public class JDInit {
                 Vector<Vector<String>> files = updater.getAvailableFiles();
                 // logger.info(files + "");
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
-                // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
+                // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(
+                // Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
                 // false)){
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.get(i).get(0).endsWith("mth"))
+                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
                 // "+files.get(i).get(0));
@@ -712,7 +713,7 @@ public class JDInit {
     public void removeFiles() {
         String[] remove = null;
 
-       remove = new String[] { "jd/captcha/methods/filefactory.com","jd/captcha/methods/Stealth.to" ,"jd/captcha/methods/rapidshare.com" };
+        remove = new String[] { "jd/captcha/methods/filefactory.com", "jd/captcha/methods/Stealth.to", "jd/captcha/methods/rapidshare.com" };
         if (remove != null) for (String file : remove) {
 
             if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {
@@ -723,27 +724,32 @@ public class JDInit {
 
     }
 
-    public void setupProxy() {
-        // try {
-        // splashScreen.increase(2);
-        // splashScreen.setText("Setup Proxy");
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        System.setProperty("proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
-        System.setProperty("proxyPort", JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 80) + "");
-        System.setProperty("http.proxyUser", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_USER, ""));
-        System.setProperty("http.proxyPassword", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_PASS, ""));
-        System.setProperty("proxySet", JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY, false) ? "true" : "false");
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) System.setProperty("proxyHost", "");
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY)) {
-            logger.info("Use proxy:");
-            logger.info("proxyHost: " + System.getProperty("proxyHost"));
-            logger.info("proxyPort: " + System.getProperty("proxyPort"));
-            logger.info("http.proxyUser: *******");
-            logger.info("http.proxyPassword: ******");
+    public static void setupProxy() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            //für evtl authentifizierung: http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
+            //nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
+            System.setProperty("http.proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
+            System.setProperty("http.proxyPort", new Integer(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
+            logger.info("http-proxy: enabled");           
+        } else {
+            System.setProperty("http.proxyHost", "");            
+            logger.info("http-proxy: disabled");
         }
-
+    }
+    
+    public static void setupSocks() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_SOCKS, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            System.setProperty("socksProxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.SOCKS_HOST, ""));
+            System.setProperty("socksProxyPort", new Integer(JDUtilities.getConfiguration().getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
+            logger.info("socks-proxy: enabled");           
+        } else {
+            System.setProperty("socksProxyHost", "");            
+            logger.info("socks-proxy: disabled");
+        }
     }
 
 }

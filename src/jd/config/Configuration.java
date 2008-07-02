@@ -225,9 +225,15 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PROXY_PORT = "PROXY_PORT";
 
-    public static final String PROXY_USER = "PROXY_USER";
+//    public static final String PROXY_USER = "PROXY_USER";
+//
+//    public static final String PROXY_PASS = "PROXY_PASS";
+    
+    public static final String USE_SOCKS = "USE_SOCKS";
 
-    public static final String PROXY_PASS = "PROXY_PASS";
+    public static final String SOCKS_HOST = "SOCKS_HOST";
+
+    public static final String SOCKS_PORT = "SOCKS_PORT";
 
     public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
 

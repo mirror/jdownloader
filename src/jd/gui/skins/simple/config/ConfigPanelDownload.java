@@ -184,10 +184,10 @@ public class ConfigPanelDownload extends ConfigPanel {
      
         
         
-        
+           
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Proxy Verwenden"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
         ce.setDefaultValue(false);
         ce.setExpertEntry(true);
         network.addEntry(ce);
@@ -200,25 +200,44 @@ public class ConfigPanelDownload extends ConfigPanel {
         network.addEntry(ce);
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"),1,65000);
+        ce.setDefaultValue(8080);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setExpertEntry(true);
+        network.addEntry(ce);
+        
+        
+//        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "Benutzername (optional)"));
+//      
+//        ce.setEnabledCondidtion(conditionEntry, "==", true);
+//        ce.setExpertEntry(true);
+//        network.addEntry(ce);
+//        
+//        
+//        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Passwort (optional)"));
+//    
+//        ce.setEnabledCondidtion(conditionEntry, "==", true);
+//        ce.setExpertEntry(true);
+//        network.addEntry(ce);
+     
+        ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
+        network.addEntry(ce);
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.USE_SOCKS, JDLocale.L("gui.config.download.use_socks", "Socks-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
+        ce.setDefaultValue(false);
+        ce.setExpertEntry(true);
+        network.addEntry(ce);
+        conditionEntry=ce;
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.SOCKS_HOST, JDLocale.L("gui.config.download.socks.host", "Host/IP"));
+        
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        ce.setExpertEntry(true);
+        network.addEntry(ce);
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"),1,65000);
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setExpertEntry(true);
         network.addEntry(ce);
-        
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "Benutzername (optional)"));
-      
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
-        network.addEntry(ce);
-        
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Passwort (optional)"));
-    
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
-        network.addEntry(ce);
-     
 
         
 
