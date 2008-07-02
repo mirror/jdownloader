@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.sql.Date;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +32,6 @@ import java.util.regex.Pattern;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
-import jd.captcha.CES;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -49,12 +46,11 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.CESClient;
+//import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -76,13 +72,13 @@ public class Rapidshare extends PluginForHost {
     // '<center><table><tr><td><img
     // src="http://rs235.rapidshare.com/access1216288.gif"></td>' +
 
-    private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL = Pattern.compile("<center><table><tr><td><img src\\=\"(.*?)\"></td>");
+//    private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL = Pattern.compile("<center><table><tr><td><img src\\=\"(.*?)\"></td>");
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
     private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(bereits eine Datei runter)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_MATCHER_HAPPY_HOUR = Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
+//    private static final Pattern PATTERN_MATCHER_HAPPY_HOUR = Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
     // <form name="dl"
     // action="http://rs363cg.rapidshare.com/files/119944363/814136/NG_-_001_-_TaN.part2.rar"
@@ -138,9 +134,9 @@ public class Rapidshare extends PluginForHost {
 
     private String[] serverList2;
 
-    private boolean hashFound;
+//    private boolean hashFound;
 
-    private CESClient ces;
+//    private CESClient ces;
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -171,7 +167,7 @@ public class Rapidshare extends PluginForHost {
     private static final String PROPERTY_USE_PREMIUM_3 = "USE_PREMIUM_3";
 
 //    private static final String PROPERTY_FREE_IF_LIMIT_NOT_REACHED = "FREE_IF_LIMIT_NOT_REACHED";
-    private static final String PARAM_FORRCEFREE_WHILE_HAPPYHOURS = "FORRCEFREE_WHILE_HAPPYHOURS";
+//    private static final String PARAM_FORRCEFREE_WHILE_HAPPYHOURS = "FORRCEFREE_WHILE_HAPPYHOURS";
 
     private static final int ACTION_TOGGLE_PREMIUM_1 = 1;
 
@@ -181,13 +177,13 @@ public class Rapidshare extends PluginForHost {
     private static final int ACTION_INFO_PREMIUM_2 = 5;
     private static final int ACTION_INFO_PREMIUM_3 = 6;
 
-    private static final int ACTION_HAPPY_HOURS = 7;
+//    private static final int ACTION_HAPPY_HOURS = 7;
 
-    private static final String PARAM_WAIT_FOR_HAPPYHOURS = "WAIT_FOR_HAPPYHOURS";
+//    private static final String PARAM_WAIT_FOR_HAPPYHOURS = "WAIT_FOR_HAPPYHOURS";
 
-    private static final int ACTION_HAPPY_HOURS_TOGGLE_WAIT = 8;
+//    private static final int ACTION_HAPPY_HOURS_TOGGLE_WAIT = 8;
 
-    private static final int ACTION_HAPPY_HOURS_FORCE_FREE = 9;
+//    private static final int ACTION_HAPPY_HOURS_FORCE_FREE = 9;
 
 //    private static final int ERROR_ID_ACCOUNTEXPIRED = 4;
 
@@ -199,7 +195,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("anderen IP gerade genutzt");
 
-    private static boolean FORCE_FREE_USER = true;
+//    private static boolean FORCE_FREE_USER = true;
 
     @Override
     public String getCoder() {
@@ -292,25 +288,25 @@ public class Rapidshare extends PluginForHost {
 
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium", "Premiumaccounts"), 0);
-        MenuItem hh = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.happyHour", "Happy Hours"), 0);
+//        MenuItem hh = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.happyHour", "Happy Hours"), 0);
 
         MenuItem account;
         MenuItem m;
 
-        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours", "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
-        m.setActionListener(this);
-        hh.addMenuItem(m);
+//        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours", "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
+//        m.setActionListener(this);
+//        hh.addMenuItem(m);
 
-        m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.forcefreewhilehh", "Free Download während Happy Hour erzwingen"), ACTION_HAPPY_HOURS_FORCE_FREE);
-        m.setActionListener(this);
-        m.setSelected(this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false));
-        hh.addMenuItem(m);
+//        m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.forcefreewhilehh", "Free Download während Happy Hour erzwingen"), ACTION_HAPPY_HOURS_FORCE_FREE);
+//        m.setActionListener(this);
+//        m.setSelected(this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false));
+//        hh.addMenuItem(m);
 
-        m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.happyHourswait", "Auf Happy Hours warten"), ACTION_HAPPY_HOURS_TOGGLE_WAIT);
-        m.setActionListener(this);
-        m.setSelected(this.getProperties().getBooleanProperty(PARAM_WAIT_FOR_HAPPYHOURS, false));
-        hh.addMenuItem(m);
-        menuList.add(hh);
+//        m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.happyHourswait", "Auf Happy Hours warten"), ACTION_HAPPY_HOURS_TOGGLE_WAIT);
+//        m.setActionListener(this);
+//        m.setSelected(this.getProperties().getBooleanProperty(PARAM_WAIT_FOR_HAPPYHOURS, false));
+//        hh.addMenuItem(m);
+//        menuList.add(hh);
         menuList.add(premium);
         // account1
         account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
@@ -403,6 +399,7 @@ public class Rapidshare extends PluginForHost {
         case Rapidshare.ACTION_INFO_PREMIUM_3:
             showInfo(3);
             break;
+            /*
         case Rapidshare.ACTION_HAPPY_HOURS_TOGGLE_WAIT:
             getProperties().setProperty(PARAM_WAIT_FOR_HAPPYHOURS, !getProperties().getBooleanProperty(Rapidshare.PARAM_WAIT_FOR_HAPPYHOURS, false));
             getProperties().save();
@@ -457,6 +454,7 @@ public class Rapidshare extends PluginForHost {
                 }
             }.start();
             break;
+            */
         }
         return;
     }
@@ -771,6 +769,7 @@ public class Rapidshare extends PluginForHost {
 //            String cid=new Regex(ticketCode,PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch();
 //            Pattern p=Pattern.compile("getElementById\\(\""+cid+"\"\\)\\.src\\=\"(.*?)\"");
 //            
+            /*
             String captchaAddress = new Regex(ticketCode, PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch();
 
             // Happy Hour check
@@ -798,7 +797,7 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-
+ 				*/
                 
                 // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
                 // step.setParameter(1000l);
@@ -823,18 +822,18 @@ public class Rapidshare extends PluginForHost {
                 }
 
                 waitTicketTime(step, downloadLink, pendingTime);
-                captchaFile = this.getLocalCaptchaFile(this);
+//                captchaFile = this.getLocalCaptchaFile(this);
 
                 long timer = System.currentTimeMillis();
 
-                captchaCode = getCaptchaCode(step, downloadLink, captchaFile, captchaAddress);
+//                captchaCode = getCaptchaCode(step, downloadLink, captchaFile, captchaAddress);
 
                 if (downloadLink.getStatus() == DownloadLink.STATUS_ERROR_BOT_DETECTED) { return step; }
                 timer = System.currentTimeMillis() - timer;
 
                 // War Captchaerkennung Fehlerhaft?
                 if (step.getStatus() == PluginStep.STATUS_ERROR) { return step; }
-
+/*
                 if (captchaCode == null || captchaCode.trim().length() != 4) {
                     logger.severe("Captcha could not be recognized");
                     JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, false);
@@ -844,11 +843,11 @@ public class Rapidshare extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-
+*/
                 logger.info("captcha detection duration: " + JDUtilities.formatSeconds((int) (timer / 1000)));
 
                 
-            }
+            
             // get Downloadserverurl
             String postTarget = getDownloadTarget(step, downloadLink, ticketCode);
 
@@ -857,8 +856,8 @@ public class Rapidshare extends PluginForHost {
 
             pReq = new PostRequest(postTarget);
             pReq.setPostVariable("mirror", "on");
-            if (captchaCode == null) captchaCode = "";
-            pReq.setPostVariable("accesscode", captchaCode);
+//            if (captchaCode == null) captchaCode = "";
+//            pReq.setPostVariable("accesscode", captchaCode);
             pReq.setPostVariable("x", (int) (Math.random() * 40) + "");
             pReq.setPostVariable("y", (int) (Math.random() * 40) + "");
             pReq.connect();
@@ -885,13 +884,13 @@ public class Rapidshare extends PluginForHost {
 
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
 
-                        if (hashFound) {
+//                        if (hashFound) {
 
-                            new GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)).load();
+//                            new GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=" + captchaCode + "&hash=" + JDUtilities.getLocalHash(captchaFile)).load();
 
-                        }
-                        JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, false);
-                        if (ces != null) ces.sendCaptchaWrong();
+//                        }
+//                        JDUtilities.appendInfoToFilename(this, captchaFile, captchaCode, false);
+//                        if (ces != null) ces.sendCaptchaWrong();
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -903,7 +902,7 @@ public class Rapidshare extends PluginForHost {
 
                         step.setStatus(PluginStep.STATUS_ERROR);
 
-                        new GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash=" + JDUtilities.getLocalHash(captchaFile)).load();
+//                        new GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash=" + JDUtilities.getLocalHash(captchaFile)).load();
 
                         return step;
                     }
@@ -1094,6 +1093,7 @@ public class Rapidshare extends PluginForHost {
      * @param captchaAddress
      * @return
      */
+    /*
     private String getCaptchaCode(PluginStep step, DownloadLink downloadLink, File captchaFile, String captchaAddress) {
         GetRequest r = new GetRequest(captchaAddress);
         r.setFollowRedirects(false);
@@ -1174,7 +1174,7 @@ public class Rapidshare extends PluginForHost {
         }
         return captchaCode;
     }
-
+*/
     /**
      * Lädt den Link in der Happyhour. Ticketzeit und Captchaerkennung sind
      * dabei nicht zu beachten
@@ -1189,6 +1189,7 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 */
+    
     /**
      * Wartet 5 minuten und startet den Downlaod anschließend neu.
      * 
@@ -1196,6 +1197,7 @@ public class Rapidshare extends PluginForHost {
      * @param downloadLink
      * @throws InterruptedException
      */
+    /*
     private void waitForHappyHours(PluginStep step, DownloadLink downloadLink) throws InterruptedException {
         // 5 Minuten Warten und dann einenj Neuversuch starten
 
@@ -1220,7 +1222,7 @@ public class Rapidshare extends PluginForHost {
         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
 
     }
-
+*/
     /**
      * Prüft vor dem Download ob der Download geschrieben werden darf Es wird
      * z.B. auf "Is local file in progress" oder "fileexists" geprüft.
@@ -1343,6 +1345,7 @@ public class Rapidshare extends PluginForHost {
      */
 
     private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
+    	/*
         try {
 
             if (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false)) {
@@ -1396,10 +1399,11 @@ public class Rapidshare extends PluginForHost {
                 // }
                 //               
 
-                FORCE_FREE_USER = false;
+//                FORCE_FREE_USER = false;
                 // Wartezeit (Downloadlimit) wird gesucht
                 String strWaitTime = new Regex(pReq, PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
                 int waitTime;
+                
                 if (strWaitTime != null && !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
                     logger.info("Waittime detected. check happy hour via jdownloader.org");
                     String happyCHeck = new GetRequest("http://jdownloader.org/hh.php?txt=1").load();
@@ -1436,6 +1440,7 @@ public class Rapidshare extends PluginForHost {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        */
         //   
         //     
         // String firstPage=new
@@ -1853,8 +1858,8 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false) && FORCE_FREE_USER) { return 1; }
-        int ret = 0;
+//        if (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, false) && FORCE_FREE_USER) { return 1; }
+      int ret = 0;
 
         if ((((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM))) || ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2))) || ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3)))) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true))) {
             ret = getMaxConnections() / getChunksPerFile();
@@ -1945,7 +1950,7 @@ public class Rapidshare extends PluginForHost {
 
     public void resetPluginGlobals() {
         super.resetPluginGlobals();
-        FORCE_FREE_USER = true;
+//        FORCE_FREE_USER = true;
 
     }
 
