@@ -80,6 +80,11 @@ public class Zippysharecom extends PluginForHost {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = JDUtilities.htmlDecode(new Regex(requestInfo.getHeaders().get("Content-Disposition").get(0), "attachment; filename=(.*)").getFirstMatch());
+            if (urlConnection.getContentLength()==0){
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                step.setStatus(PluginStep.STATUS_RETRY);
+                return step;
+            }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             downloadLink.setStaticFileName(filename);
             downloadLink.setName(filename);
