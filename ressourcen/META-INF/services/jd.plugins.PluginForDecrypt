@@ -40,7 +40,6 @@ jd.plugins.decrypt.ShareOnAll
 jd.plugins.decrypt.Stealth
 jd.plugins.decrypt.Tinyurl
 jd.plugins.decrypt.UpPicoasisNet
-jd.plugins.decrypt.Xirror
 jd.plugins.decrypt.YoumirrorBiz
 jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.Filer
