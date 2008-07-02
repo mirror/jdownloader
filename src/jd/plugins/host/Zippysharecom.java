@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
-import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -79,7 +77,7 @@ public class Zippysharecom extends PluginForHost {
             /* Datei herunterladen */
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
             HTTPConnection urlConnection = requestInfo.getConnection();
-            String filename = JDUtilities.htmlDecode(new Regex(requestInfo.getHeaders().get("Content-Disposition").get(0), "attachment; filename=(.*)").getFirstMatch());
+            String filename = getFileNameFormHeader(urlConnection);            
             if (urlConnection.getContentLength()==0){
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_RETRY);
