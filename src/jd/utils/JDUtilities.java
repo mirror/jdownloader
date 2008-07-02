@@ -123,7 +123,7 @@ import sun.misc.BASE64Encoder;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-
+ 
 	/**
 	 * Parametername für den Konfigpath
 	 */
@@ -132,7 +132,7 @@ public class JDUtilities {
 	private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
 	/**
-	 * Name des Loggers
+	 * Loggername
 	 */
 	public static String LOGGER_NAME = "java_downloader";
 
