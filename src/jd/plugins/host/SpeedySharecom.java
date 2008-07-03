@@ -16,6 +16,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class SpeedySharecom extends PluginForHost {
@@ -87,6 +88,12 @@ public class SpeedySharecom extends PluginForHost {
                 postdata = "act=" + JDUtilities.urlEncode(submitvalues.get("act"));
                 postdata = postdata + "&id=" + JDUtilities.urlEncode(submitvalues.get("id"));
                 postdata = postdata + "&fname=" + JDUtilities.urlEncode(submitvalues.get("fname"));
+                if (requestInfo.containsHTML("type=\"password\" name=\"password\"")) {
+                    String password = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.speedysharecom.password", "Enter Password:"));
+                    if (password != null && password != "") {
+                        postdata = postdata + "&password=" + JDUtilities.urlEncode(password);
+                    }
+                }
                 return step;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 30seks */
@@ -100,6 +107,13 @@ public class SpeedySharecom extends PluginForHost {
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_RETRY);
+                    return step;
+                }
+                if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatusText("Wrong Password");
+                    step.setStatus(PluginStep.STATUS_RETRY);
+                    step.setParameter("Wrong Password");
                     return step;
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
