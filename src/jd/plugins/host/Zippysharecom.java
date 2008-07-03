@@ -20,6 +20,7 @@ public class Zippysharecom extends PluginForHost {
     private static final String HOST = "zippyshare.com";
     private static final String VERSION = "1.0.0";
     static private final Pattern patternSupported = Pattern.compile("http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html", Pattern.CASE_INSENSITIVE);
+    private String url;
 
     //
     @Override
@@ -59,43 +60,47 @@ public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom() {
         super();
+        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
         try {
-            String url = downloadLink.getDownloadURL();
-            /* Nochmals das File überprüfen */
-            if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
+            switch (step.getStep()) {
+            case PluginStep.STEP_PAGE:
+                url = downloadLink.getDownloadURL();
+                /* Nochmals das File überprüfen */
+                if (!getFileInformation(downloadLink)) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+                }
+                return step;
+            case PluginStep.STEP_DOWNLOAD:
+                /* Link holen */
+                RequestInfo requestInfo = HTTP.getRequest(new URL(url));
+                String linkurl = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "downloadlink = unescape\\(\\'", "\\'\\);"));
+                /* Datei herunterladen */
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
+                HTTPConnection urlConnection = requestInfo.getConnection();
+                String filename = getFileNameFormHeader(urlConnection);
+                if (urlConnection.getContentLength() == 0) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    step.setStatus(PluginStep.STATUS_RETRY);
+                    return step;
+                }
+                downloadLink.setDownloadMax(urlConnection.getContentLength());
+                downloadLink.setName(filename);
+                long length = downloadLink.getDownloadMax();
+                dl = new RAFDownload(this, downloadLink, urlConnection);
+                dl.setFilesize(length);
+                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+                }
                 return step;
             }
-            /* Link holen */
-            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-            String linkurl = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "downloadlink = unescape\\(\\'", "\\'\\);"));
-            /* Datei herunterladen */
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            String filename = getFileNameFormHeader(urlConnection);            
-            if (urlConnection.getContentLength()==0){
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_RETRY);
-                return step;
-            }
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            downloadLink.setStaticFileName(filename);
-            downloadLink.setName(filename);
-            final long length = downloadLink.getDownloadMax();
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setFilesize(length);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
-            }
-            return step;
-
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
