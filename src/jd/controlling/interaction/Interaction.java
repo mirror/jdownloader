@@ -323,7 +323,8 @@ public abstract class Interaction extends Property implements Serializable {
 
             }
         }
-        if(interactionevent==Interaction.INTERACTION_ALL_DOWNLOADS_FINISHED&&interactionsRunning == 0 && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0){
+        if(interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED)&&interactionsRunning == 0 && JDUtilities.getController().getFinishedLinks().size() > 0){
+
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
         if (interacts == 0) return false;
