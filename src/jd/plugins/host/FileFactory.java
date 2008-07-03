@@ -56,7 +56,7 @@ public class FileFactory extends PluginForHost {
     private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
     
-    private static final String NOT_AVAILABLE = "this file is no longer available";
+    private static final String NOT_AVAILABLE = "class=\"box error\"";
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String NO_SLOT = "no free download slots";
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
