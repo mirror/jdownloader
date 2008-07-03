@@ -42,6 +42,9 @@ public class PostRequest extends Request {
         postData.put(key, value);
 
     }
+    public void setPostVariableString(String vars){
+        postData.putAll(parseQuery(vars));
+    }
 
     public HashMap<String, String> getPostData() {
         return postData;

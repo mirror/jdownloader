@@ -1265,7 +1265,7 @@ private boolean isDupe(DownloadLink link){
                 pwList.add(pws[i]);
 
             }
-
+         
             for (int i = 0; i < list.length; i++) {
                 linkList.add(list[i]);
                 String pass = list[i].getSourcePluginPassword();

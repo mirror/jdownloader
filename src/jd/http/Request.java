@@ -69,16 +69,18 @@ public abstract class Request {
         initDefaultHeader();
 
     }
+
     public void setProxy(String ip, String port) {
-        this.proxyip=ip;
-        this.proxyport=port;
+        this.proxyip = ip;
+        this.proxyport = port;
         try {
-            url=new URL("http",proxyip,Integer.parseInt(proxyport),url.toString());
-        } catch (Exception e) {         
+            url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
+        } catch (Exception e) {
             e.printStackTrace();
-        } 
-        
+        }
+
     }
+
     private void initDefaultHeader() {
         headers = new HashMap<String, String>();
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
@@ -144,19 +146,17 @@ public abstract class Request {
     }
 
     public abstract void postRequest(HTTPConnection httpConnection) throws IOException;
-/*
-    private void setCookies(HashMap<String, String> cookies) {
-        this.cookies = cookies;
-    }
 
-    private void setCookieString(String cookieString) {
-
-        cookies = new HashMap<String, String>();
-        StringTokenizer st = new StringTokenizer(cookieString, ";=");
-        while (st.hasMoreTokens())
-            cookies.put(st.nextToken().trim(), st.nextToken().trim());
-    }
-*/
+    /*
+     * private void setCookies(HashMap<String, String> cookies) { this.cookies =
+     * cookies; }
+     * 
+     * private void setCookieString(String cookieString) {
+     * 
+     * cookies = new HashMap<String, String>(); StringTokenizer st = new
+     * StringTokenizer(cookieString, ";="); while (st.hasMoreTokens())
+     * cookies.put(st.nextToken().trim(), st.nextToken().trim()); }
+     */
     public String followRedirect() throws IOException {
         if (getLocation() == null) return null;
         try {
@@ -233,7 +233,7 @@ public abstract class Request {
         }
         rd.close();
         this.readTime = System.currentTimeMillis() - tima;
-        this.htmlCode=htmlCode.toString();
+        this.htmlCode = htmlCode.toString();
         return htmlCode.toString();
     }
 
@@ -244,7 +244,7 @@ public abstract class Request {
             this.requestTime = System.currentTimeMillis() - tima;
             httpConnection.setReadTimeout(this.readTimeout);
             httpConnection.setConnectTimeout(this.connectTimeout);
-      
+
             httpConnection.setInstanceFollowRedirects(false);
             if (this.headers != null) {
                 Set<String> keys = headers.keySet();
@@ -287,6 +287,35 @@ public abstract class Request {
                 // ignore
             }
         }
+
+    }
+/**
+ * Gibt eine Hashmap mit allen key:value pairs im query zurück
+ * @param query kann ein reines query ein (&key=value) oder eine url mit query
+ * @return
+ */
+    public static HashMap<String, String> parseQuery(String query) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        if (query.toLowerCase().trim().startsWith("http")) {
+            try {
+                query = new URL(query).getQuery();
+            } catch (MalformedURLException e) {               
+                e.printStackTrace();
+                return ret;
+            }
+        }
+
+        if (query == null) return ret;
+        try {
+            StringTokenizer st = new StringTokenizer(query, "&=");
+            while (st.hasMoreTokens())
+                ret.put(st.nextToken().trim(), st.nextToken().trim());
+
+        } catch (NoSuchElementException e) {
+            // ignore
+        }
+
+        return ret;
 
     }
 
@@ -338,12 +367,14 @@ public abstract class Request {
     public HTTPConnection getHttpConnection() {
         return httpConnection;
     }
+
     public Map<String, List<String>> getResponseHeaders() {
-        if(httpConnection==null)return null;
-          return httpConnection.getHeaderFields();
-      }
-      public String getResponseHeader(String key){
-          if(httpConnection==null)return null;
-          return httpConnection.getHeaderField(key);
-      }
+        if (httpConnection == null) return null;
+        return httpConnection.getHeaderFields();
+    }
+
+    public String getResponseHeader(String key) {
+        if (httpConnection == null) return null;
+        return httpConnection.getHeaderField(key);
+    }
 }

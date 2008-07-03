@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.Browser;
+import jd.http.Request;
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -322,59 +324,30 @@ public class Megauploadcom extends PluginForHost {
 
         try {
             downloadLink.setStatusText("Login");
-            // requestInfo=postRequest(new URL(link),
-            // "login="+user+"&password="+pass);
-
-            HashMap<String, String> h = new HashMap<String, String>();
-            h.put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
-            h.put("X-MUTB", link);
-            h.put("Content-Type", "application/x-www-form-urlencoded");
-            requestInfo = HTTP.postRequest(new URL(url), null, link, h, "login=" + user + "&password=" + pass, false);
-            if (requestInfo.getCookie().indexOf("user=") < 0) {
+            Browser br = new Browser();
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
+            br.getHeaders().put("X-MUTB", link);
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");        
+            br.postPage(url,"login=" + user + "&password=" + pass);        
+            if (Browser.getCookie(url,"user")==null || Browser.getCookie(url,"user").length()==0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
-
             }
-            String cookie = requestInfo.getCookie();
-
-            // String url=requestInfo.getLocation();
-            // if(!url.toLowerCase().startsWith("http")){
-            // url=
-            // "http://"+requestInfo.getConnection().getURL().getHost()+"/"+url;
-            // }
-            // requestInfo=getRequest(new URL(link), cookie, link, false);
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), cookie, url, h, false);
-            requestInfo = HTTP.readFromURL(requestInfo.getConnection());
-
-            // requestInfo=getRequest(new URL(url), cookie, link, false);
-
-            // url=requestInfo.getLocation();
-            // if(!url.toLowerCase().startsWith("http")){
-            // url=
-            // "http://"+requestInfo.getConnection().getURL().getHost()+"/"+url;
-            // }
-            // requestInfo=getRequest(new URL(url), cookie, link, false);
-            // this.postRequest(string, cookie, referrer, requestProperties,
-            // parameter, redirect)(, "login="+user+"&password="+pass);
-            Character l=null;
-            String i=null;
-            try{
-            l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
+           
+            String id=Request.parseQuery(link).get("d");
+            br.getHeaders().clear();
+            br.getHeaders().put("TE", "trailers");
+            br.getHeaders().put("Connection", "TE");
+            br.setFollowRedirects(false);     
+            br.getPage("http://"+new URL(link).getHost()+"/mgr_dl.php?d="+id+"&u="+Browser.getCookie(url,"user"));
+      
             
-            
-             i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
-            }catch(Exception e){
-                e.printStackTrace();
-                logger.severe(requestInfo+"");
-               step.setStatus(PluginStep.STATUS_ERROR);
-               downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-            }
-            finalurl = (JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
-
+ 
             HTTPConnection urlConnection;
             downloadLink.setStatusText("Premium");
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl), cookie, link, false);
-            urlConnection = requestInfo.getConnection();
+            
+            //requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl), Browser.getCookie(url,"user"), link, false);
+            urlConnection = br.openGetConnection(br.getRedirectLocation());
             String name = getFileNameFormHeader(urlConnection);
             downloadLink.setName(name);
             dl = new RAFDownload(this, downloadLink, urlConnection);
