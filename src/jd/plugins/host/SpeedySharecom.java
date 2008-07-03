@@ -26,7 +26,7 @@ public class SpeedySharecom extends PluginForHost {
     private String url;
     private String postdata;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
-
+    RequestInfo requestInfo;
     //
     @Override
     public boolean doBotCheck(File file) {
@@ -70,8 +70,7 @@ public class SpeedySharecom extends PluginForHost {
         steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-        RequestInfo requestInfo;
+    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {        
         try {
             switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
@@ -82,8 +81,7 @@ public class SpeedySharecom extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                /* Link holen */
-                requestInfo = HTTP.getRequest(new URL(url));
+                /* Link holen */                
                 HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
                 postdata = "act=" + JDUtilities.urlEncode(submitvalues.get("act"));
                 postdata = postdata + "&id=" + JDUtilities.urlEncode(submitvalues.get("id"));

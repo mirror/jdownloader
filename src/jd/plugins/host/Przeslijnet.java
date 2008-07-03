@@ -78,8 +78,7 @@ public class Przeslijnet extends PluginForHost {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
-                }
-                requestInfo = HTTP.getRequest(new URL(url));
+                }                
                 return step;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 15seks */

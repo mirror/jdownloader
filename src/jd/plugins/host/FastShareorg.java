@@ -79,8 +79,7 @@ public class FastShareorg extends PluginForHost {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
-                /* Link holen */
-                requestInfo = HTTP.getRequest(new URL(url));
+                /* Link holen */                
                 Form form = requestInfo.getForms()[0];
                 requestInfo = form.getRequestInfo();
                 if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
