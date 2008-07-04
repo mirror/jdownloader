@@ -18,14 +18,18 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -47,11 +51,12 @@ public class Filer extends PluginForHost {
     static private final String FILE_NOT_FOUND2 = "Oops! We couldn't find this page for you.";
     static private final String FREE_USER_LIMIT = "Momentan sind die Limits f&uuml;r Free-Downloads erreicht";
     static private final String CAPTCHAADRESS = "http://www.filer.net/captcha.png";
-    //<form method="post" action="/get/e14eaf55d686a2b.html"><p class="center">
+    // <form method="post" action="/get/e14eaf55d686a2b.html"><p class="center">
     static private final Pattern DOWNLOAD = Pattern.compile("<form method=\"post\" action=\"(\\/dl\\/.*?)\">", Pattern.CASE_INSENSITIVE);
     static private final Pattern WAITTIME = Pattern.compile("Bitte warten Sie ([\\d]+)", Pattern.CASE_INSENSITIVE);
     static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"(\\/get\\/.*?.html)\">(.*?)</a></td>.*?<td>([0-9\\.]+) .*?</td>", Pattern.CASE_INSENSITIVE);
     static private final String WRONG_CAPTCHACODE = "<img src=\"/captcha.png\"";
+    private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
     private String cookie;
     private String dlink = null;
     private String url;
@@ -116,7 +121,7 @@ public class Filer extends PluginForHost {
                     url = "http://www.filer.net" + link.get(0);
                     cookie = requestInfo.getCookie();
                     requestInfo = HTTP.getRequest(new URL(url));
-                    if(cookie==null)cookie = requestInfo.getCookie();
+                    if (cookie == null) cookie = requestInfo.getCookie();
                 } else
                     url = downloadLink.getDownloadURL();
 
@@ -124,7 +129,8 @@ public class Filer extends PluginForHost {
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 File file = this.getLocalCaptchaFile(this);
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(CAPTCHAADRESS), cookie, url, false);
-                //cookie = requestInfo.getConnection().getHeaderField("Set-Cookie");
+                // cookie =
+                // requestInfo.getConnection().getHeaderField("Set-Cookie");
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha Download fehlgeschlagen: " + CAPTCHAADRESS);
                     step.setParameter(null);
@@ -167,7 +173,7 @@ public class Filer extends PluginForHost {
                 }
 
                 if (dlink == null) {
-                    logger.info(requestInfo+"");
+                    logger.info(requestInfo + "");
                     logger.severe("Der Downloadlink konnte nicht gefunden werden");
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -202,7 +208,7 @@ public class Filer extends PluginForHost {
                     return step;
                 }
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-        
+
                 dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                 dl.startDownload();
 
@@ -231,31 +237,32 @@ public class Filer extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        RequestInfo requestInfo;
-        try {
-            String strId = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), GETID, 1);
-            if (strId == null) return true;
-            int id = Integer.parseInt(strId);
-            url = downloadLink.getDownloadURL().replaceFirst("filer.net\\/file[0-9]+\\/", "filer.net/folder/");
-            url = url.replaceFirst("\\/filename\\/.*", "");
-            requestInfo = HTTP.getRequest(new URL(url));
-            // Datei geloescht?
-            if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND2)) { return false; }
-            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), INFO);
-            if (matches.size() < id) return false;
-            ArrayList<String> link = matches.get(id);
-            downloadLink.setName(link.get(1));
-            if (link != null) {
-                try {
-                    int length = (int) (Double.parseDouble(link.get(2)) * 1024 * 1024);
-                    downloadLink.setDownloadMax(length);
-                } catch (Exception e) {
-                }
-            }
+        String page;
+        File captchaFile;
+        String code;
+        int bytes;
+        int maxCaptchaTries = 5;
+        int tries = 0;
+        while (maxCaptchaTries > tries) {
+            try {
 
-            return true;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
+                Browser br = new Browser();
+                br.getPage(downloadLink.getDownloadURL());
+                captchaFile = getLocalCaptchaFile(this, ".png");
+                JDUtilities.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
+                code = Plugin.getCaptchaCode(captchaFile, this);
+                page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
+                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) return false;
+                bytes = (int) SimpleMatches.getBytes(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
+                downloadLink.setDownloadMax(bytes);
+                br.setFollowRedirects(false);
+                br.submitForm(br.getForms()[1]);
+                downloadLink.setName(getFileNameFormURL(new URL(br.getRedirectLocation())));
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            tries++;
         }
         return false;
     }

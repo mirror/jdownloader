@@ -533,8 +533,7 @@ public abstract class Plugin implements ActionListener {
         String ret;
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) {
 
-            int index = Math.max(urlConnection.getURL().getFile().lastIndexOf("/"), urlConnection.getURL().getFile().lastIndexOf("\\"));
-            return urlConnection.getURL().getFile().substring(index + 1);
+            return getFileNameFormURL(urlConnection.getURL());
         }
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
@@ -550,6 +549,11 @@ public abstract class Plugin implements ActionListener {
         }
         ;
         return ret;
+    }
+
+    protected String getFileNameFormURL(URL url) {
+        int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
+        return url.getFile().substring(index + 1);
     }
 
     /**

@@ -540,18 +540,19 @@ public class Captcha extends PixelGrid {
         this.gaps = new boolean[getWidth() + 1];
         Letter[] ret = new Letter[letterNum];
         lastletterX = 0;
-
+int letters=0;
         for (int letterId = 0; letterId < letterNum; letterId++) {
             ret[letterId] = getNextLetter(letterId);
 
-            if (ret[letterId] == null) {
+            if (ret[letterId] == null &&!owner.jas.getBoolean("autoLetterNum")) {
                 if (owner.getJas().getGaps() != null) {
                     return getLetters(letterNum, owner.getJas().getGaps());
                 } else {
                     return null;
                 }
                 // ret[letterId]= ret[letterId].getSimplified(SIMPLIFYFAKTOR);
-            } else {
+            } else if(ret[letterId] != null){
+                letters++;
                 owner.getJas().executeLetterPrepareCommands(ret[letterId]);
                 // if(owner.getJas().getInteger("leftAngle")!=0 ||
                 // owner.getJas().getInteger("rightAngle")!=0) ret[letterId] =
@@ -562,6 +563,13 @@ public class Captcha extends PixelGrid {
 
             }
 
+        }
+        
+        if(owner.jas.getBoolean("autoLetterNum") && letters<ret.length){
+            Letter[] tmp=ret;
+            
+            ret= new Letter[letters];
+            System.arraycopy(tmp, 0, ret, 0, letters);
         }
        
         return ret;

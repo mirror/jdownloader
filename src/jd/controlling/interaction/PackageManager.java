@@ -30,6 +30,8 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.http.GetRequest;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -192,12 +194,18 @@ public class PackageManager extends Interaction implements Serializable {
                 for (int i = 0; i < files.length; i++) {
                     if (files[i].getAbsolutePath().endsWith("readme.html")) {
 
-                        JDUtilities.getGUI().showCountdownConfirmDialog(JDUtilities.getLocalFile(files[i]), 60);
+                        String html=JDUtilities.getLocalFile(files[i]);
+                        if(Regex.matches(html, "src\\=\"(.*?)\"")){
+                            html=new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+                           html=JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b><hr><a href='"+html+"'>"+JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes")+"</a>";
+                        }
+                       
+                        JDUtilities.getGUI().showCountdownConfirmDialog(html, 30);
                         c = true;
                     }
                 }
                 if (!c) {
-                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b>", 60);
+                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b>", 15);
                 }
                 managerConfig.setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
                 managerConfig.save();
