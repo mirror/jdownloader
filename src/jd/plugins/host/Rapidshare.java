@@ -565,8 +565,8 @@ public class Rapidshare extends PluginForHost {
 
 //                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
                     
-                    String def = "Accountinfo for " + user;
-                    String title = JDLocale.L("plugins.hoster.rapidshare.com.info.title", def);
+                    String title = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title"), user);
+                    String def = (title == null) ? "Accountinfo for " + user : title;
                     int n = 10;
                     JPanel panel = new JPanel(new BorderLayout(n,n));
                     panel.setBorder(new EmptyBorder(n,n,n,n));
