@@ -1218,6 +1218,7 @@ public class JDUtilities {
 	 * @return MD% hash von arg
 	 */
 	public static String getMD5(String arg) {
+	    if(arg==null)return arg;
 		try {
 			MessageDigest md = MessageDigest.getInstance("md5");
 			byte[] digest = md.digest(arg.getBytes());

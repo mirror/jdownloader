@@ -274,16 +274,6 @@ public class MeinUpload extends PluginForHost {
 
     }
 
-    private void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0) {
 
-            i -= 1000;
-            downloadLink.setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
-            downloadLink.requestGuiUpdate();
-            Thread.sleep(1000);
-
-        }
-
-    }
 
 }

@@ -44,6 +44,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -554,6 +555,17 @@ public abstract class Plugin implements ActionListener {
     protected String getFileNameFormURL(URL url) {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
         return url.getFile().substring(index + 1);
+    }
+    protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
+        while (i > 0) {
+
+            i -= 1000;
+            downloadLink.setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+            downloadLink.requestGuiUpdate();
+            Thread.sleep(1000);
+
+        }
+
     }
 
     /**
