@@ -34,7 +34,9 @@ import jd.plugins.RequestInfo;
 public class CineTo extends PluginForDecrypt {
     final static String host = "cine.to";
     private String version = "1.2.0";
-    private Pattern patternSupported = getSupportPattern("http://[*]cine.to/index.php\\?do=(protect|show_download)\\&id=[a-zA-Z0-9]+");
+    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
     public CineTo() {
         super();
@@ -74,80 +76,47 @@ public class CineTo extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-
+        String cryptedLink = (String) parameter;
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            ArrayList<ArrayList<String>> mirrors = new ArrayList<ArrayList<String>>();
+
+            RequestInfo reqinfo;
 
             try {
-
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                boolean direct = false;
-
-                if (parameter.contains("do=show_download")) {
-
-                    mirrors = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"index.php?do=protect&id=°\"");
-
-                    if (reqinfo.getHtmlCode().contains("<strong>Passwort:</strong>")) {
-
-                        String password = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td><strong>Passwort:</strong></td>\n                        <td style=\"color: red\">", "</td>");
-                        default_password.add(password);
-
-                    } else {
-                        default_password.add("cine.to");
+                if (cryptedLink.matches(patternLink_Show.pattern())) {
+                    reqinfo = HTTP.getRequest(new URL(cryptedLink));
+                    ArrayList<String> mirrors = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("href=\"index.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE), 1);
+                    for (int i = 0; i < mirrors.size(); i++) {
+                        decryptedLinks.add(this.createDownloadlink("http://cine.to/index.php?do=protect&id=" + mirrors.get(i)));
                     }
-
-                } else {
-
-                    ArrayList<String> temp = new ArrayList<String>();
-                    temp.add(parameter);
-                    mirrors.add(temp);
-                    direct = true;
-
-                }
-
-                if (!direct) progress.setRange(mirrors.size());
-
-                for (int i = 0; i < mirrors.size(); i++) {
-
-                    reqinfo = HTTP.getRequest(new URL("http://cine.to/index.php?do=protect&id=" + mirrors.get(i).get(0)));
+                } else if (cryptedLink.matches(patternLink_Protected.pattern())) {
+                    reqinfo = HTTP.getRequest(new URL(cryptedLink));
                     logger.info(reqinfo.getLocation());
                     ArrayList<ArrayList<String>> captcha = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "span class=\"°\"");
-
                     String capText = "";
                     if (captcha.size() == 80) {
-
                         for (int j = 1; j < 5; j++) {
                             capText = capText + extractCaptcha(captcha, j);
                         }
-
                     }
 
-                    reqinfo = HTTP.postRequest(new URL("http://cine.toHTTP./index.php?do=protect&id=" + mirrors.get(i).get(0)), reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
-
+                    reqinfo = HTTP.postRequest(new URL(cryptedLink), reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
                     ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "window.open(\'°\'");
-                    if (direct) progress.setRange(links.size());
-
+                    progress.setRange(links.size());
                     for (int j = 0; j < links.size(); j++) {
-                        decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-                        if (direct) progress.increase(1);
+                        DownloadLink link =this.createDownloadlink(links.get(j).get(0));
+                        link.addSourcePluginPassword("cine.to");
+                        decryptedLinks.add(link);
+                        progress.increase(1);
                     }
-
-                    if (!direct) progress.increase(1);
-
                 }
-
                 step.setParameter(decryptedLinks);
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
-
         return null;
-
     }
 
     private String extractCaptcha(ArrayList<ArrayList<String>> source, int captchanumber) {
