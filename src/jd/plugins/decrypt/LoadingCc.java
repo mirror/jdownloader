@@ -96,7 +96,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           progress.increase(1);
           
           //logger.info(content);
-          String[] links = HTMLParser.getHttpLinks(content, parameter);
+          String[] links = new Regex(content, "<a href=\"([^\"]*?)\" target=\"\\_blank\"><img src='images[^>]*?' border=\"0\" />").getMatches(1);
 //          ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(content, "<a target=\"_blank\" href="'°"'>");
           
           progress.setRange(links.length);
@@ -106,6 +106,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
         	  
         	  if(!links[i].matches("(?is)http://.*?loading\\.cc.*")) //Achtung: Loading.cc hat bei Files ohne DLC statt des dllinks einen Backlink auf die eigene URL
         	  {
+//        		  System.out.println(links[i]);
               decryptedLinks.add(this.createDownloadlink(links[i]));
         	  }
         	  progress.increase(1);
