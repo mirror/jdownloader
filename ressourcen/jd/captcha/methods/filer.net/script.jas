@@ -6,7 +6,7 @@
 param.simplifyFaktor = 1;
 param.trainOnlyUnknown=true;
 param.colorType = sss;
- 
+param.autoLetterNum=true;
 captcha.prepare.invert();
 
 letter.prepare.toBlackAndWhite();
