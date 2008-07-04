@@ -137,7 +137,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                     } catch (InterruptedException e) {
                     }
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
-                        textField.setText(code);
+                        
                         // int wait =
                         // configuration.getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME,
                         // 10);
@@ -155,10 +155,11 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                         // }
                         // wait--;
                         // }
-                        if (isVisible() && textField.getText().equalsIgnoreCase(code) && textField.getText().length() > 0) {
-                            captchaText = textField.getText();
+                        if (isVisible() && textField.getText().equals(code) && textField.getText().length() > 0) {
+                            captchaText = code;
                             dispose();
                         }
+                        textField.setText(code);
                     } else {
                         textField.setText(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
                         setTitle(JDLocale.L("gui.captchaWindow.title_error", "jAntiCaptcha Fehler. Bitte Code eingeben!"));

@@ -19,6 +19,7 @@ package jd.utils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -28,7 +29,7 @@ import javax.swing.JOptionPane;
 
 import jd.unrar.Zip;
 
-public class PackageCreater {
+public class PackageCreaterUP {
     public static void main(String[] args) {
         Date dt = new Date();
         // Festlegung des Formats:
@@ -53,12 +54,10 @@ public class PackageCreater {
             }
 
         });
-//        ArrayList<File> upload = new ArrayList<File>();
+        ArrayList<File> upload = new ArrayList<File>();
 
-        StringBuffer sb = new StringBuffer();
-        sb.append("<packages>");
-        String uid = "3373035";
-        String pw = JOptionPane.showInputDialog(frame, "PW für: " + 3373035);
+        String uid = "70683";
+        String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         for (String p : packages) {
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
@@ -71,43 +70,33 @@ public class PackageCreater {
             });
             int i = 1;
             String filename = null;
-            String[] dat= p.split("__");
-            String name=dat[1];
-            String id=dat[0];
+            String[] dat = p.split("__");
+            String name = dat[1];
+            String id = dat[0];
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
             } while (filename == null || new File(srcDir, filename).exists());
             Zip zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
-            zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
+            // zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() *
+            // 1024.0 * 150.0);
             try {
                 zip.zip();
-               String url;
-               if(pw!=null){ System.out.println(url=Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
-                sb.append("<package>");
-                sb.append("<category>"+JOptionPane.showInputDialog(frame, "Kategorie für: " + name)+"</category>");
-                sb.append("<name>"+JOptionPane.showInputDialog(frame, "Name für: " + name)+"</name>");
-                sb.append("<version>"+JOptionPane.showInputDialog(frame, "Version für: " + name)+"</version>");
-                sb.append("<url>"+url+"</url>");
-                sb.append("<filename>"+name+".jdu</filename>");
-                sb.append("<infourl>http://wiki.jdownloader.org/index.php?title="+name+"</infourl>");
-                sb.append("<preselected>false</preselected>");
-                sb.append("<id>"+id+"</id>");
-                sb.append("</package>");
-               }
+                String url;
+                if (pw != null) {
+                    url = Upload.toUploadedToPremium(new File(srcDir, filename), uid, pw);
+                    System.out.println("<tr>");
+                    System.out.println("<th>"+name+" ("+df.format(dt) + "_v" + i+")</th>");
+                    System.out.println("<td><a href='"+url+"' target='_blank'>Download package</a></td>");
+                    System.out.println("</tr>");
+                }
 
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        sb.append("</packages>");
-        
-        System.out.println(sb+"");
-       
-     
-            
-        
+
     }
 }

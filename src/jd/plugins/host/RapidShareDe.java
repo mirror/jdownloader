@@ -369,7 +369,6 @@ return null;
         } else {
             return 1;
         }
-
     }
 
     @Override
