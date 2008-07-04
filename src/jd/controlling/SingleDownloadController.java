@@ -371,6 +371,7 @@ public class SingleDownloadController extends Thread {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
+                return;
             }
             milliSeconds -= 1000;
         }
@@ -496,6 +497,7 @@ public class SingleDownloadController extends Thread {
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
+            return;
         }
 
         downloadLink.setEnabled(false);
@@ -728,6 +730,7 @@ public class SingleDownloadController extends Thread {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    return;
                 }
                 wait -= 1000;
 

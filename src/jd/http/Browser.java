@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.parser.Form;
+import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.utils.JDUtilities;
 
@@ -72,6 +73,35 @@ public class Browser {
         }
         return null;
 
+    }
+    
+    public HTTPConnection openPostConnection(String url, String post) {
+
+        return openPostConnection(url, Request.parseQuery(post));
+    }
+    private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
+        try {
+            if (currentURL == null) this.currentURL = new URL(url);
+            PostRequest request = new PostRequest(url);
+            request.setFollowRedirects(doRedirects);
+
+            forwardCookies(request);
+            request.getHeaders().put("Referer", currentURL.toString());
+            request.getPostData().putAll(post);
+            if (headers != null) request.getHeaders().putAll(this.headers);
+            request.connect();
+          
+            this.request = request;
+            this.currentURL = new URL(url);
+            return request.getHttpConnection();
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public HTTPConnection openGetConnection(String string) {
@@ -257,4 +287,42 @@ public class Browser {
         return null;
     }
 
+    public String getPage(DownloadLink downloadLink) {
+       return getPage(downloadLink.getDownloadURL());
+    }
+
+    public HTTPConnection openFormConnection(Form form) {
+        String action = form.getAction();
+        switch (form.method) {
+
+        case Form.METHOD_GET:
+            StringBuffer stbuffer = new StringBuffer();
+            boolean first = true;
+            for (Map.Entry<String, String> entry : form.vars.entrySet()) {
+                if (first)
+                    first = false;
+                else
+                    stbuffer.append("&");
+                stbuffer.append(entry.getKey());
+                stbuffer.append("=");
+                stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
+            }
+            String varString = stbuffer.toString();
+            if (varString != null && !varString.matches("[\\s]*")) {
+                if (action.matches(".*\\?.+"))
+                    action += "&";
+                else if (action.matches("[^\\?]*")) action += "?";
+                action += varString;
+            }
+            return this.openGetConnection(action);
+
+        case Form.METHOD_POST:
+
+            return this.openPostConnection(action, form.vars);
+        }
+        return null;
+        
+    }
+
+ 
 }
