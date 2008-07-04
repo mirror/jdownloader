@@ -16,6 +16,10 @@
 
 package jd.plugins.host;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +33,14 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+
+import org.jdesktop.swingx.JXTitledSeparator;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -37,6 +49,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
@@ -538,20 +551,39 @@ public class Rapidshare extends PluginForHost {
                     		validUntil += " (" + JDLocale.L("plugins.hoster.rapidshare.com.info.expired", "expired") + ")";
                     	}
                     	
-                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html",
-                        		"<table style=\"height:100%; width:100%\">" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Valid until</th>		<td style=\"text-align:left\">%s</td></tr>" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic left</th>		<td style=\"text-align:left\">%s</td></tr>" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Files</th>				<td style=\"text-align:left\">%s</td></tr>" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Rapidpoints</th>		<td style=\"text-align:left\">%s</td></tr>" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Used Space</th>			<td style=\"text-align:left\">%s</td></tr>" +
-                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic Share left</th>	<td style=\"text-align:left\">%s</td></tr>" +
-                        		"</table>"),
-                        		validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft);
-                    }
+//                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html",
+//                        		"<table style=\"height:100%; width:100%\">" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Valid until</th>		<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic left</th>		<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Files</th>				<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Rapidpoints</th>		<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Used Space</th>			<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic Share left</th>	<td style=\"text-align:left\">%s</td></tr>" +
+//                        		"</table>"),
+//                        		validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft);
 
-                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
+
+//                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
                     
+                    String def = "Accountinfo for " + user;
+                    String title = JDLocale.L("plugins.hoster.rapidshare.com.info.title", def);
+                    int n = 10;
+                    JPanel panel = new JPanel(new BorderLayout(n,n));
+                    panel.setBorder(new EmptyBorder(n,n,n,n));
+                    
+                    String[] label = new String[]{"Valid until", "Traffic left", "Files", "Rapidpoints", "Used Space", "Traffic Share left"};
+                    String[] data = new String[]{validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft};
+                    JPanel datapanel = new JPanel(new GridLayout(0, 4, n , n));
+                    for (int j = 0; j < data.length; j++) {
+                        datapanel.add(new JLabel(label[j]));
+                        datapanel.add(new JTextField(data[j]));
+                    }
+                    panel.add(new JXTitledSeparator(def), BorderLayout.CENTER);
+                    panel.add(datapanel, BorderLayout.CENTER);
+                    
+                    JOptionPane.showMessageDialog(null, panel, title, JOptionPane.INFORMATION_MESSAGE);
+                    
+                    }
                 } catch (MalformedURLException e) {
                 } catch (IOException e) {
                 }
