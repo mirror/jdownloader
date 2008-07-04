@@ -578,7 +578,7 @@ public class Rapidshare extends PluginForHost {
                         datapanel.add(new JLabel(label[j]));
                         datapanel.add(new JTextField(data[j]));
                     }
-                    panel.add(new JXTitledSeparator(def), BorderLayout.CENTER);
+                    panel.add(new JXTitledSeparator(def), BorderLayout.NORTH);
                     panel.add(datapanel, BorderLayout.CENTER);
                     
                     JOptionPane.showMessageDialog(null, panel, title, JOptionPane.INFORMATION_MESSAGE);
