@@ -267,13 +267,14 @@ public class CaptchaDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
             captchaText = textField.getText();
-            setVisible(false);
-            dispose();
+//            setVisible(false);
+            this.dispose();
+//            System.out.println();
         }
         if (e.getSource() == btnBAD) {
             captchaText = null;
-            setVisible(false);
-            dispose();
+//            setVisible(false);
+            this.dispose();
         }
 
         if (countdownThread != null && countdownThread.isAlive()) this.countdownThread.interrupt();
