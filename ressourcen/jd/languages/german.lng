@@ -4,7 +4,7 @@ addons.schedule.menu.abort = Abbrechen
 addons.schedule.menu.add = Hinzufügen
 addons.schedule.menu.close = Schließen
 addons.schedule.menu.create = Neu
-addons.schedule.menu.edit = bBarbeiten
+addons.schedule.menu.edit = Barbeiten
 addons.schedule.menu.finished = Abgeschlossen
 addons.schedule.menu.maxdl = max. Downloads
 addons.schedule.menu.maxspeed = max. DownloadGeschwindigkeit
@@ -732,8 +732,9 @@ plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
 plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
 plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
 plugins.hoster.rapidshare.com.increaseTicketTime = Ticketwartezeit verlängern (0%-500%)
-plugins.hoster.rapidshare.com.info.error = <font color='red'><p>Account nicht gefunden</p></font>
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.error = <div style='text-align:center; width:100%; height:100%; color:red;'><b>Account konnte nicht gefunden werden!</b></div>
+plugins.hoster.rapidshare.com.info.html = <table width='100%%'><tr><th style='text-align:right; padding-right:10px'>Gültig bis</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Traffic übrig</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Dateien</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Rapidpunkte</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Belegter Speicher</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Traffic Share übrig</th><td style='text-align:left'>%s</td></tr></table>
+plugins.hoster.rapidshare.com.info.expired = abgelaufen
 plugins.hoster.rapidshare.com.info.title = Accountinfo für %s
 plugins.hoster.rapidshare.com.loadinfo = Lade RS.com Account Informationen:
 plugins.hoster.rapidshare.com.loadpreBytes = Nur die ersten * Bytes jeder Datei laden[-1 to disable]

@@ -897,7 +897,8 @@ plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
 plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Important!
 plugins.hoster.rapidshare.com.increaseTicketTime = Increase ticket time (0%-500%)
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.info.html = <table width='100%%'><tr><th style='text-align:right; padding-right:10px'>Valid until</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Traffic left</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Files</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Rapidpoints</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Used Space</th><td style='text-align:left'>%s</td></tr><tr><th style='text-align:right; padding-right:10px'>Traffic Share left</th><td style='text-align:left'>%s</td></tr></table>
+plugins.hoster.rapidshare.com.info.expired = expired
 plugins.hoster.rapidshare.com.info.title = Accountinformation for %s
 plugins.hoster.rapidshare.com.loadFirstBytes = Load only first * kilobytes for each file (-1 = disable)
 plugins.hoster.rapidshare.com.loadinfo = Loading account information for rapidshare.com
@@ -1040,3 +1041,4 @@ plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugin.rapidshare.tickettime= Wait %s min. for ticket
 plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Downloadsession expired. Try again.
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = 10 GB limit reached.
+plugins.hoster.rapidshare.com.info.error = <div style='text-align:center; width:100%; height:100%; color:red;'><b>Account could not be found!</b></div>

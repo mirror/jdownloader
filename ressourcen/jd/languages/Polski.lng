@@ -897,7 +897,6 @@ addons.schedule.menu.remove = Usun
 addons.schedule.menu.settings = Ustawienia
 addons.schedule.name = Schedule
 gui.config.gui.soundTheme = Soundtheme
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Accountinformation for %s
 plugins.hoster.rapidshare.com.loadinfo = Fetch premiumaccount information:
 plugins.rapidshare.menu.forcefreewhilehh = Free Download during Happy Hour

@@ -879,7 +879,6 @@ plugins.hoster.rapidshare.com.happyHours = Kontrola Happy Hour
 plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Důležité 
 plugins.hoster.rapidshare.com.increaseTicketTime = Zvětšte čekací čas (0%-500%)
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Informace o účtu pro %s
 plugins.hoster.rapidshare.com.loadFirstBytes = nahrát pouze prvních * kilobajtů ze všech souborů (-1 = zakázat)
 plugins.hoster.rapidshare.com.loadinfo = Nahrát informace o účtu z rapidshare.com

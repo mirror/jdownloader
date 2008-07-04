@@ -466,6 +466,32 @@ public class Rapidshare extends PluginForHost {
      */
     private void showInfo(final int i) {
         new Thread() {
+        	
+        	private String formatKB(String input) {
+
+        		if ( input != null ) {
+        			
+	        		String result = "";
+	        		int j = 0;
+	        		
+	        		for ( int i=input.length()-1; i>=0; i-- ) {
+	
+	        			j++;
+	        			result = input.charAt(i) + result;
+	        			
+	        			if ( j == 3 ) {
+	        				j = 0;
+	        				result = " " + result;
+	        			}
+	        			
+	        		}
+	        		
+	        		return result;
+	        		
+        		} else return null;
+        		
+        	}
+        	
             public void run() {
 
                 String user = null;
@@ -496,24 +522,36 @@ public class Rapidshare extends PluginForHost {
                     // logger.info(ri.getHtmlCode());
                     String html = null;
 
-                    if (ri.containsHTML("Ein Fehler ist aufgetreten")) {
-                        html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<font color='red'><p>Account nicht gefunden</p></font>");
+                    if (ri.containsHTML("Premium-Account wurde nicht gefunden")) {
+                        html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<div style='text-align:center; width:100%; height:100%; color:red;'><b>Account could not be found!</b></div>");
                     } else {
-                        String validuntil = SimpleMatches.getSimpleMatch(ri, "<td>G&uuml;ltig bis:</td><td style=\"padding-right:20px;\"><b>°</b></td>", 0);
-                        String files = SimpleMatches.getSimpleMatch(ri, " <td>Dateien:</td><td><b>°</b></td> ", 0);
-//                        String days5traffic = SimpleMatches.getSimpleMatch(ri, "<td>5 Tage Traffic:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
-                        
-                        String days1traffic = SimpleMatches.getSimpleMatch(ri, "<td>Traffic heute:</td><td align=right style=\"padding-right:20px;\"><b>°</b></td>", 0);
-                        
-                        String rapidPoints = SimpleMatches.getSimpleMatch(ri, " <td>RapidPoints:</td><td style=\"padding-right:20px;\"><b>°</b>", 0);
-
-                        String trafficshare = SimpleMatches.getSimpleMatch(ri, "<td>TrafficShare &uuml;brig:</td><td><b>°</b>", 0);
-                        String usedHD = SimpleMatches.getSimpleMatch(ri, "<td>Belegter Speicher:</td><td align=right style=\"padding-right:20px;\"><b>°</b>", 0);
-
-                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Accountinformation</h2><table width='100%%' ><tr><th >Valid until</th><td>%s</td></tr><tr><th >Premiumpoints</th><td>%s</td></tr><tr><th >Current traffic</th><td>%s</td></tr><tr><th >Used space</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>"), validuntil, rapidPoints, days1traffic, usedHD + "/" + trafficshare, files);
+                    	
+                    	//String login = ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	String validUntil = ri.getRegexp("<td>G&uuml;ltig bis:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	String trafficLeft = formatKB(ri.getRegexp("<td>Traffic &uuml;brig:</td><td.*?><b><script>document\\.write\\(setzeTT\\(\"(.*?)\"\\)\\);</script> KB</b></td>").getFirstMatch(1)).trim() + " KB";
+                    	String files = ri.getRegexp("<td>Dateien:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	String rapidPoints = ri.getRegexp("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	String usedSpace = ri.getRegexp("<td>Belegter Speicher:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	String trafficShareLeft = ri.getRegexp("<td>TrafficShare &uuml;brig:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+                    	
+                    	if ( ri.containsHTML("abgelaufen") ) {
+                    		validUntil += " (" + JDLocale.L("plugins.hoster.rapidshare.com.info.expired", "expired") + ")";
+                    	}
+                    	
+                        html = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html",
+                        		"<table style=\"height:100%; width:100%\">" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Valid until</th>		<td style=\"text-align:left\">%s</td></tr>" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic left</th>		<td style=\"text-align:left\">%s</td></tr>" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Files</th>				<td style=\"text-align:left\">%s</td></tr>" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Rapidpoints</th>		<td style=\"text-align:left\">%s</td></tr>" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Used Space</th>			<td style=\"text-align:left\">%s</td></tr>" +
+                        		"<tr><th style=\"text-align:right; padding-right:10px\">Traffic Share left</th>	<td style=\"text-align:left\">%s</td></tr>" +
+                        		"</table>"),
+                        		validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft);
                     }
 
-                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo für %s"), user), html);
+                    JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
+                    
                 } catch (MalformedURLException e) {
                 } catch (IOException e) {
                 }

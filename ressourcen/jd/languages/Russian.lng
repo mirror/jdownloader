@@ -865,7 +865,6 @@ plugins.hoster.rapidshare.com.happyHours = Проверка счастливых
 plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Активен до %s<br>Последняя проверка %s<br>Последний счастливый час был %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Важно!
 plugins.hoster.rapidshare.com.increaseTicketTime = Увеличение времени доступа (0%-500%)
-plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>АккаунтИнфо</h2><table width='100%%' ><tr><th >Действует до</th><td>%s</td></tr><tr><th >ПремиумОчки</th><td>%s</td></tr><tr><th >Текущий трафик</th><td>%s</td></tr><tr><th >Занято места</th><td>%s</td></tr><tr><th >Files</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Аккаунт инфо для %s
 plugins.hoster.rapidshare.com.loadFirstBytes = Загружать только первые * килобайт для каждого файла (-1 = отключить)
 plugins.hoster.rapidshare.com.loadinfo = Загрузка инфы об аккаунте с  rapidshare.com
