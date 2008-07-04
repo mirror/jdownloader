@@ -534,7 +534,7 @@ public class Rapidshare extends PluginForHost {
                     	String usedSpace = ri.getRegexp("<td>Belegter Speicher:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
                     	String trafficShareLeft = ri.getRegexp("<td>TrafficShare &uuml;brig:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
                     	
-                    	if ( ri.containsHTML("abgelaufen") ) {
+                    	if ( ri.containsHTML("abgelaufen") && ri.containsHTML("if (1)") ) {
                     		validUntil += " (" + JDLocale.L("plugins.hoster.rapidshare.com.info.expired", "expired") + ")";
                     	}
                     	
