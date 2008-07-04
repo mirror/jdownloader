@@ -30,7 +30,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.http.GetRequest;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;

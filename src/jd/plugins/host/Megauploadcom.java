@@ -87,7 +87,7 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean tempUnavailable = false;
 
-    private String finalurl;
+//    private String finalurl;
 
     public Megauploadcom() {
         steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -361,9 +361,6 @@ public class Megauploadcom extends PluginForHost {
             return step;
 
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
