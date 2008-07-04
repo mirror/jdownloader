@@ -18,13 +18,13 @@
 package jd.plugins.decrypt;  import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.HTMLParser;
+
+
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -92,21 +92,21 @@ public PluginStep doStep(PluginStep step, String parameter) {
           URL url = new URL(parameter);
           RequestInfo reqinfo = HTTP.getRequest(url);
           
-          String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>([\\s\\S]*?)\\<!-- Rechte Navigation --\\>").getFirstMatch();
+          String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>(.*?)\\<!-- Rechte Navigation --\\>").getFirstMatch();
           progress.increase(1);
           
           //logger.info(content);
+          String[] links = HTMLParser.getHttpLinks(content, parameter);
+//          ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(content, "<a target=\"_blank\" href="'°"'>");
           
-          ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(content, "<a target=\"_blank\" href=\'°\'>");
-          
-          progress.setRange(links.size());
+          progress.setRange(links.length);
 
-          for(int i=0; i<links.size(); i++) {
+          for(int i=0; i<links.length; i++) {
         	  //logger.info(links.get(i).get(0));
-        	  Matcher matcher = patternSupported.matcher(links.get(i).get(0));
-        	  if(!matcher.find()) //Achtung: Loading.cc hat bei Files ohne DLC statt des dllinks einen Backlink auf die eigene URL
+        	  
+        	  if(!links[i].matches("(?is)http://.*?loading\\.cc.*")) //Achtung: Loading.cc hat bei Files ohne DLC statt des dllinks einen Backlink auf die eigene URL
         	  {
-              decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+              decryptedLinks.add(this.createDownloadlink(links[i]));
         	  }
         	  progress.increase(1);
           } 
