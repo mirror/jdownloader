@@ -1,4 +1,5 @@
-#Default Theme by Coalado
+#Based upon the Danish Royalty Free Stock Icons by Jonas Rask
+#Themeified and Modified by Zoot
 gui.images.add = danishRoyalty/add
 gui.images.clipboard = danishRoyalty/clipboard
 gui.images.config.database = danishRoyalty/database
@@ -36,3 +37,7 @@ gui.images.terminal = danishRoyalty/terminal
 gui.images.top = danishRoyalty/top
 gui.images.update_manager = danishRoyalty/update_manager
 gui.images.help = danishRoyalty/help
+
+#1.1
+gui.images.package_opened = danishRoyalty/package_opened
+gui.images.package_closed = danishRoyalty/package_closed
