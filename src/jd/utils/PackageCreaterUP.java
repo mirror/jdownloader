@@ -79,17 +79,19 @@ public class PackageCreaterUP {
             } while (filename == null || new File(srcDir, filename).exists());
             Zip zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
-            // zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() *
-            // 1024.0 * 150.0);
+            zip.fillSize = 61 * 1024 + (int) (Math.random() * 1024.0 * 10.0);
             try {
                 zip.zip();
                 String url;
                 if (pw != null) {
                     url = Upload.toUploadedToPremium(new File(srcDir, filename), uid, pw);
                     System.out.println("<tr>");
-                    System.out.println("<th>"+name+" ("+df.format(dt) + "_v" + i+")</th>");
+                    System.out.println("<th><a href=\"http://wiki.jdownloader.org/index.php?go=Seite&search="+name.replaceAll("JD","")+"\">"+name+"</a></th><td>"+(df.format(dt) + "_v" + i)+"</td>");
                     System.out.println("<td><a href='"+url+"' target='_blank'>Download package</a></td>");
                     System.out.println("</tr>");
+                   
+                    
+                    
                 }
 
             } catch (Exception e) {

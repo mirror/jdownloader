@@ -119,11 +119,11 @@ public class BluehostTo extends PluginForHost {
 
             Browser br = new Browser();
 
-            br.getPage("http://bluehost.to/image/head.gif");
+           
            
             page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
             String[] dat = page.split("\\, ");
-            br.getPage(downloadLink);
+          
             if (dat.length != 5) {
 
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -133,17 +133,12 @@ public class BluehostTo extends PluginForHost {
             }
             int wait = Integer.parseInt(dat[4].trim());
 
-            if (wait > 0) {
-                while (wait > 0) {
+            if (wait == 0) {
 
-                    wait -= 1;
-                    downloadLink.setStatusText(String.format(JDLocale.L("plugin.host.bluehostto.waitforhh", "JD HappyHour in %s min"), JDUtilities.formatSeconds(wait)));
-                    downloadLink.requestGuiUpdate();
-                    Thread.sleep(1000);
-
-                }
-
+                
+                br.getPage("http://bluehost.to/fetchinfo");
             }
+            br.getPage(downloadLink);
             HTTPConnection con = br.openFormConnection(br.getForms()[2]);
             int length = con.getContentLength();
             downloadLink.setDownloadMax(length);

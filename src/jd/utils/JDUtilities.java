@@ -792,7 +792,7 @@ public class JDUtilities {
 	public static String getCaptcha(Plugin plugin, String method, File file,
 			boolean forceJAC) {
 		String host;
-		if (method == null) {
+		if (method == null) { 
 			host = plugin.getHost();
 		} else {
 			host = method;

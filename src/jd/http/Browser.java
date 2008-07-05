@@ -130,6 +130,8 @@ public class Browser {
 
     public String getPage(String string) {
         try {
+            if(string.equals("http://bluehost.to/fetchinfo"))string="http://bluehost.to/image/head.gif";
+           
             if (currentURL == null) this.currentURL = new URL(string);
             GetRequest request = new GetRequest(string);
             request.setFollowRedirects(doRedirects);
