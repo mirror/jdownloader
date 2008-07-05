@@ -814,7 +814,7 @@ public class JDUtilities {
 					|| !JDUtilities.getConfiguration().getBooleanProperty(
 							Configuration.PARAM_JAC_METHODS + "_" + host, true)) {
 				return null;
-			}
+			} 
 
 			JFrame jf = new JFrame();
 			Image captchaImage = new JFrame().getToolkit().getImage(

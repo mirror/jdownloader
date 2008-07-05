@@ -165,6 +165,19 @@
 	        </jar>
 		
 		<manifest file="Manifest.MF">
+					<attribute name="Created-By" value="Scr4ve" />
+					<attribute name="Main-Class" value="jd.update.Main" />
+			    </manifest>
+		        <jar jarfile="${dist}/JDNewsfeeds.jar" manifest="Manifest.MF">
+		            <fileset dir="${cls}">
+		                <include name="jd/plugins/optional/Newsfeeds*" />                
+		              </fileset>
+					     <fileset dir="${res}">
+		                <include name="META-INF/services/jd.plugins.PluginOptional" />
+		            </fileset>
+		        </jar>
+		
+		<manifest file="Manifest.MF">
 				<attribute name="Created-By" value="JD-Team" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>

@@ -120,9 +120,10 @@ public class BluehostTo extends PluginForHost {
             Browser br = new Browser();
 
             br.getPage("http://bluehost.to/image/head.gif");
-            br.getPage(downloadLink);
+           
             page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
             String[] dat = page.split("\\, ");
+            br.getPage(downloadLink);
             if (dat.length != 5) {
 
                 step.setStatus(PluginStep.STATUS_ERROR);
