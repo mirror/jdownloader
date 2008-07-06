@@ -19,7 +19,6 @@ package jd.utils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -54,7 +53,7 @@ public class PackageCreaterRS {
             }
 
         });
-        ArrayList<File> upload = new ArrayList<File>();
+      //  ArrayList<File> upload = new ArrayList<File>();
 
         StringBuffer sb = new StringBuffer();
         sb.append("<packages>");

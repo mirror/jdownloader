@@ -83,7 +83,7 @@ public class Filer extends PluginForDecrypt {
                 RequestInfo reqinfo = HTTP.getRequest(url);
                 ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
                 progress.setRange(matches.size());
-                String link = SimpleMatches.getFirstMatch(parameter, patternSupported, 1);
+                //String link = SimpleMatches.getFirstMatch(parameter, patternSupported, 1);
                 DownloadLink dl;
                 for (int i = 0; i < matches.size(); i++) {
                     decryptedLinks.add(dl=this.createDownloadlink("http://www.filer.net/get/" + matches.get(i).get(0)+".html"));

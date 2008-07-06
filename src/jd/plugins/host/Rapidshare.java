@@ -17,8 +17,6 @@
 package jd.plugins.host;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -33,23 +31,17 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
-import org.jdesktop.swingx.JXTitledSeparator;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
@@ -63,9 +55,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-//import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
+import org.jdesktop.swingx.JXTitledSeparator;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class Rapidshare extends PluginForHost {
     static private final String host = "rapidshare.com";
@@ -533,10 +528,13 @@ public class Rapidshare extends PluginForHost {
                     RequestInfo ri = HTTP.getRequest(new URL(url));
                     progress.increase(1);
                     // logger.info(ri.getHtmlCode());
-                    String html = null;
+                    //String html = null;
 
                     if (ri.containsHTML("Premium-Account wurde nicht gefunden")) {
+                        String html = null;
                         html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<div style='text-align:center; width:100%; height:100%; color:red;'><b>Account could not be found!</b></div>");
+                        JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
+                        
                     } else {
                     	
                     	//String login = ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();

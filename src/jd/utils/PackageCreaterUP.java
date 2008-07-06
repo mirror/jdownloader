@@ -19,7 +19,6 @@ package jd.utils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -54,7 +53,7 @@ public class PackageCreaterUP {
             }
 
         });
-        ArrayList<File> upload = new ArrayList<File>();
+       // ArrayList<File> upload = new ArrayList<File>();
 
         String uid = "70683";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
@@ -72,7 +71,7 @@ public class PackageCreaterUP {
             String filename = null;
             String[] dat = p.split("__");
             String name = dat[1];
-            String id = dat[0];
+           // String id = dat[0];
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
