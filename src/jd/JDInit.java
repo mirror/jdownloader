@@ -44,6 +44,7 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JHelpDialog;
+import jd.parser.SimpleMatches;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -712,11 +713,10 @@ public class JDInit {
 
     public void removeFiles() {
         String[] remove = null;
-
-        remove = new String[] { "jd/captcha/methods/filefactory.com", "jd/captcha/methods/Stealth.to", "jd/captcha/methods/rapidshare.com","jd/captcha/methods/containerlinks.Serienjunkies.org","jd/captcha/methods/einzellinks.Serienjunkies.org" };
+        remove = SimpleMatches.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
+                     
         if (remove != null) for (String file : remove) {
-
-            if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file))) {
+            if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file.trim()))) {
                 logger.warning("Removed " + file);
             }
 
