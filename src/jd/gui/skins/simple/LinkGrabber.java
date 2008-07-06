@@ -101,9 +101,6 @@ import jd.utils.JDUtilities;
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4974425479842618402L;
 
     private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
@@ -233,7 +230,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 //        LocationListener list = new LocationListener();
 //        this.addComponentListener(list);
 //        this.addWindowListener(list);
-//        acceptAll.getRootPane().setDefaultButton(acceptAll);
         
         int n = 5;
         JPanel panel = new JPanel(new BorderLayout(n,n));
@@ -254,6 +250,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         inner.add(tabbedPane, BorderLayout.CENTER);
         inner.add(progress, BorderLayout.SOUTH);
         panel.add(south, BorderLayout.SOUTH);
+        
+        acceptAll.getRootPane().setDefaultButton(acceptAll);
 
         setPreferredSize(new Dimension(640,480));
         setLocationRelativeTo(null);
@@ -605,7 +603,7 @@ private boolean isDupe(DownloadLink link){
         return ret;
     }
     
-    private void SetTitle()
+    private void setTitle()
     {
     	setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
     }
@@ -631,7 +629,7 @@ private boolean isDupe(DownloadLink link){
         PackageTab tab = tabList.remove(i);
         tabbedPane.removeTabAt(i);
         totalLinkList.removeAll(tab.getLinkList());
-        SetTitle();
+        this.setTitle();
     }
 
     protected void removePackage(PackageTab tab) {
@@ -672,8 +670,8 @@ private boolean isDupe(DownloadLink link){
     }
 
     protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) { return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
-
+        if (!link.isAvailabilityChecked()) {
+            return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
         }
         return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
     }
@@ -757,23 +755,18 @@ private boolean isDupe(DownloadLink link){
             }
 
             getSelectedTab().setLinkList(finalList);
-
         } else if (e.getSource() == this.mRemovePackage) {
             this.removePackageAt(this.tabbedPane.getSelectedIndex());
             this.emptyCheck();
         } else if (e.getSource() == this.accept) {
             confirmCurrentPackage();
             this.removePackageAt(this.tabbedPane.getSelectedIndex());
-            if (this.tabList.size() == 0) {
-                this.setVisible(false);
-                this.dispose();
-            }
+            this.emptyCheck();
         } else if (e.getSource() == this.acceptAll) {
             confirmAll();
             this.setVisible(false);
             this.dispose();
         } else if (e.getSource() == sortPackages) {
-
             this.reprintTabbedPane();
         } else if (e.getSource() == this.mMerge) {
             PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
@@ -798,7 +791,6 @@ private boolean isDupe(DownloadLink link){
         } else if (e.getSource() == this.mRemoveOfflineAll) {
             PackageTab tab;
             Iterator<PackageTab> iterator = tabList.iterator();
-            // Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
                 Vector<DownloadLink> list = tab.getLinkList();
@@ -814,8 +806,6 @@ private boolean isDupe(DownloadLink link){
             Vector<DownloadLink> list = tab.getLinkList();
             for (int i = list.size() - 1; i >= 0; --i) {
                 if (!list.get(i).isAvailable()) {
-                   ;
-                    
                     totalLinkList.remove( tab.removeLinkAt(i));
                 }
             }
@@ -832,13 +822,11 @@ private boolean isDupe(DownloadLink link){
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.x, (int) loc.getY());
             this.removePackageAt(destID);
-
             this.emptyCheck();
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
-
             addTab();
         }
-        SetTitle();
+        this.setTitle();
     }
 
     /**
@@ -977,8 +965,6 @@ private boolean isDupe(DownloadLink link){
     }
 
     public void drop(DropTargetDropEvent e) {
-        // TODO Auto-generated method stub
-
         int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) e.getLocation().getX(), (int) e.getLocation().getY());
         PackageTab dest;
         PackageTab source = tabList.get(currentTab);
@@ -1077,9 +1063,6 @@ private boolean isDupe(DownloadLink link){
      */
     class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = -7394319645950106241L;
 
         public static final int HOSTER = 1;
@@ -1505,9 +1488,6 @@ private boolean isDupe(DownloadLink link){
 
         private class InternalTableModel extends AbstractTableModel {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -7475394342173736030L;
 
             public int getColumnCount() {
@@ -1609,10 +1589,8 @@ private boolean isDupe(DownloadLink link){
                    
                     totalLinkList.remove( this.linkList.remove(id));
                 }
-                this.refreshTable();
-
+                this.refreshTable();                
             }
-
         }
 
         /**
@@ -1644,14 +1622,9 @@ private boolean isDupe(DownloadLink link){
          * 
          */
         private class InternalTableCellRenderer extends DefaultTableCellRenderer {
-            /**
-             * 
-             */
+
             private static final long serialVersionUID = -7858580590383167251L;
 
-            /**
-             * serialVersionUID
-             */
             private final Color COLOR_DONE = new Color(0, 255, 0, 20);
 
             private final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
@@ -1701,12 +1674,4 @@ private boolean isDupe(DownloadLink link){
     }
 
 }
-
-
-
-
-
-
-
-
               
