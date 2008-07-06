@@ -24,6 +24,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -119,7 +120,7 @@ public class Filer extends PluginForHost {
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)&&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) ) {
             try {
                 return this.doPremiumStep(step, downloadLink);
             } catch (Exception e) {
@@ -187,6 +188,7 @@ public class Filer extends PluginForHost {
         String page = null;
         try {
             Browser br = new Browser();
+            Browser.clearCookies("filer.net");
             br.getPage(downloadLink.getDownloadURL());
             int tries = 0;
             while (tries < maxCaptchaTries) {
@@ -214,6 +216,15 @@ public class Filer extends PluginForHost {
             }
 
             br.setFollowRedirects(false);
+            String wait=new Regex(br,"Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
+            if(wait!=null){
+                step.setStatus(PluginStep.STATUS_ERROR);
+                step.setParameter(Long.parseLong(wait));
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                return step;
+                
+                
+            }
             page = br.submitForm(br.getForms()[1]);
             //        
             // if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
@@ -304,7 +315,9 @@ public class Filer extends PluginForHost {
                 bytes = (int) SimpleMatches.getBytes(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
                 downloadLink.setDownloadMax(bytes);
                 br.setFollowRedirects(false);
-                br.submitForm(br.getForms()[1]);
+                Form[] forms = br.getForms();
+                if(forms.length<2)return true;
+                br.submitForm(forms[1]);
                 downloadLink.setName(getFileNameFormURL(new URL(br.getRedirectLocation())));
                 return true;
             } catch (Exception e) {

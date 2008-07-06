@@ -292,7 +292,10 @@ public class Browser {
     public String getPage(DownloadLink downloadLink) {
        return getPage(downloadLink.getDownloadURL());
     }
-
+public String toString(){
+    if(request==null)return "Browser. no rquest yet";
+    return request.toString();
+}
     public HTTPConnection openFormConnection(Form form) {
         String action = form.getAction();
         switch (form.method) {

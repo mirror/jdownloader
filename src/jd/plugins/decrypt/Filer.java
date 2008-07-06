@@ -35,7 +35,7 @@ public class Filer extends PluginForDecrypt {
     static private String        host             = "filer.net";
     private String               version          = "0.1";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern INFO             = Pattern.compile("(?s)<td><a href=\"\\/get\\/.*?.html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern INFO             = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
         super();
@@ -84,8 +84,10 @@ public class Filer extends PluginForDecrypt {
                 ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
                 progress.setRange(matches.size());
                 String link = SimpleMatches.getFirstMatch(parameter, patternSupported, 1);
+                DownloadLink dl;
                 for (int i = 0; i < matches.size(); i++) {
-                    decryptedLinks.add(this.createDownloadlink("http://www.filer.net/file" + i + "/" + link + "/filename/" + matches.get(i).get(0)));
+                    decryptedLinks.add(dl=this.createDownloadlink("http://www.filer.net/get/" + matches.get(i).get(0)+".html"));
+                    dl.setName(matches.get(i).get(1));
                     progress.increase(1);
                 }
 
