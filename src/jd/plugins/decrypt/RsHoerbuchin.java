@@ -18,7 +18,6 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,22 +33,18 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
-/** 
- * @author JD-Team
- * 
- */
 public class RsHoerbuchin extends PluginForDecrypt {
     static private final String host = "rs.hoerbuch.in";
 
-    private String version = "1.0.0.1";
-    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[a-zA-Z0-9]{6}.html", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_UP.flags());
+    private String version = "1.0.0.2";
+    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_DE = Pattern.compile("http://rs\\.hoerbuch\\.in/de-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[\\w]{6}.html", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_DE.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_DE.flags() | patternLink_UP.flags());
 
     public RsHoerbuchin() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,7 +74,7 @@ public class RsHoerbuchin extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "hoerbuch.in-1.0.0.";
+        return "hoerbuch.in-1.0.0.2";
     }
 
     @Override
@@ -89,36 +84,30 @@ public class RsHoerbuchin extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        String cryptedLink = (String) parameter;
-        switch (step.getStep()) {
-        case PluginStep.STEP_DECRYPT:
-
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                URL url = new URL(cryptedLink);
-                RequestInfo requestInfo = HTTP.getRequest(url, null, null, false);
-
-                if (cryptedLink.matches(patternLink_RS.pattern())) {
+                URL url = new URL(parameter);
+                RequestInfo requestInfo = HTTP.getRequest(url);
+                
+                if (parameter.matches(patternLink_RS.pattern())) {
                     HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                     String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
                     decryptedLinks.add(this.createDownloadlink(newURL));
-                } else if (cryptedLink.matches(patternLink_UP.pattern())) {
-                    /*Uploaded.to links werden aus der action rausgelesen*/
+                } else if (parameter.matches(patternLink_DE.pattern())) {
+                    HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                    String newURL = "http://rapidshare.de" + JDUtilities.htmlDecode(fields.get("uri"));
+                    decryptedLinks.add(this.createDownloadlink(newURL));                    
+                } else if (parameter.matches(patternLink_UP.pattern())) {
                     ArrayList<String> links = SimpleMatches.getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
-                    for (int i = 0; i < links.size(); i++) {                        
+                    for (int i = 0; i < links.size(); i++)
                         decryptedLinks.add(this.createDownloadlink(links.get(i)));
-                    }
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             step.setParameter(decryptedLinks);
-            break;
-
         }
         return null;
-
     }
 }

@@ -43,6 +43,7 @@ public class Wordpress extends PluginForDecrypt {
         /* diese Pattern dienen zum auffinden des Passworts */
         /* ACHTUNG: passwort muss an erster stelle im pattern sein */
         passwordpattern.add("<b>Passwort\\:<\\/b> (.*?) \\|"); /* hörbuch,xxx-blog */
+        passwordpattern.add("<B>Passwort\\:<\\/b> (.*?)<br><\\/p>"); /* hörbuch */
         passwordpattern.add("<b>Passwort\\:<\\/b> (.*?)<\\/p>");/* game-blog */
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");/* sky-porn */
         passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>"); /* movie-blog */
