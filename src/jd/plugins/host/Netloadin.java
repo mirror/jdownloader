@@ -134,6 +134,8 @@ public class Netloadin extends PluginForHost {
     // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) throws MalformedURLException, IOException {
         DownloadLink downloadLink = (DownloadLink) parameter;
+        // Download-URL aktualisieren
+        downloadLink.setUrlDownload("http://netload.in/datei" + getID(downloadLink.getDownloadURL()) + ".htm");
         // RequestInfo requestInfo;
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
