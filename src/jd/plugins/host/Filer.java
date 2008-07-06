@@ -219,13 +219,22 @@ public class Filer extends PluginForHost {
             String wait=new Regex(br,"Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
             if(wait!=null){
                 step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(Long.parseLong(wait));
+                step.setParameter(Long.parseLong(wait)*60*1000);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                 return step;
                 
                 
             }
-            page = br.submitForm(br.getForms()[1]);
+            Form[] forms = br.getForms();
+            if(forms.length<2){
+                step.setStatus(PluginStep.STATUS_ERROR);
+                step.setParameter(Long.parseLong("1")*60*1000);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                return step;
+                
+                
+            }
+            page = br.submitForm(forms[1]);
             //        
             // if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
             // logger.severe("Free User Limit reached");
