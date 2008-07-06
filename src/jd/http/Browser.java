@@ -326,5 +326,10 @@ public class Browser {
         
     }
 
+    public static void clearCookies(String string) {
+        COOKIES.put(string, null);
+        
+    }
+
  
 }
