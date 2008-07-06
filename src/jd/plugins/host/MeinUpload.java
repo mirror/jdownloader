@@ -45,7 +45,7 @@ public class MeinUpload extends PluginForHost {
     private static final String PLUGIN_VERSION = "0.1.0";
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    static private final Pattern PATTERN_SUPPORTED = getSupportPattern("http://[*]meinupload.com/dl/[+]/[+]");
+    static private final Pattern PATTERN_SUPPORTED = getSupportPattern("http://[*]meinupload.com/{1,}dl/[+]/[+]");
 //    private static final int MAX_SIMULTAN_DOWNLOADS = 1;
 
     public MeinUpload() {
@@ -117,7 +117,7 @@ public class MeinUpload extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
 
         try {
-            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if(id==null)return false;
            // http://meinupload.com/infos.api?get_id=3794082988
         
@@ -161,7 +161,7 @@ public class MeinUpload extends PluginForHost {
         String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
         downloadLink.setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
         downloadLink.requestGuiUpdate();
-        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         if (id == null) {
             step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
