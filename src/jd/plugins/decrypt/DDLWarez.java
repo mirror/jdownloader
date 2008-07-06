@@ -17,29 +17,23 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.net.URL;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
-import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class DDLWarez extends PluginForDecrypt {
     private static final String host = "ddl-warez.org";
     private static final String version = "1.0.0.0";
-    // http://ddl-warez.org/detail.php?id=5380&cat=games
     private static final Pattern patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[+]&cat=[+]");
-    private static final Pattern patternFrame = Pattern.compile("<frame\\s.*?src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
     public DDLWarez() {
         super();
@@ -50,7 +44,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Bo0nZ";
+        return "Jiaz";
     }
 
     @Override
@@ -82,87 +76,44 @@ public class DDLWarez extends PluginForDecrypt {
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            try {
-//                URL url = new URL(parameter);
-                GetRequest req = new GetRequest(parameter);
-                req.setReadTimeout(5 * 60 * 1000);
-                req.setConnectTimeout(5 * 60 * 1000);
-                String page = req.load();
-                // RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
-                String title = SimpleMatches.getSimpleMatch(page, "<title>DDL-Warez v3.0 // °</title>", 0);
-                String pass = SimpleMatches.getSimpleMatch(page, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
-                if (pass.equals("kein Passwort")) pass = null;
-                logger.info("Password=" + pass);
+            for (int retry = 1; retry <= 10; retry++) {
+                try {
+                    GetRequest req = new GetRequest(parameter);
+                    req.setReadTimeout(5 * 60 * 1000);
+                    req.setConnectTimeout(5 * 60 * 1000);
+                    String page = req.load();
+                    String pass = SimpleMatches.getSimpleMatch(page, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
+                    Vector <String> passwords=new Vector<String>();
+                    if (!pass.equals("kein Passwort")) passwords.add(pass);
 
-                Form[] forms = Form.getForms(req.getRequestInfo());
-
-                // first form is the search form, not needed
-                progress.setRange(forms.length - 1);
-//                Matcher frameMatcher = null;
-                FilePackage fp = new FilePackage();
-                fp.setName(title);
-                fp.setPassword(pass);
-
-                for (int i = 1; i < forms.length; ++i) {
-                    // forms[i].setRequestPoperty("User-Agent","Mozilla/5.0
-                    // (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
-                    // Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
-                    //                    
-                    // forms[i].setRequestPoperty("Accept","text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
-                    //                    
-                    // forms[i].setRequestPoperty("Accept-Language","de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-                    //
-                    // forms[i].setRequestPoperty("Accept-Encoding","gzip,deflate");
-                    // forms[i].setRequestPoperty("Accept-Charset","ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-                    //                
-                    //   
-                    String action = forms[i].getAction();
-                    PostRequest r = new PostRequest(action);
-                    r.setPostVariable("dont", forms[i].vars.get("dont"));
-                    r.setPostVariable("do", forms[i].vars.get("do"));
-                    r.setPostVariable("this", forms[i].vars.get("this"));
-                    r.setPostVariable("now", forms[i].vars.get("now"));
-                    r.getHeaders().put("Referer", parameter);
-                    r.load();
-
-                    RequestInfo formInfo = r.getRequestInfo();
-
-                    // r= new PostRequest(forms[i].)
-
-                    // signed: the 2nd redirection layer was removed
-                    // URL urlredirector = new
-                    // URL(getBetween(formInfo.getHtmlCode(), "<FRAME SRC=\"",
-                    // "\""));
-                    // RequestInfo reqinfoRS = getRequest(urlredirector);
-
-                    // System.out.println(formInfo.getHtmlCode());
-
-                    for (Iterator<String> it = SimpleMatches.getAllSimpleMatches(formInfo, patternFrame, 1).iterator(); it.hasNext();) {
-
-                        String[] links = HTMLParser.getHttpLinks(it.next().trim(), null);
-
-                        for (String link : links) {
-                            try {
-                                if (JDUtilities.getPluginForHost(new URL(link).getHost()) != null) {
-                                    ;
-                                    decryptedLinks.add(this.createDownloadlink(link));
-                                    decryptedLinks.lastElement().setFilePackage(fp);
-                                    decryptedLinks.lastElement().addSourcePluginPassword(pass);
-                                }
-                            } catch (Exception e) {
+                    Form[] forms = Form.getForms(req.getRequestInfo());
+                    progress.setRange(forms.length - 1);
+                    DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
+                    for (int i = 0; i < forms.length; ++i) {
+                        Thread.sleep(200);
+                        DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(i);
+                        DDLWarez_Linkgrabbers[i].setjob(forms[i], parameter);
+                        DDLWarez_Linkgrabbers[i].start();
+                        Thread.sleep(800);
+                    }
+                    for (int i = 0; i < forms.length; ++i) {
+                        try {
+                            DDLWarez_Linkgrabbers[i].join();
+                            if (DDLWarez_Linkgrabbers[i].status() == DDLWarez_Linkgrabber.THREADPASS) {
+                                DownloadLink link = this.createDownloadlink(DDLWarez_Linkgrabbers[i].getlink());
+                                link.setSourcePluginPasswords(passwords);
+                                decryptedLinks.add(link);
                             }
+                            progress.increase(1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
                     }
-
-                    // System.out.println("found: "+found);
-
-                    progress.increase(1);
+                    step.setParameter(decryptedLinks);
+                    break;
+                } catch (Exception e) {
+                    logger.finest("DDLWarez: PostRequest-Error, try again!");
                 }
-
-                // Decrypt abschliessen
-                step.setParameter(decryptedLinks);
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
         return null;
@@ -171,6 +122,67 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    static class DDLWarez_Linkgrabber extends Thread {
+        public final static int THREADPASS = 0;
+        public final static int THREADFAIL = 1;
+        int _status;
+        private Form form;
+        private String parameter;
+        private String downloadlink;
+        private boolean gotjob;
+        private int Worker_ID;
+
+        public int status() {
+            return this._status;
+        }
+
+        public String getlink() {
+            return this.downloadlink;
+        }
+
+        public DDLWarez_Linkgrabber(int id) {
+            this.downloadlink = null;
+            this.gotjob = false;
+            this._status = THREADFAIL;
+            this.Worker_ID = id;
+        }
+
+        public void setjob(Form form, String parameter) {
+            this.form = form;
+            this.parameter = parameter;
+            this.gotjob = true;
+        }
+
+        public void run() {
+            if (this.gotjob == true) {
+                logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " started!");
+                String action = form.getAction();
+                PostRequest r = new PostRequest(action);
+                r.setPostVariable("dont", form.vars.get("dont"));
+                r.setPostVariable("do", form.vars.get("do"));
+                r.setPostVariable("this", form.vars.get("this"));
+                r.setPostVariable("now", form.vars.get("now"));
+                r.getHeaders().put("Referer", parameter);
+                for (int retry = 1; retry <= 10; retry++) {
+                    try {
+                        r.load();
+                        RequestInfo formInfo = r.getRequestInfo();
+                        downloadlink = new Regex(formInfo.getHtmlCode(), Pattern.compile("<frame\\s.*?src=\"(.*?)\" NAME=\"second\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        break;
+                    } catch (Exception e) {
+                        logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " PostRequest-Error, try again!");
+                    }
+                    try {
+                        Thread.sleep(1500);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+            logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished!");
+            this._status = THREADPASS;
+        }
     }
 
 }
