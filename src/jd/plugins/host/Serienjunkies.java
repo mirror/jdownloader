@@ -363,10 +363,46 @@ public class Serienjunkies extends PluginForHost {
                         continue;
                     }
                     capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile, false);
+//                    System.out.println(capTxt);
                     reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+//                    System.out.println(reqinfo);
                 } else {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                        if (useUserinputIfCaptchaUnknown() && this.getCaptchaDetectionID() == Plugin.CAPTCHA_USER_INPUT && this.getLastCaptcha() != null && this.getLastCaptcha().getLetterComperators() != null) {
+                            LetterComperator[] lcs = this.getLastCaptcha().getLetterComperators();
+                            this.getLastCaptcha().setCorrectcaptchaCode(capTxt.trim());
+
+                            if (lcs.length == capTxt.trim().length()) {
+                                for (int i = 0; i < capTxt.length(); i++) {
+
+                                    if (lcs[i] != null && lcs[i].getDecodedValue() != null && capTxt.substring(i, i + 1).equalsIgnoreCase(lcs[i].getDecodedValue()) && lcs[i].getValityPercent() < 30.0) { //
+                                        logger.severe("OK letter: " + i + ": JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER: " + capTxt.substring(i, i + 1));
+                                    } else {
+
+                                        logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1)); // Pixelstring.
+                                        // getB()
+                                        // ist
+                                        // immer
+                                        // der
+                                        // neue
+                                        // letter
+                                        final String character = capTxt.substring(i, i + 1);
+                                        logger.info("SEND");
+                                        Letter letter = lcs[i].getA();
+                                        String captchaHash = UTILITIES.getLocalHash(captchaFile);
+                                        letter.setSourcehash(captchaHash);
+                                        letter.setOwner(this.getLastCaptcha().owner);
+                                        letter.setDecodedValue(character);
+                                        this.getLastCaptcha().owner.letterDB.add(letter);
+                                        this.getLastCaptcha().owner.saveMTHFile();
+                                    }
+                                }
+
+                            } else {
+                                logger.info("LCS not length comp");
+                            }
+                        }
                     }
                     break;
                 }
