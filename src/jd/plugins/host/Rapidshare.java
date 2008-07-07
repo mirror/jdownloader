@@ -47,7 +47,6 @@ import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.http.Request;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -1019,7 +1018,7 @@ public class Rapidshare extends PluginForHost {
         
         
         error = JDUtilities.htmlDecode(error);
-        String[] er = SimpleMatches.getLines(error);
+        String[] er = Regex.getLines(error);
 
         if (er == null || er.length == 0) return null;
         error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]), er[0]);
@@ -1973,7 +1972,7 @@ public class Rapidshare extends PluginForHost {
                 r.setPostVariable("toolmode", "1");
                 String page = r.load();
 
-                String[] lines = SimpleMatches.getLines(page);
+                String[] lines = Regex.getLines(page);
                 if (lines.length != i-c) return null;
                
                 for (String line : lines) {
