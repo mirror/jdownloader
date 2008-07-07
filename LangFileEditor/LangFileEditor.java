@@ -1,6 +1,4 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -32,17 +30,25 @@ import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 
 import jd.gui.skins.simple.LocationListener;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
+/**
+ * 
+ * Editor for jDownloader language files
+ * Gets JDLocale entries from source and compares them to the keypairs in the language file
+ * @author eXecuTe
+ * 
+ */
+
 public class LangFileEditor implements ActionListener {
 	
 	private JFrame frame;
 	private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblEntriesCount;
-	private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear;
+	private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder,
+					btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear;
 	private JTable table;
 	private MyTableModel tableModel;
 	
@@ -190,7 +196,7 @@ public class LangFileEditor implements ActionListener {
 
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setTitle("Language File Editor");
+        frame.setTitle("jDownloader Language File Editor");
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
         LocationListener listener = new LocationListener();
@@ -213,7 +219,7 @@ public class LangFileEditor implements ActionListener {
         btnSelectMissing = new JButton("Select Missing Entries");
         btnClear = new JButton("Clear Values");
         btnReload = new JButton("Reload");
-        btnSave = new JButton("Save As");
+        btnSave = new JButton("Save As...");
         
         btnBrowseFolder.addActionListener(this);
         btnBrowseFile.addActionListener(this);
