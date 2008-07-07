@@ -151,9 +151,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
         btnEdit.setEnabled(false);
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 	          public void valueChanged(ListSelectionEvent e) {
-	                System.out.println(e.getSource());
-	                DefaultListSelectionModel model = (DefaultListSelectionModel) e.getSource();
-	                if (pluginsForDecrypt.get(model.getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+	                if (pluginsForDecrypt.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
 	                else btnEdit.setEnabled(false);
 	          }
 		});
