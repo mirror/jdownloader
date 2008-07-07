@@ -493,7 +493,7 @@ private boolean isDupe(DownloadLink link){
                         tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
 
                     }
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
 
                 }
 
@@ -605,7 +605,7 @@ private boolean isDupe(DownloadLink link){
     
     private void setTitle()
     {
-    	setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+    	setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
     }
 
     public void addLinkstoTab(DownloadLink[] linkList, int id) {
@@ -1284,7 +1284,7 @@ private boolean isDupe(DownloadLink link){
                     table.tableChanged(new TableModelEvent(table.getModel()));
                     onPackageNameChanged(PackageTab.this);
 
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
                 }
             });
         }
