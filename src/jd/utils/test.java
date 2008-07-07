@@ -1,0 +1,26 @@
+package jd.utils;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
+public class test {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		String all = "eval(unescape(\"%66%75%6E%63%74%69%6F%6E%20%68%70%5F%64%31%31%28%73%29%7B%76%61%72%20%6F%3D%22%22%2C%61%72%3D%6E%65%77%20%41%72%72%61%79%28%29%2C%6F%73%3D%22%22%2C%69%63%3D%30%3B%66%6F%72%28%69%3D%30%3B%69%3C%73%2E%6C%65%6E%67%74%68%3B%69%2B%2B%29%7B%63%3D%73%2E%63%68%61%72%43%6F%64%65%41%74%28%69%29%3B%69%66%28%63%3C%31%32%38%29%63%3D%63%5E%32%3B%6F%73%2B%3D%53%74%72%69%6E%67%2E%66%72%6F%6D%43%68%61%72%43%6F%64%65%28%63%29%3B%69%66%28%6F%73%2E%6C%65%6E%67%74%68%3E%38%30%29%7B%61%72%5B%69%63%2B%2B%5D%3D%6F%73%3B%6F%73%3D%22%22%7D%7D%6F%3D%61%72%2E%6A%6F%69%6E%28%22%22%29%2B%6F%73%3B%72%65%74%75%72%6E%20%6F%7D\"));eval(hp_d11(unescape(\"tcp%22nmcfdkngnkli%22?%22y--%22rpktcvg%22rpmrgpv{]ig{Qvp%228%22 C@AFGDEJKHINOLMRSPQVWTUZ[Xc`afgdejkhinolmrspqvwtuz{x23016745:;)-? .--%22rw`nka%22ogvjmf%22dmp%22glamfkleglamfg%228%22dwlavkml%22*klrwv+%22ytcp%22mwvrwv%22?%22  9tcp%22ajp3.%22ajp0.%22ajp1.%22gla3.%22gla0.%22gla1.%22gla69tcp%22k%22?%2229klrwv%22?%22nmcfdkngnkli,]wvd:]glamfg*klrwv+9ujkng%22*k%22>%22klrwv,nglevj+%22yajp3%22?%22klrwv,ajcpAmfgCv*k))+9ajp0%22?%22klrwv,ajcpAmfgCv*k))+9ajp1%22?%22klrwv,ajcpAmfgCv*k))+9gla3%22?%22ajp3%22%3C%3C%2209gla0%22?%22**ajp3%22$%221+%22>>%226+%22~%22*ajp0%22%3C%3C%226+9gla1%22?%22**ajp0%22$%2237+%22>>%220+%22~%22*ajp1%22%3C%3C%224+9gla6%22?%22ajp1%22$%22419kd%22*kqLcL*ajp0++%22ygla1%22?%22gla6%22?%22469%7F%22gnqg%22kd%22*kqLcL*ajp1++%22ygla6%22?%22469%7Fmwvrwv%22?%22mwvrwv%22)vjkq,]ig{Qvp,ajcpCv*gla3+%22)%22vjkq,]ig{Qvp,ajcpCv*gla0+%22)vjkq,]ig{Qvp,ajcpCv*gla1+%22)%22vjkq,]ig{Qvp,ajcpCv*gla6+9%7Fpgvwpl%22mwvrwv9%7F.--%22rw`nka%22ogvjmf%22dmp%22fgamfklefgamfg%228%22dwlavkml%22*klrwv+%22ytcp%22mwvrwv%22?%22  9tcp%22ajp3.%22ajp0.%22ajp19tcp%22gla3.%22gla0.%22gla1.%22gla69tcp%22k%22?%2229klrwv%22?%22klrwv,pgrncag*-Y%5CC/Xc/x2/;^)^-^?_-e.%22  +9ujkng%22*k%22>%22klrwv,nglevj+%22ygla3%22?%22vjkq,]ig{Qvp,klfgzMd*klrwv,ajcpCv*k))++9gla0%22?%22vjkq,]ig{Qvp,klfgzMd*klrwv,ajcpCv*k))++9gla1%22?%22vjkq,]ig{Qvp,klfgzMd*klrwv,ajcpCv*k))++9gla6%22?%22vjkq,]ig{Qvp,klfgzMd*klrwv,ajcpCv*k))++9ajp3%22?%22*gla3%22>>%220+%22~%22*gla0%22%3C%3C%226+9ajp0%22?%22**gla0%22$%2237+%22>>%226+%22~%22*gla1%22%3C%3C%220+9ajp1%22?%22**gla1%22$%221+%22>>%224+%22~%22gla69mwvrwv%22?%22mwvrwv%22)%22Qvpkle,dpmoAjcpAmfg*ajp3+9kd%22*gla1%22#?%2246+%22ymwvrwv%22?%22mwvrwv%22)%22Qvpkle,dpmoAjcpAmfg*ajp0+9%7Fkd%22*gla6%22#?%2246+%22ymwvrwv%22?%22mwvrwv%22)%22Qvpkle,dpmoAjcpAmfg*ajp1+9%7F%7Fmwvrwv%22?%22nmcfdkngnkli,]wvd:]fgamfg*mwvrwv+9pgvwpl%22mwvrwv9%7F.--%22rpktcvg%22ogvjmf%22dmp%22WVD/:%22glamfkle]wvd:]glamfg%228%22dwlavkml%22*qvpkle+%22yqvpkle%22?%22qvpkle,pgrncag*-^p^l-e. ^l +9tcp%22wvdvgzv%22?%22  9dmp%22*tcp%22l%22?%2229%22l%22>%22qvpkle,nglevj9%22l))+%22ytcp%22a%22?%22qvpkle,ajcpAmfgCv*l+9kd%22*a%22>%2230:+%22ywvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg*a+9%7Fgnqg%22kd**a%22%3C%22305+%22$$%22*a%22>%22026:++%22ywvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg**a%22%3C%3C%224+%22~%223;0+9wvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg**a%22$%2241+%22~%2230:+9%7Fgnqg%22ywvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg**a%22%3C%3C%2230+%22~%22006+9wvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg***a%22%3C%3C%224+%22$%2241+%22~%2230:+9wvdvgzv%22)?%22Qvpkle,dpmoAjcpAmfg**a%22$%2241+%22~%2230:+9%7F%7Fpgvwpl%22wvdvgzv9%7F.--%22rpktcvg%22ogvjmf%22dmp%22WVD/:%22fgamfkle]wvd:]fgamfg%228%22dwlavkml%22*wvdvgzv+%22ytcp%22qvpkle%22?%22  9tcp%22k%22?%2229tcp%22a%22?%22a3%22?%22a0%22?%2229ujkng%22*%22k%22>%22wvdvgzv,nglevj%22+%22ya%22?%22wvdvgzv,ajcpAmfgCv*k+9kd%22*a%22>%2230:+%22yqvpkle%22)?%22Qvpkle,dpmoAjcpAmfg*a+9k))9%7Fgnqg%22kd**a%22%3C%223;3+%22$$%22*a%22>%22006++%22ya0%22?%22wvdvgzv,ajcpAmfgCv*k)3+9qvpkle%22)?%22Qvpkle,dpmoAjcpAmfg***a%22$%2213+%22>>%224+%22~%22*a0%22$%2241++9k%22)?%2209%7Fgnqg%22ya0%22?%22wvdvgzv,ajcpAmfgCv*k)3+9a1%22?%22wvdvgzv,ajcpAmfgCv*k)0+9qvpkle%22)?%22Qvpkle,dpmoAjcpAmfg***a%22$%2237+%22>>%2230+%22~%22**a0%22$%2241+%22>>%224+%22~%22*a1%22$%2241++9k%22)?%2219%7F%7Fpgvwpl%22qvpkle9%7F%7F\")));";
+
+		String dec = "loadfilelink.decode(\"aHR0cDovL2RsMi5zaGFyZS1vbmxpbmUuYml6Ly9nZXRmaWxlLnBocD9pZD0xMTU0MjgmYWNjZXNzX2tleT01ZTdiMTU5MWYyMjA0ODJkN2UyNTMxMmViYjg1MjcxNyZ0PTQ4NzI4ZTM0Jm89QzlCRTg2N0I0QUY2QjIzOTRGQzMxNTc5MDMxRTEwRjZDMUE0ODA3QzRGRjZBQzI1NTFENzFGMTQ3QzdDMTU4MENEQTc5ODA4M0FGNkIxMzk0RkMzJm5hbWU9dGhoYXByNWxpZHh2ZGdlci5yMDA=\");";
+
+		Context cx = Context.enter();
+		Scriptable scope = cx.initStandardObjects();
+
+		String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
+		Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+		String code = Context.toString(result);
+		System.out.println(code);
+
+	}
+
+}
