@@ -28,11 +28,14 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Vector;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -95,7 +98,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
-        table = new InternalTable();
+        table = new JTable(); //new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(new InternalTableModel());
         this.setPreferredSize(new Dimension(700, 350));
@@ -125,6 +128,13 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.container.btn_settings","Einstellungen"));
+        btnEdit.setEnabled(false);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent e) {
+                if (pluginsForContainer.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+                else btnEdit.setEnabled(false);
+            }
+        });
 
         btnEdit.addActionListener(this);
 //        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
