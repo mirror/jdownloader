@@ -52,6 +52,7 @@ import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -61,9 +62,11 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
@@ -156,6 +159,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JMenuItem mRemoveOfflineAll;
 
     private JButton sortPackages;
+    
+    private JComboBox addAtPosition;
 
     private ArrayList<DownloadLink> totalLinkList= new ArrayList<DownloadLink>();
 
@@ -192,11 +197,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
         this.accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "package übernehmen"));
         this.progress = new JProgressBar();
+        String[] positions = {JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende")};
+        this.addAtPosition = new JComboBox(positions);
+        addAtPosition.setSelectedIndex(guiConfig.getIntegerProperty("PROPERTY_POSITION", 1));
         progress.setBorder(BorderFactory.createEtchedBorder());
         progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
         progress.setStringPainted(true);
         acceptAll.addActionListener(this);
         accept.addActionListener(this);
+        addAtPosition.addActionListener(this);
         sortPackages.addActionListener(this);
         tabbedPane.addChangeListener(this);
 
@@ -242,6 +251,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
         
         south.add(sortPackages, BorderLayout.WEST);
+        bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.addAtPosition", "Einfügen an Position:")));
+        bpanel.add(addAtPosition);
+        JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+        separator.setPreferredSize(new Dimension(5, 20));
+        bpanel.add(separator);
+
         bpanel.add(acceptAll);
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
@@ -759,8 +774,9 @@ private boolean isDupe(DownloadLink link){
             this.removePackageAt(this.tabbedPane.getSelectedIndex());
             this.emptyCheck();
         } else if (e.getSource() == this.accept) {
-            confirmCurrentPackage();
-            this.removePackageAt(this.tabbedPane.getSelectedIndex());
+            int idx = this.tabbedPane.getSelectedIndex();
+            confirmPackage(idx);
+            this.removePackageAt(idx);
             this.emptyCheck();
         } else if (e.getSource() == this.acceptAll) {
             confirmAll();
@@ -825,6 +841,10 @@ private boolean isDupe(DownloadLink link){
             this.emptyCheck();
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
             addTab();
+        } else if (e.getSource() == this.addAtPosition) {
+            guiConfig.setProperty("PROPERTY_POSITION", addAtPosition.getSelectedIndex());
+            JDUtilities.saveConfig();
+            return;
         }
         this.setTitle();
     }
@@ -861,61 +881,15 @@ private boolean isDupe(DownloadLink link){
 
     private void confirmAll() {
         for (int tt = 0; tt < tabList.size(); tt++) {
-            PackageTab tab = tabList.get(tt);
-            Vector<DownloadLink> linkList = tab.getLinkList();
-
-            if (linkList.size() == 0) {
-
-            return; }
-
-            int rand = (int) (Math.random() * 0xffffff);
-            Color c = new Color(rand);
-            // c = c.brighter();
-            c = c.brighter();
-            FilePackage fp = new FilePackage();
-            fp.setProperty("color", c);
-            fp.setName(tab.getPackageName());
-            fp.setComment(tab.getComment());
-            fp.setPassword(tab.getPassword());
-            JUnrar unrar = new JUnrar(false);
-            unrar.addToPasswordlist(tab.getPassword());
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-                File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
-                if (!file.exists()) {
-                    file.mkdirs();
-                }
-                if (file.exists()) {
-                    fp.setDownloadDirectory(file.getAbsolutePath());
-                } else {
-                    fp.setDownloadDirectory(tab.getDownloadDirectory());
-                }
-            } else {
-                fp.setDownloadDirectory(tab.getDownloadDirectory());
-            }
-            fp.setDownloadLinks(linkList);
-
-            for (int i = 0; i < linkList.size(); i++) {
-                linkList.elementAt(i).setFilePackage(fp);
-            }
-
-            parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + linkList.size());
+            confirmPackage(tt);
         }
-
     }
 
-    private void confirmCurrentPackage() {
-        PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
+    private void confirmPackage(int idx) {
+        PackageTab tab = tabList.get(idx);
         Vector<DownloadLink> linkList = tab.getLinkList();
-        if (linkList.size() == 0) {
+        if (linkList.size() == 0) return;
 
-        return; }
         Color c = new Color((int) (Math.random() * 0xffffff));
         c = c.brighter();
         FilePackage fp = new FilePackage();
@@ -950,7 +924,6 @@ private boolean isDupe(DownloadLink link){
     }
 
     public void dragEnter(DropTargetDragEvent dtde) {
-
         if (this.currentTab < 0) {
             currentTab = tabbedPane.getSelectedIndex();
         }
@@ -1476,8 +1449,9 @@ private boolean isDupe(DownloadLink link){
                 }
 
                 linkList = list;
-                confirmCurrentPackage();
-                removePackageAt(tabbedPane.getSelectedIndex());
+                int idx = tabbedPane.getSelectedIndex();
+                confirmPackage(idx);
+                removePackageAt(idx);
                 if (tabList.size() == 0) {
                     this.setVisible(false);
                     dispose();

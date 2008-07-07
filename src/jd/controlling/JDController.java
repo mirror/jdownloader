@@ -465,7 +465,11 @@ public class JDController implements ControlListener, UIListener {
                 return;
             }
             fp.sort("asc");
-            this.addPackage(fp);
+            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty("PROPERTY_POSITION", 1) == 1) {
+                this.addPackage(fp);
+            } else {
+                this.addPackageAt(fp, 0);
+            }
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             break;
