@@ -18,7 +18,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
@@ -47,7 +46,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -354,48 +352,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             }
             return super.getColumnName(column);
         }
-    }
-
-    private class InternalTable extends JTable {
-        /**
-         * serialVersionUID
-         */
-        private static final long serialVersionUID = 4424930948374806098L;
-
-        // private InternalTableCellRenderer internalTableCellRenderer = new
-        // InternalTableCellRenderer();
-        // @Override
-        // public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-        // return internalTableCellRenderer;
-        // }
-
-    }
-
-    private class MarkRenderer extends DefaultTableCellRenderer {
-        /**
-		 * 
-		 */
-		private static final long serialVersionUID = -448800592517509052L;
-
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected) {
-
-                PluginForHost plugin = pluginsForHost.get(row);
-                if (plugin.getConfig().getEntries().size() == 0) {
-                    c.setBackground(new Color(0, 0, 0, 10));
-                    c.setForeground(new Color(0, 0, 0, 70));
-                }
-                else {
-                    c.setBackground(Color.WHITE);
-                    c.setForeground(Color.BLACK);
-                }
-
-            }
-            // logger.info("jj");
-            return c;
-        }
-
     }
 
     private class JLinkButtonRenderer implements TableCellRenderer {

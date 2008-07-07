@@ -18,8 +18,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
@@ -33,14 +31,11 @@ import java.util.Vector;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
@@ -294,49 +289,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 
 			}
 			return super.getColumnName(column);
-		}
-	}
-
-	private class InternalTable extends JTable {
-		/**
-		 * serialVersionUID
-		 */
-		private static final long serialVersionUID = 4424930948374806098L;
-
-		private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-
-		@Override
-		public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-			return internalTableCellRenderer;
-		}
-	}
-
-	private class InternalTableCellRenderer extends DefaultTableCellRenderer {
-		/**
-		 * serialVersionUID
-		 */
-		private static final long serialVersionUID = -3912572910439565199L;
-
-		public Component getTableCellRendererComponent(JTable table,
-				Object value, boolean isSelected, boolean hasFocus, int row,
-				int column) {
-			if (value instanceof JProgressBar)
-				return (JProgressBar) value;
-
-			Component c = super.getTableCellRendererComponent(table, value,
-					isSelected, hasFocus, row, column);
-			if (!isSelected) {
-				PluginForDecrypt plugin = pluginsForDecrypt.get(row);
-				if (plugin.getConfig().getEntries().size() == 0) {
-					c.setBackground(new Color(0, 0, 0, 10));
-					c.setForeground(new Color(0, 0, 0, 70));
-				} else {
-					c.setBackground(Color.WHITE);
-					c.setForeground(Color.BLACK);
-				}
-
-			}
-			return c;
 		}
 	}
 }

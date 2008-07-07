@@ -18,8 +18,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -34,7 +32,6 @@ import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
@@ -42,8 +39,6 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
@@ -392,50 +387,5 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
             }
             return super.getColumnName(column);
         }
-    }
-
-    private class InternalTable extends JTable {
-        /**
-         * serialVersionUID
-         */
-        private static final long         serialVersionUID          = 4424930948374806098L;
-
-        private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-
-        @Override
-        public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-            return internalTableCellRenderer;
-        }
-
-    }
-
-    private class InternalTableCellRenderer extends DefaultTableCellRenderer {
-        /**
-         * serialVersionUID
-         */
-        private static final long serialVersionUID = -3912572910439565199L;
-
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            if (value instanceof JProgressBar) return (JProgressBar) value;
-
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            if (!isSelected) {
-                boolean b = configuration.getBooleanProperty(getConfigParamKey(plugins.get(row)), false);
-                if (!b) {
-                    c.setBackground(new Color(255, 0, 0, 10));
-                    c.setForeground(new Color(0, 0, 0, 70));
-
-                }
-                else {
-
-                    c.setBackground(Color.WHITE);
-                    c.setForeground(Color.BLACK);
-                }
-
-            }
-            // logger.info("jj");
-            return c;
-        }
-
     }
 }
