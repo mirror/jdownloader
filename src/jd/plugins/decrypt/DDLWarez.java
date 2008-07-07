@@ -34,6 +34,7 @@ public class DDLWarez extends PluginForDecrypt {
     private static final String host = "ddl-warez.org";
     private static final String version = "1.0.0.0";
     private static final Pattern patternSupported = getSupportPattern("http://[*]ddl-warez\\.org/detail\\.php\\?id=[+]&cat=[+]");
+    public static Integer Worker_Delay = 250;
 
     public DDLWarez() {
         super();
@@ -83,18 +84,19 @@ public class DDLWarez extends PluginForDecrypt {
                     req.setConnectTimeout(5 * 60 * 1000);
                     String page = req.load();
                     String pass = SimpleMatches.getSimpleMatch(page, "<td>Passwort:</td>°<td style=\"padding-left:10px;\">°</td>°</tr>", 1);
-                    Vector <String> passwords=new Vector<String>();
+                    Vector<String> passwords = new Vector<String>();
                     if (!pass.equals("kein Passwort")) passwords.add(pass);
 
                     Form[] forms = Form.getForms(req.getRequestInfo());
                     progress.setRange(forms.length - 1);
                     DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
                     for (int i = 0; i < forms.length; ++i) {
-                        Thread.sleep(200);
+                        synchronized (Worker_Delay) {
+                            Thread.sleep(Worker_Delay);
+                        }
                         DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(i);
                         DDLWarez_Linkgrabbers[i].setjob(forms[i], parameter);
                         DDLWarez_Linkgrabbers[i].start();
-                        Thread.sleep(800);
                     }
                     for (int i = 0; i < forms.length; ++i) {
                         try {
@@ -173,6 +175,9 @@ public class DDLWarez extends PluginForDecrypt {
                         break;
                     } catch (Exception e) {
                         logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " PostRequest-Error, try again!");
+                        synchronized (DDLWarez.Worker_Delay) {
+                            DDLWarez.Worker_Delay = 1000;
+                        }
                     }
                     try {
                         Thread.sleep(1500);
