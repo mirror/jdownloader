@@ -30,11 +30,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -49,7 +52,7 @@ import jd.utils.JDUtilities;
 public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		ActionListener, MouseListener {
 
-	/**
+    /**
 	 * 
 	 */
 	private static final long serialVersionUID = -5308908915544580923L;
@@ -85,7 +88,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		pluginsForDecrypt=pltmp;
 		initPanel();
 		load();
-
 	}
 
 	/**
@@ -115,7 +117,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 	@Override
 	public void initPanel() {
 		setLayout(new BorderLayout());
-		table = new InternalTable();
+		table = new JTable(); // new InternalTable();
 		InternalTableModel internalTableModel = new InternalTableModel();
 		table.setModel(new InternalTableModel());
 		this.setPreferredSize(new Dimension(550, 350));
@@ -146,6 +148,14 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		scrollpane.setPreferredSize(new Dimension(400, 200));
 
 		btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
+		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+	          public void valueChanged(ListSelectionEvent e) {
+	                System.out.println(e.getSource());
+	                DefaultListSelectionModel model = (DefaultListSelectionModel) e.getSource();
+	                if (pluginsForDecrypt.get(model.getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+	                else btnEdit.setEnabled(false);
+	          }
+		});
 		btnEdit.addActionListener(this);
 //		JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
 //				GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -160,6 +170,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		// GridBagConstraints.BOTH, GridBagConstraints.WEST);
 		add(panel, BorderLayout.CENTER);
 	}
+
 
 	private int getSelectedInteractionIndex() {
 		return table.getSelectedRow();

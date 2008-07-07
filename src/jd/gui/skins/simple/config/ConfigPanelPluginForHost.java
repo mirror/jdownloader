@@ -34,6 +34,7 @@ import java.awt.event.MouseListener;
 import java.util.EventObject;
 import java.util.Vector;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -42,6 +43,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.CellEditorListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -115,7 +118,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
-        table = new InternalTable();
+        table = new JTable(); // new InternalTable();
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent e) {
+                  System.out.println(e.getSource());
+                  DefaultListSelectionModel model = (DefaultListSelectionModel) e.getSource();
+                  if (pluginsForHost.get(model.getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+                  else btnEdit.setEnabled(false);
+            }
+        });
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setDragEnabled(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -124,10 +135,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
         this.setPreferredSize(new Dimension(650, 350));
-        table.getColumn(table.getColumnName(0)).setCellRenderer(new MarkRenderer());
-        table.getColumn(table.getColumnName(1)).setCellRenderer(new MarkRenderer());
-        table.getColumn(table.getColumnName(2)).setCellRenderer(new MarkRenderer());
-        table.getColumn(table.getColumnName(3)).setCellRenderer(new MarkRenderer());
+//        table.getColumn(table.getColumnName(0)).setCellRenderer(new MarkRenderer());
+//        table.getColumn(table.getColumnName(1)).setCellRenderer(new MarkRenderer());
+//        table.getColumn(table.getColumnName(2)).setCellRenderer(new MarkRenderer());
+//        table.getColumn(table.getColumnName(3)).setCellRenderer(new MarkRenderer());
         table.getColumn(table.getColumnName(4)).setCellRenderer(new JLinkButtonRenderer());
         table.getColumn(table.getColumnName(4)).setCellEditor(new JLinkButtonEditor());
 
