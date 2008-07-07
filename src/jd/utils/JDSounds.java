@@ -23,10 +23,11 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.parser.Regex;
+
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.JDFileFilter;
-import jd.parser.SimpleMatches;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -213,7 +214,7 @@ private static boolean playing=false;
         logger.info("SoundTheme " + themeID + " loaded");
         data = new HashMap<String, String>();
         String str = JDUtilities.getLocalFile(file);
-        String[] lines = SimpleMatches.getLines(str);
+        String[] lines = Regex.getLines(str);
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");
             if (split <= 0 || lines[i].startsWith("#")) continue;

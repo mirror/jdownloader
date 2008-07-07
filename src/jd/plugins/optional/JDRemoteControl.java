@@ -48,7 +48,6 @@ import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -370,17 +369,17 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     
                 RequestInfo ri = HTTP.getRequest(new URL("http://jdownloader.org/hh.php?txt=1"));
                 
-                int sec = 300 - JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[3]);
+                int sec = 300 - JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[3]);
     
-                int lastStart = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[4]);
-                int lastEnd = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[5]);
+                int lastStart = JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[4]);
+                int lastEnd = JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[5]);
                 Date lastStartDate = new Date(lastStart * 1000L);
                 lastStartDate.setTime(lastStart * 1000L);
     
                 Date lastEndDate = new Date(lastEnd * 1000L);
                 lastEndDate.setTime(lastEnd * 1000L);
                 if (ri.containsHTML("Hour")) {//HappyHour aktiv
-                    int activ = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[1]);
+                    int activ = JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[1]);
                     Date d = new Date(activ * 1000L);
                     d.setTime(activ * 1000L);
     
@@ -399,7 +398,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     response.getWriter().println(html);
                     //JDUtilities.getGUI().showHTMLDialog(JDLocale.L("plugins.hoster.rapidshare.com.happyHours", "Happy Hour Check"), html);
                 } else {
-                    int activ = JDUtilities.filterInt(SimpleMatches.getLines(ri.getHtmlCode())[1]);
+                    int activ = JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[1]);
                     Date d = new Date(activ * 1000L);
                     d.setTime(activ * 1000L);
     

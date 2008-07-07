@@ -55,7 +55,6 @@ import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -710,7 +709,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
 
     public void perform() {
-        String[] perform = SimpleMatches.getLines(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
+        String[] perform = Regex.getLines(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
         if (perform == null) return;
         for (String cmd : perform)
             if (cmd.trim().length() > 0) this.sendMessage(CHANNEL, cmd);

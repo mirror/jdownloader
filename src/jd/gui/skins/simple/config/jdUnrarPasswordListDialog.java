@@ -31,7 +31,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
+
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -126,7 +127,7 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
 	public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
             JUnrar unrar = new JUnrar(false);
-            unrar.editPasswordlist(SimpleMatches.getLines(pwField.getText()));
+            unrar.editPasswordlist(Regex.getLines(pwField.getText()));
             dispose();
 
         } else {

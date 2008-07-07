@@ -35,6 +35,8 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import jd.parser.Regex;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
@@ -44,7 +46,6 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JHelpDialog;
-import jd.parser.SimpleMatches;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -713,7 +714,7 @@ public class JDInit {
 
     public void removeFiles() {
         String[] remove = null;
-        remove = SimpleMatches.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
+        remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
                      
         if (remove != null) for (String file : remove) {
             if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file.trim()))) {

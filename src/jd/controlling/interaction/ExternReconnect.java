@@ -20,11 +20,12 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 
+import jd.parser.Regex;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
-import jd.parser.SimpleMatches;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -150,7 +151,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
     
 
-            logger.finer("Execute Returns: " + JDUtilities.runCommand(command, SimpleMatches.getLines(parameter), executeIn, waitForReturn));
+            logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
     
 
     }

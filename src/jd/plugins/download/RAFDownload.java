@@ -22,8 +22,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
+import jd.parser.Regex;
+
 import jd.config.Configuration;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -312,7 +313,7 @@ public class RAFDownload extends DownloadInterface {
 
                     String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
                     if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
-                        String[] l = SimpleMatches.getLines(sfvText);
+                        String[] l = Regex.getLines(sfvText);
                         boolean c = false;
                         for (String line : l) {
                             logger.info(line + " - " + Long.toHexString(crc).toUpperCase());

@@ -81,13 +81,14 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
 
+import jd.parser.Regex;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.ContextMenu;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
@@ -960,7 +961,7 @@ private boolean isDupe(DownloadLink link){
                 String data = tr.getTransferData(DataFlavor.stringFlavor).toString();
                 if (data != null) {
 
-                    String[] lines = SimpleMatches.getLines(data);
+                    String[] lines = Regex.getLines(data);
 
                     for (int i = 0; i < lines.length; i++) {
                         int id = lines[i].indexOf("\t");

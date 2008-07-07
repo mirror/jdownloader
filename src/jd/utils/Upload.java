@@ -154,7 +154,7 @@ public class Upload {
             String code = up.getRequestInfo().getHtmlCode();
 
           
-            String[] lines = SimpleMatches.getLines(code);
+            String[] lines = Regex.getLines(code);
 
             return lines[1];
         } catch (Exception e) {

@@ -26,7 +26,6 @@ import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
@@ -321,7 +320,7 @@ public class Filer extends PluginForHost {
                 code = Plugin.getCaptchaCode(captchaFile, this);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) return false;
-                bytes = (int) SimpleMatches.getBytes(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
+                bytes = (int) Regex.getBytes(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
                 downloadLink.setDownloadMax(bytes);
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();

@@ -184,12 +184,44 @@ public class Regex {
     	 matcher.reset();
     	return ret;
     }
+    public static String[] getLines(String arg) {
+        if (arg == null) return new String[] {};
+        return arg.split("[\r|\n]{1,2}");
+    }
     public static boolean matches(Object str, Pattern pat) {
        
         return new Regex(str,pat).matches();
     }
-    public static boolean matches(String page, String string) {
+    public static boolean matches(Object page, String string) {
         // TODO Auto-generated method stub
         return new Regex(page,string).matches();
+    }
+    /**
+     * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in bytes zurück.
+     * @param sizestring
+     * @return
+     */
+    public static long getBytes(String string) {
+
+   
+        String[][] matches = new Regex(string, Pattern.compile("([\\d]{1,})[\\.|\\,|\\:]([\\d]{1,})", Pattern.CASE_INSENSITIVE)).getMatches();
+
+        if (matches == null || matches.length == 0) {
+            matches = new Regex(string, Pattern.compile("([\\d]{1,})", Pattern.CASE_INSENSITIVE)).getMatches();
+
+        }
+        if (matches == null || matches.length == 0) return -1;
+
+        double res = 0;
+        if (matches[0].length == 1) res = Double.parseDouble(matches[0][0]);
+        if (matches[0].length == 2) res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
+
+        if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024;
+        } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024;
+        }
+
+        return Math.round(res);
     }
 }

@@ -303,7 +303,7 @@ public class JDLocale {
             return dat;
         }
         String str = JDUtilities.getLocalFile(file);
-        String[] lines = SimpleMatches.getLines(str);
+        String[] lines = Regex.getLines(str);
         boolean dupes = false;
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");

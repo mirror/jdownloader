@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -199,7 +198,7 @@ public class QshareCom extends PluginForHost {
             String[][] dat = new Regex(page,"<SPAN STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\- google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end \\-\\->(.*?)<\\/SPAN>").getMatches();
             
             downloadLink.setName(dat[0][0].trim());
-            downloadLink.setDownloadMax((int)SimpleMatches.getBytes(dat[0][1].trim()));
+            downloadLink.setDownloadMax((int)Regex.getBytes(dat[0][1].trim()));
             return true;
         } catch (Exception e) {
         }

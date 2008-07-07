@@ -21,9 +21,10 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
 
+import jd.parser.Regex;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.parser.SimpleMatches;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
@@ -58,7 +59,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
         File path = new File(command);
 
         if (!path.exists()) {
-            String[] params = SimpleMatches.getLines(parameter);
+            String[] params = Regex.getLines(parameter);
             if (params.length > 0) {
                 path = new File(params[0]);
             }
@@ -69,7 +70,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
             executeIn=getStringProperty(PROPERTY_EXECUTE_IN,null);
         }
 
-        logger.finer("Execute Returns: " + JDUtilities.runCommand(command, SimpleMatches.getLines(parameter), executeIn, this.getBooleanProperty(PROPERTY_WAIT_TERMINATION, false) ? getIntegerProperty(PROPERTY_WAITTIME,60) : 0));
+        logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, this.getBooleanProperty(PROPERTY_WAIT_TERMINATION, false) ? getIntegerProperty(PROPERTY_WAITTIME,60) : 0));
         return true;
 
     }

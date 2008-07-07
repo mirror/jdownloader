@@ -57,6 +57,8 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import jd.parser.Regex;
+
 import sun.misc.BASE64Encoder;
 
 /**
@@ -492,7 +494,7 @@ public class HTTPLiveHeader extends Interaction {
             ret += "    [[[STEP]]]" + SEPARATOR + "";
             ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
             ret += "    [[[/STEP]]]" + SEPARATOR;
-            String[] lines = SimpleMatches.getLines(code);
+            String[] lines = Regex.getLines(code);
             for (int i = 0; i < lines.length; i++) {
                 if (lines[i].trim().toLowerCase().startsWith("curl")) {
                     try {

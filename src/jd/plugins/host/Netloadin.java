@@ -511,13 +511,13 @@ public class Netloadin extends PluginForHost {
             return false;
         }
 
-        String[] entries = SimpleMatches.getLines(page);
+        String[] entries = Regex.getLines(page);
 
         if (entries.length < 3) return false;
 
         downloadLink.setName(entries[0]);
         this.fileStatusText = entries[2];
-        downloadLink.setDownloadMax((int) SimpleMatches.getBytes(entries[1]));
+        downloadLink.setDownloadMax((int) Regex.getBytes(entries[1]));
 
         if (entries[2].equalsIgnoreCase("online")) return true;
         return false;

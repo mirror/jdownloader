@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.SimpleMatches;
@@ -46,7 +48,7 @@ public class ShareOnAll extends PluginForDecrypt {
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
         this.setConfigEelements();
-        this.ignoreList=SimpleMatches.getLines(getProperties().getStringProperty(IGNORE_LIST, ""));
+        this.ignoreList=Regex.getLines(getProperties().getStringProperty(IGNORE_LIST, ""));
     }
 
     @Override

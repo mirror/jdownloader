@@ -25,8 +25,9 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
+import jd.parser.Regex;
+
 import jd.JDFileFilter;
-import jd.parser.SimpleMatches;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -163,7 +164,7 @@ public class JDTheme {
         }
         data = new HashMap<String, String>();
         String str = JDUtilities.getLocalFile(file);
-        String[] lines = SimpleMatches.getLines(str);
+        String[] lines = Regex.getLines(str);
         for (int i = 0; i < lines.length; i++) {
             int split = lines[i].indexOf("=");
             if (split <= 0 || lines[i].startsWith("#")) continue;
@@ -189,7 +190,7 @@ public class JDTheme {
             }
             data = new HashMap<String, String>();
             str = JDUtilities.getLocalFile(file);
-            lines = SimpleMatches.getLines(str);
+            lines = Regex.getLines(str);
             for (int i = 0; i < lines.length; i++) {
                 int split = lines[i].indexOf("=");
                 if (split <= 0 || lines[i].startsWith("#")) continue;

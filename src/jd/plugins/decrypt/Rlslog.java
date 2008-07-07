@@ -5,10 +5,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
+import jd.parser.Regex;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.HTMLParser;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -28,7 +30,7 @@ public class Rlslog extends PluginForDecrypt {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         this.setConfigEelements();
-        this.hosterList = SimpleMatches.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
+        this.hosterList = Regex.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
     }
 
     private boolean checkLink(String link) {
