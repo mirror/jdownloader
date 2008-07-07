@@ -5,7 +5,13 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
@@ -21,7 +27,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -33,8 +41,8 @@ import jd.utils.JDUtilities;
 public class LangFileEditor implements ActionListener {
 	
 	private JFrame frame;
-	private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblNumSource, lblNumFile, lblNumMissing, lblNumOld;
-	private JButton btnAdoptMissing, btnDeleteOld, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt;
+	private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblEntriesCount;
+	private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear;
 	private JTable table;
 	private MyTableModel tableModel;
 	
@@ -54,6 +62,8 @@ public class LangFileEditor implements ActionListener {
 			editor.initList();
 			
 		}
+		
+        editor.table.setRowSelectionInterval(0,0);
 		
 	}
 	
@@ -90,10 +100,10 @@ public class LangFileEditor implements ActionListener {
 			
 		}
 		
-        lblNumSource.setText("Source: "+numSource);
-        lblNumFile.setText("File: "+numFile);
-        lblNumMissing.setText("Missing: "+numMissing);
-        lblNumOld.setText("Old: "+numOld);
+		lblEntriesCount.setText("Entries Count:     [Sourcecode] "+numSource+
+				"     [Language File] "+numFile+
+				"     [Missing] "+numMissing+
+				"     [Not found / no Default] "+numOld);
         
 	}
 	
@@ -119,6 +129,7 @@ public class LangFileEditor implements ActionListener {
 	        return tableData.get(row)[col];
 	    }
 
+		@SuppressWarnings("unchecked")
 	    public Class getColumnClass(int c) {
 	        return getValueAt(0, c).getClass();
 	    }
@@ -168,33 +179,19 @@ public class LangFileEditor implements ActionListener {
 	    }
 	    
 	}
-
-	public class MyTableCellRenderer extends DefaultTableCellRenderer {
-		
-		private static final long serialVersionUID = 4503845066884103663L;
-
-		public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-	        
-	    	Component cell = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-	        
-	    	if ( value == "" ) {
-	    		cell.setBackground( Color.red );
-	        } else {
-	        	cell.setBackground( Color.white );
-	        }
-	    	
-	        return cell;
-	        
-	    }
-	    
-	}
 	
 	private void showGui() {
-    	
+		
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch(Exception e) {
+			System.out.println("Error setting native LAF: " + e);
+		}
+
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setTitle("Language File Editor");
-        frame.setPreferredSize(new Dimension(1000, 800));
+        frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
         LocationListener listener = new LocationListener();
         frame.addComponentListener(listener);
@@ -202,39 +199,39 @@ public class LangFileEditor implements ActionListener {
         
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
-        table.setDefaultRenderer(String.class, new MyTableCellRenderer());
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
         
         btnBrowseFolder = new JButton("Browse");
         btnBrowseFile = new JButton("Browse");
-        btnAdoptMissing = new JButton("Adopt Missing Entries");
-        btnDeleteOld = new JButton("Delete Old Entries");
-        btnAdopt = new JButton("Adopt Default");
-        btnDelete = new JButton("Delete Key");
-        btnEdit = new JButton("Edit Value");
-        btnSave = new JButton("Save As");
+        btnAdoptMissing = new JButton("Adopt Defaults of Missing Entries");
+        btnAdopt = new JButton("Adopt Default(s)");
+        btnAdd = new JButton("Add Key");
+        btnDelete = new JButton("Delete Key(s)");
+        btnEdit = new JButton("Edit Value(s)");
+        btnSelectMissing = new JButton("Select Missing Entries");
+        btnClear = new JButton("Clear Values");
         btnReload = new JButton("Reload");
+        btnSave = new JButton("Save As");
         
         btnBrowseFolder.addActionListener(this);
         btnBrowseFile.addActionListener(this);
         btnAdoptMissing.addActionListener(this);
-        btnDeleteOld.addActionListener(this);
+        btnAdd.addActionListener(this);
         btnDelete.addActionListener(this);
         btnEdit.addActionListener(this);
         btnSave.addActionListener(this);
         btnReload.addActionListener(this);
         btnAdopt.addActionListener(this);
+        btnSelectMissing.addActionListener(this);
+        btnClear.addActionListener(this);
         
         lblFolder = new JLabel("Source Folder: ");
         lblFile = new JLabel("Language File: ");
         lblFolderValue = new JLabel("/.../...");
         lblFileValue = new JLabel("/.../...");
-        lblNumSource = new JLabel("Source: ");
-        lblNumFile = new JLabel("File: ");
-        lblNumMissing = new JLabel("Missing:");
-        lblNumOld = new JLabel("Old: ");
+        lblEntriesCount = new JLabel("Entries Count:");
 	      
         JPanel main = new JPanel(new BorderLayout(5,5));
 	    main.setBorder(new EmptyBorder(10,10,10,10));
@@ -245,14 +242,13 @@ public class LangFileEditor implements ActionListener {
 
 	    JPanel top1 = new JPanel(new BorderLayout(5,5));
 	    JPanel top2 = new JPanel(new BorderLayout(5,5));
-	    JPanel infos1 = new JPanel(new BorderLayout(5,5));
-	    JPanel infos2 = new JPanel(new FlowLayout());
+	    JPanel infos = new JPanel(new BorderLayout(5,5));
 	    JPanel buttons = new JPanel(new FlowLayout());
 	    
 	    top.add(top1, BorderLayout.PAGE_START);
 	    top.add(top2, BorderLayout.PAGE_END);
 	    
-	    bottom.add(infos1 , BorderLayout.PAGE_START);
+	    bottom.add(infos, BorderLayout.PAGE_START);
 	    bottom.add(buttons, BorderLayout.LINE_END);
 	    
 	    top1.add(lblFolder, BorderLayout.LINE_START);
@@ -263,17 +259,14 @@ public class LangFileEditor implements ActionListener {
 	    top2.add(lblFileValue, BorderLayout.CENTER);
 	    top2.add(btnBrowseFile, BorderLayout.EAST);
 	    
-	    infos1.add(infos2, BorderLayout.LINE_START);
-	    
-	    infos2.add(lblNumSource);
-	    infos2.add(lblNumFile);
-	    infos2.add(lblNumMissing);
-	    infos2.add(lblNumOld);
+	    infos.add(lblEntriesCount, BorderLayout.LINE_START);
 
 	    buttons.add(btnSave);
 	    buttons.add(btnReload);
-	    buttons.add(btnDeleteOld);
+	    buttons.add(btnClear);
+	    buttons.add(btnSelectMissing);
 	    buttons.add(btnAdoptMissing);
+	    buttons.add(btnAdd);
 	    buttons.add(btnDelete);
 	    buttons.add(btnAdopt);
 	    buttons.add(btnEdit);
@@ -288,6 +281,7 @@ public class LangFileEditor implements ActionListener {
         
     }
 
+	@SuppressWarnings("unchecked")
 	public void actionPerformed(ActionEvent e) {
 
 		if ( e.getSource().equals(btnBrowseFolder) ) {
@@ -313,10 +307,12 @@ public class LangFileEditor implements ActionListener {
 			    initList();
 		    }
 		    
-		} else if ( e.getSource().equals(btnSave) ) {
+		} else if ( e.getSource().equals(btnSave) ) {			
 			
 			JFileChooser chooser = new JFileChooser();
 			chooser.setDialogType(JFileChooser.SAVE_DIALOG);
+			chooser.setDialogTitle("Save Language File As...");
+			chooser.setCurrentDirectory(languageFile.getParentFile());
 			int vlaue = chooser.showOpenDialog(frame);
 			
 		    if ( vlaue == JFileChooser.APPROVE_OPTION) {
@@ -333,58 +329,83 @@ public class LangFileEditor implements ActionListener {
 		    		
 		    	}
 			    
-		    	JDUtilities.writeLocalFile(file, content);
+		    	try {
+			        Writer out = new BufferedWriter(new OutputStreamWriter(
+			            new FileOutputStream(file), "UTF8"));
+			        out.write(content);
+			        out.close();
+			    } catch (UnsupportedEncodingException ex) {
+			    } catch (IOException ex) {
+			    }
+			    
 		        JOptionPane.showMessageDialog(frame, "Saved.");
 		    	
 		    }
 			
 		} else if ( e.getSource().equals(btnEdit) ) {
-
-			int i = table.getSelectedRow();
 			
-			if ( i > -1 ) {
+			int[] rows = table.getSelectedRows();
+			
+			for ( int i=0; i<rows.length; i++ ) {
 				
-				String k = tableModel.getValueAt(i, 0);
-				String s = tableModel.getValueAt(i, 1);
-				String f = tableModel.getValueAt(i, 2);
+				int j = rows[i];
+				
+				String k = tableModel.getValueAt(j, 0);
+				String s = tableModel.getValueAt(j, 1);
+				String f = tableModel.getValueAt(j, 2);
 				EditDialog dialog = new EditDialog(frame, k, s, f);
 				
 				if ( dialog.value != null ) {
-					tableModel.setValueAt(dialog.value, i, 2);
+					
+					tableModel.setValueAt(dialog.value, j, 2);
+					
+					if ( i+1 == rows.length ) {
+						if ( j+1 < table.getRowCount() ) {
+							table.getSelectionModel().setSelectionInterval(j+1, j+1);
+						} else {
+							table.getSelectionModel().setSelectionInterval(j, j);
+						}
+					}
+					
+				} else {
+					break;
 				}
 				
+				setInfoLabels();
+				
 			}
-			
-			setInfoLabels();
 			
 		} else if ( e.getSource().equals(btnDelete) ) {
 			
-			int i = table.getSelectedRow();
+			int j = -1;
+			int offset = 0;
 			
-			if ( i > -1 ) {
-				tableModel.deleteRow(i);
+			for ( int i : table.getSelectedRows() ) {
+				tableModel.deleteRow(i-offset);
+				offset++;
+				j = i-offset;
+			}
+			
+			if ( j != -1 && j+1 < table.getRowCount() ) {
+				table.getSelectionModel().setSelectionInterval(j+1, j+1);
+			} else if ( j != -1 ) {
+				table.getSelectionModel().setSelectionInterval(j, j);
 			}
 			
 			setInfoLabels();
 			
-		} else if ( e.getSource().equals(btnDeleteOld) ) {
+		} else if ( e.getSource().equals(btnAdd) ) {
 
-	        int ret = JOptionPane.showConfirmDialog(frame,
-	        		"Attention!\nSome Keys are dynamic or simply could not be found.\nYou shouldn't use this function.\nGo on?");
-	        if ( ret > 0 ) return;
-	        
 	        Vector<String[]> data = tableModel.getData();
+			AddDialog dialog = new AddDialog(frame);
 			
-			for ( int i=0; i<data.size(); i++ ) {
-				
-				if ( data.get(i)[1] == "" && data.get(i)[2] != "" ) {
-					//System.out.println(data.get(i)[0]);
-					tableModel.deleteRow(i);
-					i--;
-				}
-				
+			if ( dialog.key != null && dialog.value != null && !dialog.key.equals("") && !dialog.value.equals("") ) {
+				data.add(new String[]{dialog.key, "", dialog.value});
 			}
 			
+			Collections.sort(data, new StringArrayComparator());
+	        tableModel.setData(data);
+			table.getSelectionModel().setSelectionInterval(0, 0);
 			setInfoLabels();
 			
 		} else if ( e.getSource().equals(btnAdoptMissing) ) {
@@ -394,7 +415,13 @@ public class LangFileEditor implements ActionListener {
 			for ( int i=0; i<data.size(); i++ ) {
 				
 				if ( data.get(i)[2] == "") {
-					tableModel.setValueAt(data.get(i)[1], i, 2);
+					
+					String def = data.get(i)[1];
+					
+					if ( !def.equals("") && !def.equals("<no default value>") ) {
+						tableModel.setValueAt(def, i, 2);
+					}
+					
 				}
 				
 			}
@@ -407,21 +434,47 @@ public class LangFileEditor implements ActionListener {
 			
 		} else if ( e.getSource().equals(btnAdopt) ) {
 			
-			int i = table.getSelectedRow();
+			int j = -1;
 			
-			if ( i > -1 ) {
+			for ( int i : table.getSelectedRows() ) {
 				
 				String def = tableModel.getValueAt(i, 1);
-				tableModel.setValueAt(def, i, 2);
+				
+				if ( !def.equals("") && !def.equals("<no default value>") ) {
+					tableModel.setValueAt(def, i, 2);
+				}
 				
 			}
 			
+			if ( j != -1 && j+1 < table.getRowCount() ) {
+				table.getSelectionModel().setSelectionInterval(j+1, j+1);
+			} else if ( j != -1 ) {
+				table.getSelectionModel().setSelectionInterval(j, j);
+			}
+			
 			setInfoLabels();
+			
+		} else if ( e.getSource().equals(btnClear) ) {
+			
+			for ( int i=0; i<table.getRowCount(); i++ ) {
+				tableModel.setValueAt("", i, 2);
+			}
+			
+		} else if ( e.getSource().equals(btnSelectMissing) ) {
+			
+			for ( int i=0; i<table.getRowCount(); i++ ) {
+				
+				if ( tableModel.getValueAt(i, 2).equals("") ) {
+					table.getSelectionModel().addSelectionInterval(i, i);
+				}
+				
+			}
 			
 		}
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Vector<String[]> getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
 		
 		Vector<String[]> data = new Vector<String[]>();
@@ -474,21 +527,24 @@ public class LangFileEditor implements ActionListener {
 		return result;
 		
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	private Vector<String[]> getLanguageFileEntries(File file) {
 		
 		String content = JDUtilities.getLocalFile(file);
 		Vector<String[]> entries = new Vector<String[]>();
 		String keys = "";
 		
-		Regex regex = new Regex(Pattern.compile("\\s*(.*?)\\s*=\\s*(.*?)\\s*\\n").matcher(content));
+		Regex regex = new Regex(Pattern.compile("(.*?)=(.*?)\\n").matcher(content));
 		
 		for ( String[] match : regex.getMatches() ) {
 
-			if ( !keys.contains(match[0].trim()) ) {
+			if ( !keys.contains(match[0].trim()+"\n") && !match[0].trim().equals("") && !match[1].trim().equals("") ) {
+				
 				keys += match[0].trim() + "\n";
 				String[] temp = new String[] { match[0].trim(), match[1].trim() };
 				entries.add(temp);
+				
 			}
 			
 		}
@@ -497,7 +553,8 @@ public class LangFileEditor implements ActionListener {
 		return entries;
 		
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	private Vector<String[]> getSourceEntries(File dir) {
 		
 		Vector<String> fileContents = getFileContents(dir, "java");
@@ -506,8 +563,6 @@ public class LangFileEditor implements ActionListener {
 		
 		for ( String file : fileContents ) {
 			
-			// "JDLocale.L(\\s*?\"\\s*?(.*?)\\s*?\"\\s*?(,\\s*?\"\\s*?(.*?)\\s*?\"\\s*?){0,1}?)"
-			// "JDLocale.L\\(\\s*?\"\\s*?(.*?)\\s*?\"\\s*?(,\\s*?\"\\s*?(.*?)\\s*?\"\\s*?)*?\\)"
 			Regex regex = new Regex(Pattern.compile("JDLocale.L" +
 					"[\\n\\s]*?\\([\\n\\s]*?" +
 					"\"\\s*?(.*?)\\s*?\"" +
@@ -553,6 +608,7 @@ public class LangFileEditor implements ActionListener {
 				fileContents.addAll(getFileContents(entries[i], filter));
 				
 			} else if ( entries[i].isFile ( ) ) {
+
 				
 				String extension = JDUtilities.getFileExtension(entries[i]);
 				
@@ -572,10 +628,13 @@ public class LangFileEditor implements ActionListener {
 	  
 		public int compare( Object o1, Object o2 ) {
 		    
-			String[] s1 = (String[]) o1;
-			String[] s2 = (String[]) o2;
-			
-			return s1[0].compareTo(s2[0]);
+			if ( o1 instanceof String[] && o2 instanceof String[] ) {
+				String[] s1 = (String[]) o1;
+				String[] s2 = (String[]) o2;
+				
+				return s1[0].compareTo(s2[0]);
+				
+			} else return 1;
 			
 		}
 	  
@@ -587,8 +646,8 @@ public class LangFileEditor implements ActionListener {
 		
 	    private JButton     btnOK = new JButton("OK");
 	    private JButton     btnCancel = new JButton("Cancel");
+	    private JButton     btnAdopt = new JButton("Adopt Default Value");
 	    private JFrame      owner;
-	    private JLabel		lblKey = new JLabel("");
 	    private JTextArea	taSourceValue = new JTextArea(5,20);
 	    private JTextArea	taFileValue = new JTextArea(5,20);
 	    
@@ -603,9 +662,12 @@ public class LangFileEditor implements ActionListener {
 	        setLayout(new BorderLayout(5,5));
 	        setTitle("Edit Value");
 	        getRootPane().setDefaultButton(btnOK);
+
+		    JLabel lblKey = new JLabel("");
 		    
 	        btnOK.addActionListener(this);
 	        btnCancel.addActionListener(this);
+	        btnAdopt.addActionListener(this);
 	        
 	        lblKey.setText("Key: "+key);
 	        taSourceValue.setText(sourceValue);
@@ -626,6 +688,7 @@ public class LangFileEditor implements ActionListener {
 	        fields.add(new JScrollPane(taFileValue), BorderLayout.PAGE_END);
 
 	        buttons1.add(buttons2, BorderLayout.LINE_END);
+	        buttons2.add(btnAdopt);
 	        buttons2.add(btnOK);
 	        buttons2.add(btnCancel);
 	        
@@ -641,6 +704,83 @@ public class LangFileEditor implements ActionListener {
 	        if (e.getSource() == btnOK) {
 
 	        	value = taFileValue.getText();
+	        	dispose();
+			    owner.setVisible(true);
+	        	
+	        } else if (e.getSource() == btnCancel) {
+
+	        	value = null;
+	        	dispose();
+			    owner.setVisible(true);
+	        	
+	        } else if (e.getSource() == btnAdopt) {
+
+	        	taFileValue.setText(taSourceValue.getText());
+	        	
+	        }
+	        
+	    }
+	    
+	}
+	
+	private class AddDialog extends JDialog implements ActionListener {
+		
+		private static final long serialVersionUID = 1L;
+		
+	    private JButton     btnOK = new JButton("OK");
+	    private JButton     btnCancel = new JButton("Cancel");
+	    private JFrame      owner;
+	    private JTextField	tfKey = new JTextField(20);
+	    private JTextArea	taValue = new JTextArea(5,20);
+	    
+	    public String 		value;
+	    public String 		key;
+	    
+	    public AddDialog(JFrame owner) {
+	        
+	    	super(owner);
+	        this.owner = owner;
+	        
+	        setModal(true);
+	        setLayout(new BorderLayout(5,5));
+	        setTitle("Edit Value");
+	        getRootPane().setDefaultButton(btnOK);
+		    
+	        btnOK.addActionListener(this);
+	        btnCancel.addActionListener(this);
+	        
+	        JLabel		lblKey = new JLabel("Key:");
+	        
+	        JPanel main = new JPanel(new BorderLayout(5,5));
+	        main.setBorder(new EmptyBorder(10,10,10,10));
+	        JPanel keyPanel = new JPanel(new BorderLayout(5,5));
+	        JPanel buttons1 = new JPanel(new BorderLayout(5,5));
+	        JPanel buttons2 = new JPanel(new FlowLayout());
+	        
+	        main.add(keyPanel, BorderLayout.PAGE_START);
+	        main.add(new JScrollPane(taValue), BorderLayout.CENTER);
+	        main.add(buttons1, BorderLayout.PAGE_END);
+	        
+	        keyPanel.add(lblKey, BorderLayout.LINE_START);
+	        keyPanel.add(tfKey, BorderLayout.CENTER);
+
+	        buttons1.add(buttons2, BorderLayout.LINE_END);
+	        buttons2.add(btnOK);
+	        buttons2.add(btnCancel);
+	        
+	        setContentPane(main);
+	        pack();
+	        setLocation(JDUtilities.getCenterOfComponent(owner, this));
+	        setVisible(true);
+	        
+	    }
+	    
+	    public void actionPerformed(ActionEvent e) {
+	    	
+	        if (e.getSource() == btnOK) {
+
+	        	value = taValue.getText().trim();
+	        	key = tfKey.getText().trim();
 	        	dispose();
 			    owner.setVisible(true);
 	        	
