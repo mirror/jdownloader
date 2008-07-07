@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -37,6 +38,8 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -138,7 +141,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 //        int n = 10;
 //        setBorder(new EmptyBorder(n,n,n,n));
         setLayout(new BorderLayout(10, 10));
-        table = new InternalTable();
+        table = new JTable(); // new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
 
         table.setModel(new InternalTableModel());
@@ -169,6 +172,13 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.optional.btn_settings","Einstellungen"));
+        btnEdit.setEnabled(false);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent e) {
+                if (plugins.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+                else btnEdit.setEnabled(false);
+            }
+        });
 
         btnEdit.addActionListener(this);
         enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus","An/Aus"));
