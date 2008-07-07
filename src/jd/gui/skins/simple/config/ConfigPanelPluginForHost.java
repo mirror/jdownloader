@@ -256,41 +256,24 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-    }
+    public void mouseEntered(MouseEvent e)  { }
+    public void mouseExited(MouseEvent e)   { }
+    public void mousePressed(MouseEvent e)  { }
+    public void mouseReleased(MouseEvent e) { }
 
     private class InternalTableModel extends AbstractTableModel {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1155282457354673850L;
 
         public Class<?> getColumnClass(int columnIndex) {
             return getValueAt(0, columnIndex).getClass();
-
         }
 
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-
             return columnIndex > 2;
         }
 
         public int getColumnCount() {
-
             return 6;
         }
 

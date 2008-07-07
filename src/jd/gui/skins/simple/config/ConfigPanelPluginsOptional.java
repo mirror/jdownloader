@@ -304,32 +304,16 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     }
 
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
-    }
+    public void mouseEntered(MouseEvent e)  { }
+    public void mouseExited(MouseEvent e)   { }
+    public void mousePressed(MouseEvent e)  { }
+    public void mouseReleased(MouseEvent e) { }
 
     private class InternalTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = 1155282457354673850L;
 
         public Class<?> getColumnClass(int columnIndex) {
-            switch (columnIndex) {
-                case 0: return String.class;
-                case 1: return String.class;
-                case 2: return String.class;
-            }
             return String.class;
         }
 
