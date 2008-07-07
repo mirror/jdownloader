@@ -54,14 +54,9 @@ import jd.utils.JDUtilities;
  */
 public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionListener, MouseListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 5794208138046480006L;
 
-    /**
-     * 
-     */
+
 
     private JButton           btnEdit;
 
@@ -327,20 +322,13 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     private class InternalTableModel extends AbstractTableModel {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1155282457354673850L;
 
         public Class<?> getColumnClass(int columnIndex) {
             switch (columnIndex) {
-                case 0:
-                    return String.class;
-                case 1:
-                    return String.class;
-                case 2:
-                    return String.class;
-
+                case 0: return String.class;
+                case 1: return String.class;
+                case 2: return String.class;
             }
             return String.class;
         }
@@ -354,36 +342,25 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-
             switch (columnIndex) {
-                case 0:
-                    return rowIndex + "";
-                case 1:
-                    return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive","An") : JDLocale.L("gui.config.plugin.optional.statusInactive","Aus");
-                case 2:return plugins.get(rowIndex).getPluginName();
-                case 3:return plugins.get(rowIndex).getPluginID();
-                case 4:return plugins.get(rowIndex).getCoder();
-                case 5:return plugins.get(rowIndex).getRequirements();
-                    
+                case 0: return rowIndex + "";
+                case 1: return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive","An") : JDLocale.L("gui.config.plugin.optional.statusInactive","Aus");
+                case 2: return plugins.get(rowIndex).getPluginName();
+                case 3: return plugins.get(rowIndex).getVersion();
+                case 4: return plugins.get(rowIndex).getCoder();
+                case 5: return plugins.get(rowIndex).getRequirements();
             }
             return null;
         }
 
         public String getColumnName(int column) {
             switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.plugin.optional.column_id","ID");
-                case 1:
-                    return JDLocale.L("gui.config.plugin.optional.column_status","Status");
-                case 2:
-                    return JDLocale.L("gui.config.plugin.optional.column_plugin","Plugin");
-                case 3:
-                    return JDLocale.L("gui.config.plugin.optional.column_version","Version");
-                case 4:
-                    return JDLocale.L("gui.config.plugin.optional.column_author","Coder");
-                case 5:
-                    return JDLocale.L("gui.config.plugin.optional.column_needs","Needs");
-
+                case 0: return JDLocale.L("gui.config.plugin.optional.column_id","ID");
+                case 1: return JDLocale.L("gui.config.plugin.optional.column_status","Status");
+                case 2: return JDLocale.L("gui.config.plugin.optional.column_plugin","Plugin");
+                case 3: return JDLocale.L("gui.config.plugin.optional.column_version","Version");
+                case 4: return JDLocale.L("gui.config.plugin.optional.column_author","Coder");
+                case 5: return JDLocale.L("gui.config.plugin.optional.column_needs","Needs");
             }
             return super.getColumnName(column);
         }
