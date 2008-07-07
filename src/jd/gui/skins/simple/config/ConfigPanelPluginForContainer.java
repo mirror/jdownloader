@@ -229,7 +229,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
                 case 0:
                     return pluginsForContainer.elementAt(rowIndex).getPluginName();
                 case 1:
-                    return pluginsForContainer.elementAt(rowIndex).getPluginID();
+//                    return pluginsForContainer.elementAt(rowIndex).getPluginID();
+                    return pluginsForContainer.elementAt(rowIndex).getVersion();
                 case 2:
                     return pluginsForContainer.elementAt(rowIndex).getCoder();
 
@@ -242,7 +243,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
                 case 0:
                     return JDLocale.L("gui.config.plugin.container.column_host","Host");
                 case 1:
-                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
+//                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
+                    return JDLocale.L("gui.config.plugin.container.column_version","Version");
                 case 2:
                     return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
 
