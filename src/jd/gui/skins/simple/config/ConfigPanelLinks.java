@@ -18,6 +18,9 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
+
+import javax.swing.JScrollPane;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -110,9 +113,8 @@ ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         addGUIConfigEntry(ce);
    
-        
-        
-        add(panel, BorderLayout.NORTH);
+
+        add(new JScrollPane(panel), BorderLayout.CENTER);
     }
     @Override
     public void load() {
