@@ -137,7 +137,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             this.addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
             this.addConfigPanel(ConfigPanelInfoFileWriter.class, JDTheme.V("gui.images.config.infoFile", "infoFile"), JDLocale.L("gui.config.tabLables.infoFileWriter", "'Info File Writer' settings"));
             this.addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager", "eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
-            this.addConfigPanel(ConfigPanelUpdater.class, JDTheme.V("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
             this.addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.V("gui.images.config.addons"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
             this.addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.V("gui.images.config.container"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
         }
@@ -145,6 +144,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         this.addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.V("gui.images.config.decrypt"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
         this.addConfigPanel(ConfigPanelRessources.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.ressources", "Paketmanager"));
 
+        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
+            this.addConfigPanel(ConfigPanelUpdater.class, JDTheme.V("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
+        }
         this.addConfigPanel(ConfigPanelLinks.class, JDTheme.V("gui.images.config.tip"), JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
         
         try {
