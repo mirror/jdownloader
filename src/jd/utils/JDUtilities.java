@@ -865,8 +865,10 @@ public class JDUtilities {
 							.getIntegerProperty(
 									Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
 				plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+				System.out.println(code);
 				code = getController().getCaptchaCodeFromUser(plugin, file,
 						captchaCode);
+				System.out.println(code);
 			} else {
 				return captchaCode;
 			}
