@@ -119,14 +119,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable(); // new InternalTable();
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-            public void valueChanged(ListSelectionEvent e) {
-                  System.out.println(e.getSource());
-                  DefaultListSelectionModel model = (DefaultListSelectionModel) e.getSource();
-                  if (pluginsForHost.get(model.getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
-                  else btnEdit.setEnabled(false);
-            }
-        });
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setDragEnabled(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -183,7 +175,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.host.btn_settings", "Einstellungen"));
-
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+            public void valueChanged(ListSelectionEvent e) {
+                  System.out.println(e.getSource());
+                  DefaultListSelectionModel model = (DefaultListSelectionModel) e.getSource();
+                  if (pluginsForHost.get(model.getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
+                  else btnEdit.setEnabled(false);
+            }
+        });
+        btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
         JLabel disclaimerLabel = new JLabel("<html><body align=\"justify\" color=\"red\"><b>" + JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"));

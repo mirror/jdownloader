@@ -148,6 +148,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		scrollpane.setPreferredSize(new Dimension(400, 200));
 
 		btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
+        btnEdit.setEnabled(false);
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 	          public void valueChanged(ListSelectionEvent e) {
 	                System.out.println(e.getSource());
