@@ -114,8 +114,7 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getRequirements() {
-        // TODO Auto-generated method stub
-        return null;
+        return "JRE 1.5+";
     }
 
     @Override
