@@ -201,11 +201,11 @@ public class Filer extends PluginForHost {
             if (page.contains("captcha.png")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                return step;
             }
 
             if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-
                 String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
                 logger.severe("Error: " + error);
                 step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
