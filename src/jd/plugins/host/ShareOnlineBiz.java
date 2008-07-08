@@ -21,14 +21,17 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class ShareOnlineBiz extends PluginForHost {
@@ -46,13 +49,12 @@ public class ShareOnlineBiz extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
     private File captchaFile;
+    private String captchaCode;
+    private String passCode;
 
     public ShareOnlineBiz() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -133,58 +135,103 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+        if (step == null) return null;
         try {
-            switch (step.getStep()) {
-            case PluginStep.STEP_PAGE:
-                url = downloadLink.getDownloadURL();
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
-                }
+            url = downloadLink.getDownloadURL();
+            /* Nochmals das File überprüfen */
+            if (!getFileInformation(downloadLink)) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
-                captchaFile = this.getLocalCaptchaFile(this);
-                HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
-                captcha_con.setRequestProperty("Referer", url);
-                captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-                if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
-                    /* Fehler beim Captcha */
-                    logger.severe("Captcha Download fehlgeschlagen!");
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                    return step;
-                }
-                step.setParameter(captchaFile);
+            }
+            /* Captcha File holen */
+            captchaFile = getLocalCaptchaFile(this);
+            HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
+            captcha_con.setRequestProperty("Referer", url);
+            captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
+            if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                /* Fehler beim Captcha */
+                logger.severe("Captcha Download fehlgeschlagen!");
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
                 return step;
-            case PluginStep.STEP_PENDING:
-                String captchaCode = (String) steps.get(1).getParameter();
-                requestInfo = HTTP.postRequest((new URL(url)), requestInfo.getCookie(), url, null, "captchacode=" + captchaCode, true);
-                if (requestInfo.getHtmlCode().contains("<span>Die Nummer ist leider nicht richtig oder ausgelaufen!</span>")) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                    return step;
-                }
-                // hier müsste jetzt der download link zusammengebaut werden
-                step.setParameter(15 * 1000L);
+            }
+
+            /* CaptchaCode holen */
+            if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                 return step;
-            case PluginStep.STEP_DOWNLOAD:
-                // hab ich nur zu testzwecken hier so
+            }            
+            /* Passwort holen holen */
+            if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
+                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) passCode = "";
+            }
+            
+            /* Überprüfen(Captcha,Password) */
+            requestInfo = HTTP.postRequest((new URL(url)), requestInfo.getCookie(), url, null, "captchacode=" + captchaCode + "&downloadpw=" + passCode, true);
+            if (requestInfo.getHtmlCode().contains("<span>Die Nummer ist leider nicht richtig oder ausgelaufen!</span>") || requestInfo.getHtmlCode().contains("Tippfehler")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                 return step;
             }
+            /* Downloadlimit erreicht */
+            if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
+                step.setStatus(PluginStep.STATUS_ERROR);
+                step.setParameter(120000L);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+                return step;
+            }
+
+            /* DownloadLink holen, thx @dwd */
+            String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getFirstMatch();
+            String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getFirstMatch();
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            url = Context.toString(result);
+            Context.exit();
+
+            /* 15 seks warten */
+            this.sleep(15000, downloadLink);
+
+            /* Datei herunterladen */
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
+            HTTPConnection urlConnection = requestInfo.getConnection();
+            String filename = getFileNameFormHeader(urlConnection);
+            if (urlConnection.getContentLength() == 0) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                step.setStatus(PluginStep.STATUS_ERROR);
+                return step;
+            }
+            downloadLink.setDownloadMax(urlConnection.getContentLength());
+            downloadLink.setName(filename);
+            long length = downloadLink.getDownloadMax();
+            dl = new RAFDownload(this, downloadLink, urlConnection);
+            dl.setChunkNum(1);
+            dl.setResume(false);
+            dl.setFilesize(length);
+            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                step.setStatus(PluginStep.STATUS_ERROR);
+                return step;
+            }
+            return step;
+
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-
+        step.setStatus(PluginStep.STATUS_ERROR);
+        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
         return step;
-
     }
 
     @Override
