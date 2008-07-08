@@ -557,7 +557,7 @@ public abstract class Plugin implements ActionListener {
         return url.getFile().substring(index + 1);
     }
     protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0) {
+        while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
             i -= 1000;
             downloadLink.setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
