@@ -14,14 +14,14 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -29,13 +29,10 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class CryptGetMoviesOrg extends PluginForDecrypt {
+    static private final String host = "crypt.get-movies.org";
+    private String version = "1.0.0.0";
 
-    final static String host             = "crypt.get-movies.org";
-
-    private String      version          = "1.0.0.0";
-
-
-    private Pattern     patternSupported = getSupportPattern("http://crypt\\.get-movies\\.org/[\\d]{4}");
+    private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/[\\d]{4}", Pattern.CASE_INSENSITIVE);
 
     public CryptGetMoviesOrg() {
         super();
@@ -59,7 +56,7 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "crypt.get-movies.org-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -84,13 +81,10 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = HTTP.getRequest(url);
 
-    			progress.setRange( 1);
-    			
-    			decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>")));
-    		progress.increase(1);
-    			
-    			// Decrypt abschliessen
-    			
+    			progress.setRange(1);
+    			decryptedLinks.add(createDownloadlink(reqinfo.getFirstMatch("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").trim()));
+    			progress.increase(1);
+
     			step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
