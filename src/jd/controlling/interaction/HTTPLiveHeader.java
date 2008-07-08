@@ -25,7 +25,6 @@ import java.net.Authenticator;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +42,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
-import jd.parser.SimpleMatches;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.RequestInfo;
@@ -596,17 +594,18 @@ public class HTTPLiveHeader extends Interaction {
       
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-        ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request, "%%%°%%%", 1);
-        if (params.size() > 0) {
+//        ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request, "%%%°%%%", 1);
+        String[] params = new Regex(request, "%%%(.*?)%%%").getMatches(1);
+        if (params.length > 0) {
             String req;
-            if (request.startsWith(params.get(0))) {
+            if (request.startsWith(params[0])) {
                 req = "";
                 logger.finer("Variables: " + this.variables);
                 logger.finer("Headerproperties: " + this.headerProperties);
                 for (int i = 0; i <= tmp.length; i++) {
-                    logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+                    logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
 
-                    req += getModifiedVariable(params.get(i - 1));
+                    req += getModifiedVariable(params[i - 1]);
                     if (i < tmp.length) {
                         req += tmp[i];
                     }
@@ -617,10 +616,10 @@ public class HTTPLiveHeader extends Interaction {
                 logger.finer("Variables: " + this.variables);
                 logger.finer("Headerproperties: " + this.headerProperties);
                 for (int i = 1; i <= tmp.length; i++) {
-                    if (i > params.size()) continue;
-                    logger.finer("Replace variable: " + getModifiedVariable(params.get(i - 1)) + "(" + params.get(i - 1) + ")");
+                    if (i > params.length) continue;
+                    logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
 
-                    req += getModifiedVariable(params.get(i - 1));
+                    req += getModifiedVariable(params[i - 1]);
                     if (i < tmp.length) {
                         req += tmp[i];
                     }
