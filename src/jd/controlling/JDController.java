@@ -43,6 +43,7 @@ import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -465,10 +466,11 @@ public class JDController implements ControlListener, UIListener {
                 return;
             }
             fp.sort("asc");
-            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty("PROPERTY_POSITION", 1) == 1) {
-                this.addPackage(fp);
-            } else {
+            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty("PROPERTY_POSITION", 1) == 0) || 
+                    (uiEvent.getSource() instanceof LinkGrabber)) {
                 this.addPackageAt(fp, 0);
+            } else {
+                this.addPackage(fp);
             }
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
