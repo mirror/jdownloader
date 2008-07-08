@@ -243,7 +243,7 @@ public class DistributeData extends ControlBroadcaster {
                     pDecrypt = pDecrypt.getClass().newInstance();
 
                   
-                    Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(data);
+                    String[] decryptableLinks = pDecrypt.getDecryptableLinks(data);
                     data = pDecrypt.cutMatches(data);
 
                     decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
@@ -300,7 +300,7 @@ public class DistributeData extends ControlBroadcaster {
 
                      
 
-                        Vector<String> decryptableLinks = pDecrypt.getDecryptableLinks(url);
+                        String[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
                         Vector<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
                        
