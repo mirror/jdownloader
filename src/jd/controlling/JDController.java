@@ -466,7 +466,7 @@ public class JDController implements ControlListener, UIListener {
                 return;
             }
             fp.sort("asc");
-            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty("PROPERTY_POSITION", 1) == 0) || 
+            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty("PROPERTY_POSITION", 1) == 0) && 
                     (uiEvent.getSource() instanceof LinkGrabber)) {
                 this.addPackageAt(fp, 0);
             } else {
