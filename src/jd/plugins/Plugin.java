@@ -31,6 +31,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -202,11 +203,11 @@ public abstract class Plugin implements ActionListener {
     public static File getLocalCaptchaFile(Plugin plugin, String extension) {
         if (extension == null) extension = ".jpg";
         Calendar calendar = Calendar.getInstance();
-        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS", calendar);
+        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar)+new Random().nextInt(999);
         // File dest = JDUtilities.getResourceFile("captchas/" +
         // plugin.getPluginName() + "/captcha_" + (new Date().getTime()) +
         // ".jpg");
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);        
         return dest;
     }
 
