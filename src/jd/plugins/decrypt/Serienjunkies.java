@@ -296,14 +296,14 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     @Override
-    public Vector<String> getDecryptableLinks(String data) {
+    public String[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
         Vector<String> ret = new Vector<String>();
         scatChecked = true;
         for (int i = 0; i < links.length; i++) {
             if (canHandle(links[i])) ret.add(links[i]);
         }
-        return ret;
+        return ret.toArray(new String[ret.size()]);
     }
 
     @Override

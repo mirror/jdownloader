@@ -517,7 +517,7 @@ public class Netloadin extends PluginForHost {
 
         downloadLink.setName(entries[0]);
         this.fileStatusText = entries[2];
-        downloadLink.setDownloadMax((int) Regex.getBytes(entries[1]));
+        downloadLink.setDownloadMax((int) Regex.getSize(entries[1]));
 
         if (entries[2].equalsIgnoreCase("online")) return true;
         return false;

@@ -19,13 +19,13 @@ package jd.plugins;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
+
+import jd.parser.Regex;
 
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.parser.SimpleMatches;
 import jd.utils.JDUtilities;
 
 /**
@@ -52,12 +52,13 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     }
 
-    public Vector<DownloadLink> decryptLinks(Vector<String> cryptedLinks) {
+    public Vector<DownloadLink> decryptLinks(String[] cryptedLinks) {
         this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        for (Iterator<String> iterator = cryptedLinks.iterator(); iterator.hasNext();) {
-            decryptedLinks.addAll(decryptLink(iterator.next()));
-        }
+        	for (int i = 0; i < cryptedLinks.length; i++) {
+                decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
+			}
+
         this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 
         return decryptedLinks;
@@ -175,17 +176,18 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @param data
      * @return
      */
-    public Vector<String> getDecryptableLinks(String data) {
-        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
-        if (hits != null && hits.size() > 0) {
+    public String[] getDecryptableLinks(String data) {
+//        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
+        String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
+        if (hits != null && hits.length > 0) {
 
-            for (int i = hits.size() - 1; i >= 0; i--) {
-                String file = hits.get(i);
+            for (int i = hits.length - 1; i >= 0; i--) {
+                String file = hits[i];
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
                     file = file.substring(0, file.length() - 1);
-                hits.setElementAt(file, i);
+                hits[i]=file;
 
             }
         }
