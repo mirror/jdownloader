@@ -31,6 +31,8 @@ import java.util.Vector;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import jd.parser.Regex;
+
 import jd.JDInit;
 import jd.captcha.CES;
 import jd.config.Configuration;
@@ -45,7 +47,6 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -738,7 +739,7 @@ public class JDController implements ControlListener, UIListener {
         } else {
             String dlcKey = ri.getHtmlCode();
 
-            dlcKey = SimpleMatches.getBetween(dlcKey, "<rc>", "</rc>");
+            dlcKey = new Regex(dlcKey, "<rc>(.*?)</rc>").getFirstMatch();
             if (dlcKey.trim().length() < 80) {
 
             return null; }

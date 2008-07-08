@@ -24,7 +24,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.logging.Logger;
 
-import jd.parser.SimpleMatches;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
