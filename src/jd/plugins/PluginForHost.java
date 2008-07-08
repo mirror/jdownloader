@@ -24,9 +24,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import jd.parser.Regex;
+
 import jd.config.Configuration;
 import jd.config.MenuItem;
-import jd.parser.SimpleMatches;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -133,11 +134,12 @@ public abstract class PluginForHost extends Plugin {
 
         Vector<DownloadLink> links = null;
 
-        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
-        if (hits != null && hits.size() > 0) {
+//        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
+        String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
+        if (hits != null && hits.length > 0) {
             links = new Vector<DownloadLink>();
-            for (int i = 0; i < hits.size(); i++) {
-                String file = hits.get(i);
+            for (int i = 0; i < hits.length; i++) {
+                String file = hits[i];
 
                 while (file.charAt(0) == '"')
                     file = file.substring(1);
