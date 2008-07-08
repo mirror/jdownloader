@@ -20,11 +20,9 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -80,12 +78,13 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = HTTP.getRequest(url);
     			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "a href=\"°\" target=\"");
-    			progress.setRange( links.size());
+//    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "a href=\"°\" target=\"");
+    			String[] links = reqinfo.getRegexp("a href=\"(.*?)\" target=\"").getMatches(1);
+    			progress.setRange( links.length);
     			
-    			for(int i=0; i<links.size(); i++) {
-    				reqinfo = HTTP.getRequest(new URL("http://airfresh.steelhoster.com/" + links.get(i).get(0)));
-    				decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"", "\"").trim()));
+    			for(int i=0; i<links.length; i++) {
+    				reqinfo = HTTP.getRequest(new URL("http://airfresh.steelhoster.com/" + links[i]));
+    				decryptedLinks.add(this.createDownloadlink(reqinfo.getFirstMatch("src=\"(.*?)\"").trim()));
     				progress.increase(1);
     			}
     			

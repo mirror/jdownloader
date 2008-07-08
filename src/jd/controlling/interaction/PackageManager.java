@@ -31,7 +31,6 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -119,7 +118,7 @@ public class PackageManager extends Interaction implements Serializable {
                 ri = HTTP.getRequest(new URL("http://jdservice.ath.cx/update/packages/list.php"), null, null, true);
             }
             progress.increase(1);
-            String xml = "<packages>" + SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<packages>°</packages>", 0) + "</packages>";
+            String xml = "<packages>" + ri.getFirstMatch("<packages>(.*?)</packages>") + "</packages>";
             DocumentBuilderFactory factory;
             InputSource inSource;
             Document doc;

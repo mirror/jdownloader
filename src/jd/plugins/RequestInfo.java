@@ -112,6 +112,13 @@ public class RequestInfo {
     	return new Regex(this, pattern);
     }
     /**
+     * gibt den ersten Match aus
+     */
+    public String getFirstMatch(String pattern)
+    {
+    	return getRegexp(pattern).getFirstMatch();
+    }
+    /**
      * gibt die Forms der requestInfo aus
      * @param pattern
      * @return

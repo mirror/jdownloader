@@ -105,7 +105,7 @@ public class HTMLParser {
      *         endPattern
      */
     public static HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
-        return HTMLParser.getInputHiddenFields(SimpleMatches.getBetween(data, startPattern, lastPattern));
+        return HTMLParser.getInputHiddenFields(new Regex(data, startPattern +"(.*?)"+ lastPattern).getFirstMatch());
     }
     /**
      * Diese Methode sucht die vordefinierten input type="hidden" zwischen
@@ -128,7 +128,7 @@ public class HTMLParser {
      *         Parameter des Formulars enthält
      */
     public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
-        return HTMLParser.getFormInputHidden(SimpleMatches.getBetween(data, startPattern, lastPattern));
+        return HTMLParser.getFormInputHidden(new Regex(data, startPattern +"(.*?)"+ lastPattern).getFirstMatch());
     }
 
     /**
