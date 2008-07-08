@@ -78,7 +78,7 @@ public class UploadedTo {
         try {
             ri = HTTP.getRequest(new URL(link));
 
-            String captchaURL = "http://uploaded.to/" + SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<img name=\"img_captcha\" src=\"°\"", 0);
+            String captchaURL = "http://uploaded.to/" + ri.getRegexp("<img name=\"img_captcha\" src=\"(.*?)\"");
             JDUtilities.download(new File(file, getCaptchaName()), captchaURL);
 
             logger.info(captchaURL+" - "+new File(file, getCaptchaName()));

@@ -229,17 +229,17 @@ public class HTTPLiveHeader extends Interaction {
                             String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            ArrayList<String> params = SimpleMatches.getAllSimpleMatches(value, "%%%°%%%", 1);
-                            if (params.size() > 0) {
+                            String[] params = new Regex(value, "%%%(.*?)%%%").getMatches(1);
+                            if (params.length > 0) {
                                 String req;
-                                if (value.startsWith(params.get(0))) {
+                                if (value.startsWith(params[0])) {
                                     req = "";
                                     logger.finer("Variables: " + this.variables);
                                     logger.finer("Headerproperties: " + this.headerProperties);
                                     for (int i = 0; i <= tmp.length; i++) {
-                                        logger.finer("Replace variable: ********(" + params.get(i - 1) + ")");
+                                        logger.finer("Replace variable: ********(" + params[i - 1] + ")");
 
-                                        req += getModifiedVariable(params.get(i - 1));
+                                        req += getModifiedVariable(params[i - 1]);
                                         if (i < tmp.length) {
                                             req += tmp[i];
                                         }
@@ -250,10 +250,10 @@ public class HTTPLiveHeader extends Interaction {
                                     logger.finer("Variables: " + this.variables);
                                     logger.finer("Headerproperties: " + this.headerProperties);
                                     for (int i = 1; i <= tmp.length; i++) {
-                                        if (i > params.size()) continue;
-                                        logger.finer("Replace variable: *********(" + params.get(i - 1) + ")");
+                                        if (i > params.length) continue;
+                                        logger.finer("Replace variable: *********(" + params[i - 1] + ")");
 
-                                        req += getModifiedVariable(params.get(i - 1));
+                                        req += getModifiedVariable(params[i - 1]);
                                         if (i < tmp.length) {
                                             req += tmp[i];
                                         }
@@ -393,26 +393,26 @@ public class HTTPLiveHeader extends Interaction {
         try {
 
             RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
-            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
-
-            for (int i = 0; i < cats.size(); i++) {
-                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats.get(i).get(0)));
-                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
-
-                for (int t = 0; t < router.size(); t++) {
-                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router.get(t).get(0) + "&show=" + router.get(t).get(1);
+//            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getMatches(1);
+            for (int i = 0; i < cats.length; i++) {
+                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats[i]));
+//                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+                String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
+                for (int t = 0; t < router.length; t++) {
+                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router[t][0] + "&show=" + router[t][1];
                     requestInfo = HTTP.getRequest(new URL(endURL));
                     // s logger.info(requestInfo.getHtmlCode() + "");
 
-                    String code = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), "<textarea name=\"ReconnectCode\" °>°</textarea", 1);
-
-                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router.get(t).get(2)));
+                    String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getFirstMatch();
+                    
+                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router[t][2]));
                     if (script == null) {
 
-                        cScript = new String[] { router.get(t).get(0), router.get(t).get(2), code };
+                        cScript = new String[] { router[t][0], router[t][2], code };
                     }
                     else {
-                        cScript = new String[] { router.get(t).get(0), router.get(t).get(2), script };
+                        cScript = new String[] { router[t][0], router[t][2], script };
                     }
                     db.add(cScript);
 
