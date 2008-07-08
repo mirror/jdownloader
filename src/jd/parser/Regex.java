@@ -201,7 +201,7 @@ public class Regex {
      * @param sizestring
      * @return
      */
-    public static long getBytes(String string) {
+    public static long getSize(String string) {
 
    
         String[][] matches = new Regex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
