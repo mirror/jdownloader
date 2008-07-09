@@ -108,9 +108,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
-    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
+    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V2";
 
-    public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK";
+    public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
 
     private JTabbedPane tabbedPane;
 
@@ -415,7 +415,7 @@ private boolean isDupe(DownloadLink link){
                 while (waitingLinkList.size() > 0) {
 
                     link = waitingLinkList.remove(0);
-                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)) {
+                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
                         attachLinkTopackage(link);
                         try {
                             Thread.sleep(5);
@@ -553,7 +553,7 @@ private boolean isDupe(DownloadLink link){
                 }
             }
             // logger.info("Best sym: "+bestSim);
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
+            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
 
                 addLinkstoTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(packageName);

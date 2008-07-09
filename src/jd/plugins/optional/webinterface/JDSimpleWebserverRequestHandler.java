@@ -10,6 +10,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,10 +26,6 @@ public class JDSimpleWebserverRequestHandler {
     private JDSimpleWebserverResponseCreator response;
 
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT";
-
-    public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK";
-
     private Logger logger = JDUtilities.getLogger();
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
@@ -90,7 +87,7 @@ public class JDSimpleWebserverRequestHandler {
                     bestIndex = i;
                 }
             }
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 98)) {
+            if (bestSim < guiConfig.getIntegerProperty(LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
 
                 FilePackage fp = new FilePackage();
                 fp.setName(removeExtension(link.getName()));
@@ -156,7 +153,7 @@ public class JDSimpleWebserverRequestHandler {
                 } else
                     requestParameter.put(key, value);
             }
-        }        
+        }
         String url = path.replaceAll("\\.\\.", "");
 
         /* parsen der paramter */
@@ -442,7 +439,7 @@ public class JDSimpleWebserverRequestHandler {
                     DownloadLink next;
                     while (waitingLinkList.size() > 0) {
                         link = waitingLinkList.remove(0);
-                        if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, false)) {
+                        if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
                             attachLinkTopackage(link);
                             try {
                                 Thread.sleep(5);

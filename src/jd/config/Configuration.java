@@ -44,13 +44,13 @@ public class Configuration extends Property implements Serializable {
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
      * soll
      */
-    public static final String      PARAM_DOWNLOAD_READ_TIMEOUT        = "DOWNLOAD_READ_TIMEOUT";
+    public static final String      PARAM_DOWNLOAD_READ_TIMEOUT        = "DOWNLOAD_READ_TIMEOUT_V2";
 
     /**
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
      * soll
      */
-    public static final String      PARAM_DOWNLOAD_CONNECT_TIMEOUT     = "DOWNLOAD_CONNECT_TIMEOUT";
+    public static final String      PARAM_DOWNLOAD_CONNECT_TIMEOUT     = "DOWNLOAD_CONNECT_TIMEOUT_V2";
 
     /**
      * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
