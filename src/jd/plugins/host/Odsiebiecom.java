@@ -202,7 +202,8 @@ public class Odsiebiecom extends PluginForHost {
                     return step;
                 }
             }
-
+            /*Leerzeichen müssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie von new URL() abgeschnitten*/
+            downloadurl=downloadurl.replaceAll(" ", "%20"); 
             /* Datei herunterladen */
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), requestInfo.getCookie(), referrerurl, false);
             HTTPConnection urlConnection = requestInfo.getConnection();
