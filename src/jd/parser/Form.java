@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -518,5 +519,19 @@ public class Form {
             }
         }
         return ret;
+    }
+
+    public String setVariable(int i,String value) {
+        
+        for( Iterator<String> it = vars.keySet().iterator();it.hasNext();){
+            
+            if(--i<=0){
+                String key=it.next();
+                vars.put(key, value);
+                return key;
+            }
+        }
+    return null;
+        
     }
 }
