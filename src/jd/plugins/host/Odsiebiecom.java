@@ -122,10 +122,10 @@ public class Odsiebiecom extends PluginForHost {
             if (steplink == null) {
                 /* Kein Button, also muss der Link irgendwo auf der Page sein */
                 /* Film,Mp3 */
-                downloadurl = requestInfo.getRegexp("<PARAM NAME=\"FileName\" VALUE=\"(.*?)\">").getFirstMatch();
+                downloadurl = requestInfo.getRegexp("<PARAM NAME=\"FileName\" VALUE=\"(.*?)\"").getFirstMatch();
                 /* Flash */
                 if (downloadurl == null) {
-                    downloadurl = requestInfo.getRegexp("<PARAM NAME=\"movie\" VALUE=\"(.*?)\">").getFirstMatch();
+                    downloadurl = requestInfo.getRegexp("<PARAM NAME=\"movie\" VALUE=\"(.*?)\"").getFirstMatch();
                 }
                 /* Bilder, Animationen */
                 if (downloadurl == null) {
