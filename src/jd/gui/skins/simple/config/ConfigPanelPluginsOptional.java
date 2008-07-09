@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -56,21 +55,15 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     private static final long serialVersionUID = 5794208138046480006L;
 
+    private JButton btnEdit;
 
+    private JTable table;
 
-    private JButton           btnEdit;
+    private Configuration configuration;
 
-    private JTable            table;
+    private JButton enableDisable;
 
-
-
-    private Configuration     configuration;
-
-    private JButton           enableDisable;
-
-
-
-    //private JarFile[] availablePluginJarFiles;
+    // private JarFile[] availablePluginJarFiles;
 
     private Vector<PluginOptional> plugins;
 
@@ -81,18 +74,19 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
     public ConfigPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-     
-    
-//        enabledList[i] = configuration.getBooleanProperty(getConfigParamKey(availablePlugins[i]), false);
+
+        // enabledList[i] =
+        // configuration.getBooleanProperty(getConfigParamKey(availablePlugins
+        // [i]), false);
         HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
-        
-        plugins= new Vector<PluginOptional>();
-        if(pluginsOptional != null && pluginsOptional.size()>0){
+
+        plugins = new Vector<PluginOptional>();
+        if (pluginsOptional != null && pluginsOptional.size() > 0) {
             Iterator<String> iterator = pluginsOptional.keySet().iterator();
             String key;
             while (iterator.hasNext()) {
                 key = iterator.next();
-                plugins.add(pluginsOptional.get(key));         
+                plugins.add(pluginsOptional.get(key));
             }
 
             initPanel();
@@ -117,19 +111,19 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
      */
     public void save() {
 
-    // for (int i = 0; i < availablePlugins.length; i++) {
-    // table.getValueAt(0., column)
-    // if (plg.getProperties() != null)
-    // configuration.setProperty("PluginConfig_" + plg.getPluginName(),
-    // plg.getProperties());
-    // }
+        // for (int i = 0; i < availablePlugins.length; i++) {
+        // table.getValueAt(0., column)
+        // if (plg.getProperties() != null)
+        // configuration.setProperty("PluginConfig_" + plg.getPluginName(),
+        // plg.getProperties());
+        // }
 
     }
 
     @Override
     public void initPanel() {
-//        int n = 10;
-//        setBorder(new EmptyBorder(n,n,n,n));
+        // int n = 10;
+        // setBorder(new EmptyBorder(n,n,n,n));
         setLayout(new BorderLayout(10, 10));
         table = new JTable(); // new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
@@ -141,16 +135,12 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
-
-                case 0:
-                    column.setPreferredWidth(30);
-                    break;
-                case 1:
-                    column.setPreferredWidth(70);
-                    break;
-                case 2:
-                    column.setPreferredWidth(600);
-                    break;
+            case 0:
+                column.setPreferredWidth(70);
+                break;
+            case 1:
+                column.setPreferredWidth(300);
+                break;
 
             }
         }
@@ -161,61 +151,70 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton(JDLocale.L("gui.config.plugin.optional.btn_settings","Einstellungen"));
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.optional.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if (plugins.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
-                else btnEdit.setEnabled(false);
+                if ((((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex() != -1) && (plugins.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0))
+                    btnEdit.setEnabled(true);
+                else
+                    btnEdit.setEnabled(false);
             }
         });
 
         btnEdit.addActionListener(this);
-        enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus","An/Aus"));
+        enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus", "An/Aus"));
 
         enableDisable.addActionListener(this);
-        
-        
-        openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir","Addon Ordner öffnen"));
+
+        openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir", "Addon Ordner öffnen"));
 
         openPluginDir.addActionListener(this);
-      
-        link= new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help","Hilfe"),JDLocale.L("gui.config.plugin.optional.link_help","  http://jdownloader.org/page.php?id=122"));
-        // JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-//        JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-//
-//        JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, openPluginDir, 2, 2, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        link = new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122"));
+        // JDUtilities.addToGridBag(panel, new
+        // JLabel(JDLocale.L("gui.warning.restartNeeded"
+        // ,"JD-Restart needed after changes!")), 0, 0, 3, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        JPanel contentPanel = new JPanel(new BorderLayout(5,5));
+        // JDUtilities.addToGridBag(panel, scrollpane, 0, 1, 20, 1, 1, 1,
+        // insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        //
+        // JDUtilities.addToGridBag(panel, btnEdit, 0, 2, 1, 1, 0, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, enableDisable, 1, 2, 1, 1, 0, 0,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, openPluginDir, 2, 2, 1, 1, 0, 0,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, link, 3, 2, 1, 1, 1, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        JPanel contentPanel = new JPanel(new BorderLayout(5, 5));
         int n = 5;
-        contentPanel.setBorder(new EmptyBorder(0,n,0,n));
-        String text = JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!");
+        contentPanel.setBorder(new EmptyBorder(0, n, 0, n));
+        String text = JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!");
         contentPanel.add(new JLabel(text), BorderLayout.NORTH);
         contentPanel.add(scrollpane, BorderLayout.CENTER);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(5, 5, FlowLayout.LEFT));
         buttonPanel.add(btnEdit);
         buttonPanel.add(enableDisable);
         buttonPanel.add(openPluginDir);
         buttonPanel.add(link);
-        
+
         add(contentPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
-        
+
         // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
     }
 
     @Override
     public String getName() {
-        return JDLocale.L("gui.config.plugin.optional.name","Optional Plugins");
+        return JDLocale.L("gui.config.plugin.optional.name", "Optional Plugins");
     }
 
-  //  private void openPopupPanel(ConfigPanel config) {
+    // private void openPopupPanel(ConfigPanel config) {
     // JPanel panel = new JPanel(new BorderLayout());
     //
     // // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
@@ -232,12 +231,12 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
     // uiinterface, configuration);
     // pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
     // pop.setVisible(true);
-  //  }
+    // }
 
     public void fireTableChanged() {
         int rowIndex = table.getSelectedRow();
 
-        table.tableChanged(new TableModelEvent(table.getModel()));
+        table.tableChanged(new TableModelEvent(this.table.getModel()));
         table.getSelectionModel().addSelectionInterval(rowIndex, rowIndex);
     }
 
@@ -254,8 +253,8 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
             configuration.setProperty(getConfigParamKey(plugins.get(rowIndex)), !b);
             fireTableChanged();
         }
-        if(e.getSource()==openPluginDir){
-            
+        if (e.getSource() == openPluginDir) {
+
             try {
                 new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));
             } catch (Exception ec) {
@@ -263,10 +262,11 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
     }
-    
+
     private int getSelectedIndex() {
         return table.getSelectedRow();
     }
+
     private PluginOptional getSelectedPlugin() {
         int index = getSelectedIndex();
         if (index < 0) return null;
@@ -279,13 +279,14 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
             openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
         }
     }
+
     private void openPopupPanel(ConfigPanel config) {
         JPanel panel = new JPanel(new BorderLayout());
 
-//      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
         PluginOptional plugin = this.getSelectedPlugin();
-//      currentPlugin = plugin;
+        // currentPlugin = plugin;
         if (plugin == null) return;
 
         JPanel topPanel = new JPanel();
@@ -296,7 +297,6 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         pop.setVisible(true);
     }
 
-
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             editEntry();
@@ -304,10 +304,17 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     }
 
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -318,7 +325,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
         public int getColumnCount() {
-            return 6;
+            return 5;
         }
 
         public int getRowCount() {
@@ -326,25 +333,33 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            switch (columnIndex) {
-                case 0: return rowIndex + "";
-                case 1: return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive","An") : JDLocale.L("gui.config.plugin.optional.statusInactive","Aus");
-                case 2: return plugins.get(rowIndex).getPluginName();
-                case 3: return plugins.get(rowIndex).getVersion();
-                case 4: return plugins.get(rowIndex).getCoder();
-                case 5: return plugins.get(rowIndex).getRequirements();
+            switch (columnIndex) {            
+            case 0:
+                return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
+            case 1:
+                return plugins.get(rowIndex).getPluginName();
+            case 2:
+                return plugins.get(rowIndex).getVersion();
+            case 3:
+                return plugins.get(rowIndex).getCoder();
+            case 4:
+                return plugins.get(rowIndex).getRequirements();
             }
             return null;
         }
 
         public String getColumnName(int column) {
-            switch (column) {
-                case 0: return JDLocale.L("gui.config.plugin.optional.column_id","ID");
-                case 1: return JDLocale.L("gui.config.plugin.optional.column_status","Status");
-                case 2: return JDLocale.L("gui.config.plugin.optional.column_plugin","Plugin");
-                case 3: return JDLocale.L("gui.config.plugin.optional.column_version","Version");
-                case 4: return JDLocale.L("gui.config.plugin.optional.column_author","Coder");
-                case 5: return JDLocale.L("gui.config.plugin.optional.column_needs","Needs");
+            switch (column) {            
+            case 0:
+                return JDLocale.L("gui.config.plugin.optional.column_status", "Status");
+            case 1:
+                return JDLocale.L("gui.config.plugin.optional.column_plugin", "Plugin");
+            case 2:
+                return JDLocale.L("gui.config.plugin.optional.column_version", "Version");
+            case 3:
+                return JDLocale.L("gui.config.plugin.optional.column_author", "Coder");
+            case 4:
+                return JDLocale.L("gui.config.plugin.optional.column_needs", "Needs");
             }
             return super.getColumnName(column);
         }
