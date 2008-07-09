@@ -32,7 +32,10 @@ param.coverageFaktorAWeight=4;
 param.coverageFaktorBWeight=4;
 param.cleftFaktor=0.6;
 captcha.prepare.invert();
+captcha.prepare.cleanWithDetailMask("mask.png",10);
+
 letter.prepare.toBlackAndWhite();
+captcha.prepare.removeSmallObjects(0.55,0.99,125);
 captcha.prepare.removeSmallObjects(0.55,0.99,125);
 captcha.prepare.blurIt(4);
 captcha.prepare.toBlackAndWhite(0.4);
