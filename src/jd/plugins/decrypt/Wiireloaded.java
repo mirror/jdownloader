@@ -20,8 +20,6 @@ import java.io.File;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -29,7 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Wiireloaded extends PluginForDecrypt {
@@ -43,22 +40,10 @@ public class Wiireloaded extends PluginForDecrypt {
 
     private static final String PARAM_CALCCODE = "PARAM_CALCCODES";
 
- 
-
     public Wiireloaded() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-      
-        setConfigEntries();
-
-    }
-
-    private void setConfigEntries() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PARAM_CALCCODE, JDLocale.L("gui.plugins.decrypt.wiireloaded.calcresult", "Ergebnis der Rechenaufgabe")));
-        cfg.setDefaultValue(5);
-
     }
 
     @Override
@@ -121,35 +106,33 @@ public class Wiireloaded extends PluginForDecrypt {
                     String capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     br.getPage(parameter);
                     Form[] forms = br.getForms();
-                    Form post = forms[0];                    
-                    logger.info("set "+post.setVariable(0,capTxt)+" = "+capTxt);
+                    Form post = forms[0];
+                    logger.info("set " + post.setVariable(0, capTxt) + " = " + capTxt);
                     page = br.submitForm(post);
                 }
             }
-                String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
-                progress.addToMax(ids.length);
-                for (int i = 0; i < ids.length; i++) {
-                    String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids[i][0];
-                    br.getPage(u);
-                    String code=new Regex(br,"\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade").getFirstMatch();
-                    Form form = br.getForms()[0];
-                    form.setVariable(0, code);
-                    br.submitForm(form);
-                    if (br.getRedirectLocation() != null) {
-                        decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation()));
-                        
-                    }
-                    progress.increase(1);
+            String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
+            progress.addToMax(ids.length);
+            for (int i = 0; i < ids.length; i++) {
+                String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids[i][0];
+                br.getPage(u);
+                String code = new Regex(br, "\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade").getFirstMatch();
+                Form form = br.getForms()[0];
+                form.setVariable(0, code);
+                br.submitForm(form);
+                if (br.getRedirectLocation() != null) {
+                    decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation()));
+
                 }
-              
                 progress.increase(1);
-              
             }
 
-            return step;
-        
+            progress.increase(1);
 
-       
+        }
+
+        return step;
+
     }
 
     @Override
