@@ -17,9 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -28,10 +25,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -49,15 +43,13 @@ public class Wiireloaded extends PluginForDecrypt {
 
     private static final String PARAM_CALCCODE = "PARAM_CALCCODES";
 
-    private static String CALCCODE = "I";
-
-    private static String COOKIE = null;
+ 
 
     public Wiireloaded() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        CALCCODE = getProperties().getStringProperty(PARAM_CALCCODE, "I");
+      
         setConfigEntries();
 
     }
