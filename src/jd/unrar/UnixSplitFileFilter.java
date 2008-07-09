@@ -21,8 +21,9 @@
 
 package jd.unrar;
 
-import javax.swing.filechooser.FileFilter;
 import java.io.File;
+
+import javax.swing.filechooser.FileFilter;
 
 public class UnixSplitFileFilter extends FileFilter
 {

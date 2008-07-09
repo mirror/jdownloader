@@ -21,10 +21,9 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.Serializable;
 
-import jd.parser.Regex;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;

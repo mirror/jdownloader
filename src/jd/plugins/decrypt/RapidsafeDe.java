@@ -16,14 +16,14 @@
 
 package jd.plugins.decrypt;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.BufferedInputStream;
-import java.net.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.regex.Pattern;
 

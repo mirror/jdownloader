@@ -35,18 +35,19 @@ import java.util.Map.Entry;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import jd.JDInit;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
+import jd.controlling.ClipboardHandler;
 import jd.controlling.DistributeData;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -55,7 +56,6 @@ import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
 
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
@@ -687,7 +687,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
             //Get IsClipBoard
             else if (request.getRequestURI().equals("/get/isclipboard")) {
-                response.getWriter().println(JDUtilities.getController().getClipboard().isEnabled());
+                response.getWriter().println(ClipboardHandler.getClipboard().isEnabled());
             }
             
             //---------------------------------------
@@ -896,7 +896,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                      "[\\s\\S]*/action/set/clipboard/(.*)")
                      .getFirstMatch());
                 logger.fine("RemoteControl - Set ClipBoard: " + newclip );
-                if((JDUtilities.getController().getClipboard().isEnabled()) ^ (newclip)) /*C++ User:^ is equuvalent to XOR*/
+                if((ClipboardHandler.getClipboard().isEnabled()) ^ (newclip)) /*C++ User:^ is equuvalent to XOR*/
                 {
                     simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
                     response.getWriter().println("clip=" + newclip + " (CHANGED=true)");
@@ -913,7 +913,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                      "[\\s\\S]*/action/set/beta/(.*)")
                      .getFirstMatch());
                 logger.fine("RemoteControl - Set Beta: " + newbeta );
-                if((JDUtilities.getController().getClipboard().isEnabled()) ^ (newbeta)) /*C++ User:^ is equuvalent to XOR*/
+                if((ClipboardHandler.getClipboard().isEnabled()) ^ (newbeta)) /*C++ User:^ is equuvalent to XOR*/
                 {
                     JDUtilities.getSubConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA",newbeta);
                     JDUtilities.getSubConfig("WEBUPDATE").save();

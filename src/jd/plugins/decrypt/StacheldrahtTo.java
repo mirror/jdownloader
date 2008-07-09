@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.*;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;

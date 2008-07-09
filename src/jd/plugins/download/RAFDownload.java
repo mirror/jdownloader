@@ -22,9 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
-import jd.parser.Regex;
-
 import jd.config.Configuration;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;

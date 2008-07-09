@@ -18,6 +18,7 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+
 import javax.swing.JScrollPane;
 
 import jd.config.ConfigContainer;

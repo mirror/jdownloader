@@ -32,7 +32,6 @@ import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
 import jd.parser.Regex;
-
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

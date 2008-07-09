@@ -25,9 +25,8 @@ import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
-import jd.parser.Regex;
-
 import jd.JDFileFilter;
+import jd.parser.Regex;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern

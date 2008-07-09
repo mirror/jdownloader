@@ -43,6 +43,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.controlling.ClipboardHandler;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginOptional;
@@ -336,7 +337,7 @@ public class JDTrayIcon extends PluginOptional {
         trayParent.toFront();
         hideTooltip();
 
-        clipboard.setSelected(JDUtilities.getController().getClipboard().isEnabled());
+        clipboard.setSelected(ClipboardHandler.getClipboard().isEnabled());
         reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
 
         speed1.setText(this.getProperties().getStringProperty("SPEED1", "100") + " kb/s");

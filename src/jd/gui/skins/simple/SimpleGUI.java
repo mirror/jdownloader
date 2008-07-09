@@ -73,12 +73,14 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
+
 import jd.JDFileFilter;
 import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
+import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
@@ -265,6 +267,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actioninstallJDU;
 
+ 
+
     // private SwingWorker warningWorker;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
@@ -373,7 +377,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         dragNDrop = new Dropper(new JFrame());
         dragNDrop.addUIListener(this);
         // Ruft jede sekunde ein UpdateEvent auf
-
+   
         /*
          * jago: Fixed very bad style of coding which often is the cause of
          * fully frozen applications!!! After the JFrame is realized (e.g.
@@ -477,7 +481,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     private String getClipBoardImage() {
-        if (JDUtilities.getController().getClipboard().isEnabled())
+        if (ClipboardHandler.getClipboard().isEnabled())
             return JDTheme.V("gui.images.clipboardon");
         else
             return JDTheme.V("gui.images.clipboardoff");
@@ -1029,7 +1033,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_CLIPBOARD:
             logger.finer("Clipboard");
-            JDUtilities.getController().getClipboard().toggleActivation();
+            ClipboardHandler.getClipboard().toggleActivation();
 
             break;
         case JDAction.APP_CES:

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.swing.UIManager;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;

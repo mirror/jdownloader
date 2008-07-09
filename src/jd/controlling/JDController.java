@@ -31,8 +31,6 @@ import java.util.Vector;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import jd.parser.Regex;
-
 import jd.JDInit;
 import jd.captcha.CES;
 import jd.config.Configuration;
@@ -47,6 +45,7 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -54,6 +53,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
+import jd.plugins.event.PluginEvent;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -125,7 +125,6 @@ public class JDController implements ControlListener, UIListener {
 
     private DownloadLink lastDownloadFinished;
 
-    private ClipboardHandler clipboard;
 
     /**
      * Der Download Watchdog verwaltet die Downloads
@@ -158,7 +157,7 @@ public class JDController implements ControlListener, UIListener {
     public JDController() {
 
         packages = new Vector<FilePackage>();
-        clipboard = new ClipboardHandler();
+     
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         this.eventSender = getEventSender();
 
@@ -1516,16 +1515,7 @@ public class JDController implements ControlListener, UIListener {
     // return ipChangeSuccess;
     // }
 
-    public ClipboardHandler getClipboard() {
-        if (clipboard == null) {
-            clipboard = new ClipboardHandler();
-        }
-        return clipboard;
-    }
 
-    public void setClipboard(ClipboardHandler clipboard) {
-        this.clipboard = clipboard;
-    }
 
     public void setInitStatus(int initStatus) {
         this.initStatus = initStatus;

@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-
 import jd.gui.skins.simple.ProgressDialog;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;

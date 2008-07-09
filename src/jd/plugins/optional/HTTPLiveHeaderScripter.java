@@ -63,6 +63,7 @@ import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -73,8 +74,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import jd.parser.Regex;
 
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public static int getAddonInterfaceVersion() {

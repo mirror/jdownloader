@@ -6,11 +6,10 @@ import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.parser.Regex;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;

@@ -17,9 +17,10 @@ import javax.swing.JOptionPane;
 public class UpdateBeta {
     private static Logger logger = JDUtilities.getLogger();
     private ArrayList<File> filelist;
+    private File dir;
 
     public UpdateBeta() {
-        File dir = new File("D:\\jd_gc_update_beta\\bin");
+        dir = new File("D:\\jd_gc_update_beta\\bin");
         filelist = new ArrayList<File>();
         scanDir(dir);
         logger.info("");
@@ -50,6 +51,8 @@ public class UpdateBeta {
 private void upload(String list){
     
     try {
+        
+        logger.info("connect to ftp");
         SimpleFTP ftp = new SimpleFTP();
         
         // Connect to an FTP server on port 21.
@@ -68,12 +71,32 @@ private void upload(String list){
        
         // You can also upload from an InputStream, e.g.
         //ftp.stor(new FileInputStream(new File("test.png")), "test.png");
+        logger.info("write list.php");
         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("list.php"),list);
         ftp.remove("list.php");
         ftp.stor(JDUtilities.getResourceFile("list.php"));
+        ftp.remove("updatemessage.html");
+        logger.info("write updatemessage (changelog)");
+        ftp.stor(new File(dir,"updatemessage.html"));
+        ftp.cwd("/httpdocs/dlcryptbeta/jars/");
+       
+        ftp.remove("JDownloader.jar");
+       
+        ftp.remove("JDownloaderContainer.jar");
+       
+        ftp.remove("JDownloaderPlugins.jar");
+        
+        ftp.bin();
+        logger.info("write jar1");
+        ftp.stor(new File(dir,"JDownloader.jar"));
+        logger.info("write jar2");
+        ftp.stor(new File(dir,"JDownloaderContainer.jar"));
+        logger.info("write jar3");
+        ftp.stor(new File(dir,"JDownloaderPlugins.jar"));
         
         // Quit from the FTP server.
         ftp.disconnect();
+        logger.info("update ok");
     }
     catch (IOException e) {
        e.printStackTrace();

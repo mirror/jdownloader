@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling;
 
 import java.awt.Toolkit;
@@ -22,6 +21,7 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.util.List;
+
 import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
@@ -40,7 +40,7 @@ public class ClipboardHandler extends Thread {
 
     private Clipboard clipboard;
 
-//    private Logger logger;
+    // private Logger logger;
 
     private List<?> oldList;
 
@@ -48,14 +48,22 @@ public class ClipboardHandler extends Thread {
 
     private String olddata;
 
+    private static ClipboardHandler INSTANCE = null;
+
     /**
      */
-    public ClipboardHandler() {
+    private ClipboardHandler() {
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-//        logger = JDUtilities.getLogger();
+        INSTANCE = this;
+        // logger = JDUtilities.getLogger();
         this.start();
+    }
+
+    public static ClipboardHandler getClipboard() {
+        if (INSTANCE == null) new ClipboardHandler();
+        return INSTANCE;
+
     }
 
     /**
@@ -97,12 +105,11 @@ public class ClipboardHandler extends Thread {
         });
         saveConfig.start();
 
-        if (enabled && !this.isAlive())
-            JDUtilities.getController().setClipboard(new ClipboardHandler());
+        if (enabled && !this.isAlive()) new ClipboardHandler();
     }
 
     @SuppressWarnings("unchecked")
-	public void run() {
+    public void run() {
         enabled = isEnabled();
         while (enabled) {
             try {
@@ -111,7 +118,7 @@ public class ClipboardHandler extends Thread {
 
                     if (flavors[i].isFlavorJavaFileListType()) {
                         List list = (List) clipboard.getData(flavors[i]);
-                      
+
                         boolean ch = oldList == null || list.size() != oldList.size();
                         if (!ch) {
                             for (int t = 0; t < list.size(); t++) {
@@ -128,7 +135,7 @@ public class ClipboardHandler extends Thread {
                                 JDUtilities.getController().loadContainerFile((File) list.get(t));
                             }
                         }
-                       
+
                         break;
 
                     }
@@ -138,7 +145,7 @@ public class ClipboardHandler extends Thread {
                         data = data.trim();
                         if (!data.equals(olddata)) {
                             olddata = data;
-                       
+
                             distributeData = new DistributeData(data, true);
                             distributeData.addControlListener(JDUtilities.getController());
                             distributeData.start();
@@ -150,7 +157,7 @@ public class ClipboardHandler extends Thread {
                 }
                 Thread.sleep(500);
             } catch (Exception e2) {
-             //   e2.printStackTrace();
+                // e2.printStackTrace();
             }
         }
     }

@@ -21,7 +21,8 @@
 
 package jd.unrar;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class CountingInputStream extends InputStream
 {

@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;

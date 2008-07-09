@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;

@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
+
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -33,6 +32,9 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class ShareOnlineBiz extends PluginForHost {
     private static final String CODER = "JD-Team";

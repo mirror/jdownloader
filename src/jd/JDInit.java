@@ -35,8 +35,6 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import jd.parser.Regex;
-
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
@@ -46,6 +44,7 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JHelpDialog;
+import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;

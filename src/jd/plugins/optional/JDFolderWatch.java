@@ -16,6 +16,10 @@
 
 package jd.plugins.optional;
 
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.util.ArrayList;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -23,13 +27,8 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
-import java.awt.event.ActionEvent;
-import java.io.*;
-import java.util.ArrayList;
 
 public class JDFolderWatch extends PluginOptional implements ControlListener {
     public static int getAddonInterfaceVersion(){

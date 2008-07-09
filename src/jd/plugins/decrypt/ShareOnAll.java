@@ -24,10 +24,9 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.parser.Regex;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;

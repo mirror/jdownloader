@@ -24,10 +24,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import jd.parser.Regex;
-
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;

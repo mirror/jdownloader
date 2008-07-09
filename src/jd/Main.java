@@ -47,11 +47,11 @@ import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.HTTPConnection;
+import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.CheckJava;
 
 /**
  * @author astaldo/JD-Team

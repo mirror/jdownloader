@@ -26,6 +26,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.controlling.ClipboardHandler;
 import jd.controlling.JDController;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
@@ -145,7 +146,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     private ImageIcon getClipBoardImage() {
-        if (JDUtilities.getController().getClipboard().isEnabled())
+        if (ClipboardHandler.getClipboard().isEnabled())
             return JDTheme.II("gui.images.clipboardon");
         else
             return JDTheme.II("gui.images.clipboardoff");

@@ -1,13 +1,24 @@
 package jd.plugins.optional.schedule;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Calendar;
+import java.util.Date;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.Timer;
+
 import jd.config.Configuration;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import javax.swing.*;
-import java.util.Date;
-import java.util.Calendar;
 
 public class ScheduleFrame extends JPanel implements ActionListener{
     

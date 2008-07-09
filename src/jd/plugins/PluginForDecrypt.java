@@ -21,11 +21,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import jd.parser.Regex;
-
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**

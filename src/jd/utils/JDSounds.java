@@ -23,11 +23,10 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.parser.Regex;
-
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.JDFileFilter;
+import jd.parser.Regex;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern

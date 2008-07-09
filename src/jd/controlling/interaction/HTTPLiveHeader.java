@@ -42,6 +42,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.RequestInfo;
@@ -54,8 +55,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import jd.parser.Regex;
 
 import sun.misc.BASE64Encoder;
 

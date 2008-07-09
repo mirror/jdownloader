@@ -1,11 +1,22 @@
 package jd.plugins.optional.schedule;
 
+import java.awt.Choice;
 import java.awt.FlowLayout;
-import java.awt.event.*;
-import java.awt.*;
-import javax.swing.*;
-import jd.utils.JDLocale;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Vector;
+
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.Timer;
+
+import jd.utils.JDLocale;
 
 public class ScheduleControl extends JDialog implements ActionListener {
     

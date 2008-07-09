@@ -20,12 +20,11 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.Serializable;
 
-import jd.parser.Regex;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

@@ -21,6 +21,7 @@ import java.util.Vector;
 
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.plugins.event.PluginEvent;
 
 /**
  * Diese Klasse

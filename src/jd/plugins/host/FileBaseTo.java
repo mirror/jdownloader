@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;

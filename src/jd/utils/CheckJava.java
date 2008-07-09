@@ -15,9 +15,9 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.parser.Regex;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.parser.Regex;
 
 public class CheckJava {
     public boolean check() {

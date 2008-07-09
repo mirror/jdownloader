@@ -42,8 +42,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import org.jdesktop.swingx.JXPanel;
-import org.jdesktop.swingx.JXTitledSeparator;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
@@ -53,6 +51,9 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import org.jdesktop.swingx.JXPanel;
+import org.jdesktop.swingx.JXTitledSeparator;
 
 /**
  * Diese Klasse ist das Hauptfemster der Konfiguration. Sie verwaltet die
