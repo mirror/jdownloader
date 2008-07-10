@@ -30,7 +30,7 @@ public class FileUploadnet extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Wordpress Parser";
+        return "File-Upload.net Parser";
     }
 
     @Override
@@ -55,6 +55,7 @@ public class FileUploadnet extends PluginForDecrypt {
             String user = new Regex(parameter, "upload\\.net/(.*?)/").getFirstMatch();
             String file = new Regex(parameter, user + "/(.*)").getFirstMatch();
             String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
+            link.replaceAll(" ","%20");
             decryptedLinks.add(this.createDownloadlink(link));
             step.setParameter(decryptedLinks);
         }
