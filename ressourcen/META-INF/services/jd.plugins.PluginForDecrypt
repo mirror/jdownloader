@@ -24,6 +24,7 @@ jd.plugins.decrypt.Filer
 jd.plugins.decrypt.FileUploadnet
 jd.plugins.decrypt.FrozenRomsIn
 jd.plugins.decrypt.FTI6xto
+jd.plugins.decrypt.Fyadorg
 jd.plugins.decrypt.ftp2share
 jd.plugins.decrypt.GappingOrg
 jd.plugins.decrypt.Gwarezcc
