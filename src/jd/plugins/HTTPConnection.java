@@ -109,7 +109,11 @@ public class HTTPConnection {
     }
 
     public InputStream getInputStream() throws IOException {
-        return connection.getInputStream();
+        if (connection.getResponseCode() != 404) {
+            return connection.getInputStream();
+        } else {            
+            return connection.getErrorStream();
+        }
     }
 
     public URL getURL() {
@@ -147,8 +151,9 @@ public class HTTPConnection {
         wr.close();
 
     }
+
     public void post(byte[] parameter) throws IOException {
-        BufferedOutputStream wr =  new BufferedOutputStream(connection.getOutputStream());
+        BufferedOutputStream wr = new BufferedOutputStream(connection.getOutputStream());
         if (parameter != null) wr.write(parameter);
 
         this.postData = "binary";
@@ -156,6 +161,7 @@ public class HTTPConnection {
         wr.close();
 
     }
+
     public void postGzip(String parameter) throws IOException {
 
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
