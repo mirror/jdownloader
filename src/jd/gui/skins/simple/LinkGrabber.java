@@ -200,22 +200,25 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private void initGUI() {
         buildMenu();
-        tabbedPane = new JTabbedPane();
+
         sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
+        sortPackages.addActionListener(this);
         acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
+        acceptAll.addActionListener(this);
         accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "Paket übernehmen"));
-        progress = new JProgressBar();
+        accept.addActionListener(this);
         insertAtPosition = new JComboBox(new String[] { JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende") });
         insertAtPosition.setSelectedIndex(guiConfig.getIntegerProperty(PROPERTY_POSITION, 1));
+        insertAtPosition.addActionListener(this);
+
+        progress = new JProgressBar();
         progress.setBorder(BorderFactory.createEtchedBorder());
         progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
         progress.setStringPainted(true);
-        acceptAll.addActionListener(this);
-        accept.addActionListener(this);
-        insertAtPosition.addActionListener(this);
-        sortPackages.addActionListener(this);
-        tabbedPane.addChangeListener(this);
 
+        tabbedPane = new JTabbedPane();
+        tabbedPane.addChangeListener(this);
+        tabbedPane.addMouseListener(this);
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         tabbedPane.setTabPlacement(JTabbedPane.LEFT);
@@ -223,7 +226,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             logger.finer("OS: " + System.getProperty("os.name") + " SET TABS ON TOP");
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
         }
-        tabbedPane.addMouseListener(this);
         new DropTarget(tabbedPane, this);
 
         this.setName("LINKGRABBER");
@@ -244,7 +246,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(5, 20));
         bpanel.add(separator);
-
         bpanel.add(acceptAll);
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
@@ -286,32 +287,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
         mAutoPackage.addActionListener(this);
         menu.add(mAutoPackage);
-        menu.addSeparator();
-        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection", "Host Auswahl"));
-        menu.add(submenu);
-        mHostSelectionPackageOnly = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly", "Nur aktuelles Paket"));
-        mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, false));
-        mHostSelectionPackageOnly.addActionListener(this);
-        submenu.add(mHostSelectionPackageOnly);
-        mHostSelectionRemove = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove", "Restliche Links verwerfen"));
-        mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
-        mHostSelectionRemove.addActionListener(this);
-        submenu.add(mHostSelectionRemove);
-        submenu.addSeparator();
-        submenu.addSeparator();
-        Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
-        mHostSelection = new JMenuItem[hosts.size()];
-        for (int i = 0; i < hosts.size(); ++i) {
-            if ((i > 0) &&(i % 10 == 0)) {
-                submenu.addSeparator();
-                subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menuHostSelectionMore", "Weitere Hoster"));
-                submenu.add(subsubmenu);
-                submenu = subsubmenu;
-            }
-            mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
-            mHostSelection[i].addActionListener(this);
-            submenu.add(mHostSelection[i]);
-        }
 
         // Edit Menü
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
@@ -342,20 +317,48 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection", "Auswahl"));
         menuBar.add(menu);
 
-        mPremiumMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premiummirror", "Premium Mirrorauswahl"));
-        menu.add(mPremiumMirror);
-        mFreeMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.freemirror", "Free Mirrorauswahl"));
-        menu.add(mFreeMirror);
-        mPriorityMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.prioritymirror", "Priorität Mirrorauswahl"));
-        menu.add(mPriorityMirror);
-        mPremiumMirror.addActionListener(this);
-        mFreeMirror.addActionListener(this);
-        mPriorityMirror.addActionListener(this);
+        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection.mirror", "Mirrorauswahl"));
+        menu.add(submenu);
+        mPremiumMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premium", "Premium"));
         mPremiumMirror.setEnabled(true);
+        mPremiumMirror.addActionListener(this);
+        submenu.add(mPremiumMirror);
+        mFreeMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.free", "Free"));
         mFreeMirror.setEnabled(true);
+        mFreeMirror.addActionListener(this);
+        submenu.add(mFreeMirror);
+        mPriorityMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.priority", "Priority"));
         mPriorityMirror.setEnabled(true);
+        mPriorityMirror.addActionListener(this);
+        submenu.add(mPriorityMirror);
+        menu.addSeparator();
+        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection", "Host Auswahl"));
+        menu.add(submenu);
+        mHostSelectionPackageOnly = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly", "Nur aktuelles Paket"));
+        mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, false));
+        mHostSelectionPackageOnly.addActionListener(this);
+        submenu.add(mHostSelectionPackageOnly);
+        mHostSelectionRemove = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove", "Restliche Links verwerfen"));
+        mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
+        mHostSelectionRemove.addActionListener(this);
+        submenu.add(mHostSelectionRemove);
+        submenu.addSeparator();
+        submenu.addSeparator();
+        Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
+        mHostSelection = new JMenuItem[hosts.size()];
+        for (int i = 0; i < hosts.size(); ++i) {
+            if ((i > 0) &&(i % 10 == 0)) {
+                submenu.addSeparator();
+                subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menuHostSelectionMore", "Weitere Hoster"));
+                submenu.add(subsubmenu);
+                submenu = subsubmenu;
+            }
+            mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
+            mHostSelection[i].addActionListener(this);
+            submenu.add(mHostSelection[i]);
+        }
+        
         this.setJMenuBar(menuBar);
-
     }
 
     public int getTotalLinkCount() {
