@@ -143,6 +143,8 @@ public class ClipboardHandler extends Thread {
                         String data = (String) clipboard.getData(flavors[i]);
 
                         data = data.trim();
+                        
+                        if(olddata==null)  olddata = data;
                         if (!data.equals(olddata)) {
                             olddata = data;
 

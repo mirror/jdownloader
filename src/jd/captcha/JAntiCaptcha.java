@@ -1980,7 +1980,7 @@ if(ret==null){
      * @param file
      */
     public static void testMethod(File file) {
-        int checkCaptchas = 10;
+        int checkCaptchas = 20;
         String code;
         String inputCode;
         int totalLetters = 0;

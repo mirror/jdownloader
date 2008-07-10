@@ -309,7 +309,7 @@ public class JDController implements ControlListener, UIListener {
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-
+if(uiInterface==null)return;
             // logger.info("rvc event" + links);
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
