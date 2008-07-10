@@ -41,6 +41,7 @@ jd.plugins.decrypt.MediafireFolder
 jd.plugins.decrypt.MirrorItDe
 jd.plugins.decrypt.MovieloadTo
 jd.plugins.decrypt.MyRef
+jd.plugins.decrypt.Myupcc
 jd.plugins.decrypt.NetfolderIn
 jd.plugins.decrypt.NewzFindCom
 #jd.plugins.decrypt.NixPopOrg
