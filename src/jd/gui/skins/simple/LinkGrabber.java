@@ -346,16 +346,23 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         submenu.addSeparator();
         Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
         mHostSelection = new JMenuItem[hosts.size()];
+        subsubmenu = null;
         for (int i = 0; i < hosts.size(); ++i) {
-            if ((i > 0) &&(i % 10 == 0)) {
-                submenu.addSeparator();
-                subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menuHostSelectionMore", "Weitere Hoster"));
-                submenu.add(subsubmenu);
-                submenu = subsubmenu;
+            if (i % 10 == 0) {
+                if (hosts.size() - i > 10) {
+                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menuHostSelectionMore", "Weitere Hoster"));
+                    submenu.add(subsubmenu);
+                    submenu.addSeparator();
+                } else {
+                    subsubmenu = null;
+                }
             }
             mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
             mHostSelection[i].addActionListener(this);
             submenu.add(mHostSelection[i]);
+            if ((subsubmenu != null) && (i % 10 == 9)) {
+                submenu = subsubmenu;
+            }
         }
         
         this.setJMenuBar(menuBar);
