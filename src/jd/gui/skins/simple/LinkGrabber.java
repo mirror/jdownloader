@@ -1,5 +1,3 @@
-
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -156,13 +154,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JMenuItem mMerge;
 
+    private JMenuItem mSplitByHost;
+
     private JMenuItem mRemoveOfflineAll;
 
     private JButton sortPackages;
-    
-    private JComboBox addAtPosition;
 
-    private ArrayList<DownloadLink> totalLinkList= new ArrayList<DownloadLink>();
+    private JComboBox insertAtPosition;
+
+    private ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
 
     /**
      * @param parent
@@ -190,22 +190,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void initGUI() {
-//        setLayout(new GridBagLayout());
+        // setLayout(new GridBagLayout());
         buildMenu();
         this.tabbedPane = new JTabbedPane();
         this.sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         this.acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
         this.accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "package übernehmen"));
         this.progress = new JProgressBar();
-        String[] positions = {JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende")};
-        this.addAtPosition = new JComboBox(positions);
-        addAtPosition.setSelectedIndex(guiConfig.getIntegerProperty("PROPERTY_POSITION", 1));
+        this.insertAtPosition = new JComboBox(new String[] { JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende") });
+        insertAtPosition.setSelectedIndex(guiConfig.getIntegerProperty("PROPERTY_POSITION", 1));
         progress.setBorder(BorderFactory.createEtchedBorder());
         progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
         progress.setStringPainted(true);
         acceptAll.addActionListener(this);
         accept.addActionListener(this);
-        addAtPosition.addActionListener(this);
+        insertAtPosition.addActionListener(this);
         sortPackages.addActionListener(this);
         tabbedPane.addChangeListener(this);
 
@@ -226,33 +225,38 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // th.exportAsDrag(c, e, TransferHandler.COPY);
         // }
         // });
-//        JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-//        JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-//
-//        JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
-//        JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
-//
-//        JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+        // JDUtilities.addToGridBag(this, tabbedPane, 0, 0, 4, 1, 1, 1, null,
+        // GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        // JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null,
+        // GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        //
+        // JDUtilities.addToGridBag(this, sortPackages, 0, 2, 1, 1, 0, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.SOUTHWEST);
+        // JDUtilities.addToGridBag(this, acceptAll, 2, 2, 1, 1, 1, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
+        //
+        // JDUtilities.addToGridBag(this, accept, 3, 2, 1, 1, 0, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.SOUTHEAST);
 
         this.setName("LINKGRABBER");
 
-//        LocationListener list = new LocationListener();
-//        this.addComponentListener(list);
-//        this.addWindowListener(list);
-        
+        // LocationListener list = new LocationListener();
+        // this.addComponentListener(list);
+        // this.addWindowListener(list);
+
         int n = 5;
-        JPanel panel = new JPanel(new BorderLayout(n,n));
-        panel.setBorder(new EmptyBorder(n,n,n,n));
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
         setContentPane(panel);
-        
-        JPanel inner = new JPanel(new BorderLayout(n,n));
-        
-        JPanel south = new JPanel(new BorderLayout(n,n));
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n,0));
-        
+
+        JPanel inner = new JPanel(new BorderLayout(n, n));
+
+        JPanel south = new JPanel(new BorderLayout(n, n));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
+
         south.add(sortPackages, BorderLayout.WEST);
-        bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.addAtPosition", "Einfügen an Position:")));
-        bpanel.add(addAtPosition);
+        bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.insertAtPosition", "Einfügen an Position:")));
+        bpanel.add(insertAtPosition);
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(5, 20));
         bpanel.add(separator);
@@ -260,25 +264,25 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         bpanel.add(acceptAll);
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
-        
+
         panel.add(inner, BorderLayout.CENTER);
         inner.add(tabbedPane, BorderLayout.CENTER);
         inner.add(progress, BorderLayout.SOUTH);
         panel.add(south, BorderLayout.SOUTH);
-        
+
         acceptAll.getRootPane().setDefaultButton(acceptAll);
 
-        setPreferredSize(new Dimension(640,480));
+        setPreferredSize(new Dimension(640, 480));
         setLocationRelativeTo(null);
         pack();
-        
+
         if (SimpleGUI.getLastDimension(this, null) != null) {
             this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
         }
         if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
             this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
         }
-        
+
         this.setVisible(true);
     }
 
@@ -317,14 +321,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
         menuBar.add(menu);
 
-        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "zu einem Paket zusammenwerfen"));
+        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "Zu einem Paket zusammenfassen"));
         mMerge.addActionListener(this);
         menu.add(mMerge);
+        mSplitByHost = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.splitByHost", "Pakete nach Host aufteilen"));
+        mSplitByHost.addActionListener(this);
+        menu.add(mSplitByHost);
         menu.addSeparator();
-        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Link entfernen(Paket)"));
+        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Links entfernen (Paket)"));
         mRemoveOffline.addActionListener(this);
         menu.add(mRemoveOffline);
-        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Link entfernen(Alle)"));
+        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Links entfernen (Alle)"));
         mRemoveOfflineAll.addActionListener(this);
         menu.add(mRemoveOfflineAll);
         menu.addSeparator();
@@ -369,10 +376,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public synchronized void addLinks(DownloadLink[] linkList) {
 
         for (int i = 0; i < linkList.length; i++) {
-            if(isDupe(linkList[i]))continue;
+            if (isDupe(linkList[i])) continue;
             this.totalLinkList.add(linkList[i]);
             if (linkList[i].isAvailabilityChecked()) {
-                attachLinkTopackage(linkList[i]);
+                attachLinkToPackage(linkList[i]);
             } else {
                 waitingLinkList.add(linkList[i]);
             }
@@ -381,30 +388,34 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             startLinkGatherer();
         }
     }
-private boolean isDupe(DownloadLink link){
-  //  http://anonym.to/?http://www.anonymz.com/?http://rapidshare.com/files/117903695/284.Das.Ende.der.Bauplaene.HD.720P.x264.by.M3lloW.part1.rar
-   
-//    if(link.getDownloadURL().equals("http://rapidshare.com/files/120989674/JCm.part1.rar")){
-//        logger.info(link.getDownloadURL()); 
-//    }
-    for(DownloadLink l:totalLinkList){
-//        String a=l.getDownloadURL();
-//        String b=link.getDownloadURL();
-        if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
-        
+
+    private boolean isDupe(DownloadLink link) {
+        //http://anonym.to/?http://www.anonymz.com/?http://rapidshare.com/files/
+        // 117903695/284.Das.Ende.der.Bauplaene.HD.720P.x264.by.M3lloW.part1.rar
+
+        // if(link.getDownloadURL().equals(
+        // "http://rapidshare.com/files/120989674/JCm.part1.rar")){
+        // logger.info(link.getDownloadURL());
+        // }
+        for (DownloadLink l : totalLinkList) {
+            // String a=l.getDownloadURL();
+            // String b=link.getDownloadURL();
+            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())) return true;
+
+        }
+
+        // for(PackageTab p:this.tabList){
+        // for( DownloadLink l:p.getLinkList()){
+        // if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return
+        // true;
+        // }
+        //        
+        // }
+        return false;
     }
-    
-//    for(PackageTab p:this.tabList){
-//        for( DownloadLink l:p.getLinkList()){
-//            if(l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()))return true;
-//        }
-//        
-//    }
-    return false;
-}
+
     private void startLinkGatherer() {
-        
-        
+
         progress.setMaximum(waitingLinkList.size());
         progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) return;
@@ -416,7 +427,7 @@ private boolean isDupe(DownloadLink link){
 
                     link = waitingLinkList.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
-                        attachLinkTopackage(link);
+                        attachLinkToPackage(link);
                         try {
                             Thread.sleep(5);
                         } catch (InterruptedException e) {
@@ -446,7 +457,7 @@ private boolean isDupe(DownloadLink link){
                         }
                         if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
-                            attachLinkTopackage(link);
+                            attachLinkToPackage(link);
 
                         }
                     }
@@ -516,7 +527,7 @@ private boolean isDupe(DownloadLink link){
         });
     }
 
-    private void attachLinkTopackage(DownloadLink link) {
+    private void attachLinkToPackage(DownloadLink link) {
         String packageName;
         boolean autoPackage = false;
         if (link.getFilePackage() != JDUtilities.getController().getDefaultFilePackage()) {
@@ -529,14 +540,12 @@ private boolean isDupe(DownloadLink link){
             // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
             if (lastIndex < 0) {
-
                 addTab().setPackageName(packageName);
-
             }
             lastIndex = tabList.size() - 1;
-            addLinkstoTab(new DownloadLink[] { link }, lastIndex);
-            String newpackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
-            tabList.get(lastIndex).setPackageName(newpackageName);
+            addLinksToTab(new DownloadLink[] { link }, lastIndex);
+            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
+            tabList.get(lastIndex).setPackageName(newPackageName);
             onPackageNameChanged(tabList.get(lastIndex));
 
         } else {
@@ -546,7 +555,7 @@ private boolean isDupe(DownloadLink link){
             // logger.info("link: " + link.getName());
             for (int i = 0; i < tabList.size(); i++) {
 
-                int sim = comparepackages(tabList.get(i).getPackageName(), packageName);
+                int sim = comparePackages(tabList.get(i).getPackageName(), packageName);
                 if (sim > bestSim) {
                     bestSim = sim;
                     bestIndex = i;
@@ -555,15 +564,15 @@ private boolean isDupe(DownloadLink link){
             // logger.info("Best sym: "+bestSim);
             if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
 
-                addLinkstoTab(new DownloadLink[] { link }, tabList.size());
+                addLinksToTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(packageName);
             } else {
                 // logger.info("Found package " +
                 // tabList.get(bestIndex).getpackageName());
-                String newpackageName = autoPackage ? getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
-                tabList.get(bestIndex).setPackageName(newpackageName);
+                String newPackageName = autoPackage ? getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
+                tabList.get(bestIndex).setPackageName(newPackageName);
                 onPackageNameChanged(tabList.get(bestIndex));
-                addLinkstoTab(new DownloadLink[] { link }, bestIndex);
+                addLinksToTab(new DownloadLink[] { link }, bestIndex);
 
             }
 
@@ -592,7 +601,7 @@ private boolean isDupe(DownloadLink link){
 
     }
 
-    private int comparepackages(String a, String b) {
+    private int comparePackages(String a, String b) {
 
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
@@ -617,13 +626,12 @@ private boolean isDupe(DownloadLink link){
         }
         return ret;
     }
-    
-    private void setTitle()
-    {
-    	setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+
+    private void setTitle() {
+        setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
     }
 
-    public void addLinkstoTab(DownloadLink[] linkList, int id) {
+    public void addLinksToTab(DownloadLink[] linkList, int id) {
 
         PackageTab tab;
         // logger.info(id + " - " + tabList.size());
@@ -649,7 +657,7 @@ private boolean isDupe(DownloadLink link){
 
     protected void removePackage(PackageTab tab) {
         removePackageAt(tabList.indexOf(tab));
-        
+
         totalLinkList.removeAll(tab.getLinkList());
     }
 
@@ -668,14 +676,11 @@ private boolean isDupe(DownloadLink link){
                 tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
                 return;
             }
-
         }
-
     }
 
     private PackageTab addTab() {
-        PackageTab tab;
-        tab = new PackageTab();
+        PackageTab tab = new PackageTab();
         tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
         this.tabList.add(tab);
         tabbedPane.addTab(tab.getPackageName(), tab);
@@ -685,9 +690,7 @@ private boolean isDupe(DownloadLink link){
     }
 
     protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) {
-            return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
-        }
+        if (!link.isAvailabilityChecked()) { return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText(); }
         return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
     }
 
@@ -756,7 +759,6 @@ private boolean isDupe(DownloadLink link){
 
             }
             getSelectedTab().setLinkList(finalList);
-
         } else if (e.getSource() == this.mPriorityMirror) {
             Vector<DownloadLink> finalList = new Vector<DownloadLink>();
             Vector<Vector<DownloadLink>> files = getSelectedTab().getMirrors();
@@ -791,9 +793,7 @@ private boolean isDupe(DownloadLink link){
             Vector<DownloadLink> newList = new Vector<DownloadLink>();
             while (iterator.hasNext()) {
                 tab = iterator.next();
-                Vector<DownloadLink> list = tab.getLinkList();
-                newList.addAll(list);
-
+                newList.addAll(tab.getLinkList());
             }
             while (tabList.size() > 1) {
                 this.removePackageAt(0);
@@ -803,46 +803,64 @@ private boolean isDupe(DownloadLink link){
                 tabList.get(0).setPackageName(name);
                 onPackageNameChanged(tabList.get(0));
             }
-
-        } else if (e.getSource() == this.mRemoveOfflineAll) {
+        } else if (e.getSource() == this.mSplitByHost) {
+            Vector<PackageTab> newTabList = new Vector<PackageTab>();
             PackageTab tab;
+
+            removeEmptyPackages();
+            while (!tabList.isEmpty()) {
+                String curHost = tabList.get(0).getLinkAt(0).getHost();
+                newTabList.add(tab = new PackageTab());
+                tab.setPackageName(curHost);
+
+                Vector<DownloadLink> links = new Vector<DownloadLink>();
+                for (int i = tabList.size() - 1; i >= 0; --i) {
+                    PackageTab curTab = tabList.get(i);
+                    for (int j = curTab.getLinkList().size() - 1; j >= 0; --j) {
+                        if (curTab.getLinkAt(j).getHost().compareTo(curHost) == 0) {
+                            // Link aus dem alten Package entfernen und Passwort/Kommentar vom Package holen
+                            DownloadLink link = curTab.removeLinkAt(j);
+                            link.setSourcePluginComment(curTab.getComment());
+                            String[] pws = JUnrar.getPasswordArray(curTab.getPassword());
+                            for (int k = 0; k < pws.length; ++k) {
+                                link.addSourcePluginPassword(pws[k]);
+                            }
+                            links.add(link);
+                        }
+                    }
+                    if (curTab.isEmpty()) this.removePackageAt(i);
+                }
+
+                // Vector ins Array kopieren und zum neuen Package hinzufuegen
+                DownloadLink[] links2 = new DownloadLink[links.size()];
+                links.copyInto(links2);
+                tab.addLinks(links2);
+            }
+
+            // Neue Tabliste setzen und alle Tabs zum TabbedPane hinzufuegen
+            tabList = newTabList;
+            for (int i = 0; i < tabList.size(); ++i) {
+                tab = tabList.get(i);
+                tabbedPane.addTab(tab.getPackageName(), tab);
+            }
+        } else if (e.getSource() == this.mRemoveOfflineAll) {
             Iterator<PackageTab> iterator = tabList.iterator();
             while (iterator.hasNext()) {
-                tab = iterator.next();
-                Vector<DownloadLink> list = tab.getLinkList();
-                for (int i = list.size() - 1; i >= 0; i--) {
-                    if (!list.get(i).isAvailable()) {
-                        tab.removeLinkAt(i);
-                    }
-                }
-                this.onPackageNameChanged(tab);
+                removeOfflineLinks(iterator.next());
             }
         } else if (e.getSource() == this.mRemoveOffline) {
-            PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
-            Vector<DownloadLink> list = tab.getLinkList();
-            for (int i = list.size() - 1; i >= 0; --i) {
-                if (!list.get(i).isAvailable()) {
-                    totalLinkList.remove( tab.removeLinkAt(i));
-                }
-            }
-            this.onPackageNameChanged(tab);
+            removeOfflineLinks(tabList.get(tabbedPane.getSelectedIndex()));
         } else if (e.getSource() == this.mRemoveEmptyPackages) {
-            for (int i = tabList.size() - 1; i >= 0; --i) {
-                PackageTab tab = tabList.get(i);
-                if (tab.isEmpty()) {
-                    this.removePackage(tab);
-                }
-            }
+            removeEmptyPackages();
             this.emptyCheck();
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
-            int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.x, (int) loc.getY());
+            int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.getX(), (int) loc.getY());
             this.removePackageAt(destID);
-            this.emptyCheck();
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
             addTab();
-        } else if (e.getSource() == this.addAtPosition) {
-            guiConfig.setProperty("PROPERTY_POSITION", addAtPosition.getSelectedIndex());
+        } else if (e.getSource() == this.insertAtPosition) {
+            guiConfig.setProperty("PROPERTY_POSITION", insertAtPosition.getSelectedIndex());
             JDUtilities.saveConfig();
             return;
         }
@@ -861,6 +879,25 @@ private boolean isDupe(DownloadLink link){
         }
     }
 
+    private void removeOfflineLinks(PackageTab tab) {
+        Vector<DownloadLink> list = tab.getLinkList();
+        for (int i = list.size() - 1; i >= 0; --i) {
+            if (!list.get(i).isAvailable()) {
+                totalLinkList.remove(tab.removeLinkAt(i));
+            }
+        }
+        this.onPackageNameChanged(tab);
+    }
+
+    private void removeEmptyPackages() {
+        for (int i = tabList.size() - 1; i >= 0; --i) {
+            PackageTab tab = tabList.get(i);
+            if (tab.isEmpty()) {
+                this.removePackage(tab);
+            }
+        }
+    }
+
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
 
         Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
@@ -870,8 +907,8 @@ private boolean isDupe(DownloadLink link){
             // boolean ch = false;
             for (int c = 0; c < mirrors.size(); c++) {
                 DownloadLink mirror = mirrors.get(c);
-                if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) { return mirror;
-
+                if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) {
+                    return mirror;
                 }
             }
         }
@@ -880,8 +917,8 @@ private boolean isDupe(DownloadLink link){
     }
 
     private void confirmAll() {
-        for (int tt = 0; tt < tabList.size(); tt++) {
-            confirmPackage(tt);
+        for (int i = 0; i < tabList.size(); i++) {
+            confirmPackage(i);
         }
     }
 
@@ -965,7 +1002,7 @@ private boolean isDupe(DownloadLink link){
                     for (int i = 0; i < lines.length; i++) {
                         int id = lines[i].indexOf("\t");
                         if (id <= 0) continue;
-                        id = Integer.parseInt(lines[i].substring(0, id))-1;
+                        id = Integer.parseInt(lines[i].substring(0, id)) - 1;
                         // DownloadLink link = source.removeLinkAt(id);
                         move.add(source.getLinkAt(id));
 
@@ -1017,7 +1054,6 @@ private boolean isDupe(DownloadLink link){
     }
 
     public void keyPressed(KeyEvent e) {
-
     }
 
     public void keyReleased(KeyEvent e) {
@@ -1052,7 +1088,7 @@ private boolean isDupe(DownloadLink link){
 
         private JTextField txtComment;
 
-        private ComboBrowseFile brwSaveto;
+        private ComboBrowseFile brwSaveTo;
 
         private JTable table;
 
@@ -1133,7 +1169,6 @@ private boolean isDupe(DownloadLink link){
         }
 
         public String getPackageName() {
-
             return txtName.getText().trim();
         }
 
@@ -1142,16 +1177,14 @@ private boolean isDupe(DownloadLink link){
         }
 
         public String getDownloadDirectory() {
-
-            return this.brwSaveto.getText();
+            return this.brwSaveTo.getText();
         }
 
         public void setDownloadDirectory(String dir) {
-            brwSaveto.setText(dir);
+            brwSaveTo.setText(dir);
         }
 
         public String getPassword() {
-
             return this.txtPassword.getText();
         }
 
@@ -1160,7 +1193,6 @@ private boolean isDupe(DownloadLink link){
         }
 
         public String getComment() {
-
             return this.txtComment.getText();
         }
 
@@ -1219,25 +1251,22 @@ private boolean isDupe(DownloadLink link){
             Vector<String> pwList = new Vector<String>();
             for (int i = 0; i < pws.length; i++) {
                 pwList.add(pws[i]);
-
             }
-         
+
             for (int i = 0; i < list.length; i++) {
                 linkList.add(list[i]);
-                String pass = list[i].getSourcePluginPassword();
 
-                pws = JUnrar.getPasswordArray(pass);
-
+                pws = JUnrar.getPasswordArray(list[i].getSourcePluginPassword());
                 for (int i2 = 0; i2 < pws.length; i2++) {
                     if (pwList.indexOf(pws[i2]) < 0) {
                         pwList.add(pws[i2]);
                     }
                 }
 
-                if (list[i].getSourcePluginComment() != null && comment.indexOf(list[i].getSourcePluginComment()) < 0) {
-                    comment += "|" + list[i].getSourcePluginComment();
+                String newComment = list[i].getSourcePluginComment();
+                if (newComment != null && comment.indexOf(newComment) < 0) {
+                    comment += "|" + newComment;
                 }
-
             }
 
             if (comment.startsWith("|")) comment = comment.substring(1);
@@ -1248,7 +1277,6 @@ private boolean isDupe(DownloadLink link){
             if (!txtPassword.hasFocus()) txtPassword.setText(pw);
             refreshTable();
             sortOn();
-
         }
 
         private void refreshTable() {
@@ -1273,20 +1301,21 @@ private boolean isDupe(DownloadLink link){
             this.txtPassword = new JTextField();
             this.txtComment = new JTextField();
 
-            this.brwSaveto = new ComboBrowseFile("DownloadSaveTo");
-            brwSaveto.setEditable(true);
-            brwSaveto.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-            brwSaveto.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-            // bfSubFolder.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
+            this.brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
+            brwSaveTo.setEditable(true);
+            brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+            brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+            // bfSubFolder.setText(JDUtilities.getConfiguration().
+            // getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
 
             txtName.setPreferredSize(new Dimension(450, 20));
             txtPassword.setPreferredSize(new Dimension(450, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));
-            brwSaveto.setPreferredSize(new Dimension(450, 20));
+            brwSaveTo.setPreferredSize(new Dimension(450, 20));
             txtName.setMinimumSize(new Dimension(250, 20));
             txtPassword.setMinimumSize(new Dimension(250, 20));
             txtComment.setMinimumSize(new Dimension(250, 20));
-            brwSaveto.setMinimumSize(new Dimension(250, 20));
+            brwSaveTo.setMinimumSize(new Dimension(250, 20));
 
             PlainDocument doc = (PlainDocument) txtName.getDocument();
             doc.addDocumentListener(new DocumentListener() {
@@ -1352,42 +1381,53 @@ private boolean isDupe(DownloadLink link){
 
                 }
             }
-//            JDUtilities.addToGridBag(this, lblName, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, txtName, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//            JDUtilities.addToGridBag(this, lblSaveto, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, brwSaveto, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//            JDUtilities.addToGridBag(this, lblPassword, REL, REL, REL, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, txtPassword, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//            JDUtilities.addToGridBag(this, lblComment, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            JDUtilities.addToGridBag(this, txtComment, REL, REL, REM, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-//
-//            JDUtilities.addToGridBag(this, new JSeparator(), REL, REL, REM, 1, 1, 0, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH, GridBagConstraints.WEST);
-//            JScrollPane scrollpane = new JScrollPane(table);
-//            scrollpane.setPreferredSize(new Dimension(400, 200));
-//            JDUtilities.addToGridBag(this, scrollpane, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, lblName, REL, REL, REL, 1, 0, 0,
+            // null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, txtName, REL, REL, REM, 1, 0, 0,
+            // null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            // JDUtilities.addToGridBag(this, lblSaveto, REL, REL, REL, 1, 0, 0,
+            // null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, brwSaveto, REL, REL, REM, 1, 0, 0,
+            // null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            // JDUtilities.addToGridBag(this, lblPassword, REL, REL, REL, 1, 0,
+            // 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, txtPassword, REL, REL, REM, 1, 0,
+            // 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            // JDUtilities.addToGridBag(this, lblComment, REL, REL, REM, 1, 0,
+            // 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // JDUtilities.addToGridBag(this, txtComment, REL, REL, REM, 1, 1,
+            // 0, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            //
+            // JDUtilities.addToGridBag(this, new JSeparator(), REL, REL, REM,
+            // 1, 1, 0, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH,
+            // GridBagConstraints.WEST);
+            // JScrollPane scrollpane = new JScrollPane(table);
+            // scrollpane.setPreferredSize(new Dimension(400, 200));
+            // JDUtilities.addToGridBag(this, scrollpane, REL, REL, REM, 1, 1,
+            // 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
             int n = 10;
-            JPanel north = new JPanel(new BorderLayout(n,n));
-            JPanel east = new JPanel(new GridLayout(0,1,n/2,n/2));
-            JPanel center = new JPanel(new GridLayout(0,1,n/2,n/2));
+            JPanel north = new JPanel(new BorderLayout(n, n));
+            JPanel east = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            JPanel center = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
             north.add(east, BorderLayout.WEST);
             north.add(center, BorderLayout.CENTER);
-            
+
             east.add(lblName);
             east.add(lblSaveto);
             east.add(lblPassword);
             east.add(lblComment);
-            
+
             center.add(txtName);
-            center.add(brwSaveto);
+            center.add(brwSaveTo);
             center.add(txtPassword);
             center.add(txtComment);
-            
-            setLayout(new BorderLayout(n,n));
-            setBorder(new EmptyBorder(n,n,n,n));
+
+            setLayout(new BorderLayout(n, n));
+            setBorder(new EmptyBorder(n, n, n, n));
             add(north, BorderLayout.NORTH);
             add(new JScrollPane(table), BorderLayout.CENTER);
-            
+
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -1430,7 +1470,9 @@ private boolean isDupe(DownloadLink link){
                 for (int i = 0; i < rows.length; i++) {
 
                     ret.add(rows[i]);// table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(rows[i]));// table.convertRowIndexToModel(rows[i])));
+                    list.add(linkList.get(rows[i]));// table.
+                                                    // convertRowIndexToModel
+                                                    // (rows[i])));
 
                 }
 
@@ -1444,7 +1486,9 @@ private boolean isDupe(DownloadLink link){
                 for (int i = 0; i < rows.length; i++) {
 
                     ret.add(rows[i]);// table.convertRowIndexToModel(rows[i]));
-                    list.add(linkList.get(rows[i]));// table.convertRowIndexToModel(rows[i])));
+                    list.add(linkList.get(rows[i]));// table.
+                                                    // convertRowIndexToModel
+                                                    // (rows[i])));
 
                 }
 
@@ -1486,7 +1530,7 @@ private boolean isDupe(DownloadLink link){
 
                 switch (columnIndex) {
                 case 0:
-                    return rowIndex+1;
+                    return rowIndex + 1;
                 case 1:
                     return linkList.get(rowIndex).getHost();
                 case 2:
@@ -1560,10 +1604,10 @@ private boolean isDupe(DownloadLink link){
                 int[] rows = table.getSelectedRows();
                 for (int i = rows.length - 1; i >= 0; i--) {
                     int id = rows[i];// table.convertRowIndexToModel(rows[i]);
-                   
-                    totalLinkList.remove( this.linkList.remove(id));
+
+                    totalLinkList.remove(this.linkList.remove(id));
                 }
-                this.refreshTable();                
+                this.refreshTable();
             }
         }
 
@@ -1648,4 +1692,3 @@ private boolean isDupe(DownloadLink link){
     }
 
 }
-              
