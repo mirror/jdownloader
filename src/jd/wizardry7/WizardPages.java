@@ -10,7 +10,9 @@ import jd.wizardry7.view.DefaultFooter;
 import jd.wizardry7.view.DefaultHeader;
 import jd.wizardry7.view.DefaultWizardPage;
 import jd.wizardry7.view.pages.CheckAGB;
+import jd.wizardry7.view.pages.DownloadFolder;
 import jd.wizardry7.view.pages.Finished;
+import jd.wizardry7.view.pages.Reconnect;
 import jd.wizardry7.view.pages.Welcome;
 
 
@@ -28,6 +30,8 @@ public class WizardPages {
 		DefaultWizardPage[] wizardPages = new DefaultWizardPage[]{
 				Welcome.getInstance(),
 				CheckAGB.getInstance(),
+//				DownloadFolder.getInstance(),
+				Reconnect.getInstance(),
 				Finished.getInstance(),
 		};
 		
@@ -38,17 +42,28 @@ public class WizardPages {
 		step++;
 		headerIcon = getImageIcon("res/userinfo.jpg");
 		Welcome.getInstance().setHeader(new DefaultHeader("Welcome", "The JDownloader Wizard allows you to easily get started.", headerIcon, step, of));
-		Welcome.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, null, getNextButton(), null, null));
+		Welcome.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, null, getNextButton(), null, getCancelButton()));
 		
-		step++;
-		headerIcon = getImageIcon("res/agb.jpg");
-		CheckAGB.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
-		CheckAGB.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, new JButton[]{getCancelButton()}));
+        step++;
+        headerIcon = getImageIcon("res/agb.jpg");
+        CheckAGB.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
+        CheckAGB.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
 
+//        step++;
+//        headerIcon = getImageIcon("res/agb.jpg");
+//        DownloadFolder.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
+//        DownloadFolder.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
+
+        step++;
+        headerIcon = getImageIcon("res/agb.jpg");
+        Reconnect.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
+        Reconnect.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
+
+        
 		step++;
 		headerIcon = getImageIcon("res/agb.jpg");
 		Finished.getInstance().setHeader(new DefaultHeader("Congratulations!", "With these Settings JDownloader should run smoothly.", headerIcon, step, of));
-		Finished.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getFinishButton(), null, null));
+		Finished.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), null, null, getFinishButton()));
 
 		return wizardPages;
 	}
@@ -60,7 +75,7 @@ public class WizardPages {
 	
 	
 	private static JButton getAboutButton() {
-	    return getButton("About", "Visit the JDownloader Website", aboutIcon, WizardController.finishedAction);
+	    return getButton("About", "Visit the JDownloader Website", aboutIcon, WizardController.helpAction);
 	}
 	
 	private static JButton getBackButton() {

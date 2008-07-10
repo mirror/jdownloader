@@ -11,7 +11,7 @@ public class DefaultFooter extends JPanel {
 	
 	public static JPanel createFooter(JButton[] leftAlignedButtons,
 			JButton back, JButton next, JButton overlayedFinish,
-			JButton[] rightAlignedButtons) {
+			JButton... rightAlignedButtons) {
 		
         FormLayout layout = new FormLayout("p:g", "");
 		DefaultFormBuilder builder = new DefaultFormBuilder(layout); //, new FormDebugPanel());

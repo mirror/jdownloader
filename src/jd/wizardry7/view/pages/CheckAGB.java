@@ -25,7 +25,6 @@ public class CheckAGB extends DefaultWizardPage {
 	
 	private CheckAGB() {
 		super();
-		setPreferredSize(new Dimension(500,600));
 	}
 	
 	JCheckBox checkbox;
@@ -34,7 +33,7 @@ public class CheckAGB extends DefaultWizardPage {
 	
 	protected void initComponents() {
 		checkbox = new JCheckBox();
-		checkbox.setText("I read and agree to the JDownloader AGBs");
+		checkbox.setText(" I have read and agree with the JDownloader AGBs");
 		rtfView = new RTFView(new File("res/agbs.rtf"));
 	}
 	

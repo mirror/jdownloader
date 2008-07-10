@@ -22,7 +22,6 @@ public class Welcome extends DefaultWizardPage {
 	
 	private Welcome() {
 		super();
-		setPreferredSize(new Dimension(500,600));
 	}
 	
     private JLabel label;

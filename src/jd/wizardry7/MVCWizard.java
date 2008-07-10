@@ -127,7 +127,7 @@ public class MVCWizard {
 		// Determines maxWidth/maxHeight
 		calculateMax_WizardPage_Dimension(currentWizardPages);
 		if (maxWidth > 400) maxWidth = 500;
-		wizardFrame.setPreferredSize(new Dimension(maxWidth, maxHeight));
+//		wizardFrame.setPreferredSize(new Dimension(Math.max(wizardFrame.getPreferredSize().width, maxWidth), Math.max(wizardFrame.getPreferredSize().height, maxHeight)));
 		wizardFrame.pack();
 		wizardFrame.setLocationRelativeTo(null);
 		
