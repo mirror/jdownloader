@@ -1,5 +1,5 @@
 <jDownloader>
-  <method name="JAntiCaptcha_share-online.biz" author="Coalado" />
-  <format type="gif" letterNum="3"/>
+  <method name="JAntiCaptcha_filefactory" author="Coalado" />
+  <format type="png" letterNum="3"/>
 
 </jDownloader>
