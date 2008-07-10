@@ -394,7 +394,7 @@ public class JDUtilities {
 			cons.insets = insets;
 		cons.ipadx = iPadX;
 		cons.ipady = iPadY;
-		cont.add(comp, cons);
+		cont.add(comp, cons); 
 	}
 
 	/**

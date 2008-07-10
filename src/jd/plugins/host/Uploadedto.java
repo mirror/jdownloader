@@ -521,7 +521,7 @@ public class Uploadedto extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-
+if(!newURL.startsWith("http")){newURL="http://uploaded.to"+newURL;}
                     requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
 
                     if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
@@ -616,6 +616,10 @@ public class Uploadedto extends PluginForHost {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 this.setStatusText("Error");
+                if(requestInfo.getConnection().getHeaderField("Location").contains("error_traffic_exceeded_free")){
+                    return true;
+                    
+                }
                 return false;
             } else {
                 if (requestInfo.getConnection().getHeaderField("Location") != null) {
