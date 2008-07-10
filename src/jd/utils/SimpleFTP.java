@@ -244,5 +244,16 @@ public class SimpleFTP {
         return false;
 
     }
+    
+    public boolean rename(String from, String to) throws IOException {
+        sendLine("RNFR "+from);
+        String response = readLine();
+        if(!response.startsWith("350"))return false;
+        sendLine("RNTO "+to);
+        response = readLine();
+        if(response.startsWith("250"))return true;
+        return false;
+
+    }
 
 }

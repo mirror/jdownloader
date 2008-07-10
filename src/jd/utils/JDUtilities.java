@@ -414,7 +414,7 @@ public class JDUtilities {
 	 *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
 	 * @param weightX
 	 *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-	 * @param weightY
+	 * @param weightY 
 	 *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
 	 * @param insets
 	 *            Abstände der Komponente

@@ -169,14 +169,14 @@ public class Megauploadcom extends PluginForHost {
                 e.printStackTrace();
             }
             
-            logger.info("New link: " + link);
+         
 
         }
 
         try {
             switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
-                logger.info("::" + new URL(link));
+                
                 requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
                 if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -256,8 +256,7 @@ public class Megauploadcom extends PluginForHost {
                 Character l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
                 String i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
                 String url = (JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5)));
-                logger.info(".." + url);
-                logger.info(requestInfo.getHtmlCode());
+           
                 try {
                     requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
                     if (!requestInfo.isOK()) {
@@ -318,7 +317,7 @@ public class Megauploadcom extends PluginForHost {
 
             link = link.replace(".com/", ".com/" + countryID + "/");
             url = url.replaceAll("/de/", "/" + countryID + "/");
-            logger.info("New link: " + link);
+        
 
         }
 

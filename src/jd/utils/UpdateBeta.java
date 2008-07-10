@@ -78,21 +78,23 @@ private void upload(String list){
         ftp.remove("updatemessage.html");
         logger.info("write updatemessage (changelog)");
         ftp.stor(new File(dir,"updatemessage.html"));
-        ftp.cwd("/httpdocs/dlcryptbeta/jars/");
-       
-        ftp.remove("JDownloader.jar");
-       
-        ftp.remove("JDownloaderContainer.jar");
-       
-        ftp.remove("JDownloaderPlugins.jar");
+        ftp.cwd("/httpdocs/dlcryptbeta/configs/");
+        ftp.remove("jdtc2o.php");
         
-        ftp.bin();
-        logger.info("write jar1");
-        ftp.stor(new File(dir,"JDownloader.jar"));
-        logger.info("write jar2");
-        ftp.stor(new File(dir,"JDownloaderContainer.jar"));
-        logger.info("write jar3");
-        ftp.stor(new File(dir,"JDownloaderPlugins.jar"));
+       if(! ftp.rename("/httpdocs/dlcryptbeta/configs/jdtc2.php","/httpdocs/dlcryptbeta/configs/jdtc2o.php")){
+           
+         logger.severe("rename to jdtc2o failed");
+       }
+       
+       StringBuffer sb= new StringBuffer();
+       sb.append("<?php\r\n");
+       sb.append("$jd='"+JDUtilities.getLocalHash(new File(dir,"JDownloader.jar"))+"';\r\n");
+       sb.append("$jdc='"+JDUtilities.getLocalHash(new File(dir,"JDownloaderContainer.jar"))+"';\r\n");
+       sb.append("$jdp='"+JDUtilities.getLocalHash(new File(dir,"JDownloaderPlugins.jar"))+"';\r\n");
+       sb.append("?>");
+       
+       JDUtilities.writeLocalFile(JDUtilities.getResourceFile("jdtc2.php"),sb+"");
+       ftp.stor(JDUtilities.getResourceFile("jdtc2.php"));
         
         // Quit from the FTP server.
         ftp.disconnect();
