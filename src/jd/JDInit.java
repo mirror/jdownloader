@@ -250,79 +250,43 @@ public class JDInit {
     @SuppressWarnings("unchecked")
     public Vector<PluginForDecrypt> loadPluginForDecrypt() {
         Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-        // try {
-        // splashScreen.setText("Load Plugins for Decrypt");
-        // splashScreen.increase();
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
+
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load PLugins");
+        logger.finer("Load Decrypt Plugins");
         Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-        // int c=0;
+
         while (iterator.hasNext()) {
             try {
                 PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-                // try {
-                //
-                // if(c++%2==0)
-                // {
-                // splashScreen.setText(p.getPluginName());
-                // splashScreen.increase();
-                // }
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
-                logger.info("Load " + p);
+                logger.finer("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
                 logger.info("caught");
                 e.printStackTrace();
-
             }
         }
         return plugins;
-
     }
 
     @SuppressWarnings("unchecked")
     public Vector<PluginForHost> loadPluginForHost() {
         Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-        // try {
-        // splashScreen.setText("Load Plugins for Host");
-        // splashScreen.increase();
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
+
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForHost.class, jdClassLoader);
-        // int c=0;
+        logger.finer("Load Host Plugins");
+        Iterator iterator = Service.providers(PluginForHost.class, jdClassLoader);
+
         while (iterator.hasNext()) {
             try {
-                PluginForHost next = (PluginForHost) iterator.next();
-                logger.finer("Load PLugins" + next);
-                // try {
-                // if(c++%2==0)
-                // {
-                // splashScreen.setText(next.getPluginName());
-                // splashScreen.increase();
-                // }
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
-                PluginForHost p = next;
-
+                PluginForHost p = (PluginForHost) iterator.next();
+                logger.finer("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
                 logger.info("caught");
                 e.printStackTrace();
-
             }
         }
         return plugins;
-
     }
 
     public void loadModules() {
@@ -338,33 +302,20 @@ public class JDInit {
         Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        Iterator iterator;
-        // try {
-        // splashScreen.setText("Load Container Plugins");
-        // splashScreen.increase();
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        logger.finer("Load PLugins");
-        iterator = Service.providers(PluginForContainer.class, jdClassLoader);
+        logger.finer("Load Container Plugins");
+        Iterator iterator = Service.providers(PluginForContainer.class, jdClassLoader);
+
         while (iterator.hasNext()) {
             try {
                 PluginForContainer p = (PluginForContainer) iterator.next();
-                // try {
-                // splashScreen.setText(p.getPluginName());
-                // splashScreen.increase();
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
+                logger.finer("Load " + p);
                 plugins.add(p);
             } catch (Exception e) {
                 e.printStackTrace();
                 logger.info("caught");
-
             }
         }
         return plugins;
-
     }
 
     @SuppressWarnings("unchecked")
