@@ -98,7 +98,7 @@ public class UploadServiceinfo extends PluginForHost {
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_RETRY);
+                    step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());

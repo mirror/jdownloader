@@ -793,7 +793,7 @@ public class Rapidshare extends PluginForHost {
                 logger.severe("Already downloading. Wait 2 min. or reconnect");
 
                 waitTime = 120 * 1000;
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_WAITTIME);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 // setDownloadLimitTime(waitTime);
 

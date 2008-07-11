@@ -1341,7 +1341,7 @@ public class JDUtilities {
 		}
 		return null;
 	}
-
+ 
 	/**
 	 * public static String getLocalHash(File f) Gibt einen MD% Hash der file
 	 * zurück

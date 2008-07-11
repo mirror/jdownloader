@@ -19,6 +19,7 @@ package jd;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -548,7 +549,14 @@ public class JDInit {
 
             public void run() {
                 ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
+                String[] jdus = JDUtilities.getResourceFile("packages").list(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        if (name.endsWith(".jdu")) return true;
+                       return false;
 
+                    }
+
+                });
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 
@@ -575,6 +583,7 @@ public class JDInit {
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
+            
                 cid = updater.getCid();
                 if (getCid() > 0 && getCid() != JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
@@ -586,26 +595,27 @@ public class JDInit {
                     return;
                 }
 
-                if (files == null) {
+                if (files == null&&jdus.length==0) {
                     logger.severe("Webupdater offline");
                     progress.finalize();
                     return;
                 }
-
+                if(files==null)files= new  Vector<Vector<String>>();
                 int org;
                 progress.setRange(org = files.size());
                 logger.finer("Files found: " + files);
 
                 logger.finer("init progressbar");
                 progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
-                if (files != null) {
+                if (files.size()>0||jdus.length>0) {
 
-                    progress.setStatus(org - files.size());
+                    progress.setStatus(org - (files.size()+jdus.length));
                     logger.finer("FIles to update: " + files);
-                    if (files.size() > 0) {
+                    logger.finer("JDUs to update: " + jdus.length);
+                    
                         createQueueBackup();
 
-                        logger.info("New Updates Available! " + files);
+                        
 
                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                             JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
@@ -616,7 +626,7 @@ public class JDInit {
                         } else {
 
                             try {
-                                JHelpDialog d = new JHelpDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + files.size() + " update(s) available. Start Webupdater now?" + "</font>");
+                                JHelpDialog d = new JHelpDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size()+jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
                                 d.getBtn3().setText("Cancel");
                                 d.getBtn1().setText("Show changes");
                                 d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
@@ -650,7 +660,7 @@ public class JDInit {
                                 e.printStackTrace();
                             }
 
-                        }
+                        
 
                     }
 

@@ -105,13 +105,13 @@ public class SpeedySharecom extends PluginForHost {
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_RETRY);
+                    step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
                 if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     downloadLink.setStatusText("Wrong Password");
-                    step.setStatus(PluginStep.STATUS_RETRY);
+                    step.setStatus(PluginStep.STATUS_ERROR);
                     step.setParameter("Wrong Password");
                     return step;
                 }

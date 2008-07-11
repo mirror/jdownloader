@@ -99,7 +99,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         link = links.elementAt(i);
                         if (!link.isEnabled()) continue;
                         // Link mit Wartezeit in der queue
-                        if (!link.isInProgress() && (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_STATIC_WAITTIME)) {
+                        if (!link.isInProgress() && (link.getStatus() == DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT || link.getStatus() == DownloadLink.STATUS_ERROR_WAITTIME)) {
                             if (link.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
                                 link.setStatus(DownloadLink.STATUS_TODO);

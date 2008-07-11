@@ -368,7 +368,7 @@ abstract public class DownloadInterface {
         }
 
         if (errors.contains(ERROR_COULD_NOT_RENAME)) {
-            plugin.getCurrentStep().setStatus(PluginStep.STATUS_RETRY);
+            plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
             return false;
         }
@@ -537,7 +537,19 @@ abstract public class DownloadInterface {
             }
 
             int overhead = allowedLinkSpeed - currentSpeed;
-            if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD) return;
+            if (Math.abs(overhead) < MAX_ALLOWED_OVERHEAD){
+                it = chunks.iterator();
+
+                while (it.hasNext()) {
+                    next = it.next();
+                    if (next.isAlive()) {
+                        next.checkTimeout(180000);
+                       // next.setMaximalSpeed(Math.max(mChunk, (int) next.bytesPerSecond + overhead / Math.max(1, getRunningChunks())));
+                    }
+
+                }
+                return;
+            }
 
             it = chunks.iterator();
 

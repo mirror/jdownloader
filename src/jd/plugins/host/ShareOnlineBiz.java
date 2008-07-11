@@ -181,7 +181,7 @@ public class ShareOnlineBiz extends PluginForHost {
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 step.setParameter(120000L);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_STATIC_WAITTIME);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_WAITTIME);
                 return step;
             }
 

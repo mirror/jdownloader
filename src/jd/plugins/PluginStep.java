@@ -91,7 +91,7 @@ public class PluginStep {
     /**
      * Dieser Schritt sollte nochmal wiederholt werden
      */
-    public final static int STATUS_RETRY          = 5;
+    //public final static int STATUS_RETRY          = 5;
 
     /**
      * Schritt wird übersprungen

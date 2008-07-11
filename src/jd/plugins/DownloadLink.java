@@ -94,7 +94,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B.
      * weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
-    public final static int STATUS_ERROR_STATIC_WAITTIME = 10;
+   public final static int STATUS_ERROR_WAITTIME = 10;
 
     /**
      * zeigt einen Premiumspezifischen fehler an
@@ -794,7 +794,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
         case DownloadLink.STATUS_ERROR_SECURITY:
             return JDLocale.L("downloadlink.status.error.security", "Read/Write Error");
-        case DownloadLink.STATUS_ERROR_STATIC_WAITTIME:
+        case DownloadLink.STATUS_ERROR_WAITTIME:
             return JDLocale.L("downloadlink.status.error.static_wait", "Waittime");
         case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
             return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");

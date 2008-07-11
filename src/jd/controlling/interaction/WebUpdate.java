@@ -17,6 +17,8 @@
 
 package jd.controlling.interaction;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Vector;
@@ -78,16 +80,29 @@ public class WebUpdate extends Interaction implements Serializable {
     public void run() {
         ProgressController progress = new ProgressController("Webupdater",5);
         Vector<Vector<String>> files = updater.getAvailableFiles();
-        if(files==null||files.size()==0)return;
+        String[] jdus = JDUtilities.getResourceFile("packages").list(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".jdu")) return true;
+               return false;
+
+            }
+
+        });
+        
+        if((files==null||files.size()==0)&&jdus.length==0)return;
         int org;
         progress.setRange(org=files.size());
         progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
-        if (files != null) {
+        
+        if (files != null||jdus.length>0) {
           
             updater.filterAvailableUpdates(files,JDUtilities.getResourceFile("."));
+        
+       
             progress.setStatus(org-files.size());
-            if (files.size() > 0) {
+            if (files.size() > 0||jdus.length>0) {
                 logger.info("New Updates Available! "+files);
+                logger.info("New Packages to install: "+jdus.length);
                 JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
   
                 
@@ -99,7 +114,7 @@ public class WebUpdate extends Interaction implements Serializable {
                     System.exit(0);
                 }
                 else {
-                    if (JDUtilities.getController().getUiInterface().showConfirmDialog(files.size() + " update(s) available. Start Webupdater now?")) {
+                    if (JDUtilities.getController().getUiInterface().showConfirmDialog((jdus.length+files.size()) + " update(s) available. Start Webupdater now?")) {
                         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString()+"\r\n(Revision"+JDUtilities.getRevision()+")");
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart" ,"/rt"+JDUtilities.getRunType()}, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                         System.exit(0);

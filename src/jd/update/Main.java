@@ -24,6 +24,8 @@ import java.awt.Insets;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -60,24 +62,24 @@ public class Main {
         SubConfiguration guiConfig = SubConfiguration.getSubConfig("simpleGUI");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
-        
-        /*Http-Proxy einstellen*/
+
+        /* Http-Proxy einstellen */
         if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_PROXY", false)) {
             System.setProperty("http.proxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_HOST", ""));
             System.setProperty("http.proxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("PROXY_PORT", 8080)).toString());
-            log(log, "http-proxy: enabled"+ System.getProperty("line.separator"));
+            log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
         } else {
             System.setProperty("http.proxyHost", "");
-            log(log, "http-proxy: disabled"+ System.getProperty("line.separator"));
+            log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
         }
-        /*Socks-Proxy einstellen*/
+        /* Socks-Proxy einstellen */
         if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_SOCKS", false)) {
             System.setProperty("socksProxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("SOCKS_HOST", ""));
             System.setProperty("socksProxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("SOCKS_PORT", 1080)).toString());
-            log(log, "socks-proxy: enabled"+ System.getProperty("line.separator"));
+            log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
         } else {
-            System.setProperty("socksProxyHost", "");            
-            log(log, "socks-proxy: disabled"+ System.getProperty("line.separator"));
+            System.setProperty("socksProxyHost", "");
+            log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
         }
 
         if (paf != null) {
@@ -200,7 +202,91 @@ public class Main {
             progresslist.setValue(100);
             updater.updateFiles(files);
         }
+        String[] jdus = new File("packages").list(new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                if (name.endsWith(".jdu")) return true;
+                return false;
 
+            }
+
+        });
+        log(log, "JD Packages to install: " + jdus.length + System.getProperty("line.separator"));
+        ArrayList<File> readmes = new ArrayList<File>();
+        ArrayList<File> failed = new ArrayList<File>();
+        ArrayList<File> successfull = new ArrayList<File>();
+        for (String jdu : jdus) {
+            File zip = new File(new File("packages"), jdu);
+
+            log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
+
+            UnZip u = new UnZip(zip, new File("."));
+            File[] efiles;
+            try {
+                efiles = u.extract();
+                if (files != null) {
+                   
+boolean c=false;
+                    for (int i = 0; i < efiles.length; i++) {
+                        log(log, "       extracted: " + efiles[i] + System.getProperty("line.separator"));
+                        if (efiles[i].getAbsolutePath().endsWith("readme.html")) {
+                            readmes.add(efiles[i].getAbsoluteFile());
+                            c=true;
+                            // String html=JDUtilities.getLocalFile(efiles[i]);
+                            // if(Regex.matches(html, "src\\=\"(.*?)\"")){
+                            // html=new Regex(html,
+                            // "src\\=\"(.*?)\"").getFirstMatch();
+                            // html=JDLocale.L("modules.packagemanager.loadednewpackage.title",
+                            // "Paket Update installiert") + "<hr><b>" +
+                            // downloadLink.getName() + " v" + dat[1] +
+                            // "</b><hr><a
+                            // href='"+html+"'>"+JDLocale.L("modules.packagemanager.loadednewpackage.more",
+                            // "More Information & Installnotes")+"</a>";
+                            // }
+                            //                           
+                            // JDUtilities.getGUI().showCountdownConfirmDialog(html,
+                            // 30);
+                            // c = true;
+                        }
+                    }
+                    //if(!c)readmes.add(null);
+                    // if (!c) {
+                    // JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title",
+                    // "Paket Update installiert") + "<hr><b>" +
+                    // downloadLink.getName() + " v" + dat[1] + "</b>", 15);
+                    // } String[] dat =
+                    // downloadLink.getSourcePluginComment().split("_");
+                    SubConfiguration conf = SubConfiguration.getSubConfig("PACKAGEMANAGER");
+                    String comment = SubConfiguration.getSubConfig("PACKAGEMANAGER").getStringProperty("COMMENT_" + zip.getAbsolutePath());
+
+                    if (comment != null) {
+
+                        String[] dat = comment.split("_");
+
+                        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
+                        SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
+                        log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
+                        successfull.add(zip.getAbsoluteFile());
+
+                    } else {
+                        log(log, "Installation failed: " + zip + System.getProperty("line.separator"));
+                        failed.add(zip.getAbsoluteFile());
+                    }
+                    zip.delete();
+                    zip.deleteOnExit();
+
+                }
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                zip.delete();
+                zip.deleteOnExit();
+            }
+
+        }
+        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED", readmes);
+        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_FAILED", failed);
+        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_SUCCESSFULL", successfull);
+        SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
         trace(updater.getLogger().toString());
         trace("End Webupdate");
         logWindow.setText(log.toString());

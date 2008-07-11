@@ -745,4 +745,8 @@ public abstract class Plugin implements ActionListener {
 
     }
 
+    public Vector<PluginStep> getSteps() {
+        return steps;
+    }
+
 }

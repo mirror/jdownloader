@@ -120,11 +120,11 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setStep(1);
      
         download.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_ERROR_RETRIES, JDLocale.L("gui.config.download.errorretries", "Max. Neuversuche bei einem Fehler"), 0, 20);
-        ce.setDefaultValue(0);
-        ce.setStep(1);
-     
-        download.addEntry(ce);
+//        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_ERROR_RETRIES, JDLocale.L("gui.config.download.errorretries", "Max. Neuversuche bei einem Fehler"), 0, 20);
+//        ce.setDefaultValue(0);
+//        ce.setStep(1);
+//     
+//        download.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
         ce.setDefaultValue(false);

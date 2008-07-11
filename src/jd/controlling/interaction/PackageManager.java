@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -35,7 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
-import jd.unrar.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -47,11 +47,11 @@ import org.xml.sax.InputSource;
 public class PackageManager extends Interaction implements Serializable {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
-	private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+    private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
 
     private SubConfiguration managerConfig;
 
@@ -64,6 +64,9 @@ public class PackageManager extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
+
+        checkNewInstalled();
+
         Vector<HashMap<String, String>> data = getPackageData();
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
@@ -75,7 +78,7 @@ public class PackageManager extends Interaction implements Serializable {
             dat = data.get(i);
             installed = managerConfig.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + dat.get("id"), 0);
             if (dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
-             
+
                 DistributeData distributeData = new DistributeData(dat.get("url"));
                 Vector<DownloadLink> links = distributeData.findLinks();
 
@@ -96,17 +99,62 @@ public class PackageManager extends Interaction implements Serializable {
         }
 
         if (fp.size() > 0) {
-            JDUtilities.getController().addPackageAt(fp,0);
+            JDUtilities.getController().addPackageAt(fp, 0);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         }
         return true;
     }
 
+    @SuppressWarnings("unchecked")
+    private void checkNewInstalled() {
+        ArrayList<File> slist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
+        if (slist != null) for (File del : slist){
+            del.delete();
+            
+           String  html = JDLocale.L("modules.packagemanager.installednewpackage.title", "Package Installed") + "<hr><b>" + del.getName() + "</b><hr>";
+            JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+        }
+           
+
+        ArrayList<File> flist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_FAILED");
+        if (flist != null) for (File del : flist) {
+            del.delete();
+            JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.failed", "Installation failed. try again: ") + "<hr><b>" + del.getName() + "</b>", 15);
+
+        }
+
+        Object list = managerConfig.getProperty("NEW_INSTALLED");
+        managerConfig.setProperty("NEW_INSTALLED_SUCCESSFULL", null);
+        managerConfig.setProperty("NEW_INSTALLED", null);
+        managerConfig.setProperty("NEW_INSTALLED_FAILED", null);
+        managerConfig.save();
+        if (list == null) return;
+
+        ArrayList<File> readmes = (ArrayList<File>) list;
+        for (File readme : readmes) {
+            String html;
+            if (readme == null) {
+               
+                continue;
+            }
+            html = JDUtilities.getLocalFile(readme);
+            if (Regex.matches(html, "src\\=\"(.*?)\"")) {
+                html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+                html = JDLocale.L("modules.packagemanager.infonewpackage.title", "Package information") + "<hr><b>" + readme.getAbsolutePath() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
+                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+            } else {
+                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+            }
+
+        }
+
+    }
+
     public Vector<HashMap<String, String>> getPackageData() {
         if (PACKAGE_DATA != null) return PACKAGE_DATA;
         RequestInfo ri = null;
-        
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.packagemanager.progress.loadpackages","Load packagedata"),10);
+
+        ProgressController progress = new ProgressController(JDLocale.L("interaction.packagemanager.progress.loadpackages", "Load packagedata"), 10);
         progress.setRange(3);
         try {
             //
@@ -153,7 +201,7 @@ public class PackageManager extends Interaction implements Serializable {
             progress.finalize();
             return new Vector<HashMap<String, String>>();
         }
-       
+
     }
 
     public void run() {
@@ -177,42 +225,29 @@ public class PackageManager extends Interaction implements Serializable {
     public void resetInteraction() {
     }
 
-    public void onDownloadedPackage(DownloadLink downloadLink) {
-//        File dir = JDUtilities.getResourceFile("packages");
+    public void onDownloadedPackage(final DownloadLink downloadLink) {
+        // File dir = JDUtilities.getResourceFile("packages");
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
         String[] dat = downloadLink.getSourcePluginComment().split("_");
-       
-        UnZip u = new UnZip(new File(downloadLink.getFileOutput()), JDUtilities.getResourceFile("."));
-        File[] files;
-        try {
-            files = u.extract();
-            if (files != null) {
-                boolean c = false;
-                for (int i = 0; i < files.length; i++) {
-                    if (files[i].getAbsolutePath().endsWith("readme.html")) {
-
-                        String html=JDUtilities.getLocalFile(files[i]);
-                        if(Regex.matches(html, "src\\=\"(.*?)\"")){
-                            html=new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
-                           html=JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b><hr><a href='"+html+"'>"+JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes")+"</a>";
-                        }
-                       
-                        JDUtilities.getGUI().showCountdownConfirmDialog(html, 30);
-                        c = true;
-                    }
+        managerConfig.setProperty("COMMENT_" + new File(downloadLink.getFileOutput()), downloadLink.getSourcePluginComment());
+        managerConfig.save();
+        new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
-                if (!c) {
-                    JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b>", 15);
-                }
-                managerConfig.setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
-                managerConfig.save();
-                new File(downloadLink.getFileOutput()).deleteOnExit();
+                JDUtilities.getController().removeDownloadLink(downloadLink);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                
             }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        }.start();
+        JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.downloadednewpackage.title", "Package downloaded. Don't forget do restart JD to complete installation") + "<hr><b>" + downloadLink.getName() + " v" + dat[1] + "</b>", 15);
+
+        // String[] dat = downloadLink.getSourcePluginComment().split("_");
 
         // }
 
