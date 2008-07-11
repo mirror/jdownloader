@@ -353,7 +353,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     submenu = subsubmenu;
                 }
                 if (hosts.size() - i > 10) {
-                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menuHostSelectionMore", "Weitere Hoster"));
+                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelectionMore", "Weitere Hoster"));
                     submenu.add(subsubmenu);
                     submenu.addSeparator();
                 }
@@ -367,10 +367,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public int getTotalLinkCount() {
-        int ret = 0;
-        for (int i = 0; i < tabList.size(); i++)
-            ret += tabList.get(i).getLinkList().size();
-        return ret;
+//        int ret = 0;
+//        for (int i = 0; i < tabList.size(); i++)
+//            ret += tabList.get(i).getLinkList().size();
+//        return ret;
+        return totalLinkList.size();
     }
 
     public synchronized void addLinks(DownloadLink[] linkList) {
@@ -755,6 +756,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 this.removePackageAt(0);
             }
             if (tabList.size() > 0) {
+                totalLinkList.clear();
+                totalLinkList.addAll(newList);
                 tabList.get(0).setLinkList(newList);
                 tabList.get(0).setPackageName(name);
                 onPackageNameChanged(tabList.get(0));
@@ -886,7 +889,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
-
         Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
 
         for (int b = 0; b < pfh.size(); b++) {
