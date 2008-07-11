@@ -73,7 +73,6 @@ public class PackageCreaterRS {
             String filename = null;
             String[] dat = p.split("__");
             String name = dat[1];
-            String id = dat[0];
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
@@ -83,10 +82,9 @@ public class PackageCreaterRS {
             zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-                String url;
                 if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
-                        System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
+                        System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");
                         // sb.append("<category>"+c.showInputDialog(frame,
                         // "Kategorie für: " + name)+"</category>");

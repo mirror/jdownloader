@@ -38,8 +38,6 @@ public class Wiireloaded extends PluginForDecrypt {
     // http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
     static private final Pattern patternSupported = getSupportPattern("http://wii-reloaded.ath.cx/protect/get\\.php\\?i=[+]");
 
-    private static final String PARAM_CALCCODE = "PARAM_CALCCODES";
-
     public Wiireloaded() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));

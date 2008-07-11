@@ -224,38 +224,13 @@ public class Main {
             try {
                 efiles = u.extract();
                 if (files != null) {
-                   
-boolean c=false;
+
                     for (int i = 0; i < efiles.length; i++) {
                         log(log, "       extracted: " + efiles[i] + System.getProperty("line.separator"));
                         if (efiles[i].getAbsolutePath().endsWith("readme.html")) {
                             readmes.add(efiles[i].getAbsoluteFile());
-                            c=true;
-                            // String html=JDUtilities.getLocalFile(efiles[i]);
-                            // if(Regex.matches(html, "src\\=\"(.*?)\"")){
-                            // html=new Regex(html,
-                            // "src\\=\"(.*?)\"").getFirstMatch();
-                            // html=JDLocale.L("modules.packagemanager.loadednewpackage.title",
-                            // "Paket Update installiert") + "<hr><b>" +
-                            // downloadLink.getName() + " v" + dat[1] +
-                            // "</b><hr><a
-                            // href='"+html+"'>"+JDLocale.L("modules.packagemanager.loadednewpackage.more",
-                            // "More Information & Installnotes")+"</a>";
-                            // }
-                            //                           
-                            // JDUtilities.getGUI().showCountdownConfirmDialog(html,
-                            // 30);
-                            // c = true;
                         }
                     }
-                    //if(!c)readmes.add(null);
-                    // if (!c) {
-                    // JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title",
-                    // "Paket Update installiert") + "<hr><b>" +
-                    // downloadLink.getName() + " v" + dat[1] + "</b>", 15);
-                    // } String[] dat =
-                    // downloadLink.getSourcePluginComment().split("_");
-                    SubConfiguration conf = SubConfiguration.getSubConfig("PACKAGEMANAGER");
                     String comment = SubConfiguration.getSubConfig("PACKAGEMANAGER").getStringProperty("COMMENT_" + zip.getAbsolutePath());
 
                     if (comment != null) {
