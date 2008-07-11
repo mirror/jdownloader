@@ -172,7 +172,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JComboBox insertAtPosition;
 
-    protected ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
 
     /**
      * @param parent
