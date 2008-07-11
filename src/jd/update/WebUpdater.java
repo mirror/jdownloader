@@ -171,7 +171,7 @@ public class WebUpdater implements Serializable {
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                    log("Webupdater: direktfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
+                    log("Webupdater: directfile: " + tmp[1].replaceAll("http\\:\\/\\/jdownloader\\.googlecode\\.com\\/svn\\/trunk", "...") + " to " + new File(tmp[0]).getAbsolutePath());
                     downloadBinary(tmp[0], tmp[1]);
                 }
                 else {

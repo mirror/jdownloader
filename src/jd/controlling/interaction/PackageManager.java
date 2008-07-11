@@ -35,6 +35,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -62,6 +63,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean doInteraction(Object arg) {
 
@@ -77,7 +79,10 @@ public class PackageManager extends Interaction implements Serializable {
         for (int i = 0; i < data.size(); i++) {
             dat = data.get(i);
             installed = managerConfig.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + dat.get("id"), 0);
-            if (dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
+            ArrayList<String> list=(ArrayList<String>)managerConfig.getProperty("CURRENT_JDU_LIST", new ArrayList<String>());
+            
+            
+            if (!list.contains(dat.get("url"))&&dat.get("selected") != null && installed != Integer.parseInt(dat.get("version")) && !JDUtilities.getController().hasDownloadLinkURL(dat.get("url").trim())) {
 
                 DistributeData distributeData = new DistributeData(dat.get("url"));
                 Vector<DownloadLink> links = distributeData.findLinks();
@@ -225,12 +230,18 @@ public class PackageManager extends Interaction implements Serializable {
     public void resetInteraction() {
     }
 
+    @SuppressWarnings("unchecked")
     public void onDownloadedPackage(final DownloadLink downloadLink) {
         // File dir = JDUtilities.getResourceFile("packages");
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
         String[] dat = downloadLink.getSourcePluginComment().split("_");
         managerConfig.setProperty("COMMENT_" + new File(downloadLink.getFileOutput()), downloadLink.getSourcePluginComment());
+        managerConfig.save();
+        ArrayList<String> list=(ArrayList<String>)managerConfig.getProperty("CURRENT_JDU_LIST", new ArrayList<String>());
+        list.add(downloadLink.getDownloadURL());
+        
+        managerConfig.setProperty("CURRENT_JDU_LIST",list);
         managerConfig.save();
         new Thread() {
             public void run() {
