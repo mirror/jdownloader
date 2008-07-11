@@ -83,6 +83,7 @@ jd.plugins.decrypt.UCMS
 jd.plugins.decrypt.UploadJockeycom
 jd.plugins.decrypt.UpPicoasisNet
 jd.plugins.decrypt.URLCash
+jd.plugins.decrypt.Web06de
 jd.plugins.decrypt.Wiireloaded
 jd.plugins.decrypt.Wordpress
 jd.plugins.decrypt.XinkIt
