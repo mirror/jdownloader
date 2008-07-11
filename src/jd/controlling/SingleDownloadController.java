@@ -159,6 +159,7 @@ public class SingleDownloadController extends Thread {
                     switch (step.getStep()) {
                     case PluginStep.STEP_PENDING:
                         long wait = (Long) step.getParameter();
+                        step.setParameter(null);
                         logger.info("Erzwungene Wartezeit: " + wait);
                         while (wait > 0 && !this.isAborted()) {
                             downloadLink.setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.mustWaittime", "Erzwungene Wartezeit: %s"), new String[] { JDUtilities.formatSeconds((int) (wait / 1000)) }));
@@ -177,6 +178,7 @@ public class SingleDownloadController extends Thread {
                         logger.severe("GOGO JAC!");
                         if (step.getParameter() != null && step.getParameter() instanceof File) {
                             captcha = (File) step.getParameter();
+                            step.setParameter(null);
                         }
                         if (captcha == null) {
                             step.setStatus(PluginStep.STATUS_DONE);
@@ -324,13 +326,14 @@ public class SingleDownloadController extends Thread {
            
                 // downloadLink.setStatusText(JDLocale.L("controller.status.finished",
                 // "Fertig"));
-                if (resultLinkStatus != DownloadLink.STATUS_DONE) {
+                if (resultPluginStatus != PluginStep.STATUS_ERROR &&resultLinkStatus != DownloadLink.STATUS_DONE) {
                     logger.severe("Pluginerror: resultStep returned null and Downloadlink status != STATUS_DONE.  retry Link");
                     this.onErrorRetry(downloadLink, currentPlugin, resultStep);
                     return;
                 }
-                
+                if(resultPluginStatus != PluginStep.STATUS_ERROR ){
                 onDownloadFinishedSuccessFull(downloadLink,resultStep,resultLinkStatus);
+                }
              
 
             
@@ -469,6 +472,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin, PluginStep step) {
         String message = (String) step.getParameter();
         logger.severe("Error occurred: " + message);
+        step.setParameter(null);
         if (message != null) downloadLink.setStatusText(message);
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         // downloadLink.setEnabled(false);
@@ -520,6 +524,7 @@ public class SingleDownloadController extends Thread {
         long milliSeconds = 2 * 60 * 1000;
         try {
             milliSeconds = (Long) step.getParameter();
+            step.setParameter(null);
         } catch (Exception e) {
         }
 
@@ -541,6 +546,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.warning("disable PREMIUM for: " + plugin + " Reason: "+step.getParameter());
         String str = (String) step.getParameter();
+        step.setParameter(null);
         if (str == null) {
             plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
         } else {
@@ -669,20 +675,20 @@ public class SingleDownloadController extends Thread {
         JDUtilities.sleep(3000);
         plugin.setRetryCount(plugin.getRetryCount() + 1);
 
-        if (step != null && step.getParameter() != null) {
-            try {
-                logger.info("step.getParameter() " + step.getParameter());
-                long milliSeconds = (Long) step.getParameter();
-                downloadLink.setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.wait", "Warten: %s sek."), new String[] { JDUtilities.formatSeconds((int) (milliSeconds / 1000)) }));
-                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, null));
-                try {
-                    Thread.sleep(milliSeconds);
-                } catch (InterruptedException e) {
-                }
-            } catch (Exception e2) {
-
-            }
-        }
+//        if (step != null && step.getParameter() != null) {
+//            try {
+//                logger.info("step.getParameter() " + step.getParameter());
+//                long milliSeconds = (Long) step.getParameter();
+//                downloadLink.setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.wait", "Warten: %s sek."), new String[] { JDUtilities.formatSeconds((int) (milliSeconds / 1000)) }));
+//                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, null));
+//                try {
+//                    Thread.sleep(milliSeconds);
+//                } catch (InterruptedException e) {
+//                }
+//            } catch (Exception e2) {
+//
+//            }
+//        }
 
         downloadLink.setStatus(DownloadLink.STATUS_TODO);
         downloadLink.setEndOfWaittime(0);
@@ -777,6 +783,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         logger.finer("Error occurred: Wait Time " + step);
         long milliSeconds = (Long) step.getParameter();
+        step.setParameter(null);
         downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
         downloadLink.setStatusText(" " + JDLocale.L("controller.status.reconnect", "Reconnect "));
 

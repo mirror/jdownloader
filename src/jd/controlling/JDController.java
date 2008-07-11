@@ -1175,7 +1175,7 @@ if(uiInterface==null)return;
             }
         }
 
-        if (watchdog != null && !this.watchdog.isAborted() && watchdog.isAlive()) { return Math.max(watchdog.getActiveDownloadControllers().size(), ret); }
+        if (watchdog != null && !this.watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.getActiveDownloadControllers().size(), ret); }
         return ret;
     }
 
