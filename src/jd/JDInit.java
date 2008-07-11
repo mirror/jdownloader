@@ -735,13 +735,13 @@ public class JDInit {
     }
 
     public static void setupProxy() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_PROXY, false)) {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
             //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             //für evtl authentifizierung: http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
             //nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
-            System.setProperty("http.proxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.PROXY_HOST, ""));
-            System.setProperty("http.proxyPort", new Integer(JDUtilities.getConfiguration().getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
+            System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
+            System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
             logger.info("http-proxy: enabled");           
         } else {
             System.setProperty("http.proxyHost", "");            
@@ -750,11 +750,11 @@ public class JDInit {
     }
     
     public static void setupSocks() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.USE_SOCKS, false)) {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
             //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            System.setProperty("socksProxyHost", JDUtilities.getConfiguration().getStringProperty(Configuration.SOCKS_HOST, ""));
-            System.setProperty("socksProxyPort", new Integer(JDUtilities.getConfiguration().getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
+            System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
+            System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
             logger.info("socks-proxy: enabled");           
         } else {
             System.setProperty("socksProxyHost", "");            
