@@ -172,7 +172,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private JComboBox insertAtPosition;
 
-    private ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
+    protected ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
 
     /**
      * @param parent
@@ -367,10 +367,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public int getTotalLinkCount() {
-//        int ret = 0;
-//        for (int i = 0; i < tabList.size(); i++)
-//            ret += tabList.get(i).getLinkList().size();
-//        return ret;
         return totalLinkList.size();
     }
 
@@ -641,8 +637,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
         this.tabList.add(tab);
         tabbedPane.addTab(tab.getPackageName(), tab);
-        // logger.finer("ADD new Tab ");
-        // refreshTabbedPane();
         return tab;
     }
 
@@ -1308,8 +1302,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             brwSaveTo.setEditable(true);
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-            // bfSubFolder.setText(JDUtilities.getConfiguration().
-            // getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY));
 
             txtName.setPreferredSize(new Dimension(450, 20));
             txtPassword.setPreferredSize(new Dimension(450, 20));
@@ -1412,19 +1404,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public void actionPerformed(ActionEvent e) {
 
             if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"))) {
-
                 int[] rows = table.getSelectedRows();
+
                 for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = rows[i];
-                    // logger.info("remove " + id);
-                    linkList.remove(id);
-
+                    totalLinkList.remove(linkList.remove(rows[i]));
                 }
+
                 this.refreshTable();
-
-            }
-
-            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
                 PackageTab newTab = addTab();
                 int[] rows = table.getSelectedRows();
                 if (0 < rows.length) {
@@ -1437,29 +1424,23 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     newTab.addLinks(linksToTransfer);
                     this.refreshTable();
                 }
-
-            }
-
-            else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
-
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
                 int[] rows = table.getSelectedRows();
 
-                Vector<Integer> ret = new Vector<Integer>();
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
                 for (int i = 0; i < rows.length; i++) {
-                    ret.add(rows[i]);
                     list.add(linkList.get(rows[i]));
                 }
 
+                totalLinkList.removeAll(linkList);
+                totalLinkList.addAll(list);
                 linkList = list;
                 this.refreshTable();
             } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {
                 int[] rows = table.getSelectedRows();
 
-                Vector<Integer> ret = new Vector<Integer>();
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
                 for (int i = 0; i < rows.length; i++) {
-                    ret.add(rows[i]);
                     list.add(linkList.get(rows[i]));
                 }
 
@@ -1472,7 +1453,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     dispose();
                 }
             }
-
         }
 
         private class InternalTableModel extends AbstractTableModel {
