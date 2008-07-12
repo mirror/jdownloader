@@ -898,8 +898,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void confirmAll() {
-        for (int i = 0; i < tabList.size(); ++i) {
-            confirmPackage(i, null);
+        if(insertAtPosition.getSelectedItem().equals(JDLocale.L("gui.linkgrabber.pos.top"))) {
+            for (int i=tabList.size()-1; i >-1; --i) {
+                confirmPackage(i, null);
+            }
+        }
+        else {
+            for (int i = 0; i < tabList.size(); ++i) {
+                confirmPackage(i, null);
+            }
         }
     }
 
