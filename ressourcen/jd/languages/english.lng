@@ -1,4 +1,4 @@
-﻿# ----------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------
 #
 # Translation of strings missing and some translation fix by ReX
 # Version: 0.1.058-0.7
@@ -1105,6 +1105,17 @@ plugins.optional.newsfeeds.getLatestSubscribedDownloads = Get latest subscribed 
 plugins.optional.newsfeeds.manageDownloadSubscriptions = Manage Download Subscriptions
 plugins.optional.newsfeeds.manageFeeds = Manage Feeds
 plugins.optional.newsfeeds.pluginTitle = Newsfeed Check
-
-
-
+gui.frame.packageinfo.entryPassword = Password
+gui.linkgrabber.cmb.insertAtPosition = Insert at:
+gui.linkgrabber.menu.edit.splitByHost = Split packages by hoster
+gui.linkgrabber.menu.hostSelection = Host selection
+gui.linkgrabber.menu.hostSelectionMore = More hoster
+gui.linkgrabber.menu.hostSelectionPackageOnly = Only current package
+gui.linkgrabber.menu.hostSelectionRemove = Remove remaining links
+gui.linkgrabber.menu.selection.free = Free
+gui.linkgrabber.menu.selection.mirror = Mirror selection
+gui.linkgrabber.menu.selection.premium = Premium
+gui.linkgrabber.menu.selection.priority = Priority
+gui.linkgrabber.pos.bottom = Bottom
+gui.linkgrabber.pos.top = Top
+plugins.optional.jdChat.gui.title = JD Chat
