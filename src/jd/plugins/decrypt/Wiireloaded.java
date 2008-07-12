@@ -114,9 +114,9 @@ public class Wiireloaded extends PluginForDecrypt {
             for (int i = 0; i < ids.length; i++) {
                 String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids[i][0];
                 br.getPage(u);
-                String code = new Regex(br, "\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade").getFirstMatch();
+                //String code = new Regex(br, "\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade").getFirstMatch();
                 Form form = br.getForms()[0];
-                form.setVariable(0, code);
+                form.setVariable(0, "8");
                 br.submitForm(form);
                 if (br.getRedirectLocation() != null) {
                     decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation()));
