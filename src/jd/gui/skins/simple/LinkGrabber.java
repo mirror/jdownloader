@@ -1436,11 +1436,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
                 for (int i = 0; i < rows.length; i++) {
-                    list.add(linkList.get(rows[i]));
+                    list.add(linkList.remove(rows[i]));
                 }
 
                 totalLinkList.removeAll(linkList);
-                totalLinkList.addAll(list);
                 linkList = list;
                 this.refreshTable();
             } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {

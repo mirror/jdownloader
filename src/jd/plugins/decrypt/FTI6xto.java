@@ -18,12 +18,10 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,46 +29,36 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
-// http://crypt-it.com/s/BXYMBR
-// http://crypt-it.com/s/B44Z4A
-
 public class FTI6xto extends PluginForDecrypt {
+    static private final String host = "fucktheindustry.ru";
+    private String version = "1.0.0.0";
 
-    static private final String HOST = "FTI.6x.to";
-
-    private String VERSION = "0.0.1";
-
-    private String CODER = "jD-Team";
-    //http://fucktheindustry.ru/file.php?id=23423765
-    // http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=One.Piece.S01E001.Hier.Kommt.Ruffy.Der.Kuenftige.Koenig.Der.Piraten.German.DVDRiP.UNCUT.Xvid-iND.dlc
-    static private final Pattern patternSupported = getSupportPattern("http://fucktheindustry.ru/store/file/dlc/forcedl.php\\?file\\=[+]|http://fucktheindustry.ru/file.php\\?id\\=[+]");
+    private static final Pattern patternSupported = Pattern.compile("http://92\\.241\\.164\\.148/(file\\.php\\?id=\\d+|store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc)", Pattern.CASE_INSENSITIVE);
 
     public FTI6xto() {
-
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public String getHost() {
-        return HOST;
+        return host;
     }
 
     @Override
     public String getPluginID() {
-        return HOST + "-" + VERSION;
+        return host + "-" + version;
     }
 
     @Override
     public String getPluginName() {
-        return HOST;
+        return host;
     }
 
     @Override
@@ -80,49 +68,30 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return VERSION;
+        return version;
     }
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        // surpress jd warning
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        step.setParameter(decryptedLinks);
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            
-            if(parameter.trim().toLowerCase().contains("file.php")){
-                try {
-                    RequestInfo ri = HTTP.getRequest(new URL(parameter));
-                    
-                   parameter= "http://fucktheindustry.ru/store/file/dlc/forcedl.php?file="+SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<a href=\"http://fucktheindustry.ru/store/file/dlc/forcedl.php?file=°.dlc",0)+".dlc";
-                } catch (MalformedURLException e) {
-                    return step;
-                } catch (IOException e) {
-                    return step;
+            try {
+                if (!parameter.endsWith(".dlc")) {
+                    URL url = new URL(parameter);
+                    RequestInfo requestInfo = HTTP.getRequest(url);
+                    parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + 
+                            requestInfo.getFirstMatch("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc") + ".dlc";
                 }
-                
-            }
-            if(parameter.trim().toLowerCase().endsWith("ccf")){
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+
+                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 if (JDUtilities.download(container, parameter)) {
-
                     JDUtilities.getController().loadContainerFile(container);
-
-                } 
-            }else{
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            if (JDUtilities.download(container, parameter)) {
-
-                JDUtilities.getController().loadContainerFile(container);
-
-            }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-          
-            return step;
-
+            step.setParameter(new Vector<DownloadLink>());
         }
-
         return null;
     }
 
