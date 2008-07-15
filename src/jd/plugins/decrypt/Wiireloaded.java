@@ -76,6 +76,8 @@ public class Wiireloaded extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
+        Vector<String> link_passwds = new Vector<String>();
+        link_passwds.add("wii-reloaded.info");
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             step.setParameter(decryptedLinks);
@@ -119,8 +121,9 @@ public class Wiireloaded extends PluginForDecrypt {
                 form.setVariable(0, "8");
                 br.submitForm(form);
                 if (br.getRedirectLocation() != null) {
-                    decryptedLinks.add(this.createDownloadlink(br.getRedirectLocation()));
-
+                    DownloadLink link=this.createDownloadlink(br.getRedirectLocation());
+                    link.setSourcePluginPasswords(link_passwds);
+                    decryptedLinks.add(link);
                 }
                 progress.increase(1);
             }
