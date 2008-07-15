@@ -59,7 +59,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     private JButton btn;
 
-//    private StringBuffer buffer;
+    // private StringBuffer buffer;
 
     private MiniLogDialog mld;
 
@@ -87,14 +87,14 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         box.addActionListener(this);
         p.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")));
         p.add(box);
-        
-        JDUtilities.addToGridBag(panel,new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")),0,0,1,1,0,0,new Insets(0,7,5,0),GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel,box,0,1,1,1,0,0,new Insets(0,7,5,0),GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        
-       JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), 1,1,1, 1, 0, 0, new Insets(0,5,5,0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-       JDUtilities.addToGridBag(panel, new JSeparator(),0, 3, 5, 1, 1, 1, new Insets(0,7,3,0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-       
-       btn.addActionListener(this);
+
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, box, 0, 1, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+
+        JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), 1, 1, 1, 1, 0, 0, new Insets(0, 5, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 3, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
+        btn.addActionListener(this);
 
         // panel.add(new JSeparator());
         if (reconnectType != null) box.setSelectedItem(reconnectType);
@@ -112,19 +112,19 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"))) {
             lh = new SubPanelLiveHeaderReconnect(uiinterface, (Interaction) new HTTPLiveHeader());
 
-            JDUtilities.addToGridBag(panel, lh, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, lh, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         } else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
             er = new ConfigPanelDefault(uiinterface, ((Interaction) new ExternReconnect()).getConfig());
 
-            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
 
         else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
             er = new ConfigPanelDefault(uiinterface, ((Interaction) new BatchReconnect()).getConfig());
 
-            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0,0,0,0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
         this.validate();
@@ -151,19 +151,12 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (e.getSource() == btn) {
             save();
 
-            
-
-            
-            
-            
-            
-            
             mld = new MiniLogDialog("Reconnect");
-             mld.getBtnOK().setEnabled(false);
-             mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"));
+            mld.getBtnOK().setEnabled(false);
+            mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.pleaseWait", "Bitte Warten...Reconnect läuft"));
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
-            //mld.setEnabled(true);
+            // mld.setEnabled(true);
             JDUtilities.getController().addControlListener(this);
 
             logger.info("Start Reconnect");
@@ -173,35 +166,38 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
             new Thread() {
                 public void run() {
-
+                    boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                     if (Reconnecter.waitForNewIP(1)) {
-                        mld.setText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull")+ "\r\n\r\n\r\n"+mld.getText());
+                        mld.setText(JDLocale.L("gui.warning.reconnectSuccess", "Reconnect successfull") + "\r\n\r\n\r\n" + mld.getText());
                     } else {
-                        
-                        mld.setText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!")+ "\r\n\r\n\r\n"+mld.getText());
-                        
-                     }
+
+                        mld.setText(JDLocale.L("gui.warning.reconnectFailed", "Reconnect failed!") + "\r\n\r\n\r\n" + mld.getText());
+                        if (JDUtilities.getController().getRunningDownloadNum() > 0) {
+                            mld.setText(JDLocale.L("gui.warning.reconnectFailedRunningDownloads", "Please stop all running Downloads first!") + "\r\n\r\n\r\n" + mld.getText());
+                        }
+                    }
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
                     mld.getProgress().setValue(100);
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.warning.reconnect.close", "Fenster schließen"));
-                    //mld.setEnabled(false);
+                    // mld.setEnabled(false);
                     JDUtilities.getController().removeControlListener(ConfigPanelReconnect.this);
                 }
             }.start();
-           
 
             // mld.getBtnOK().setEnabled(true);
         }
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED&&mld!=null&&mld.isEnabled()) {
+        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
 
             if (l.getSourceClassName().startsWith("jd.controlling.interaction")) {
-                mld.setText(JDUtilities.formatSeconds((int)l.getMillis()/1000)+" : "+ l.getMessage() + "\r\n"+mld.getText());
+                mld.setText(JDUtilities.formatSeconds((int) l.getMillis() / 1000) + " : " + l.getMessage() + "\r\n" + mld.getText());
                 mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                mld.getProgress().setValue(mld.getProgress().getValue()+1);
+                mld.getProgress().setValue(mld.getProgress().getValue() + 1);
             }
         }
 
