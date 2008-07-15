@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.utils.JDUtilities;
-
 public class HTTPConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
@@ -46,8 +44,7 @@ public class HTTPConnection {
         this.connection = (HttpURLConnection) openConnection;
         requestProperties = new HashMap<String, List<String>>();
 
-        connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 2.0.50727; .j v" + JDUtilities.getRevision() + ")");
-
+        connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         Map<String, List<String>> tmp = connection.getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
         while (set.hasNext()) {
