@@ -69,7 +69,7 @@ public class Hubuploadcom extends PluginForDecrypt {
                 for (int i = 0; i < links.length; i++) {
                     reqinfo = HTTP.getRequest(new URL(links[i]), Cookie, cryptedLink, false);
                     String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                    decryptedLinks.add(this.createDownloadlink(link));
+                    if (link != null) decryptedLinks.add(this.createDownloadlink(link));
                     progress.increase(1);
                 }
                 // Decrypt abschliessen
