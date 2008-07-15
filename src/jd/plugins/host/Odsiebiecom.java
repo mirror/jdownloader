@@ -153,10 +153,10 @@ public class Odsiebiecom extends PluginForHost {
                     downloadcookie = requestInfo.getCookie();
                     referrerurl = downloadurl;
                 }
-                if (requestInfo.containsHTML("src=\"http://odsiebie.com/captcha.php\"")) {
+                if (requestInfo.containsHTML("src=\"http://odsiebie.com/captcha1.php\"")) {
                     /* Captcha File holen */
                     captchaFile = getLocalCaptchaFile(this);
-                    HTTPConnection captcha_con = new HTTPConnection(new URL("http://odsiebie.com/captcha.php").openConnection());
+                    HTTPConnection captcha_con = new HTTPConnection(new URL("http://odsiebie.com/captcha1.php").openConnection());
                     captcha_con.setRequestProperty("Referer", referrerurl);
                     captcha_con.setRequestProperty("Cookie", downloadcookie);
                     if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
