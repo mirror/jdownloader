@@ -1,5 +1,5 @@
 <jDownloader>
   <method name="JAntiCaptcha_odsiebie" author="Coalado" />
-  <format type="png" letterNum="4"/>
+  <format type="png" letterNum="3"/>
 
 </jDownloader>
