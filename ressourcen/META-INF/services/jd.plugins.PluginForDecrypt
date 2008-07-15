@@ -27,6 +27,7 @@ jd.plugins.decrypt.Fyadorg
 jd.plugins.decrypt.ftp2share
 jd.plugins.decrypt.GappingOrg
 jd.plugins.decrypt.Gwarezcc
+jd.plugins.decrypt.Hubuploadcom
 jd.plugins.decrypt.ImagefapCom
 jd.plugins.decrypt.LeecherWs
 jd.plugins.decrypt.LinkBankeu

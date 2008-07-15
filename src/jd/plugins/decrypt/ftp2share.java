@@ -73,7 +73,7 @@ public class ftp2share extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "JD-Team,Scikes";
+        return "JD-Team";
     }
 
     @Override
