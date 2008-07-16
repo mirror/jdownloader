@@ -214,16 +214,19 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // questionable if one needs this call to pack since restoreWindow does
         // a similar job. Only way this may hurt is by increasing the time it takes to 
         // make the dialog visible.
-        setPreferredSize(new Dimension(640,640));
-        pack();
+//        setPreferredSize(new Dimension(640,640));
+//        pack();
         setLocationRelativeTo(null);
         // pack already calls validate implicitely. 
         // this.validate();
         SimpleGUI.restoreWindow(parent, null, this);
+        
+        setPreferredSize(new Dimension(Math.max(getWidth(), 800), Math.max(getHeight(), 640)));
+        pack();
         // setVisible should be called after restoreWindow. Otherwise we have a
         // strange growing effect since the dialog is first made visible and then
         // assigned a new (possibly different) size by restoreWindow.
-        this.setVisible(true);
+        setVisible(true);
     }
 
     private String fill(String s, int maxLength) {
