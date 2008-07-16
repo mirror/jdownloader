@@ -101,7 +101,6 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     public void paint(Graphics g, JComponent c) {
 
-        ((DownloadTreeTable) c).onRefresh();
         int vRowHeight = c.getFont().getSize() + 6;
 
         Rectangle clip = g.getClipBounds();

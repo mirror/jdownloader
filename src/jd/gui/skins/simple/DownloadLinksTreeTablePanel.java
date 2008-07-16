@@ -16,20 +16,14 @@ import jd.utils.JDUtilities;
 
 public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private DownloadTreeTable internalTreeTable;
+    private static final long serialVersionUID = 1L;
 
-//    private DownloadTreeTableModel treeModel;
-
-//    private long lockTimer = 0;
+    private DownloadTreeTable internalTreeTable;
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
         this.setVisible(false);
-        internalTreeTable = new DownloadTreeTable( new DownloadTreeTableModel(this));
+        internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
@@ -37,14 +31,12 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     @Override
     public void fireTableChanged(int id, Object param) {
-
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
         internalTreeTable.fireTableChanged(id, param);
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !this.isVisible()) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             this.setVisible(true);
@@ -58,13 +50,10 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
             links.addAll(it.next().getDownloadLinks());
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
-       
-        
     }
 
     public void moveSelectedItems(int id) {
         internalTreeTable.moveSelectedItems(id);
-        
     }
 
 }

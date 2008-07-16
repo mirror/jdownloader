@@ -147,8 +147,8 @@ public class JDLocale {
 
     /*
      * private static Vector<String[]> send = new Vector<String[]>(); private
-     * static Vector<String> sent = new Vector<String>(); private static
-     * Thread sender;
+     * static Vector<String> sent = new Vector<String>(); private static Thread
+     * sender;
      */
     private static String lID;
 
@@ -161,7 +161,7 @@ public class JDLocale {
     }
 
     private static void saveData(File lc, HashMap<String, String> dat) {
-      
+
         if (lc == null) lc = localeFile;
         if (dat == null) dat = data;
         if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
@@ -204,6 +204,7 @@ public class JDLocale {
         missingData = parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
     }
+
     public static String translate(String to, String msg) {
 
         PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + "auto" + "&tl=" + to);
@@ -214,7 +215,6 @@ public class JDLocale {
         r.setPostVariable("tl", to);
         r.setPostVariable("ie", "UTF8");
 
-        
         r.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)");
         r.getHeaders().put("Accept", "text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
         r.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
@@ -225,7 +225,6 @@ public class JDLocale {
         String page;
         try {
             page = r.load();
-
 
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (Exception e) {
@@ -239,7 +238,8 @@ public class JDLocale {
         // User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
         // Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0
         // Accept:
-        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/
+        // plain;q=0.8,image/png,*/*;q=0.5
         // Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
         // Accept-Encoding: gzip,deflate
         // Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
@@ -247,12 +247,13 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
 
     }
+
     public static String translate(String from, String to, String msg) {
 
         PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
@@ -267,7 +268,6 @@ public class JDLocale {
         try {
             page = r.load();
 
-
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -280,7 +280,8 @@ public class JDLocale {
         // User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14)
         // Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0
         // Accept:
-        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+        // text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/
+        // plain;q=0.8,image/png,*/*;q=0.5
         // Accept-Language: de-de,de;q=0.8,en-us;q=0.5,en;q=0.3
         // Accept-Encoding: gzip,deflate
         // Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7
@@ -288,7 +289,7 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
@@ -309,7 +310,7 @@ public class JDLocale {
             int split = lines[i].indexOf("=");
             if (split <= 0 || lines[i].startsWith("#")) continue;
             String key = lines[i].substring(0, split).trim();
-            String value = lines[i].substring(split + 1).trim();
+            String value = lines[i].substring(split + 1).trim() + ((lines[i].endsWith(" ")) ? " " : "");
             if (dat.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
                 dat.put(key, value);
@@ -339,19 +340,20 @@ public class JDLocale {
             logger.severe("Lanuage " + file + " not installed");
             return;
         }
-int i=0;
+        int i = 0;
 
-HashMap<String, String> ret= new HashMap<String, String> ();
+        HashMap<String, String> ret = new HashMap<String, String>();
         HashMap<String, String> data = parseLanguageFile(file);
         for (Iterator<Entry<String, String>> it = data.entrySet().iterator(); it.hasNext();) {
             Entry<String, String> next = it.next();
             i++;
             ret.put(next.getKey(), (translate(afrom, ato, next.getValue())));
 
-            logger.info(i+" : "+next.getKey() + " = " + ret.get(next.getKey()));
-            //saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
+            logger.info(i + " : " + next.getKey() + " = " + ret.get(next.getKey()));
+            // saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" +
+            // to + ".lng"), ret);
         }
-       saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
+        saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
 
     }
 
