@@ -216,6 +216,7 @@ public class TreeTableTransferHandler extends TransferHandler {
         int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
 
         TreePath current = treeTable.getPathForRow(row);
+        if(current==null)return false;
         for (TreePath path : draggingPathes) {
             if (path.getLastPathComponent() == current.getLastPathComponent()) return false;
         }

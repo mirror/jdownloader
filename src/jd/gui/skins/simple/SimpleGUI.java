@@ -914,7 +914,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
         btnCes = createMenuButton(this.actionCes);
-        toolBar.setFloatable(true);
+        toolBar.setFloatable(false);
         // toolBar.add(createMenuButton(this.actionLoadDLC));
         // toolBar.add(createMenuButton(this.actionSaveDLC));
         // toolBar.addSeparator();

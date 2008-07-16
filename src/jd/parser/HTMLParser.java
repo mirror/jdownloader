@@ -146,7 +146,7 @@ public class HTMLParser {
         Vector<String> ret = new Vector<String>();
         while (iter.hasNext()) {
             String pass = (String) iter.next();
-            if (data.contains(pass)) ret.add(pass);
+            if (pass.length()>8&&data.contains(pass)) ret.add(pass);
         }
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
     
