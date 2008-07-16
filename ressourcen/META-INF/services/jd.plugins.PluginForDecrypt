@@ -3,7 +3,7 @@ jd.plugins.decrypt.AdrefIn
 jd.plugins.decrypt.AnimeANet
 jd.plugins.decrypt.BestMovies
 jd.plugins.decrypt.Bm4uin
-#jd.plugins.decrypt.CineTo
+jd.plugins.decrypt.CineTo
 #jd.plugins.decrypt.CodedTo
 jd.plugins.decrypt.Collectr
 #jd.plugins.decrypt.CryptGetMoviesOrg
@@ -22,6 +22,7 @@ jd.plugins.decrypt.FilehostIt
 jd.plugins.decrypt.Filer
 jd.plugins.decrypt.FileUploadnet
 jd.plugins.decrypt.FrozenRomsIn
+jd.plugins.decrypt.FlyLoadnet
 jd.plugins.decrypt.FTI6xto
 jd.plugins.decrypt.Fyadorg
 jd.plugins.decrypt.ftp2share
