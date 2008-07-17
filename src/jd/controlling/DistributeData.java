@@ -335,11 +335,15 @@ public class DistributeData extends ControlBroadcaster {
      * Bringt alle links in data in eine einheitliche Form
      */
     private void reformDataString() {
-        if (data != null) {
-            data = HTMLParser.getHttpLinkList(data);
+        if (this.data != null) {
+            String Temp = HTMLParser.getHttpLinkList(this.data);            
             
             try {
-                this.data = URLDecoder.decode(this.data, "UTF-8");
+                if (Temp==""){                    
+                    this.data = URLDecoder.decode(this.data, "UTF-8");
+                }else{
+                    this.data = URLDecoder.decode(Temp, "UTF-8");
+                }
             }
             catch (Exception e) {
                 logger.warning("text not url decodeable");

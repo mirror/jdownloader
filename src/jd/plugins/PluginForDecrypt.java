@@ -226,7 +226,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         try {
             return new URL(cryptedLink).getFile();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             return "";
         }
     }
