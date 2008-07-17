@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -62,19 +61,19 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     /**
      * 
      */
-    private static final long     serialVersionUID = -5219586497809869375L;
+    private static final long serialVersionUID = -5219586497809869375L;
 
-    private JButton               btnEdit;
+    private JButton btnEdit;
 
-    private Configuration         configuration;
+    private Configuration configuration;
 
-    private JTable                table;
+    private JTable table;
 
     private Vector<PluginForHost> pluginsForHost;
 
-   // private PluginForHost         currentPlugin;
+    // private PluginForHost currentPlugin;
 
-    private PluginForHost         draggedPlugin;
+    private PluginForHost draggedPlugin;
 
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -125,10 +124,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
         this.setPreferredSize(new Dimension(650, 350));
-//        table.getColumn(table.getColumnName(0)).setCellRenderer(new MarkRenderer());
-//        table.getColumn(table.getColumnName(1)).setCellRenderer(new MarkRenderer());
-//        table.getColumn(table.getColumnName(2)).setCellRenderer(new MarkRenderer());
-//        table.getColumn(table.getColumnName(3)).setCellRenderer(new MarkRenderer());
+        // table.getColumn(table.getColumnName(0)).setCellRenderer(new
+        // MarkRenderer());
+        // table.getColumn(table.getColumnName(1)).setCellRenderer(new
+        // MarkRenderer());
+        // table.getColumn(table.getColumnName(2)).setCellRenderer(new
+        // MarkRenderer());
+        // table.getColumn(table.getColumnName(3)).setCellRenderer(new
+        // MarkRenderer());
         table.getColumn(table.getColumnName(4)).setCellRenderer(new JLinkButtonRenderer());
         table.getColumn(table.getColumnName(4)).setCellEditor(new JLinkButtonEditor());
 
@@ -136,34 +139,35 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
-                case 0:
-                    column.setPreferredWidth(30);
-                    column.setMaxWidth(30);
-                    column.setMinWidth(30);
-                    break;
-                case 1:
-                    column.setPreferredWidth(250);
-                    break;
-                case 2:
-                    column.setPreferredWidth(60);
-                    column.setMinWidth(60);
-                    break;
-                case 3:
-                    column.setPreferredWidth(250);
-                    break;
-                case 4:
-                    column.setPreferredWidth(70);
-                    column.setMaxWidth(70);
-                    column.setMinWidth(70);
-                    break;
-                case 5:
-                    column.setPreferredWidth(90);
-                    column.setMaxWidth(90);
-                    column.setMinWidth(90);
-                    break;
+            case 0:
+                column.setPreferredWidth(30);
+                column.setMaxWidth(30);
+                column.setMinWidth(30);
+                break;
+            case 1:
+                column.setPreferredWidth(250);
+                break;
+            case 2:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                break;
+            case 3:
+                column.setPreferredWidth(250);
+                break;
+            case 4:
+                column.setPreferredWidth(70);
+                column.setMaxWidth(70);
+                column.setMinWidth(70);
+                break;
+            case 5:
+                column.setPreferredWidth(90);
+                column.setMaxWidth(90);
+                column.setMinWidth(90);
+                break;
 
             }
-            //logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer() + "");
+            //logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer
+            // () + "");
         }
 
         // add(scrollPane);
@@ -173,18 +177,25 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.host.btn_settings", "Einstellungen"));
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                  if (pluginsForHost.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
-                  else btnEdit.setEnabled(false);
+                if ((((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex() != -1) && (pluginsForHost.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0))
+                    btnEdit.setEnabled(true);
+                else
+                    btnEdit.setEnabled(false);
             }
         });
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
         JLabel disclaimerLabel = new JLabel("<html><body align=\"justify\" color=\"red\"><b>" + JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"));
-        // JDUtilities.addToGridBag(panel, (new JTextArea(JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-        
+        // JDUtilities.addToGridBag(panel, (new
+        // JTextArea(JDLocale.L("gui.config.plugin.host.desc",
+        // "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"
+        // ))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.REMAINDER, 1, 1, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.CENTER);
+
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
         JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -212,7 +223,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
         PluginForHost plugin = this.getSelectedPlugin();
-       // currentPlugin = plugin;
+        // currentPlugin = plugin;
         if (plugin == null) return;
 
         JPanel topPanel = new JPanel();
@@ -256,10 +267,17 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -284,18 +302,18 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public Object getValueAt(int rowIndex, int columnIndex) {
 
             switch (columnIndex) {
-                case 0:
-                    return rowIndex;
-                case 1:
-                    return pluginsForHost.elementAt(rowIndex).getPluginName();
-                case 2:
-                    return pluginsForHost.elementAt(rowIndex).getVersion();
-                case 3:
-                    return pluginsForHost.elementAt(rowIndex).getCoder();
-                case 4:
-                    return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.elementAt(rowIndex).getAGBLink());
-                case 5:
-                    return pluginsForHost.elementAt(rowIndex).isAGBChecked();
+            case 0:
+                return rowIndex;
+            case 1:
+                return pluginsForHost.elementAt(rowIndex).getPluginName();
+            case 2:
+                return pluginsForHost.elementAt(rowIndex).getVersion();
+            case 3:
+                return pluginsForHost.elementAt(rowIndex).getCoder();
+            case 4:
+                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.elementAt(rowIndex).getAGBLink());
+            case 5:
+                return pluginsForHost.elementAt(rowIndex).isAGBChecked();
 
             }
             return null;
@@ -306,31 +324,30 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
          * change.
          */
         public void setValueAt(Object value, int row, int col) {
-            //logger.info("Set value: " + value);
+            // logger.info("Set value: " + value);
             if ((Boolean) value) {
-                String msg=String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost() );
-                
-                if(JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG,msg)==JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            }
-            else {
+                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost());
+
+                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+            } else {
                 pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             }
         }
 
         public String getColumnName(int column) {
             switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.plugin.host.column_id2", "ID");
-                case 1:
-                    return JDLocale.L("gui.config.plugin.host.column_host2", "Host");
-                case 2:
-                    return JDLocale.L("gui.config.plugin.host.column_version2", "Version");
-                case 3:
-                    return JDLocale.L("gui.config.plugin.host.column_coder2", "Ersteller");
-                case 4:
-                    return JDLocale.L("gui.config.plugin.host.column_agb2", "AGB");
-                case 5:
-                    return JDLocale.L("gui.config.plugin.host.column_agbChecked2", "akzeptieren");
+            case 0:
+                return JDLocale.L("gui.config.plugin.host.column_id2", "ID");
+            case 1:
+                return JDLocale.L("gui.config.plugin.host.column_host2", "Host");
+            case 2:
+                return JDLocale.L("gui.config.plugin.host.column_version2", "Version");
+            case 3:
+                return JDLocale.L("gui.config.plugin.host.column_coder2", "Ersteller");
+            case 4:
+                return JDLocale.L("gui.config.plugin.host.column_agb2", "AGB");
+            case 5:
+                return JDLocale.L("gui.config.plugin.host.column_agbChecked2", "akzeptieren");
 
             }
             return super.getColumnName(column);
@@ -348,7 +365,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         private JLinkButton btn;
 
-        private boolean     stop = false;
+        private boolean stop = false;
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
             // TODO Auto-generated method stub
@@ -440,7 +457,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dragExit(DropTargetEvent dte) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
 
@@ -460,12 +477,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public void drop(DropTargetDropEvent e) {
 
-        //logger.info("insert at " + table.rowAtPoint(e.getLocation()));
+        // logger.info("insert at " + table.rowAtPoint(e.getLocation()));
         try {
 
             // e.dropComplete(true);
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             // e.rejectDrop();
             exc.printStackTrace();
         }
@@ -473,7 +489,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
 
     }
     // private class CheckBoxRenderer implements TableCellRenderer {

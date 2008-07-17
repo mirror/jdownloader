@@ -58,14 +58,13 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     /**
 	 * 
 	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	/**
+    /**
      * 
      */
 
-//    private Configuration configuration;
-
+    // private Configuration configuration;
     private SubConfiguration config;
 
     private InternalTable table;
@@ -74,7 +73,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-//        this.configuration = configuration;
+        // this.configuration = configuration;
         initPanel();
 
         load();
@@ -127,37 +126,32 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         // MarkRenderer());
         // table.getColumn(table.getColumnName(3)).setCellRenderer(new
         // MarkRenderer());
-        table.getColumn(table.getColumnName(3)).setCellRenderer(new JLinkButtonRenderer());
-        table.getColumn(table.getColumnName(3)).setCellEditor(new JLinkButtonEditor());
+        table.getColumn(table.getColumnName(2)).setCellRenderer(new JLinkButtonRenderer());
+        table.getColumn(table.getColumnName(2)).setCellEditor(new JLinkButtonEditor());
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(30);
-                column.setMaxWidth(30);
-                column.setMinWidth(30);
-                break;
-            case 1:
                 column.setPreferredWidth(250);
                 break;
-            case 2:
+            case 1:
                 column.setPreferredWidth(60);
                 column.setMinWidth(60);
                 break;
-            case 3:
+            case 2:
                 column.setPreferredWidth(50);
+                break;
+            case 3:
+                column.setPreferredWidth(30);
+
                 break;
             case 4:
                 column.setPreferredWidth(30);
 
                 break;
             case 5:
-                column.setPreferredWidth(30);
-
-                break;
-            case 6:
                 column.setPreferredWidth(60);
                 column.setMaxWidth(60);
                 column.setMinWidth(60);
@@ -197,9 +191,9 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         /**
 		 * 
 		 */
-		private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
-		public Class<?> getColumnClass(int columnIndex) {
+        public Class<?> getColumnClass(int columnIndex) {
 
             return getValueAt(0, columnIndex).getClass();
 
@@ -212,7 +206,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
         public int getColumnCount() {
 
-            return 7;
+            return 6;
         }
 
         public int getRowCount() {
@@ -224,19 +218,17 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
             switch (columnIndex) {
             case 0:
-                return rowIndex;
-            case 1:
                 return element.get("name");
-            case 2:
+            case 1:
                 return element.get("category");
-            case 3:
+            case 2:
                 return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
-            case 4:
+            case 3:
                 return element.get("version");
-            case 5:
+            case 4:
                 return getInstalledVersion(element);
 
-            case 6:
+            case 5:
                 return element.get("selected") != null;
 
             }
@@ -251,7 +243,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
             // logger.info("Set value: " + value);
             // if ((Boolean) value) {
             // if
-            // (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(JDLocale.L("gui.config.plugin.abg_confirm",
+            // (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(
+            // JDLocale.L("gui.config.plugin.abg_confirm",
             // "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit
             // einverstanden!"), new String[] {
             // pluginsForHost.elementAt(row).getHost() })))
@@ -272,18 +265,16 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.packagemanager.column_id", "ID");
-            case 1:
                 return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
-            case 2:
+            case 1:
                 return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
-            case 3:
+            case 2:
                 return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
-            case 4:
+            case 3:
                 return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
-            case 5:
+            case 4:
                 return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
-            case 6:
+            case 5:
                 return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
 
             }
@@ -293,10 +284,10 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     private class InternalTable extends JTable {
 
-		/**
+        /**
 		 * 
 		 */
-		private static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
 
     }
 
@@ -431,7 +422,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
             config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
-        
+
         config.setProperty("CURRENT_JDU_LIST", new ArrayList<String>());
         config.save();
     }
