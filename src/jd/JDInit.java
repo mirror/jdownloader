@@ -507,6 +507,7 @@ public class JDInit {
                     }
 
                 });
+                if(jdus==null)jdus= new String[0];
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 

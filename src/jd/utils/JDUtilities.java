@@ -1132,7 +1132,7 @@ public class JDUtilities {
 		return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0")
 				+ ":" + fillInteger(seconds, 2, "0");
 	}
- 
+  
 	/**
 	 * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
 	 * 
