@@ -357,7 +357,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         this.dispose();
 
         setVisible(false);
-        ConfigurationDialog.showConfig((JFrame) PARENTFRAME, this.uiinterface);
+        if (e.getSource() == this.chbExpert) ConfigurationDialog.showConfig((JFrame) PARENTFRAME, this.uiinterface);
     }
 
     public void stateChanged(ChangeEvent e) {
