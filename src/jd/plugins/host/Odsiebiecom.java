@@ -119,7 +119,7 @@ public class Odsiebiecom extends PluginForHost {
              * Zuerst schaun ob wir nen Button haben oder direkt das File
              * vorhanden ist
              */
-            String steplink = requestInfo.getRegexp("<a href=\"/pobierz/(.*?)\"  style=\"font-size: 18px\">Pobierz plik</a>").getFirstMatch();
+            String steplink = requestInfo.getRegexp("<a href=\"/pobierz/(.*?)\"  style=\"font-size: 18px\">(.*?)</a>").getFirstMatch();
             if (steplink == null) {
                 /* Kein Button, also muss der Link irgendwo auf der Page sein */
                 /* Film,Mp3 */
