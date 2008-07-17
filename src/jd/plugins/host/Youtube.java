@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -50,7 +51,7 @@ public class Youtube extends PluginForHost {
     public static final int CONVERT_ID_MP4 = 3;
     public static final int CONVERT_ID_3GP = 4;
     
-    static private final Pattern FILENAME = Pattern.compile("<div id=\"watch-vid-title\">[\\s\\S]*?<div >(.*?)</div>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
     static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
     static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
     static private final Pattern DOWNLOADFILE = Pattern.compile("< youtubedl url=\".*?\" decrypted=\"(.*?)\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
@@ -229,7 +230,8 @@ public class Youtube extends PluginForHost {
         RequestInfo requestInfo;
         try {
             requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
-            String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1);
+            String name = new Regex(requestInfo,FILENAME).getFirstMatch();
+            
             downloadLink.setName(name);
 
             if (name == null) return false;

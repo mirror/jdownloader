@@ -208,7 +208,7 @@ e.printStackTrace();
         this.currentPath = currentPath;
         String item = currentPath.toString();
         if (!files.contains(item)) {
-            files.add(item);
+            files.add(0, item);
 
             JDUtilities.getSubConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size() , 20))));
             JDUtilities.getSubConfig("GUI").save();

@@ -24,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.Vector;
@@ -430,7 +431,9 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
             config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
-
+        
+        config.setProperty("CURRENT_JDU_LIST", new ArrayList<String>());
+        config.save();
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer
