@@ -123,7 +123,7 @@ private static final int saveyConvert = 1;
 
 
 
-private void yConvertDialog() {
+private void yConvertDialog(final boolean hasMp4, final boolean has3gp) {
     if (yConvertChecked || useyConvert[1] == saveyConvert) return;
     new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
@@ -172,7 +172,6 @@ private void yConvertDialog() {
                 public void windowClosing(WindowEvent e) {
                     useyConvert = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
                     dispose();
-
                 }
 
                 public void windowDeactivated(WindowEvent e) {
@@ -195,12 +194,17 @@ private void yConvertDialog() {
 
                 }
             });
-            meth[] meths = new meth[5];
+            
+            int n = 3;
+            if ( hasMp4 ) n++;
+            if ( has3gp ) n++;
+            
+            meth[] meths = new meth[n];
             meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
             meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
             meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
-            meths[3] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
-            meths[4] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
+            if ( hasMp4 ) meths[3] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
+            if ( has3gp ) meths[4] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
 
             methods = new JComboBox(meths);
             checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);
@@ -226,9 +230,9 @@ private void yConvertDialog() {
     }.init();
 }
 
-private int getYoutubeConvertTo() {
+private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
 
-    yConvertDialog();
+    yConvertDialog(hasMp4, has3gp);
     return useyConvert[0];
 
 }
@@ -256,7 +260,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
           String filename = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
           String video_id="";
           String t="";
-//          String cookies = reqinfo.getCookie();
+//        String cookies = reqinfo.getCookie();
           fp.setName(filename);
           
           //logger.info(reqinfo.getHtmlCode());
@@ -279,7 +283,16 @@ public PluginStep doStep(PluginStep step, String parameter) {
           }
           
           String link = "http://"+host + "/"+PLAYER+"?" + VIDEO_ID +"="+ video_id + "&" + "t="+ t;
-          int convertId = getYoutubeConvertTo();
+          
+          boolean hasMp4 = false;
+          boolean has3gp = false;
+          
+          if ( HTTP.getRequestWithoutHtmlCode(new URL(link+"&fmt=18"),null,null,true).getResponseCode() == 200 )
+        	  hasMp4 = true;
+          if ( HTTP.getRequestWithoutHtmlCode(new URL(link+"&fmt=13"),null,null,true).getResponseCode() == 200 )
+        	  has3gp = true;
+          
+          int convertId = getYoutubeConvertTo(hasMp4, has3gp);
           
           if ( convertId == CONVERT_ID_MP4 ) {
         	  link += "&fmt=18";
