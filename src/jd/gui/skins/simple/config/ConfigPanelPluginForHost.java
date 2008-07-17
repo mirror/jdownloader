@@ -179,10 +179,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.host.btn_settings", "Einstellungen"));
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if ((((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex() != -1) && (pluginsForHost.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0))
-                    btnEdit.setEnabled(true);
-                else
-                    btnEdit.setEnabled(false);
+                int index = ((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex();
+                btnEdit.setEnabled(index != -1 && pluginsForHost.get(index).getConfig().getEntries().size() != 0);
             }
         });
         btnEdit.setEnabled(false);

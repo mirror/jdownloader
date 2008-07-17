@@ -151,7 +151,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     /**
      * Komponente, die alle Downloads anzeigt
      */
-    private DownloadLinksTreeTablePanel linkListPane;;
+    private DownloadLinksTreeTablePanel linkListPane;
 
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
@@ -352,21 +352,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // toolBar.setOpaque(false);
 
         frame.addWindowListener(this);
-
         frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setTitle(JDUtilities.getJDTitle());
         frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         initActions();
         initMenuBar();
         buildUI();
-        frame.setPreferredSize(new Dimension(600, 600));
 
-        // frame.getContentPane().add(desktop, BorderLayout.CENTER);
         frame.setName("MAINFRAME");
-        if (SimpleGUI.getLastDimension(frame, null) != null) frame.setPreferredSize(getLastDimension(frame, null));
-        // frame.setLocation(JDUtilities.getCenterOfComponent(null, frame));
+        Dimension dim = SimpleGUI.getLastDimension(frame, null);
+        if (dim == null) dim = new Dimension(600, 600);
+        frame.setPreferredSize(dim);
         frame.setLocation(getLastLocation(null, null, frame));
-
         frame.pack();
         frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", JFrame.NORMAL));
         frame.setVisible(true);
@@ -404,23 +401,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }.start();
 
-        // new SwingWorker() {
-        //
-        // @Override
-        // protected Object doInBackground() throws Exception {
-        // while (true) {
-        // EventQueue.invokeLater(new Runnable() {
-        // public void run() {
-        // interval();
-        // }
-        // });
-        // Thread.sleep(1000);
-        // }
-        // }
-        //
-        // }.execute();
-
-        // enableOptionalPlugins(true);
     }
 
     public static Point getLastLocation(Component parent, String key, Component child) {
@@ -674,7 +654,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 
         menPlugins.add(helpHost);
-
         menPlugins.add(helpDecrypt);
         menPlugins.add(helpContainer);
 
@@ -1015,7 +994,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_TESTER:
             logger.finer("Test trigger pressed");
-            displayMiniWarning("Testtrigger wurde ausgelöst", "Der Testauslöser für den Eventmanager wurde manuel ausgelöst.", 5000);
+            displayMiniWarning(JDLocale.L("interaction.trigger.testtrigger.shortWarn", "Testtrigger wurde ausgelöst"), JDLocale.L("interaction.trigger.testtrigger.toolTip", "Der Testauslöser für den Eventmanager wurde manuell ausgelöst."), 5000);
             Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
 
             break;
@@ -1122,18 +1101,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.ITEMS_REMOVE:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (this.showConfirmDialog("Ausgewählte Links wirklich entfernen?")) {
-
+                if (this.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?"))) {
                     linkListPane.removeSelectedLinks();
-
-                    // fireUIEvent(new UIEvent(this,
-                    // UIEvent.UI_UPDATED_LINKLIST, this.getDownloadLinks()));
-
                 }
             } else {
                 linkListPane.removeSelectedLinks();
-                // fireUIEvent(new UIEvent(this, UIEvent.UI_UPDATED_LINKLIST,
-                // this.getDownloadLinks()));
             }
             break;
         case JDAction.ITEMS_DND:
@@ -1198,7 +1170,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             dragNDrop.setVisible(false);
         } else {
             dragNDrop.setVisible(true);
-            dragNDrop.setText("Ziehe Links auf mich!");
+            dragNDrop.setText(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
         }
     }
 
@@ -2047,7 +2019,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return CountdownConfirmDialog.showCountdownConfirmDialog(this.frame, string, sec);
     }
 
-    public void displayMiniWarning(final String shortWarn, final String tooltip, final int showtime) {
+    public void displayMiniWarning(final String shortWarn, final String toolTip, final int showtime) {
         if (shortWarn == null) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
@@ -2062,7 +2034,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     warning.setVisible(true);
 
                     warning.setText(shortWarn);
-                    warning.setToolTipText(tooltip);
+                    warning.setToolTipText(toolTip);
                 }
             });
             if (warningWorker != null) warningWorker.interrupt();
