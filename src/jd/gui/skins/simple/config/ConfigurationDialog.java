@@ -189,7 +189,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
         // GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE,
         // GridBagConstraints.EAST);
-        JDUtilities.getLogger().info("" + JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
+        //JDUtilities.getLogger().info("" + JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
         tabbedPane.addChangeListener(this);
         if (configClasses.size() <= JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) == 0) {
             paintPanel(0);

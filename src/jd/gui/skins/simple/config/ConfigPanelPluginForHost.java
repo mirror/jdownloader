@@ -163,7 +163,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                     break;
 
             }
-            logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer() + "");
+            //logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer() + "");
         }
 
         // add(scrollPane);
@@ -306,7 +306,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
          * change.
          */
         public void setValueAt(Object value, int row, int col) {
-            logger.info("Set value: " + value);
+            //logger.info("Set value: " + value);
             if ((Boolean) value) {
                 String msg=String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost() );
                 
@@ -460,7 +460,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     public void drop(DropTargetDropEvent e) {
 
-        logger.info("insert at " + table.rowAtPoint(e.getLocation()));
+        //logger.info("insert at " + table.rowAtPoint(e.getLocation()));
         try {
 
             // e.dropComplete(true);

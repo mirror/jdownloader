@@ -73,7 +73,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         super(uiinterface);
         this.configuration = configuration;
         methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
-        logger.info(methods.length + "");
+        //logger.info(methods.length + "");
 
         initPanel();
 

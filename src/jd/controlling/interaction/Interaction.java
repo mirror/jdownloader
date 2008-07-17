@@ -436,7 +436,7 @@ public abstract class Interaction extends Property implements Serializable {
     public abstract void initConfig();
 
     public ConfigContainer getConfig() {
-        logger.info(config + " # ");
+        //logger.info(config + " # ");
         if (config == null) {
             config = new ConfigContainer(this);
             initConfig();
