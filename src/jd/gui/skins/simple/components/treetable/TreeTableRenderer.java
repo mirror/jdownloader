@@ -135,13 +135,17 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     progress.setString("");
                     if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
                         progress.setForeground(DONE_COLOR);
-                        if (ui != null) ui.setSelectionForeground(DONE_COLOR_FONT_A);
-                        if (ui != null) ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                        if (ui != null) {
+                            ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                            ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                        }
                         progress.setString("- 100 % -");
                     } else {
                         progress.setForeground(INACTIVE_PROGRESS_COLOR);
-                        if (ui != null) ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
-                        if (ui != null) ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
+                        if (ui != null) {
+                            ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
+                            ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
+                        }
                     }
                     progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                     progress.setStringPainted(true);
@@ -152,8 +156,10 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                     progress.setStringPainted(true);
                     progress.setForeground(ACTIVE_PROGRESS_COLOR);
-                    if (ui != null) ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
-                    if (ui != null) ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
+                    if (ui != null) {
+                        ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
+                        ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
+                    }
                     progress.setValue((int) dLink.getDownloadCurrent());
                     progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
 
@@ -163,8 +169,10 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
                 progress.setMaximum(dLink.getWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
-                if (ui != null) ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
-                if (ui != null) ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
+                if (ui != null) {
+                    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
+                }
                 progress.setStringPainted(true);
                 progress.setValue((int) dLink.getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
@@ -178,9 +186,10 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setStringPainted(true);
                 progress.setForeground(PACKAGE_PROGRESS_COLOR);
-                if (ui != null) ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                if (ui != null) ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-
+                if (ui != null) {
+                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+                }
                 progress.setValue(fp.getTotalKBLoaded());
                 progress.setString("- 0% -");
 
@@ -188,9 +197,10 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
                 progress.setStringPainted(true);
                 progress.setForeground(PACKAGE_PROGRESS_COLOR);
-                if (ui != null) ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                if (ui != null) ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-
+                if (ui != null) {
+                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+                }
                 progress.setValue(fp.getTotalKBLoaded());
                 progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
             }

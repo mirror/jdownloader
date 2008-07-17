@@ -341,7 +341,7 @@ public class JDInit {
             }
         }
         ArrayList<optionalPluginsVersions> optionalPluginsVersionsArray = new ArrayList<optionalPluginsVersions>();
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDTrayIcon", 1.6));        
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDTrayIcon", 1.6));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLightTray", 1.6));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("webinterface.JDWebinterface", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.5));

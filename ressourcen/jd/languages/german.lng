@@ -419,6 +419,7 @@ gui.downloadlink.offline = [offline]
 gui.downloadlink.status.crcfailed = Checksum Fehler
 gui.downloadlink.status.crcok = Checksum OK
 gui.downloadlink.status.wait = %s min warten
+gui.downloadlist.delete = Ausgewählte Links wirklich entfernen?
 gui.downloadlist.tooltip.connections = Akt. Verbindungen:
 gui.downloadlist.tooltip.partnum = Teile:
 gui.downloadlist.tooltip.partsactive = Gerade aktiv:
