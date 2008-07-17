@@ -22,7 +22,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -371,7 +370,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setLocation(getLastLocation(null, null, frame));
 
         frame.pack();
-        frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", Frame.NORMAL));
+        frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", JFrame.NORMAL));
         frame.setVisible(true);
         // DND
         dragNDrop = new Dropper(new JFrame());
