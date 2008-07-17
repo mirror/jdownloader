@@ -22,6 +22,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -267,8 +268,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actioninstallJDU;
 
- 
-
     // private SwingWorker warningWorker;
 
     public static final String PARAM_DISABLE_CONFIRM_DIALOGS = "DISABLE_CONFIRM_DIALOGS";
@@ -372,12 +371,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setLocation(getLastLocation(null, null, frame));
 
         frame.pack();
+        frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", Frame.NORMAL));
         frame.setVisible(true);
         // DND
         dragNDrop = new Dropper(new JFrame());
         dragNDrop.addUIListener(this);
         // Ruft jede sekunde ein UpdateEvent auf
-   
+
         /*
          * jago: Fixed very bad style of coding which often is the cause of
          * fully frozen applications!!! After the JFrame is realized (e.g.
@@ -401,7 +401,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -815,10 +814,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         menHelp.add(createMenuItem(actionHelp));
         menHelp.add(createMenuItem(actionWiki));
-        /*
-         * TODO: ABout Frame
-         */
-        // menAbout.setEnabled(false);
         menHelp.addSeparator();
         menHelp.add(createMenuItem(actionAbout));
 
@@ -1107,7 +1102,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                     }
                 } catch (Exception e3) {
-                    // TODO Auto-generated catch block
                     e3.printStackTrace();
                 }
 
@@ -1479,8 +1473,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             // lblPluginHostActive = new JLabel(imgInactive);
             // lblPluginDecryptActive = new JLabel(imgInactive);
-            // lblPluginDecryptActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_decrypt"));
-            // lblPluginHostActive.setToolTipText(JDLocale.L("gui.tooltip.plugin_host"));
+            // lblPluginDecryptActive.setToolTipText(JDLocale.L(
+            // "gui.tooltip.plugin_decrypt"));
+            // lblPluginHostActive.setToolTipText(JDLocale.L(
+            // "gui.tooltip.plugin_host"));
 
             panel.add(lblMessage);
             // JLinkButton linkButton = new
@@ -1762,6 +1758,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (doIt) {
                 saveLastLocation(e.getComponent(), null);
                 saveLastDimension(e.getComponent(), null);
+                guiConfig.setProperty("MAXIMIZED_STATE", this.getFrame().getExtendedState());
                 JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
                 this.fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
             }
@@ -1769,33 +1766,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void windowActivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowClosed(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowDeactivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowDeiconified(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowIconified(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowOpened(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 
     public boolean showHTMLDialog(String title, String htmlQuestion) {
@@ -1918,13 +1903,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         Image img2 = JDUtilities.getImage(img);
                         // boolean sel = btnReconnect.isSelected();
                         btnReconnect.setIcon(new ImageIcon(img2));
-                        // btnReconnect.setSelected(p.getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
+                        // btnReconnect.setSelected(p.getBooleanProperty(
+                        // Configuration.PARAM_DISABLE_RECONNECT));
                         // btnReconnect.setSelected(true);
                     }
 
                     if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
                         btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
-                        // btnClipBoard.setSelected(p.getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE));
+                        // btnClipBoard.setSelected(p.getBooleanProperty(
+                        // Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE));
 
                     }
                     break;
@@ -1987,17 +1974,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     // public void updateStatusBar() {
     // int maxspeed =
-    // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+    // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.
+    // PARAM_DOWNLOAD_MAX_SPEED,
     // 0);
     //
     // this.statusBar.spMaxDls.setModel(new
-    // SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
+    //SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty
+    // (Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,
     // 3), 1, 20, 1));
     //
     // this.statusBar.spMax.setModel(new SpinnerNumberModel(maxspeed, 0,
     // Integer.MAX_VALUE, 50));
     //
-    // this.statusBar.chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+    // this.statusBar.chbPremium.setSelected(JDUtilities.getConfiguration().
+    // getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
     //
     // return;
     // }
