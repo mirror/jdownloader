@@ -78,23 +78,20 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen"));
         ce.setDefaultValue(false);        
         container.addEntry(ce);
-        ce =new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[]{Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, JDLocale.L("gui.config.general.toDoWithDownloads", "Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START).setExpertEntry(true);
+        ce =new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[]{Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, JDLocale.L("gui.config.general.toDoWithDownloads", "Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START);
         container.addEntry(ce); 
        
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 120000);
         ce.setDefaultValue(100000);
-        ce.setStep(500);
-        ce.setExpertEntry(true);
+        ce.setStep(500);        
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 0, 120000);
         ce.setDefaultValue(100000);
-        ce.setStep(500);
-        ce.setExpertEntry(true);
+        ce.setStep(500);        
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, SingleDownloadController.WAIT_TIME_ON_CONNECTION_LOSS, JDLocale.L("gui.config.download.connectionlost.wait", "Wartezeit nach Verbindungsabbruch [s]"), 0, 24*60*60);
         ce.setDefaultValue(5*60);
-        ce.setStep(1);
-        ce.setExpertEntry(true);
+        ce.setStep(1);        
         network.addEntry(ce);
         
        
@@ -111,8 +108,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         download.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Dateigröße anpassen."));
         ce.setDefaultValue(true);
-        ce.setEnabledCondidtion(conditionEntry, ">", 1);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, ">", 1);        
         download.addEntry(ce);
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_RETRIES, JDLocale.L("gui.config.download.retries", "Max. Neuversuche bei vorrübergehenden Hosterproblemen"), 0, 20);
@@ -127,31 +123,26 @@ public class ConfigPanelDownload extends ConfigPanel {
 //        download.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
-        ce.setDefaultValue(false);
-        ce.setExpertEntry(true);
+        ce.setDefaultValue(false);        
         conditionEntry=ce;
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDLocale.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)"));
-        ce.setDefaultValue("http://checkip.dyndns.org");
-        ce.setExpertEntry(true);
+        ce.setDefaultValue("http://checkip.dyndns.org");        
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP"));
         ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);        
         extended.addEntry(ce);
     
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDLocale.L("gui.config.download.ipcheck.mask", "Erlaubte IPs"));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);        
         extended.addEntry(ce);
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config,"EXTERNAL_IP_CHECK_INTERVAL", JDLocale.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"),10,60*60);
         ce.setDefaultValue(10*60);
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);        
         extended.addEntry(ce);
         
         
@@ -161,23 +152,20 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(false);
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, Configuration.PARAM_FILE_EXISTS, new String[] { JDLocale.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen") }, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:"));
-        ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
-        ce.setExpertEntry(false);
+        ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));        
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDLocale.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen"));
-        ce.setDefaultValue(false);
-        ce.setExpertEntry(true);
+        ce.setDefaultValue(false);        
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "USEWRITERTHREAD", JDLocale.L("gui.config.download.downloadThread", "Gleichzeitig downloaden und auf Festplatte schreiben"));
-        ce.setDefaultValue(false);
-        ce.setExpertEntry(true);
+        ce.setDefaultValue(false);        
         extended.addEntry(ce);
         
 
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"),3,30);
         ce.setDefaultValue(4);
     
-        ce.setExpertEntry(true);
+        
         extended.addEntry(ce);
         
 
@@ -188,21 +176,17 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
-        ce.setDefaultValue(false);
-        ce.setExpertEntry(true);
+        ce.setDefaultValue(false);        
         network.addEntry(ce);
         conditionEntry=ce;
         
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDLocale.L("gui.config.download.proxy.host", "Host/IP"));
-        
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDLocale.L("gui.config.download.proxy.host", "Host/IP"));        
+        ce.setEnabledCondidtion(conditionEntry, "==", true);        
         network.addEntry(ce);
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"),1,65000);
         ce.setDefaultValue(8080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);        
         network.addEntry(ce);
         
         
@@ -222,21 +206,18 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDLocale.L("gui.config.download.use_socks", "Socks-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
-        ce.setDefaultValue(false);
-        ce.setExpertEntry(true);
+        ce.setDefaultValue(false);        
         network.addEntry(ce);
         conditionEntry=ce;
         
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDLocale.L("gui.config.download.socks.host", "Host/IP"));
         
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);        
         network.addEntry(ce);
         
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"),1,65000);
         ce.setDefaultValue(1080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setExpertEntry(true);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);        
         network.addEntry(ce);
 
         

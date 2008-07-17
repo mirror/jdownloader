@@ -60,7 +60,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
         GUIConfigEntry ce;
    
         
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[]{Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF}, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[]{Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF}, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING));
         addGUIConfigEntry(ce);
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,    Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false));
         addGUIConfigEntry(ce);

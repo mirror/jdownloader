@@ -47,9 +47,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     private int start;
     private int end;
 
-    private boolean enabled = true;
-
-    private boolean expertEntry = false;
+    private boolean enabled = true;    
 
     private String instantHelp;
 
@@ -61,7 +59,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     private Object conditionValue;
 
-//    private Object newValue;
+    // private Object newValue;
 
     private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
 
@@ -328,15 +326,6 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         return enabled;
     }
 
-    public ConfigEntry setExpertEntry(boolean b) {
-        this.expertEntry = b;
-        return this;
-    }
-
-    public boolean isExpertEntry() {
-        return expertEntry;
-    }
-
     public ConfigEntry setInstantHelp(String l) {
         this.instantHelp = l;
         return this;
@@ -379,6 +368,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         }
 
     }
+
     public void addListener(ConfigEntry configEntry) {
         if (configEntry != null) {
             this.listener.add(configEntry);
@@ -386,6 +376,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         }
 
     }
+
     public String getCompareOperator() {
         return compareOperator;
     }
@@ -419,8 +410,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     public void setGuiListener(PropertyChangeListener gce) {
-        if(guiListener==null)
-        this.guiListener = gce;
+        if (guiListener == null) this.guiListener = gce;
 
     }
 

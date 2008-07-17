@@ -123,7 +123,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ConfigEntry conditionEntry;
         // GENERAL
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20).setExpertEntry(true);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.JAC_SHOW_TIMEOUT, JDLocale.L("gui.config.captcha.train.show_timeout", "Anzeigedauer des Eingabefensters"), 0, 600).setDefaultValue(20);
 
         container.addEntry(ce);
 
@@ -140,7 +140,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         jac.addEntry(ce);
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80).setExpertEntry(true);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80);
         ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.org/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle"));
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         jac.addEntry(ce);

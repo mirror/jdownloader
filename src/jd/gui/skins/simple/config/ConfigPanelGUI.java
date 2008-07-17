@@ -120,7 +120,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")).setDefaultValue(defplaf));
         look.addEntry(ce);
 
-        ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false).setExpertEntry(true));
+        ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")).setDefaultValue(false));
         look.addEntry(ce);
         ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")).setDefaultValue(true));
         look.addEntry(ce);
@@ -152,10 +152,10 @@ public class ConfigPanelGUI extends ConfigPanel {
             guiConfig.save();
         }
 
-        ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]).setExpertEntry(true));
+        ce = (new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, guiConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")).setDefaultValue(BrowserArray[0]));
         extended.addEntry(ce);
 
-        ce = (new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackagelimit", "Schwelle der Auto. Paketverwaltung."), 0, 100).setDefaultValue(90).setExpertEntry(true));
+        ce = (new ConfigEntry(ConfigContainer.TYPE_SPINNER, guiConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackagelimit", "Schwelle der Auto. Paketverwaltung."), 0, 100).setDefaultValue(90));
         links.addEntry(ce);
         ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")).setDefaultValue(true));
         links.addEntry(ce);

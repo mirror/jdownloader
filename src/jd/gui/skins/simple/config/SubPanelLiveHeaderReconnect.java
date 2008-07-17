@@ -62,7 +62,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,ControlListener {
+class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener, ControlListener {
     /**
      * 
      */
@@ -94,7 +94,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         initPanel();
         this.lh = (HTTPLiveHeader) interaction;
         load();
-       
+
     }
 
     public void save() {
@@ -116,9 +116,9 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         btnFindIP.addActionListener(this);
         JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
         JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
+
         user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
         addGUIConfigEntry(user);
         pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
@@ -127,11 +127,11 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
         ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")).setDefaultValue(routerip));
         addGUIConfigEntry(ip);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20).setExpertEntry(true));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
         addGUIConfigEntry(ce);
 
         routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
@@ -155,11 +155,11 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
         if (e.getSource() == btnFindIP) {
             JDUtilities.getController().addControlListener(this);
-          mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
+            mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
             mld.getBtnOK().setEnabled(false);
             mld.getProgress().setMaximum(100);
             mld.getProgress().setValue(2);
-           //mld.setEnabled(true);
+            // mld.setEnabled(true);
             new Thread() {
                 public void run() {
                     ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
@@ -171,8 +171,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
                     mld.getBtnOK().setEnabled(true);
                     mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
-                    //mld.setEnabled(true);
-                   
+                    // mld.setEnabled(true);
+
                     JDUtilities.getController().addControlListener(SubPanelLiveHeaderReconnect.this);
                 }
             }.start();
@@ -312,13 +312,15 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             dialog.pack();
             dialog.setLocationRelativeTo(null);
             dialog.setVisible(true);
-            int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.showConfirmDialog(this,
-                                                                // panel,
-                                                                // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
-                                                                // "Router
-                                                                // importieren"),
-                                                                // JOptionPane.OK_CANCEL_OPTION,
-                                                                // JOptionPane.INFORMATION_MESSAGE);
+            int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.
+                                                               // showConfirmDialog
+                                                               // (this,
+            // panel,
+            // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
+            // "Router
+            // importieren"),
+            // JOptionPane.OK_CANCEL_OPTION,
+            // JOptionPane.INFORMATION_MESSAGE);
             if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
                 String selected = (String) list.getSelectedValue();
                 int id = Integer.parseInt(selected.split("\\.")[0]);
@@ -334,7 +336,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
             }
         }
-            if (e.getSource() == this.btnAutoConfig) {
+        if (e.getSource() == this.btnAutoConfig) {
 
             if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen. Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"))) {
                 Thread th;
@@ -344,8 +346,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                     public void run() {
 
                         GetRouterInfo routerInfo = new GetRouterInfo(progress);
-                        routerInfo.setLoginPass((String)pass.getText());
-                        routerInfo.setLoginUser((String)user.getText());
+                        routerInfo.setLoginPass((String) pass.getText());
+                        routerInfo.setLoginUser((String) user.getText());
                         String username = (String) user.getText();
                         if (username != null && !username.matches("[\\s]*")) routerInfo.username = username;
                         String pw = (String) pass.getText();
@@ -383,16 +385,16 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED&&mld!=null&&mld.isEnabled()) {
+        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
 
             if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
-                mld.setText(JDUtilities.formatSeconds((int)l.getMillis()/1000)+" : "+ l.getMessage() + "\r\n"+mld.getText());
+                mld.setText(JDUtilities.formatSeconds((int) l.getMillis() / 1000) + " : " + l.getMessage() + "\r\n" + mld.getText());
                 mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                mld.getProgress().setValue(mld.getProgress().getValue()+1);
+                mld.getProgress().setValue(mld.getProgress().getValue() + 1);
             }
         }
-        
+
     }
 
 }

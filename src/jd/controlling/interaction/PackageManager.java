@@ -35,7 +35,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
-import jd.plugins.Plugin;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

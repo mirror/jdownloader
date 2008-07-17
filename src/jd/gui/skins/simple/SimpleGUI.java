@@ -125,8 +125,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_JAC_LOG = "JAC_DOLOG";
 
-    public static final String PARAM_USE_EXPERT_VIEW = "USE_EXPERT_VIEW";
-
     public static final String PARAM_BROWSER_VARS = "BROWSER_VARS";
 
     public static final String PARAM_BROWSER = "BROWSER";

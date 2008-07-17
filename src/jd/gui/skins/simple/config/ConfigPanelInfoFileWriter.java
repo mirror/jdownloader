@@ -28,9 +28,7 @@ import javax.swing.border.EmptyBorder;
 import jd.config.Configuration;
 import jd.controlling.interaction.InfoFileWriter;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ConfigPanelInfoFileWriter extends ConfigPanel {
     /**
@@ -57,7 +55,7 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
         GUIConfigEntry ce;
         for(int i=0; i<fileWriter.getConfig().getEntries().size();i++){
             ce = new GUIConfigEntry(fileWriter.getConfig().getEntries().get(i));
-            if (!ce.isExpertEntry() || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_USE_EXPERT_VIEW, false)) {
+            
                 EmptyBorder eb = new EmptyBorder(0,0,0,0);
                 ce.setBorder(eb);
 //                Component[] components = ce.getComponents();
@@ -66,7 +64,7 @@ public class ConfigPanelInfoFileWriter extends ConfigPanel {
 //                }
                 panel.add(ce);
                 entries.add(ce);
-            }
+            
         }
         panel.setLayout(new BorderLayout());
         add(panel, "Center");

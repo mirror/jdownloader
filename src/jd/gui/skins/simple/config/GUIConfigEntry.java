@@ -314,10 +314,6 @@ public class GUIConfigEntry extends JPanel implements ActionListener,ChangeListe
         
     }
 
-    public boolean isExpertEntry() {
-        return configEntry.isExpertEntry();
-    }
-
     /**
      * Setz daten ind ei INput Komponente
      * 
