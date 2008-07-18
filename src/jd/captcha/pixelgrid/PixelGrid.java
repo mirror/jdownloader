@@ -51,11 +51,11 @@ import com.sun.image.codec.jpeg.JPEGImageEncoder;
 
 public class PixelGrid extends Property {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
-	/**
+    /**
      * Logger
      */
     public Logger logger = UTILITIES.getLogger();
@@ -963,7 +963,7 @@ public class PixelGrid extends Property {
      * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
      */
     public boolean isElement(int value, int avg) {
-      return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
+        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
     }
 
     /**
@@ -1117,7 +1117,7 @@ public class PixelGrid extends Property {
      */
     public void removeSmallObjects(double contrast, double objectContrast) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
-        
+
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
@@ -1135,7 +1135,7 @@ public class PixelGrid extends Property {
      */
     public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
         int tmp = owner.getJas().getInteger("minimumObjectArea");
-       
+
         owner.getJas().set("minimumObjectArea", 0);
         Vector<PixelObject> ret = getObjects(contrast, objectContrast);
         owner.getJas().set("minimumObjectArea", tmp);
@@ -1156,7 +1156,7 @@ public class PixelGrid extends Property {
     public Vector<PixelObject> getObjects(double contrast, double objectContrast) {
         int[][] tmpGrid = getGridCopy();
         int dist;
-       
+
         Vector<PixelObject> ret = new Vector<PixelObject>();
         PixelObject lastObject = null;
         PixelObject object;
@@ -1168,6 +1168,7 @@ public class PixelGrid extends Property {
         int line = 1;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
+               
                 if (tmpGrid[x][y] < 0) continue;
 
                 if (getPixelValue(x, y) <= (objectContrast * getMaxPixelValue())) {
@@ -1190,40 +1191,7 @@ public class PixelGrid extends Property {
                         }
                         if (JAntiCaptcha.isLoggerActive()) logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
 
-                    }
-                    // else if
-                    // (owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance")
-                    // > 0.0 && lastObject != null && x >= lastObject.getXMin()
-                    // && x <= (lastObject.getXMin() + lastObject.getWidth())) {
-                    // double xDist = Math.abs(x - (lastObject.getXMin() +
-                    // lastObject.getWidth() / 2));
-                    // double perc = 100.0 * (xDist / (double)
-                    // (lastObject.getWidth() / 2));
-                    //
-                    // if (perc <
-                    // owner.getJas().getDouble("objectDetectionMergeSeperatedPartsDistance"))
-                    // {
-                    //
-                    // object = lastObject;
-                    // for (int i = 0; i < ret.size(); i++) {
-                    // if (ret.elementAt(i) == object) {
-                    // ret.remove(i);
-                    // break;
-                    // }
-                    // }
-                    // if (JAntiCaptcha.isLoggerActive()) logger.finer(perc + "
-                    // Neues Objekt liegt im alten.... weiter gehts");
-                    // }
-                    // else {
-                    // object = new PixelObject(this);
-                    // object.setContrast(contrast);
-                    // //
-                    // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
-                    // // "+contrast+" : "+objectContrast);
-                    // object.setWhiteContrast(objectContrast);
-                    // }
-                    // }
-                    else {
+                    }else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
                         // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
@@ -1233,7 +1201,16 @@ public class PixelGrid extends Property {
                     if (showdebug) {
                         if (object.getArea() > 20) w.setImage(0, line, getImage());
                     }
+                    int tmp=object.getSize();
                     getObject(x, y, tmpGrid, object);
+                    if(tmp==object.getSize()){
+                        object = new PixelObject(this);
+                        object.setContrast(contrast);
+                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // "+contrast+" : "+objectContrast);
+                        object.setWhiteContrast(objectContrast);
+                        getObject(x, y, tmpGrid, object);
+                    }
                     // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
                     if (object.getArea() > 20) {
@@ -1268,6 +1245,11 @@ public class PixelGrid extends Property {
 
                     }
 
+                }else{
+                    
+                  // logger.finer("fdsf");
+
+                    
                 }
             }
         }
@@ -1601,15 +1583,16 @@ public class PixelGrid extends Property {
 
     }
 
-   
     public void setOrgGrid(int[][] grid) {
         this.tmpGrid = grid;
 
     }
 
     /**
-     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion!
-     * Diese rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow führen. Man sollte sie mal umschreiben!
+     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese
+     * rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow
+     * führen. Man sollte sie mal umschreiben!
+     * 
      * @param x
      * @param y
      * @param tmpGrid
@@ -1627,15 +1610,15 @@ public class PixelGrid extends Property {
                 tmpGrid[x][y] = -1;
 
                 // Achtung!! Algos funktionieren nur auf sw basis richtig
-                // grid[x][y] = 254;
+                //grid[x][y] = 254;
                 getObject(x - 1, y, tmpGrid, object);
-               if(owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
                 getObject(x, y - 1, tmpGrid, object);
-                if(owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
                 getObject(x + 1, y, tmpGrid, object);
-                if(owner.getJas().getBoolean("followXLines"))getObject(x + 1, y + 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y + 1, tmpGrid, object);
                 getObject(x, y + 1, tmpGrid, object);
-                if(owner.getJas().getBoolean("followXLines"))getObject(x - 1, y + 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y + 1, tmpGrid, object);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1698,7 +1681,6 @@ public class PixelGrid extends Property {
         this.grid = newGrid;
 
     }
-    
 
     public static void fillLetter(Letter l) {
 
@@ -1710,7 +1692,7 @@ public class PixelGrid extends Property {
                 if (l.grid[x][y] > limit && tmp[x][y] != 1) {
                     PixelObject p = new PixelObject(l);
                     recFill(p, l, x, y, tmp, 0);
-                    if (p.isBordered()&&p.getSize()<60) {
+                    if (p.isBordered() && p.getSize() < 60) {
                         l.fillWithObject(p, 0);
                     }
                     // BasicWindow.showImage(l.getImage(2), x+" - "+y);
@@ -1729,6 +1711,7 @@ public class PixelGrid extends Property {
             }
             p.add(x, y, 0xff0000);
             tmp[x][y] = 1;
+
             recFill(p, l, x - 1, y, tmp, i);
             // getObject(x - 1, y - 1, tmpGrid, object);
             recFill(p, l, x, y - 1, tmp, i);

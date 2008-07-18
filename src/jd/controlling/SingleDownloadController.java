@@ -474,7 +474,7 @@ public class SingleDownloadController extends Thread {
         logger.severe("Error occurred: " + message);
         step.setParameter(null);
         if (message != null) downloadLink.setStatusText(message);
-        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+       // downloadLink.setStatus(DownloadLink.STATUS_TODO);
         // downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 

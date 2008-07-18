@@ -210,6 +210,7 @@ public class Main {
             }
 
         });
+        if(jdus==null)jdus= new String[0];
         log(log, "JD Packages to install: " + jdus.length + System.getProperty("line.separator"));
         ArrayList<File> readmes = new ArrayList<File>();
         ArrayList<File> failed = new ArrayList<File>();

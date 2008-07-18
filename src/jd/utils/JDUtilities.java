@@ -1155,7 +1155,7 @@ public class JDUtilities {
 	 */
 	public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
 		return pluginsForDecrypt;
-	}
+	} 
 
 	/**
 	 * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück

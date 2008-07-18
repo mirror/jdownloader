@@ -78,7 +78,9 @@ public class Zip {
         for (int i = 0; i < srcFiles.length; i++) {
             if (srcFiles[i].isDirectory())
                 addFolderToZip("", srcFiles[i].getAbsolutePath(), zip);
-            else if (srcFiles[i].isFile()) addFileToZip("", srcFiles[i].getAbsolutePath(), zip);
+            else if (srcFiles[i].isFile()) {
+                addFileToZip("", srcFiles[i].getAbsolutePath(), zip);
+            }
         }
 
         zip.flush();
@@ -107,8 +109,8 @@ public class Zip {
 
     private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
         if (srcFile.endsWith("Thumbs.db")) return;
-        if(Regex.matches(srcFile,excludeFilter)){
-            System.out.println("Filtered: "+srcFile);
+        if (Regex.matches(srcFile, excludeFilter)) {
+            System.out.println("Filtered: " + srcFile);
             return;
         }
         File folder = new File(srcFile);
@@ -130,8 +132,8 @@ public class Zip {
         File folder = new File(srcFolder);
         if (excludeFiles.contains(folder)) return;
         for (String fileName : folder.list()) {
-            if(Regex.matches(fileName,excludeFilter)){
-                System.out.println("Filtered: "+fileName);
+            if (Regex.matches(fileName, excludeFilter)) {
+                System.out.println("Filtered: " + fileName);
                 continue;
             }
             if (path.equals("")) {
@@ -143,7 +145,7 @@ public class Zip {
     }
 
     public void setExcludeFilter(Pattern compile) {
-      excludeFilter = compile;
-        
+        excludeFilter = compile;
+
     }
 }

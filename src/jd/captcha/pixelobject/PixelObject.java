@@ -314,6 +314,7 @@ public class PixelObject implements Comparable {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 ret[x][y] = owner.getMaxPixelValue();
+              
             }
         }
         for (int i = 0; i < getSize(); i++) {
@@ -565,6 +566,18 @@ public class PixelObject implements Comparable {
     public void setBordered(boolean b) {
         bordered=b;
         
+    }
+
+    public int getDistanceTo(int x, int y) {
+       int mindist=Integer.MAX_VALUE;
+       
+       for(int[]akt:object){
+           int xd=Math.abs(x-akt[0]);
+           int yd=Math.abs(y-akt[1]);
+           int dis= (int)Math.sqrt(xd*xd+yd*yd);
+           mindist=Math.min(mindist, dis);
+       }
+        return mindist;
     }
     
 }

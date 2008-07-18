@@ -8,11 +8,15 @@ package jd.utils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 
+import jd.unrar.Zip;
 
 public class UpdateStable {
     private static Logger logger = JDUtilities.getLogger();
@@ -27,11 +31,11 @@ public class UpdateStable {
         StringBuffer sb = new StringBuffer();
         for (File file : filelist) {
             String sub = file.toString().substring(dir.toString().length() + 1).replaceAll("\\\\", "/");
-            sb.append("$" + sub + "?" + "http://jdproject.googlecode.com/svn/trunk/" + sub + "=\""+JDUtilities.getLocalHash(file)+"\";\r\n");
+            sb.append("$" + sub + "?" + "http://jdproject.googlecode.com/svn/trunk/" + sub + "=\"" + JDUtilities.getLocalHash(file) + "\";\r\n");
         }
-        logger.info(sb+"");
-        
-        upload(sb+"");
+        logger.info(sb + "");
+
+        upload(sb + "");
     }
 
     private void scanDir(File dir) {
@@ -48,7 +52,8 @@ public class UpdateStable {
 
         });
     }
-private void upload(String list){
+
+    private void upload(String list){
     
     try {
         
@@ -65,12 +70,12 @@ private void upload(String list){
         ftp.cwd("/httpdocs/update/stable/");
         
         // Upload some files.
-        //ftp.
-        //ftp.stor(new File("webcam.jpg"));
-        //ftp.stor(new File("comicbot-latest.png"));
+        // ftp.
+        // ftp.stor(new File("webcam.jpg"));
+        // ftp.stor(new File("comicbot-latest.png"));
        
         // You can also upload from an InputStream, e.g.
-        //ftp.stor(new FileInputStream(new File("test.png")), "test.png");
+        // ftp.stor(new FileInputStream(new File("test.png")), "test.png");
         logger.info("write list.php");
         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("list.php"),list);
         ftp.remove("list.php");
@@ -99,12 +104,32 @@ private void upload(String list){
         // Quit from the FTP server.
         ftp.disconnect();
         logger.info("update ok");
+        Date dt = new Date();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_hh-mm");
+        String filename = "JDownloader_" + df.format(dt) + "_v" + JDUtilities.getRevision() + ".zip";
+        
+        Zip zip = new Zip(dir.listFiles(), new File(dir.getParentFile(), filename));
+        zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
+       
+       
+            zip.zip();
+            String uid = "70683";
+            String pw = JOptionPane.showInputDialog("PW für: " + uid);
+            if(pw!=null){
+               System.out.println(Upload.toUploadedToPremium(new File(dir.getParentFile(), filename), uid, pw));;
+            
+            }
+            logger.info("zipped files to: "+new File(dir.getParentFile(), filename));
     }
     catch (IOException e) {
        e.printStackTrace();
+    } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
     }
     
 }
+
     public static void main(String args[]) {
 
         new UpdateStable();

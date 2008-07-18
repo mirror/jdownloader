@@ -33,6 +33,8 @@ public class Browser {
     private int limit = 500 * 1024 * 1025;
     private boolean doRedirects = true;
     private HashMap<String, String> headers;
+    private int connectTimeout=-1;
+    private int readTimeout=-1;
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
 
     public Browser() {
@@ -49,7 +51,8 @@ public class Browser {
             if (currentURL == null) this.currentURL = new URL(url);
             PostRequest request = new PostRequest(url);
             request.setFollowRedirects(doRedirects);
-
+            if(connectTimeout>0)request.setConnectTimeout(connectTimeout);
+            if(readTimeout>0)request.setReadTimeout(readTimeout);
             forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             request.getPostData().putAll(post);
@@ -332,6 +335,22 @@ public String toString(){
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
         
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
     }
 
  

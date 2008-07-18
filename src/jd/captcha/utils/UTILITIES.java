@@ -941,14 +941,24 @@ public class UTILITIES {
 		return dif;
 	}
 
-	public static double getColorDifference(int[] rgbA, int[] rgbB) {
-		int[] labA = rgb2lab(rgbA[0], rgbA[1], rgbA[2]);
-		int[] labB = rgb2lab(rgbB[0], rgbB[1], rgbB[2]);
-		int dif0 = labA[0] - labB[0];
-		int dif1 = labA[1] - labB[1];
-		int dif2 = labA[2] - labB[2];
-		return Math.sqrt(dif0 * dif0 + dif1 * dif1 + dif2 * dif2);
-	}
+	   public static double getColorDifference(int[] rgbA, int[] rgbB) {
+	        int[] labA = rgb2lab(rgbA[0], rgbA[1], rgbA[2]);
+	        int[] labB = rgb2lab(rgbB[0], rgbB[1], rgbB[2]);
+	        int dif0 = labA[0] - labB[0];
+	        int dif1 = labA[1] - labB[1];
+	        int dif2 = labA[2] - labB[2];
+	        return Math.sqrt(dif0 * dif0 + dif1 * dif1 + dif2 * dif2);
+	    }
+
+	    public static double getColorDifference(int a, int b) {
+	        return getColorDifference(getRGB(a), getRGB(b));
+
+	    }
+	    public static int[] getRGB(int a) {
+	        java.awt.Color aa = new java.awt.Color(a);
+	        return new int[] { aa.getRed(), aa.getGreen(), aa.getBlue() };
+
+	    }
 
 	public static double getAbsolutLABValue(int[] rgb) {
 		return getColorDifference(rgb, new int[] { 0, 0, 0 });
