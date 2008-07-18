@@ -166,7 +166,7 @@ public class DistributeData extends ControlBroadcaster {
         // Zuerst wird data durch die Such Plugins geschickt.
         // decryptedLinks.addAll(handleSearchPlugins());
 		
-        reformDataString();
+        //reformDataString();
 		
         // es werden die entschlüsselten Links (soweit überhaupt
         // vorhanden)

@@ -58,6 +58,7 @@ jd.plugins.decrypt.RapidsafeDe
 jd.plugins.decrypt.Rapidsafenet
 jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.rapidsharknet
+jd.plugins.decrypt.RedirectWayaroundorg
 jd.plugins.decrypt.RelinkUs
 jd.plugins.decrypt.Rlslog
 jd.plugins.decrypt.RockHouseIn
