@@ -30,7 +30,7 @@ public class WizardPages {
 		DefaultWizardPage[] wizardPages = new DefaultWizardPage[]{
 				Welcome.getInstance(),
 				CheckAGB.getInstance(),
-//				DownloadFolder.getInstance(),
+				DownloadFolder.getInstance(),
 				Reconnect.getInstance(),
 				Finished.getInstance(),
 		};
@@ -49,10 +49,10 @@ public class WizardPages {
         CheckAGB.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
         CheckAGB.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
 
-//        step++;
-//        headerIcon = getImageIcon("res/agb.jpg");
-//        DownloadFolder.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
-//        DownloadFolder.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
+        step++;
+        headerIcon = getImageIcon("res/agb.jpg");
+        DownloadFolder.getInstance().setHeader(new DefaultHeader("AGBs", "You have to read and accept our AGBs prior to using JDownloader", headerIcon, step, of));
+        DownloadFolder.getInstance().setFooter(DefaultFooter.createFooter(new JButton[]{getAboutButton()}, getBackButton(), getNextButton(), null, getCancelButton()));
 
         step++;
         headerIcon = getImageIcon("res/agb.jpg");

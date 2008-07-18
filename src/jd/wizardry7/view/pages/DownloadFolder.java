@@ -32,11 +32,11 @@ public class DownloadFolder extends DefaultWizardPage {
 	}
 	
 	protected void initComponents() {
-	    ConfigContainer configContainer = new ConfigContainer(this, "Titel");
-        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-        configContainer.addEntry(ce);
-
-        cpanel = new ConfigEntriesPanel(configContainer, "Select where files downloaded with JDownloader should be stored.");
+//	    ConfigContainer configContainer = new ConfigContainer(this, "Titel");
+//        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+//        configContainer.addEntry(ce);
+//
+//        cpanel = new ConfigEntriesPanel(configContainer, "Select where files downloaded with JDownloader should be stored.");
 	}
 	
 	protected Component createBody() {
