@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,14 +31,15 @@ import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDLocale;
 
 public class SharebeeCom extends PluginForDecrypt {
 
-    final static String host             = "sharebee.com";
+    final static String host = "sharebee.com";
 
-    private String      version          = "1.0.0.0";
-    //sharebee.com/67e489cf
-    private Pattern     patternSupported = getSupportPattern("http://[*]sharebee\\.com/[a-zA-Z0-9]{8}");
+    private String version = "1.0.0.0";
+    // sharebee.com/67e489cf
+    private Pattern patternSupported = getSupportPattern("http://[*]sharebee\\.com/[a-zA-Z0-9]{8}");
 
     public SharebeeCom() {
         super();
@@ -78,78 +78,74 @@ public class SharebeeCom extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			int count = 0;
-    			
-    			// Anzahl der Links zählen
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true)) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE",false)) {
-    				count++;
-    			}
-    			if((Boolean) this.getProperties().getProperty("USE_BADONGO",false)) {
-    				count++;
-    			}
-    			progress.setRange( count);
-    			
-    			// Links auslesen und umdrehen
-    			ArrayList<ArrayList<String>> g = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "u=°\');return false;\">°</a>");
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE",true)) {
-    			progress.increase(1);
-                    for( int i=0; i<g.size();i++){
-                        if(g.get(i).get(1).equalsIgnoreCase("Rapidshare"))
-                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+                int count = 0;
+
+                // Anzahl der Links zählen
+                if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true)) {
+                    count++;
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true)) {
+                    count++;
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_ZSHARE", false)) {
+                    count++;
+                }
+                if ((Boolean) this.getProperties().getProperty("USE_BADONGO", false)) {
+                    count++;
+                }
+                progress.setRange(count);
+
+                // Links auslesen und umdrehen
+                ArrayList<ArrayList<String>> g = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "u=°\');return false;\">°</a>");
+
+                if ((Boolean) this.getProperties().getProperty("USE_RAPIDSHARE", true)) {
+                    progress.increase(1);
+                    for (int i = 0; i < g.size(); i++) {
+                        if (g.get(i).get(1).equalsIgnoreCase("Rapidshare")) decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
-    			}
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_ZSHARE",false)) {
-    			progress.increase(1);
-                    for( int i=0; i<g.size();i++){
-                        if(g.get(i).get(1).equalsIgnoreCase("zSHARE"))
-                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
+                }
+
+                if ((Boolean) this.getProperties().getProperty("USE_ZSHARE", false)) {
+                    progress.increase(1);
+                    for (int i = 0; i < g.size(); i++) {
+                        if (g.get(i).get(1).equalsIgnoreCase("zSHARE")) decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
-    			}
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD",true)) {
-    			progress.increase(1);
-                    for( int i=0; i<g.size();i++){
-                        if(g.get(i).get(1).equalsIgnoreCase("Megaupload"))
-                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
+                }
+
+                if ((Boolean) this.getProperties().getProperty("USE_MEGAUPLOAD", true)) {
+                    progress.increase(1);
+                    for (int i = 0; i < g.size(); i++) {
+                        if (g.get(i).get(1).equalsIgnoreCase("Megaupload")) decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
-    			}
-    			
-    			if((Boolean) this.getProperties().getProperty("USE_BADONGO",false)) {
-    			progress.increase(1);
-                    for( int i=0; i<g.size();i++){
-                        if(g.get(i).get(1).equalsIgnoreCase("Badongo"))
-                            decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
+                }
+
+                if ((Boolean) this.getProperties().getProperty("USE_BADONGO", false)) {
+                    progress.increase(1);
+                    for (int i = 0; i < g.size(); i++) {
+                        if (g.get(i).get(1).equalsIgnoreCase("Badongo")) decryptedLinks.add(this.createDownloadlink(g.get(i).get(0)));
                     }
-    			}
-    			    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+                }
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     private void setConfigEelements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "Hoster Auswahl"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE", "Rapidshare.com"));
         cfg.setDefaultValue(true);

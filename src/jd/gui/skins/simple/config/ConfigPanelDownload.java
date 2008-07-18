@@ -41,7 +41,7 @@ public class ConfigPanelDownload extends ConfigPanel {
      */
     private static final long serialVersionUID = 4145243293360008779L;
 
-    private SubConfiguration  config;
+    private SubConfiguration config;
 
     private ConfigContainer container;
 
@@ -59,12 +59,13 @@ public class ConfigPanelDownload extends ConfigPanel {
     public void save() {
         logger.info("save");
         cep.save();
-        //this.saveConfigEntries();
+        // this.saveConfigEntries();
         config.save();
     }
-    public void  setupContainer(){
-        this.container= new ConfigContainer(this);
-        config= JDUtilities.getSubConfig("DOWNLOAD");
+
+    public void setupContainer() {
+        this.container = new ConfigContainer(this);
+        config = JDUtilities.getSubConfig("DOWNLOAD");
         ConfigContainer network = new ConfigContainer(this, JDLocale.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
         ConfigContainer download = new ConfigContainer(this, JDLocale.L("gui.config.download.download.tab", "Downloadsteuerung"));
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.download.network.extended", "Erweiterte Einstellungen"));
@@ -76,27 +77,25 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen"));
-        ce.setDefaultValue(false);        
+        ce.setDefaultValue(false);
         container.addEntry(ce);
-        ce =new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[]{Configuration.FINISHED_DOWNLOADS_REMOVE, Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START, Configuration.FINISHED_DOWNLOADS_NO_REMOVE}, JDLocale.L("gui.config.general.toDoWithDownloads", "Fertig gestellte Downloads ...")).setDefaultValue(Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START);
-        container.addEntry(ce); 
-       
+        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDLocale.L("gui.config.general.toDoWithDownloads.never", "never") }, JDLocale.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ..."));
+        ce.setDefaultValue(JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"));
+        container.addEntry(ce);
+
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 120000);
         ce.setDefaultValue(100000);
-        ce.setStep(500);        
+        ce.setStep(500);
         network.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, JDLocale.L("gui.config.download.timeout.connect", "Timeout beim Verbinden(Request) [ms]"), 0, 120000);
         ce.setDefaultValue(100000);
-        ce.setStep(500);        
+        ce.setStep(500);
         network.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, SingleDownloadController.WAIT_TIME_ON_CONNECTION_LOSS, JDLocale.L("gui.config.download.connectionlost.wait", "Wartezeit nach Verbindungsabbruch [s]"), 0, 24*60*60);
-        ce.setDefaultValue(5*60);
-        ce.setStep(1);        
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, SingleDownloadController.WAIT_TIME_ON_CONNECTION_LOSS, JDLocale.L("gui.config.download.connectionlost.wait", "Wartezeit nach Verbindungsabbruch [s]"), 0, 24 * 60 * 60);
+        ce.setDefaultValue(5 * 60);
+        ce.setStep(1);
         network.addEntry(ce);
-        
-       
-        
-        
+
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, JDLocale.L("gui.config.download.simultan_downloads", "Maximale gleichzeitige Downloads"), 1, 20);
         ce.setDefaultValue(2);
         ce.setStep(1);
@@ -108,128 +107,113 @@ public class ConfigPanelDownload extends ConfigPanel {
         download.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Dateigröße anpassen."));
         ce.setDefaultValue(true);
-        ce.setEnabledCondidtion(conditionEntry, ">", 1);        
+        ce.setEnabledCondidtion(conditionEntry, ">", 1);
         download.addEntry(ce);
-        
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_RETRIES, JDLocale.L("gui.config.download.retries", "Max. Neuversuche bei vorrübergehenden Hosterproblemen"), 0, 20);
         ce.setDefaultValue(3);
         ce.setStep(1);
-     
         download.addEntry(ce);
-//        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_ERROR_RETRIES, JDLocale.L("gui.config.download.errorretries", "Max. Neuversuche bei einem Fehler"), 0, 20);
-//        ce.setDefaultValue(0);
-//        ce.setStep(1);
-//     
-//        download.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
-        ce.setDefaultValue(false);        
-        conditionEntry=ce;
+        ce.setDefaultValue(false);
+        conditionEntry = ce;
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_CHECK_SITE, JDLocale.L("gui.config.download.ipcheck.website", "IP prüfen über (Website)"));
-        ce.setDefaultValue("http://checkip.dyndns.org");        
+        ce.setDefaultValue("http://checkip.dyndns.org");
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_PATTERN, JDLocale.L("gui.config.download.ipcheck.regex", "RegEx zum filtern der IP"));
         ce.setDefaultValue("Address\\: ([0-9.]*)\\<\\/body\\>");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);        
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(ce);
-    
+
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PARAM_GLOBAL_IP_MASK, JDLocale.L("gui.config.download.ipcheck.mask", "Erlaubte IPs"));
         ce.setDefaultValue("\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        ce.setEnabledCondidtion(conditionEntry, "==", false);        
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(ce);
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config,"EXTERNAL_IP_CHECK_INTERVAL", JDLocale.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"),10,60*60);
-        ce.setDefaultValue(10*60);
-        ce.setEnabledCondidtion(conditionEntry, "==", false);        
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "EXTERNAL_IP_CHECK_INTERVAL", JDLocale.L("gui.config.download.ipcheck.externalinterval", "External IP Check Interval [sec]"), 10, 60 * 60);
+        ce.setDefaultValue(10 * 60);
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(ce);
-        
-        
-        
-        
+
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen"));
         ce.setDefaultValue(false);
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, Configuration.PARAM_FILE_EXISTS, new String[] { JDLocale.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen") }, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:"));
-        ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));        
+        ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDLocale.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen"));
-        ce.setDefaultValue(false);        
+        ce.setDefaultValue(false);
         extended.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "USEWRITERTHREAD", JDLocale.L("gui.config.download.downloadThread", "Gleichzeitig downloaden und auf Festplatte schreiben"));
-        ce.setDefaultValue(false);        
+        ce.setDefaultValue(false);
         extended.addEntry(ce);
-        
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"),3,30);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"), 3, 30);
         ce.setDefaultValue(4);
-    
-        
+
         extended.addEntry(ce);
-        
 
-     
-        
-        
-           
-        ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
+        ce = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
-        ce.setDefaultValue(false);        
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_PROXY, JDLocale.L("gui.config.download.use_proxy", "Http-Proxy Verwenden") + " (" + JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")");
+        ce.setDefaultValue(false);
         network.addEntry(ce);
-        conditionEntry=ce;
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDLocale.L("gui.config.download.proxy.host", "Host/IP"));        
-        ce.setEnabledCondidtion(conditionEntry, "==", true);        
+        conditionEntry = ce;
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDLocale.L("gui.config.download.proxy.host", "Host/IP"));
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"),1,65000);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"), 1, 65000);
         ce.setDefaultValue(8080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);        
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
-        
-        
-//        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "Benutzername (optional)"));
-//      
-//        ce.setEnabledCondidtion(conditionEntry, "==", true);
-//        ce.setExpertEntry(true);
-//        network.addEntry(ce);
-//        
-//        
-//        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Passwort (optional)"));
-//    
-//        ce.setEnabledCondidtion(conditionEntry, "==", true);
-//        ce.setExpertEntry(true);
-//        network.addEntry(ce);
-     
-        ce= new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
+
+        // ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
+        // JDUtilities.getConfiguration(), Configuration.PROXY_USER,
+        // JDLocale.L("gui.config.download.proxy.user",
+        // "Benutzername (optional)"));
+        //      
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ce.setExpertEntry(true);
+        // network.addEntry(ce);
+        //        
+        //        
+        // ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
+        // JDUtilities.getConfiguration(), Configuration.PROXY_PASS,
+        // JDLocale.L("gui.config.download.proxy.pass", "Passwort (optional)"));
+        //    
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ce.setExpertEntry(true);
+        // network.addEntry(ce);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR);
         network.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDLocale.L("gui.config.download.use_socks", "Socks-Proxy Verwenden")+" ("+JDLocale.L("gui.warning.restartNeeded","JD-Restart needed after changes!")+")");
-        ce.setDefaultValue(false);        
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.USE_SOCKS, JDLocale.L("gui.config.download.use_socks", "Socks-Proxy Verwenden") + " (" + JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!") + ")");
+        ce.setDefaultValue(false);
         network.addEntry(ce);
-        conditionEntry=ce;
-        
+        conditionEntry = ce;
+
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDLocale.L("gui.config.download.socks.host", "Host/IP"));
-        
-        ce.setEnabledCondidtion(conditionEntry, "==", true);        
+
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
-        
-        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"),1,65000);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"), 1, 65000);
         ce.setDefaultValue(1080);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);        
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
 
-        
-
-  
     }
+
     public void initPanel() {
-        setupContainer();      
+        setupContainer();
         this.setLayout(new GridBagLayout());
-       
-        JDUtilities.addToGridBag(this, cep=new ConfigEntriesPanel(this.container,"Download"), 0, 0, 1, 1, 1, 1,null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-    
+
+        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Download"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
     }
 
     @Override

@@ -125,7 +125,6 @@ public class JDController implements ControlListener, UIListener {
 
     private DownloadLink lastDownloadFinished;
 
-
     /**
      * Der Download Watchdog verwaltet die Downloads
      */
@@ -157,7 +156,7 @@ public class JDController implements ControlListener, UIListener {
     public JDController() {
 
         packages = new Vector<FilePackage>();
-     
+
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         this.eventSender = getEventSender();
 
@@ -292,7 +291,7 @@ public class JDController implements ControlListener, UIListener {
 
             }
             // Prüfen obd er Link entfernt werden soll.
-            if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+            if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
 
                 this.removeDownloadLink(lastDownloadFinished);
                 this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -309,7 +308,7 @@ public class JDController implements ControlListener, UIListener {
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-if(uiInterface==null)return;
+            if (uiInterface == null) return;
             // logger.info("rvc event" + links);
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
@@ -466,8 +465,7 @@ if(uiInterface==null)return;
                 return;
             }
             fp.sort("asc");
-            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0) && 
-                    (uiEvent.getSource() instanceof LinkGrabber)) {
+            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0) && (uiEvent.getSource() instanceof LinkGrabber)) {
                 this.addPackageAt(fp, 0);
             } else {
                 this.addPackage(fp);
@@ -847,7 +845,7 @@ if(uiInterface==null)return;
                         while (it.hasNext()) {
 
                             localLink = it.next();
-                            if (localLink.getStatus() == DownloadLink.STATUS_DONE && Configuration.FINISHED_DOWNLOADS_REMOVE_AT_START.equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                            if (localLink.getStatus() == DownloadLink.STATUS_DONE && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                                 it.remove();
                                 if (fp.getDownloadLinks().size() == 0) {
                                     iterator.remove();
@@ -1514,8 +1512,6 @@ if(uiInterface==null)return;
     // CURRENT_IP = JDUtilities.getIPAddress();
     // return ipChangeSuccess;
     // }
-
-
 
     public void setInitStatus(int initStatus) {
         this.initStatus = initStatus;

@@ -500,7 +500,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actioninstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
-
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
         actionTester = new JDAction(this, null, "action.tester", JDAction.APP_TESTER);
@@ -511,8 +510,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
-        // actionSearch = new JDAction(this, JDTheme.I("gui.images.find"),
-        // "action.search", JDAction.APP_SEARCH);
         actionItemsDelete = new JDAction(this, JDTheme.V("gui.images.delete"), "action.edit.items_remove", JDAction.ITEMS_REMOVE);
         actionItemsTop = new JDAction(this, JDTheme.V("gui.images.go_top"), "action.edit.items_top", JDAction.ITEMS_MOVE_TOP);
         actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
@@ -520,13 +517,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
-        // actionWiki = new JDAction(this, JDTheme.V("gui.images.wiki"),
-        // "action.wiki", JDAction.WIKI);
         actionWiki = new JDAction(this, null, "action.wiki", JDAction.WIKI);
-        // actionAbout = new JDAction(this, JDTheme.V("gui.images.about"),
-        // "action.about", JDAction.ABOUT);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
-
     }
 
     // Funktion wird jede Sekunde aufgerufen
@@ -556,54 +548,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Das Menü wird hier initialisiert
      */
     public void initMenuBar() {
-        // file menu
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file"));
-        // ImageIcon imageIcon = new
-        // ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
-        // imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
-        // menFile.setIcon(imageIcon);
-        menFile.setMnemonic(JDLocale.L("gui.menu.file_mnem").charAt(0));
-        JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
-        JMenuItem menFileLoad = createMenuItem(actionLoadDLC);
-        JMenuItem menFileSave = createMenuItem(actionSaveDLC);
-        JMenuItem menFileExit = createMenuItem(actionExit);
-        JMenuItem menFileInstall = createMenuItem(actioninstallJDU);
-        // edit menu
-        // JMenu menEdit = new JMenu(JDLocale.L("gui.menu.edit"));
-        menFile.setMnemonic(JDLocale.L("gui.menu.edit_mnem").charAt(0));
-        // JMenuItem menEditItemTop = createMenuItem(actionItemsTop);
-        // JMenuItem menEditItemUp = createMenuItem(actionItemsUp);
-        // JMenuItem menEditItemDown = createMenuItem(actionItemsDown);
-        // JMenuItem menEditItemBottom = createMenuItem(actionItemsBottom);
-        // JMenuItem menEditItemsDelete = createMenuItem(actionItemsDelete);
-        // menEdit.add(menEditItemsDelete);
-        // menEdit.addSeparator();
-        // menEdit.add(menEditItemTop);
-        // menEdit.add(menEditItemUp);
-        // menEdit.add(menEditItemDown);
-        // menEdit.add(menEditItemBottom);
-        // action menu
-        // JMenu menAction = new JMenu(JDLocale.L("gui.menu.action"));
-        // menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
-        // JMenuItem menDownload = createMenuItem(actionStartStopDownload);
-        // JMenuItem menAddLinks = createMenuItem(actionItemsAdd);
-        // menAction.setMnemonic(JDLocale.L("gui.menu.action_mnem").charAt(0));
-        // extra
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra"));
-        // menAction.setMnemonic(JDLocale.L("gui.menu.extra_mnem").charAt(0));
+        JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
+        JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
+
         menViewLog = createMenuItem(actionLog);
         if (actionLog.getAccelerator() != null) menViewLog.setAccelerator(actionLog.getAccelerator());
-        JMenuItem memDnD = createMenuItem(actionDnD);
-        JMenuItem menConfig = createMenuItem(actionConfig);
-        JMenuItem menTester = createMenuItem(actionTester);
-        JMenuItem menUnrar = createMenuItem(actionUnrar);
-        JMenuItem menPasswordlist = createMenuItem(actionPasswordlist);
 
         // add menus to parents
 
         // Adds the menus form the Addons
-        JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
-
         HashMap<String, PluginOptional> addons = JDUtilities.getPluginsOptional();
         Iterator<String> e = addons.keySet().iterator();
         JMenuItem mi;
@@ -774,52 +729,36 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             helpContainer.setEnabled(false);
         }
 
-        menFile.add(menFileLoad);
-        menFile.add(menFileSave);
+        menFile.add(createMenuItem(actionLoadDLC));
+        menFile.add(createMenuItem(actionSaveDLC));
         menFile.addSeparator();
-        menFile.add(menFileInstall);
+        menFile.add(createMenuItem(actioninstallJDU));
         menFile.addSeparator();
-        menFile.add(menFileExit);
+        menFile.add(createMenuItem(actionExit));
+
         menExtra.add(menViewLog);
-        menExtra.add(menTester);
-        menExtra.add(menConfig);
-        menExtra.add(memDnD);
-        menExtra.add(menUnrar);
+        menExtra.add(createMenuItem(actionTester));
+        menExtra.add(createMenuItem(actionConfig));
+        menExtra.add(createMenuItem(actionDnD));
+        menExtra.add(createMenuItem(actionUnrar));
         menExtra.addSeparator();
-        menExtra.add(menPasswordlist);
+        menExtra.add(createMenuItem(actionPasswordlist));
 
         menHelp.add(createMenuItem(actionHelp));
         menHelp.add(createMenuItem(actionWiki));
         menHelp.addSeparator();
         menHelp.add(createMenuItem(actionAbout));
 
-        // menAction.add(menDownload);
-        // menAction.add(menAddLinks);
         menuBar.setLayout(new GridBagLayout());
         Insets insets = new Insets(1, 1, 1, 1);
+
         int m = 0;
-
-        // ImageIcon imageIcon = new
-        // ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
-        // imageIcon = JDUtilities.getscaledImageIcon(imageIcon, 16, -1);
-        // JLabel logo = new JLabel(imageIcon);
-        // JDUtilities.addToGridBag(menuBar, logo, m++, 0, 1, 1, 0, 0, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
-
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        // menuBar.add(menEdit);
-        // menuBar.add(menAction);
         JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
         JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
         JDUtilities.addToGridBag(menuBar, menPlugins, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-        // menuBar.add(menExtra);
-        // /menuBar.add(menAddons);
-        // menuBar.add(menPlugins);
 
         warning = new JLabel("", JDTheme.II("gui.images.warning", 16, 16), SwingConstants.RIGHT);
         warning.setVisible(false);
@@ -884,7 +823,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnClipBoard = createMenuButton(actionClipBoard);
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
-        btnCes = createMenuButton(this.actionCes);
+        btnCes = createMenuButton(actionCes);
         toolBar.setFloatable(false);
         // toolBar.add(createMenuButton(this.actionLoadDLC));
         // toolBar.add(createMenuButton(this.actionSaveDLC));
@@ -904,10 +843,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionConfig));
         toolBar.addSeparator();
         toolBar.add(btnReconnect);
-        toolBar.add(createMenuButton(this.actionReconnect));
+        toolBar.add(createMenuButton(actionReconnect));
         toolBar.add(btnClipBoard);
         toolBar.addSeparator();
-        toolBar.add(createMenuButton(this.actionUpdate));
+        toolBar.add(createMenuButton(actionUpdate));
 
         if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) toolBar.add(btnCes);
 
