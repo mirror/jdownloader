@@ -94,21 +94,8 @@
                 <include name="META-INF/services/jd.plugins.PluginOptional" />
             </fileset>
         </jar>
-		<delete file="Manifest.MF" failonerror="false" />
+		<delete file="Manifest.MF" failonerror="false" />	
 		
-		<manifest file="Manifest.MF">
-			<attribute name="Created-By" value="Botzi" />
-			<attribute name="Main-Class" value="jd.update.Main" />
-	    </manifest>
-        <jar jarfile="${dist}/JDGetter.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/optional/JDGetter*" />                
-              </fileset>
-			     <fileset dir="${res}">
-                <include name="META-INF/services/jd.plugins.PluginOptional" />
-            </fileset>
-        </jar>
-		<delete file="Manifest.MF" failonerror="false" />
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="Tudels" />
 			<attribute name="Main-Class" value="jd.update.Main" />
