@@ -31,13 +31,14 @@ import jd.unrar.Zip;
 public class PackageCreaterUP {
     public static void main(String[] args) {
         Date dt = new Date();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         // Festlegung des Formats:
         JFrame frame = new JFrame();
         frame.setAlwaysOnTop(true);
         frame.setVisible(true);
         frame.add(new JLabel("JDU Packer"));
         frame.pack();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+       
 
         File srcDir = new File("D:/jd_jdu");
 

@@ -137,7 +137,7 @@ public class Main {
         final JProgressBar progressload = new JProgressBar();
         progressload.setMaximum(100);
         progressload.setStringPainted(true);
-        final JTextArea logWindow = new JTextArea(10, 60);
+        final JTextArea logWindow = new JTextArea(30, 120);
         JScrollPane scrollPane = new JScrollPane(logWindow);
         logWindow.setEditable(true);
 

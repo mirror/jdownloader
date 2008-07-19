@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -42,7 +43,7 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
-import jd.utils.HTMLEntities;
+
 
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
@@ -116,8 +117,11 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
+        buf=buf.replaceAll("http\\:\\/\\/.*\\.googlecode\\.com\\/svn\\/trunk", "...");
         System.out.println(buf);
-        if (logger != null) logger.append(new Date() + ":" + buf + System.getProperty("line.separator"));
+        Date dt = new Date();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        if (logger != null) logger.append(df.format(dt) + ":" + buf + System.getProperty("line.separator"));
     }
 
     public StringBuffer getLogger() {
@@ -171,7 +175,7 @@ public class WebUpdater implements Serializable {
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                    log("Webupdater: directfile: " + tmp[1].replaceAll("http\\:\\/\\/jdownloader\\.googlecode\\.com\\/svn\\/trunk", "...") + " to " + new File(tmp[0]).getAbsolutePath());
+                    log("Webupdater: directfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
                     downloadBinary(tmp[0], tmp[1]);
                 }
                 else {

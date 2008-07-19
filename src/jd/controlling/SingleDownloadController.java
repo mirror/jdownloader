@@ -248,6 +248,7 @@ public class SingleDownloadController extends Thread {
             logger.info("FINISHED " + resultStep + " / " + resultLinkStatus);
         
                 switch (resultLinkStatus) {
+                case DownloadLink.STATUS_ERROR_WAITTIME:
                 case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
                     this.onErrorWaittime(downloadLink, currentPlugin, resultStep);
                     break;

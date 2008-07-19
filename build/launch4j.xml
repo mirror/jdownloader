@@ -2,22 +2,38 @@
   <dontWrapJar>true</dontWrapJar>
   <headerType>gui</headerType>
   <jar>JDownloader.jar</jar>
-  <outfile>D:\Projekte - Java\workspace\jDownloader\dist\JDownloader.exe</outfile>
+  <outfile>C:\Users\coalado\Desktop\JDownloader.exe</outfile>
   <errTitle>Wrong Java Version installed</errTitle>
   <cmdLine>-Xmx512m</cmdLine>
   <chdir></chdir>
   <priority>normal</priority>
   <downloadUrl>http://java.com/download</downloadUrl>
-  <supportUrl>http://jdownloader.ath.cx</supportUrl>
-  <customProcName>true</customProcName>
+  <supportUrl>http://jdownloader.org</supportUrl>
+  <customProcName>false</customProcName>
   <stayAlive>false</stayAlive>
-  <icon>D:\Projekte - Java\workspace\jDownloader\dist\jd\img\jd_icon.ico</icon>
+  <manifest></manifest>
+  <icon>C:\Users\coalado\Desktop\jdressourcen\128_128_jd_icon.ico</icon>
+  <singleInstance>
+    <mutexName>JDOWNLOADER</mutexName>
+    <windowTitle></windowTitle>
+  </singleInstance>
   <jre>
     <path></path>
     <minVersion>1.5.0</minVersion>
     <maxVersion></maxVersion>
-    <dontUsePrivateJres>false</dontUsePrivateJres>
-    <initialHeapSize>0</initialHeapSize>
+    <jdkPreference>preferJre</jdkPreference>
     <maxHeapSize>512</maxHeapSize>
   </jre>
+  <versionInfo>
+    <fileVersion>2.0.0.0</fileVersion>
+    <txtFileVersion>rev</txtFileVersion>
+    <fileDescription>JDownloader Windows Launcher</fileDescription>
+    <copyright>(GPL) JD-TEam /JDownloader contributors</copyright>
+    <productVersion>2.0.0.0</productVersion>
+    <txtProductVersion>rev</txtProductVersion>
+    <productName>JDownloader Windows Launcher</productName>
+    <companyName>JD-team</companyName>
+    <internalName>JDLaunch4j</internalName>
+    <originalFilename>JDownloader.exe</originalFilename>
+  </versionInfo>
 </launch4jConfig>

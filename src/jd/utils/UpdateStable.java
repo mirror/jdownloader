@@ -108,7 +108,7 @@ public class UpdateStable {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd_hh-mm");
         String filename = "JDownloader_" + df.format(dt) + "_v" + JDUtilities.getRevision() + ".zip";
         
-        Zip zip = new Zip(dir.listFiles(), new File(dir.getParentFile(), filename));
+        Zip zip = new Zip(dir, new File(dir.getParentFile(), filename));
         zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
        
        

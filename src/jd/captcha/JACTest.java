@@ -39,7 +39,7 @@ public class JACTest {
 
     private void go() {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "filefactory.com";
+        String hoster = "li";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
         
