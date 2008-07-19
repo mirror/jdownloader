@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -111,10 +110,11 @@ public class ShareOnlineBiz extends PluginForHost {
                 Thread.sleep(1000);/* Sicherheitspause, sonst gibts 403 Response */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
-                    String filename = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), "<span class=\"locatedActive\">Download °</span>", 0);
-                    String[] sizev = SimpleMatches.getSimpleMatches(requestInfo.getHtmlCode(), "</font> (° °) angefordert");
-                    double size = Double.parseDouble(sizev[0].trim());
-                    String type = sizev[1].trim().toLowerCase();
+                    String filename = new Regex(requestInfo.getHtmlCode(),Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>",Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String sizev[][]=new Regex(requestInfo.getHtmlCode(),Pattern.compile("</font> \\((.*?) (.*?)\\) angefordert",Pattern.CASE_INSENSITIVE)).getMatches();
+                    
+                    double size = Double.parseDouble(sizev[0][0].trim());
+                    String type = sizev[0][1].trim().toLowerCase();
                     int filesize = 0;
                     if (type.equals("mb")) {
                         filesize = (int) (1024 * 1024 * size);
@@ -180,8 +180,8 @@ public class ShareOnlineBiz extends PluginForHost {
             /* Downloadlimit erreicht */
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(120000L);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_WAITTIME);
+                step.setParameter(60*60*1000L);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                 return step;
             }
 
