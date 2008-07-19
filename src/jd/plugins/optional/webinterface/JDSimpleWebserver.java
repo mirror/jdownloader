@@ -1,17 +1,18 @@
 package jd.plugins.optional.webinterface;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class JDSimpleWebserver extends Thread {
@@ -49,7 +50,7 @@ public class JDSimpleWebserver extends Thread {
             try {
                 while (getCurrentClientCounter() >= max_clientCounter) {
                     try {
-                        /*logger.info("warte");*/
+                        /* logger.info("warte"); */
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
                     }
@@ -57,7 +58,9 @@ public class JDSimpleWebserver extends Thread {
                 }
                 ;
                 Socket Client_Socket = Server_Socket.accept();
-                //logger.info("WebInterface: Client[" + getCurrentClientCounter() + "/" + max_clientCounter + "] connecting from " + Client_Socket.getInetAddress());
+                // logger.info("WebInterface: Client[" +
+                // getCurrentClientCounter() + "/" + max_clientCounter +
+                // "] connecting from " + Client_Socket.getInetAddress());
 
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
@@ -85,14 +88,50 @@ public class JDSimpleWebserver extends Thread {
 
         }
 
+        public String readline(BufferedInputStream reader) {
+            /* ne eigene readline für BufferedInputStream */
+            /*
+             * BufferedReader hat nur böse Probleme mit dem Verarbeiten von
+             * FileUploads gehabt
+             */
+            int max_buf = 1024;
+            byte[] buffer = new byte[max_buf];
+            int index = 0;
+            int byteread = 0;
+            try {
+
+                while ((byteread = reader.read()) != -1) {
+                    if (byteread == 10 || byteread == 13) {
+                        reader.mark(0);
+                        if ((byteread = reader.read()) != -1) {
+                            if (byteread == 13 || byteread == 10) {
+                                break;
+                            } else {
+                                reader.reset();
+                                break;
+                            }
+                        }
+                    }
+                    if (index > max_buf) return null;
+                    buffer[index] = (byte) byteread;
+                    index++;
+                }
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return new String(buffer).substring(0, index);
+        }
+
         public void run0() {
             try {
                 InputStream requestInputStream = Current_Socket.getInputStream();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(requestInputStream));
+                BufferedInputStream reader = new BufferedInputStream(requestInputStream);
+
                 String line = null;
                 HashMap<String, String> headers = new HashMap<String, String>();
 
-                while ((line = reader.readLine()) != null && line.trim().length() > 0) {
+                while ((line = readline(reader)) != null && line.trim().length() > 0) {
                     String key = null;
                     String value = null;
                     if (line.indexOf(": ") > 0) {
@@ -117,47 +156,56 @@ public class JDSimpleWebserver extends Thread {
                                      * damit der RequestParams Parser nicht
                                      * geändert werden muss
                                      */
-                                    /*logger.info("get post data length " + headers.get("content-length"));*/
-                                    Integer post_len = new Integer(headers.get("content-length"));
-                                    Integer post_len_toread = new Integer(post_len);
-                                    Integer post_len_read = new Integer(0);
-                                    char[] cbuf = new char[post_len];
-                                    Integer indexstart = 0;
-
+                                    int post_len = new Integer(headers.get("content-length"));
+                                    int post_len_toread = new Integer(post_len);
+                                    int post_len_read = new Integer(0);
+                                    byte[] cbuf = new byte[post_len];
+                                    int indexstart = 0;
                                     while (post_len_toread > 0) {
                                         if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
                                         indexstart = indexstart + post_len_read;
                                         post_len_toread = post_len_toread - post_len_read;
-                                        /*logger.info("gelesen " + post_len_read + " index " + indexstart + " noch zu lesen " + post_len_toread);*/
                                     }
-
-                                    String RequestParams = String.copyValueOf(cbuf);
-                                    if (indexstart.compareTo(post_len) == 0) {
+                                    String RequestParams = new String(cbuf).trim();
+                                    if (indexstart == post_len) {
                                         /* alten POST aus Header Liste holen */
                                         String request = headers.get(null);
                                         String[] requ = request.split(" ");
-                                        /*logger.info(requ[0]);*/
                                         if (Method.compareToIgnoreCase("post") == 0) {
-                                            /*
-                                             * alter POST aus Header Liste
-                                             * entfernen
-                                             */
-                                            headers.remove(null);
-                                            /*
-                                             * FIXME: ist remove nötig
-                                             */
-                                            /*
-                                             * neuer POST mit RequestParams in
-                                             * Header-Liste einfügen
-                                             */
                                             headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
                                         } else
                                             logger.severe("POST Daten bei nem GET aufruf???");
-
                                     } else {
                                         logger.severe("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
                                     }
 
+                                }
+                            } else if (headers.get("content-type").contains("multipart/form-data")) {
+                                /*
+                                 * POST Form Daten in GET Format übersetzen,
+                                 * damit der RequestParams Parser nicht
+                                 * geändert werden muss
+                                 * 
+                                 * Zusätzlich das File auslesen
+                                 */
+                                if (headers.containsKey("content-length")) {
+                                    int post_len = new Integer(headers.get("content-length"));
+                                    int post_len_toread = new Integer(post_len);
+                                    int post_len_read = new Integer(0);
+                                    byte[] cbuf = new byte[post_len];
+                                    int indexstart = 0;
+                                    String limiter = new Regex(headers.get("content-type"), Pattern.compile("boundary=(.*)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                    while (post_len_toread > 0) {
+                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
+                                        indexstart = indexstart + post_len_read;
+                                        post_len_toread = post_len_toread - post_len_read;
+                                    }
+                                    if (indexstart == post_len) {
+                                        logger.info("post daten verarbeiten");
+                                    }else
+                                    {
+                                        logger.severe("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
+                                    }
                                 }
                             }
                         }
@@ -171,7 +219,7 @@ public class JDSimpleWebserver extends Thread {
                                     /*
                                      * send authorization granted
                                      */
-                                    /*logger.info("pass stimmt");*/
+                                    /* logger.info("pass stimmt"); */
                                     request.handle();
 
                                 } else { /* send authorization failed */
@@ -199,7 +247,6 @@ public class JDSimpleWebserver extends Thread {
                 logger.severe("WebInterface: I/O Error");
             }
         }
-
     }
 
     /**

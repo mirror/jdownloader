@@ -44,6 +44,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
         mimes.put("txt", "text/plain");
         mimes.put("gif", "image/gif");
         mimes.put("css", "text/css");
+        mimes.put("png", "image/png");
         mimes.put("jpeg", "image/jpeg");
         mimes.put("jpg", "image/jpeg");
         mimes.put("jpe", "image/jpeg");
