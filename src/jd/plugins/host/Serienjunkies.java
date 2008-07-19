@@ -126,7 +126,7 @@ public class Serienjunkies extends PluginForHost {
             if(reqinfo.containsHTML("Download-Limit")){
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
                 if(Reconnecter.waitForNewIP(2*60*1000l)){
-                    logger.info("REconnect successfull. try again");
+                    logger.info("Reconnect successfull. try again");
                     reqinfo = HTTP.getRequest(url, null, null, true);
                     if (reqinfo.getLocation() != null) reqinfo = HTTP.getRequest(url, null, null, true);
                 }else{
@@ -432,6 +432,15 @@ public class Serienjunkies extends PluginForHost {
                 downloadLink.setStatusText("decrypt");
                 downloadLink.requestGuiUpdate();
                 Vector<DownloadLink> dls = getDLinks(link);
+                
+                if(dls.size() < 2) {
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
+                    logger.warning("SJ returned no Downloadlinks");
+                    return step;
+                }
+                
 //                if (aborted) return null;
                 FilePackage fp = downloadLink.getFilePackage();
                 int index= fp.indexOf(downloadLink);
