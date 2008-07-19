@@ -25,6 +25,12 @@ table td {
 	background-color: #fff;
 }
 
+h1 {
+	font-size: 18px;
+	margin: 20px 0 0 0;
+	border-bottom: 1px dashed #000;
+}
+
 h2 {
 	font-size: 16px;
 	color: #006AC3;
@@ -162,9 +168,10 @@ a:hover {
 	background-color: #d3d3ff;
 }
 
-#message {
+#message, #message_show {
 	/*horizontal and vertical centered*/
 	position: absolute;
+	z-index: 999;
 	left: 50%;
 	width: 80%;
 	margin-left: -40%;
@@ -181,6 +188,23 @@ a:hover {
 	font-weight: bold;
 	font-family:verdana,arial,helvetica;
 	font-size:11px;
+}
+
+#message_show {
+	border-width: 1px;
+	border-color: red;
+	border-style:solid;
+	padding: 10px;
+	background-color: #ffd5d5;
+
+	height: auto;
+	top: 200px;
+	line-height: 20px;
+	text-transform: none;
+}
+
+#message_hide, #message_ {
+	display: none;
 }
 
 #packageContainer .symbol {
@@ -416,7 +440,9 @@ a.button, a.addButton {
 }
 
 a.addButton {
-	float: left;
+	/*float: left;*/
+	display: block;
+	width: 40px;
 	background-image:url('img/add.png');
 	background-repeat: no-repeat;
 	height: 30px;

@@ -49,6 +49,8 @@
 					<br class="clear">
 				</div>
 
+				<div id="message_<tmpl_var message_status escape>"><tmpl_var message><div><a href="#" class="button" onclick="closeMessage();">Close Message</a></div></div>
+
 				<table class="tabledownload" id="packageContainer">
 					<tr>
 						<td style="width:2%;" class="tabletitle">
@@ -122,14 +124,26 @@
 				<br>
 			</FORM>
 
+			<h1>Add Links</h1>
 			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
 				<DIV class="linkAddBox">
-					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea><br>
-					<br>
+					<div style="float:right;">
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
+					</div>
+
+					<div style="padding-right: 100px;">
+					<textarea name="addlinks" cols="90" rows="3" onfocus="formElementChanged(); clean(this);" style="width:100%; float:left;">Paste your Links here (Container URLs, Link URLs, SourceCode from Pages to parse)</textarea>
+					</div>
 					<br class="clear">
 				</DIV>
 			</FORM>
+
+			<h1>Upload container file</h1>
+			<form name="upload" id="uploadForm" action="/link_adder.tmpl" method="post" enctype="multipart/form-data">
+				<div class="linkAddBox">
+					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50" onclick="formElementChanged()"> <a href="#" class="button" onclick="submitForm('uploadForm','/link_adder.tmpl','do','Upload')">Upload!</a>
+				</div>
+			</form>
 		</div>
 	</div>
 </div>

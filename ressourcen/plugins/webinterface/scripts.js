@@ -337,6 +337,11 @@ function allowChars(id, chars) {
 	}
 }
 
+function closeMessage() {
+	var msg = document.getElementById("message_show");
+	msg.id = "message_hide";
+}
+
 /*********************
  * ProgressBars
  *********************/
