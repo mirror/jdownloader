@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -166,8 +167,10 @@ public class ImageFap extends PluginForHost {
             gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
 
             if (picture_name != null) {
+                FilePackage fp =new FilePackage();
+                fp.setName(gallery_name);
                 downloadLink.setName(picture_name);
-                downloadLink.getFilePackage().setName(gallery_name);
+                downloadLink.setFilePackage(fp);                
                 return true;
             }
         } catch (MalformedURLException e) {
