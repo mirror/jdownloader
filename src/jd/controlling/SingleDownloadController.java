@@ -252,9 +252,6 @@ public class SingleDownloadController extends Thread {
                 case DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT:
                     this.onErrorWaittime(downloadLink, currentPlugin, resultStep);
                     break;
-//                case DownloadLink.STATUS_ERROR_WAITTIME:
-//                    this.onErrorStaticWaittime(downloadLink, currentPlugin, resultStep);
-//                    break;
                 case DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE:
                     this.onErrorTemporarilyUnavailable(downloadLink, currentPlugin, resultStep);
                     break;
