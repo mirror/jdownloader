@@ -1320,24 +1320,24 @@ public class JDUtilities {
          * 
          * 
          * if (str == null) return str; String allowed =
-         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;"
-         * ; String ret = ""; String l; int i; for (i = 0; i < str.length();
-         * i++) { char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0)
-         * { ret += letter; } else { l = Integer.toString(letter, 16); ret +=
-         * "%" + (l.length() == 1 ? "0" + l : l); } }
+         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
+         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
+         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
+         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
+         * (l.length() == 1 ? "0" + l : l); } }
          */
 
     }
 
     /**
-     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;"
-     * ; Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
+     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
+     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
      * 
      * @param str
      * @return decoded string
      */
     public static String htmlDecode(String str) {
-        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) return null;
@@ -1345,22 +1345,34 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
+                if (c == '$') {
+                    str = str.replaceFirst("\\&\\#x(.*?)\\;","\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
+                }
             }
         }
         pattern = "\\&\\#(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 10);
-                str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+                if (c == '$') {
+                    str = str.replaceFirst("\\&\\#(.*?)\\;", "\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+                }
             }
         }
-        
+
         pattern = "\\%([a-f0-9]{2})";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL|Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
+                if (c == '$') {
+                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}","\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
+                }
             }
         }
         try {
@@ -1400,8 +1412,8 @@ public class JDUtilities {
     }
 
     /**
-	 * 
-	 */
+     * 
+     */
     public static int getRunType() {
 
         try {
@@ -1671,7 +1683,7 @@ public class JDUtilities {
             return false;
         }
     }
-    
+
     /**
      * Speichert ein byteArray in ein file.
      * 
@@ -1690,10 +1702,10 @@ public class JDUtilities {
             if (!file.getParentFile().exists()) {
                 file.getParentFile().mkdirs();
             }
-            file.createNewFile();            
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));        
-            output.write(b, 0, b.length);           
-            output.close();            
+            file.createNewFile();
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            output.write(b, 0, b.length);
+            output.close();
             return true;
         } catch (FileNotFoundException e) {
             e.printStackTrace();
