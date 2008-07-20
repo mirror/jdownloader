@@ -29,10 +29,11 @@ import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
     // http://bluehost.to/dl=uScPWKtIN
+    
     // http://bluehost.to/file/uScPWKtIN/rnt-cckw.r07
     // http://bluehost.to/file/uScPWKtIN/
     // http://bluehost.to/file/uScPWKtIN
-    // http://bluehost.to/dl=0DEH7n9A8
+    // http://bluehost.to/?dl=0DEH7n9A8
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", Pattern.CASE_INSENSITIVE);
 
     static private final String HOST = "bluehost.to";
