@@ -15,6 +15,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
@@ -75,6 +76,49 @@ public class JDSimpleWebserverRequestHandler {
         return ret;
     }
 
+    private void addLinkstoWaitingList(Vector<DownloadLink> waitingLinkList) {
+        DownloadLink link;
+        DownloadLink next;
+        while (waitingLinkList.size() > 0) {
+            link = waitingLinkList.remove(0);
+            if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
+                attachLinkTopackage(link);
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                }
+            } else {
+                if (!link.isAvailabilityChecked()) {
+                    Iterator<DownloadLink> it = waitingLinkList.iterator();
+                    Vector<DownloadLink> links = new Vector<DownloadLink>();
+                    Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
+                    links.add(link);
+                    dlLinks.add(link);
+                    while (it.hasNext()) {
+                        next = it.next();
+                        if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
+                            dlLinks.add(next);
+                            links.add(next);
+                        }
+                    }
+                    if (links.size() > 1) {
+                        boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
+                        if (ret != null) {
+                            for (int ii = 0; ii < links.size(); ii++) {
+                                dlLinks.get(ii).setAvailable(ret[ii]);
+                            }
+                        }
+                    }
+                }
+                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+
+                    attachLinkTopackage(link);
+
+                }
+            }
+        }
+    }
+
     private void attachLinkTopackage(DownloadLink link) {
         synchronized (JDWebinterface.Link_Adder_Packages) {
             int bestSim = 0;
@@ -100,6 +144,31 @@ public class JDSimpleWebserverRequestHandler {
 
             }
         }
+    }
+
+    private Vector<DownloadLink> loadContainerFile(final File file) {
+
+        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        PluginForContainer pContainer;
+
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            pContainer = pluginsForContainer.get(i);
+            if (pContainer.canHandle(file.getName())) {
+                try {
+                    pContainer = pContainer.getClass().newInstance();
+                    pContainer.initContainer(file.getAbsolutePath());
+                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                    if (links != null && links.size() != 0) {
+                        downloadLinks = links;
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return downloadLinks;
     }
 
     @SuppressWarnings("static-access")
@@ -428,56 +497,18 @@ public class JDSimpleWebserverRequestHandler {
                 JDRestart jdrs = new JDRestart();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
-                if (requestParameter.containsKey("addlinks")) {
-                    /*
-                     * TODO: offline links markieren, dupe check
-                     */
+                if (requestParameter.containsKey("addlinks")) {                    
                     String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
                     Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
-
-                    DownloadLink link;
-                    DownloadLink next;
-                    while (waitingLinkList.size() > 0) {
-                        link = waitingLinkList.remove(0);
-                        if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
-                            attachLinkTopackage(link);
-                            try {
-                                Thread.sleep(5);
-                            } catch (InterruptedException e) {
-                            }
-                        } else {
-                            if (!link.isAvailabilityChecked()) {
-                                Iterator<DownloadLink> it = waitingLinkList.iterator();
-                                Vector<DownloadLink> links = new Vector<DownloadLink>();
-                                Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
-                                links.add(link);
-                                dlLinks.add(link);
-                                while (it.hasNext()) {
-                                    next = it.next();
-                                    if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
-                                        dlLinks.add(next);
-                                        links.add(next);
-                                    }
-                                }
-                                if (links.size() > 1) {
-                                    boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
-                                    if (ret != null) {
-                                        for (int ii = 0; ii < links.size(); ii++) {
-                                            dlLinks.get(ii).setAvailable(ret[ii]);
-                                        }
-                                    }
-                                }
-                            }
-                            if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
-
-                                attachLinkTopackage(link);
-
-                            }
-                        }
-                    }
+                    addLinkstoWaitingList(waitingLinkList);
+                }
+            } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
+                if (requestParameter.containsKey("file")) {
+                    File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
+                    Vector<DownloadLink> waitingLinkList = loadContainerFile(container);
+                    addLinkstoWaitingList(waitingLinkList);
                 }
             }
-
         }
         /* passwortliste verändern */
         if (requestParameter.containsKey("passwd")) {

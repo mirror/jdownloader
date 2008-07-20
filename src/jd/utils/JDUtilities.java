@@ -1663,6 +1663,41 @@ public class JDUtilities {
             return false;
         }
     }
+    
+    /**
+     * Speichert ein byteArray in ein file.
+     * 
+     * @param file
+     * @param bytearray
+     * @return Erfolg true/false
+     */
+    public static boolean savetofile(File file, byte[] b) {
+        try {
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    logger.severe("Konnte Datei nicht überschreiben " + file);
+                    return false;
+                }
+            }
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();            
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));        
+            output.write(b, 0, b.length);           
+            output.close();            
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     /**
      * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
