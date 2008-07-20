@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
@@ -140,6 +141,13 @@ public class BluehostTo extends PluginForHost {
                 br.getPage("http://bluehost.to/fetchinfo");
             }
             br.getPage(downloadLink);
+            if(Regex.matches(br,"Sie haben diese Datei in der letzten Stunde")){
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_WAITTIME);
+                step.setParameter(60*60*1000l);
+                logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
+                return step;
+            }
             HTTPConnection con = br.openFormConnection(br.getForms()[2]);
             int length = con.getContentLength();
             downloadLink.setDownloadMax(length);

@@ -1355,6 +1355,14 @@ public class JDUtilities {
                 str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
             }
         }
+        
+        pattern = "\\%([a-f0-9]{2})";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL|Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 16);
+                str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
+            }
+        }
         try {
             str = URLDecoder.decode(str, "UTF-8");
         } catch (Exception e) {
