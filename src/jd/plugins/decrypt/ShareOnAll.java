@@ -14,40 +14,33 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class ShareOnAll extends PluginForDecrypt {
-    final static String host             = "shareonall.com";
-    private static final String IGNORE_LIST = "IGNORE_LIST";
-    private String      version          = "1.0.0.0";
-    private Pattern     patternSupported = getSupportPattern("http://[*]shareonall\\.com/[+]");
-    private String[] ignoreList;
- 
+    final static String host = "shareonall.com";
+    private String version = "1.0.0.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm", Pattern.CASE_INSENSITIVE);
+
     public ShareOnAll() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        this.setConfigEelements();
-        this.ignoreList=Regex.getLines(getProperties().getStringProperty(IGNORE_LIST, ""));
     }
 
     @Override
@@ -80,50 +73,62 @@ public class ShareOnAll extends PluginForDecrypt {
         return version;
     }
 
-    private boolean checkLink(String link) {
-
-        for(String hoster:ignoreList){
-            if(hoster.trim().length()>2&&link.toLowerCase().contains(hoster.toLowerCase().trim()))return false;
-        }
-        return true;
-    }
-
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
+        String cryptedLink = (String) parameter;
+        logger.info(cryptedLink);
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                parameter = parameter.replace("\\?.*", "");
-                URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + SimpleMatches.getFirstMatch(parameter, Pattern.compile("http://.*?shareonall.com/(.*)", Pattern.CASE_INSENSITIVE), 1));
-                RequestInfo reqinfo = HTTP.getRequest(url);
-
-                // Links herausfiltern
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\'°\' target='_blank'>");
-                progress.setRange(links.size());
-                for (int i = 0; i < links.size(); i++) {
-                    if (checkLink(links.get(i).get(0))) decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-                    progress.increase(1);
+                String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+                URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + id + ".htm");
+                RequestInfo reqInfo = HTTP.getRequest(url);
+                boolean do_continue = false;
+                Form form;
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    if (reqInfo.containsHTML("<img src='code")) {
+                        form = reqInfo.getForms()[0];
+                        String captchaAddress = new Regex(reqInfo.getHtmlCode(), Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
+                        HTTPConnection captcha_con = new HTTPConnection(new URL(captchaAddress).openConnection());
+                        captcha_con.setRequestProperty("Cookie", reqInfo.getCookie());
+                        File captchaFile = this.getLocalCaptchaFile(this);
+                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                            /* Fehler beim Captcha */
+                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                            step.setParameter(null);
+                            step.setStatus(PluginStep.STATUS_ERROR);
+                            return step;
+                        }
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        if (captchaCode == null) {
+                            /* abbruch geklickt */
+                            step.setParameter(decryptedLinks);
+                            return null;
+                        }
+                        captchaCode = captchaCode.toUpperCase();
+                        form.put("c", captchaCode);
+                        reqInfo = form.getRequestInfo();
+                    } else {
+                        do_continue = true;
+                        break;
+                    }
                 }
-
-                // Decrypt abschliessen
-                // veraltet: firePluginEvent(new PluginEvent(this,
-                // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                if (do_continue == true) {
+                    // Links herausfiltern
+                    String links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
+                    progress.setRange(links.length);
+                    for (int i = 0; i < links.length; i++) {
+                        decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                        progress.increase(1);
+                    }
+                }
                 step.setParameter(decryptedLinks);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         return null;
-    }
-
-    private void setConfigEelements() {
-//        ConfigEntry cfg;
-       // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(domain1.com;domain2.com;...)")));
-
-        config.addEntry( new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), IGNORE_LIST,JDLocale.L("plugins.decrypt.shareonall.ignorelist","Liste der ignorierten Domains(Eine Domain/Zeile)")) );
-    
-   
     }
 
     @Override
