@@ -22,15 +22,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
-import jd.parser.SimpleMatches;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -40,7 +39,8 @@ public class FileBaseTo extends PluginForHost {
 
     private static final String VERSION = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[w]filebase.to/files/\\d{1,}/[+]");
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*", Pattern.CASE_INSENSITIVE);
+    private RequestInfo requestInfo;
 
     //
     @Override
@@ -85,27 +85,15 @@ public class FileBaseTo extends PluginForHost {
 
     public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
         try {
-            String url = downloadLink.getDownloadURL();
-
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
 
-            requestInfo = HTTP.getRequest(new URL(url));
-            
-            if(requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
-                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
-            }
-            
-            String[] helpurl = url.split("/");
-            String name = helpurl[helpurl.length-1];
-            downloadLink.setName(name);
-
             /* Postdaten zusammenbaun */
-            String linkurl = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<form name=\"waitform\" action=\"", "\"");
-            String submit_wait_value = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "wait.value = \"Download ", "\";");
+            String linkurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<form name=\"waitform\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String submit_wait_value = new Regex(requestInfo.getHtmlCode(), Pattern.compile("wait.value = \"Download (.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
             String postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
             postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
@@ -113,16 +101,17 @@ public class FileBaseTo extends PluginForHost {
             postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
             postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
 
-            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", url, postdata, false);
+            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
             HTTPConnection urlConnection = requestInfo.getConnection();
             downloadLink.setDownloadMax(urlConnection.getContentLength());
+            String filename = getFileNameFormHeader(urlConnection);
+            downloadLink.setName(filename);
             final long length = downloadLink.getDownloadMax();
-
             dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
-
+            dl.setResume(false);
+            dl.setChunkNum(1);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
@@ -144,21 +133,17 @@ public class FileBaseTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            
             requestInfo = HTTP.getRequest(new URL(url));
-            
             String[] helpurl = url.split("/");
-            downloadLink.setName(helpurl[helpurl.length-1]);
-            
-            if(requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
+            downloadLink.setName(helpurl[helpurl.length - 1]);
+            if (requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
                 requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
             }
-            
+
             if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
                 downloadLink.setAvailable(false);
                 return false;
             }
-            
             downloadLink.setDownloadMax(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
 
             return true;
@@ -167,23 +152,31 @@ public class FileBaseTo extends PluginForHost {
         }
         return false;
     }
-    
-    private int getSize(String size){
+
+    private int getSize(String size) {
+        if (size == null) return 0;
         String[] help = size.split(" ");
         int loops = 0;
         Double s = Double.parseDouble(help[0]);
-        
-        if(help[1].equals("KB")) {loops = 1;}
-        if(help[1].equals("MB")) {loops = 2;}
-        if(help[1].equals("GB")) {loops = 3;}
-        if(help[1].equals("TB")) {loops = 4;}
-        
-        for(int i=0; i<loops; i++) {
+
+        if (help[1].equals("KB")) {
+            loops = 1;
+        }
+        if (help[1].equals("MB")) {
+            loops = 2;
+        }
+        if (help[1].equals("GB")) {
+            loops = 3;
+        }
+        if (help[1].equals("TB")) {
+            loops = 4;
+        }
+
+        for (int i = 0; i < loops; i++) {
             s = s * 1024;
         }
-        
+
         return (int) Math.round(s);
-        //(int) Math.round(Double.parseDouble(size) * 1024 * 1024)
     }
 
     @Override
