@@ -5,7 +5,9 @@ import java.io.UnsupportedEncodingException;
 public class JDHexUtils {
 
     static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
-
+    public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
+    public static final String REGEX_FIND_ALL_HEX = "[[a-fA-F0-9]{2}]*?";
+    
     static public String getHexString(byte[] raw) {
         byte[] hex = new byte[2 * raw.length];
         int index = 0;
@@ -26,7 +28,7 @@ public class JDHexUtils {
 
     static public String getHexString(String string) {
         try {
-            if (string==null) return null;
+            if (string == null) return null;
             byte[] raw = string.getBytes("ASCII");
             byte[] hex = new byte[2 * raw.length];
             int index = 0;
@@ -45,8 +47,8 @@ public class JDHexUtils {
         }
     }
 
-    public static byte[] getByteArray(String hexString){
-        if (hexString==null) return null;
+    public static byte[] getByteArray(String hexString) {
+        if (hexString == null) return null;
         int length = hexString.length();
         byte[] buffer = new byte[(length + 1) / 2];
         boolean evenByte = true;

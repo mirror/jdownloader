@@ -168,9 +168,12 @@ public class JDSimpleWebserver extends Thread {
                                         indexstart = indexstart + post_len_read;
                                         post_len_toread = post_len_toread - post_len_read;
                                     }
-                                    String RequestParams = new String(cbuf).trim();                                    
+                                    String RequestParams = new String(cbuf).trim();
                                     if (indexstart == post_len) {
-                                        /* alten POST aus Header Liste holen, neuen zusammenbauen */
+                                        /*
+                                         * alten POST aus Header Liste holen,
+                                         * neuen zusammenbauen
+                                         */
                                         String request = headers.get(null);
                                         String[] requ = request.split(" ");
                                         if (Method.compareToIgnoreCase("post") == 0) {
@@ -188,7 +191,8 @@ public class JDSimpleWebserver extends Thread {
                                  * damit der RequestParams Parser nicht geändert
                                  * werden muss
                                  * 
-                                 * Zusätzlich das File auslesen (die komplette Verarbeiten findet auf Hex statt!!)
+                                 * Zusätzlich das File auslesen (die komplette
+                                 * Verarbeiten findet auf Hex statt!!)
                                  */
                                 if (headers.containsKey("content-length")) {
                                     int post_len = new Integer(headers.get("content-length"));
@@ -203,37 +207,44 @@ public class JDSimpleWebserver extends Thread {
                                          * vorhanden ist
                                          */
                                         limiter = "--" + limiter;
-                                        limiter=JDHexUtils.getHexString(limiter);
+                                        limiter = JDHexUtils.getHexString(limiter);
                                         while (post_len_toread > 0) {
                                             if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
                                             indexstart = indexstart + post_len_read;
                                             post_len_toread = post_len_toread - post_len_read;
                                         }
                                         if (indexstart == post_len) {
-                                            String RequestParams="";
+                                            String RequestParams = "";
                                             /*
                                              * momentan wird multipart nur für
                                              * containerupload genutzt, daher
                                              * form-data parsing unnötig
-                                             */                                                                                        
-                                            String MultiPartData[][] = new Regex(JDHexUtils.getHexString(cbuf), Pattern.compile(limiter + ""+JDHexUtils.getHexString("\r")+"{0,1}"+ ""+ ""+JDHexUtils.getHexString("\n")+"{0,1}"+ ""+"(.*?)(?="+ ""+ JDHexUtils.getHexString("\r")+ ""+"{0,1}"+ ""+ JDHexUtils.getHexString("\n")+ ""+"{0,1}" + limiter + ")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-                                            for (int i = 0; i < MultiPartData.length; i++) {                                                
+                                             *                                           
+                                             */
+                                            String MultiPartData[][] = new Regex(JDHexUtils.getHexString(cbuf), Pattern.compile(limiter + JDHexUtils.getHexString("\r") + "{0,1}" +  JDHexUtils.getHexString("\n") + "{0,1}" + JDHexUtils.REGEX_MATCH_ALL_HEX +"(?=" + "" + JDHexUtils.getHexString("\r")  + "{0,1}"  + JDHexUtils.getHexString("\n") + "{0,1}" + limiter + ")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+                                            for (int i = 0; i < MultiPartData.length; i++) {
                                                 if (MultiPartData[i][0].contains(JDHexUtils.getHexString("Content-Disposition: form-data; name=\"container\""))) {
-                                                    String containertyp = new Regex(MultiPartData[i][0], Pattern.compile(JDHexUtils.getHexString("filename=\"")+".*?"+JDHexUtils.getHexString(".")+"(.*?)"+JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                                                    if (containertyp!=null) containertyp=new String(JDHexUtils.getByteArray(containertyp));                                                    
-                                                    if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf"))) {                                                        
+                                                    String containertyp = new Regex(MultiPartData[i][0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                                    if (containertyp != null) containertyp = new String(JDHexUtils.getByteArray(containertyp));
+                                                    if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf")||true)) {
                                                         File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
-                                                        if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(MultiPartData[i][0].substring(MultiPartData[i][0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))){
-                                                            /*RequestParameter zusammenbauen*/
-                                                            RequestParams="do=Upload&file="+JDUtilities.urlEncode(containerfile.getName());  
+                                                        if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(MultiPartData[i][0].substring(MultiPartData[i][0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
+                                                            /*
+                                                             * RequestParameter
+                                                             * zusammenbauen
+                                                             */
+                                                            RequestParams = "do=Upload&file=" + JDUtilities.urlEncode(containerfile.getName());
                                                             break;
                                                         }
                                                     } else {
-                                                        if (containertyp!=null ) logger.severe("unknown container typ: " + containertyp);
+                                                        if (containertyp != null) logger.severe("unknown container typ: " + containertyp);
                                                     }
                                                 }
                                             }
-                                            /* alten POST aus Header Liste holen, neuen zusammenbauen */
+                                            /*
+                                             * alten POST aus Header Liste
+                                             * holen, neuen zusammenbauen
+                                             */
                                             String request = headers.get(null);
                                             String[] requ = request.split(" ");
                                             if (Method.compareToIgnoreCase("post") == 0) {
@@ -316,5 +327,4 @@ public class JDSimpleWebserver extends Thread {
         CURRENT_CLIENT_COUNTER = cc;
     }
 
-    
 }
