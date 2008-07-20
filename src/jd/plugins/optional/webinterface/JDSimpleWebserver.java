@@ -226,7 +226,7 @@ public class JDSimpleWebserver extends Thread {
                                                 if (MultiPartData[i][0].contains(JDHexUtils.getHexString("Content-Disposition: form-data; name=\"container\""))) {
                                                     String containertyp = new Regex(MultiPartData[i][0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
                                                     if (containertyp != null) containertyp = new String(JDHexUtils.getByteArray(containertyp));
-                                                    if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf")||true)) {
+                                                    if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf"))) {
                                                         File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
                                                         if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(MultiPartData[i][0].substring(MultiPartData[i][0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
                                                             /*
