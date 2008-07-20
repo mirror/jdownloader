@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -85,7 +86,6 @@ public class FileBaseTo extends PluginForHost {
     public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            if (url.endsWith(".avi")) url = url + "&dl=1";
 
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
@@ -94,7 +94,13 @@ public class FileBaseTo extends PluginForHost {
             }
 
             requestInfo = HTTP.getRequest(new URL(url));
-            String name = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>");
+            
+            if(requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
+                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
+            }
+            
+            String[] helpurl = url.split("/");
+            String name = helpurl[helpurl.length-1];
             downloadLink.setName(name);
 
             /* Postdaten zusammenbaun */
@@ -138,20 +144,46 @@ public class FileBaseTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
-            if (url.endsWith(".avi")) url = url + "&dl=1";
+            
             requestInfo = HTTP.getRequest(new URL(url));
+            
+            String[] helpurl = url.split("/");
+            downloadLink.setName(helpurl[helpurl.length-1]);
+            
+            if(requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
+                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
+            }
+            
             if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
                 downloadLink.setAvailable(false);
                 return false;
             }
-            downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<br>Du hast die Datei <b>", "</b>"));
-            downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">", "B</font>"), "font-size: 9pt\">", " M").trim()) * 1024 * 1024));
+            
+            downloadLink.setDownloadMax(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
 
             return true;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    private int getSize(String size){
+        String[] help = size.split(" ");
+        int loops = 0;
+        Double s = Double.parseDouble(help[0]);
+        
+        if(help[1].equals("KB")) {loops = 1;}
+        if(help[1].equals("MB")) {loops = 2;}
+        if(help[1].equals("GB")) {loops = 3;}
+        if(help[1].equals("TB")) {loops = 4;}
+        
+        for(int i=0; i<loops; i++) {
+            s = s * 1024;
+        }
+        
+        return (int) Math.round(s);
+        //(int) Math.round(Double.parseDouble(size) * 1024 * 1024)
     }
 
     @Override
