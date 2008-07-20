@@ -33,7 +33,7 @@ public class BluehostTo extends PluginForHost {
     // http://bluehost.to/file/uScPWKtIN/
     // http://bluehost.to/file/uScPWKtIN
     // http://bluehost.to/dl=0DEH7n9A8
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(dl=|file/).*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", Pattern.CASE_INSENSITIVE);
 
     static private final String HOST = "bluehost.to";
     static private final String PLUGIN_NAME = HOST;
@@ -118,6 +118,7 @@ public class BluehostTo extends PluginForHost {
 
             Browser br = new Browser();
 
+           correctUrl(downloadLink);
            
            
             page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
@@ -162,6 +163,17 @@ public class BluehostTo extends PluginForHost {
         }
     }
 
+    private void correctUrl(DownloadLink downloadLink) {
+        String url=downloadLink.getDownloadURL();
+        
+       url= url.replaceFirst("\\?dl=","dl=");
+        downloadLink.setUrlDownload(url);
+            
+
+         //   http://bluehost.to/?dl=kmuevIKM7
+        
+    }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -179,6 +191,7 @@ public class BluehostTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
+            correctUrl(downloadLink);
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
             // happyhour
