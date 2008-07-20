@@ -1345,7 +1345,7 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$') {
+                if (c == '$'||c=='\\') {
                     str = str.replaceFirst("\\&\\#x(.*?)\\;","\\"+ c );
                 } else {
                     str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
@@ -1356,7 +1356,7 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 10);
-                if (c == '$') {
+                if (c == '$'||c=='\\') {
                     str = str.replaceFirst("\\&\\#(.*?)\\;", "\\"+ c );
                 } else {
                     str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
@@ -1368,7 +1368,7 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$') {
+                if (c == '$'||c=='\\') {
                     str = str.replaceFirst("\\%[a-f0-9A-F]{2}","\\"+ c );
                 } else {
                     str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
