@@ -1380,7 +1380,7 @@ public class JDUtilities {
         } catch (Exception e) {
         }
         return HTMLEntities.unhtmlentities(str);
-    }
+    } 
 
     /**
      * Schreibt content in eine Lokale textdatei

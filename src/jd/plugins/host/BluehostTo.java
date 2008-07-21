@@ -135,11 +135,11 @@ public class BluehostTo extends PluginForHost {
             }
             int wait = Integer.parseInt(dat[4].trim());
 
-            if (wait == 0) {
+          //  if (wait == 0) {
 
                 
                 br.getPage("http://bluehost.to/fetchinfo");
-            }
+            //}
             br.getPage(downloadLink);
             if(Regex.matches(br,"Sie haben diese Datei in der letzten Stunde")){
                 step.setStatus(PluginStep.STATUS_ERROR);
@@ -154,8 +154,9 @@ public class BluehostTo extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                step.setParameter(20000l);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                step.setParameter(60*60*1000l);
+               
                 return step;
             }
             downloadLink.setName(getFileNameFormHeader(con));
