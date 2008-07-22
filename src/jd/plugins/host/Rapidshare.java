@@ -942,7 +942,7 @@ public class Rapidshare extends PluginForHost {
 
             if (dl.startDownload()) {
 
-                if (new File(downloadLink.getFileOutput()).length() < 6000) {
+                if (new File(downloadLink.getFileOutput()).length() < 8000) {
                     String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
                     error = findError(page + "");
                     if (new Regex(page, PATTERN_MATCHER_CAPTCHA_WRONG).matches()) {
@@ -1779,7 +1779,7 @@ public class Rapidshare extends PluginForHost {
             if (dl.startDownload()) {
                 // Dieses Konto ist am Mon, 2. Jun 2008 abgelaufen
 
-                if (new File(downloadLink.getFileOutput()).length() < 6000) {
+                if (new File(downloadLink.getFileOutput()).length() < 8000) {
                     String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
                     if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
                         new File(downloadLink.getFileOutput()).delete();
