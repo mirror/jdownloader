@@ -38,7 +38,7 @@ public class BestMovies extends PluginForDecrypt {
     private String VERSION = "1.0.0";
 
     private String CODER = "jD-Team";
-    static private final Pattern patternSupported = getSupportPattern("http://crypt.best-movies.us/go.php\\?id\\=\\d{1,}");
+    static private final Pattern patternSupported = Pattern.compile("http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d{1,}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
     static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
@@ -90,7 +90,7 @@ public class BestMovies extends PluginForDecrypt {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqInfo = null;
                 Matcher matcher;
-                boolean bestmovies_continue = false;                
+                boolean bestmovies_continue = false;
                 reqInfo = HTTP.getRequest(url);
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
 
@@ -105,7 +105,7 @@ public class BestMovies extends PluginForDecrypt {
 
                     matcher = patternCaptcha_Needed.matcher(reqInfo.getHtmlCode());
                     if (matcher.find()) {
-                        /* Captcha vorhanden */                        
+                        /* Captcha vorhanden */
                         File captchaFile = this.getLocalCaptchaFile(this);
                         URL captcha_url = new URL("http://crypt.best-movies.us/captcha.php");
                         HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
@@ -136,7 +136,7 @@ public class BestMovies extends PluginForDecrypt {
                     matcher = patternIframe.matcher(reqInfo.getHtmlCode());
                     if (matcher.find()) {
                         /* EinzelLink gefunden */
-                        String link = matcher.group(1);                       
+                        String link = matcher.group(1);
                         decryptedLinks.add(this.createDownloadlink((link)));
                     }
                 }

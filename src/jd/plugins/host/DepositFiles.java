@@ -27,7 +27,6 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Form;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -417,7 +416,8 @@ public class DepositFiles extends PluginForHost {
                 // logger.severe("Captcha donwload failed: " + captchaAddress);
                 // step.setParameter(null);
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                // downloadLink.setStatus(DownloadLink.
+                // STATUS_ERROR_CAPTCHA_IMAGEERROR);
                 // return step;
                 //
                 // }
@@ -444,7 +444,8 @@ public class DepositFiles extends PluginForHost {
                 //
                 // logger.severe("Captcha donwload failed: " + captchaAddress);
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                // downloadLink.setStatus(DownloadLink.
+                // STATUS_ERROR_CAPTCHA_IMAGEERROR);
                 // return step;
                 //
                 // }
@@ -452,7 +453,8 @@ public class DepositFiles extends PluginForHost {
                 // if (code.length() != 4) {
                 //
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                //downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG
+                // );
                 // return step;
                 //
                 // }

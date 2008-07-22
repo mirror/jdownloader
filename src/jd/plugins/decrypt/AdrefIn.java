@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -31,7 +30,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     private String version = "2.0.0.0";
 
-    private Pattern patternSupported = getSupportPattern("http://[+]adref.in/\\?[+]");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?adref\\.in/\\?.+", Pattern.CASE_INSENSITIVE);
 
     public AdrefIn() {
         super();
@@ -51,7 +50,7 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "adRef.in-" + version;
+        return host + "-" + version;
     }
 
     @Override
@@ -75,9 +74,8 @@ public class AdrefIn extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
             progress.setRange(1);
-            parameter=parameter.replaceFirst("http://.*?adref.in/\\?", "");
-            if(!parameter.matches("^http://"))
-                parameter="http://"+parameter;
+            parameter = parameter.replaceFirst("http://.*?adref.in/\\?", "");
+            if (!parameter.matches("^http://")) parameter = "http://" + parameter;
             decryptedLinks.add(this.createDownloadlink(parameter));
             progress.increase(1);
 

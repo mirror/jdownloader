@@ -695,9 +695,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     /*
      * Load/Save
      */
-/**
- * load und save funktionen wurden über die subConfigs gelöst. Eine zentrale Klasse zum ablegen von lokalen daten ist besser
- */
+    /**
+     * load und save funktionen wurden über die subConfigs gelöst. Eine zentrale
+     * Klasse zum ablegen von lokalen daten ist besser
+     */
     private void saveFeeds() {
 
         // String content = "";
@@ -732,7 +733,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else {
             JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             feeds = (Vector<String[]>) f;
-            if(feeds==null)feeds=new Vector<String[]>();
+            if (feeds == null) feeds = new Vector<String[]>();
 
         }
         setFeedList();
@@ -756,6 +757,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
+    @SuppressWarnings("unchecked")
     private void loadAbos() {
         Object f = subConfig.getProperty(PROPERTY_ABOS);
         if (f == null) {
@@ -773,7 +775,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else {
             JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             abos = (Vector<String[]>) f;
-            if(abos==null)abos=new Vector<String[]>();
+            if (abos == null) abos = new Vector<String[]>();
 
         }
 

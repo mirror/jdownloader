@@ -153,7 +153,6 @@ public abstract class Plugin implements ActionListener {
      */
     public @Deprecated static Pattern getSupportPattern(String patternString) {
         patternString = patternString.replaceAll("\\[\\*\\]", ".*");
-      
         patternString = patternString.replaceAll("\\[\\+\\]", ".+");
         patternString = patternString.replaceAll("\\[\\w\\]", "[\\w\\.]*?");
         if (patternString.endsWith(".*") || patternString.endsWith(".+")) {
