@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -30,11 +31,11 @@ import jd.plugins.RequestInfo;
 
 public class DipurlCom extends PluginForDecrypt {
 
-    final static String host             = "dipurl.com";
+    final static String host = "dipurl.com";
 
-    private String      version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]dipurl.com/[+]");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?dipurl.com/.+", Pattern.CASE_INSENSITIVE);
 
     public DipurlCom() {
         super();
@@ -72,27 +73,27 @@ public class DipurlCom extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			
-    			progress.setRange( 1);
-    			
-    		progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\"")));
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                progress.setRange(1);
+
+                progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "name=\"page\" src=\"", "\"")));
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override
