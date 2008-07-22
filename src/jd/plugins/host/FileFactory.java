@@ -48,7 +48,7 @@ public class FileFactory extends PluginForHost {
 	
     static private final String host = "filefactory.com";
     private String version = "1.5.6";
-    static private final Pattern patternSupported = Pattern.compile("http:[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
     
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
    // src="/securimage/securimage_show.php?f=044a7b&amp;h=c5b0bfa214ecf57d7f5250582c8004a3" alt="Verification code
