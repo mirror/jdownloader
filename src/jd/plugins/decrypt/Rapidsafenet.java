@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -31,12 +32,12 @@ import jd.utils.JDUtilities;
 
 public class Rapidsafenet extends PluginForDecrypt {
 
-    static private final String host             = "rapidsafe.net";
+    static private final String host = "rapidsafe.net";
 
-    private String              version          = "1.0.0.0";
-    //http://www.rapidsafe.net/rsAzNhVDZxYTM/ShapeInstall.zip.html
-    //http://3qt41pmhbf.rapidsafe.de/
-    private Pattern             patternSupported = getSupportPattern("http://[*]rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*");
+    private String version = "1.0.0.0";
+    // http://www.rapidsafe.net/rsAzNhVDZxYTM/ShapeInstall.zip.html
+    // http://3qt41pmhbf.rapidsafe.de/
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public Rapidsafenet() {
         super();
@@ -86,8 +87,7 @@ public class Rapidsafenet extends PluginForDecrypt {
                 // Links auslesen und konvertieren
                 progress.increase(1);
                 decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 

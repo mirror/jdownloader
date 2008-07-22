@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,11 +31,11 @@ import jd.plugins.RequestInfo;
 
 public class NixPopOrg extends PluginForDecrypt {
 
-    static private String host             = "nix-pop.org";
-    
-    static private String        version          = "1.0.1";
-    
-    static private final Pattern patternSupported = getSupportPattern("http://[*]nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+");
+    static private String host = "nix-pop.org";
+
+    static private String version = "1.0.1";
+
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public NixPopOrg() {
         super();
@@ -56,7 +55,7 @@ public class NixPopOrg extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -74,37 +73,37 @@ public class NixPopOrg extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
-    			String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
-    			
-    			progress.setRange(links.length);
-    			this.default_password.add(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><strong>Passwort</strong>:", "<").trim());
-    			
-    			// Link der Liste hinzufügen
-    			for(int i=0; i<links.length; i++) {
-    				decryptedLinks.add(this.createDownloadlink(links[i].trim()));
-    				progress.increase(1);
-    			}
-    			
-    			// Decrypt abschliessen
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+                String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
+
+                progress.setRange(links.length);
+                this.default_password.add(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><strong>Passwort</strong>:", "<").trim());
+
+                // Link der Liste hinzufügen
+                for (int i = 0; i < links.length; i++) {
+                    decryptedLinks.add(this.createDownloadlink(links[i].trim()));
+                    progress.increase(1);
+                }
+
+                // Decrypt abschliessen
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-    
+
 }

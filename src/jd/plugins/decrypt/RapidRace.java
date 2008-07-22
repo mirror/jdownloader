@@ -14,15 +14,15 @@ import jd.plugins.RequestInfo;
 
 public class RapidRace extends PluginForDecrypt {
     // http://www.rapidrace.org/rel.php?ID=1332
-    static private final String  HOST             = "rapidrace.org";
+    static private final String HOST = "rapidrace.org";
 
-    static private final String  CODER            = "TheBlindProphet";
+    static private final String CODER = "TheBlindProphet";
 
-    static private final String  VERSION          = "1.2";
+    static private final String VERSION = "1.2";
 
-    private Pattern              patternSupported = getSupportPattern("http://(www.)?rapidrace\\.org/rel\\.php\\?ID=[+]");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
 
-    private Vector<DownloadLink> decryptedLinks   = new Vector<DownloadLink>();
+    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
     public RapidRace() {
         super();
@@ -79,8 +79,7 @@ public class RapidRace extends PluginForDecrypt {
                 }
                 step.setParameter(decryptedLinks);
 
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }

@@ -38,8 +38,9 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     private String version = "0.1";
     // http://raidrush.org/ext/?fid=200634
-    private Pattern patternSupported = getSupportPattern("http://raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+");
-//    private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
+    private Pattern patternSupported = Pattern.compile("http://raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
+    // private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
 
     public RaidrushOrg() {
         super();
@@ -110,7 +111,7 @@ public class RaidrushOrg extends PluginForDecrypt {
                     dl.setSourcePluginPasswords(passes);
                     dl.setFilePackage(fp);
                     decryptedLinks.add(dl);
-                  
+
                     progress.increase(1);
                 }
                 step.setParameter(decryptedLinks);

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -34,11 +33,10 @@ import jd.plugins.RequestInfo;
 
 public class NewzFindCom extends PluginForDecrypt {
 
-    final static String host             = "newzfind.com";
-    final static String name             = "newzfind.com";
-    private String      version          = "0.1.0";
-    private Pattern     patternSupported = getSupportPattern("http://[*]newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/[+]");
-    
+    final static String host = "newzfind.com";
+    private String version = "0.1.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+", Pattern.CASE_INSENSITIVE);
+
     public NewzFindCom() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -57,12 +55,12 @@ public class NewzFindCom extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
     public String getPluginName() {
-        return name;
+        return host;
     }
 
     @Override
@@ -74,47 +72,48 @@ public class NewzFindCom extends PluginForDecrypt {
     public String getVersion() {
         return version;
     }
-    
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-    		
+
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		
-    		try {
-    			
-    			String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/")+1);
-    			RequestInfo reqinfo = HTTP.getRequest(new URL(url));
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<link title=\"°\"");
-                
-    			reqinfo = HTTP.getRequest(new URL(parameter));
-    			Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
+
+            try {
+
+                String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1);
+                RequestInfo reqinfo = HTTP.getRequest(new URL(url));
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<link title=\"°\"");
+
+                reqinfo = HTTP.getRequest(new URL(parameter));
+                Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
                 default_password.addAll(pws);
-                
-    			progress.setRange(links.size());
-    			
-    			for ( int i=0; i<links.size(); i++ ) {
-    				
-    				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-    				progress.increase(1);
-    				
-	    		}
-				
-				step.setParameter(decryptedLinks);
-				
-    		} catch(IOException e) {
-    			e.printStackTrace();
-    		}
-	        
-    	}
-    	
-    	return null;
-    	
+
+                progress.setRange(links.size());
+
+                for (int i = 0; i < links.size(); i++) {
+
+                    decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+                    progress.increase(1);
+
+                }
+
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return null;
+
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-    
+
 }

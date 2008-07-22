@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,11 +31,11 @@ import jd.plugins.RequestInfo;
 
 public class RapidAdsAthCx extends PluginForDecrypt {
 
-    static private final String host             = "rapidads.ath.cx";
+    static private final String host = "rapidads.ath.cx";
 
-    private String              version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]rapidads.ath.cx/crypter/[+]");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidads\\.ath\\.cx/crypter/.+", Pattern.CASE_INSENSITIVE);
 
     public RapidAdsAthCx() {
         super();
@@ -74,33 +73,32 @@ public class RapidAdsAthCx extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			
-    			progress.setRange(1);
-    			RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
-    			String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
-    			String help = "";
-    			
-    			for(int i=0; i<helpa.length; i++) {
-    				if(!helpa[i].equals(""))
-    					help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
-    			}
-    			
-    			progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink(help));
-    			
-    			// Decrypten abschliessen
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+
+                progress.setRange(1);
+                RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+                String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
+                String help = "";
+
+                for (int i = 0; i < helpa.length; i++) {
+                    if (!helpa[i].equals("")) help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
+                }
+
+                progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink(help));
+
+                // Decrypten abschliessen
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override
