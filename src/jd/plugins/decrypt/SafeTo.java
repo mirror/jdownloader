@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -33,19 +32,19 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class SafeTo extends PluginForDecrypt {
-    private static final String  CODER          = "Bo0nZ";
-    private static final String  HOST           = "safe.to";
-    private static final String  PLUGIN_NAME    = HOST;
-    private static final String  PLUGIN_VERSION = "1.0.0.0";
-    private static final String  PLUGIN_ID      = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    private static final Pattern PAT_SUPPORTED  = getSupportPattern("http://[*]safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+");
+    private static final String CODER = "Bo0nZ";
+    private static final String HOST = "safe.to";
+    private static final String PLUGIN_NAME = HOST;
+    private static final String PLUGIN_VERSION = "1.0.0.0";
+    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken
      */
-    private static final String  FRAME_URL      = "<frame src=\"°\" scrolling=\"auto\" name=\"FrameRedirect\" noresize>";
-    private static final String  FILE_ID        = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
-    private static final String  PASSWORD       = "<input type=\"password\" name=\"pw\" class=\"txt\">";
+    private static final String FRAME_URL = "<frame src=\"°\" scrolling=\"auto\" name=\"FrameRedirect\" noresize>";
+    private static final String FILE_ID = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
+    private static final String PASSWORD = "<input type=\"password\" name=\"pw\" class=\"txt\">";
 
     public SafeTo() {
         super();
@@ -126,12 +125,11 @@ public class SafeTo extends PluginForDecrypt {
                         String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
                         // Passwort senden
                         reqinfo = HTTP.postRequest(new URL(frameURL), "pw=" + pwd + "&chk=Check");
-                    }
-                    else {
+                    } else {
                         break;
                     }
                 }
-               progress.setRange(fileIDs.size());
+                progress.setRange(fileIDs.size());
 
                 for (int i = 0; i < fileIDs.size(); i++) {
                     reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
@@ -145,8 +143,7 @@ public class SafeTo extends PluginForDecrypt {
                 // Decrypt abschliessen
 
                 step.setParameter(decryptedLinks);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }

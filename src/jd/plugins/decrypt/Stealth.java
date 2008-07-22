@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -44,12 +43,11 @@ import jd.utils.JDUtilities;
  * 
  */
 public class Stealth extends PluginForDecrypt {
-    static private final String host             = "Stealth.to";
+    static private final String host = "Stealth.to";
 
-    private String              version          = "1.0.0.4";
+    private String version = "1.0.0.4";
 
-    private Pattern             patternSupported = getSupportPattern("(http://[*]stealth\\.to/\\?id\\=[a-zA-Z0-9]+)|(http://[*]stealth\\.to/index.php\\?id\\=[a-zA-Z0-9]+)");
-
+    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?stealth\\.to/\\?id\\=[a-zA-Z0-9]+)|(http://[\\w\\.]*?stealth\\.to/index.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public Stealth() {
         super();
@@ -84,7 +82,7 @@ public class Stealth extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+version;
+        return host + version;
     }
 
     @Override
@@ -92,23 +90,24 @@ public class Stealth extends PluginForDecrypt {
         return false;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			CaptchaInfo<File, String> captchaInfo = null;
-    			request.getRequest(parameter);
-    			for (int i=0;i<5;i++) { 
+            try {
+                CaptchaInfo<File, String> captchaInfo = null;
+                request.getRequest(parameter);
+                for (int i = 0; i < 5; i++) {
                     // wird
                     if (request.toString().contains("captcha_img.php")) {
-                        
+
                         String sessid = new Regex(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
-                        if(sessid==null){
-                            logger.severe("Error sessionid: "+request.getCookie());
-                        
+                        if (sessid == null) {
+                            logger.severe("Error sessionid: " + request.getCookie());
+
                             step.setParameter(decryptedLinks);
                             return step;
-                            
+
                         }
                         logger.finest("Captcha Protected");
                         String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
@@ -116,33 +115,29 @@ public class Stealth extends PluginForDecrypt {
                         Form form = request.getForm();
                         form.put("txtCode", captchaInfo.captchaCode);
                         request.setRequestInfo(form);
-                    }
-                    else {
-                        
-                        
-                        
+                    } else {
+
                         break;
                     }
                 }
-    			//
-    			RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + SimpleMatches.getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
-    			progress.setRange( links.size());
-				
-				for(int j=0; j<links.size(); j++) {
-					reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
-    				decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\""))));
-    			progress.increase(1);
-				}
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+                //
+                RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + SimpleMatches.getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
+                progress.setRange(links.size());
+
+                for (int j = 0; j < links.size(); j++) {
+                    reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
+                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\""))));
+                    progress.increase(1);
+                }
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }

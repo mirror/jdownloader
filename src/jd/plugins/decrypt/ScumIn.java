@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -38,8 +39,8 @@ public class ScumIn extends PluginForDecrypt {
     static private String host = "scum.in";
 
     private String version = "1.0.0.0";
-    
-    private Pattern patternSupported = getSupportPattern("http://[*]scum.in/index.php\\?id=[+]");
+
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public ScumIn() {
         super();
@@ -99,7 +100,7 @@ public class ScumIn extends PluginForDecrypt {
                 con.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
                 con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
                 con.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                
+
                 File captchaFile = this.getLocalCaptchaFile(this);
                 if (!JDUtilities.download(captchaFile, con) || !captchaFile.exists()) {
                     step.setParameter(null);
@@ -107,14 +108,14 @@ public class ScumIn extends PluginForDecrypt {
                     return step;
                 }
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                
+
                 reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.old.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
-                
+
                 ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"°\"");
 
                 progress.setRange(links.size());
-                
-                for(int i=0; i<links.size(); i++) {
+
+                for (int i = 0; i < links.size(); i++) {
                     progress.increase(1);
                     decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
                 }
@@ -126,6 +127,7 @@ public class ScumIn extends PluginForDecrypt {
         }
         return null;
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;

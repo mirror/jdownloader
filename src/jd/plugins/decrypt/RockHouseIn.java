@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,9 +31,9 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class RockHouseIn extends PluginForDecrypt {
-    final static String host             = "rock-house.in";
-    private String      version          = "1.0.0.0";
-    private Pattern     patternSupported = getSupportPattern("http://[*]rock-house.in/warez/warez\\_download.php\\?id=[+]");
+    final static String host = "rock-house.in";
+    private String version = "1.0.0.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
 
     public RockHouseIn() {
         super();
@@ -72,28 +71,28 @@ public class RockHouseIn extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
 
-    			default_password.add(jd.utils.JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
-    			for(int i=0; i<links.size(); i++) {
-    				decryptedLinks.add(this.createDownloadlink(links.get(i).get(0).replaceAll("\n", "")));
-    			}
-    			
-    			// Decrypt abschliessen    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
+
+                default_password.add(jd.utils.JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
+                for (int i = 0; i < links.size(); i++) {
+                    decryptedLinks.add(this.createDownloadlink(links.get(i).get(0).replaceAll("\n", "")));
+                }
+
+                // Decrypt abschliessen
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override

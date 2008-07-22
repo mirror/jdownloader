@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,11 +31,11 @@ import jd.plugins.RequestInfo;
 
 public class TechnorockerInfo extends PluginForDecrypt {
 
-    final static String host             = "technorocker.info";
+    final static String host = "technorocker.info";
 
-    private String      version          = "0.1.0";
+    private String version = "0.1.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]technorocker\\.info/opentrack\\.php\\?id=[0-9]+");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public TechnorockerInfo() {
         super();
@@ -56,7 +55,7 @@ public class TechnorockerInfo extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -74,29 +73,30 @@ public class TechnorockerInfo extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            
+
             default_password.add("technorocker");
-            
-    		try {
-    			
-    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-    			String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(),"<a href=\"", "\"><b>here</b>");
-    			progress.setRange(1);
-    			decryptedLinks.add(this.createDownloadlink(link));
-    			progress.increase(1);
-    			step.setParameter(decryptedLinks);
-    				
-    		} catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    		
-    	return null;
-    	
+
+            try {
+
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+                String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<a href=\"", "\"><b>here</b>");
+                progress.setRange(1);
+                decryptedLinks.add(this.createDownloadlink(link));
+                progress.increase(1);
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
+
     }
 
     @Override

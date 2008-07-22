@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -34,7 +35,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     private String version = "2.0.0.0";
     // tinyurl.com/preview.php?num=37nt3d
-    private Pattern patternSupported = getSupportPattern("http://[*]tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})", Pattern.CASE_INSENSITIVE);
 
     private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
 
@@ -81,7 +82,7 @@ public class Tinyurl extends PluginForDecrypt {
             try {
                 progress.setRange(1);
                 if (!parameter.matches("http://.*?tinyurl\\.com/preview\\.php\\?num\\=[a-zA-Z0-9]{6}")) {
-                    parameter=parameter.replaceFirst("tinyurl\\.com/", "tinyurl.com/preview.php?num=");
+                    parameter = parameter.replaceFirst("tinyurl\\.com/", "tinyurl.com/preview.php?num=");
                 }
 
                 URL url = new URL(parameter);
@@ -106,6 +107,7 @@ public class Tinyurl extends PluginForDecrypt {
         }
         return null;
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
