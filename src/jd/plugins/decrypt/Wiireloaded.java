@@ -36,7 +36,7 @@ public class Wiireloaded extends PluginForDecrypt {
     private String version = "1.0.0.0";
 
     // http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
-    static private final Pattern patternSupported = getSupportPattern("http://wii-reloaded.ath.cx/protect/get\\.php\\?i=[+]");
+    static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
     public Wiireloaded() {
         super();
@@ -116,12 +116,14 @@ public class Wiireloaded extends PluginForDecrypt {
             for (int i = 0; i < ids.length; i++) {
                 String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids[i][0];
                 br.getPage(u);
-                //String code = new Regex(br, "\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade").getFirstMatch();
+                // String code = new Regex(br,
+                // "\\'(.*?)\\'.*<iframe src=\"http\\:\\/\\/wii\\-reloade"
+                // ).getFirstMatch();
                 Form form = br.getForms()[0];
                 form.setVariable(0, "8");
                 br.submitForm(form);
                 if (br.getRedirectLocation() != null) {
-                    DownloadLink link=this.createDownloadlink(br.getRedirectLocation());
+                    DownloadLink link = this.createDownloadlink(br.getRedirectLocation());
                     link.setSourcePluginPasswords(link_passwds);
                     decryptedLinks.add(link);
                 }
