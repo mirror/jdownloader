@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
@@ -33,11 +32,11 @@ import jd.plugins.download.RAFDownload;
 
 public class DataHu extends PluginForHost {
 
-    private static final String  HOST             = "data.hu";
+    private static final String HOST = "data.hu";
 
-    private static final String  VERSION          = "1.0.0";
+    private static final String VERSION = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[\\w\\.]*?data.hu/get/[+]/[+]");
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?data.hu/get/.+/.+", Pattern.CASE_INSENSITIVE);
 
     //
     @Override
@@ -81,38 +80,38 @@ public class DataHu extends PluginForHost {
     }
 
     public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
-//        if (aborted) {
-//            logger.warning("Plugin aborted");
-//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-//            step.setStatus(PluginStep.STATUS_TODO);
-//            return step;
-//        }
+        // if (aborted) {
+        // logger.warning("Plugin aborted");
+        // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        // step.setStatus(PluginStep.STATUS_TODO);
+        // return step;
+        // }
         try {
-            String url = downloadLink.getDownloadURL();                    
+            String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
-            
+
             String link = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'");
             String[] test = link.split("/");
-            String name = test[test.length-1];
+            String name = test[test.length - 1];
             downloadLink.setName(name);
-            
+
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, url, false);
-            
+
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
-            
+
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             final long length = downloadLink.getDownloadMax();
-            
 
             dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
-            //dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            
+            // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
+            // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
@@ -121,11 +120,9 @@ public class DataHu extends PluginForHost {
             }
             return step;
 
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
@@ -139,15 +136,13 @@ public class DataHu extends PluginForHost {
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
-            if(requestInfo.getHtmlCode().length() == 0)
-                return false;
-            
+            if (requestInfo.getHtmlCode().length() == 0) return false;
+
             String[] test = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'").split("/");
-            String name = test[test.length-1];
+            String name = test[test.length - 1];
             downloadLink.setName(name);
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -159,10 +154,12 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public void reset() {}
+    public void reset() {
+    }
 
     @Override
-    public void resetPluginGlobals() {}
+    public void resetPluginGlobals() {
+    }
 
     @Override
     public String getAGBLink() {

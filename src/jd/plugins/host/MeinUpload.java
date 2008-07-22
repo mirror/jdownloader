@@ -45,8 +45,9 @@ public class MeinUpload extends PluginForHost {
     private static final String PLUGIN_VERSION = "0.1.0";
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    static private final Pattern PATTERN_SUPPORTED = getSupportPattern("http://[*]meinupload.com/{1,}dl/[+]/[+]");
-//    private static final int MAX_SIMULTAN_DOWNLOADS = 1;
+    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?meinupload.com/{1,}dl/.+/.+", Pattern.CASE_INSENSITIVE);
+
+    // private static final int MAX_SIMULTAN_DOWNLOADS = 1;
 
     public MeinUpload() {
 
@@ -118,22 +119,22 @@ public class MeinUpload extends PluginForHost {
 
         try {
             String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if(id==null)return false;
-           // http://meinupload.com/infos.api?get_id=3794082988
-        
-            String page= new GetRequest("http://meinupload.com/infos.api?get_id="+id).load();
-            
-           String status=new Regex(page,"<status>([\\d]*?)</status>").getFirstMatch();
-           String filesize=new Regex(page,"<filesize>([\\d]*?)</filesize>").getFirstMatch();
-           String name=new Regex(page,"<name>(.*?)</name>").getFirstMatch();
-           if(status==null||!status.equals("1"))return false;
-           
-            if(filesize==null||name==null)return false;
-            
+            if (id == null) return false;
+            // http://meinupload.com/infos.api?get_id=3794082988
+
+            String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
+
+            String status = new Regex(page, "<status>([\\d]*?)</status>").getFirstMatch();
+            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getFirstMatch();
+            String name = new Regex(page, "<name>(.*?)</name>").getFirstMatch();
+            if (status == null || !status.equals("1")) return false;
+
+            if (filesize == null || name == null) return false;
+
             downloadLink.setDownloadMax(Integer.parseInt(filesize));
             downloadLink.setName(name);
             return true;
-         
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -193,9 +194,11 @@ public class MeinUpload extends PluginForHost {
             r.getHeaders().put("Referer", "http://MeinUpload.com/");
             r.getHeaders().put("User-Agent", " MeinUpload Tool - v2.2");
             r.connect();
-            // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&id=3407292519
+            // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865
+            // a2801d938ce3e59024b4ef1d6d30&id=3407292519
             // GET
-            // /download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&id=9923945611
+            ///download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
+            // id=9923945611
             // HTTP/1.1
             // v
             if (r.getResponseHeader("Content-Disposition") == null) {
@@ -273,7 +276,5 @@ public class MeinUpload extends PluginForHost {
         cfg.setDefaultValue(false);
 
     }
-
-
 
 }

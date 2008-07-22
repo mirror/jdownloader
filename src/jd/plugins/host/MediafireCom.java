@@ -37,7 +37,7 @@ public class MediafireCom extends PluginForHost {
 
     private static final String VERSION = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("(http://[*]mediafire.com/download.php?[+])|(http://[*]mediafire.com/?[+])");
+    static private final Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?mediafire.com/download.php?.+)|(http://[\\w\\.]*?mediafire.com/?.+)", Pattern.CASE_INSENSITIVE);
 
     static private final String offlinelink = "tos_aup_violation";
 
@@ -106,7 +106,7 @@ public class MediafireCom extends PluginForHost {
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 downloadLink.setName(this.getFileNameFormHeader(urlConnection));
                 long length = downloadLink.getDownloadMax();
-                dl = new RAFDownload(this, downloadLink, urlConnection);                
+                dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
