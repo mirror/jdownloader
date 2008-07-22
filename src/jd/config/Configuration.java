@@ -39,58 +39,24 @@ public class Configuration extends Property implements Serializable {
      */
     private static final long serialVersionUID = -2709887320616014389L;
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
+    public static final String CID = "CID";
+
     public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V2";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_HOME_DIRECTORY = "HOME_DIRECTORY";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
 
-    /**
-     * Parameter für den key unter dem der zugehöroge Wert abgespeichert werden
-     * soll
-     */
     public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
 
     public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
@@ -146,12 +112,6 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
 
     public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
-    // public static final String USE_CAPTCHA_COLLECTOR =
-    // "USE_CAPTCHA_COLLECTOR";
-    // public static final String USE_CAPTCHA_EXCHANGE_SERVER =
-    // "USE_CAPTCHA_EXCHANGE_SERVER";
-
-    public static final String CID = "CID";
 
     public static final String PARAM_WEBUPDATE_DISABLE = "WEBUPDATE_DISABLE";
 
@@ -190,10 +150,6 @@ public class Configuration extends Property implements Serializable {
     public static final String PROXY_HOST = "PROXY_HOST";
 
     public static final String PROXY_PORT = "PROXY_PORT";
-
-    // public static final String PROXY_USER = "PROXY_USER";
-    //
-    // public static final String PROXY_PASS = "PROXY_PASS";
 
     public static final String USE_SOCKS = "USE_SOCKS";
 
