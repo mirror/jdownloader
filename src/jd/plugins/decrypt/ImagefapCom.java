@@ -33,8 +33,8 @@ public class ImagefapCom extends PluginForDecrypt {
     static private final String host = "imagefap.com folder";
     private String version = "1.0.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("(http://[*]imagefap\\.com/gallery.php\\?gid\\=[+]|http://[*]imagefap\\.com/gallery/[+])");
-    
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
+
     private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     private URL url;
 

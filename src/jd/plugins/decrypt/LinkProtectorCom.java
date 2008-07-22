@@ -14,8 +14,9 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -29,89 +30,88 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class LinkProtectorCom extends PluginForDecrypt {
-	private static final String host             = "link-protector.com";
-	private static final String version          = "1.0.0.0";
+    private static final String host = "link-protector.com";
+    private static final String version = "1.0.0.0";
 
-	private static final Pattern patternSupported = getSupportPattern("http://[*]link-protector\\.com/[\\d]{6}[*]");
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
-	public LinkProtectorCom() {
-		super();
-		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-		currentStep = steps.firstElement();
-	}
+    public LinkProtectorCom() {
+        super();
+        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        currentStep = steps.firstElement();
+    }
 
-	@Override
-	public String getCoder() {
-		return "Luke";
-	}
+    @Override
+    public String getCoder() {
+        return "Luke";
+    }
 
-	@Override
-	public String getHost() {
-		return host;
-	}
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-	@Override
-	public String getPluginID() {
-		return host + "-" + version;
-	}
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
+    }
 
-	@Override
-	public String getPluginName() {
-		return host;
-	}
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-	@Override
-	public Pattern getSupportedLinks() {
-		return patternSupported;
-	}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-	@Override
-	public String getVersion() {
-		return version;
-	}
+    @Override
+    public String getVersion() {
+        return version;
+    }
 
-	@Override
-	public PluginStep doStep(PluginStep step, String parameter) {
-		//example link: http://link-protector.com/459915/ 
-		
-		if (step.getStep() == PluginStep.STEP_DECRYPT) {
-			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-			try {
-				URL url = new URL(parameter);
-				RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
-				
-				String decryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "write\\(stream\\('", "'\\)");
-				int charCode = Integer.parseInt(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "fromCharCode\\(yy\\[i\\]-", "\\)\\;"));
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        // example link: http://link-protector.com/459915/
 
-				String link = SimpleMatches.getBetween(decryptCode(decryptedLink,charCode),"<iframe src=\"", "\" ");
-				decryptedLinks.add(this.createDownloadlink(link));
-				progress.increase(1);
-				step.setParameter(decryptedLinks);
-				
-			}
-			catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return null;
-	}
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 
-	private String decryptCode(String decryptedLink,int charCode) {
-		String result = "";
-		try {
-			for (int i=0;i*4<decryptedLink.length();i++){
-				result = (char)(Integer.parseInt(decryptedLink.substring(i*4,i*4+4))-charCode) + result;
-			}
-		} catch (Exception e){
-			result = "";
-		}
-		
-		return result;
-	}
+                String decryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "write\\(stream\\('", "'\\)");
+                int charCode = Integer.parseInt(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "fromCharCode\\(yy\\[i\\]-", "\\)\\;"));
 
-	@Override
-	public boolean doBotCheck(File file) {
-		return false;
-	}
+                String link = SimpleMatches.getBetween(decryptCode(decryptedLink, charCode), "<iframe src=\"", "\" ");
+                decryptedLinks.add(this.createDownloadlink(link));
+                progress.increase(1);
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private String decryptCode(String decryptedLink, int charCode) {
+        String result = "";
+        try {
+            for (int i = 0; i * 4 < decryptedLink.length(); i++) {
+                result = (char) (Integer.parseInt(decryptedLink.substring(i * 4, i * 4 + 4)) - charCode) + result;
+            }
+        } catch (Exception e) {
+            result = "";
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 
 }

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -33,13 +32,11 @@ import jd.plugins.RequestInfo;
 
 public class LeecherWs extends PluginForDecrypt {
 
-    final static String host             = "leecher.ws";
+    final static String host = "leecher.ws";
 
-    private String      version          = "0.1.0";
-    
-    private Pattern     patternSupported = getSupportPattern(
-    		"(http://[*]leecher\\.ws/folder/[+])"
-    		+ "|(http://[*]leecher\\.ws/out/[+]/[0-9]+)");
+    private String version = "0.1.0";
+
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public LeecherWs() {
         super();
@@ -59,7 +56,7 @@ public class LeecherWs extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -79,67 +76,65 @@ public class LeecherWs extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-    		
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             RequestInfo reqinfo;
             ArrayList<ArrayList<String>> outLinks = new ArrayList<ArrayList<String>>();
-            
-    		try {
-    			
-    			if ( parameter.indexOf("out") != -1 ) {
-    				ArrayList<String> tempVector = new ArrayList<String>();
-    				tempVector.add(parameter.substring(parameter.lastIndexOf("leecher.ws/out/")+15));
-    				outLinks.add(tempVector);
-    				
-    			} else {
-    				
-    				reqinfo = HTTP.getRequest(new URL(parameter));
-    				outLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(),
-					"href=\"http://www.leecher.ws/out/°\"");
-    				
-    			}
-    			
-    			progress.setRange(outLinks.size());
-    			
-    			for ( int i=0; i<outLinks.size(); i++ ) {
-    				
-    				reqinfo = HTTP.getRequest(new URL(
-    						"http://leecher.ws/out/"+outLinks.get(i).get(0)));
-    				String cryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(),"<iframe src=\"","\"");
-    				decryptedLinks.add(this.createDownloadlink(decryptAsciiEntities(cryptedLink)));
-    				progress.increase(1);
-    				
-    			}
-    			
-    			step.setParameter(decryptedLinks);
-    			
-    		} catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    		
-    	}
-    	
-    	return null;
-    	
+
+            try {
+
+                if (parameter.indexOf("out") != -1) {
+                    ArrayList<String> tempVector = new ArrayList<String>();
+                    tempVector.add(parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15));
+                    outLinks.add(tempVector);
+
+                } else {
+
+                    reqinfo = HTTP.getRequest(new URL(parameter));
+                    outLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.leecher.ws/out/°\"");
+
+                }
+
+                progress.setRange(outLinks.size());
+
+                for (int i = 0; i < outLinks.size(); i++) {
+
+                    reqinfo = HTTP.getRequest(new URL("http://leecher.ws/out/" + outLinks.get(i).get(0)));
+                    String cryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<iframe src=\"", "\"");
+                    decryptedLinks.add(this.createDownloadlink(decryptAsciiEntities(cryptedLink)));
+                    progress.increase(1);
+
+                }
+
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return null;
+
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-    
+
     // Zeichencode-Entities (&#124 etc.) in normale Zeichen umwandeln
     private String decryptAsciiEntities(String str) {
-    	ArrayList<ArrayList<String>> codes = SimpleMatches.getAllSimpleMatches(str,"&#°;");
-    	String decodedString = "";
-    	
-    	for( int i=0; i<codes.size(); i++ ) {
-    		int code = Integer.parseInt(codes.get(i).get(0));
-    		char[] asciiChar = {(char)code};
-    		decodedString += String.copyValueOf(asciiChar);
-		}
-    	return decodedString;
+        ArrayList<ArrayList<String>> codes = SimpleMatches.getAllSimpleMatches(str, "&#°;");
+        String decodedString = "";
+
+        for (int i = 0; i < codes.size(); i++) {
+            int code = Integer.parseInt(codes.get(i).get(0));
+            char[] asciiChar = { (char) code };
+            decodedString += String.copyValueOf(asciiChar);
+        }
+        return decodedString;
     }
-    
+
 }

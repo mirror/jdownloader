@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,9 +31,9 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class MovieloadTo extends PluginForDecrypt {
-    final static String host             = "movieload.to";
-    private String      version          = "1.0.0.0";
-    private Pattern     patternSupported = getSupportPattern("http://[*]movieload.to/v2/index.php\\?do=protect\\&i=[+]");
+    final static String host = "movieload.to";
+    private String version = "1.0.0.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+", Pattern.CASE_INSENSITIVE);
 
     public MovieloadTo() {
         super();
@@ -73,29 +72,29 @@ public class MovieloadTo extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
-    			progress.setRange(links.size());
-    			for(int i=0; i<links.size(); i++) {
-    				progress.increase(1);
-    				reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links.get(i).get(0)));
-    				decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
-    			}
-    			
-    			//Decrypt abschliessen    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "; popup_dl(°)\" ");
+                progress.setRange(links.size());
+                for (int i = 0; i < links.size(); i++) {
+                    progress.increase(1);
+                    reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links.get(i).get(0)));
+                    decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+                }
+
+                // Decrypt abschliessen
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override
