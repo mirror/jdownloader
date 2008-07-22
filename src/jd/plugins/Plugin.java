@@ -151,7 +151,7 @@ public abstract class Plugin implements ActionListener {
      * @return Gibt ein patternzurück mit dem links gesucht und überprüft werden
      *         können
      */
-    public static Pattern getSupportPattern(String patternString) {
+    public @Deprecated static Pattern getSupportPattern(String patternString) {
         patternString = patternString.replaceAll("\\[\\*\\]", ".*");
       
         patternString = patternString.replaceAll("\\[\\+\\]", ".+");
