@@ -37,7 +37,7 @@ public class DataHu extends PluginForHost {
 
     private static final String  VERSION          = "1.0.0";
 
-    static private final Pattern patternSupported = getSupportPattern("http://[w]data.hu/get/[+]/[+]");
+    static private final Pattern patternSupported = getSupportPattern("http://[\\w\\.]*?data.hu/get/[+]/[+]");
 
     //
     @Override

@@ -283,13 +283,13 @@ public class Serienjunkies extends PluginForDecrypt {
             hosterStr += "not";
         }
         // http://links.serienjunkies.org/f-3bd58945ab43eae0/Episode%2006.html
-        Matcher matcher = Pattern.compile("http://.{0,10}serienjunkies\\.org.*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE).matcher(data);
+        Matcher matcher = Pattern.compile("http://[\\w\\.]{0,10}serienjunkies\\.org.*" + hosterStr + ".*", Pattern.CASE_INSENSITIVE).matcher(data);
         if (matcher.find()) {
             return true;
         } else {
-            String[] links = new Regex(data, "http://.{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
+            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
             for (int i = 0; i < links.length; i++) {
-                if (!links[i].matches("(?i).*http://.{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*")) return true;
+                if (!links[i].matches("(?i).*http://[\\w\\.]{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*")) return true;
             }
         }
         return false;
@@ -297,7 +297,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     @Override
     public String[] getDecryptableLinks(String data) {
-        String[] links = new Regex(data, "http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
+        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
         Vector<String> ret = new Vector<String>();
         scatChecked = true;
         for (int i = 0; i < links.length; i++) {
@@ -308,7 +308,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     @Override
     public String cutMatches(String data) {
-        return data.replaceAll("(?i)http://.*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
+        return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
     @Override

@@ -41,7 +41,7 @@ public class YourFilesBiz extends PluginForHost {
     private static final String  PLUGIN_VERSION           = "0.1.0";
     private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
     
-    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://.*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
+    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
     private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
 
     private String               downloadURL              = "";

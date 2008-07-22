@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 //http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
 public class Netloadin extends PluginForHost {
     // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://.*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "netload.in";
     static private final String PLUGIN_NAME = HOST;
     static private final String PLUGIN_VERSION = "1.1.0";

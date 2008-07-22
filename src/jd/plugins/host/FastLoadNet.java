@@ -44,7 +44,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
 
     private static final int MAX_SIMULTAN_DOWNLOADS = 8;
 

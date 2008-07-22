@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
 
     static private final String HOST = "depositfiles.com";
 

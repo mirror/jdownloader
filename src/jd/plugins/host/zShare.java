@@ -32,7 +32,7 @@ public class zShare extends PluginForHost {
 
     private static final String  VERSION          = "1.0.0.0";
 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
 
     //
     @Override

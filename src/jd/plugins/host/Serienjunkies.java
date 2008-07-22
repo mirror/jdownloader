@@ -50,7 +50,7 @@ public class Serienjunkies extends PluginForHost {
 
     private static final String VERSION = "1.0.0.0";
 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
     private Pattern patternCaptcha = null;
     private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
     private String subdomain = "download.";
@@ -199,7 +199,7 @@ public class Serienjunkies extends PluginForHost {
     private Vector<String> ContainerLinks(String url) {
         Vector<String> links = new Vector<String>();
         boolean fileDownloaded = false;
-        if (url.matches("http://.*?.serienjunkies.org/..\\-.*")) {
+        if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
         if (!url.startsWith("http://")) url = "http://" + url;
@@ -433,7 +433,7 @@ public class Serienjunkies extends PluginForHost {
                 downloadLink.requestGuiUpdate();
                 Vector<DownloadLink> dls = getDLinks(link);
                 
-                if(dls.size() < 2) {
+                if(dls.size() < 1) {
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));

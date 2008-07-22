@@ -43,7 +43,7 @@ public class DatenKlo extends PluginForHost {
 
     private static final String  VERSION       = "1.0.0.0";
 
-    private static final Pattern PAT_SUPPORTED = Pattern.compile("http://.*?datenklo\\.net/dl\\-[a-zA-Z0-9]{5}", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?datenklo\\.net/dl\\-[a-zA-Z0-9]{5}", Pattern.CASE_INSENSITIVE);
 
     private Form                 form;
 

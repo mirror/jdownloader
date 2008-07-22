@@ -44,7 +44,7 @@ public class RapidShareDe extends PluginForHost {
 
     private static final String VERSION = "1.0.0.0";
 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     private Form form;
 
