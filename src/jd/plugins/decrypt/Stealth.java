@@ -19,13 +19,11 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -34,14 +32,6 @@ import jd.plugins.RequestInfo;
 import jd.plugins.CRequest.CaptchaInfo;
 import jd.utils.JDUtilities;
 
-/**
- * http://stealth.to/?id=13wz0z8lds3nun4dihetpsqgzte4t2
- * 
- * http://stealth.to/?id=ol0fhnjxpogioavfnmj3aub03s10nt
- * 
- * @author astaldo
- * 
- */
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
 
@@ -57,7 +47,7 @@ public class Stealth extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Astaldo";
+        return "JD-Team";
     }
 
     @Override
@@ -82,7 +72,7 @@ public class Stealth extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host + version;
+        return host + "-" + version;
     }
 
     @Override
@@ -98,7 +88,6 @@ public class Stealth extends PluginForDecrypt {
                 CaptchaInfo<File, String> captchaInfo = null;
                 request.getRequest(parameter);
                 for (int i = 0; i < 5; i++) {
-                    // wird
                     if (request.toString().contains("captcha_img.php")) {
 
                         String sessid = new Regex(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
@@ -107,7 +96,6 @@ public class Stealth extends PluginForDecrypt {
 
                             step.setParameter(decryptedLinks);
                             return step;
-
                         }
                         logger.finest("Captcha Protected");
                         String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
@@ -116,22 +104,19 @@ public class Stealth extends PluginForDecrypt {
                         form.put("txtCode", captchaInfo.captchaCode);
                         request.setRequestInfo(form);
                     } else {
-
                         break;
                     }
                 }
-                //
-                RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + SimpleMatches.getBetween(request.getHtmlCode(), "<div align=\"center\"><a id=\"", "\" href=\"") + "&typ=hit", true);
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "dl = window.open(\"°\"");
-                progress.setRange(links.size());
 
-                for (int j = 0; j < links.size(); j++) {
-                    reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links.get(j).get(0)));
-                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqhelp.getHtmlCode(), "iframe src=\"", "\""))));
+                RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + new Regex(request.getHtmlCode(), Pattern.compile("<div align=\"center\"><a id=\"(.*?)\" href=\"", Pattern.CASE_INSENSITIVE)).getFirstMatch() + "&typ=hit", true);
+                String[] links = new Regex(request.getHtmlCode(), Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                progress.setRange(links.length);
+
+                for (int j = 0; j < links.length; j++) {
+                    reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links[j]));
+                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(new Regex(reqhelp.getHtmlCode(), Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
                     progress.increase(1);
                 }
-
-                // Decrypt abschliessen
 
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
