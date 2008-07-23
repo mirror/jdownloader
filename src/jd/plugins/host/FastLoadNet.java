@@ -55,6 +55,8 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
+    private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
+
     public FastLoadNet() {
 
         super();
@@ -126,6 +128,14 @@ public class FastLoadNet extends PluginForHost {
 
             }
 
+            if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
+
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
+                return false;
+
+            }
+
             String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
             Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
 
@@ -158,15 +168,6 @@ public class FastLoadNet extends PluginForHost {
 
     public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
 
-//        if (aborted) {
-//
-//            logger.warning("Plugin aborted");
-//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
-//            step.setStatus(PluginStep.STATUS_TODO);
-//            return step;
-//
-//        }
-
         try {
 
             switch (step.getStep()) {
@@ -181,6 +182,14 @@ public class FastLoadNet extends PluginForHost {
                 if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    return step;
+
+                }
+
+                if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
+
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
