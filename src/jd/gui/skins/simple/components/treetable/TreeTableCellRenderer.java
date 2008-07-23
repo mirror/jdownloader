@@ -16,15 +16,11 @@ import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 
-//TreeCellRenderer
 public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private JLabel lbl_link;
+    private JLabel lbl_link;
 
     private JLabel lbl_fp_closed;
 
@@ -50,18 +46,14 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 
-        // Component c = super.getTreeCellRendererComponent(tree, value,
-        // selected, expanded, leaf, row, hasFocus);
         if (value instanceof DownloadLink) {
-
             int id = ((DownloadLink) value).getPartByName();
             if (((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_JDU) {
                 lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update ") + "-> v." + ((DownloadLink) value).getSourcePluginComment().split("_")[1]);
             } else {
-              
                 lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
             }
-           
+
             if (selected) {
                 lbl_link.setForeground(FONT_COLOR_SELECTED);
                 lbl_link.setBackground(FONT_COLOR_SELECTED);
@@ -71,10 +63,7 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             }
             return lbl_link;
         } else if (value instanceof FilePackage) {
-            
-            
-            
-        
+
             if (expanded) {
                 lbl_fp_opened.setText(((FilePackage) value).getName());
                 if (selected) {
@@ -88,7 +77,7 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             } else {
                 lbl_fp_closed.setText(((FilePackage) value).getName());
                 if (selected) {
-                    lbl_fp_closed.setForeground(FONT_COLOR_SELECTED); 
+                    lbl_fp_closed.setForeground(FONT_COLOR_SELECTED);
                     lbl_fp_closed.setBackground(FONT_COLOR_SELECTED);
                 } else {
                     lbl_fp_closed.setForeground(FONT_COLOR);

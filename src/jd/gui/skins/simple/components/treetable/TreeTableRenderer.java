@@ -134,7 +134,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                             ui.setSelectionForeground(DONE_COLOR_FONT_A);
                             ui.setSelectionBackground(DONE_COLOR_FONT_B);
                         }
-                        progress.setString("- 100 % -");
+                        progress.setString("- 100% -");
                     } else {
                         progress.setForeground(INACTIVE_PROGRESS_COLOR);
                         if (ui != null) {
@@ -144,7 +144,6 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     }
                     progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
                     progress.setStringPainted(true);
-
                     progress.setValue((int) dLink.getDownloadCurrent());
 
                 } else {

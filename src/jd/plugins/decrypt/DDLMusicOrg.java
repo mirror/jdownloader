@@ -119,17 +119,13 @@ public class DDLMusicOrg extends PluginForDecrypt {
                         // server -> http 403
                         // => ab 3. aufruf jeweils 0.5 sekunden warten
                         if (j >= 2) {
-
                             try {
                                 Thread.sleep(500);
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-
-                            j++;
-
-                        } else
-                            j++;
+                        }
+                        j++;
 
                     }
 
