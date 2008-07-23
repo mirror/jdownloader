@@ -610,7 +610,7 @@ public class SingleDownloadController extends Thread {
      */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin, PluginStep step) {
         downloadLink.setStatusText(JDLocale.L("controller.status.filenotfound", "File Not Found"));
-        downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        //downloadLink.setStatus(DownloadLink.STATUS_TODO);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
 
