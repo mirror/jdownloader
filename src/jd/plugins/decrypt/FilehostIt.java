@@ -32,9 +32,9 @@ import jd.plugins.RequestInfo;
 
 public class FilehostIt extends PluginForDecrypt {
 
-    final static String host             = "filehost.it";
-    private String      version          = "1.0.0.0";
-    private Pattern     patternSupported = getSupportPattern("http://[*]filehost\\.it/(multi|live)link/checklinks.php\\?links=[\\d]+");
+    final static String host = "filehost.it";
+    private String version = "1.0.0.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filehost\\.it/(multi|live)link/checklinks\\.php\\?links=[\\d]+", Pattern.CASE_INSENSITIVE);
 
     public FilehostIt() {
         super();
@@ -72,28 +72,28 @@ public class FilehostIt extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-    			
-    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
-    			progress.setRange( links.size());
-    			
-				for(int i=0; i<links.size(); i++) {
-					decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-				progress.increase(1);
-				}
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
+                progress.setRange(links.size());
+
+                for (int i = 0; i < links.size(); i++) {
+                    decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+                    progress.increase(1);
+                }
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override

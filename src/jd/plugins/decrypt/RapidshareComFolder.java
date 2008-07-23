@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -34,12 +33,12 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class RapidshareComFolder extends PluginForDecrypt {
-    static private final String host             = "rapidshare.com folder";
-    private String              version          = "1.0.0.0";
-    //http://rapidshare.com/users/32P7CI
-    static private final Pattern patternSupported = getSupportPattern("http://[w]rapidshare.com/users/[+]");
-    private String              password         = "";
-    private Vector<DownloadLink>      decryptedLinks   = new Vector<DownloadLink>();
+    static private final String host = "rapidshare.com folder";
+    private String version = "1.0.0.0";
+    // http://rapidshare.com/users/32P7CI
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
+    private String password = "";
+    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
     private String para = "";
     private String cookie = "";
 
@@ -97,8 +96,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                         }
 
                         reqinfo = HTTP.postRequest(url, "password=" + password);
-                    }
-                    else {
+                    } else {
                         break;
                     }
                 }
@@ -110,8 +108,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                     progress.increase(1);
                 }
                 step.setParameter(decryptedLinks);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -128,16 +125,14 @@ public class RapidshareComFolder extends PluginForDecrypt {
         RequestInfo reqhelp;
         ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(source, "<div style=\"text-align:right;\">°</div>");
         for (int i = 0; i < links.size(); i++) {
-            if(new Regex(links.get(i).get(0), "javascript:folderoeffnen").count() > 0) {
+            if (new Regex(links.get(i).get(0), "javascript:folderoeffnen").count() > 0) {
                 try {
                     reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + SimpleMatches.getBetween(links.get(i).get(0), "', '", "'"), false);
                     getLinks(reqhelp.getHtmlCode());
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }
-            else {
+            } else {
                 decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(links.get(i).get(0), "href=\"", "\" ")));
             }
         }

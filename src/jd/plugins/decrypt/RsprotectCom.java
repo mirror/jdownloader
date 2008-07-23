@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -31,11 +32,11 @@ import jd.utils.JDUtilities;
 
 public class RsprotectCom extends PluginForDecrypt {
 
-    final static String host             = "rsprotect.com";
+    final static String host = "rsprotect.com";
 
-    private String      version          = "1.0.0.0";
-    //www.rsprotect.com/rs-QDZkNWZyYTM/uds-AKeys-unp.rar
-    private Pattern             patternSupported   = Pattern.compile("http://.*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private String version = "1.0.0.0";
+    // www.rsprotect.com/rs-QDZkNWZyYTM/uds-AKeys-unp.rar
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public RsprotectCom() {
         super();
@@ -73,27 +74,27 @@ public class RsprotectCom extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
- 			
-    			progress.setRange( 1);
-    			
-    			decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
-    		progress.increase(1);
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                progress.setRange(1);
+
+                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
+                progress.increase(1);
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override

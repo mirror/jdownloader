@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -33,14 +32,14 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class SeCurNet extends PluginForDecrypt {
-    final 	static	String	HOST             	= "se-cur.net";
-    private 		String	VERSION          	= "0.1.0";
-    private 		String	CODER            	= "jD-Team";
-    private 		Pattern	SUPPORT_PATTERN		= getSupportPattern("http://[*]se-cur\\.net/q\\.php\\?d=[+]");
-    private 		String  LINK_OUT_PATTERN	= "href=\"http://se-cur.net/out.php?d=°\"";
-    private 		String  LINK_OUT_TEMPLATE	= "http://se-cur.net/out.php?d=";
-    private 		String  FRAME	= "src=\"°\"";
-    
+    final static String HOST = "se-cur.net";
+    private String VERSION = "0.1.0";
+    private String CODER = "jD-Team";
+    private Pattern SUPPORT_PATTERN = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
+    private String LINK_OUT_PATTERN = "href=\"http://se-cur.net/out.php?d=°\"";
+    private String LINK_OUT_TEMPLATE = "http://se-cur.net/out.php?d=";
+    private String FRAME = "src=\"°\"";
+
     public SeCurNet() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -77,44 +76,45 @@ public class SeCurNet extends PluginForDecrypt {
         return VERSION;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            
-    		Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            
-    		try {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
 
-    			URL url = new URL(parameter);
-    			RequestInfo requestInfo = HTTP.getRequest(url);
-    			ArrayList<ArrayList<String>> layerLinks = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
-    			progress.setRange(layerLinks.size());
-    			
-    			for ( int i = 0; i < layerLinks.size(); i++ ) {
-    				
-    				requestInfo = HTTP.getRequest( new URL(LINK_OUT_TEMPLATE + layerLinks.get(i).get(0)) );
-    				String link = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FRAME, 0);
-    				link = JDUtilities.htmlDecode(link);
-    				decryptedLinks.add(this.createDownloadlink(link));
-    				progress.increase(1);
-    				
-    			}
-    			
-    			step.setParameter(decryptedLinks);
-    		
-    		} catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    		
-    	}
-    	
-    	return null;
-    	
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+
+            try {
+
+                URL url = new URL(parameter);
+                RequestInfo requestInfo = HTTP.getRequest(url);
+                ArrayList<ArrayList<String>> layerLinks = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
+                progress.setRange(layerLinks.size());
+
+                for (int i = 0; i < layerLinks.size(); i++) {
+
+                    requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + layerLinks.get(i).get(0)));
+                    String link = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FRAME, 0);
+                    link = JDUtilities.htmlDecode(link);
+                    decryptedLinks.add(this.createDownloadlink(link));
+                    progress.increase(1);
+
+                }
+
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return null;
+
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-    
+
 }

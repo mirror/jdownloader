@@ -50,7 +50,7 @@ public class CryptItCom extends PluginForDecrypt {
 
     private String CODER = "jD-Team";
 
-    static private final Pattern patternSupported = getSupportPattern("(http|ccf)://[*]crypt-it.com/(s|e|d|c)/[a-zA-Z0-9]+");
+    static private final Pattern patternSupported = Pattern.compile("(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     private static final String PATTERN_PW = "Passworteingabe";
 
@@ -109,9 +109,9 @@ public class CryptItCom extends PluginForDecrypt {
                 String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
                 String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
                 RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-                String pass="";
+                String pass = "";
                 if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
-                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {                        
+                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                         pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
                         if (pass == null) {
                             /* auf abbruch geklickt */

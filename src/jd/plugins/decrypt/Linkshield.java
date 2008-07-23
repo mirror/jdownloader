@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -30,11 +31,11 @@ import jd.plugins.RequestInfo;
 
 public class Linkshield extends PluginForDecrypt {
 
-    static private final String host             = "www.linkshield.com";
+    static private final String host = "www.linkshield.com";
 
-    private String              version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    private Pattern             patternSupported = getSupportPattern("http://[*]linkshield\\.com/[sc]/[\\d]+_[\\d]+");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+", Pattern.CASE_INSENSITIVE);
 
     public Linkshield() {
         super();
@@ -72,32 +73,31 @@ public class Linkshield extends PluginForDecrypt {
         return version;
     }
 
-    @Override 
+    @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		try {
-    			
-    			// test link: http://www.linkshield.com/c/976_956
-    			
-				progress.setRange( 1);
-				
-				RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
+            try {
 
-			progress.increase(1);
-    			decryptedLinks.add(this.createDownloadlink((SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
-    			
-    			// Decrypten abschliessen
-    			
-    			logger.info(decryptedLinks.size() + " download decrypted");
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	
-    	return null;
+                // test link: http://www.linkshield.com/c/976_956
+
+                progress.setRange(1);
+
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
+
+                progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink((SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
+
+                // Decrypten abschliessen
+
+                logger.info(decryptedLinks.size() + " download decrypted");
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return null;
     }
 
     @Override

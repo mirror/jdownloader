@@ -23,7 +23,7 @@ public class Rlslog extends PluginForDecrypt {
     private static final String HOSTER_LIST = "HOSTER_LIST";
     private String[] hosterList;
 
-    private Pattern patternSupported = getSupportPattern("(http://[*]rlslog.net(/[+]/[+]/#comments|/[+]/#comments|/[+]/))");
+    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
     public Rlslog() {
         super();
@@ -126,7 +126,7 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), HOSTER_LIST, JDLocale.L("plugins.decrypt.rlslog.hosterlist", "Liste der zu suchenden Hoster(Ein Hoster/Zeile)")).setDefaultValue("rapidshare.com"));        
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), HOSTER_LIST, JDLocale.L("plugins.decrypt.rlslog.hosterlist", "Liste der zu suchenden Hoster(Ein Hoster/Zeile)")).setDefaultValue("rapidshare.com"));
     }
 
     @Override

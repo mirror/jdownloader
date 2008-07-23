@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,9 +31,9 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class DDLMusicOrg extends PluginForDecrypt {
-    final static String host             = "ddl-music.org";
-    private String      version          = "0.1.0";
-    private Pattern     patternSupported = getSupportPattern("(http://ddl-music\\.org/music_crypth\\.php\\?[+])" + "|(http://ddl-music\\.org/index\\.php\\?site=view_download[+])");
+    final static String host = "ddl-music.org";
+    private String version = "0.1.0";
+    private Pattern patternSupported = Pattern.compile("http://ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg() {
         super();
@@ -91,8 +90,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                     progress.increase(1);
                     step.setParameter(decryptedLinks);
 
-                }
-                else if (parameter.indexOf("site=view_download") != -1) {
+                } else if (parameter.indexOf("site=view_download") != -1) {
 
                     RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
 
@@ -124,15 +122,13 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
                             try {
                                 Thread.sleep(500);
-                            }
-                            catch (InterruptedException e) {
+                            } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
 
                             j++;
 
-                        }
-                        else
+                        } else
                             j++;
 
                     }
@@ -141,8 +137,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
                 }
 
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 

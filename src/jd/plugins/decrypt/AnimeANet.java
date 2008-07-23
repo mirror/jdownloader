@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -31,11 +30,11 @@ import jd.plugins.RequestInfo;
 
 public class AnimeANet extends PluginForDecrypt {
 
-    final static String host             = "animea.net";
+    final static String host = "animea.net";
 
-    private String      version          = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-    private Pattern     patternSupported = getSupportPattern("http://[*]animea\\.net/download/[\\d]+/[*]");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/.*", Pattern.CASE_INSENSITIVE);
 
     public AnimeANet() {
         super();
@@ -73,34 +72,35 @@ public class AnimeANet extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             parameter = parameter.replaceAll(" ", "+");
-            
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
 
-//    			ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), );
-    			String[] links = reqinfo.getRegexp("href=javascript:reqLink\\(.\\'(.*?).\\'\\)>").getMatches(1);
-    			progress.setRange( links.length);
-    			
-    			for(int i=0; i<links.length; i++) {
-    				reqinfo = HTTP.postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links[i]), "submit=Open");
-    				decryptedLinks.add(this.createDownloadlink(reqinfo.getFirstMatch("width=\"12\" height=\"11\" /><a href=\"(.*?)\" target=\"_blank\">Download")));
-    				progress.increase(1);
-    			}
-    			
-    			// Decrypt abschliessen
-    			
-    			step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    	}
-    	return null;
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                // ArrayList<ArrayList<String>> links =
+                // SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), );
+                String[] links = reqinfo.getRegexp("href=javascript:reqLink\\(.\\'(.*?).\\'\\)>").getMatches(1);
+                progress.setRange(links.length);
+
+                for (int i = 0; i < links.length; i++) {
+                    reqinfo = HTTP.postRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links[i]), "submit=Open");
+                    decryptedLinks.add(this.createDownloadlink(reqinfo.getFirstMatch("width=\"12\" height=\"11\" /><a href=\"(.*?)\" target=\"_blank\">Download")));
+                    progress.increase(1);
+                }
+
+                // Decrypt abschliessen
+
+                step.setParameter(decryptedLinks);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 
     @Override

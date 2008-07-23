@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -32,10 +31,11 @@ import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class MediafireFolder extends PluginForDecrypt {
-    static private String host             = "mediafire.com";
-    private String        version          = "1.0.0.0";
-    //http://www.mediafire.com/?sharekey=b81a40fbdaa3d7d298f05b957ce1b5b4b7ae71a3e97d435e
-    static private final Pattern patternSupported = getSupportPattern("http://[*]mediafire.com/\\?sharekey=[+]");
+    static private String host = "mediafire.com";
+    private String version = "1.0.0.0";
+    // http://www.mediafire.com/?sharekey=
+    // b81a40fbdaa3d7d298f05b957ce1b5b4b7ae71a3e97d435e
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
     public MediafireFolder() {
         super();
@@ -73,26 +73,26 @@ public class MediafireFolder extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-        if(step.getStep() == PluginStep.STEP_DECRYPT) {
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
-                
+
                 reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
-                
+
                 ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
                 progress.setRange(links.size());
-                
-                for(int i=0; i<links.size(); i++) {
+
+                for (int i = 0; i < links.size(); i++) {
                     decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links.get(i).get(1)));
                     progress.increase(1);
                 }
                 step.setParameter(decryptedLinks);
-            }
-            catch(IOException e) {
-                 e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return null;

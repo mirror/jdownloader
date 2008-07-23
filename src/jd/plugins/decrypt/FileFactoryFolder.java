@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -35,13 +34,12 @@ import jd.plugins.RequestInfo;
 
 public class FileFactoryFolder extends PluginForDecrypt {
 
-    final static String host             = "filefactory.com";
-    final static String name             = "filefactory.com Folder";
-    private String      version          = "0.1.0";
+    final static String host = "filefactory.com";
+    final static String name = "filefactory.com Folder";
+    private String version = "0.1.0";
 
-    private Pattern     patternSupported = getSupportPattern(
-    		"http://[*]filefactory\\.com(/|//)f/[a-zA-Z0-9]+");
-    
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
     public FileFactoryFolder() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
@@ -60,7 +58,7 @@ public class FileFactoryFolder extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "filefactory.com/f-"+version;
+        return "filefactory.com/f-" + version;
     }
 
     @Override
@@ -77,42 +75,43 @@ public class FileFactoryFolder extends PluginForDecrypt {
     public String getVersion() {
         return version;
     }
-    
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-    		
+
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-    		
-    		try {
-    			
-    			RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-    			
-    			ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
-    			progress.setRange(ids.size());
-    			
-    			for ( int i=0; i<ids.size(); i++ ) {
-    				
-    				decryptedLinks.add(this.createDownloadlink("http://www.filefactory.com/file/"+ids.get(i).get(0)));
-    				progress.increase(1);
-    				
-	    		}
-				
-				step.setParameter(decryptedLinks);
-				
-    		} catch(IOException e) {
-    			e.printStackTrace();
-    		}
-	        
-    	}
-    	
-    	return null;
-    	
+
+            try {
+
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+
+                ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
+                progress.setRange(ids.size());
+
+                for (int i = 0; i < ids.size(); i++) {
+
+                    decryptedLinks.add(this.createDownloadlink("http://www.filefactory.com/file/" + ids.get(i).get(0)));
+                    progress.increase(1);
+
+                }
+
+                step.setParameter(decryptedLinks);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        return null;
+
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-    
+
 }

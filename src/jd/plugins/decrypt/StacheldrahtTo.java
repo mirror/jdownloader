@@ -34,8 +34,8 @@ import jd.plugins.RequestInfo;
 public class StacheldrahtTo extends PluginForDecrypt {
     final static String host = "stacheldraht.to";
     private String version = "0.1";
-    
-    private Pattern patternSupported = getSupportPattern("http://[*]stacheldraht.to/index.php\\?folder=[+]");
+
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stacheldraht\\.to/index\\.php\\?folder=.+", Pattern.CASE_INSENSITIVE);
 
     public StacheldrahtTo() {
         super();
@@ -78,15 +78,15 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            
+
             try {
                 RequestInfo ri = HTTP.getRequest(new URL(parameter));
                 String cookie = ri.getCookie().split(";")[0];
                 ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
-                
-                progress.setRange(links.size()/2);
-                for(int i=0; i<links.size(); i=i+2) {
-                    HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?"+links.get(i).get(0)).openConnection());
+
+                progress.setRange(links.size() / 2);
+                for (int i = 0; i < links.size(); i = i + 2) {
+                    HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links.get(i).get(0)).openConnection());
                     httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
                     httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
                     httpConnection.setRequestMethod("GET");
@@ -104,7 +104,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
                     httpConnection.setRequestProperty("Cookie", cookie);
                     RequestInfo reqinfo = HTTP.readFromURL(httpConnection);
                     reqinfo.setConnection(httpConnection);
-                    
+
                     progress.increase(1);
                     decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
                 }
