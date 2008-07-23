@@ -39,7 +39,7 @@ import jd.utils.JDUtilities;
 public class Uploadedto extends PluginForHost {
     // uploaded.to/file/40gtfe
     // uploaded.to/?id=5tr1m8
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
 
     static private final String HOST = "uploaded.to";
 
@@ -124,11 +124,6 @@ public class Uploadedto extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    // @Override
-    // public URLConnection getURLConnection() {
-    // // XXX: ???
-    // return null;
-    // }
     public PluginStep doStep(PluginStep step, DownloadLink parameter) {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
@@ -339,7 +334,7 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-                 
+
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
@@ -388,7 +383,7 @@ public class Uploadedto extends PluginForHost {
                         return step;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-               
+
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
@@ -521,7 +516,9 @@ public class Uploadedto extends PluginForHost {
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
-if(!newURL.startsWith("http")){newURL="http://uploaded.to"+newURL;}
+                    if (!newURL.startsWith("http")) {
+                        newURL = "http://uploaded.to" + newURL;
+                    }
                     requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
 
                     if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
@@ -557,7 +554,7 @@ if(!newURL.startsWith("http")){newURL="http://uploaded.to"+newURL;}
                     return step;
                 }
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-              
+
                 dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 dl.setResume(true);
@@ -616,9 +613,8 @@ if(!newURL.startsWith("http")){newURL="http://uploaded.to"+newURL;}
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 this.setStatusText("Error");
-                if(requestInfo.getConnection().getHeaderField("Location").contains("error_traffic_exceeded_free")){
-                    return true;
-                    
+                if (requestInfo.getConnection().getHeaderField("Location").contains("error_traffic_exceeded_free")) { return true;
+
                 }
                 return false;
             } else {
@@ -633,7 +629,6 @@ if(!newURL.startsWith("http")){newURL="http://uploaded.to"+newURL;}
                     this.setStatusText("File Not Found");
                     return false;
                 }
-
 
                 String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
                 String ext = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
