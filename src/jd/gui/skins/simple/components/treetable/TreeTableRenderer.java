@@ -76,7 +76,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
-        FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");    
+        FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "000000");
 
         PACKAGE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.package_progress", "94baff");
         ERROR_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_error", "FF0000");
@@ -103,8 +103,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         this.progress = new JProgressBar();
         if (JDUtilities.getJavaVersion() >= 1.6) {
             ui = new TreeProgressBarUI();
-            progress.setUI(ui);
             ui.setSelectionForeground(Color.BLACK);
+            progress.setUI(ui);
         }
 
         progress.setBorderPainted(false);
@@ -119,13 +119,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             FilePackage filePackage = (FilePackage) value;
             if (filePackage.getLinksInProgress() > 0) label = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             if (filePackage.getTotalDownloadSpeed() > 0) label = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
-            double pv;
-            if (filePackage.getLinksFinished() == 0)
-                pv = 1;
-            else
-                pv = 1.0 - (filePackage.getLinksFinished() / ((double) filePackage.size()));
             miniBar.setText(label);
-            miniBar.setPercent(1.0 - pv);
+            miniBar.setPercent(filePackage.getPercent() / 100.0);
             return miniBar;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
@@ -225,9 +220,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         protected void paintComponent(Graphics g) {
             if (p != 0) {
                 int n = 3;
-                int start = getHeight() - n;
                 ((Graphics2D) g).setPaint(new GradientPaint(0, 0, ACTIVE_PROGRESS_COLOR, getWidth(), getHeight(), ACTIVE_PROGRESS_COLOR.darker()));
-                g.fillRect(0, start, (int) (getWidth() * p), n);
+                g.fillRect(0, getHeight() - n, (int) (getWidth() * p), n);
             }
             super.paintComponent(g);
         }
