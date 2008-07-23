@@ -2,15 +2,13 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -41,21 +39,18 @@ public class LinkBankeu extends PluginForDecrypt {
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo requestInfo = HTTP.getRequest(url);
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE));
-                ArrayList<String> mirrors = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE), 1);
-                for (int i = 0; i < links.size(); i++) {
-                    url = new URL("http://www.linkbank.eu/posli.php?match=" + links.get(i).get(0) + "&id=" + links.get(i).get(1));
+                String[][] links = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches();
+                String[] mirrors = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                for (int i = 0; i < links.length; i++) {
+                    url = new URL("http://www.linkbank.eu/posli.php?match=" + links[i][0] + "&id=" + links[i][1]);
                     requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, cryptedLink, false);
                     decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
                 }
                 if (getProperties().getBooleanProperty(CHECK_MIRRORS, false) == true) {
-                    for (int i = 0; i < mirrors.size(); i++) {
-                        decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(mirrors.get(i))));
+                    for (int i = 0; i < mirrors.length; i++) {
+                        decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(mirrors[i])));
                     }
                 }
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -76,7 +71,7 @@ public class LinkBankeu extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "LinkBankeu Decrypter";
+        return host + "-" + version;
     }
 
     @Override

@@ -19,12 +19,10 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -35,7 +33,7 @@ import jd.utils.JDUtilities;
 public class EinsKhDe extends PluginForDecrypt {
 
     static private String host = "1kh.de";
-    
+
     private String version = "1.0.0.0";
     final static private Pattern patternSupported_File = Pattern.compile("http://.*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
     final static private Pattern patternSupported_Folder = Pattern.compile("http://.*?1kh\\.de/f/[0-9/]+", Pattern.CASE_INSENSITIVE);
@@ -87,7 +85,7 @@ public class EinsKhDe extends PluginForDecrypt {
                 RequestInfo reqinfo = HTTP.getRequest(url);
                 if (cryptedLink.matches(patternSupported_File.pattern())) {
                     /* eine einzelne Datei */
-                    String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());                    
+                    String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
                     decryptedLinks.add(this.createDownloadlink(link));
                 } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                     /* ein Folder */
@@ -104,15 +102,13 @@ public class EinsKhDe extends PluginForDecrypt {
                             if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) break;
                         }
                     }
-                    ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"", Pattern.CASE_INSENSITIVE), 1);
-                    progress.setRange(links.size());
-                    for (int i = 0; i < links.size(); i++) {
-                        decryptedLinks.add(this.createDownloadlink("http://1kh.de/" + links.get(i)));
+                    String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                    progress.setRange(links.length);
+                    for (int i = 0; i < links.length; i++) {
+                        decryptedLinks.add(this.createDownloadlink("http://1kh.de/" + links[i]));
                         progress.increase(1);
                     }
                 }
-
-                // Decrypt abschliessen
 
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
