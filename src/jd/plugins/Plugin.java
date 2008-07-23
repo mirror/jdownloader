@@ -85,7 +85,7 @@ public abstract class Plugin implements ActionListener {
 
     protected CRequest request = new CRequest();
 
-    //public boolean aborted = false;
+    // public boolean aborted = false;
 
     public boolean collectCaptchas() {
         return true;
@@ -151,7 +151,8 @@ public abstract class Plugin implements ActionListener {
      * @return Gibt ein patternzurück mit dem links gesucht und überprüft werden
      *         können
      */
-    public @Deprecated static Pattern getSupportPattern(String patternString) {
+    public @Deprecated
+    static Pattern getSupportPattern(String patternString) {
         patternString = patternString.replaceAll("\\[\\*\\]", ".*");
         patternString = patternString.replaceAll("\\[\\+\\]", ".+");
         patternString = patternString.replaceAll("\\[\\w\\]", "[\\w\\.]*?");
@@ -202,11 +203,11 @@ public abstract class Plugin implements ActionListener {
     public static File getLocalCaptchaFile(Plugin plugin, String extension) {
         if (extension == null) extension = ".jpg";
         Calendar calendar = Calendar.getInstance();
-        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar)+new Random().nextInt(999);
+        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
         // File dest = JDUtilities.getResourceFile("captchas/" +
         // plugin.getPluginName() + "/captcha_" + (new Date().getTime()) +
         // ".jpg");
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);        
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
         return dest;
     }
 
@@ -252,7 +253,7 @@ public abstract class Plugin implements ActionListener {
 
     public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
 
-//    private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
+    // private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
     public static final int CAPTCHA_JAC = 0;
 
@@ -282,8 +283,7 @@ public abstract class Plugin implements ActionListener {
     /**
      * Properties zum abspeichern der einstellungen
      */
-//    private Property properties;
-
+    // private Property properties;
     private String statusText;
 
     private long initTime;
@@ -312,19 +312,18 @@ public abstract class Plugin implements ActionListener {
     /**
      * Zeigt, daß diese Plugin gestoppt werden soll
      */
-//    public void abort() {
-//        aborted = true;
-//
-//    }
-
-//    public boolean hasBeenInterrupted(){
-//    
-//        if(Thread.currentThread().isInterrupted()){
-//            Thread.currentThread().interrupt();
-//            return true;
-//        }
-//        return false;
-//    }
+    // public void abort() {
+    // aborted = true;
+    //
+    // }
+    // public boolean hasBeenInterrupted(){
+    //    
+    // if(Thread.currentThread().isInterrupted()){
+    // Thread.currentThread().interrupt();
+    // return true;
+    // }
+    // return false;
+    // }
     /**
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
@@ -482,7 +481,6 @@ public abstract class Plugin implements ActionListener {
         return buffer.toString();
     }
 
-
     /**
      * @author JD-Team
      * @return Gibt den aktuellen Schritt oder null zurück
@@ -531,24 +529,19 @@ public abstract class Plugin implements ActionListener {
      */
     public String getFileNameFormHeader(HTTPConnection urlConnection) {
 
-        String ret;
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) {
-
-            return getFileNameFormURL(urlConnection.getURL());
-        }
+        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return getFileNameFormURL(urlConnection.getURL()); }
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
-        ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
+        String ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
         while (ret.startsWith("\"") || ret.startsWith("'"))
             ret = ret.substring(1);
-        while (ret.endsWith("\"") || ret.endsWith("'")|| ret.endsWith(";"))
+        while (ret.endsWith("\"") || ret.endsWith("'") || ret.endsWith(";"))
             ret = ret.substring(0, ret.length() - 1);
         try {
-
             ret = URLDecoder.decode(ret, "UTF-8");
         } catch (UnsupportedEncodingException e) {
         }
-        ;
+
         return ret;
     }
 
@@ -556,6 +549,7 @@ public abstract class Plugin implements ActionListener {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
         return url.getFile().substring(index + 1);
     }
+
     protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
         while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
@@ -596,7 +590,6 @@ public abstract class Plugin implements ActionListener {
         return parameterLine.toString();
     }
 
-   
     /**
      * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
      * 

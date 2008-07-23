@@ -735,7 +735,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             confirmAll();
             this.setVisible(false);
             this.dispose();
-        } else if (e.getSource() == sortPackages) {
+        } else if (e.getSource() == this.sortPackages) {
             this.reprintTabbedPane();
         } else if (e.getSource() == this.mMerge) {
             PackageTab tab = tabList.get(tabbedPane.getSelectedIndex());
@@ -811,6 +811,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.getX(), (int) loc.getY());
             this.removePackageAt(destID);
+            this.emptyCheck();
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
             addTab();
         } else if (e.getSource() == this.insertAtPosition) {
