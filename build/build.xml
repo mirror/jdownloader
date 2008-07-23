@@ -236,6 +236,6 @@
 		<move file="${dist}/JDownloaderContainer_obfuscated.jar" tofile="${dist}/JDownloaderContainer.jar" />
 	</target>
 	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater"></target>
-	<target name="dlcEnabledBuild" depends="standardBuild,jarContainer,cryptContainer,sign"></target>
+	<target name="dlcEnabledBuild" depends="standardBuild,jarContainer,sign"></target>
 	<target name="signedBuild" depends="standardBuild,sign"></target>
 </project>

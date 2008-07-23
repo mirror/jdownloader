@@ -1258,6 +1258,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
 
             for (int i = 0; i < list.length; i++) {
+             
                 linkList.add(list[i]);
 
                 pws = JUnrar.getPasswordArray(list[i].getSourcePluginPassword());
