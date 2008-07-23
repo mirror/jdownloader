@@ -19,13 +19,11 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -37,13 +35,13 @@ public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
     private String version = "1.0.0.0";
 
-    private Pattern patternSupported = getSupportPattern("(http://[*]filefox.in(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]alphawarez.us/\\?id=[+])" + "|(http://[*]pirate-loads.com/\\?id=[+])" + "|(http://[*]fettrap.com/\\?id=[+])" + "|(http://[*]omega-music.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]hardcoremetal.biz/\\?id=[+])" + "|(http://[*]flashload.org/\\?id=[+])" + "|(http://[*]twin-warez.com/\\?id=[+])" + "|(http://[*]oneload.org/\\?id=[+])" + "|(http://[*]steelwarez.com/\\?id=[+])" + "|(http://[*]fullstreams.info/\\?id=[+])" + "|(http://[*]lionwarez.com/\\?id=[+])" + "|(http://[*]1dl.in/\\?id=[+])" + "|(http://[*]chrome-database.com/\\?id=[+])" + "|(http://[*]oneload.org/\\?id=[+])" + "|(http://[*]youwarez.biz/\\?id=[+])" + "|(http://[*]saugking.net/\\?id=[+])" + "|(http://[*]leetpornz.com/\\?id=[+])" + "|(http://[*]freefiles4u.com/\\?id=[+])"
-            + "|(http://[*]dark-load.net/\\?id=[+])" + "|(http://[*]wrzunlimited.1gb.in/\\?id=[+])" + "|(http://[*]crimeland.de/\\?id=[+])" + "|(http://[*]get-warez.in/\\?id=[+])" + "|(http://[*]meinsound.com/\\?id=[+])" + "|(http://[*]projekt-tempel-news.de.vu/\\?id=[+])" + "|(http://[*]datensau.org/\\?id=[+])" + "|(http://[*]musik.am(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]spreaded.net(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]relfreaks.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]babevidz.com(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]serien24.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]porn-freaks.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]xxx-4-free.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]xxx-reactor.net(/\\?id=[+]|/category/[+]/[+].html))"
-            + "|(http://[*]porn-traffic.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]chili-warez.net(/\\?id=[+]|/[+]/[+].html))" + "|(http://[*]game-freaks.net(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]isos.at(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]your-load.com(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]mov-world.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]xtreme-warez.net(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]sceneload.to(/\\?id=[+]|/download/[+]/[+].html))" + "|(http://[*]oxygen-warez.com(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]epicspeedload.in/\\?id=[+])" + "|(http://[*]serienfreaks.to(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]serienfreaks.in(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]warez-load.com(/\\?id=[+]|/download/[+]/[+].html))"
-            + "|(http://[*]ddl-scene.com(/\\?id=[+]|/category/[+]/[+].html))" + "|(http://[*]mp3king.cinipac-hosting.biz/\\?id=[+])");
+    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?filefox\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?alphawarez\\.us/\\?id=.+)" + "|(http://[\\w\\.]*?pirate-loads\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fettrap\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?omega-music\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?hardcoremetal\\.biz/\\?id=.+)" + "|(http://[\\w\\.]*?flashload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?twin-warez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?steelwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fullstreams\\.info/\\?id=.+)" + "|(http://[\\w\\.]*?lionwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?1dl\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?chrome-database\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?youwarez\\.biz/\\?id=.+)"
+            + "|(http://[\\w\\.]*?saugking\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?leetpornz\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?freefiles4u\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?dark-load\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?crimeland\\.de/\\?id=.+)" + "|(http://[\\w\\.]*?get-warez\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?meinsound\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?projekt-tempel-news\\.de.vu/\\?id=.+)" + "|(http://[\\w\\.]*?datensau\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?musik\\.am(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?spreaded\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?relfreaks\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?babevidz\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serien24\\.com(/\\?id=.+|/download/.+/.+\\.html))"
+            + "|(http://[\\w\\.]*?porn-freaks\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-4-free\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-reactor\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?porn-traffic\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?chili-warez\\.net(/\\?id=.+|/.+/.+\\.html))" + "|(http://[\\w\\.]*?game-freaks\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?isos\\.at(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?your-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?mov-world\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xtreme-warez\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?sceneload\\.to(/\\?id=.+|/download/.+/.+\\.html))"
+            + "|(http://[\\w\\.]*?oxygen-warez\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?epicspeedload\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?serienfreaks\\.to(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serienfreaks\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?warez-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?ddl-scene\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/\\?id=.+)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/");
-    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)");
+    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/", Pattern.CASE_INSENSITIVE);
+    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)", Pattern.CASE_INSENSITIVE);
 
     public UCMS() {
         super();
@@ -94,80 +92,67 @@ public class UCMS extends PluginForDecrypt {
 
                 if (!host.startsWith("http")) host = "http://" + host;
 
-                ArrayList<String> pass = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE), 1);
-                if (pass.size() > 0) {
-                    if (!pass.get(0).equals("n/a") && !pass.get(0).equals("-") && !pass.get(0).equals("-kein Passwort-")) this.default_password.add(pass.get(0));
+                String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (pass != null) {
+                    if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) this.default_password.add(pass);
                 }
+                String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+                for (int i = 0; i < forms.length; i++) {
+                    for (int retry = 0; retry < 5; retry++) {
+                        Matcher matcher = PAT_CAPTCHA.matcher(forms[i][2]);
 
-                ArrayList<ArrayList<String>> forms = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"([^\"]*)\"(.*?)<\\/FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
-
-                for (int i = 0; i < forms.size(); i++) {
-                    if (forms.get(i).get(1).contains("download") || forms.get(i).get(1).contains("mirror")) {
-                        for (int retry = 0; retry < 5; retry++) {
-                            Matcher matcher = PAT_CAPTCHA.matcher(forms.get(i).get(2));
-
-                            if (matcher.find()) {
-                                if (captchaFile != null && capTxt != null) {
-                                    JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                                }
-
-                                logger.finest("Captcha Protected");
-                                String captchaAdress = host + SimpleMatches.getBetween(forms.get(i).get(2), "<IMG SRC=\"", "\"");
-                                captchaFile = getLocalCaptchaFile(this);
-                                JDUtilities.download(captchaFile, captchaAdress);
-
-                                capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
-
-                                String posthelp = HTMLParser.getFormInputHidden(forms.get(i).get(2));
-                                if (forms.get(i).get(0).startsWith("http")) {
-                                    reqinfo = HTTP.postRequest(new URL(forms.get(i).get(0)), posthelp + "&code=" + capTxt);
-                                } else {
-                                    reqinfo = HTTP.postRequest(new URL(host + forms.get(i).get(0)), posthelp + "&code=" + capTxt);
-                                }
-                            } else {
-                                if (captchaFile != null && capTxt != null) {
-                                    JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                                }
-
-                                Matcher matcher_no = PAT_NO_CAPTCHA.matcher(reqinfo.getHtmlCode());
-
-                                if (matcher_no.find()) {
-                                    logger.finest("Not Captcha protected");
-                                    String posthelp = HTMLParser.getFormInputHidden(forms.get(i).get(2));
-
-                                    if (forms.get(i).get(0).startsWith("http")) {
-                                        reqinfo = HTTP.postRequest(new URL(forms.get(i).get(0)), posthelp);
-                                    } else {
-                                        reqinfo = HTTP.postRequest(new URL(host + forms.get(i).get(0)), posthelp);
-                                    }
-
-                                    break;
-                                }
-
+                        if (matcher.find()) {
+                            if (captchaFile != null && capTxt != null) {
+                                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                             }
-                            if (reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
-                                logger.warning("Captcha Detection failed");
-                                reqinfo = HTTP.getRequest(url);
+
+                            logger.finest("Captcha Protected");
+                            String captchaAdress = host + new Regex(forms[i][2], Pattern.compile("<IMG SRC=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                            captchaFile = getLocalCaptchaFile(this);
+                            JDUtilities.download(captchaFile, captchaAdress);
+                            capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
+                            String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
+                            if (forms[i][0].startsWith("http")) {
+                                reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp + "&code=" + capTxt);
                             } else {
+                                reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp + "&code=" + capTxt);
+                            }
+                        } else {
+                            if (captchaFile != null && capTxt != null) {
+                                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                            }
+
+                            Matcher matcher_no = PAT_NO_CAPTCHA.matcher(forms[i][2]);
+                            if (matcher_no.find()) {
+                                logger.finest("Not Captcha protected");
+                                String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
+                                if (forms[i][0].startsWith("http")) {
+                                    reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp);
+                                } else {
+                                    reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp);
+                                }
                                 break;
                             }
-                            if (reqinfo.getConnection().getURL().toString().equals(host + forms.get(i).get(0))) break;
                         }
-                        ArrayList<ArrayList<String>> links = null;
-
-                        if (reqinfo.containsHTML("unescape")) {
-                            links = SimpleMatches.getAllSimpleMatches(JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "unescape\\(unescape\\(\"", "\"")))), "ACTION=\"°\"");
+                        if (reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
+                            logger.warning("Captcha Detection failed");
+                            reqinfo = HTTP.getRequest(url);
                         } else {
-                            links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "ACTION=\"°\"");
+                            break;
                         }
-                        for (int j = 0; j < links.size(); j++) {
-                            //System.out.println(JDUtilities.htmlDecode(links.get
-                            // (j).get(0)));
-                            decryptedLinks.add(this.createDownloadlink(HTMLParser.getHttpLinkList(JDUtilities.htmlDecode(links.get(j).get(0)))));
-                        }
+                        if (reqinfo.getConnection().getURL().toString().equals(host + forms[i][0])) break;
+                    }
+                    String links[][] = null;
+                    if (reqinfo.containsHTML("unescape")) {
+                        String temp = JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+                        links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getMatches();                         
+                    } else {
+                        links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                    }
+                    for (int j = 0; j < links.length; j++) {
+                        decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(links[j][0])));
                     }
                 }
-
                 // Decrypten abschliessen
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
