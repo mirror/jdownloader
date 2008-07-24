@@ -46,7 +46,7 @@ public class EinsKhDe extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "JD-Team,b0ffed";
+        return "JD-Team";
     }
 
     @Override
