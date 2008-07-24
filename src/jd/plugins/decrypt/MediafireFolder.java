@@ -35,7 +35,7 @@ public class MediafireFolder extends PluginForDecrypt {
     private String version = "1.0.0.0";
     // http://www.mediafire.com/?sharekey=
     // b81a40fbdaa3d7d298f05b957ce1b5b4b7ae71a3e97d435e
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
     public MediafireFolder() {
         super();

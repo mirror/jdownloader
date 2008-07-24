@@ -35,7 +35,7 @@ public class DipurlCom extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
 
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?dipurl.com/.+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?dipurl\\.com/.+", Pattern.CASE_INSENSITIVE);
 
     public DipurlCom() {
         super();

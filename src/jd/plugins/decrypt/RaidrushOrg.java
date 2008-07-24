@@ -38,7 +38,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     private String version = "0.1";
     // http://raidrush.org/ext/?fid=200634
-    private Pattern patternSupported = Pattern.compile("http://raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     // private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
 

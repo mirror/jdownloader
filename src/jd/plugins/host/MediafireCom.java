@@ -37,7 +37,7 @@ public class MediafireCom extends PluginForHost {
 
     private static final String VERSION = "1.0.0";
 
-    static private final Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?mediafire.com/download.php?.+)|(http://[\\w\\.]*?mediafire.com/?.+)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)", Pattern.CASE_INSENSITIVE);
 
     static private final String offlinelink = "tos_aup_violation";
 

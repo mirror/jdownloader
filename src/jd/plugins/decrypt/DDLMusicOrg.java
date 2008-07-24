@@ -33,7 +33,7 @@ import jd.plugins.RequestInfo;
 public class DDLMusicOrg extends PluginForDecrypt {
     final static String host = "ddl-music.org";
     private String version = "0.1.0";
-    private Pattern patternSupported = Pattern.compile("http://ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://http://[\\w\\.]*?ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg() {
         super();

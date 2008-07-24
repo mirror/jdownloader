@@ -32,7 +32,7 @@ public class RsXXXBlog extends PluginForDecrypt {
     static private final String host = "rs.xxx-blog.org";
 
     private String version = "1.0.0.2";
-    static private final Pattern patternSupported = Pattern.compile("http://.*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*", Pattern.CASE_INSENSITIVE);
 
     public RsXXXBlog() {
         super();
@@ -83,7 +83,7 @@ public class RsXXXBlog extends PluginForDecrypt {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
                 parameter = parameter.substring(parameter.lastIndexOf("http://"));
-                URL url = new URL(parameter.replaceFirst("http://.*?xxx-blog.org", "http://xxx-blog.org/frame"));
+                URL url = new URL(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
                 RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
                 decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
             } catch (IOException e) {
