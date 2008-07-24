@@ -87,7 +87,7 @@ public class Gamezam extends PluginForDecrypt {
                             } else {
                                 String follow_link = new Regex(ri_extern_link.getHtmlCode(), Pattern.compile("extern\\.php\\?aktion=unten&nr=(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                                 ri_extern_link = HTTP.getRequest(new URL("http://www.gamez.am/extern.php?aktion=unten&nr=" + follow_link), cookie, "http://www.gamez.am/start.php?", false);
-                                follow_link = new Regex(ri_extern_link.getHtmlCode(), Pattern.compile("<p class=\"downloadlink\">(.*?)<", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                follow_link = new Regex(ri_extern_link.getHtmlCode(), Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                                 if (follow_link != null) {
                                     DownloadLink link = this.createDownloadlink(follow_link);
                                     link.addSourcePluginPassword(pw);
