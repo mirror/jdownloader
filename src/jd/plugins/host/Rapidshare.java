@@ -1905,7 +1905,7 @@ public class Rapidshare extends PluginForHost {
         RequestInfo requestInfo;
         try {
             // http://rapidshare.com/files/117366525/dlc.dlc
-            requestInfo = HTTP.getRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL().trim() + "&toolmode=1"));
+            requestInfo = HTTP.getRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL() + "&toolmode=1"));
 
             String[] erg = requestInfo.getHtmlCode().trim().split(",");
             /*
@@ -1962,8 +1962,8 @@ public class Rapidshare extends PluginForHost {
                         urls[i].setUrlDownload("http://rapidshare.com" + urls[i].getDownloadURL().substring(urls[i].getDownloadURL().indexOf("rapidshare.com") + 14));
 
                     }
-                    if((post+urls[i].getDownloadURL().trim() + "%0a").length()>10000)break;
-                    post += urls[i].getDownloadURL().trim() + "%0a";
+                    if((post+urls[i].getDownloadURL() + "%0a").length()>10000)break;
+                    post += urls[i].getDownloadURL() + "%0a";
                     
                 }
 

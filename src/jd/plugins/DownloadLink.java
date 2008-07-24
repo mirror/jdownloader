@@ -337,9 +337,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter();
         if (urlDownload != null)
-            this.urlDownload = urlDownload;
+            this.urlDownload = urlDownload.trim();
         else
-            urlDownload = null;
+            this.urlDownload = null;
         if (name == null && urlDownload != null) this.name = this.extractFileNameFromURL();
     }
 
@@ -436,7 +436,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getDownloadURL() {
 
         if (linkType == LINKTYPE_CONTAINER) {
-            if (this.tempUrlDownload != null) return tempUrlDownload;
+            if (this.tempUrlDownload != null) return this.tempUrlDownload;
             String ret;
             if (pluginForContainer != null) {
                 ret = pluginForContainer.extractDownloadURL(this);
@@ -451,7 +451,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
 
         }
-        return urlDownload;
+        return this.urlDownload;
     }
 
     /**
@@ -545,11 +545,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setUrlDownload(String urlDownload) {
         if (this.linkType == LINKTYPE_CONTAINER) {
-            this.tempUrlDownload = urlDownload;
+            this.tempUrlDownload = urlDownload.trim();
             this.urlDownload = null;
             return;
         }
-        this.urlDownload = urlDownload;
+        this.urlDownload = urlDownload.trim();
     }
 
     /**
