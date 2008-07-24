@@ -23,32 +23,28 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
 
 public class FrozenRomsIn extends PluginForDecrypt {
     final static String host = "frozen-roms.in";
     private String version = "0.2.0";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final String[] HOSTERS = new String[] { "FileFactory.com", "Netload.in", "Rapidshare.com", "QShare.com" };
 
     public FrozenRomsIn() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        this.setConfigElements();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -77,21 +73,6 @@ public class FrozenRomsIn extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    private boolean getHosterUsed(String link) {
-        if (link == null) return false;
-        link = link.toLowerCase();
-
-        for (int i = 0; i < HOSTERS.length; i++) {
-            if (link.contains(HOSTERS[i].toLowerCase())) { return getProperties().getBooleanProperty(HOSTERS[i], true); }
-        }
-        return false;
-    }
-
-    @Override
     public PluginStep doStep(PluginStep step, String parameter) {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
@@ -101,7 +82,7 @@ public class FrozenRomsIn extends PluginForDecrypt {
             try {
                 if (parameter.indexOf("get") != -1) {
                     ArrayList<String> tempVector = new ArrayList<String>();
-                    tempVector.add(SimpleMatches.getBetween(parameter, "http://frozen-roms.in/get_", ".html"));
+                    tempVector.add(new Regex(parameter, Pattern.compile("http://frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getFirstMatch());
                     getLinks.add(tempVector);
                 } else {
                     reqinfo = HTTP.getRequest(new URL(parameter));
@@ -111,13 +92,11 @@ public class FrozenRomsIn extends PluginForDecrypt {
 
                 for (int i = 0; i < getLinks.size(); i++) {
                     reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + getLinks.get(i).get(0) + ".html"));
-                    String link = reqinfo.getConnection().getHeaderField("Location");
-                    if (getHosterUsed(link)) decryptedLinks.add(this.createDownloadlink(link));
+                    decryptedLinks.add(this.createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
                     progress.increase(1);
                 }
 
                 step.setParameter(decryptedLinks);
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -125,15 +104,8 @@ public class FrozenRomsIn extends PluginForDecrypt {
         return null;
     }
 
-    private void setConfigElements() {
-        ConfigEntry cfg;
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
-        for (int i = 0; i < HOSTERS.length; i++) {
-            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), HOSTERS[i], HOSTERS[i]));
-            cfg.setDefaultValue(true);
-        }
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 }
