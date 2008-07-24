@@ -81,13 +81,10 @@ public class MirrorItDe extends PluginForDecrypt {
                 RequestInfo reqInfo = HTTP.getRequest(new URL(parameter));
                 String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
                 progress.setRange(links.length);
-                logger.info(links.length + "");
 
                 for (int i = 0; i < links.length; i++) {
-                    logger.info(URLDecoder.decode(links[i][0], "UTF-8") + " == " + links[i][1]);
                     reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links[i][0], "UTF-8") + "&num=" + links[i][1]));
                     reqInfo = HTTP.getRequest(new URL(reqInfo.getLocation()));
-
                     decryptedLinks.add(this.createDownloadlink(reqInfo.getLocation()));
                     progress.increase(1);
                 }
