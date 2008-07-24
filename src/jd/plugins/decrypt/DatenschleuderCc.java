@@ -19,19 +19,15 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
 
 public class DatenschleuderCc extends PluginForDecrypt {
 
@@ -39,18 +35,15 @@ public class DatenschleuderCc extends PluginForDecrypt {
     private String version = "0.2.0";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+", Pattern.CASE_INSENSITIVE);
 
-    private static final String[] USEARRAY = new String[] { "Rapidshare.com", "Netload.in", "Uploaded.to", "Datenklo.net", "Share.Gulli.com", "Archiv.to", "Bluehost.to", "Share-Online.biz", "Speedshare.org" };
-
     public DatenschleuderCc() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         currentStep = steps.firstElement();
-        this.setConfigEelements();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -78,73 +71,30 @@ public class DatenschleuderCc extends PluginForDecrypt {
         return version;
     }
 
-    private boolean getUseConfig(String link) {
-
-        if (link == null) return false;
-        link = link.toLowerCase();
-
-        for (int i = 0; i < USEARRAY.length; i++) {
-
-            if (link.contains(USEARRAY[i].toLowerCase())) { return getProperties().getBooleanProperty(USEARRAY[i], true); }
-
-        }
-
-        return false;
-
-    }
-
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
 
             try {
-
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<a href=\"http://www.datenschleuder.cc/redir.php?id=°\"");
+                String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                progress.setRange(links.length);
 
-                progress.setRange(links.size());
-
-                for (int i = 0; i < links.size(); i++) {
-
-                    reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + links.get(i).get(0)));
-                    String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=\"", "\" name=\"dl\">");
-                    link = link.replace("http://anonym.to?", "");
+                for (int i = 0; i < links.length; i++) {
+                    reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + links[i]));
+                    String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                     progress.increase(1);
 
-                    if (getUseConfig(link)) decryptedLinks.add(createDownloadlink(link));
-
+                    decryptedLinks.add(createDownloadlink(link.replace("http://anonym.to?", "")));
                 }
 
-                logger.info(decryptedLinks.size() + " " + JDLocale.L("plugins.decrypt.general.downloadsDecrypted", "Downloads entschlüsselt"));
                 step.setParameter(decryptedLinks);
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
-
         return null;
-
-    }
-
-    private void setConfigEelements() {
-
-        ConfigEntry cfg;
-
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
-        for (int i = 0; i < USEARRAY.length; i++) {
-
-            config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAY[i], USEARRAY[i]));
-            cfg.setDefaultValue(true);
-
-        }
-
     }
 
     @Override
