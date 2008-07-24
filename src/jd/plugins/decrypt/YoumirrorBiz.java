@@ -25,8 +25,6 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -34,8 +32,6 @@ import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -51,8 +47,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
     private String CODER = "JD-Team";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youmirror\\.biz/(.*/)?(file|folder)/.+", Pattern.CASE_INSENSITIVE);
 
-    private static final String[] USEARRAY = new String[] { "Rapidshare.com", "Uploaded.to", "FileFactory.com", "Fast-Load.net", "MegaUpload.com", "Netload.in", "Gulli.com", "Filer.net", "Load.to", "Sharebase.de", "zShare.net", "Share-Online.biz", "Bluehost.to", "BinLoad.to", "Simpleupload.net", "UltimateLoad.in", "MeinUpload.com", "Qshare.com", "Fastshare.org", "Uploadstube.de", "Files.to", "Datenklo.net" };
-
+    
     private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
     private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
 
@@ -75,8 +70,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
     public YoumirrorBiz() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
-        this.setConfigEelements();
+        currentStep = steps.firstElement();        
     }
 
     @Override
@@ -107,18 +101,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
     @Override
     public String getVersion() {
         return VERSION;
-    }
-
-    private boolean getUseConfig(String link) {
-        if (link == null) { return false; }
-
-        link = link.toLowerCase();
-        for (String hoster : USEARRAY) {
-            if (link.matches(".*" + hoster.toLowerCase() + ".*")) { return getProperties().getBooleanProperty(hoster, true); }
-        }
-
-        return false;
-    }
+    }   
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
@@ -156,13 +139,6 @@ public class YoumirrorBiz extends PluginForDecrypt {
                     ArrayList<ArrayList<String>> groups = SimpleMatches.getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);
 
                     for (ArrayList<String> pair : groups) {
-                        // check if user does not want the links from this
-                        // hoster
-                        // if( !getUseConfig(mirrorHoster.get(i))){
-                        if (!getUseConfig(pair.get(1))) {
-                            logger.info(pair.get(1) + " is ignored due to user config");
-                            continue;
-                        }
 
                         URL fileURL = new URL("http://" + getHost() + pair.get(0));
 
@@ -234,26 +210,6 @@ public class YoumirrorBiz extends PluginForDecrypt {
             }
         }
         return null;
-    }
-
-    private void setConfigEelements() {
-        ConfigEntry cfg;
-        ConfigContainer hoster = null;
-
-        int c = 0;
-        int max = 6;
-        for (int i = 0; i < USEARRAY.length; i++) {
-
-            if (c == 0) {
-                hoster = new ConfigContainer(this, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster Auswahl") + " " + (i + 1) + "-" + Math.min(USEARRAY.length, (i + max)));
-                config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, hoster));
-            }
-
-            hoster.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USEARRAY[i], USEARRAY[i]));
-            cfg.setDefaultValue(true);
-            c++;
-            if (c == max) c = 0;
-        }
     }
 
     @Override
