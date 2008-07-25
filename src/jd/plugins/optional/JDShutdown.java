@@ -34,15 +34,16 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
-    public static int getAddonInterfaceVersion(){
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
+
     private static final int count = 60;
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -57,7 +58,7 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public String getVersion() {
-        return "0.2";
+        return "0.3";
     }
 
     @Override
@@ -94,7 +95,6 @@ public class JDShutdown extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
         if (!JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
-
             menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.enable", "Herunterfahren"), 0).setActionListener(this));
             m.setSelected(false);
         } else {
@@ -106,8 +106,6 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void onExit() {
-        // TODO Auto-generated method stub
-
     }
 
     public void controlEvent(ControlEvent event) {
@@ -115,13 +113,11 @@ public class JDShutdown extends PluginOptional {
         if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if (((InteractionTrigger) event.getSource()) == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
+                    JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").setProperty(PROPERTY_ENABLED, false);
                     shutDown();
-
                 }
-
             }
         }
-
     }
 
     public void shutDown() {
