@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
 
-    private String version = "1.0.0.4";
+    private String version = "1.0.0.5";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
@@ -114,7 +114,8 @@ public class Stealth extends PluginForDecrypt {
 
                 for (int j = 0; j < links.length; j++) {
                     reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links[j]));
-                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(new Regex(reqhelp.getHtmlCode(), Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+                    String[] decLinks = new Regex(reqhelp.getHtmlCode(), Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(decLinks[1])));
                     progress.increase(1);
                 }
 
