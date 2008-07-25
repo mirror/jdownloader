@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class LinkProtectorCom extends PluginForDecrypt {
     private static final String host = "link-protector.com";
@@ -43,7 +43,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Luke";
+        return "JD-Team";
     }
 
     @Override
@@ -73,20 +73,36 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     @Override
     public PluginStep doStep(PluginStep step, String parameter) {
-        // example link: http://link-protector.com/459915/
-
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
+                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+
                 URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
-
-                String decryptedLink = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "write\\(stream\\('", "'\\)");
-                int charCode = Integer.parseInt(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "fromCharCode\\(yy\\[i\\]-", "\\)\\;"));
-
-                String link = SimpleMatches.getBetween(decryptCode(decryptedLink, charCode), "<iframe src=\"", "\" ");
-                decryptedLinks.add(this.createDownloadlink(link));
-                progress.increase(1);
+                RequestInfo requestInfo = HTTP.getRequest(url);
+                boolean do_continue = false;
+                String passCode = null;
+                String referrer = null;
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    if (requestInfo.containsHTML("Bad Referrer!")) {
+                        referrer = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Site below:<br><a href=(.*?)>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        requestInfo = HTTP.getRequest(url, null, referrer, false);
+                    } else if (requestInfo.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || requestInfo.containsHTML("Incorrect Password")) {
+                        if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
+                            break;
+                        }
+                        requestInfo = HTTP.postRequest(url, null, referrer, null, "u_name=user&u_password=" + JDUtilities.urlEncode(passCode), false);
+                    } else {
+                        do_continue = true;
+                        break;
+                    }
+                }
+                if (do_continue == true) {
+                    String cryptedLink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("write\\(stream\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    int charCode = Integer.parseInt(new Regex(requestInfo.getHtmlCode(), Pattern.compile("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                    String decryptedLink = decryptCode(cryptedLink, charCode);
+                    String link = new Regex(decryptedLink, Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch().trim();
+                    decryptedLinks.add(this.createDownloadlink(link));
+                }
                 step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
@@ -105,7 +121,6 @@ public class LinkProtectorCom extends PluginForDecrypt {
         } catch (Exception e) {
             result = "";
         }
-
         return result;
     }
 
