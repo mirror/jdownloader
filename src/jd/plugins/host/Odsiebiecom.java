@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -153,10 +154,11 @@ public class Odsiebiecom extends PluginForHost {
                     downloadcookie = requestInfo.getCookie();
                     referrerurl = downloadurl;
                 }
-                if (requestInfo.containsHTML("src=\"http://odsiebie.com/captcha1.php\"")) {
+                if (requestInfo.containsHTML("captcha.php")) {
                     /* Captcha File holen */
+                    String captchaurl=new Regex(requestInfo.getHtmlCode(),Pattern.compile("<img src=\"(.*?captcha.*?)\">",Pattern.CASE_INSENSITIVE)).getFirstMatch();                    
                     captchaFile = getLocalCaptchaFile(this);
-                    HTTPConnection captcha_con = new HTTPConnection(new URL("http://odsiebie.com/captcha1.php").openConnection());
+                    HTTPConnection captcha_con = new HTTPConnection(new URL(captchaurl).openConnection());
                     captcha_con.setRequestProperty("Referer", referrerurl);
                     captcha_con.setRequestProperty("Cookie", downloadcookie);
                     if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
