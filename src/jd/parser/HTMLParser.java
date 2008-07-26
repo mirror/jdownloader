@@ -17,14 +17,11 @@
 package jd.parser;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.plugins.Plugin;
-import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 
 public class HTMLParser {
@@ -143,12 +140,7 @@ public class HTMLParser {
      */
     public static Vector<String> findPasswords(String data) {
         if (data == null) return new Vector<String>();
-        Iterator<String> iter = JUnrar.getPasswordList().iterator();
         Vector<String> ret = new Vector<String>();
-        while (iter.hasNext()) {
-            String pass = (String) iter.next();
-            if (pass.length() > 8 && data.contains(pass)) ret.add(pass);
-        }
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
         Pattern pattern = Pattern.compile("(pw|passwort|password|pass)[\\s][\\s]*?[\"']([[^\\:\"'\\s]][^\"'\\s]*)[\"']?", Pattern.CASE_INSENSITIVE);
