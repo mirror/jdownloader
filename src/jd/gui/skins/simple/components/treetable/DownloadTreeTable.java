@@ -17,11 +17,9 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
-
 import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
@@ -383,7 +381,10 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 for (Iterator<DownloadLink> it = getSelectedDownloadLinks().iterator(); it.hasNext();) {
                     DownloadLink next = it.next();
                     if (!fps.contains(next.getFilePackage())) fps.add(next.getFilePackage());
-                    if (next.isEnabled()) enabled++; else disabled++;
+                    if (next.isEnabled())
+                        enabled++;
+                    else
+                        disabled++;
                     if (!next.isInProgress() && next.isFailed()) resumeable++;
                 }
                 JPopupMenu popup = new JPopupMenu();
@@ -603,20 +604,21 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             break;
         case TreeTableAction.DOWNLOAD_NEW_PACKAGE:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
-            JDUtilities.getController().removeDownloadLinks(links);
             FilePackage parentFP = links.get(0).getFilePackage();
-            String name = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("gui.linklist.newpackage.title", "Neues Paket erstellen"), JDLocale.L("gui.linklist.newpackage.message", "Name des neuen Pakets"), parentFP.getName());
-            FilePackage nfp = new FilePackage();
-            nfp.setName(name);
-            nfp.setDownloadDirectory(parentFP.getDownloadDirectory());
-            nfp.setPassword(parentFP.getPassword());
-            nfp.setComment(parentFP.getComment());
+            String name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.newpackage.message", "Name of the new package"), parentFP.getName());
+            if (name != null) {
+                JDUtilities.getController().removeDownloadLinks(links);
+                FilePackage nfp = new FilePackage();
+                nfp.setName(name);
+                nfp.setDownloadDirectory(parentFP.getDownloadDirectory());
+                nfp.setPassword(parentFP.getPassword());
+                nfp.setComment(parentFP.getComment());
 
-            if (name == null) return;
-            for (int i = 0; i < links.size(); i++) {
-                links.elementAt(i).setFilePackage(nfp);
+                for (int i = 0; i < links.size(); i++) {
+                    links.elementAt(i).setFilePackage(nfp);
+                }
+                JDUtilities.getController().addAllLinks(links);
             }
-            JDUtilities.getController().addAllLinks(links);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
 
             break;
@@ -658,7 +660,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             break;
         case TreeTableAction.PACKAGE_EDIT_NAME:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
-            name = JOptionPane.showInputDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
+            name = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("gui.linklist.editpackagename.message", "Neuer Paketname"), fp.getName());
 
             if (name != null) fp.setName(name);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
@@ -891,13 +893,17 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             case DownloadTreeTableModel.COL_HOSTER:
                 return;
             case DownloadTreeTableModel.COL_STATUS:
-//                sb.append("<h1>" + fp.getName() + "</h1><hr>");
-//                sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(fp, column) + "</p>");
-//                break;
+                // sb.append("<h1>" + fp.getName() + "</h1><hr>");
+                // sb.append("<p>" +
+                // this.getDownladTreeTableModel().getValueAt(fp, column) +
+                // "</p>");
+                // break;
                 return;
             case DownloadTreeTableModel.COL_PROGRESS:
-//                sb.append("<h1>" + fp.getName() + "</h1><hr>");
-//                sb.append("<p>" + this.getDownladTreeTableModel().getValueAt(fp, column - 1) + "</p>");
+                // sb.append("<h1>" + fp.getName() + "</h1><hr>");
+                // sb.append("<p>" +
+                // this.getDownladTreeTableModel().getValueAt(fp, column - 1) +
+                // "</p>");
                 return;
             }
         }

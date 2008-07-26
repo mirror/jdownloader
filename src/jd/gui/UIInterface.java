@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui;
 
 import java.io.File;
@@ -26,118 +25,153 @@ import jd.event.UIListener;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 
-
 /**
  * INterface für alle GUIS
+ * 
  * @author astaldo
- *
+ * 
  */
 public interface UIInterface extends ControlListener {
     /**
      * GUI minimieren
      */
-  public static int WINDOW_STATUS_MINIMIZED=0;
-  /**
-   * GUI maximieren
-   */
-  public static int WINDOW_STATUS_MAXIMIZED=1;
-  /**
-   * GUI in den Tray legen
-   */
-  public static int WINDOW_STATUS_TRAYED=2;
-  /**
-   * GUI normal anzeigen (Defaulteinstellungen)
-   */
-public static int WINDOW_STATUS_NORMAL = 3;
-/**
- * GUI normal, aber im Vordergrund anzeigen
- */
-public static int WINDOW_STATUS_FOREGROUND = 4;
+    public static int WINDOW_STATUS_MINIMIZED = 0;
+    /**
+     * GUI maximieren
+     */
+    public static int WINDOW_STATUS_MAXIMIZED = 1;
+    /**
+     * GUI in den Tray legen
+     */
+    public static int WINDOW_STATUS_TRAYED = 2;
+    /**
+     * GUI normal anzeigen (Defaulteinstellungen)
+     */
+    public static int WINDOW_STATUS_NORMAL = 3;
+    /**
+     * GUI normal, aber im Vordergrund anzeigen
+     */
+    public static int WINDOW_STATUS_FOREGROUND = 4;
+
     /**
      * Der Benutzer soll den Captcha Code eintippen
      * 
-     * @param plugin Das Plugin, daß den Captcha Code benötigt
-     * @param captchaAddress Die Adresse des Captchas
+     * @param plugin
+     *            Das Plugin, daß den Captcha Code benötigt
+     * @param captchaAddress
+     *            Die Adresse des Captchas
      * @return Der erkannte Text
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress,String def);
-//    /**
-//     * Legt alle DownloadLinks fest
-//     * 
-//     * @param downloadLinks Alle DownloadLinks
-//     */
-//    public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
- 
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
+
+    // /**
+    // * Legt alle DownloadLinks fest
+    // *
+    // * @param downloadLinks Alle DownloadLinks
+    // */
+    // public void setDownloadLinks(Vector<DownloadLink> downloadLinks);
 
     /**
      * Fügt einen UIListener hinzu
      * 
-     * @param listener Ein neuer UIListener
+     * @param listener
+     *            Ein neuer UIListener
      */
     public void addUIListener(UIListener listener);
+
     /**
      * Entfernt einen UIListener
      * 
-     * @param listener UIListener, der entfernt werden soll
+     * @param listener
+     *            UIListener, der entfernt werden soll
      */
     public void removeUIListener(UIListener listener);
+
     /**
      * Verteilt ein UIEvent an alle registrierten Listener
      * 
-     * @param pluginEvent Das UIEvent, daß verteilt werden soll
+     * @param pluginEvent
+     *            Das UIEvent, daß verteilt werden soll
      */
     public void fireUIEvent(UIEvent pluginEvent);
+
     /**
      * Zeigt einen MessageDialog an
+     * 
      * @param string
      */
     public void showMessageDialog(String string);
+
     /**
      * Zeigt einen Eingabe Dialog an
-     * @param string Die Nachricht, die angezeigt werden soll
+     * 
+     * @param string
+     *            Die Nachricht, die angezeigt werden soll
      * @return Der vom Benutzer eingegebene Text
      */
     public String showUserInputDialog(String string);
+    
+    /**
+     * Zeigt einen Eingabe Dialog an
+     * 
+     * @param string
+     *            Die Nachricht, die angezeigt werden soll
+     * @param def
+     *            default Wert
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public String showUserInputDialog(String string,String def);
+    
     /**
      * Zeigt einen MessageDialog an
-     * @param string Nachricht, die angezeigt werden soll
+     * 
+     * @param string
+     *            Nachricht, die angezeigt werden soll
      * @return Wahr, falls diese Anfrage bestätigt wurde, andernfalls falsch
      */
     public boolean showConfirmDialog(String string);
-    public boolean showCountdownConfirmDialog(String string,int sec);
+
+    public boolean showCountdownConfirmDialog(String string, int sec);
+
     /**
      * Fügt Links zum Linkgrabber hinzu
+     * 
      * @param links
      */
     public void addLinksToGrabber(Vector<DownloadLink> links);
+
     /**
      * Zeigt einen Textarea dialog an
+     * 
      * @param string
      */
-    public String showTextAreaDialog(String title,String question,String def);
-    
+    public String showTextAreaDialog(String title, String question, String def);
+
     /**
      * Zeigt einen HTML dialog an
+     * 
      * @param string
      */
-    public boolean showHTMLDialog(String title,String htmlQuestion);
-    
+    public boolean showHTMLDialog(String title, String htmlQuestion);
+
     /**
      * Zeigt einen HTML dialog an
+     * 
      * @param string
      */
-    public int showHelpMessage(String title,String message, String url);
+    public int showHelpMessage(String title, String message, String url);
+
     /**
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
     public void onJDInitComplete();
 
-/**
- * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,* verwendet werden
- */
+    /**
+     * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
+     * verwendet werden
+     */
     public void setGUIStatus(int id);
-    
 
-        public void displayMiniWarning(String shortWarn,String longWarn, int showtime);
- 
+    public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
+
 }

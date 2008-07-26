@@ -1649,6 +1649,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return JOptionPane.showInputDialog(frame, string);
     }
 
+    public String showUserInputDialog(String string, String def) {
+        logger.info("userinputdialog");
+        return JOptionPane.showInputDialog(frame, string, def);
+    }
+
     public String showTextAreaDialog(String title, String question, String def) {
         logger.info("Textareadialog");
         return TextAreaDialog.showDialog(this.getFrame(), title, question, def);
