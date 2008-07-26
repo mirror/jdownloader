@@ -1352,14 +1352,15 @@ public class JDUtilities {
                 }
             }
         }
-        pattern = "\\&\\#(.*?)\\;";
+
+        pattern = "\\&\\#(\\d+)\\;{0,1}";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 10);
                 if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#(.*?)\\;", "\\"+ c );
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;{0,1}", "\\"+ c );
                 } else {
-                    str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;{0,1}", c + "");
                 }
             }
         }

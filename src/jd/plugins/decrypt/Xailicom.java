@@ -19,7 +19,7 @@ public class Xailicom extends PluginForDecrypt {
     static private String host = "xaili.com";
 
     private String version = "1.0.0.0";
-    final static private Pattern patternSupported = Pattern.compile("http://.*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public Xailicom() {
         super();
