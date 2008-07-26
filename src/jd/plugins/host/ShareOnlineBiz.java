@@ -46,7 +46,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]{9}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String url;
     private File captchaFile;
