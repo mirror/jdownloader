@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling;
 
 import java.net.URL;
@@ -44,35 +43,36 @@ public class DistributeData extends ControlBroadcaster {
     /**
      * Der Logger
      */
-    private static Logger            logger = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
     /**
      * Die zu verteilenden Daten
      */
-    private String                   data;
+    private String data;
 
     /**
      * keinen Linkgrabber öffnen sondern direkt hinzufügen
      */
-    private boolean                  hideGrabber;
+    private boolean hideGrabber;
 
     /**
      * Download nach Beendigung starten
      */
-    private boolean                  startDownload;
+    private boolean startDownload;
 
     /**
      * Aufruf von Clipboard Überwachung
      */
-    private boolean                  clipboard = false;
+    private boolean clipboard = false;
 
-    private Vector<DownloadLink>     linkData;
+    private Vector<DownloadLink> linkData;
 
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
      * 
-     * @param data Daten, die verteilt werden sollen
+     * @param data
+     *            Daten, die verteilt werden sollen
      */
     public DistributeData(String data) {
         super("JD-DistributeData");
@@ -83,7 +83,7 @@ public class DistributeData extends ControlBroadcaster {
             logger.warning("text not url decodeable");
         }
     }
-    
+
     public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
         super("JD-DistributeData");
         this.data = data;
@@ -95,7 +95,7 @@ public class DistributeData extends ControlBroadcaster {
         this.hideGrabber = hideGrabber;
         this.startDownload = startDownload;
     }
-    
+
     public DistributeData(String data, boolean fromClipboard) {
         super("JD-DistributeData");
         this.data = data;
@@ -104,50 +104,50 @@ public class DistributeData extends ControlBroadcaster {
         } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
-        if ( fromClipboard ) this.clipboard = true;
+        if (fromClipboard) this.clipboard = true;
     }
 
     public void run() {
-    	
-        Vector<DownloadLink> links = findLinks();
-        
-        if ( links.size() == 0 && !clipboard ) {
 
-        	logger.info("No supported links found -> search for links in source code of all urls");
-        	String[] urls = HTMLParser.getHttpLinks(data, null);
-        	
-        	if ( urls.length > 0 ) this.data = "";
-        	
-        	for ( String url : urls ) {
-        		
+        Vector<DownloadLink> links = findLinks();
+
+        if (links.size() == 0 && !clipboard) {
+
+            logger.info("No supported links found -> search for links in source code of all urls");
+            String[] urls = HTMLParser.getHttpLinks(data, null);
+
+            if (urls.length > 0) this.data = "";
+
+            for (String url : urls) {
+
                 try {
-                	
-					RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-					data += requestInfo.getHtmlCode() + " ";					
-			
-				} catch (Exception e) {
-					
-				}
-        		
-        	}
-        	
-        	links = findLinks();
-        	
+
+                    RequestInfo requestInfo = HTTP.getRequest(new URL(url));
+                    data += requestInfo.getHtmlCode() + " ";
+
+                } catch (Exception e) {
+
+                }
+
+            }
+
+            links = findLinks();
+
         }
-        
+
         Collections.sort(links);
-        
+
         if (hideGrabber && startDownload) {
-        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START, links));
         } else if (hideGrabber) {
-        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER, links));
         } else if (startDownload) {
-        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
-        	if ( JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
-        		JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
-        	}
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+            }
         } else {
-        	fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
+            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
         }
     }
 
@@ -155,19 +155,27 @@ public class DistributeData extends ControlBroadcaster {
      * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
      * Vector zurück
      * 
+     * @param (optional) searchpw (true,false))
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {
+        return findLinks(true);
+    }
+
+    public Vector<DownloadLink> findLinks(boolean searchpw) {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
         if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
-        Vector<String> foundpassword = HTMLParser.findPasswords(data);
-        
+        Vector<String> foundpassword = new Vector<String>();
+        if (searchpw == true) {
+            foundpassword = HTMLParser.findPasswords(data);
+        }
+
         // Zuerst wird data durch die Such Plugins geschickt.
         // decryptedLinks.addAll(handleSearchPlugins());
-		
+
         reformDataString();
-		
+
         // es werden die entschlüsselten Links (soweit überhaupt
         // vorhanden)
         // an die HostPlugins geschickt, damit diese einen Downloadlink
@@ -177,18 +185,18 @@ public class DistributeData extends ControlBroadcaster {
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
 
         Iterator<DownloadLink> iterator = handleDecryptPlugins().iterator();
-       
+
         while (iterator.hasNext()) {
             DownloadLink decrypted = iterator.next();
-         
+
             Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
             while (iteratorHost.hasNext()) {
 
                 try {
-    				PluginForHost pHost = (PluginForHost) iteratorHost.next();
-    				if (pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL(),decrypted.getFilePackage()!=JDUtilities.getController().getDefaultFilePackage()?decrypted.getFilePackage():null);
-                      
+                    PluginForHost pHost = (PluginForHost) iteratorHost.next();
+                    if (pHost.canHandle(decrypted.getDownloadURL())) {
+                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != JDUtilities.getController().getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+
                         for (int c = 0; c < dLinks.size(); c++) {
 
                             dLinks.get(c).addSourcePluginPasswords(foundpassword);
@@ -202,60 +210,56 @@ public class DistributeData extends ControlBroadcaster {
 
                         links.addAll(dLinks);
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
                 }
-				
-			}
+
+            }
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
-			PluginForHost pHost = (PluginForHost) iteratorHost.next();
+            PluginForHost pHost = (PluginForHost) iteratorHost.next();
             if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data,null);
-                if (foundpassword.size()>0) {
-                	Iterator<DownloadLink> iter = dl.iterator();
-                	while (iter.hasNext()) {
-						((DownloadLink) iter.next()).addSourcePluginPasswords(foundpassword);
-					}
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data, null);
+                if (foundpassword.size() > 0) {
+                    Iterator<DownloadLink> iter = dl.iterator();
+                    while (iter.hasNext()) {
+                        ((DownloadLink) iter.next()).addSourcePluginPasswords(foundpassword);
+                    }
                 }
                 links.addAll(dl);
                 data = pHost.cutMatches(data);
             }
-		}
+        }
 
         return links;
     }
 
     private Vector<DownloadLink> handleDecryptPlugins() {
-        
+
         Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if ( JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
+        if (JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
-			PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
+            PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
             if (pDecrypt.canHandle(data)) {
 
                 try {
                     pDecrypt = pDecrypt.getClass().newInstance();
 
-                  
                     String[] decryptableLinks = pDecrypt.getDecryptableLinks(data);
                     data = pDecrypt.cutMatches(data);
 
                     decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
 
-               
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
 
                     e.printStackTrace();
                 }
             }
-		}
+        }
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {
             i++;
@@ -274,7 +278,7 @@ public class DistributeData extends ControlBroadcaster {
     private boolean deepDecrypt(Vector<DownloadLink> decryptedLinks) {
         if (decryptedLinks.size() == 0) return false;
         boolean hasDecryptedLinks = false;
-        
+
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
             DownloadLink link = decryptedLinks.get(i);
             String url = link.getDownloadURL();
@@ -284,8 +288,7 @@ public class DistributeData extends ControlBroadcaster {
 
                 try {
                     url = URLDecoder.decode(url, "UTF-8");
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     logger.warning("text not url decodeable");
                 }
             }
@@ -293,17 +296,14 @@ public class DistributeData extends ControlBroadcaster {
             boolean canDecrypt = false;
             Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
             while (iteratorDecrypt.hasNext()) {
-				PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
+                PluginForDecrypt pDecrypt = (PluginForDecrypt) iteratorDecrypt.next();
                 if (pDecrypt.canHandle(url)) {
                     try {
                         pDecrypt = pDecrypt.getClass().newInstance();
 
-                     
-
                         String[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
                         Vector<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
-                       
 
                         // Reicht die passwörter weiter
                         for (int t = 0; t < links.size(); t++) {
@@ -311,17 +311,15 @@ public class DistributeData extends ControlBroadcaster {
                         }
                         decryptedLinks.addAll(links);
 
-                        
                         canDecrypt = true;
                         break;
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
 
                         e.printStackTrace();
                     }
                 }
-			}
-            
+            }
+
             if (canDecrypt) {
                 decryptedLinks.remove(i);
                 hasDecryptedLinks = true;
@@ -336,21 +334,19 @@ public class DistributeData extends ControlBroadcaster {
      */
     private void reformDataString() {
         if (this.data != null) {
-            String Temp = HTMLParser.getHttpLinkList(this.data);            
-            
+            String Temp = HTMLParser.getHttpLinkList(this.data);
+
             try {
-                if (Temp==""){                    
+                if (Temp == "") {
                     this.data = URLDecoder.decode(this.data, "UTF-8");
-                }else{
+                } else {
                     this.data = URLDecoder.decode(Temp, "UTF-8");
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 logger.warning("text not url decodeable");
             }
         }
     }
-
 
     public Vector<DownloadLink> getLinkData() {
         return linkData;

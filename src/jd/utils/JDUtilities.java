@@ -1341,31 +1341,31 @@ public class JDUtilities {
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) return null;
-        String pattern = "\\&\\#x(.*?)\\;";
+        String pattern = "\\&\\#x([a-f0-9A-F]+)\\;?";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
                 if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#x(.*?)\\;","\\"+ c );
+                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?","\\"+ c );
                 } else {
-                    str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
+                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", c + "");
                 }
             }
         }
 
-        pattern = "\\&\\#(\\d+)\\;{0,1}";
+        pattern = "\\&\\#(\\d+)\\;?";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 10);
                 if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;{0,1}", "\\"+ c );
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\"+ c );
                 } else {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;{0,1}", c + "");
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", c + "");
                 }
             }
         }
 
-        pattern = "\\%([a-f0-9]{2})";
+        pattern = "\\%([a-f0-9A-F]{2})";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
