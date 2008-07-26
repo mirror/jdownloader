@@ -94,7 +94,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Zeigt an, dass der Download aus unbekannten Gründen warten muss. z.B.
      * weil Die Ip gerade gesperrt ist, oder eine Session id abgelaufen ist
      */
-   public final static int STATUS_ERROR_WAITTIME = 10;
+    public final static int STATUS_ERROR_WAITTIME = 10;
 
     /**
      * zeigt einen Premiumspezifischen fehler an
@@ -178,8 +178,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
-//    private transient boolean aborted = false;
-
+    // private transient boolean aborted = false;
     private transient String statusText = "";
 
     /**
@@ -544,12 +543,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
+        if (urlDownload!= null) urlDownload=urlDownload.trim();
         if (this.linkType == LINKTYPE_CONTAINER) {
-            this.tempUrlDownload = urlDownload.trim();
+            this.tempUrlDownload = urlDownload;
             this.urlDownload = null;
             return;
         }
-        this.urlDownload = urlDownload.trim();
+        if (urlDownload != null) {
+            this.urlDownload = urlDownload;
+        }else{
+            this.urlDownload=null;
+        }
+            
     }
 
     /**
@@ -828,10 +833,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadMax = 0;
         setEndOfWaittime(0);
         this.chunksProgress = null;
-        this.downloadLinkController=null;
+        this.downloadLinkController = null;
         downloadCurrent = 0;
         this.waittime = 0;
-//        aborted = false;
+        // aborted = false;
         this.crcStatus = CRC_STATUS_UNCHECKED;
     }
 
@@ -950,9 +955,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true falls der download abgebrochen wurde
      */
     public boolean isAborted() {
-        if(this.getDownloadLinkController()==null){
-            return false;          
-            
+        if (this.getDownloadLinkController() == null) { return false;
+
         }
         return getDownloadLinkController().isAborted();
     }
@@ -963,17 +967,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param aborted
      */
     public void setAborted(boolean aborted) {
-        if(aborted==false){
-           // logger.severe("cannot unabort a link. use reset()");
+        if (aborted == false) {
+            // logger.severe("cannot unabort a link. use reset()");
             return;
         }
-        if(this.getDownloadLinkController()==null){
+        if (this.getDownloadLinkController() == null) {
             logger.severe("TRied to abort download even it has no downlaodController");
-            return;            
-            
+            return;
+
         }
         getDownloadLinkController().abortDownload();
-        
+
     }
 
     /**
@@ -1000,9 +1004,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (this.filePackage != null) this.filePackage.remove(this);
         this.filePackage = filePackage;
-        if (filePackage == null&&this.filePackage!=null) {
+        if (filePackage == null && this.filePackage != null) {
             this.setDownloadPath(this.filePackage.getDownloadDirectory());
-        }else{
+        } else {
             this.setDownloadPath(null);
         }
         if (filePackage != null && !filePackage.contains(this)) filePackage.add(this);
@@ -1015,7 +1019,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return STring
      */
     public String toString() {
-        return this.getName() + "-> " + this.getFileOutput()+"("+this.getHost()+")";
+        return this.getName() + "-> " + this.getFileOutput() + "(" + this.getHost() + ")";
     }
 
     /**
@@ -1160,7 +1164,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         // return 5000000/40;
 
         // int maxspeed =
-        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED,
+        //JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.
+        // PARAM_DOWNLOAD_MAX_SPEED,
         // 0) * 1024;
         //
         // if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
@@ -1258,8 +1263,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return !this.isInProgress() && this.getStatus() != DownloadLink.STATUS_DONE && this.getStatus() != DownloadLink.STATUS_TODO;
     }
 
-
-
     public SingleDownloadController getDownloadLinkController() {
         return downloadLinkController;
     }
@@ -1268,8 +1271,4 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.downloadLinkController = downloadLinkController;
     }
 
-  
-    
-    
-    
 }
