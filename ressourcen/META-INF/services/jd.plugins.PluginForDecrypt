@@ -9,6 +9,7 @@ jd.plugins.decrypt.CineTo
 jd.plugins.decrypt.Collectr
 #jd.plugins.decrypt.CryptGetMoviesOrg
 jd.plugins.decrypt.CryptItCom
+jd.plugins.decrypt.Cryptlinkws
 jd.plugins.decrypt.DatenschleuderCc
 jd.plugins.decrypt.DDLMusicOrg
 jd.plugins.decrypt.DDLWarez
