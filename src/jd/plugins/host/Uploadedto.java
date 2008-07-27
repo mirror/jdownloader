@@ -37,8 +37,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
-    // uploaded.to/file/40gtfe
-    // uploaded.to/?id=5tr1m8
+
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
 
     static private final String HOST = "uploaded.to";
@@ -74,8 +73,6 @@ public class Uploadedto extends PluginForHost {
     private static final Pattern CAPTCHA_TEXTFLD = Pattern.compile("<input type=\"text\" id=\".*?\" name=\"(.*?)\" onkeyup=\"cap\\(\\)\\;\" size=3 />");
 
     private HashMap<String, String> postParameter = new HashMap<String, String>();
-
-    private static String lastPassword = null;
 
     private String captchaAddress;
 
@@ -141,19 +138,8 @@ public class Uploadedto extends PluginForHost {
 
                 requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
                 // /?view=error_traffic_exceeded_free
-                if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
-
-                    int waitTime = 10 * 60 * 1000;
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    logger.info("Traffic Limit reached....");
-                    step.setParameter((long) waitTime);
-                    return step;
-                }
-
                 if (requestInfo.containsHTML(TRAFFIC_EXCEEDED_FREE) || requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
-
-                    int waitTime = 10 * 60 * 1000;
+                    int waitTime = 61 * 60 * 1000;
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     logger.info("Traffic Limit reached....");
@@ -168,47 +154,30 @@ public class Uploadedto extends PluginForHost {
                     return step;
                 }
 
-                // 3 Versuche
-                String pass = null;
+                
+                String filepass = null;
                 if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected (1)");
-                    if (lastPassword != null) {
-                        logger.info("Try last pw: " + lastPassword);
-                        pass = lastPassword;
-                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
-
+                    logger.info("File is Password protected");
+                    if (downloadLink.getStringProperty("pass", null) != null) {
+                        filepass = downloadLink.getStringProperty("pass", null);
                     } else {
-                        pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                        logger.info("Password: " + pass);
-                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
+                        filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
                     }
-
-                }
-                if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected (2)");
-                    pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                    logger.info("Password: " + pass);
-                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
-
-                }
-                if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected (3)");
-                    pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                    logger.info("Password: " + pass);
-                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + pass, false);
-
+                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, null, "lang=de&file_key=" + filepass, false);
                 }
                 if (requestInfo.containsHTML("file_key")) {
                     logger.severe("Wrong password entered");
-
+                    /* PassCode war falsch, also Löschen */
+                    downloadLink.setProperty("pass", null);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setParameter("Wrong Password");
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
                 }
-                if (pass != null) {
-                    lastPassword = pass;
+                if (filepass != null) {
+                    /* PassCode war richtig, also Speichern */
+                    downloadLink.setProperty("pass", filepass);
                 }
 
                 // logger.info(requestInfo.getHtmlCode());
@@ -227,7 +196,7 @@ public class Uploadedto extends PluginForHost {
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
-                        int waitTime = 10 * 60 * 1000;
+                        int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
@@ -247,7 +216,7 @@ public class Uploadedto extends PluginForHost {
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
-                        int waitTime = 10 * 60 * 1000;
+                        int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
@@ -299,7 +268,7 @@ public class Uploadedto extends PluginForHost {
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
-                        int waitTime = 10 * 60 * 1000;
+                        int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
@@ -369,11 +338,14 @@ public class Uploadedto extends PluginForHost {
                             break;
                         }
                     }
-                    logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+                    // logger.info("Filename: " +
+                    // getFileNameFormHeader(requestInfo.getConnection()));
 
-                    logger.info("Headers: " + requestInfo.getHeaders().size());
-                    logger.info("Connection: " + requestInfo.getConnection());
-                    logger.info("Code: \r\n" + requestInfo.getHtmlCode());
+                    // logger.info("Headers: " +
+                    // requestInfo.getHeaders().size());
+                    // logger.info("Connection: " +
+                    // requestInfo.getConnection());
+                    // logger.info("Code: \r\n" + requestInfo.getHtmlCode());
 
                     if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
@@ -462,39 +434,21 @@ public class Uploadedto extends PluginForHost {
                     return step;
                 }
 
-                // 3 Versuche
                 String filepass = null;
                 if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected1");
-                    if (lastPassword != null) {
-                        logger.info("Try last pw: " + lastPassword);
-                        filepass = lastPassword;
-                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
-
+                    logger.info("File is Password protected");
+                    if (downloadLink.getStringProperty("pass", null) != null) {
+                        filepass = downloadLink.getStringProperty("pass", null);
                     } else {
                         filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                        logger.info("Password: " + pass);
-                        requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
                     }
-
-                }
-                if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected (2)");
-                    filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                    logger.info("Password: " + pass);
                     requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
-
                 }
-                if (requestInfo.containsHTML("file_key")) {
-                    logger.info("File is Password protected (3)");
-                    filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-                    logger.info("Password: " + pass);
-                    requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
 
-                }
                 if (requestInfo.containsHTML("file_key")) {
                     logger.severe("Wrong password entered");
-
+                    /* PassCode war falsch, also Löschen */
+                    downloadLink.setProperty("pass", null);
                     downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
                     step.setParameter("Wrong Password");
                     step.setStatus(PluginStep.STATUS_ERROR);
@@ -502,7 +456,8 @@ public class Uploadedto extends PluginForHost {
 
                 }
                 if (filepass != null) {
-                    lastPassword = filepass;
+                    /* PassCode war richtig, also Speichern */
+                    downloadLink.setProperty("pass", filepass);
                 }
                 String newURL = null;
                 if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
