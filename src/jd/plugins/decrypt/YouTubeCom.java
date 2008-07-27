@@ -14,8 +14,9 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.awt.BorderLayout;
+import java.awt.BorderLayout;
 import java.awt.Dialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,11 +36,9 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginStep;
@@ -49,274 +48,261 @@ import jd.utils.JDUtilities;
 
 public class YouTubeCom extends PluginForDecrypt {
 
-static private String host = "youtube.com";
+    static private String host = "youtube.com";
 
-private static final String VIDEO_ID = "video_id";
-private static final String T = "\"t\"";
-//private static final String HOST = "BASE_YT_URL";
-private static final String PLAYER = "get_video";
+    private static final String VIDEO_ID = "video_id";
+    private static final String T = "\"t\"";
+    // private static final String HOST = "BASE_YT_URL";
+    private static final String PLAYER = "get_video";
 
-public static final int CONVERT_ID_AUDIO = 0;
-public static final int CONVERT_ID_VIDEO = 1;
-public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
-public static final int CONVERT_ID_MP4 = 3;
-public static final int CONVERT_ID_3GP = 4;
+    public static final int CONVERT_ID_AUDIO = 0;
+    public static final int CONVERT_ID_VIDEO = 1;
+    public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
+    public static final int CONVERT_ID_MP4 = 3;
+    public static final int CONVERT_ID_3GP = 4;
 
-private String version = "1.0.0.0";
+    private String version = "1.0.0.0";
 
-//http://youtube.com/watch?v=qgjWZXnTn9A
+    private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
 
-private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
-static private final Pattern FILENAME = Pattern.compile("<div id=\"watch-vid-title\">[\\s\\S]*?<div >(.*?)</div>", Pattern.CASE_INSENSITIVE);
+    public YouTubeCom() {
+        super();
+        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        currentStep = steps.firstElement();
+    }
 
-static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
+    @Override
+    public String getCoder() {
+        return "b0ffed";
+    }
 
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-public YouTubeCom() {
-  super();
-  steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-  currentStep = steps.firstElement();
-}
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
+    }
 
-@Override
-public String getCoder() {
-  return "b0ffed";
-}
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-@Override
-public String getHost() {
-  return host;
-}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-@Override
-public String getPluginID() {
-  return host+"-"+version;
-}
+    @Override
+    public String getVersion() {
+        return version;
+    }
 
-@Override
-public String getPluginName() {
-  return host;
-}
+    private static int[] useyConvert = new int[] { 0, 0 };
 
-@Override
-public Pattern getSupportedLinks() {
-  return patternSupported;
-}
+    private JComboBox methods;
 
-@Override
-public String getVersion() {
-  return version;
-}
+    private JCheckBox checkyConvert;
+    private JButton btnOK;
 
+    private boolean yConvertChecked = false;
 
+    private static final int saveyConvert = 1;
 
-private static int[] useyConvert = new int[] { 0, 0 };
+    private void yConvertDialog(final boolean hasMp4, final boolean has3gp) {
+        if (yConvertChecked || useyConvert[1] == saveyConvert) return;
+        new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
-private JComboBox methods;
-
-private JCheckBox checkyConvert;
-
-private boolean yConvertChecked = false;
-
-private static final int saveyConvert = 1;
-
-
-
-
-private void yConvertDialog(final boolean hasMp4, final boolean has3gp) {
-    if (yConvertChecked || useyConvert[1] == saveyConvert) return;
-    new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
-
-
-        /**
+            /**
 		 * 
 		 */
-		private static final long serialVersionUID = -4282205277016215186L;
+            private static final long serialVersionUID = -4282205277016215186L;
 
-		void init() {
-            setLayout(new BorderLayout());
-            setModal(true);
-            setTitle(JDLocale.L("plugins.YouTube.ConvertDialog.title", "Youtube.com Dateiformat"));
-            setAlwaysOnTop(true);
-            setLocation(20, 20);
-            JPanel panel = new JPanel(new GridBagLayout());
-            final class meth {
-                public int var;
+            void init() {
+                setLayout(new BorderLayout());
+                setModal(true);
+                setTitle(JDLocale.L("plugins.YouTube.ConvertDialog.title", "Youtube.com Dateiformat"));
+                setAlwaysOnTop(true);
+                setLocation(20, 20);
+                JPanel panel = new JPanel(new GridBagLayout());
+                final class meth {
+                    public int var;
 
-                public String name;
+                    public String name;
 
-                public meth(String name, int var) {
-                    this.name = name;
-                    this.var = var;
+                    public meth(String name, int var) {
+                        this.name = name;
+                        this.var = var;
+                    }
+
+                    @Override
+                    public String toString() {
+                        // TODO Auto-generated method stub
+                        return name;
+                    }
+                }
+                ;
+
+                addWindowListener(new WindowListener() {
+
+                    public void windowActivated(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    public void windowClosed(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    public void windowClosing(WindowEvent e) {
+                        // useyConvert = new int[] { ((meth)
+                        // methods.getSelectedItem()).var, 0 };
+                        useyConvert = new int[] { -1, -1 };
+                        dispose();
+                    }
+
+                    public void windowDeactivated(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    public void windowDeiconified(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    public void windowIconified(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                    public void windowOpened(WindowEvent e) {
+                        // TODO Auto-generated method stub
+
+                    }
+                });
+
+                int n = 3;
+                if (hasMp4) n++;
+                if (has3gp) n++;
+
+                meth[] meths = new meth[n];
+                n = 0;
+                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
+                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
+                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
+                if (hasMp4) meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
+                if (has3gp) meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
+
+                methods = new JComboBox(meths);
+                checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);
+                Insets insets = new Insets(0, 0, 0, 0);
+                JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.YouTube.ConvertDialog.action", "Dateiformat: ")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                JDUtilities.addToGridBag(panel, checkyConvert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+                btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
+                btnOK.addActionListener(new ActionListener() {
+
+                    public void actionPerformed(ActionEvent e) {
+                        if (e.getSource() == btnOK) {
+                            useyConvert = new int[] { ((meth) methods.getSelectedItem()).var, checkyConvert.isSelected() ? saveyConvert : 0 };
+                        } else {
+                            useyConvert = new int[] { -1, -1 };
+                        }
+
+                        dispose();
+                    }
+
+                });
+                JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+                add(panel, BorderLayout.CENTER);
+                pack();
+                setVisible(true);
+            }
+
+        }.init();
+    }
+
+    private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
+
+        yConvertDialog(hasMp4, has3gp);
+        return useyConvert[0];
+
+    }
+
+    private String clean(String s) {
+        s = s.replaceAll("\"", "");
+        s = s.replaceAll("YouTube -", "");
+        s = s.replaceAll("YouTube", "");
+        s = s.trim();
+        return s;
+    }
+
+    @Override
+    public PluginStep doStep(PluginStep step, String parameter) {
+        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            try {
+                URL url = new URL(parameter);
+                RequestInfo reqinfo = HTTP.getRequest(url);
+
+                String video_id = "";
+                String t = "";
+
+                String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
+                if (match == null) return null;
+                String[] lineSub = match.split(",|:");
+
+                for (int i = 0; i < lineSub.length; i++) {
+                    String s = lineSub[i];
+
+                    if (s.indexOf(VIDEO_ID) > -1) {
+                        video_id = clean(lineSub[i + 1]);
+                    }
+
+                    if (s.indexOf(T) > -1) {
+                        t = clean(lineSub[i + 1]);
+                    }
                 }
 
-                @Override
-                public String toString() {
-                    // TODO Auto-generated method stub
-                    return name;
-                }
-            };
-            
-            addWindowListener(new WindowListener() {
+                String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
 
-                public void windowActivated(WindowEvent e) {
-                    // TODO Auto-generated method stub
+                boolean hasMp4 = false;
+                boolean has3gp = false;
 
-                }
+                if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) hasMp4 = true;
+                if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) has3gp = true;
 
-                public void windowClosed(WindowEvent e) {
-                    // TODO Auto-generated method stub
+                int convertId = getYoutubeConvertTo(hasMp4, has3gp);
+                if (convertId != -1) {
 
-                }
+                    if (convertId == CONVERT_ID_MP4) {
+                        link += "&fmt=18";
+                    } else if (convertId == CONVERT_ID_3GP) {
+                        link += "&fmt=13";
+                    }
 
-                public void windowClosing(WindowEvent e) {
-                    useyConvert = new int[] { ((meth) methods.getSelectedItem()).var, 0 };
-                    dispose();
+                    link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
+
+                    decryptedLinks.add(this.createDownloadlink(link));
                 }
 
-                public void windowDeactivated(WindowEvent e) {
-                    // TODO Auto-generated method stub
+                step.setParameter(decryptedLinks);
 
-                }
-
-                public void windowDeiconified(WindowEvent e) {
-                    // TODO Auto-generated method stub
-
-                }
-
-                public void windowIconified(WindowEvent e) {
-                    // TODO Auto-generated method stub
-
-                }
-
-                public void windowOpened(WindowEvent e) {
-                    // TODO Auto-generated method stub
-
-                }
-            });
-            
-            int n = 3;
-            if ( hasMp4 ) n++;
-            if ( has3gp ) n++;
-            
-            meth[] meths = new meth[n];
-            meths[0] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
-            meths[1] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
-            meths[2] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
-            if ( hasMp4 ) meths[3] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
-            if ( has3gp ) meths[4] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
-
-            methods = new JComboBox(meths);
-            checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);
-            Insets insets = new Insets(0, 0, 0, 0);
-            JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.YouTube.ConvertDialog.action", "Dateiformat: ")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JDUtilities.addToGridBag(panel, checkyConvert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            JButton btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
-            btnOK.addActionListener(new ActionListener() {
-
-                public void actionPerformed(ActionEvent e) {
-                    useyConvert = new int[] { ((meth) methods.getSelectedItem()).var, checkyConvert.isSelected() ? saveyConvert : 0 };
-                    dispose();
-                }
-
-            });
-            JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            add(panel, BorderLayout.CENTER);
-            pack();
-            setVisible(true);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+        return null;
+    }
 
-    }.init();
-}
-
-private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
-
-    yConvertDialog(hasMp4, has3gp);
-    return useyConvert[0];
-
-}
-
-
-private String clean(String s) {
-    s = s.replaceAll("\"","");
-    s = s.replaceAll("YouTube -","");
-    s = s.replaceAll("YouTube","");
-    s = s.trim();
-    return s;
-}
-
-@Override
-public PluginStep doStep(PluginStep step, String parameter) {
-  if (step.getStep() == PluginStep.STEP_DECRYPT) {
-      Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-      try {
-          
-          progress.setRange(1);
-          URL url = new URL(parameter);
-          RequestInfo reqinfo = HTTP.getRequest(url);
-
-          FilePackage fp = new FilePackage();
-          String filename = JDUtilities.htmlDecode(SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), FILENAME, 1));
-          String video_id="";
-          String t="";
-//        String cookies = reqinfo.getCookie();
-          fp.setName(filename);
-          
-          //logger.info(reqinfo.getHtmlCode());
-
-          //logger.info(getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1));
-          String match=SimpleMatches.getFirstMatch(reqinfo.getHtmlCode(), patternswfArgs, 1);
-          if(match==null)return null;
-          String[] lineSub = match.split(",|:");    
- 
-          for (int i = 0; i < lineSub.length; i++) {           
-              String s = lineSub[i];
-              
-              if (s.indexOf(VIDEO_ID) > -1) {
-                  video_id = clean(lineSub[i+1]);
-              }
-              
-              if (s.indexOf(T) > -1) {
-                  t = clean(lineSub[i+1]);
-              }
-          }
-          
-          String link = "http://"+host + "/"+PLAYER+"?" + VIDEO_ID +"="+ video_id + "&" + "t="+ t;
-          
-          boolean hasMp4 = false;
-          boolean has3gp = false;
-          
-          if ( HTTP.getRequestWithoutHtmlCode(new URL(link+"&fmt=18"),null,null,true).getResponseCode() == 200 )
-        	  hasMp4 = true;
-          if ( HTTP.getRequestWithoutHtmlCode(new URL(link+"&fmt=13"),null,null,true).getResponseCode() == 200 )
-        	  has3gp = true;
-          
-          int convertId = getYoutubeConvertTo(hasMp4, has3gp);
-          
-          if ( convertId == CONVERT_ID_MP4 ) {
-        	  link += "&fmt=18";
-          } else if ( convertId == CONVERT_ID_3GP ) {
-        	  link += "&fmt=13";
-          }
-
-          link = "< youtubedl url=\"" + parameter +  "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
-          
-          logger.info(link);
-          
-          fp.add(this.createDownloadlink(link));
-          decryptedLinks.add(this.createDownloadlink(link));
-          progress.increase(1);
-          step.setParameter(decryptedLinks);
-          
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
-  }
-  return null;
-}
-@Override
-public boolean doBotCheck(File file) {
-  return false;
-}
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 }
