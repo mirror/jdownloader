@@ -48,6 +48,7 @@ public class JDAboutDialog {
 
         String[][] devs = new String[][]{
                    {" jago"," jago@jdownloader.org"," Senior software architect in real life. Responsible for the Swing GUI design of JD."},
+                   {" jiaz"," jiaz@jdownloader.org"," Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing"},
                       
                   // See how I added myself above. Every string starts with a single white space.
                   // This improves the way the entries look in the table (without fiddleing with the tablecellrenderer)
@@ -65,7 +66,7 @@ public class JDAboutDialog {
                   // {" uncomment and add your nick"," xxx@yyy.com"," describe yourself..."},
         };
         
-        JTable table = new JTable(devs, new String[]{"Entwickler","Email","Ressort"});
+        JTable table = new JTable(devs, new String[]{"Entwickler","Email","Ressort"});        
         setWidth(table.getColumnModel().getColumn(0), 100);
         setWidth(table.getColumnModel().getColumn(1), 120);
         
