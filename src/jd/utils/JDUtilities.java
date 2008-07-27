@@ -815,7 +815,7 @@ public class JDUtilities {
                 code = getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
                 System.out.println(code);
             } else {
-                return captchaCode;
+                return captchaCode; 
             }
 
             if (code != null && code.equals(captchaCode)) return captchaCode;

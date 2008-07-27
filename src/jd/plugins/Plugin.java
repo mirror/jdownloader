@@ -139,29 +139,7 @@ public abstract class Plugin implements ActionListener {
      */
     public abstract Pattern getSupportedLinks();
 
-    /**
-     * Erstellt ein SupportPattern. dabei gibt es 2 Platzhalter: [*]= Dieser
-     * Platzhalter ist optional. hier KANN ein beliebiges zeichen doer keins
-     * stehen; [+] Hier muss mindestens ein beliebiges zeichen stehen Da die
-     * links in einer liste "link1"\r\n"link2"\"\n... untersucht werden kann
-     * hier eineinfaches pattern verwendet werden. UNd es werden trotzdem
-     * zuverlässig alle treffer gefunden.
-     * 
-     * @param patternString
-     * @return Gibt ein patternzurück mit dem links gesucht und überprüft werden
-     *         können
-     */
-    public @Deprecated
-    static Pattern getSupportPattern(String patternString) {
-        patternString = patternString.replaceAll("\\[\\*\\]", ".*");
-        patternString = patternString.replaceAll("\\[\\+\\]", ".+");
-        patternString = patternString.replaceAll("\\[\\w\\]", "[\\w\\.]*?");
-        if (patternString.endsWith(".*") || patternString.endsWith(".+")) {
-            patternString = patternString.substring(0, patternString.length() - 2) + "[^\"]" + patternString.substring(patternString.length() - 1);
-        }
 
-        return Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
-    }
 
     /**
      * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
