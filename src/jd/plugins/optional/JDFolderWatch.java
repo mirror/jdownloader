@@ -30,6 +30,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
+@SuppressWarnings("unchecked")
 public class JDFolderWatch extends PluginOptional implements ControlListener {
     public static int getAddonInterfaceVersion(){
         return 0;
@@ -38,8 +39,9 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     private boolean threadend = true;
     private boolean running = true;
     private check i;
-    private ArrayList<String> added = new ArrayList<String>();
+    
     private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
+    private ArrayList<String> added =  (ArrayList<String>) subConfig.getProperty("ADDED");
 
     @Override
     public String getCoder() {
@@ -65,6 +67,12 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
             logger.info("FolderWatch OK");
+            if(added == null) {
+                added = new ArrayList<String>();
+                subConfig.setProperty("ADDED", added);
+                subConfig.save();
+            }
+            
             i = new check();
             i.start();
             return true;
@@ -76,14 +84,10 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
 
     public JDFolderWatch() {        
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Folder:")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Ordner:")));
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, "WAITTIME", JDLocale.L("plugins.optional.folderwatch.waittime", "Waittime"), 1, 60));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, "WAITTIME", JDLocale.L("plugins.optional.folderwatch.checkintervall", "Checkintervall [min]"), 1, 60));
         cfg.setDefaultValue("5");
-        
-        //Hat nicht funktioniert
-//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "DELETE", JDLocale.L("plugins.optional.folderwatch.delete", "Delete")));
-//        cfg.setDefaultValue(true);
     }
 
     @Override
@@ -97,12 +101,17 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
             checkFolder();
         }
         if (e.getActionCommand().equals("Reset")) {
+            logger.info("Folderwatch: Reseting saved containers");
             added = new ArrayList<String>();
+            subConfig.setProperty("ADDED", added);
+            subConfig.save();
         }
         if (e.getActionCommand().equals("Start/Stop")) {
             if (running) {
+                logger.info("Folderwatch: Stopping");
                 threadend = false;
             } else {
+                logger.info("Folderwatch: Starting");
                 i = new check();
                 i.start();
                 running = true;
@@ -126,8 +135,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                 checkFolder();
                 try {
                     Thread.sleep(getWaittime());
-                } catch (InterruptedException e) {
-                }
+                } catch (InterruptedException e) {}
             }
             running = false;
         };
@@ -138,6 +146,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     private synchronized void checkFolder() {
+        logger.info("Folderwatch: Checking folder");
         boolean dabei = false;
         File folder = new File(subConfig.getStringProperty("FOLDER", JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)));
         if (folder.isDirectory()) {
@@ -145,23 +154,23 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
 
             for (int i = 0; i < help.length; i++) {
                 if (help[i].toLowerCase().endsWith(".dlc") || help[i].toLowerCase().endsWith(".ccf") || help[i].toLowerCase().endsWith(".rsdf")) {
+                    dabei = false;
                     File container = new File(folder, help[i]);
-                    try{
-                    for (int j = 0; j < added.size(); j++) {
-                        if (container.getAbsolutePath().equals(added.get(j))) {
-                            dabei = true;
-                            break;
+                    try {
+                        for (int j = 0; j < added.size(); j++) {
+                            if (container.getAbsolutePath().equals(added.get(j))) {
+                                dabei = true;
+                                break;
+                            }
+                        }
+                        if (!dabei) {
+                            JDUtilities.getController().loadContainerFile(container);
+                            added.add(container.getAbsolutePath());
+                            subConfig.setProperty("ADDED", added);
+                            subConfig.save();
                         }
                     }
-                    if (!dabei) {
-                        JDUtilities.getController().loadContainerFile(container);
-                        added.add(container.getAbsolutePath());
-                        //Buggy
-//                        if (subConfig.getBooleanProperty("DELETE", true)) {
-//                            container.delete();
-//                        }
-                    }
-                    }catch(Exception e){
+                    catch(Exception e) {
                         e.printStackTrace();
                     }
                 }
