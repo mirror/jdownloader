@@ -110,9 +110,9 @@ public class ShareOnlineBiz extends PluginForHost {
                 Thread.sleep(1000);/* Sicherheitspause, sonst gibts 403 Response */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
-                    String filename = new Regex(requestInfo.getHtmlCode(),Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>",Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    String sizev[][]=new Regex(requestInfo.getHtmlCode(),Pattern.compile("</font> \\((.*?) (.*?)\\) angefordert",Pattern.CASE_INSENSITIVE)).getMatches();
-                    
+                    String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String sizev[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("</font> \\((.*?) (.*?)\\) angefordert", Pattern.CASE_INSENSITIVE)).getMatches();
+
                     double size = Double.parseDouble(sizev[0][0].trim());
                     String type = sizev[0][1].trim().toLowerCase();
                     int filesize = 0;
@@ -164,15 +164,24 @@ public class ShareOnlineBiz extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                 return step;
-            }            
+            }
             /* Passwort holen holen */
             if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
-                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) passCode = "";
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) passCode = "";
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
             }
-            
+
             /* Überprüfen(Captcha,Password) */
             requestInfo = HTTP.postRequest((new URL(url)), requestInfo.getCookie(), url, null, "captchacode=" + captchaCode + "&downloadpw=" + passCode, true);
             if (requestInfo.getHtmlCode().contains("<span>Die Nummer ist leider nicht richtig oder ausgelaufen!</span>") || requestInfo.getHtmlCode().contains("Tippfehler")) {
+                if (requestInfo.getHtmlCode().contains("Tippfehler")) {
+                    /* PassCode war falsch, also Löschen */
+                    downloadLink.setProperty("pass", null);
+                }
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
                 return step;
@@ -180,11 +189,12 @@ public class ShareOnlineBiz extends PluginForHost {
             /* Downloadlimit erreicht */
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(60*60*1000L);
+                step.setParameter(60 * 60 * 1000L);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
                 return step;
             }
-
+            /* PassCode war richtig, also Speichern */
+            downloadLink.setProperty("pass", passCode);
             /* DownloadLink holen, thx @dwd */
             String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getFirstMatch();
             String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getFirstMatch();

@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -80,7 +78,7 @@ public class Shareplacecom extends PluginForHost {
                     return step;
                 }
                 /* Link holen */                
-                url = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "document.location=\"", "\";"));                
+                url = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";",Pattern.CASE_INSENSITIVE)).getFirstMatch());                
                 return step;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 20seks*/
@@ -128,7 +126,7 @@ public class Shareplacecom extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (requestInfo.getLocation()==null) {
-                downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "File name: </b>", "<b>")));
+                downloadLink.setName(JDUtilities.htmlDecode( new Regex(requestInfo.getHtmlCode(), Pattern.compile("File name: </b>(.*?)<b>",Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)MB<b>").getFirstMatch()) != null) {
                     downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);

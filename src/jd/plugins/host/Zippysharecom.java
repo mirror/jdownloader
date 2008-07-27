@@ -5,8 +5,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -79,7 +78,7 @@ public class Zippysharecom extends PluginForHost {
                 return step;
             case PluginStep.STEP_DOWNLOAD:
                 /* Link holen */                
-                String linkurl = JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "downloadlink = unescape\\(\\'", "\\'\\);"));
+                String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);",Pattern.CASE_INSENSITIVE)).getFirstMatch());
                 /* Datei herunterladen */
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
                 HTTPConnection urlConnection = requestInfo.getConnection();
@@ -120,8 +119,8 @@ public class Zippysharecom extends PluginForHost {
             for (int i = 1; i < 3; i++) {
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (!requestInfo.containsHTML("File does not exist")) {
-                    downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Name: </strong>", "</font>")));
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<strong>Size: </strong>", "MB</font>").replaceAll(",", "\\.")) * 1024 * 1024));
+                    downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>",Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>",Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
                     return true;
                 }
                 Thread.sleep(250);

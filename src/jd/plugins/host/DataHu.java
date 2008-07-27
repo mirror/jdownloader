@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -90,7 +89,7 @@ public class DataHu extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
 
-            String link = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'");
+            String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'",Pattern.CASE_INSENSITIVE)).getFirstMatch();
             String[] test = link.split("/");
             String name = test[test.length - 1];
             downloadLink.setName(name);
@@ -137,8 +136,7 @@ public class DataHu extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (requestInfo.getHtmlCode().length() == 0) return false;
-
-            String[] test = SimpleMatches.getBetween(requestInfo.getHtmlCode(), "window.location.href='", "'").split("/");
+            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'",Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
             String name = test[test.length - 1];
             downloadLink.setName(name);
             return true;
