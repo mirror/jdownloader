@@ -33,7 +33,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 
-@SuppressWarnings("unchecked")
+
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     public static final String CODER = "JD-Team";

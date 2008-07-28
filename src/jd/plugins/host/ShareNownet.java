@@ -116,26 +116,29 @@ public class ShareNownet extends PluginForHost {
             }
             Form form = requestInfo.getForms()[1];
             form.withHtmlCode = false;
-            /* Captcha File holen */
-            captchaFile = getLocalCaptchaFile(this);
-            HTTPConnection captcha_con = new HTTPConnection(new URL("http://share-now.net/captcha.php?id=" + form.vars.get("download")).openConnection());
-            captcha_con.setRequestProperty("Referer", downloadLink.getDownloadURL());
-            captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-            if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
-                /* Fehler beim Captcha */
-                logger.severe("Captcha Download fehlgeschlagen!");
-                step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                return step;
+            /*gibts nen captcha?*/
+            if (requestInfo.containsHTML("Sicherheitscode eingeben")) {
+                /* Captcha File holen */
+                captchaFile = getLocalCaptchaFile(this);
+                HTTPConnection captcha_con = new HTTPConnection(new URL("http://share-now.net/captcha.php?id=" + form.vars.get("download")).openConnection());
+                captcha_con.setRequestProperty("Referer", downloadLink.getDownloadURL());
+                captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
+                if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                    /* Fehler beim Captcha */
+                    logger.severe("Captcha Download fehlgeschlagen!");
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    return step;
+                }
+                /* CaptchaCode holen */
+                if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
+                    step.setStatus(PluginStep.STATUS_ERROR);
+                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    return step;
+                }
+                form.vars.put("captcha", captchaCode);
             }
-            /* CaptchaCode holen */
-            if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                return step;
-            }
-            /* DownloadLink holen/Captcha check */
-            form.vars.put("captcha", captchaCode);
+            /* DownloadLink holen/Captcha check */            
             requestInfo = form.getRequestInfo(false);
             if (requestInfo.getLocation() != null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
