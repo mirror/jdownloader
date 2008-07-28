@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -84,13 +85,13 @@ public class ArchivTo extends PluginForHost {
 
     public ArchivTo() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
+    public void handle( final DownloadLink downloadLink) {
 //        if (aborted) {
 //            logger.warning("Plugin aborted");
-//            downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//            downloadLink.setStatus(LinkStatus.TODO);
 //            step.setStatus(PluginStep.STATUS_TODO);
 //            return step;
 //        }
@@ -101,7 +102,7 @@ public class ArchivTo extends PluginForHost {
 
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -112,7 +113,7 @@ public class ArchivTo extends PluginForHost {
             dl.setFilesize(length);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -126,7 +127,7 @@ public class ArchivTo extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
         return step;
     }

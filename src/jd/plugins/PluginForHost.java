@@ -29,6 +29,7 @@ import jd.config.MenuItem;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -56,7 +57,7 @@ public abstract class PluginForHost extends Plugin {
      * etc)
      */
     public abstract void reset();
-
+    public abstract void  handle(DownloadLink link);
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -70,7 +71,7 @@ public abstract class PluginForHost extends Plugin {
      * Neustart vor. Sollte nicht überschrieben werden
      */
     public final void resetPlugin() {
-        this.resetSteps();
+//        this.resetSteps();
         this.reset();
         // this.aborted = false;
     }
@@ -83,38 +84,38 @@ public abstract class PluginForHost extends Plugin {
 
   
 
-    /**
-     * Diese methode führt den Nächsten schritt aus. Der gerade ausgeführte
-     * Schritt wir zurückgegeben
-     * 
-     * @param parameter
-     *            Ein Übergabeparameter
-     * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
-     */
-    public PluginStep doNextStep(Object parameter) {
+//    /**
+//     * Diese methode führt den Nächsten schritt aus. Der gerade ausgeführte
+//     * Schritt wir zurückgegeben
+//     * 
+//     * @param parameter
+//     *            Ein Übergabeparameter
+//     * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
+//     */
+//    public PluginStep doNextStep(Object parameter) {
+//
+//        nextStep(currentStep);
+//
+//        if (//currentStep == null) {
+//            logger.info(this + " Pluginende erreicht!");
+//            return null;
+//        }
+//        logger.finer("Current Step:  " + currentStep + "/" + steps);
+//        if (!this.isAGBChecked()) {
+//            currentStep.setStatus(PluginStep.STATUS_ERROR);
+//            logger.severe("AGB not signed : " + this.getPluginID());
+//            ((DownloadLink) parameter).setStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
+//            return currentStep;
+//        }
+//        //currentStep = doStep(currentStep, parameter);
+//        logger.finer("got/return step: " + currentStep + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+//
+//        return currentStep;
+//    }
 
-        nextStep(currentStep);
-
-        if (currentStep == null) {
-            logger.info(this + " Pluginende erreicht!");
-            return null;
-        }
-        logger.finer("Current Step:  " + currentStep + "/" + steps);
-        if (!this.isAGBChecked()) {
-            currentStep.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe("AGB not signed : " + this.getPluginID());
-            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_AGB_NOT_SIGNED);
-            return currentStep;
-        }
-        currentStep = doStep(currentStep, parameter);
-        logger.finer("got/return step: " + currentStep + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
-
-        return currentStep;
-    }
-
-    public boolean isListOffline() {
-        return true;
-    }
+//    public boolean isListOffline() {
+//        return true;
+//    }
 
     public boolean[] checkLinks(DownloadLink[] urls) {
         return null;
@@ -185,14 +186,14 @@ public abstract class PluginForHost extends Plugin {
         return parameter.getName();
     }
 
-    /**
-     * Diese Funktion verarbeitet jeden Schritt des Plugins.
-     * 
-     * @param step
-     * @param parameter
-     * @return
-     */
-    public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
+//    /**
+//     * Diese Funktion verarbeitet jeden Schritt des Plugins.
+//     * 
+//     * @param step
+//     * @param parameter
+//     * @return
+//     */
+//    public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
 
     public abstract int getMaxSimultanDownloadNum();
 
@@ -231,76 +232,76 @@ public abstract class PluginForHost extends Plugin {
 //        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_ERROR_RETRIES, 0);
 //    }
 
-    /**
-     * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
-     * die Plugins. Und fängt übrige Exceptions ab.
-     * 
-     * @param parameter
-     *            Downloadlink
-     */
-    public PluginStep doStep(PluginStep step, Object parameter) {
+//    /**
+//     * Delegiert den doStep Call mit einem Downloadlink als Parameter weiter an
+//     * die Plugins. Und fängt übrige Exceptions ab.
+//     * 
+//     * @param parameter
+//     *            Downloadlink
+//     */
+//    public void handle( Object parameter) {
+//
+//        try {
+//            PluginStep ret = doStep(step, (DownloadLink) parameter);
+//            logger.finer("got/return step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+//            return ret;
+//            // if(ret==null){
+//            // return step;
+//            // }else{
+//            // return ret;
+//            // }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            step.setStatus(PluginStep.STATUS_ERROR);
+//            ((DownloadLink) parameter).setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+//            //step.setParameter(e.getLocalizedMessage());
+//            logger.finer("got/return 2 step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
+//
+//            return step;
+//        }
+//    }
 
-        try {
-            PluginStep ret = doStep(step, (DownloadLink) parameter);
-            logger.finer("got/return step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
-            return ret;
-            // if(ret==null){
-            // return step;
-            // }else{
-            // return ret;
-            // }
-        } catch (Exception e) {
-            e.printStackTrace();
-            step.setStatus(PluginStep.STATUS_ERROR);
-            ((DownloadLink) parameter).setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            step.setParameter(e.getLocalizedMessage());
-            logger.finer("got/return 2 step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
-
-            return step;
-        }
-    }
-
-    /**
-     * Kann im Downloadschritt verwendet werden um einen einfachen Download
-     * vorzubereiten
-     * 
-     * @param downloadLink
-     * @param step
-     * @param url
-     * @param cookie
-     * @param redirect
-     * @return
-     */
-    protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
-
-            int length = requestInfo.getConnection().getContentLength();
-            downloadLink.setDownloadMax(length);
-            logger.finer("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-
-            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-            dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-
-                step.setStatus(PluginStep.STATUS_ERROR);
-
-            }
-            return true;
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-
-        step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-        return false;
-
-    }
+//    /**
+//     * Kann im Downloadschritt verwendet werden um einen einfachen Download
+//     * vorzubereiten
+//     * 
+//     * @param downloadLink
+//     * @param step
+//     * @param url
+//     * @param cookie
+//     * @param redirect
+//     * @return
+//     */
+//    protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
+//        try {
+//            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
+//
+//            int length = requestInfo.getConnection().getContentLength();
+//            downloadLink.setDownloadMax(length);
+//            logger.finer("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+//
+//            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+//            dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+//            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+//                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+//
+//                step.setStatus(PluginStep.STATUS_ERROR);
+//
+//            }
+//            return true;
+//        } catch (MalformedURLException e) {
+//
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//
+//            e.printStackTrace();
+//        }
+//
+//        step.setStatus(PluginStep.STATUS_ERROR);
+//        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+//        return false;
+//
+//    }
 
     /**
      * Wird nicht gebraucht muss aber implementiert werden.
@@ -383,14 +384,28 @@ public abstract class PluginForHost extends Plugin {
     public static long getRemainingWaittime() {
         return Math.max(0, END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis());
     }
+    
+    protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
+        while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
-    public PluginStep handleDownloadLimit(PluginStep step, DownloadLink downloadLink) {
-        long waitTime = getRemainingWaittime();
-        logger.finer("wait (intern) " + waitTime + " minutes");
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-        step.setStatus(PluginStep.STATUS_ERROR);
-        logger.info(" Waittime(intern) set to " + step + " : " + waitTime);
-        step.setParameter((long) waitTime);
-        return step;
+            i -= 1000;
+            downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+            downloadLink.requestGuiUpdate();
+            Thread.sleep(1000);
+
+        }
+
     }
+
+//    public PluginStep handleDownloadLimit(PluginStep step, DownloadLink downloadLink) {
+//        long waitTime = getRemainingWaittime();
+//        logger.finer("wait (intern) " + waitTime + " minutes");
+//        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+//        //step.setStatus(PluginStep.STATUS_ERROR);
+//        logger.info(" Waittime(intern) set to " + step + " : " + waitTime);
+//        //step.setParameter((long) waitTime);
+//        return step;
+//    }
+
+   
 }

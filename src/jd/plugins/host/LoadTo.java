@@ -27,6 +27,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -65,10 +66,10 @@ public class LoadTo extends PluginForHost {
     public LoadTo() {
         super();
 
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     /*
@@ -160,7 +161,7 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
         return false;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
         try {
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
@@ -172,7 +173,7 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                     // Datei nicht gefunden?
                     if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_NOT_FOUND) > 0) {
                         logger.severe("download not found");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -185,7 +186,7 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                     }
                     catch (Exception e) {
 
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -199,16 +200,16 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                 case PluginStep.STEP_PENDING:
 
                     // immer 5 Sekunden vor dem Download warten!
-                    step.setParameter(10l);
+                    //step.setParameter(10l);
                     return step;
                 case PluginStep.STEP_WAIT_TIME:
                     // Download vorbereiten
-                    downloadLink.setStatusText("Verbindung aufbauen(0-20s)");
+                    downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
                     urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
                         logger.warning("Filesize Check fehler. Neustart");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -228,8 +229,8 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
         }
         catch (IOException e) {
              e.printStackTrace();
-             downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-             downloadLink.setStatusText(e.getMessage());
+             downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+             downloadLink.getLinkStatus().setStatusText(e.getMessage());
              step.setStatus(PluginStep.STATUS_ERROR);
              return step;
         }

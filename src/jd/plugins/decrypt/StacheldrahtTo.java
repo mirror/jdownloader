@@ -39,8 +39,8 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
     public StacheldrahtTo() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,10 +74,10 @@ public class StacheldrahtTo extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
                 RequestInfo ri = HTTP.getRequest(new URL(parameter));
@@ -108,7 +108,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
                     progress.increase(1);
                     decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

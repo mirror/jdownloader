@@ -44,8 +44,8 @@ public class LinksaveIn extends PluginForDecrypt {
 
     public LinksaveIn() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,10 +79,10 @@ public class LinksaveIn extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             URL url;
             try {
                 if (cryptedLink.matches(patternSupported.pattern())) {
@@ -102,7 +102,7 @@ public class LinksaveIn extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
         return null;
     }

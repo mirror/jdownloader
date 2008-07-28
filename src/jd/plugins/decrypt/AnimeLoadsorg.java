@@ -3,14 +3,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -23,7 +22,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
     public AnimeLoadsorg() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -56,21 +55,21 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqinfo = HTTP.getRequest(url);
                 String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "src=\"(.*?)\"").getFirstMatch());
                 if (link != null) decryptedLinks.add(this.createDownloadlink(link));
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

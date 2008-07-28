@@ -29,7 +29,7 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     public Cryptlinkws() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -62,10 +62,10 @@ public class Cryptlinkws extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = null;
                 RequestInfo reqinfo = null;
@@ -99,7 +99,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                             String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
                             if (password == null) {
                                 /* auf abbruch geklickt */
-                                step.setParameter(decryptedLinks);
+                                //step.setParameter(decryptedLinks);
                                 return null;
                             }
                             post_parameter += "folderpass=" + JDUtilities.urlEncode(password);
@@ -113,12 +113,12 @@ public class Cryptlinkws extends PluginForDecrypt {
                             if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                                 /* Fehler beim Captcha */
                                 logger.severe("Captcha Download fehlgeschlagen!");
-                                step.setParameter(decryptedLinks);
+                                //step.setParameter(decryptedLinks);
                                 return null;
                             }
                             /* CaptchaCode holen */
                             if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                                step.setParameter(decryptedLinks);
+                                //step.setParameter(decryptedLinks);
                                 return null;
                             }
                             if (post_parameter!="") post_parameter +="&";
@@ -140,7 +140,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                     }
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

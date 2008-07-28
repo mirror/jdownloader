@@ -16,7 +16,7 @@
 
 
 package jd.plugins.decrypt;  import java.io.File;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -34,8 +34,8 @@ public class Safelink extends PluginForDecrypt {
 
     public Safelink() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     /*
@@ -77,11 +77,11 @@ public class Safelink extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT :
                 System.out.println(parameter);
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 progress.setRange(1);
                 parameter=parameter.replaceFirst("http://.*?/r", "http://serienjunkies.org/safe/r");
                 System.out.println(parameter);
@@ -89,8 +89,8 @@ public class Safelink extends PluginForDecrypt {
                 progress.increase(1);
                 // veraltet: firePluginEvent(new PluginEvent(this,
                 // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-                currentStep = null;
-                step.setParameter(decryptedLinks);
+                //currentStep = null;
+                //step.setParameter(decryptedLinks);
                 break;
 
         }

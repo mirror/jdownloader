@@ -28,6 +28,7 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -73,7 +74,7 @@ public class Filer extends PluginForHost {
 
     public Filer() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         setConfigElements();
 
     }
@@ -108,7 +109,7 @@ public class Filer extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
@@ -156,8 +157,8 @@ public class Filer extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                step.setParameter(20000l);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                //step.setParameter(20000l);
                 return step;
             }
             downloadLink.setName(getFileNameFormHeader(con));
@@ -174,8 +175,8 @@ public class Filer extends PluginForHost {
 
             String error = JDUtilities.convertExceptionReadable(e);
             logger.severe("Error: " + error);
-            step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+            //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
+            downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             return step;
         }
 
@@ -200,7 +201,7 @@ public class Filer extends PluginForHost {
             }
             if (page.contains("captcha.png")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 return step;
             }
 
@@ -208,8 +209,8 @@ public class Filer extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
                 logger.severe("Error: " + error);
-                step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
+                downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                 return step;
 
             }
@@ -218,8 +219,8 @@ public class Filer extends PluginForHost {
             String wait=new Regex(br,"Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
             if(wait!=null){
                 step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(Long.parseLong(wait)*60*1000);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                //step.setParameter(Long.parseLong(wait)*60*1000);
+                downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                 return step;
                 
                 
@@ -227,8 +228,8 @@ public class Filer extends PluginForHost {
             Form[] forms = br.getForms();
             if(forms.length<2){
                 step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(Long.parseLong("1")*60*1000);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                //step.setParameter(Long.parseLong("1")*60*1000);
+                downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                 return step;
                 
                 
@@ -237,14 +238,14 @@ public class Filer extends PluginForHost {
             //        
             // if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
             // logger.severe("Free User Limit reached");
-            // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-            // step.setParameter("Free User Limit");
+            // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // //step.setParameter("Free User Limit");
             // step.setStatus(PluginStep.STATUS_ERROR);
             // return step;
             // }
             // if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
             // logger.severe("Die Datei existiert nicht");
-            // downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+            // downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             // return step;
             // }
@@ -255,10 +256,10 @@ public class Filer extends PluginForHost {
             // if (strWaitTime != null) {
             // logger.severe("wait " + strWaitTime + " minutes");
             // waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
-            // downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+            // downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
             // step.setStatus(PluginStep.STATUS_ERROR);
             // logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
-            // step.setParameter((long) waitTime);
+            // //step.setParameter((long) waitTime);
             // return step;
             // }
 
@@ -270,8 +271,8 @@ public class Filer extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                step.setParameter(20000l);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                //step.setParameter(20000l);
                 return step;
             }
             downloadLink.setName(getFileNameFormHeader(con));

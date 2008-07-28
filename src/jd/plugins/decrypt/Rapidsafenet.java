@@ -41,7 +41,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     public Rapidsafenet() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
 
     }
 
@@ -76,9 +76,9 @@ public class Rapidsafenet extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             progress.setRange(1);
             try {
                 URL url = new URL(parameter);
@@ -93,7 +93,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
             // Decrypt abschliessen
 
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
 
         return null;

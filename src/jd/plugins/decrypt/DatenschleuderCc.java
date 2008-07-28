@@ -37,8 +37,8 @@ public class DatenschleuderCc extends PluginForDecrypt {
 
     public DatenschleuderCc() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,9 +72,9 @@ public class DatenschleuderCc extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
@@ -89,7 +89,7 @@ public class DatenschleuderCc extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(link.replace("http://anonym.to?", "")));
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

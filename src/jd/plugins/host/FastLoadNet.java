@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -60,9 +61,9 @@ public class FastLoadNet extends PluginForHost {
     public FastLoadNet() {
 
         super();
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
 
@@ -122,7 +123,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
                 return false;
 
@@ -130,7 +131,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
                 return false;
 
@@ -166,7 +167,7 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         try {
 
@@ -181,7 +182,7 @@ public class FastLoadNet extends PluginForHost {
 
                 if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
@@ -189,7 +190,7 @@ public class FastLoadNet extends PluginForHost {
 
                 if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
@@ -205,7 +206,7 @@ public class FastLoadNet extends PluginForHost {
 
                 } catch (Exception e) {
 
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
@@ -222,14 +223,14 @@ public class FastLoadNet extends PluginForHost {
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
 
                     logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
-                    step.setParameter(null);
+                    //step.setParameter(null);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return step;
 
                 } else {
 
-                    step.setParameter(file);
+                    //step.setParameter(file);
                     step.setStatus(PluginStep.STATUS_USER_INPUT);
                     return step;
 
@@ -252,22 +253,22 @@ public class FastLoadNet extends PluginForHost {
 
                         if (length == 13) {
 
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                            downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
 
                         } else if (length == 184) {
 
                             logger.info("System overload: Retry in 20 seconds");
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            step.setParameter(20000l);
+                            //step.setParameter(20000l);
                             return step;
 
                         } else {
 
                             logger.severe("Unknown error page - [Length: " + length + "]");
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                            downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
 
@@ -278,7 +279,7 @@ public class FastLoadNet extends PluginForHost {
                 } else {
 
                     logger.severe("Couldn't get HTTP connection");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
@@ -302,7 +303,7 @@ public class FastLoadNet extends PluginForHost {
         } catch (IOException e) {
 
             e.printStackTrace();
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
             step.setStatus(PluginStep.STATUS_ERROR);
 
         }

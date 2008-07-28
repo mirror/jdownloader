@@ -32,6 +32,7 @@ import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -90,11 +91,11 @@ public class Netloadin extends PluginForHost {
 
     public Netloadin() {
         setConfigElements();
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -132,7 +133,7 @@ public class Netloadin extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    public PluginStep doStep(PluginStep step, DownloadLink parameter) throws MalformedURLException, IOException {
+    public void handle( DownloadLink parameter) throws MalformedURLException, IOException {
         DownloadLink downloadLink = (DownloadLink) parameter;
         // Download-URL aktualisieren
         downloadLink.setUrlDownload("http://netload.in/datei" + getID(downloadLink.getDownloadURL()) + ".htm");
@@ -144,7 +145,7 @@ public class Netloadin extends PluginForHost {
         // if (aborted) {
         // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
         // logger.warning("Plugin aborted");
-        // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        // downloadLink.setStatus(LinkStatus.TODO);
         // step.setStatus(PluginStep.STATUS_TODO);
         // return step;
         // }
@@ -181,10 +182,10 @@ public class Netloadin extends PluginForHost {
                     if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
                         long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
                         logger.severe("wait (intern) " + waitTime + " minutes");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
-                        step.setParameter((long) waitTime);
+                        //step.setParameter((long) waitTime);
                         return step;
                     }
                     logger.info("Intern: " + END_OF_DOWNLOAD_LIMIT + " - " + System.currentTimeMillis());
@@ -196,25 +197,25 @@ public class Netloadin extends PluginForHost {
 
                     if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         return step;
                     }
                     if (requestInfo.containsHTML(FILE_DAMAGED)) {
                         logger.warning("File is on a damaged server");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
                     if (requestInfo.containsHTML(FILE_HARDWARE)) {
                         logger.warning("File is on a damaged harddisk");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
                     if (!requestInfo.containsHTML(DOWNLOAD_START)) {
                         logger.severe("Download link not found");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         return step;
                     }
                     logger.info(url);
@@ -223,20 +224,20 @@ public class Netloadin extends PluginForHost {
                     if (requestInfo.containsHTML(FILE_DAMAGED)) {
                         logger.warning("File is on a damaged server");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
                     if (requestInfo.containsHTML(FILE_HARDWARE)) {
                         logger.warning("File is on a damaged harddisk");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
 
                     if (!requestInfo.containsHTML(DOWNLOAD_CAPTCHA)) {
                         logger.severe("Captcha not found");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         return step;
                     }
                     // logger.info(requestInfo.getHtmlCode());
@@ -247,11 +248,11 @@ public class Netloadin extends PluginForHost {
                     if (captchaURL == null || fileID == null || postURL == null) {
                         if (requestInfo.getHtmlCode().indexOf("download_load.tpl") >= 0) {
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                             return step;
                         }
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         return step;
                     } else {
                         return step;
@@ -261,41 +262,41 @@ public class Netloadin extends PluginForHost {
                     requestInfo = HTTP.postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + (String) steps.get(1).getParameter() + "&start=", false);
                     if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         return step;
                     }
                     if (requestInfo.containsHTML(FILE_DAMAGED)) {
                         logger.warning("File is on a damaged server");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
 
                     if (requestInfo.containsHTML(FILE_HARDWARE)) {
                         logger.warning("File is on a damaged harddisk");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                        downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         return step;
                     }
                     if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         waitTime = Long.parseLong(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
                         waitTime = waitTime * 10L;
-                        step.setParameter(waitTime);
+                        //step.setParameter(waitTime);
                         END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
                         return step;
                     }
                     if (requestInfo.getHtmlCode().indexOf(CAPTCHA_WRONG) >= 0) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                         return step;
                     }
                     this.finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
                     return step;
                 }
             case PluginStep.STEP_PENDING:
-                step.setParameter(20000l);
+                //step.setParameter(20000l);
                 return step;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 try {
@@ -306,12 +307,12 @@ public class Netloadin extends PluginForHost {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha donwload failed: " + captchaURL);
-                    step.setParameter(null);
+                    //step.setParameter(null);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return step;
                 } else {
-                    step.setParameter(file);
+                    //step.setParameter(file);
                     step.setStatus(PluginStep.STATUS_USER_INPUT);
                     return step;
                 }
@@ -331,7 +332,7 @@ public class Netloadin extends PluginForHost {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+            downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return step;
 
         }
@@ -339,7 +340,7 @@ public class Netloadin extends PluginForHost {
         catch (Exception e) {
             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
             return step;
         }
@@ -360,7 +361,7 @@ public class Netloadin extends PluginForHost {
                 logger.finer("sessionID: " + sessionID);
 
                 if (requestInfo.getHtmlCode().indexOf(FILE_NOT_FOUND) > 0) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -368,19 +369,19 @@ public class Netloadin extends PluginForHost {
                 if (requestInfo.containsHTML(FILE_DAMAGED)) {
                     logger.warning("File is on a damaged server");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return step;
                 }
                 if (requestInfo.containsHTML(FILE_HARDWARE)) {
                     logger.warning("File is on a damaged harddisk");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return step;
                 }
                 if (!requestInfo.containsHTML(DOWNLOAD_START)) {
                     logger.severe("Download link not found");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     return step;
                 }
 
@@ -394,13 +395,13 @@ public class Netloadin extends PluginForHost {
                 if (requestInfo.containsHTML(FILE_DAMAGED)) {
                     logger.warning("File is on a damaged server");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return step;
                 }
                 if (requestInfo.containsHTML(FILE_HARDWARE)) {
                     logger.warning("File is on a damaged harddisk");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return step;
                 }
 
@@ -414,7 +415,7 @@ public class Netloadin extends PluginForHost {
                 if (finalURL == null) {
                     logger.info(requestInfo + "");
                     logger.severe("Could not get final URL");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -422,16 +423,16 @@ public class Netloadin extends PluginForHost {
                 return step;
             } else {
                 step.setStatus(PluginStep.STATUS_SKIP);
-                downloadLink.setStatusText("Premiumdownload");
+                downloadLink.getLinkStatus().setStatusText("Premiumdownload");
                 return step;
             }
         case PluginStep.STEP_PENDING:
-            step.setParameter(100l);
+            //step.setParameter(100l);
 
             return step;
         case PluginStep.STEP_GET_CAPTCHA_FILE:
             step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.setStatusText("Premiumdownload");
+            downloadLink.getLinkStatus().setStatusText("Premiumdownload");
             return step;
         case PluginStep.STEP_DOWNLOAD:
             // logger.info("Download " + finalURL);
@@ -508,7 +509,7 @@ br.setConnectTimeout(15000);
         if (page == null) return false;
 
         if (Regex.matches(page, "unknown file_data")) {
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+            downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return false;
         }
 

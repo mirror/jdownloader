@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -56,7 +57,7 @@ public class Secured extends PluginForDecrypt {
 
     static private final String PLUGIN_VERSION = "2.0";
 
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + VERSION;
+    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
     static private final String CODER = "olimex|JD-Team";
 
@@ -69,8 +70,8 @@ public class Secured extends PluginForDecrypt {
     private String cryptedLink;
 
     public Secured() {
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -142,11 +143,11 @@ public class Secured extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
         case PluginStep.STEP_DECRYPT:
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             logger.finest("Decrypt: " + cryptedLink);
             this.cryptedLink = cryptedLink;
 
@@ -213,7 +214,7 @@ public class Secured extends PluginForDecrypt {
             } catch (Exception e) {
                 logger.warning("Exception: " + e);
             }
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
             break;
 
         }

@@ -38,8 +38,8 @@ public class FrozenRomsIn extends PluginForDecrypt {
 
     public FrozenRomsIn() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -73,9 +73,9 @@ public class FrozenRomsIn extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             RequestInfo reqinfo;
             ArrayList<ArrayList<String>> getLinks = new ArrayList<ArrayList<String>>();
 
@@ -96,7 +96,7 @@ public class FrozenRomsIn extends PluginForDecrypt {
                     progress.increase(1);
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

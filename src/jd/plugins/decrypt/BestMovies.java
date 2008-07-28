@@ -46,8 +46,8 @@ public class BestMovies extends PluginForDecrypt {
     public BestMovies() {
 
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
 
     }
 
@@ -82,10 +82,10 @@ public class BestMovies extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqInfo = null;
@@ -114,14 +114,14 @@ public class BestMovies extends PluginForDecrypt {
                         if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
-                            step.setParameter(null);
+                            //step.setParameter(null);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
-                            step.setParameter(decryptedLinks);
+                            //step.setParameter(decryptedLinks);
                             return null;
                         }
                         reqInfo = HTTP.postRequest(new URL(cryptedLink), cookie, cryptedLink, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
@@ -147,7 +147,7 @@ public class BestMovies extends PluginForDecrypt {
             }
 
         }
-        step.setParameter(decryptedLinks);
+        //step.setParameter(decryptedLinks);
         return null;
     }
 

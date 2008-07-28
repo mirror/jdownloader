@@ -41,7 +41,7 @@ public class EinsKhDe extends PluginForDecrypt {
 
     public EinsKhDe() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -74,10 +74,10 @@ public class EinsKhDe extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
 
                 progress.setRange(1);
@@ -95,7 +95,7 @@ public class EinsKhDe extends PluginForDecrypt {
                             String password = JDUtilities.getGUI().showUserInputDialog("1kh.de - Ordnerpasswort?");
                             if (password == null) {
                                 /* auf abbruch geklickt */
-                                step.setParameter(decryptedLinks);
+                                //step.setParameter(decryptedLinks);
                                 return null;
                             }
                             reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
@@ -110,7 +110,7 @@ public class EinsKhDe extends PluginForDecrypt {
                     }
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

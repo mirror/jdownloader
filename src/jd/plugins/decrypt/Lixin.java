@@ -44,8 +44,8 @@ public class Lixin extends PluginForDecrypt {
 
     public Lixin() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,10 +79,10 @@ public class Lixin extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqInfo = null;
@@ -100,14 +100,14 @@ public class Lixin extends PluginForDecrypt {
                         if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            step.setParameter(null);
+                            //step.setParameter(null);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
-                            step.setParameter(decryptedLinks);
+                            //step.setParameter(decryptedLinks);
                             return null;
                         }
                         captchaCode = captchaCode.toUpperCase();
@@ -140,7 +140,7 @@ public class Lixin extends PluginForDecrypt {
                     }
 
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
                 e.printStackTrace();

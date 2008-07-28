@@ -23,6 +23,7 @@ import jd.config.ConfigEntry;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -57,8 +58,8 @@ public class ResetLink extends Interaction implements Serializable {
         } else if (type.equals((String) OPTIONS[1])) {
             DownloadLink link = controller.getLastFinishedDownloadLink();
             if (link != null) {
-                link.setStatus(DownloadLink.STATUS_TODO);
-                link.setStatusText("");
+                link.getLinkStatus().setStatus(LinkStatus.TODO);
+                link.getLinkStatus().setStatusText("");
                 link.reset();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
             } else {

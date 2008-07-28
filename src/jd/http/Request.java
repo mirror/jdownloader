@@ -121,6 +121,7 @@ public abstract class Request {
     }
 
     public long getContentLength() {
+      
         if (this.httpConnection == null) return -1;
         return (long) httpConnection.getContentLength();
     }

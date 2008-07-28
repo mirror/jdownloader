@@ -23,7 +23,7 @@ public class Xailicom extends PluginForDecrypt {
 
     public Xailicom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -56,10 +56,10 @@ public class Xailicom extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqinfo = HTTP.getRequest(url);
@@ -76,7 +76,7 @@ public class Xailicom extends PluginForDecrypt {
                     progress.increase(1);
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

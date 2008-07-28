@@ -44,8 +44,8 @@ public class RsLayerCom extends PluginForDecrypt {
 
     public RsLayerCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,11 +79,11 @@ public class RsLayerCom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
 
@@ -97,7 +97,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     progress.setRange(1);
                     decryptedLinks.add(this.createDownloadlink(link));
                     progress.increase(1);
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
 
                 } else if (parameter.indexOf("/directory-") != -1) {
 
@@ -165,7 +165,7 @@ public class RsLayerCom extends PluginForDecrypt {
 
                     }
 
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
 
                 }
 

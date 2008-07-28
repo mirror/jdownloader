@@ -15,7 +15,7 @@ public class FileUploadnet extends PluginForDecrypt {
 
     public FileUploadnet() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -49,15 +49,15 @@ public class FileUploadnet extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             String user = new Regex(parameter, "upload\\.net/(.*?)/").getFirstMatch();
             String file = new Regex(parameter, user + "/(.*)").getFirstMatch();
             String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
             link.replaceAll(" ","%20");
             decryptedLinks.add(this.createDownloadlink(link));
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
         return null;
     }

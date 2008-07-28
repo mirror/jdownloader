@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -76,13 +77,13 @@ public class RamZal extends PluginForHost {
 
 	public RamZal() {
 		super();
-		steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+		//steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 	}
 
-	public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+	public void handle( DownloadLink downloadLink) {
 //		if (aborted) {
 //			logger.warning("Plugin abgebrochen");
-//			downloadLink.setStatus(DownloadLink.STATUS_TODO);
+//			downloadLink.setStatus(LinkStatus.TODO);
 //			step.setStatus(PluginStep.STATUS_TODO);
 //			return step;
 //		}
@@ -97,7 +98,7 @@ public class RamZal extends PluginForHost {
 		   dl = new RAFDownload(this, downloadLink, urlConnection);
 
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 			
 				step.setStatus(PluginStep.STATUS_ERROR);
 			}
@@ -111,7 +112,7 @@ public class RamZal extends PluginForHost {
 			e.printStackTrace();
 		}
 		step.setStatus(PluginStep.STATUS_ERROR);
-		downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+		downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 		return step;
 	}
 

@@ -26,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -48,7 +49,7 @@ public class ImageFap extends PluginForHost {
 
     public ImageFap() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -114,12 +115,12 @@ public class ImageFap extends PluginForHost {
         return null;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
         try {
             if (step.getStep() == PluginStep.STEP_COMPLETE) {
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation2(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -136,7 +137,7 @@ public class ImageFap extends PluginForHost {
                 dl.setResume(false);
                 dl.setChunkNum(1);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -147,7 +148,7 @@ public class ImageFap extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
         return step;
     }
 

@@ -37,8 +37,8 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     public DDLMusicOrg() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,10 +72,10 @@ public class DDLMusicOrg extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
 
@@ -88,7 +88,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
 
                     progress.increase(1);
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
 
                 } else if (parameter.indexOf("site=view_download") != -1) {
 
@@ -129,7 +129,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
                     }
 
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
 
                 }
 

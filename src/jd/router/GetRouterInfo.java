@@ -190,7 +190,7 @@ public class GetRouterInfo {
         
         if (getAdress() == null) return null;
         try {
-            // progress.setStatusText("Load possible RouterDatas");
+            //progress.setStatusText("Load possible RouterDatas");
             Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
 
             RequestInfo request = HTTP.getRequest(new URL("http://" + adress));

@@ -23,15 +23,15 @@ public class FlyLoadnet extends PluginForDecrypt {
 
     public FlyLoadnet() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo requestInfo;
@@ -63,7 +63,7 @@ public class FlyLoadnet extends PluginForDecrypt {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
         return null;
     }

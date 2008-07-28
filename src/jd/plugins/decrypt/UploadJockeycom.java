@@ -29,8 +29,8 @@ public class UploadJockeycom extends PluginForDecrypt {
 
     public UploadJockeycom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -64,10 +64,10 @@ public class UploadJockeycom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             URL url;
             RequestInfo requestInfo;
             try {
@@ -86,7 +86,7 @@ public class UploadJockeycom extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
         return null;
     }

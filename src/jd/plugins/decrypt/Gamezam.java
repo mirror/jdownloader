@@ -22,18 +22,18 @@ public class Gamezam extends PluginForDecrypt {
 
     public Gamezam() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         logger.info(id);
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 boolean gamez_continue = false;
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 URL url;
                 RequestInfo reqInfo = HTTP.getRequest(new URL("http://www.gamez.am/start.php?"), null, null, false);
                 String cookie = reqInfo.getConnection().getHeaderFields().get("Set-Cookie").toString().replaceAll("\\[|\\]", "");
@@ -47,14 +47,14 @@ public class Gamezam extends PluginForDecrypt {
                     File captchaFile = this.getLocalCaptchaFile(this);
                     if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
-                        step.setParameter(null);
+                        //step.setParameter(null);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
                     String captchaCode = JDUtilities.getCaptcha(this, "gamez.am", captchaFile, false);
                     if (captchaCode == null) {
                         /* abbruch geklickt */
-                        step.setParameter(decryptedLinks);
+                        //step.setParameter(decryptedLinks);
                         return null;
                     }
                     url = new URL("http://www.gamez.am/include/check.php?id=" + id + "&captcha=" + captchaCode);
@@ -100,7 +100,7 @@ public class Gamezam extends PluginForDecrypt {
                         }
                     }
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

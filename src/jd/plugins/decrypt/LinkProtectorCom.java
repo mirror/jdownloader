@@ -37,8 +37,8 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     public LinkProtectorCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,10 +72,10 @@ public class LinkProtectorCom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
                 URL url = new URL(parameter);
                 RequestInfo requestInfo = HTTP.getRequest(url);
@@ -103,7 +103,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
                     String link = new Regex(decryptedLink, Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch().trim();
                     decryptedLinks.add(this.createDownloadlink(link));
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
                 e.printStackTrace();

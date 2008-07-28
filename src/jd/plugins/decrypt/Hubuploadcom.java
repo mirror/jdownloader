@@ -22,7 +22,7 @@ public class Hubuploadcom extends PluginForDecrypt {
 
     public Hubuploadcom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -55,10 +55,10 @@ public class Hubuploadcom extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqinfo = HTTP.getRequest(url);
@@ -73,7 +73,7 @@ public class Hubuploadcom extends PluginForDecrypt {
                     progress.increase(1);
                 }
                 // Decrypt abschliessen
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

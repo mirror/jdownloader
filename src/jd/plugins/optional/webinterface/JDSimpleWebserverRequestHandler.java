@@ -15,6 +15,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.unrar.JUnrar;
@@ -110,11 +111,11 @@ public class JDSimpleWebserverRequestHandler {
                         }
                     }
                 }
-                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+//                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
 
                     attachLinkTopackage(link);
 
-                }
+//                }
             }
         }
     }
@@ -391,8 +392,8 @@ public class JDSimpleWebserverRequestHandler {
                              */
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
-                                link.setStatus(DownloadLink.STATUS_TODO);
-                                link.setStatusText("");
+                                link.getLinkStatus().setStatus(LinkStatus.TODO);
+                                link.getLinkStatus().setStatusText("");
                                 link.reset();
                             }
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));

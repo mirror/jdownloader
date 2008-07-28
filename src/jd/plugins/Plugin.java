@@ -25,11 +25,9 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
@@ -45,7 +43,6 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
 import jd.unrar.JUnrar;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -58,23 +55,40 @@ public abstract class Plugin implements ActionListener {
     public static void main(String args[]) {
 
     }
+    
+    
+//  public static final int DOWNLOAD_ERROR_INVALID_OUTPUTFILE = 0;
+    //
+//        public static final int DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS = 2;
+    //
+//        public static final int DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE = 3;
+    //
+//        public static final int DOWNLOAD_ERROR_RENAME_FAILED = 4;
+    //
+//        public static final int DOWNLOAD_SUCCESS = 5;
+    //
+//        public static final int DOWNLOAD_ERROR_FILENOTFOUND = 6;
+    //
+//        public static final int DOWNLOAD_ERROR_SECURITY = 7;
+    //
+//        public static final int DOWNLOAD_ERROR_UNKNOWN = 8;
+    //
+//        public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
+    //
+//        // private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
-    protected static final String END_OF_LINK = "[^\"]*";
-
-    /**
-     * Der Defualt Accept-language-header. Achtung nicht Ändern. Wird dieser
-     * Header geändert müssen die Regexes der Plugins angepasst werden
-     */
+   // protected static final String END_OF_LINK = "[^\"]*";
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
+
 
     public void actionPerformed(ActionEvent e) {
         return;
     }
 
-    /**
-     * Versionsinformationen
-     */
-    public static final String VERSION = "jDownloader_20070830_0";
+//    /**
+//     * Versionsinformationen
+//     */
+//    public static final String VERSION = "jDownloader_20070830_0";
 
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll
@@ -213,25 +227,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
 
-    public static final int DOWNLOAD_ERROR_INVALID_OUTPUTFILE = 0;
 
-    public static final int DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS = 2;
-
-    public static final int DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE = 3;
-
-    public static final int DOWNLOAD_ERROR_RENAME_FAILED = 4;
-
-    public static final int DOWNLOAD_SUCCESS = 5;
-
-    public static final int DOWNLOAD_ERROR_FILENOTFOUND = 6;
-
-    public static final int DOWNLOAD_ERROR_SECURITY = 7;
-
-    public static final int DOWNLOAD_ERROR_UNKNOWN = 8;
-
-    public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
-
-    // private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
     public static final int CAPTCHA_JAC = 0;
 
@@ -239,24 +235,24 @@ public abstract class Plugin implements ActionListener {
 
     public static SubConfiguration CONFIGS = null;
 
-    /**
-     * Führt den aktuellen Schritt aus
-     * 
-     * @param step
-     * @param parameter
-     * @return der gerade ausgeführte Schritt
-     */
-    public abstract PluginStep doStep(PluginStep step, Object parameter);
+//    /**
+//     * Führt den aktuellen Schritt aus
+//     * 
+//     * @param step
+//     * @param parameter
+//     * @return der gerade ausgeführte Schritt
+//     */
+//    public abstract PluginStep doStep(PluginStep step, Object parameter);
 
-    /**
-     * Hier werden alle notwendigen Schritte des Plugins hinterlegt
-     */
-    protected Vector<PluginStep> steps;
+//    /**
+//     * Hier werden alle notwendigen Schritte des Plugins hinterlegt
+//     */
+//    protected Vector<PluginStep> steps;
 
-    /**
-     * Enthält den aktuellen Schritt des Plugins
-     */
-    protected PluginStep currentStep = null;
+//    /**
+//     * Enthält den aktuellen Schritt des Plugins
+//     */
+//    protected PluginStep //currentStep = null;
 
     /**
      * Properties zum abspeichern der einstellungen
@@ -278,7 +274,7 @@ public abstract class Plugin implements ActionListener {
     protected Plugin() {
 
         this.initTime = System.currentTimeMillis();
-        steps = new Vector<PluginStep>();
+//        steps = new Vector<PluginStep>();
         config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
         if (this.getPluginName() == null) {
@@ -306,7 +302,7 @@ public abstract class Plugin implements ActionListener {
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
     public void init() {
-        currentStep = null;
+//        //currentStep = null;
     }
 
     /**
@@ -319,107 +315,107 @@ public abstract class Plugin implements ActionListener {
         return config;
     }
 
-    /**
-     * Gibt ausgehend vom aktuellen step den nächsten zurück
-     * 
-     * @param currentStep
-     *            Der aktuelle Schritt
-     * @return nächster step
-     */
-    public PluginStep nextStep(PluginStep currentStep) {
+//    /**
+//     * Gibt ausgehend vom aktuellen step den nächsten zurück
+//     * 
+//     * @param currentStep
+//     *            Der aktuelle Schritt
+//     * @return nächster step
+//     */
+//    public PluginStep nextStep(PluginStep currentStep) {
+//
+//        if (steps != null && steps.size() > 0) {
+//
+//            if (//currentStep == null) {
+//                //currentStep = steps.firstElement();
+//
+//            } else {
+//                int index = steps.indexOf(currentStep) + 1;
+//                if (steps.size() > index) {
+//                    //currentStep = steps.elementAt(index);
+//
+//                } else {
+//                    //currentStep = null;
+//                }
+//            }
+//        } else {
+//            //currentStep = null;
+//        }
+//
+//        logger.finer("next: " + this.currentStep + "->" + currentStep);
+//        return (this.//currentStep = currentStep);
+//
+//    }
 
-        if (steps != null && steps.size() > 0) {
+//    /**
+//     * Gibt den nächsten schritt zurück OHNE dabei den internen Stepzähler zu
+//     * ändern.
+//     * 
+//     * @param step
+//     * @return
+//     */
+//    public PluginStep getNextStep(PluginStep step) {
+//        if (steps != null && steps.size() > 0) {
+//
+//            if (//currentStep == null) {
+//                return steps.firstElement();
+//
+//            } else {
+//                int index = steps.indexOf(currentStep) + 1;
+//                if (steps.size() > index) {
+//                    return steps.elementAt(index);
+//
+//                } else {
+//                    return null;
+//                }
+//            }
+//        } else {
+//            return null;
+//        }
+//
+//    }
 
-            if (currentStep == null) {
-                currentStep = steps.firstElement();
+//    /**
+//     * Gibt ausgehend von übergebenem Schritt den vorherigen zurück
+//     * 
+//     * @param currentStep
+//     * @return Gibt den vorherigen step relativ zu currentstep zurück
+//     */
+//    public PluginStep previousStep(PluginStep currentStep) {
+//
+//        if (steps != null || steps.size() > 0) {
+//
+//            if (//currentStep == null) {
+//                //currentStep = steps.lastElement();
+//
+//            } else {
+//                int index = steps.indexOf(currentStep) - 1;
+//                if (index >= 0) {
+//                    //currentStep = steps.elementAt(index);
+//
+//                } else {
+//                    //currentStep = null;
+//                }
+//            }
+//        } else {
+//            //currentStep = null;
+//        }
+//
+//        logger.info("previous: " + currentStep + "<-" + this.currentStep);
+//        return (this.//currentStep = currentStep);
+//    }
 
-            } else {
-                int index = steps.indexOf(currentStep) + 1;
-                if (steps.size() > index) {
-                    currentStep = steps.elementAt(index);
-
-                } else {
-                    currentStep = null;
-                }
-            }
-        } else {
-            currentStep = null;
-        }
-
-        logger.finer("next: " + this.currentStep + "->" + currentStep);
-        return (this.currentStep = currentStep);
-
-    }
-
-    /**
-     * Gibt den nächsten schritt zurück OHNE dabei den internen Stepzähler zu
-     * ändern.
-     * 
-     * @param step
-     * @return
-     */
-    public PluginStep getNextStep(PluginStep step) {
-        if (steps != null && steps.size() > 0) {
-
-            if (currentStep == null) {
-                return steps.firstElement();
-
-            } else {
-                int index = steps.indexOf(currentStep) + 1;
-                if (steps.size() > index) {
-                    return steps.elementAt(index);
-
-                } else {
-                    return null;
-                }
-            }
-        } else {
-            return null;
-        }
-
-    }
-
-    /**
-     * Gibt ausgehend von übergebenem Schritt den vorherigen zurück
-     * 
-     * @param currentStep
-     * @return Gibt den vorherigen step relativ zu currentstep zurück
-     */
-    public PluginStep previousStep(PluginStep currentStep) {
-
-        if (steps != null || steps.size() > 0) {
-
-            if (currentStep == null) {
-                currentStep = steps.lastElement();
-
-            } else {
-                int index = steps.indexOf(currentStep) - 1;
-                if (index >= 0) {
-                    currentStep = steps.elementAt(index);
-
-                } else {
-                    currentStep = null;
-                }
-            }
-        } else {
-            currentStep = null;
-        }
-
-        logger.info("previous: " + currentStep + "<-" + this.currentStep);
-        return (this.currentStep = currentStep);
-    }
-
-    /**
-     * @author JD-Team Setzt den Pluginfortschritt zurück. Wird Gebraucht um
-     *         einen Download nochmals zu starten, z.B. nach dem reconnect
-     */
-    public void resetSteps() {
-        currentStep = null;
-        for (int i = 0; i < steps.size(); i++) {
-            steps.elementAt(i).setStatus(PluginStep.STATUS_TODO);
-        }
-        // firePluginDataChanged();
-    }
+//    /**
+//     * @author JD-Team Setzt den Pluginfortschritt zurück. Wird Gebraucht um
+//     *         einen Download nochmals zu starten, z.B. nach dem reconnect
+//     */
+//    public void resetSteps() {
+//        //currentStep = null;
+//        for (int i = 0; i < steps.size(); i++) {
+//            steps.elementAt(i).setStatus(PluginStep.STATUS_TODO);
+//        }
+//        // firePluginDataChanged();
+//    }
 
     // private void firePluginDataChanged() {
     // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
@@ -459,13 +455,13 @@ public abstract class Plugin implements ActionListener {
         return buffer.toString();
     }
 
-    /**
-     * @author JD-Team
-     * @return Gibt den aktuellen Schritt oder null zurück
-     */
-    public PluginStep getCurrentStep() {
-        return currentStep;
-    }
+//    /**
+//     * @author JD-Team
+//     * @return Gibt den aktuellen Schritt oder null zurück
+//     */
+//    public PluginStep getCurrentStep() {
+//        return currentStep;
+//    }
 
     /**
      * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon
@@ -528,45 +524,35 @@ public abstract class Plugin implements ActionListener {
         return url.getFile().substring(index + 1);
     }
 
-    protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
-            i -= 1000;
-            downloadLink.setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
-            downloadLink.requestGuiUpdate();
-            Thread.sleep(1000);
-
-        }
-
-    }
-
-    /**
-     * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
-     * Parametern für ein Post-Request.
-     * 
-     * @param parameters
-     *            HashMap mit den Parametern
-     * @return Codierter String
-     */
-    protected String createPostParameterFromHashMap(HashMap<String, String> parameters) {
-        StringBuffer parameterLine = new StringBuffer();
-        String parameter;
-        Iterator<String> iterator = parameters.keySet().iterator();
-        String key;
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            parameter = parameters.get(key);
-            try {
-                if (parameter != null) parameter = URLEncoder.encode(parameter, "US-ASCII");
-            } catch (UnsupportedEncodingException e) {
-            }
-            parameterLine.append(key);
-            parameterLine.append("=");
-            parameterLine.append(parameter);
-            if (iterator.hasNext()) parameterLine.append("&");
-        }
-        return parameterLine.toString();
-    }
+//
+//    /**
+//     * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
+//     * Parametern für ein Post-Request.
+//     * 
+//     * @param parameters
+//     *            HashMap mit den Parametern
+//     * @return Codierter String
+//     */
+//    protected String createPostParameterFromHashMap(HashMap<String, String> parameters) {
+//        StringBuffer parameterLine = new StringBuffer();
+//        String parameter;
+//        Iterator<String> iterator = parameters.keySet().iterator();
+//        String key;
+//        while (iterator.hasNext()) {
+//            key = iterator.next();
+//            parameter = parameters.get(key);
+//            try {
+//                if (parameter != null) parameter = URLEncoder.encode(parameter, "US-ASCII");
+//            } catch (UnsupportedEncodingException e) {
+//            }
+//            parameterLine.append(key);
+//            parameterLine.append("=");
+//            parameterLine.append(parameter);
+//            if (iterator.hasNext()) parameterLine.append("&");
+//        }
+//        return parameterLine.toString();
+//    }
 
     /**
      * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
@@ -715,8 +701,8 @@ public abstract class Plugin implements ActionListener {
 
     }
 
-    public Vector<PluginStep> getSteps() {
-        return steps;
-    }
+//    public Vector<PluginStep> getSteps() {
+//        return steps;
+//    }
 
 }

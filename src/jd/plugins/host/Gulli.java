@@ -28,6 +28,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -86,9 +87,9 @@ public class Gulli extends PluginForHost {
     //private boolean              serverIPChecked;
 
     public Gulli() {
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -126,7 +127,7 @@ public class Gulli extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    public PluginStep doStep(PluginStep step, DownloadLink parameter) {
+    public void handle( DownloadLink parameter) {
         RequestInfo requestInfo = null;
         String dlUrl=null;
         try {
@@ -148,8 +149,8 @@ public class Gulli extends PluginForHost {
 
                         logger.severe("Download for your Ip Temp. not available");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        step.setParameter(30 * 1000l);
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        //step.setParameter(30 * 1000l);
                         return step;
                     }
                     else {
@@ -160,13 +161,13 @@ public class Gulli extends PluginForHost {
                         File file = this.getLocalCaptchaFile(this);
                         if (!JDUtilities.download(file, captchaUrl) || !file.exists()) {
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
-                            step.setParameter(null);
+                            //step.setParameter(null);
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                            downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                             break;
                         }
                         else {
-                            step.setParameter(file);
+                            //step.setParameter(file);
                             step.setStatus(PluginStep.STATUS_USER_INPUT);
                         }
                         return step;
@@ -184,7 +185,7 @@ public class Gulli extends PluginForHost {
                     if (dlUrl == null) {
                         logger.finest("Error Page");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         return step;
                     }
                     logger.info(dlUrl);
@@ -208,8 +209,8 @@ public class Gulli extends PluginForHost {
                     logger.info("abbruch bei :" + red);
                     if (waittime != null) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        step.setParameter(Long.parseLong(waittime) * 60 * 1000);
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        //step.setParameter(Long.parseLong(waittime) * 60 * 1000);
                         logger.info("Warten " + (Long) step.getParameter() + " - " + waittime);
                         logger.info(step.toString());
                     }
@@ -217,7 +218,7 @@ public class Gulli extends PluginForHost {
                         logger.info("Error: " + error);
                         if (error.indexOf("ticket") > 0) {
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                             try {
                                 Thread.sleep(3000);
                             }
@@ -226,7 +227,7 @@ public class Gulli extends PluginForHost {
                         }
                         else {
                             step.setStatus(PluginStep.STATUS_ERROR);
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         }
                     }
                     else {

@@ -11,6 +11,7 @@ import jd.controlling.interaction.HTTPLiveHeader;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 
 public class Reconnecter {
@@ -129,7 +130,7 @@ public class Reconnecter {
                       nextDownloadLink.setEndOfWaittime(0);
                       logger.finer("REset GLOBALS: " + ((PluginForHost) nextDownloadLink.getPlugin()));
                       ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-                      nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
+                      nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
 
                   }
               }

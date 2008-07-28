@@ -38,13 +38,13 @@ public class RapidshareComFolder extends PluginForDecrypt {
     // http://rapidshare.com/users/32P7CI
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
     private String password = "";
-    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String para = "";
     private String cookie = "";
 
     public RapidshareComFolder() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
 
     }
 
@@ -79,8 +79,8 @@ public class RapidshareComFolder extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(parameter);
                 para = parameter;
@@ -91,7 +91,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                         password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
 
                         if (password == null) {
-                            step.setParameter(decryptedLinks);
+                            //step.setParameter(decryptedLinks);
                             return null;
                         }
 
@@ -107,7 +107,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
                 for (int i = 0; i < decryptedLinks.size(); i++) {
                     progress.increase(1);
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

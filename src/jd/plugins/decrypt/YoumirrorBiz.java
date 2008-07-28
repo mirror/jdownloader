@@ -69,8 +69,8 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
     public YoumirrorBiz() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();        
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();        
     }
 
     @Override
@@ -104,9 +104,9 @@ public class YoumirrorBiz extends PluginForDecrypt {
     }   
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             Context cx = null;
             try {
 
@@ -194,7 +194,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
                 logger.info(decryptedLinks.size() + " downloads decrypted");
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (MissingResourceException e) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("MissingResourceException class name: " + e.getClassName() + " key: " + e.getKey());

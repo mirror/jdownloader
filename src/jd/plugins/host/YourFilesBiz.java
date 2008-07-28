@@ -27,6 +27,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -56,9 +57,9 @@ public class YourFilesBiz extends PluginForHost {
         
     	super();
 
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
     }
 
@@ -119,7 +120,7 @@ public class YourFilesBiz extends PluginForHost {
             
             if ( requestInfo.getHtmlCode().equals("") ) {
             	logger.severe("download not found");
-				downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+				downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
 				return false;
 			}
             
@@ -150,7 +151,7 @@ public class YourFilesBiz extends PluginForHost {
         
     }
     
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
     	
         try {
 
@@ -165,7 +166,7 @@ public class YourFilesBiz extends PluginForHost {
                     // serverantwort leer (weiterleitung) -> download nicht verfügbar
                     if (requestInfo.getHtmlCode().equals("")) {
                         logger.severe("download not found");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -177,7 +178,7 @@ public class YourFilesBiz extends PluginForHost {
                     	int length = getFileSize(requestInfo.getHtmlCode());
                         downloadLink.setDownloadMax(length);
                     } catch (Exception e) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -189,13 +190,13 @@ public class YourFilesBiz extends PluginForHost {
                 case PluginStep.STEP_WAIT_TIME:
                 	
                     // Download vorbereiten
-                    downloadLink.setStatusText("Verbindung aufbauen");
+                    downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
                     urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
                     int length = urlConnection.getContentLength();
                     
 //                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
 //                        logger.warning("Dateigrößenfehler -> Neustart");
-//                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+//                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 //                        step.setStatus(PluginStep.STATUS_ERROR);
 //                        return step;
 //                    }

@@ -18,12 +18,13 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.GetRequest;
+import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.utils.JDUtilities;
 
 public class DLC extends PluginForDecrypt {
@@ -37,8 +38,8 @@ public class DLC extends PluginForDecrypt {
     public DLC() {
         super();
         this.setConfigEelements();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,7 +73,7 @@ public class DLC extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
         logger.info("");
 

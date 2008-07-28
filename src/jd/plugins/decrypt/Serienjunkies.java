@@ -77,8 +77,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     public Serienjunkies() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
         this.setConfigElements();
 
         default_password.add("serienjunkies.dl.am");
@@ -331,14 +331,14 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         switch (step.getStep()) {
         case PluginStep.STEP_DECRYPT:
             request.redirect = true;
             request.withHtmlCode = false;
             request.getRequest("http://serienjunkies.org/enter/");
             request.withHtmlCode = true;
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
                 boolean isP = parameter.contains("/?p=");
                 int catst = getSerienJunkiesCat(isP);
@@ -376,7 +376,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         decryptedLinks.add(this.createDownloadlink(links[i]));
                     }
 
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
                     return null;
                 } else if (catst == sCatGrabb) {
 
@@ -421,14 +421,14 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                     }
 
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
                     return null;
                 } else {
                     return null;
                 }
             }
             if (this.getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-                step.setParameter((new jd.plugins.host.Serienjunkies()).getDLinks(parameter));
+                //step.setParameter((new jd.plugins.host.Serienjunkies()).getDLinks(parameter));
             } else {
 
                 // if (!parameter
@@ -443,7 +443,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
 
                 decryptedLinks.add(createdl(parameter, info));
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             }
         }
         return null;
@@ -476,7 +476,7 @@ public class Serienjunkies extends PluginForDecrypt {
             dlink.setSourcePluginComment(title + " ::: " + name);
             dlink.setDownloadMax(size * 1024 * 1024);
         }
-        dlink.setStatusText(getHostname(parameter));
+        dlink.getLinkStatus().setStatusText(getHostname(parameter));
         return dlink;
     }
 

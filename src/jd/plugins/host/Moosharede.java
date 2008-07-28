@@ -3,10 +3,12 @@ package jd.plugins.host;
 import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
+
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -30,7 +32,7 @@ public class Moosharede extends PluginForHost {
 
     public Moosharede() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -97,12 +99,12 @@ public class Moosharede extends PluginForHost {
         return false;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
         if (step == null) return null;
         try {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -117,7 +119,7 @@ public class Moosharede extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -129,7 +131,7 @@ public class Moosharede extends PluginForHost {
             dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             dl.setResume(true);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -139,7 +141,7 @@ public class Moosharede extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
         return step;
     }
 

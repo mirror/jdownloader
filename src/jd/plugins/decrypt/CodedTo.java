@@ -50,8 +50,8 @@ public class CodedTo extends PluginForDecrypt {
 
     public CodedTo() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     /*
@@ -88,9 +88,9 @@ public class CodedTo extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             ArrayList<ArrayList<String>> files;
             try {
                 String strURL = parameter;
@@ -127,7 +127,7 @@ public class CodedTo extends PluginForDecrypt {
 
                 // Decrypt abschliessen
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             }
             catch (IOException e) {
                 e.printStackTrace();

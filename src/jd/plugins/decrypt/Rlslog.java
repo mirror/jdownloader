@@ -27,7 +27,7 @@ public class Rlslog extends PluginForDecrypt {
 
     public Rlslog() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         this.setConfigEelements();
         this.hosterList = Regex.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
     }
@@ -71,7 +71,7 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String followcomments = "";
 
         if (parameter.contains("/comment-page")) {
@@ -83,8 +83,8 @@ public class Rlslog extends PluginForDecrypt {
         } else {
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
         }
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
@@ -117,7 +117,7 @@ public class Rlslog extends PluginForDecrypt {
                         }
                     }
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

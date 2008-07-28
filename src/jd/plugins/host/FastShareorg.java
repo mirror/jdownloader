@@ -12,6 +12,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -64,19 +65,19 @@ public class FastShareorg extends PluginForHost {
 
     public FastShareorg() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
         try {
             switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -84,14 +85,14 @@ public class FastShareorg extends PluginForHost {
                 Form form = requestInfo.getForms()[0];
                 requestInfo = form.getRequestInfo();
                 if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
                 return step;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 10seks */
-                step.setParameter(10000l);
+                //step.setParameter(10000l);
                 return step;
             case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
@@ -101,7 +102,7 @@ public class FastShareorg extends PluginForHost {
                 HTTPConnection urlConnection = requestInfo.getConnection();
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -111,7 +112,7 @@ public class FastShareorg extends PluginForHost {
                 dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -125,7 +126,7 @@ public class FastShareorg extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
         return step;
     }
 

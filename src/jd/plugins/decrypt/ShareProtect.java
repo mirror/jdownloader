@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 public class ShareProtect extends PluginForDecrypt {
 	final static String host = "shareprotect.t-w.at";
 //http://shareprotect.t-w.at/?id=F6FR
-	private String version = "1.0.0.0";
+	private static String VERSION = "1.0.0.0";
 
 	// http://s2.saug.us/folder-m304wzg6qreym6d8xvtpt3gmyfqzjh0.html
 	private Pattern patternSupported = Pattern.compile(
@@ -39,8 +39,8 @@ public class ShareProtect extends PluginForDecrypt {
 
 	public ShareProtect() {
 		super();
-		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-		currentStep = steps.firstElement();
+		//steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+		//currentStep = steps.firstElement();
 	}
 
 	@Override
@@ -70,13 +70,13 @@ public class ShareProtect extends PluginForDecrypt {
 
 	@Override
 	public String getVersion() {
-		return version;
+		return VERSION;
 	}
 
 	@Override
-	public PluginStep doStep(PluginStep step, String parameter) {
-		if (step.getStep() == PluginStep.STEP_DECRYPT) {
-			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+	public ArrayList<DownloadLink> decryptIt(String parameter) {
+		//if (step.getStep() == PluginStep.STEP_DECRYPT) {
+			ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 			try {
 
 				request.getRequest(parameter);
@@ -102,7 +102,7 @@ public class ShareProtect extends PluginForDecrypt {
 					decryptedLinks.add(createDownloadlink(forms[i].action));
 				}
 
-				step.setParameter(decryptedLinks);
+				//step.setParameter(decryptedLinks);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

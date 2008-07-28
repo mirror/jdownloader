@@ -24,6 +24,7 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -41,7 +42,7 @@ public class QshareCom extends PluginForHost {
 
     public QshareCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         // setConfigElements();
 
     }
@@ -76,7 +77,7 @@ public class QshareCom extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
@@ -126,7 +127,7 @@ public class QshareCom extends PluginForHost {
 
                 step.setStatus(PluginStep.STATUS_ERROR);
 
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             Form[] forms = br.getForms();
@@ -136,8 +137,8 @@ public class QshareCom extends PluginForHost {
          if(wait!=null){
              long waitTime=Long.parseLong(wait)*60*1000;
              step.setStatus(PluginStep.STATUS_ERROR);
-             step.setParameter(waitTime);
-             downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+             //step.setParameter(waitTime);
+             downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
              return step;
          }
             String link = new Regex(page,"<div id=\"download_link\"><a href=\"(.*?)\"").getFirstMatch();
@@ -146,7 +147,7 @@ public class QshareCom extends PluginForHost {
 
                step.setStatus(PluginStep.STATUS_ERROR);
 
-               downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+               downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                return step;
            }
             HTTPConnection con = br.openGetConnection(link);
@@ -155,8 +156,8 @@ public class QshareCom extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                step.setParameter(20000l);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                //step.setParameter(20000l);
                 return step;
             }
             downloadLink.setName(getFileNameFormHeader(con));

@@ -434,11 +434,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                                 }
                             }
                         }
-                        if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+//                        if (link.isAvailable() ) {
 
                             attachLinkToPackage(link);
 
-                        }
+//                        }
                     }
                     progress.setValue(waitingLinkList.size());
 
@@ -641,8 +641,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) { return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText(); }
-        return link.getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getStatusText();
+        if (!link.isAvailabilityChecked()) { return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText(); }
+        return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
     }
 
     public void actionPerformed(ActionEvent e) {

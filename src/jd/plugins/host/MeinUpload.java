@@ -30,6 +30,7 @@ import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -52,7 +53,7 @@ public class MeinUpload extends PluginForHost {
     public MeinUpload() {
 
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         setConfigElements();
     }
 
@@ -146,7 +147,7 @@ public class MeinUpload extends PluginForHost {
 
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
@@ -160,12 +161,12 @@ public class MeinUpload extends PluginForHost {
     private PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
         String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-        downloadLink.setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
         downloadLink.requestGuiUpdate();
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         if (id == null) {
             step.setStatus(PluginStep.STATUS_ERROR);
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
             return step;
         }
         try {
@@ -178,7 +179,7 @@ public class MeinUpload extends PluginForHost {
             String server = r.load();
             if (server == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             server = server.trim();
@@ -203,7 +204,7 @@ public class MeinUpload extends PluginForHost {
             // v
             if (r.getResponseHeader("Content-Disposition") == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             int length = r.getHttpConnection().getContentLength();
@@ -216,8 +217,8 @@ public class MeinUpload extends PluginForHost {
             if (dl.getFile().length() < 6000) {
                 String page = JDUtilities.getLocalFile(dl.getFile());
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                step.setParameter(JDLocale.L("errors.interbalhostererror", "Internal Hoster Error"));
+                downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                //step.setParameter(JDLocale.L("errors.interbalhostererror", "Internal Hoster Error"));
                 logger.severe(page);
                 return step;
             }
@@ -226,7 +227,7 @@ public class MeinUpload extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
             step.setStatus(PluginStep.STATUS_ERROR);
-            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
             return step;
         }
 
@@ -241,7 +242,7 @@ public class MeinUpload extends PluginForHost {
             Form[] forms = Form.getForms(r.getRequestInfo());
             if (forms.length != 1 || !forms[0].vars.containsKey("download")) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             sleep(15000, downloadLink);
@@ -249,7 +250,7 @@ public class MeinUpload extends PluginForHost {
 
             if (r.getResponseHeader("Content-Disposition") == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             int length = r.getHttpConnection().getContentLength();

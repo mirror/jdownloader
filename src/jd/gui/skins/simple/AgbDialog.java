@@ -32,6 +32,7 @@ import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -136,7 +137,7 @@ public class AgbDialog extends JDialog implements ActionListener {
         if (e.getSource() == btnOK) {
         	
         	plugin.setAGBChecked(checkAgbAccepted.isSelected());
-        	if ( checkAgbAccepted.isSelected() ) downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        	if ( checkAgbAccepted.isSelected() ) downloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
         	dispose();
         	
         } else if (e.getSource() == btnCancel) {

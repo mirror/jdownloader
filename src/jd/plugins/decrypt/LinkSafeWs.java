@@ -49,8 +49,8 @@ public class LinkSafeWs extends PluginForDecrypt {
 
     public LinkSafeWs() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     /*
@@ -87,9 +87,9 @@ public class LinkSafeWs extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String strURL = parameter;
                 URL url = new URL(strURL);
@@ -116,7 +116,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
                 // Decrypt abschliessen
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             }
             catch (IOException e) {
                 e.printStackTrace();

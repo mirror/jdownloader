@@ -12,6 +12,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -88,7 +89,7 @@ public class JDLowSpeed extends PluginOptional {
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
                         long size = downloadLink.getDownloadMax();
-                        if (!downloadLink.isInProgress() || downloadLink.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS || speed > minspeed) return;
+                        if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) return;
                         if (size != 0) {
                             try{
                             if (((size - downloadLink.getDownloadCurrent()) / speed) < (size / maxspeed)) { return; }
@@ -99,14 +100,14 @@ public class JDLowSpeed extends PluginOptional {
                             long othersSpeed = 0;
                             while (iter.hasNext()) {
                                 DownloadLink downloadLink2 = (DownloadLink) iter.next();
-                                if (downloadLink2.isInProgress() || downloadLink2.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
+                                if (downloadLink2.getLinkStatus().isPluginActive() || downloadLink2.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
                             }
                             if (othersSpeed != 0 && ((size - downloadLink.getDownloadCurrent()) / speed) < (size / ((maxspeed * 5 / 4) - othersSpeed))) { return; }
                         }
                     }
                     logger.info("reset download: " + downloadLink.getName());
-                    downloadLink.setStatus(DownloadLink.STATUS_TODO);
-                    downloadLink.setStatusText("");
+                    downloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                    downloadLink.getLinkStatus().setStatusText("");
                     downloadLink.reset();
 
                 }
@@ -136,7 +137,7 @@ public class JDLowSpeed extends PluginOptional {
                             ArrayList<DownloadLink> dlsToCheck = new ArrayList<DownloadLink>();
                             while (ff.hasNext()) {
                                 DownloadLink dl = ff.next();
-                                if (dl.isInProgress() || dl.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) {
+                                if (dl.getLinkStatus().isPluginActive() || dl.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                                     dls.add(dl);
                                     if (!rsOnly || dl.getPlugin().getHost().equals("rapidshare.com")) {
                                         dlsToCheck.add(dl);

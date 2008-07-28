@@ -161,7 +161,7 @@ public class HTTPLiveHeader extends Interaction {
         retries++;
         logger.info("Starting  #" + retries);
         ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title","HTTPLiveHeader Reconnect"),10);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry","HTTPLiveHeader #" + retries));
+       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry","HTTPLiveHeader #" + retries));
         if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
 
         if (script == null) {
@@ -171,7 +171,7 @@ public class HTTPLiveHeader extends Interaction {
         String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip","(IP)HTTPLiveHeader :") + preIp);
+       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip","(IP)HTTPLiveHeader :") + preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -200,7 +200,7 @@ public class HTTPLiveHeader extends Interaction {
             NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
-                progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step","(STEP)HTTPLiveHeader :") + step);
+               progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step","(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
                 Node current = steps.item(step);
                // short type = current.getNodeType();
@@ -217,7 +217,7 @@ public class HTTPLiveHeader extends Interaction {
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
                   
-                        progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), toDo.getNodeName()));
+                       progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), toDo.getNodeName()));
                 
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
@@ -331,7 +331,7 @@ public class HTTPLiveHeader extends Interaction {
         int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
         logger.finer("Wait " + waittime + " seconds ...");
         progress.increase(1);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.5_wait","(WAIT)HTTPLiveHeader "));
+       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.5_wait","(WAIT)HTTPLiveHeader "));
         try {
             Thread.sleep(waittime * 1000);
         }
@@ -349,7 +349,7 @@ public class HTTPLiveHeader extends Interaction {
         String pattern;
        
             pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-            progress.setStatusText(String.format(pattern,  preIp ,afterIP));
+           progress.setStatusText(String.format(pattern,  preIp ,afterIP));
        
 
 
@@ -363,7 +363,7 @@ public class HTTPLiveHeader extends Interaction {
             afterIP = JDUtilities.getIPAddress();
             try {
                 pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-                progress.setStatusText(String.format(pattern,  preIp ,afterIP));
+               progress.setStatusText(String.format(pattern,  preIp ,afterIP));
             } catch (Exception e) {
                 // TODO: handle exception
             }

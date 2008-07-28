@@ -46,8 +46,8 @@ static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Leben
 //           http://collectr.net/out/376910
 public Collectr() {
   super();
-  steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-  currentStep = steps.firstElement();
+  //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+  //currentStep = steps.firstElement();
 }
 
 @Override
@@ -81,9 +81,9 @@ public String getVersion() {
 }
 
 @Override
-public PluginStep doStep(PluginStep step, String parameter) {
-  if (step.getStep() == PluginStep.STEP_DECRYPT) {
-      Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+public ArrayList<DownloadLink> decryptIt(String parameter) {
+  //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+      ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
       try {
           
           progress.setRange(1);
@@ -125,7 +125,7 @@ public PluginStep doStep(PluginStep step, String parameter) {
 
           // Decrypt abschliessen
 
-          step.setParameter(decryptedLinks);
+          //step.setParameter(decryptedLinks);
       } catch (IOException e) {
           e.printStackTrace();
       }

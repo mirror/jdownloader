@@ -23,7 +23,7 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
 
     public DownloadsPesArenacom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -56,10 +56,10 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
         return version;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
                 if (id != null) {
@@ -68,7 +68,7 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
                     String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\"").getFirstMatch());
                     decryptedLinks.add(this.createDownloadlink(link));
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

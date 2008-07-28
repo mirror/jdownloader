@@ -19,7 +19,7 @@ package jd.plugins.decrypt;  import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
@@ -48,8 +48,8 @@ public class Divxvid extends PluginForDecrypt {
 
     public Divxvid() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
         default_password.add("dxd-tivi");    
         default_password.add("dxp.divxvid.org");
         default_password.add("dxp");
@@ -97,12 +97,12 @@ public class Divxvid extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         switch (step.getStep()) {
             case PluginStep.STEP_DECRYPT:
                 progress.setRange(1000);
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 URL url;
                 try {
                     url = new URL(cryptedLink);
@@ -134,7 +134,7 @@ public class Divxvid extends PluginForDecrypt {
                     }
                     logger.info(decryptedLinks.size() + " downloads decrypted");
                     progress.finalize();
-                    currentStep = null;
+                    //currentStep = null;
                 }
                 catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -143,7 +143,7 @@ public class Divxvid extends PluginForDecrypt {
                     e.printStackTrace();
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
                 break;
 
         }

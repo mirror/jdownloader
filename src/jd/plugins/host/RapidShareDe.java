@@ -31,6 +31,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -92,11 +93,11 @@ public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
 
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
         setConfigElements();
     }
@@ -112,7 +113,7 @@ public class RapidShareDe extends PluginForHost {
 
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
@@ -146,15 +147,15 @@ public class RapidShareDe extends PluginForHost {
         switch (step.getStep()) {
         case PluginStep.STEP_WAIT_TIME:
             step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.setStatusText("Premium");
+            downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_PENDING:
             step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.setStatusText("Premium");
+            downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_GET_CAPTCHA_FILE:
             step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.setStatusText("Premium");
+            downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_DOWNLOAD:
 
@@ -176,8 +177,8 @@ public class RapidShareDe extends PluginForHost {
             String page = r.load();
 String error=new Regex(page,"alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
 if(error!=null){
-    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-    step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
+    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+    //step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
     step.setStatus(PluginStep.STATUS_ERROR);
     return step;
     
@@ -201,25 +202,25 @@ if(error!=null){
                 // logger.warning(error);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
-                // step.setParameter(premium);
-                // downloadLink.setStatusText(error);
+                // downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
+                // //step.setParameter(premium);
+                // downloadLink.getLinkStatus().setStatusText(error);
                 // } else if (Regex.matches(error,
                 // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PREMIUM);
-                // step.setParameter(premium);
-                // downloadLink.setStatusText(error);
+                // downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
+                // //step.setParameter(premium);
+                // downloadLink.getLinkStatus().setStatusText(error);
                 // } else {
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
-                // downloadLink.setStatusText(error);
-                // step.setParameter(error);
+                // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                // downloadLink.getLinkStatus().setStatusText(error);
+                // //step.setParameter(error);
                 // }
                 //
                 // return step;
                 // } else {
                 // new File(downloadLink.getFileOutput()).delete();
                 //
-                // downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                // downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 //
                 // this.reportUnknownError(page, 6);
                 //
@@ -242,7 +243,7 @@ if(error!=null){
             dl.startDownload();
 
             // step.setStatus(PluginStep.STATUS_DONE);
-            // downloadLink.setStatus(DownloadLink.STATUS_DONE);
+            // downloadLink.setStatus(LinkStatus.FINISHED);
 
             return step;
         }
@@ -257,7 +258,7 @@ return null;
             if (forms.length < 2) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("konnte den Download nicht finden");
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return null;
             }
             form = forms[1];
@@ -268,7 +269,7 @@ return null;
         case PluginStep.STEP_PENDING:
             // if (aborted) {
             // logger.warning("Plugin abgebrochen");
-            // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            // downloadLink.setStatus(LinkStatus.TODO);
             // step.setStatus(PluginStep.STATUS_TODO);
             // return step;
             // }
@@ -277,16 +278,16 @@ return null;
             } catch (Exception e) {
                 try {
                     waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
+                    downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                     step.setStatus(PluginStep.STATUS_ERROR);
                 } catch (Exception es) {
                     step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("kann wartezeit nicht setzen");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     return null;
                 }
             }
-            step.setParameter((long) waittime);
+            //step.setParameter((long) waittime);
             return step;
         case PluginStep.STEP_GET_CAPTCHA_FILE:
             String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
@@ -299,7 +300,7 @@ return null;
             boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                 logger.severe("Captcha not found");
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -310,7 +311,7 @@ return null;
             }
             if (code == null || code == "") {
                 logger.severe("Bot erkannt");
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_BOT_DETECTED);
+                downloadLink.setStatus(LinkStatus.ERROR_BOT_DETECTED);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
                 return step;
@@ -321,7 +322,7 @@ return null;
         case PluginStep.STEP_DOWNLOAD:
             // if (aborted) {
             // logger.warning("Plugin abgebrochen");
-            // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+            // downloadLink.setStatus(LinkStatus.TODO);
             // step.setStatus(PluginStep.STATUS_TODO);
             // return step;
             // }
@@ -335,14 +336,14 @@ return null;
 
                 logger.severe("captcha wrong");
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, false);
             }
             return step;
 
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
         return step;
     }
 

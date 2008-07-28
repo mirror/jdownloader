@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
  * @author astaldo/JD-Team
  */
 
-public abstract class PluginForContainer extends PluginForDecrypt {
+public abstract class PluginForContainer extends Plugin {
     private static final int STATUS_NOTEXTRACTED = 0;
 
     private static final int STATUS_ERROR_EXTRACTING = 1;
@@ -43,7 +43,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     // private static final int STATUS_SUCCESS = 2;
 
     protected String md5;
-
+    protected ProgressController progress;
     private int status = STATUS_NOTEXTRACTED;
 
     protected Vector<String> downloadLinksURL;
@@ -57,6 +57,8 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
     protected Vector<String> EXTENSIONS = new Vector<String>();
+
+    private ContainerStatus containerStatus;
 
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
@@ -74,27 +76,13 @@ public abstract class PluginForContainer extends PluginForDecrypt {
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
 
-    @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    /**
-     * Wird von der parentklasse für jeden step aufgerufen. Diese Methode muss
-     * alle steps abarbeiten und abgecshlossene schritte zurückgeben
-     * 
-     * @param step
-     * @param parameter
-     * @return
-     */
-    public abstract PluginStep doStep(PluginStep step, File container);
-
     public abstract String[] encrypt(String plain);
+
+    public abstract ContainerStatus callDecryption(File file);
 
     public String createContainerString(Vector<DownloadLink> downloadLinks) {
         return null;
@@ -103,16 +91,16 @@ public abstract class PluginForContainer extends PluginForDecrypt {
     /**
      * Erstellt eine Kopie des Containers im Homedir.
      */
-    public synchronized PluginStep doDecryptStep(PluginStep step, String parameter) {
+    public synchronized void doDecryption(String parameter) {
         logger.info("DO STEP");
         String file = (String) parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
             logger.severe("Expired JD Version. Could not extract links");
-            return step;
+            return;
         }
         if (file == null) {
             logger.severe("Containerfile == null");
-            return step;
+            return;
         }
         File f = new File(file);
         if (md5 == null) md5 = JDUtilities.getLocalHash(f);
@@ -130,10 +118,10 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
             }
 
-            return doStep(step, res);
+            this.containerStatus = callDecryption(res);
 
         }
-        return null;
+        return;
     }
 
     public Vector<String> getExtensions() {
@@ -147,7 +135,9 @@ public abstract class PluginForContainer extends PluginForDecrypt {
 
         return false;
     }
-
+    public String getLinkName() {
+       return null;
+    }
     public synchronized void initContainer(String filename) {
         if (filename == null) return;
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
@@ -173,7 +163,7 @@ public abstract class PluginForContainer extends PluginForDecrypt {
             progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
 
-            doDecryptStep(new PluginStep(PluginStep.STEP_OPEN_CONTAINER, null), filename);
+            doDecryption(filename);
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
             logger.info(filename + " Parse");

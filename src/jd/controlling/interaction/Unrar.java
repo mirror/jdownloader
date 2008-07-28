@@ -24,6 +24,7 @@ import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.unrar.JUnrar;
 import jd.unrar.Merge;
 import jd.utils.JDLocale;
@@ -110,10 +111,9 @@ public class Unrar extends Interaction implements Serializable {
             unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()), password);
             unrar.useToextractlist = true;
             Vector<DownloadLink> links = lastFinishedDownload.getFilePackage().getDownloadLinks();
-            if(!links.contains(lastFinishedDownload))
-                links.add(lastFinishedDownload);
+            if (!links.contains(lastFinishedDownload)) links.add(lastFinishedDownload);
             for (int i = 0; i < links.size(); i++) {
-                unrar.link+=links.get(i).getDownloadURL()+"\r\n";
+                unrar.link += links.get(i).getDownloadURL() + "\r\n";
             }
 
         } else {
@@ -175,7 +175,7 @@ public class Unrar extends Interaction implements Serializable {
         Iterator<DownloadLink> ff = JDUtilities.getController().getDownloadLinks().iterator();
         while (ff.hasNext()) {
             DownloadLink dl = ff.next();
-            if (dl.getStatus() != DownloadLink.STATUS_DONE && dl.getStatus() != DownloadLink.STATUS_DONE) {
+            if (!dl.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 followingFiles.add(dl.getName());
             }
         }
@@ -187,8 +187,7 @@ public class Unrar extends Interaction implements Serializable {
         while (iter.hasNext()) {
             File file = (File) iter.next();
             mergeFile mergeFile = new mergeFile(file.getAbsolutePath());
-            if(!mergeFiles.contains(mergeFile))
-                mergeFiles.add(mergeFile);
+            if (!mergeFiles.contains(mergeFile)) mergeFiles.add(mergeFile);
             if (JDUtilities.getController().isContainerFile(file)) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) JDUtilities.getController().loadContainerFile(file);
             }
@@ -216,20 +215,23 @@ public class Unrar extends Interaction implements Serializable {
     public void resetInteraction() {
     }
 }
-class mergeFile extends File{
+
+class mergeFile extends File {
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
+
     public mergeFile(String pathname) {
         super(pathname);
         // TODO Auto-generated constructor stub
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof File) {
             File file = (File) obj;
-            if(!file.getParentFile().equals(getParentFile()))return false;
+            if (!file.getParentFile().equals(getParentFile())) return false;
             String oName = file.getName(), name = getName();
             String matcher = (name.matches(".*\\.\\a.$") ? (name.replaceFirst("\\.a.$", "")) : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")));
             String oMatcher = (oName.matches(".*\\.\\a.$") ? (oName.replaceFirst("\\.a.$", "")) : (oName.replaceFirst("\\.[\\d]+($|\\..*)", "")));
@@ -238,6 +240,5 @@ class mergeFile extends File{
         }
         return false;
     }
-
 
 }

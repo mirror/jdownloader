@@ -202,7 +202,7 @@ public class JUnrar {
 		this.files.put(file, Password);
 		loadPasswordlist();
 		// progress = new ProgressController("Default Unrar", 100);
-		// progress.setStatusText("Unrar-process");
+		//progress.setStatusText("Unrar-process");
 	}
 
 	/**
@@ -217,7 +217,7 @@ public class JUnrar {
 		this.files = files;
 		loadPasswordlist();
 		// progress = new ProgressController("Default Unrar", 100);
-		// progress.setStatusText("Unrar-process");
+		//progress.setStatusText("Unrar-process");
 	}
 
 	/**

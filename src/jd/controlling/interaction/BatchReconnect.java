@@ -59,7 +59,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         retries++;
         ProgressController progress = new ProgressController(JDLocale.L("interaction.batchreconnect.progress.0_title", "Batch Reconnect"), 10);
 
-        progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.1_retries", "BatchReconnect #") + retries);
+       progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.1_retries", "BatchReconnect #") + retries);
 
         SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
         int waittime = conf.getIntegerProperty(PARAM_IPCHECKWAITTIME, 0);
@@ -70,7 +70,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         String preIp = JDUtilities.getIPAddress();
 
         progress.increase(1);
-        progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.2_oldIP", "BatchReconnect Old IP:") + preIp);
+       progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.2_oldIP", "BatchReconnect Old IP:") + preIp);
         logger.finer("IP befor: " + preIp);
         runCommands();
         logger.finer("Wait " + waittime + " seconds ...");
@@ -89,7 +89,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         }
         logger.finer("Ip after: " + afterIP);
         String pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
-        progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
+       progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait " + waitForIp + " sek for new ip");
 
@@ -101,7 +101,7 @@ public class BatchReconnect extends Interaction implements Serializable {
             }
             afterIP = JDUtilities.getIPAddress();
             pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
-            progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
+           progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {

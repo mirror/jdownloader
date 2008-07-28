@@ -18,6 +18,7 @@ package jd.controlling;
 
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Vector;
@@ -203,7 +204,7 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                             dLinks.get(c).setProperties(decrypted.getProperties());
-                            dLinks.get(c).setStatusText(decrypted.getStatusText());
+                            dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusText());
                             dLinks.get(c).setDownloadMax((int) decrypted.getDownloadMax());
 
                         }
@@ -237,9 +238,9 @@ public class DistributeData extends ControlBroadcaster {
         return links;
     }
 
-    private Vector<DownloadLink> handleDecryptPlugins() {
+    private ArrayList<DownloadLink> handleDecryptPlugins() {
 
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
@@ -275,7 +276,7 @@ public class DistributeData extends ControlBroadcaster {
      * @param decryptedLinks
      * @return
      */
-    private boolean deepDecrypt(Vector<DownloadLink> decryptedLinks) {
+    private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.size() == 0) return false;
         boolean hasDecryptedLinks = false;
 
@@ -303,7 +304,7 @@ public class DistributeData extends ControlBroadcaster {
 
                         String[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
-                        Vector<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
+                        ArrayList<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
 
                         // Reicht die passwörter weiter
                         for (int t = 0; t < links.size(); t++) {

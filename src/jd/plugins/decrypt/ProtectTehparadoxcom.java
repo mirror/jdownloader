@@ -26,8 +26,8 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     public ProtectTehparadoxcom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -61,10 +61,10 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
                 String downloadid = new Regex(url.getFile(), "/([a-zA-Z0-9]+)\\!").getFirstMatch();
@@ -77,7 +77,7 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            step.setParameter(decryptedLinks);
+            //step.setParameter(decryptedLinks);
         }
         return null;
     }

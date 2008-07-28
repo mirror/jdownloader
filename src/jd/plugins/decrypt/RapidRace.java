@@ -22,12 +22,12 @@ public class RapidRace extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
 
-    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
     public RapidRace() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     public String getCoder() {
@@ -54,8 +54,8 @@ public class RapidRace extends PluginForDecrypt {
         return VERSION;
     }
 
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(parameter);
                 String finalUrl = "";
@@ -77,7 +77,7 @@ public class RapidRace extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(finalUrl));
                     quellcode = quellcode.substring(20);
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
                 e.printStackTrace();

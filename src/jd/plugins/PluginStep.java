@@ -22,7 +22,8 @@ package jd.plugins;
  * 
  * @author astaldo
  */
-public class PluginStep {
+@Deprecated
+public class   PluginStep {
     /**
      * ID für eine gewisse Wartezeit. Der dazugehörige Wert ist die Zeit in
      * Millisekunden

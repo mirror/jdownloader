@@ -44,8 +44,8 @@ public class ScumIn extends PluginForDecrypt {
 
     public ScumIn() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,9 +79,9 @@ public class ScumIn extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 String cookie = reqinfo.getCookie();
@@ -103,7 +103,7 @@ public class ScumIn extends PluginForDecrypt {
 
                 File captchaFile = this.getLocalCaptchaFile(this);
                 if (!JDUtilities.download(captchaFile, con) || !captchaFile.exists()) {
-                    step.setParameter(null);
+                    //step.setParameter(null);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -120,7 +120,7 @@ public class ScumIn extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

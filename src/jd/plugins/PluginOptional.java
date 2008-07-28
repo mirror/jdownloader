@@ -29,7 +29,7 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
     @Override
     public boolean doBotCheck(File file) { return false; }
     public static int VERSION_ID=0;
-    @Override public PluginStep doStep(PluginStep step, Object parameter) { return null; }
+  
     @Override public String getHost()            { return null; }
     @Override public String getLinkName()        { return null; }
     @Override public Pattern getSupportedLinks() { return null; }

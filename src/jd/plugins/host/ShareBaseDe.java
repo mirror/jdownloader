@@ -29,6 +29,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -62,8 +63,8 @@ public class ShareBaseDe extends PluginForHost {
     public ShareBaseDe() {
     	
         super();
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         
     }
     
@@ -129,7 +130,7 @@ public class ShareBaseDe extends PluginForHost {
         
     }
     
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
     	
         try {
         	
@@ -148,8 +149,8 @@ public class ShareBaseDe extends PluginForHost {
                     
                     if(requestInfo.containsHTML(DOWLOAD_RUNNING)){
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        step.setParameter((long)(60 * 1000));
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        //step.setParameter((long)(60 * 1000));
                         
                     }
                     // Download-Limit erreicht
@@ -173,8 +174,8 @@ public class ShareBaseDe extends PluginForHost {
                         }
                         
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                        step.setParameter((long)(waittime * 1000));
+                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        //step.setParameter((long)(waittime * 1000));
                         return step;
                         
                     }
@@ -182,7 +183,7 @@ public class ShareBaseDe extends PluginForHost {
                     //DownloadInfos nicht gefunden? --> Datei nicht vorhanden
                     if (fileName == null) {
                         logger.severe("download not found");
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         step.setStatus(PluginStep.STATUS_ERROR);
                         return step;
                     }
@@ -200,13 +201,13 @@ public class ShareBaseDe extends PluginForHost {
                         finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         if (finishURL == null) {
-                            downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
                         
                     } catch (Exception e) {
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         step.setStatus(PluginStep.STATUS_ERROR);
                          e.printStackTrace();
                     }
@@ -229,7 +230,7 @@ public class ShareBaseDe extends PluginForHost {
                       
                     } catch (IOException e) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         logger.severe("URL could not be opened. " + e.toString());
                     }
                     

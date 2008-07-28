@@ -30,7 +30,7 @@ import jd.utils.HTMLEntities;
 public class SAUGUS extends PluginForDecrypt {
 	final static String host = "saug.us";
 
-	private String version = "1.0.0.0";
+	private static String VERSION = "1.0.0.0";
 
 	// http://s2.saug.us/folder-m304wzg6qreym6d8xvtpt3gmyfqzjh0.html
 	private Pattern patternSupported = Pattern.compile(
@@ -39,8 +39,8 @@ public class SAUGUS extends PluginForDecrypt {
 
 	public SAUGUS() {
 		super();
-		steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-		currentStep = steps.firstElement();
+		//steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+		//currentStep = steps.firstElement();
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public class SAUGUS extends PluginForDecrypt {
 
 	@Override
 	public String getVersion() {
-		return version;
+		return VERSION;
 	}
 
 	public String deca1(String input) {
@@ -110,9 +110,9 @@ public class SAUGUS extends PluginForDecrypt {
 	}
 
 	@Override
-	public PluginStep doStep(PluginStep step, String parameter) {
-		if (step.getStep() == PluginStep.STEP_DECRYPT) {
-			Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+	public ArrayList<DownloadLink> decryptIt(String parameter) {
+		//if (step.getStep() == PluginStep.STEP_DECRYPT) {
+			ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 			try {
 				request.getRequest(parameter);
 				if(request.toString().contains("<span style=\"font-size:9pt;\">Dateien offline!"))
@@ -147,7 +147,7 @@ public class SAUGUS extends PluginForDecrypt {
 						decryptedLinks.add(createDownloadlink(string));
 					progress.increase(1);
 				}
-				step.setParameter(decryptedLinks);
+				//step.setParameter(decryptedLinks);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

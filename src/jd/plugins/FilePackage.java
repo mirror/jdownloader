@@ -203,9 +203,9 @@ public class FilePackage extends Property implements Serializable {
 
                 totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
                 if(next.isEnabled())totalBytesLoaded += next.getDownloadCurrent() / 1024;
-                linksInProgress += next.isInProgress() ? 1 : 0;
-                linksFinished += next.getStatus() == DownloadLink.STATUS_DONE ? 1 : 0;
-                if (next.getStatus() != DownloadLink.STATUS_DONE && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && next.getStatus() != DownloadLink.STATUS_DOWNLOAD_INCOMPLETE && next.getStatus() != DownloadLink.STATUS_TODO) {
+                linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
+                linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;
+                if (!next.getLinkStatus().hasStatus(LinkStatus.FINISHED|LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS|LinkStatus.FINISHED ) ) {
                     linksFailed++;
                 }
             }

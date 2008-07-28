@@ -24,6 +24,7 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -46,7 +47,7 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         // setConfigElements();
 
     }
@@ -81,7 +82,7 @@ public class BluehostTo extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
@@ -131,7 +132,7 @@ public class BluehostTo extends PluginForHost {
 
                 step.setStatus(PluginStep.STATUS_ERROR);
 
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 return step;
             }
             int wait = Integer.parseInt(dat[4].trim());
@@ -144,8 +145,8 @@ public class BluehostTo extends PluginForHost {
             br.getPage(downloadLink);
             if(Regex.matches(br,"Sie haben diese Datei in der letzten Stunde")){
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_WAITTIME);
-                step.setParameter(60*60*1000l);
+                downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
+                //step.setParameter(60*60*1000l);
                 logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
                 return step;
             }
@@ -156,8 +157,8 @@ public class BluehostTo extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setParameter(60*60*1000l);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                //step.setParameter(60*60*1000l);
                
                 return step;
             }

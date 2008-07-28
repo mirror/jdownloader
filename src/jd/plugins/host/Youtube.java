@@ -28,6 +28,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -58,7 +59,7 @@ public class Youtube extends PluginForHost {
 
     public Youtube() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
 
@@ -109,25 +110,25 @@ public class Youtube extends PluginForHost {
         return null;
     }
 
-    public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
+    public void handle( final DownloadLink downloadLink) {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
                 final int convert = Integer.parseInt(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
                 requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+                    //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
                     return step;
                 }
                 String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
                 String downloadfile = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), DOWNLOADFILE, 1).trim();
 
                 if ((name == null) || (downloadfile == null)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+                    //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
                     return step;
 
                 }
@@ -166,7 +167,7 @@ public class Youtube extends PluginForHost {
                             case CONVERT_ID_3GP:
                                 break;
                             case CONVERT_ID_AUDIO:
-                                progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName());
+                               progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName());
                              
                                 new FLV(downloadLink.getFileOutput(), true, true);
                                 progress.increase(1);
@@ -183,7 +184,7 @@ public class Youtube extends PluginForHost {
                             
                                 break;
                             case CONVERT_ID_AUDIO_AND_VIDEO:
-                                progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3")+" "+downloadLink.getName());
+                               progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3")+" "+downloadLink.getName());
                           
                                 new FLV(downloadLink.getFileOutput(), true, true);
                                 progress.increase(1);
@@ -198,7 +199,7 @@ public class Youtube extends PluginForHost {
                         }
                     }.start();
                     step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(DownloadLink.STATUS_DONE);
+                    downloadLink.setStatus(LinkStatus.FINISHED);
                 }
 
                 return step;

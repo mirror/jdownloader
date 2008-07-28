@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
+
 import javax.swing.DropMode;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -47,6 +48,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.config.GetExplorer;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
@@ -385,7 +387,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         enabled++;
                     else
                         disabled++;
-                    if (!next.isInProgress() && next.isFailed()) resumeable++;
+                    if (!next.getLinkStatus().isPluginActive() && next.getLinkStatus().isFailed()) resumeable++;
                 }
                 JPopupMenu popup = new JPopupMenu();
                 Plugin plg = ((DownloadLink) obj).getPlugin();
@@ -571,9 +573,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
 
             for (int i = 0; i < links.size(); i++) {
-                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                links.elementAt(i).setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
-                links.elementAt(i).getPlugin().resetSteps();
+                links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                links.elementAt(i).getLinkStatus().setStatusText(JDLocale.L("gui.linklist.status.doresume", "Warte auf Fortsetzung"));
+                //links.elementAt(i).getPlugin().resetSteps();
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
@@ -627,9 +629,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
 
             for (int i = 0; i < links.size(); i++) {
-                // if (!links.elementAt(i).isInProgress()) {
-                links.elementAt(i).setStatus(DownloadLink.STATUS_TODO);
-                links.elementAt(i).setStatusText("");
+                // if (!links.elementAt(i).isPluginActive()) {
+                links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                links.elementAt(i).getLinkStatus().setStatusText("");
                 links.elementAt(i).reset();
 
             }
@@ -750,9 +752,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
                 next = it.next();
                 for (int i = 0; i < next.size(); i++) {
-                    if (!next.get(i).isInProgress()) {
-                        next.get(i).setStatus(DownloadLink.STATUS_TODO);
-                        next.get(i).setStatusText("");
+                    if (!next.get(i).getLinkStatus().isPluginActive()) {
+                        next.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                        next.get(i).getLinkStatus().setStatusText("");
                         next.get(i).reset();
                     }
                 }
@@ -848,7 +850,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 sb.append("</p>");
                 break;
             case DownloadTreeTableModel.COL_STATUS:
-                sb.append("<p>" + link.getStatusText() + "</p>");
+                sb.append("<p>" + link.getLinkStatus().getStatusText() + "</p>");
                 break;
             case DownloadTreeTableModel.COL_PROGRESS:
                 if (link.getDownloadInstance() == null) return;

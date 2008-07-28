@@ -44,8 +44,8 @@ public class RapidsafeDe extends PluginForDecrypt {
 
     public RapidsafeDe() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,10 +79,10 @@ public class RapidsafeDe extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             if (!parameter.endsWith("/")) parameter += "/";
             try {
                 HTTP.setReadTimeout(120000);
@@ -205,7 +205,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                     progress.increase(1);
                     decryptedLinks.add(this.createDownloadlink(SimpleMatches.getSimpleMatch(content, "action=\"°\" id", 0)));
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

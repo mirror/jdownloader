@@ -82,7 +82,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
      */
     public void save() {
         // Interaction[] tmp= new Interaction[interactions.size()];
-        PluginForDecrypt plg;
+        PluginForContainer plg;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             plg = pluginsForContainer.elementAt(i);
             if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
@@ -158,7 +158,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
 //      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-        PluginForDecrypt plugin = this.getSelectedPlugin();
+        PluginForContainer plugin = this.getSelectedPlugin();
 //      currentPlugin = plugin;
         if (plugin == null) return;
 
@@ -170,7 +170,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         pop.setVisible(true);
     }
 
-    private PluginForDecrypt getSelectedPlugin() {
+    private PluginForContainer getSelectedPlugin() {
         int index = getSelectedInteractionIndex();
         if (index < 0) return null;
         return this.pluginsForContainer.elementAt(index);
@@ -182,7 +182,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         }
     }
     private void editEntry() {
-        PluginForDecrypt plugin = getSelectedPlugin();
+        PluginForContainer plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
             openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
         }

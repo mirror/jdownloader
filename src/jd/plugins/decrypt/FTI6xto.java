@@ -37,8 +37,8 @@ public class FTI6xto extends PluginForDecrypt {
 
     public FTI6xto() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,8 +72,8 @@ public class FTI6xto extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 if (!parameter.endsWith(".dlc")) {
                     URL url = new URL(parameter);
@@ -90,7 +90,7 @@ public class FTI6xto extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-            step.setParameter(new Vector<DownloadLink>());
+            //step.setParameter(new Vector<DownloadLink>());
         }
         return null;
     }

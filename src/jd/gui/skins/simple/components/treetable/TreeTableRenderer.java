@@ -14,6 +14,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -126,9 +127,9 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             dLink = (DownloadLink) value;
             if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0) {
 
-                if (!dLink.isInProgress()) {
+                if (!dLink.getLinkStatus().isPluginActive()) {
                     progress.setString("");
-                    if (dLink.getStatus() == DownloadLink.STATUS_DONE) {
+                    if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);
                         if (ui != null) {
                             ui.setSelectionForeground(DONE_COLOR_FONT_A);

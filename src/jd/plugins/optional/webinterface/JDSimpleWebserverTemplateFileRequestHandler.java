@@ -13,6 +13,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
@@ -61,11 +62,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                 next = it.next();
                 if (next.isEnabled()) {
-                    switch (next.getStatus()) {
-                    case DownloadLink.STATUS_DONE:
+                    switch (next.getLinkStatus().getLatestStatus()) {
+                    case LinkStatus.FINISHED:
                         Single_Status = "finished";
                         break;
-                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                    case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
                         Single_Status = "running";
                         break;
                     default:
@@ -135,7 +136,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (downloadLink.getRemainingWaittime() > 0) {
                 addEntry(JDLocale.L("linkinformation.waittime.name", "Wartezeit"), downloadLink.getRemainingWaittime() + " sek");
             }
-            if (downloadLink.isInProgress()) {
+            if (downloadLink.getLinkStatus().isPluginActive()) {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.underway", " ist in Bearbeitung"));
             } else {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.notunderway", " ist nicht in Bearbeitung"));
@@ -145,14 +146,14 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             } else {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
             }
-            addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getStatusText());
+            addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getLinkStatus().getStatusText());
 
             if (downloadLink.isEnabled()) {
-                switch (downloadLink.getStatus()) {
-                case DownloadLink.STATUS_DONE:
+                switch (downloadLink.getLinkStatus().getLatestStatus()) {
+                case LinkStatus.FINISHED:
                     Single_Status = "finished";
                     break;
-                case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
                     Single_Status = "running";
                     break;
                 default:
@@ -162,7 +163,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 Single_Status = "deactivated";
             }
             DownloadInterface dl;
-            if (downloadLink.isInProgress() && (dl = downloadLink.getDownloadInstance()) != null) {
+            if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {
                 addEntry(JDLocale.L("linkinformation.download.chunks.label", "Chunks"), "");
                 int i = 1;
                 for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
@@ -250,13 +251,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 if (dLink.isEnabled()) {
 
-                    switch (dLink.getStatus()) {
-                    case DownloadLink.STATUS_DONE:
+                    switch (dLink.getLinkStatus().getLatestStatus()) {
+                    case LinkStatus.FINISHED:
                         status[3] = 1;
                         h2.put("download_status", "finished");
                         break;
 
-                    case DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS:
+                    case LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS:
                         status[2] = 1;
                         h2.put("download_status", "running");
                         break;
@@ -271,7 +272,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     h2.put("download_status", "deactivated");
                 }
 
-                h2.put("download_status_text", f.format(percent) + "% " + dLink.getStatusText());
+                h2.put("download_status_text", f.format(percent) + "% " + dLink.getLinkStatus().getStatusText());
                 v2.addElement(h2);
 
             }

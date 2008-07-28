@@ -48,6 +48,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
@@ -289,7 +290,7 @@ public class JDController implements ControlListener, UIListener {
 
             }
             // Prüfen obd er Link entfernt werden soll.
-            if (lastDownloadFinished.getStatus() == DownloadLink.STATUS_DONE && JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+            if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
 
                 this.removeDownloadLink(lastDownloadFinished);
                 this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -804,7 +805,7 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
 
-                    if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                         logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
                         return true;
 
@@ -843,7 +844,7 @@ public class JDController implements ControlListener, UIListener {
                         while (it.hasNext()) {
 
                             localLink = it.next();
-                            if (localLink.getStatus() == DownloadLink.STATUS_DONE && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                            if (localLink.getLinkStatus().isStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                                 it.remove();
                                 if (fp.getDownloadLinks().size() == 0) {
                                     iterator.remove();
@@ -948,7 +949,7 @@ public class JDController implements ControlListener, UIListener {
                     }
                     progress.increase(1);
                 }
-                progress.setStatusText(downloadLinks.size() + " links found");
+               progress.setStatusText(downloadLinks.size() + " links found");
                 if (downloadLinks.size() > 0) {
                     if (JDUtilities.getSubConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
                         String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.org/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
@@ -1092,7 +1093,7 @@ public class JDController implements ControlListener, UIListener {
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DONE) i++;
+            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) i++;
         }
         return i;
     }
@@ -1105,7 +1106,7 @@ public class JDController implements ControlListener, UIListener {
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DONE) i++;
+            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) i++;
         }
         return i;
     }
@@ -1123,7 +1124,7 @@ public class JDController implements ControlListener, UIListener {
     // DownloadLink nextDownloadLink = null;
     // while (iterator.hasNext()) {
     // nextDownloadLink = iterator.next();
-    // if (nextDownloadLink.getStatus() != DownloadLink.STATUS_DONE) i++;
+    // if (nextDownloadLink.getStatus() != LinkStatus.FINISHED) i++;
     // }
     // return i;
     // }
@@ -1145,7 +1146,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS) ret++;
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) ret++;
                 }
             }
         }
@@ -1163,7 +1164,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getStatus() == DownloadLink.STATUS_DOWNLOAD_IN_PROGRESS || (nextDownloadLink.isInProgress() && !nextDownloadLink.isWaitingForReconnect() && nextDownloadLink.isEnabled())) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || (nextDownloadLink.getLinkStatus().isPluginActive() && !nextDownloadLink.isWaitingForReconnect() && nextDownloadLink.isEnabled())) {
 
                         ret++;
                     }
@@ -1362,9 +1363,9 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (!nextDownloadLink.isInProgress()) {
-                        nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
-                        nextDownloadLink.setStatusText("");
+                    if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                        nextDownloadLink.getLinkStatus().setStatusText("");
                         nextDownloadLink.reset();
                         nextDownloadLink.setEndOfWaittime(0);
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
@@ -1488,7 +1489,7 @@ public class JDController implements ControlListener, UIListener {
     // logger.finer("REset GLOBALS: " + ((PluginForHost)
     // nextDownloadLink.getPlugin()));
     // ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-    // nextDownloadLink.setStatus(DownloadLink.STATUS_TODO);
+    // nextDownloadLink.setStatus(LinkStatus.TODO);
     //
     // }
     // }
@@ -1777,9 +1778,9 @@ public class JDController implements ControlListener, UIListener {
                     }
                 }
 
-                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+              //  if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
                     finalLinks.add(link);
-                }
+              //  }
 
             }
 

@@ -45,7 +45,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     public SaveRaidrushWs() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -79,11 +79,11 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
 
@@ -101,7 +101,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } catch (IOException e) {
                 e.printStackTrace();

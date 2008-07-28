@@ -17,12 +17,11 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 
 public class AdrefIn extends PluginForDecrypt {
 
@@ -34,8 +33,8 @@ public class AdrefIn extends PluginForDecrypt {
 
     public AdrefIn() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -69,9 +68,9 @@ public class AdrefIn extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             progress.setRange(1);
             parameter = parameter.replaceFirst("http://.*?adref.in/\\?", "");
@@ -79,9 +78,9 @@ public class AdrefIn extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(parameter));
             progress.increase(1);
 
-            step.setParameter(decryptedLinks);
-        }
-        return null;
+            //step.setParameter(decryptedLinks);
+        //}
+        return decryptedLinks;
     }
 
     @Override

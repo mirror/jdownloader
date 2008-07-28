@@ -39,8 +39,8 @@ public class ShareOnAll extends PluginForDecrypt {
 
     public ShareOnAll() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,11 +74,11 @@ public class ShareOnAll extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         logger.info(cryptedLink);
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
                 URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + id + ".htm");
@@ -96,14 +96,14 @@ public class ShareOnAll extends PluginForDecrypt {
                         if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            step.setParameter(null);
+                            //step.setParameter(null);
                             step.setStatus(PluginStep.STATUS_ERROR);
                             return step;
                         }
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
-                            step.setParameter(decryptedLinks);
+                            //step.setParameter(decryptedLinks);
                             return null;
                         }
                         captchaCode = captchaCode.toUpperCase();
@@ -123,7 +123,7 @@ public class ShareOnAll extends PluginForDecrypt {
                         progress.increase(1);
                     }
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

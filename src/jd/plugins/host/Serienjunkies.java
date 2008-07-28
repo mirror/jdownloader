@@ -37,6 +37,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -93,7 +94,7 @@ public class Serienjunkies extends PluginForHost {
 
     public Serienjunkies() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -109,7 +110,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public Vector<DownloadLink> getDLinks(String parameter) {
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
 
             URL url = new URL(parameter);
@@ -415,7 +416,7 @@ public class Serienjunkies extends PluginForHost {
         return links;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         PluginStep ret = doStep0(step, downloadLink);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -429,14 +430,14 @@ public class Serienjunkies extends PluginForHost {
             case PluginStep.STEP_DECRYPT:
                String link = (String) downloadLink.getProperty("link");
                 String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
-                downloadLink.setStatusText("decrypt");
+                downloadLink.getLinkStatus().setStatusText("decrypt");
                 downloadLink.requestGuiUpdate();
                 Vector<DownloadLink> dls = getDLinks(link);
                 
                 if(dls.size() < 1) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
+                    //step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
                     return step;
                 }
@@ -500,9 +501,9 @@ public class Serienjunkies extends PluginForHost {
                 }
                 if (down.size() > 0) {
                     fp.add(downloadLink);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_PLUGIN_SPECIFIC);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
+                    //step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
                     return step;
                 }
             }

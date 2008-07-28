@@ -40,8 +40,8 @@ public class Wiireloaded extends PluginForDecrypt {
 
     public Wiireloaded() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -75,12 +75,12 @@ public class Wiireloaded extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         Vector<String> link_passwds = new Vector<String>();
         link_passwds.add("wii-reloaded.info");
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            step.setParameter(decryptedLinks);
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            //step.setParameter(decryptedLinks);
             Browser br = new Browser();
             br.setFollowRedirects(false);
             progress.setRange(3);

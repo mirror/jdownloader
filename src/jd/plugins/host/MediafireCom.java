@@ -27,6 +27,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
@@ -80,11 +81,11 @@ public class MediafireCom extends PluginForHost {
 
     public MediafireCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public PluginStep doStep(PluginStep step, final DownloadLink downloadLink) {
+    public void handle( final DownloadLink downloadLink) {
 
         try {
             switch (step.getStep()) {
@@ -92,7 +93,7 @@ public class MediafireCom extends PluginForHost {
                 url = downloadLink.getDownloadURL();
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo.containsHTML(offlinelink)) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -109,7 +110,7 @@ public class MediafireCom extends PluginForHost {
                 dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -121,7 +122,7 @@ public class MediafireCom extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
         return step;
     }

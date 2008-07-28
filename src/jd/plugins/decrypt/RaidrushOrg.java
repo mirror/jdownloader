@@ -44,7 +44,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     public RaidrushOrg() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -78,11 +78,11 @@ public class RaidrushOrg extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
 
@@ -114,7 +114,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
                     progress.increase(1);
                 }
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
                 return step;
 
             } catch (Exception e) {

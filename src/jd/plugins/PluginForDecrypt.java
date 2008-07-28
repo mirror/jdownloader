@@ -51,12 +51,12 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     }
 
-    public Vector<DownloadLink> decryptLinks(String[] cryptedLinks) {
+    public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {
         this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
-        Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-        	for (int i = 0; i < cryptedLinks.length; i++) {
-                decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
-			}
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        for (int i = 0; i < cryptedLinks.length; i++) {
+            decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
+        }
 
         this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 
@@ -85,7 +85,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    public Vector<DownloadLink> decryptLink(String cryptedLink) {
+    public ArrayList<DownloadLink> decryptLink(String cryptedLink) {
         this.cryptedLink = cryptedLink;
         if (progress != null && !progress.isFinished()) {
             progress.finalize();
@@ -94,73 +94,25 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
         progress = new ProgressController("Decrypter: " + this.getLinkName());
         progress.setStatusText("decrypt-" + getPluginName() + ": " + this.getLinkName());
-        PluginStep step = null;
+        ArrayList<DownloadLink> tmpLinks = decryptIt(cryptedLink);
+        if (tmpLinks == null) {
+            logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
 
-        while ((step = nextStep(step)) != null) {
-            doStep(step, cryptedLink);
-
-            if (nextStep(step) == null) {
-                logger.info("decrypting finished");
-                Object tmpLinks = step.getParameter();
-
-                if (tmpLinks == null || !(tmpLinks instanceof Vector)) {
-                    logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
-
-                    progress.finalize();
-                    return new Vector<DownloadLink>();
-                }
-                Vector links = (Vector) tmpLinks;
-
-                if (links.size() == 0) {
-
-                    progress.finalize();
-                    return new Vector<DownloadLink>();
-                }
-                // Vector<DownloadLink> decryptedLinks = new
-                // Vector<DownloadLink>();
-                String link;
-                try {
-                    if (links.get(0) instanceof DownloadLink) {
-
-                        for (int i = links.size() - 1; i >= 0; i--) {
-                            DownloadLink dl = (DownloadLink) links.get(i);
-                            link = JDUtilities.htmlDecode(dl.getDownloadURL());
-                            dl.setUrlDownload(link);
-
-                            if (dl.getSourcePluginPasswords() == null || dl.getSourcePluginPasswords().size() == 0) {
-                                dl.setSourcePluginPasswords(this.getDefaultPassswords());
-                            }
-                            if (link == null || link.trim().equalsIgnoreCase(cryptedLink.trim())) {
-                                links.remove(i);
-                            } else {
-
-                            }
-
-                        }
-
-                        progress.finalize();
-
-                        return (Vector<DownloadLink>) links;
-                    } else {
-                        logger.severe("ACHTUNG2 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
-
-                        progress.finalize();
-                        return new Vector<DownloadLink>();
-                    }
-
-                } catch (Exception e) {
-
-                    e.printStackTrace();
-
-                }
-
-                progress.finalize();
-
-            }
+            progress.finalize();
+            return new ArrayList<DownloadLink>();
         }
 
+        if (tmpLinks.size() == 0) {
+
+            progress.finalize();
+            return new ArrayList<DownloadLink>();
+        }
+        // Vector<DownloadLink> decryptedLinks = new
+        // Vector<DownloadLink>();
+
         progress.finalize();
-        return new Vector<DownloadLink>();
+
+        return tmpLinks;
 
     }
 
@@ -176,7 +128,8 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @return
      */
     public String[] getDecryptableLinks(String data) {
-//        Vector<String> hits = SimpleMatches.getMatches(data, getSupportedLinks());
+        // Vector<String> hits = SimpleMatches.getMatches(data,
+        // getSupportedLinks());
         String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
         if (hits != null && hits.length > 0) {
 
@@ -186,7 +139,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
                     file = file.substring(1);
                 while (file.charAt(file.length() - 1) == '"')
                     file = file.substring(0, file.length() - 1);
-                hits[i]=file;
+                hits[i] = file;
 
             }
         }
@@ -201,19 +154,19 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @param parameter
      * @return gerade abgeschlossener Schritt
      */
-    public abstract PluginStep doStep(PluginStep step, String parameter);
+    public abstract ArrayList<DownloadLink> decryptIt(String parameter);
 
     public Vector<String> getDefaultPassswords() {
         return default_password;
 
     }
 
-    /**
-     * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
-     */
-    public PluginStep doStep(PluginStep step, Object parameter) {
-        return doStep(step, (String) parameter);
-    }
+    // /**
+    // * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
+    // */
+    // public void handle( Object parameter) {
+    // return doStep(step, (String) parameter);
+    // }
 
     /**
      * Gibt den namen des internen CryptedLinks zurück
@@ -226,7 +179,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         try {
             return new URL(cryptedLink).getFile();
         } catch (MalformedURLException e) {
-            //e.printStackTrace();
+            // e.printStackTrace();
             return "";
         }
     }

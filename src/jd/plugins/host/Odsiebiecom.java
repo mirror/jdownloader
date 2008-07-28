@@ -8,6 +8,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
@@ -36,7 +37,7 @@ public class Odsiebiecom extends PluginForHost {
 
     public Odsiebiecom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -107,12 +108,12 @@ public class Odsiebiecom extends PluginForHost {
         return false;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
         if (step == null) return null;
         try {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -135,7 +136,7 @@ public class Odsiebiecom extends PluginForHost {
                 }
                 /* kein Link gefunden */
                 if (downloadurl == null) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -165,13 +166,13 @@ public class Odsiebiecom extends PluginForHost {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen!");
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                        downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                         return step;
                     }
                     /* CaptchaCode holen */
                     if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                         return step;
                     }
                     /* Überprüfen(Captcha,Password) */
@@ -179,7 +180,7 @@ public class Odsiebiecom extends PluginForHost {
                     requestInfo = HTTP.getRequest((new URL(downloadurl)), downloadcookie, referrerurl, false);
                     if (requestInfo.getLocation() != null && requestInfo.getLocation().contains("html?err")) {
                         step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                        downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                         return step;
                     }
                     downloadcookie = downloadcookie + requestInfo.getCookie();
@@ -187,20 +188,20 @@ public class Odsiebiecom extends PluginForHost {
                 /* DownloadLink suchen */
                 steplink = requestInfo.getRegexp("<a href=\"/download/(.*?)\"").getFirstMatch();
                 if (steplink == null) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
                 downloadurl = "http://odsiebie.com/download/" + steplink;
                 requestInfo = HTTP.getRequest(new URL(downloadurl), downloadcookie, referrerurl, false);
                 if (requestInfo.getLocation() == null || requestInfo.getLocation().contains("upload")) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
                 downloadurl = requestInfo.getLocation();
                 if (downloadurl == null) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }
@@ -212,7 +213,7 @@ public class Odsiebiecom extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -224,7 +225,7 @@ public class Odsiebiecom extends PluginForHost {
             dl.setResume(false);
             dl.setFilesize(length);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
@@ -234,7 +235,7 @@ public class Odsiebiecom extends PluginForHost {
             e.printStackTrace();
         }
         step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
         return step;
     }
 

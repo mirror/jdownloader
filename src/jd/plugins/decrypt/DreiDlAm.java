@@ -42,8 +42,8 @@ public class DreiDlAm extends PluginForDecrypt {
 
     public DreiDlAm() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -77,11 +77,11 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             if (parameter.indexOf("3dl.am/download/start/") != -1) {
                 ArrayList<String> links = decryptFromStart(parameter);
@@ -94,7 +94,7 @@ public class DreiDlAm extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(link));
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } else if (parameter.indexOf("3dl.am/link/") != -1) {
 
@@ -104,7 +104,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(link));
 
                 progress.increase(1);
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
 
             } else if (parameter.indexOf("3dl.am/download/") != -1) {
 
@@ -119,7 +119,7 @@ public class DreiDlAm extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(link2));
                 }
 
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             }
         }
         return null;

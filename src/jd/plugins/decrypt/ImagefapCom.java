@@ -35,12 +35,12 @@ public class ImagefapCom extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
 
-    private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private URL url;
 
     public ImagefapCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
 
     }
 
@@ -75,8 +75,8 @@ public class ImagefapCom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
                 if (!parameter.contains("view=2")) parameter += "&view=2";
@@ -90,7 +90,7 @@ public class ImagefapCom extends PluginForDecrypt {
                     progress.increase(1);
                 }
                 // Decrypt abschliessen
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

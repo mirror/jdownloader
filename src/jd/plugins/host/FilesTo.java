@@ -22,11 +22,13 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+
 import jd.config.Configuration;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
@@ -57,9 +59,9 @@ public class FilesTo extends PluginForHost {
 
     public FilesTo() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -92,13 +94,13 @@ public class FilesTo extends PluginForHost {
         return HOST + "-" + PLUGIN_VERSION;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
+    public void handle( DownloadLink downloadLink) {
 
         // if ( aborted ) {
         //    		
         // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
         // logger.warning("Plugin abgebrochen");
-        // downloadLink.setStatus(DownloadLink.STATUS_TODO);
+        // downloadLink.setStatus(LinkStatus.TODO);
         // step.setStatus(PluginStep.STATUS_TODO);
         // return step;
         //            
@@ -120,7 +122,7 @@ public class FilesTo extends PluginForHost {
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
 
                     logger.severe("download not found");
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
 
@@ -136,8 +138,8 @@ public class FilesTo extends PluginForHost {
 
                     logger.severe("Unknown error.. retry in 20 sekunden");
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                    step.setParameter(20000l);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    //step.setParameter(20000l);
                     return step;
 
                 }
@@ -149,14 +151,14 @@ public class FilesTo extends PluginForHost {
                 if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
 
                     logger.severe("Captcha download failed: " + captchaAddress);
-                    step.setParameter(null);
+                    //step.setParameter(null);
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
+                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return step;
 
                 } else {
 
-                    step.setParameter(file);
+                    //step.setParameter(file);
                     step.setStatus(PluginStep.STATUS_USER_INPUT);
 
                 }
@@ -175,14 +177,14 @@ public class FilesTo extends PluginForHost {
                 if (requestInfo.getHtmlCode() == null) {
 
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN_RETRY);
-                    step.setParameter(20000l);
+                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    //step.setParameter(20000l);
                     return step;
 
                 } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
 
                     step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
+                    downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                     return step;
 
                 }
@@ -202,7 +204,7 @@ public class FilesTo extends PluginForHost {
                 dl.setResume(true);
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     step.setStatus(PluginStep.STATUS_ERROR);
                     return step;
                 }

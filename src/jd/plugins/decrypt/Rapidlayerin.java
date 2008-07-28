@@ -27,7 +27,7 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     public Rapidlayerin() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -61,11 +61,11 @@ public class Rapidlayerin extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         try {
-            if (step.getStep() == PluginStep.STEP_DECRYPT) {
-                Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+            //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 String link = null;
                 URL url = new URL(cryptedLink);
                 RequestInfo requestInfo = HTTP.getRequest(url);
@@ -81,7 +81,7 @@ public class Rapidlayerin extends PluginForDecrypt {
                 Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
                 if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) decryptedLinks.add(this.createDownloadlink(link));
                 Context.exit();
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block

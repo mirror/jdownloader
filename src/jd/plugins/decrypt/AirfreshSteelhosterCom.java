@@ -20,7 +20,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
@@ -37,8 +37,8 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
 
     public AirfreshSteelhosterCom() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -71,9 +71,9 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
         return version;
     }
 
-    @Override public PluginStep doStep(PluginStep step, String parameter) {
-    	if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    @Override public ArrayList<DownloadLink> decryptIt(String parameter) {
+    	//if(step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     		try {
     			URL url = new URL(parameter);
     			RequestInfo reqinfo = HTTP.getRequest(url);
@@ -90,13 +90,13 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
     			
     			// Decrypt abschliessen
     			
-    			step.setParameter(decryptedLinks);
+    			//step.setParameter(decryptedLinks);
     		}
     		catch(IOException e) {
     			 e.printStackTrace();
     		}
-    	}
-    	return null;
+    	
+    	return decryptedLinks;
     }
 
     @Override

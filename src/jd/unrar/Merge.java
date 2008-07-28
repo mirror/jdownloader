@@ -70,7 +70,7 @@ public class Merge {
                         {
                         progress.setStatus((int) (pe.lCurrent * 100 / pe.lMax));
                         last=System.currentTimeMillis();
-                        progress.setStatusText(pe.lCurrent / 1048576 + " MB merged");
+                       progress.setStatusText(pe.lCurrent / 1048576 + " MB merged");
                         }
                     } catch (Exception e) {
                         // TODO: handle exception

@@ -63,8 +63,8 @@ public class CryptItCom extends PluginForDecrypt {
     public CryptItCom() {
 
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
 
     }
 
@@ -99,10 +99,10 @@ public class CryptItCom extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String url = parameter;
                 if (!url.endsWith("/")) url += "/";
@@ -115,7 +115,7 @@ public class CryptItCom extends PluginForDecrypt {
                         pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
                         if (pass == null) {
                             /* auf abbruch geklickt */
-                            step.setParameter(decryptedLinks);
+                            //step.setParameter(decryptedLinks);
                             return null;
                         }
                         String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
@@ -164,7 +164,7 @@ public class CryptItCom extends PluginForDecrypt {
                 if (decryptedLinks.size() == 0) {
                     return containerStep(step, parameter);
                 } else {
-                    step.setParameter(decryptedLinks);
+                    //step.setParameter(decryptedLinks);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -177,11 +177,11 @@ public class CryptItCom extends PluginForDecrypt {
 
     private PluginStep containerStep(PluginStep step, String parameter) {
 
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             // surpress jd warning
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            step.setParameter(decryptedLinks);
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            //step.setParameter(decryptedLinks);
 
             parameter = parameter.replace("/s/", "/d/");
             parameter = parameter.replace("/e/", "/d/");

@@ -39,8 +39,8 @@ public class FastDomainNet extends PluginForDecrypt {
 
     public FastDomainNet() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
+        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,9 +74,9 @@ public class FastDomainNet extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
             try {
 
@@ -87,7 +87,7 @@ public class FastDomainNet extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<iframe src=\"", "\" ")));
 
                 progress.increase(1);
-                step.setParameter(decryptedLinks);
+                //step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }

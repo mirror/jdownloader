@@ -92,7 +92,7 @@ public class WebUpdate extends Interaction implements Serializable {
         if((files==null||files.size()==0)&&jdus.length==0)return;
         int org;
         progress.setRange(org=files.size());
-        progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
+       progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
         
         if (files != null||jdus.length>0) {
           
