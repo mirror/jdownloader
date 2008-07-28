@@ -14,8 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Vector;
@@ -34,12 +35,11 @@ public class LinkBucks extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
 
-    private Pattern patternSupported = Pattern.compile("http://.*?linkbucks.com/link/.*", Pattern.CASE_INSENSITIVE);
+    final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+/\\d+", Pattern.CASE_INSENSITIVE);
 
     public LinkBucks() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        currentStep = steps.firstElement();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class LinkBucks extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host+"-"+version;
+        return host + "-" + version;
     }
 
     @Override
@@ -77,16 +77,10 @@ public class LinkBucks extends PluginForDecrypt {
         if (step.getStep() == PluginStep.STEP_DECRYPT) {
             Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             try {
-                progress.setRange(1);
-
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
-                String link = new Regex(reqinfo.getHtmlCode(), "<a href=\"(.*?)\" id=\"[^\"]*?\">Click here to Continue</a></p>").getFirstMatch();
-                progress.increase(1);
+                String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getFirstMatch();
                 decryptedLinks.add(this.createDownloadlink(link));
-
-                // Decrypt abschliessen
-
                 step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -94,6 +88,7 @@ public class LinkBucks extends PluginForDecrypt {
         }
         return null;
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
