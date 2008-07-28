@@ -35,7 +35,6 @@ import jd.JDInit;
 import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
@@ -134,7 +133,6 @@ public class JDController implements ControlListener, UIListener {
 
     private Unrar unrarModule;
 
-    private InfoFileWriter infoFileWriterModule;
 
     // public static Property FLAGS = new Property();
 
@@ -287,7 +285,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
             }
             // Prüfen obd er Link entfernt werden soll.
@@ -1392,17 +1390,12 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public void setInfoFileWriterModule(InfoFileWriter instance) {
-        this.infoFileWriterModule = instance;
-    }
+  
 
     public Unrar getUnrarModule() {
         return unrarModule;
     }
 
-    public InfoFileWriter getInfoFileWriterModule() {
-        return infoFileWriterModule;
-    }
 
     // /**
     // * Führt über die in der cnfig gegebenen daten einen reconnect durch.

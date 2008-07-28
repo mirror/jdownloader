@@ -39,7 +39,6 @@ import javax.swing.JOptionPane;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
-import jd.controlling.interaction.InfoFileWriter;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
@@ -293,8 +292,7 @@ public class JDInit {
         logger.finer("create Module: Unrar");
         JDUtilities.getController().setUnrarModule(Unrar.getInstance());
         logger.finer("create Module: InfoFileWriter");
-        JDUtilities.getController().setInfoFileWriterModule(InfoFileWriter.getInstance());
-
+     
     }
 
     @SuppressWarnings("unchecked")
@@ -352,7 +350,10 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("jdchat.JDChat", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
 
+        
+        
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         Double version = JDUtilities.getJavaVersion();
