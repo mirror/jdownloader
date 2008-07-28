@@ -14,10 +14,10 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-public class YourFileSendercom extends PluginForHost {
+public class Vipfilecom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "yourfilesender.com";
+    private static final String HOST = "vip-file.com";
 
     private static final String PLUGIN_NAME = HOST;
 
@@ -25,12 +25,11 @@ public class YourFileSendercom extends PluginForHost {
 
     private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String downloadurl;
 
-
-    public YourFileSendercom() {
+    public Vipfilecom() {
         super();
         steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
@@ -84,13 +83,17 @@ public class YourFileSendercom extends PluginForHost {
         downloadurl = downloadLink.getDownloadURL();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (!requestInfo.containsHTML("alert('File Not Found")) {
-                String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getMatches();
+            if (!requestInfo.containsHTML("This file not found")) {
+                String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Size:.*?<b style=\"padding-left:5px;\">([0-9\\.]*) (.*?)</b>", Pattern.CASE_INSENSITIVE)).getMatches();
 
-                if (linkinfo[0][2].matches("KBytes")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", ""))*1024.0 ));
+                if (linkinfo[0][1].matches("Gb")) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024 * 1024));
+                } else if (linkinfo[0][1].matches("Mb")) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
+                } else if (linkinfo[0][1].matches("Kb")) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
                 }
-                downloadLink.setName(linkinfo[0][0]);
+                downloadLink.setName(new Regex(downloadurl,PAT_SUPPORTED).getFirstMatch());
                 return true;
             }
         } catch (Exception e) {
@@ -110,27 +113,26 @@ public class YourFileSendercom extends PluginForHost {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 return step;
             }
-            if (requestInfo.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {
-                step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(60 * 60 * 1000L);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                return step;
-            }
-            
-            String link = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+            /*DownloadLink holen, 2x der Location folgen*/
+            String link = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch());
             if (link == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 return step;
-            }
-            /*10 Seks warten*/
-            this.sleep(10000, downloadLink);
+            }            
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-            if (requestInfo.getLocation() != null) {
+            if (requestInfo.getLocation() == null) {
                 step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 return step;
             }
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
+            if (requestInfo.getLocation() == null) {
+                step.setStatus(PluginStep.STATUS_ERROR);
+                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                return step;
+            }
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
             /* Datei herunterladen */
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
@@ -168,7 +170,7 @@ public class YourFileSendercom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.yourfilesender.com/terms.php";
+        return "http://vip-file.com/tmpl/terms.php";
     }
 
 }
