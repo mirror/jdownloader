@@ -168,6 +168,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                             added.add(container.getAbsolutePath());
                             subConfig.setProperty("ADDED", added);
                             subConfig.save();
+                            Thread.sleep(5000);
                         }
                     }
                     catch(Exception e) {
