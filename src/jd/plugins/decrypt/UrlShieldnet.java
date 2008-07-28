@@ -99,6 +99,12 @@ public class UrlShieldnet extends PluginForDecrypt {
                     }
                 }
                 if (do_continue == true) {
+                    if (reqinfo.containsHTML("window.alert")) {
+                        logger.severe(new Regex(reqinfo.getHtmlCode(), "window.alert\\(\"(.*?)\"\\)").getFirstMatch());
+                        do_continue = false;
+                    }
+                }
+                if (do_continue == true) {
                     /* doofes JS */
                     String all = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
                     String dec = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
