@@ -34,9 +34,8 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -93,11 +92,11 @@ public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
 
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
         setConfigElements();
     }
@@ -113,242 +112,202 @@ public class RapidShareDe extends PluginForHost {
 
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        if (step == null) {
-            logger.info("Plugin Ende erreicht.");
-            return null;
-        }
-
-        
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-            try {
-               this.doPremium(downloadLink);
-            } catch (Exception e) {
-                
-                e.printStackTrace();
-            }
+
+            this.doPremium(downloadLink);
+
         } else {
-            try {
-                this.doFree(downloadLink);
-            } catch (Exception e) {
-                
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
 
-    public void doPremium( DownloadLink downloadLink) throws Exception {
-
-      //  switch (step.getStep()) {
-        //case PluginStep.STEP_WAIT_TIME:
-            //step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.getLinkStatus().setStatusText("Premium");
-            step = nextStep(step);
-        //case PluginStep.STEP_PENDING:
-            //step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.getLinkStatus().setStatusText("Premium");
-            step = nextStep(step);
-        //case PluginStep.STEP_GET_CAPTCHA_FILE:
-            //step.setStatus(PluginStep.STATUS_SKIP);
-            downloadLink.getLinkStatus().setStatusText("Premium");
-            step = nextStep(step);
-        //case PluginStep.STEP_DOWNLOAD:
-
-            String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-            String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-            String formatPass = "";
-            for (int i = 0; i < pass.length(); i++) {
-                formatPass += "%" + Integer.toString(pass.charAt(i), 16);
-
-            }
-
-            String path = new URI(downloadLink.getDownloadURL()).getPath();
-            PostRequest r = new PostRequest("http://rapidshare.de");
-            r.setPostVariable("uri", JDUtilities.urlEncode(path));
-            r.setPostVariable("dl.start", "PREMIUM");
-            r.getCookies().put("user", user + "-" + formatPass);
-
-            String page = r.load();
-String error=new Regex(page,"alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
-if(error!=null){
-    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-    //step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
-    //step.setStatus(PluginStep.STATUS_ERROR);
-    return;
-    
-    
-    
-}
-            String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getFirstMatch();
-
-            HTTPConnection urlConnection;
-            GetRequest req = new GetRequest(url);
-            r.getCookies().put("user", user + "-" + formatPass);
-            req.connect();
-            urlConnection = req.getHttpConnection();
-            if (urlConnection.getHeaderField("content-disposition") == null) {
-
-                page = req.read();
-               
-                // if ((error = this.findError(page)) != null) {
-                // new File(downloadLink.getFileOutput()).delete();
-                //
-                // logger.warning(error);
-                // //step.setStatus(PluginStep.STATUS_ERROR);
-                // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
-                // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                // //step.setParameter(premium);
-                // downloadLink.getLinkStatus().setStatusText(error);
-                // } else if (Regex.matches(error,
-                // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
-                // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                // //step.setParameter(premium);
-                // downloadLink.getLinkStatus().setStatusText(error);
-                // } else {
-                // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                // downloadLink.getLinkStatus().setStatusText(error);
-                // //step.setParameter(error);
-                // }
-                //
-                // return;
-                // } else {
-                // new File(downloadLink.getFileOutput()).delete();
-                //
-                // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                //
-                // this.reportUnknownError(page, 6);
-                //
-                // //step.setStatus(PluginStep.STATUS_ERROR);
-                // return;
-                // }
-
-            }
-
-            int length = urlConnection.getContentLength();
-
-            downloadLink.setDownloadMax(length);
-            String name = getFileNameFormHeader(urlConnection);
-            if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
-            downloadLink.setName(name);
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-
-            dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            dl.startDownload();
-
-            // //step.setStatus(PluginStep.STATUS_DONE);
-            // linkStatus.addStatus(LinkStatus.FINISHED);
-
-            return;
-        }
-        // 2448143-%31%38%36%35%34%31
-return null;
-    }
-
-    public void doFree( DownloadLink downloadLink)throws Exception { LinkStatus linkStatus=downloadLink.getLinkStatus();
-      //  switch (step.getStep()) {
-        //case PluginStep.STEP_WAIT_TIME:
-            Form[] forms = Form.getForms(downloadLink.getDownloadURL());
-            if (forms.length < 2) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                logger.severe("konnte den Download nicht finden");
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return null;
-            }
-            form = forms[1];
-            form.remove("dl.start");
-            form.put("dl.start", "Free");
-            requestInfo = form.getRequestInfo();
-            return;
-        //case PluginStep.STEP_PENDING:
-            // if (aborted) {
-            // logger.warning("Plugin abgebrochen");
-            // linkStatus.addStatus(LinkStatus.TODO);
-            // //step.setStatus(PluginStep.STATUS_TODO);
-            // return;
-            // }
-            try {
-                waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
-            } catch (Exception e) {
-                try {
-                    waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
-                    linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                } catch (Exception es) {
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    logger.severe("kann wartezeit nicht setzen");
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    return null;
-                }
-            }
-            //step.setParameter((long) waittime);
-            return;
-        //case PluginStep.STEP_GET_CAPTCHA_FILE:
-            String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
-            RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
-            req.setConnection(requestInfo.getConnection());
-            form = Form.getForms(req)[0];
-            captchaFile = getLocalCaptchaFile(this, ".png");
-            String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
-            logger.info("CaptchaAdress:" + captchaAdress);
-            boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
-            if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
-                logger.severe("Captcha not found");
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            try {
-                code = Plugin.getCaptchaCode(captchaFile, this);
-            } catch (Exception e) {
-
-            }
-            if (code == null || code == "") {
-                logger.severe("Bot erkannt");
-                linkStatus.addStatus(LinkStatus.ERROR_BOT_DETECTED);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
-                return;
-            }
-            form.put("captcha", code);
-            //step.setStatus(PluginStep.STATUS_SKIP);
-            return;
-        //case PluginStep.STEP_DOWNLOAD:
-            // if (aborted) {
-            // logger.warning("Plugin abgebrochen");
-            // linkStatus.addStatus(LinkStatus.TODO);
-            // //step.setStatus(PluginStep.STATUS_TODO);
-            // return;
-            // }
-            HTTPConnection urlConnection = form.getConnection();
-            downloadLink.setName(getFileNameFormHeader(urlConnection));
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-
-           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-
-                logger.severe("captcha wrong");
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, false);
-            }
-            return;
+            this.doFree(downloadLink);
 
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 
+    public void doPremium(DownloadLink downloadLink) throws Exception {
+
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        String formatPass = "";
+        for (int i = 0; i < pass.length(); i++) {
+            formatPass += "%" + Integer.toString(pass.charAt(i), 16);
+
+        }
+
+        String path = new URI(downloadLink.getDownloadURL()).getPath();
+        PostRequest r = new PostRequest("http://rapidshare.de");
+        r.setPostVariable("uri", JDUtilities.urlEncode(path));
+        r.setPostVariable("dl.start", "PREMIUM");
+        r.getCookies().put("user", user + "-" + formatPass);
+
+        String page = r.load();
+        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
+        if (error != null) {
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors."
+            // +
+            // JDUtilities.getMD5(error), error));
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getFirstMatch();
+
+        HTTPConnection urlConnection;
+        GetRequest req = new GetRequest(url);
+        r.getCookies().put("user", user + "-" + formatPass);
+        req.connect();
+        urlConnection = req.getHttpConnection();
+        if (urlConnection.getHeaderField("content-disposition") == null) {
+
+            page = req.read();
+
+            // if ((error = this.findError(page)) != null) {
+            // new File(downloadLink.getFileOutput()).delete();
+            //
+            // logger.warning(error);
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
+            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            // //step.setParameter(premium);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // } else if (Regex.matches(error,
+            // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
+            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            // //step.setParameter(premium);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // } else {
+            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // //step.setParameter(error);
+            // }
+            //
+            // return;
+            // } else {
+            // new File(downloadLink.getFileOutput()).delete();
+            //
+            // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            //
+            // this.reportUnknownError(page, 6);
+            //
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // return;
+            // }
+
+        }
+
+        int length = urlConnection.getContentLength();
+
+        downloadLink.setDownloadMax(length);
+        String name = getFileNameFormHeader(urlConnection);
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        downloadLink.setName(name);
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.startDownload();
+
+    }
+
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        // switch (step.getStep()) {
+        // case PluginStep.STEP_WAIT_TIME:
+        Form[] forms = Form.getForms(downloadLink.getDownloadURL());
+        if (forms.length < 2) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("konnte den Download nicht finden");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return;
+        }
+        form = forms[1];
+        form.remove("dl.start");
+        form.put("dl.start", "Free");
+        requestInfo = form.getRequestInfo();
+
+        // case PluginStep.STEP_PENDING:
+        // if (aborted) {
+        // logger.warning("Plugin abgebrochen");
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
+        // }
+        try {
+            waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
+        } catch (Exception e) {
+            try {
+                waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
+                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                // step.setStatus(PluginStep.STATUS_ERROR);
+            } catch (Exception es) {
+                // step.setStatus(PluginStep.STATUS_ERROR);
+                logger.severe("kann wartezeit nicht setzen");
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                return;
+            }
+        }
+        linkStatus.setValue((int) waittime);
+
+        // case PluginStep.STEP_GET_CAPTCHA_FILE:
+        String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
+        RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
+        req.setConnection(requestInfo.getConnection());
+        form = Form.getForms(req)[0];
+        captchaFile = getLocalCaptchaFile(this, ".png");
+        String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
+        logger.info("CaptchaAdress:" + captchaAdress);
+        boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
+        if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
+            logger.severe("Captcha not found");
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            // ImageIO
+            // Error");
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        try {
+            code = Plugin.getCaptchaCode(captchaFile, this);
+        } catch (Exception e) {
+
+        }
+        if (code == null || code == "") {
+            logger.severe("Bot erkannt");
+            linkStatus.addStatus(LinkStatus.ERROR_BOT_DETECTED);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
+            return;
+        }
+        form.put("captcha", code);
+        // step.setStatus(PluginStep.STATUS_SKIP);
+
+        // case PluginStep.STEP_DOWNLOAD:
+        // if (aborted) {
+        // logger.warning("Plugin abgebrochen");
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
+        // }
+        HTTPConnection urlConnection = form.getConnection();
+        downloadLink.setName(getFileNameFormHeader(urlConnection));
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.startDownload();
+    }
+
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         Form[] forms = Form.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) return false;
         requestInfo = forms[1].getRequestInfo();

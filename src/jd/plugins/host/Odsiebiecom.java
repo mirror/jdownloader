@@ -110,7 +110,7 @@ public class Odsiebiecom extends PluginForHost {
 
      public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         
-        try {
+    
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -224,19 +224,7 @@ public class Odsiebiecom extends PluginForHost {
             dl.setChunkNum(1);
             dl.setResume(false);
             dl.setFilesize(length);
-           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            return;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+           dl.startDownload(); 
     }
 
     @Override

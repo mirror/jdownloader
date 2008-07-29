@@ -12,9 +12,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Przeslijnet extends PluginForHost {
@@ -63,71 +62,57 @@ public class Przeslijnet extends PluginForHost {
 
     public Przeslijnet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
-          //  switch (step.getStep()) {
-            //case PluginStep.STEP_PAGE:
-                url = downloadLink.getDownloadURL();
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation(downloadLink)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }                
-                return;
-            //case PluginStep.STEP_PENDING:
-                /* Zwangswarten, 15seks */
-                this.sleep(15000,downloadLink);
-                return;
-            //case PluginStep.STEP_DOWNLOAD:
-                /* Link holen */
-                String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getFirstMatch());
-                /* Datei herunterladen */
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                String filename = getFileNameFormHeader(urlConnection);
-                if (urlConnection.getContentLength() == 0) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                downloadLink.setDownloadMax(urlConnection.getContentLength());
-                downloadLink.setName(filename);
-                long length = downloadLink.getDownloadMax();
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setFilesize(length);
-               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            }
-        } catch (MalformedURLException e) {
-            
-            e.printStackTrace();
-        } catch (IOException e) {
-            
-            e.printStackTrace();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        // switch (step.getStep()) {
+        // case PluginStep.STEP_PAGE:
+        url = downloadLink.getDownloadURL();
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+
+        // case PluginStep.STEP_PENDING:
+        /* Zwangswarten, 15seks */
+        this.sleep(15000, downloadLink);
+
+        // case PluginStep.STEP_DOWNLOAD:
+        /* Link holen */
+        String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getFirstMatch());
+        /* Datei herunterladen */
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.startDownload();
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
 
             requestInfo = HTTP.getRequest(new URL(url));
             if (!requestInfo.containsHTML("Invalid download link")) {
-                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<font color=#000000>(.*?)</font>",Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<font color=#000000>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*)MB</td>").getFirstMatch()) != null) {
                     downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
@@ -137,10 +122,10 @@ public class Przeslijnet extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
