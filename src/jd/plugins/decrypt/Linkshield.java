@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,20 +30,17 @@ import jd.plugins.RequestInfo;
 public class Linkshield extends PluginForDecrypt {
 
     static private final String host = "www.linkshield.com";
-
     private String version = "1.0.0.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+", Pattern.CASE_INSENSITIVE);
 
     public Linkshield() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "Luke";
+        return "JD-Team";
     }
 
     @Override
@@ -54,7 +50,7 @@ public class Linkshield extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "linkshield.com-".concat(version);
+        return host + "-" + version;
     }
 
     @Override
@@ -74,28 +70,18 @@ public class Linkshield extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-
-                // test link: http://www.linkshield.com/c/976_956
-
-                progress.setRange(1);
-
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-
-                progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink((SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<frame src=(?!blank)", ">"))));
-
-                // Decrypten abschliessen
-
-                logger.info(decryptedLinks.size() + " download decrypted");
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        
-
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
+            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=(?!blank)(.*?)>")).getFirstMatch();
+            if (link != null) {
+                decryptedLinks.add(this.createDownloadlink(link));
+            } else
+                return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 

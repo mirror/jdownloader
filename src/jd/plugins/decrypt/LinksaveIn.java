@@ -22,14 +22,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-/*Die Api von Linksavein verursacht *falsche* DLC's*/
-/*Am ende einer DLC wird "No database selected" angehängt*/
 
 public class LinksaveIn extends PluginForDecrypt {
 
@@ -42,9 +39,7 @@ public class LinksaveIn extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public LinksaveIn() {
-        super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        super();        
     }
 
     @Override
@@ -79,8 +74,7 @@ public class LinksaveIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        String cryptedLink = (String) parameter;        
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             URL url;
             try {
@@ -93,16 +87,13 @@ public class LinksaveIn extends PluginForDecrypt {
                     JDUtilities.download(container, dlc_con);
                     JDUtilities.getController().loadContainerFile(container);
                 }
-            } catch (MalformedURLException e) {
-                
+            } catch (MalformedURLException e) {                
                 e.printStackTrace();
-            } catch (IOException e) {
-                
+                return null;
+            } catch (IOException e) {                
                 e.printStackTrace();
-            }
-
-            //step.setParameter(decryptedLinks);
-        
+                return null;
+            }       
         return decryptedLinks;
     }
 
@@ -110,5 +101,4 @@ public class LinksaveIn extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

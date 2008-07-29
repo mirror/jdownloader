@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -38,7 +37,6 @@ public class LinkBucks extends PluginForDecrypt {
 
     public LinkBucks() {
         super();
-
     }
 
     @Override
@@ -73,18 +71,19 @@ public class LinkBucks extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getFirstMatch();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getFirstMatch();
+            if (link != null) {
                 decryptedLinks.add(this.createDownloadlink(link));
-               // step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        
+            } else
+                return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 

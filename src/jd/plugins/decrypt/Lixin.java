@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -43,8 +42,6 @@ public class Lixin extends PluginForDecrypt {
 
     public Lixin() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -80,72 +77,64 @@ public class Lixin extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                RequestInfo reqInfo = null;
-                boolean lix_continue = false;
-                Matcher matcher;
-                Form form;
-                /* zuerst mal den evtl captcha abarbeiten */
-                reqInfo = HTTP.getRequest(url);
-                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                    matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
-                    if (matcher.find()) {
-                        form = reqInfo.getForms()[0];
-                        String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                            /* Fehler beim Captcha */
-                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            //this.sleep(nul,downloadLink);
-                            //step.setStatus(PluginStep.STATUS_ERROR);
-                            return decryptedLinks;
-                        }
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                        if (captchaCode == null) {
-                            /* abbruch geklickt */
-                            //step.setParameter(decryptedLinks);
-                            return decryptedLinks;
-                        }
-                        captchaCode = captchaCode.toUpperCase();
-                        form.put("capt", captchaCode);
-                        reqInfo = form.getRequestInfo();
-                    } else {
-                        lix_continue = true;
-                        break;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo reqInfo = null;
+            boolean lix_continue = false;
+            Matcher matcher;
+            Form form;
+            /* zuerst mal den evtl captcha abarbeiten */
+            reqInfo = HTTP.getRequest(url);
+            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
+                if (matcher.find()) {
+                    form = reqInfo.getForms()[0];
+                    String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+                    File captchaFile = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        /* Fehler beim Captcha */
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        return null;
                     }
-                }
-                if (lix_continue == true) {
-                    /* EinzelLink filtern */
-                    matcher = patternIframe.matcher(reqInfo.getHtmlCode());
-                    if (matcher.find()) {
-                        /* EinzelLink gefunden */
-                        String link = matcher.group(1);
-                        decryptedLinks.add(this.createDownloadlink((link)));
-                    } else {
-                        /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
-                        Form[] forms = reqInfo.getForms();
-                        for (int i = 0; i < forms.length; i++) {
-                            RequestInfo reqInfo2 = forms[i].getRequestInfo();
-                            matcher = patternIframe.matcher(reqInfo2.getHtmlCode());
-                            if (matcher.find()) {
-                                /* EinzelLink gefunden */
-                                String link = matcher.group(1);
-                                decryptedLinks.add(this.createDownloadlink((link)));
-                            }
-                        }
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    if (captchaCode == null) {
+                        /* abbruch geklickt */
+                        return null;
                     }
-
+                    captchaCode = captchaCode.toUpperCase();
+                    form.put("capt", captchaCode);
+                    reqInfo = form.getRequestInfo();
+                } else {
+                    lix_continue = true;
+                    break;
                 }
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        
-
+            if (lix_continue == true) {
+                /* EinzelLink filtern */
+                matcher = patternIframe.matcher(reqInfo.getHtmlCode());
+                if (matcher.find()) {
+                    /* EinzelLink gefunden */
+                    String link = matcher.group(1);
+                    decryptedLinks.add(this.createDownloadlink((link)));
+                } else {
+                    /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
+                    Form[] forms = reqInfo.getForms();
+                    for (int i = 0; i < forms.length; i++) {
+                        RequestInfo reqInfo2 = forms[i].getRequestInfo();
+                        matcher = patternIframe.matcher(reqInfo2.getHtmlCode());
+                        if (matcher.find()) {
+                            /* EinzelLink gefunden */
+                            String link = matcher.group(1);
+                            decryptedLinks.add(this.createDownloadlink((link)));
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
