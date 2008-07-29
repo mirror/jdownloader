@@ -35,8 +35,6 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     public RsXXXBlog() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
         default_password.add("xxx-blog.dl.am");
         default_password.add("xxx-blog.org");
     }
@@ -78,7 +76,6 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             parameter = parameter.substring(parameter.lastIndexOf("http://"));
@@ -87,8 +84,8 @@ public class RsXXXBlog extends PluginForDecrypt {
             decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-        // step.setParameter(decryptedLinks);
         return decryptedLinks;
     }
 }

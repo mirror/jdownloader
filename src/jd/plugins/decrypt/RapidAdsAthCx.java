@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -38,8 +37,6 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     public RapidAdsAthCx() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -54,7 +51,7 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "RapidAds.ath.cx-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -74,29 +71,23 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
 
-            progress.setRange(1);
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
-            String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
+            String temp = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><p><form action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (temp == null) return null;
+            String[] helpa = temp.split("&#");
             String help = "";
-
             for (int i = 0; i < helpa.length; i++) {
                 if (!helpa[i].equals("")) help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
             }
-
-            progress.increase(1);
             decryptedLinks.add(this.createDownloadlink(help));
-
-            // Decrypten abschliessen
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 

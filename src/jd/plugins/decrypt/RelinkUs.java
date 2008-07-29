@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -48,8 +48,6 @@ public class RelinkUs extends PluginForDecrypt {
     public RelinkUs() {
         super();
         this.setConfigEelements();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -64,7 +62,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Relink.us-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -85,7 +83,6 @@ public class RelinkUs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
@@ -104,14 +101,13 @@ public class RelinkUs extends PluginForDecrypt {
             add_relinkus_links(reqinfo, decryptedLinks);
             ArrayList<String> more_links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"go\\.php\\?id\\=(\\d*)\\&seite\\=(\\d*)\">", Pattern.CASE_INSENSITIVE), 0);
             for (int i = 0; i < more_links.size(); i++) {
-                url = new URL("http://relink.us/" + JDUtilities.htmlDecode(SimpleMatches.getBetween(more_links.get(i), "<a href=\"", "\">")));
+                url = new URL("http://relink.us/" + JDUtilities.htmlDecode(new Regex(more_links.get(i), "<a href=\"(.*?)\">", Pattern.CASE_INSENSITIVE).getFirstMatch()));
                 reqinfo = HTTP.getRequest(url);
                 add_relinkus_links(reqinfo, decryptedLinks);
             }
-
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }
@@ -121,7 +117,7 @@ public class RelinkUs extends PluginForDecrypt {
         progress.addToMax(links.size());
         for (int i = 0; i < links.size(); i++) {
             reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(links.get(i))), "submit=Open");
-            String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"", "\"");
+            String link = new Regex(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
 
             if (link.contains("yourlayer")) {
                 /* CHECKME: wann passiert das hier? */

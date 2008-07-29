@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -6,7 +22,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -28,7 +43,6 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     public Rapidlayerin() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -66,8 +80,6 @@ public class Rapidlayerin extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
             String link = null;
             URL url = new URL(cryptedLink);
             RequestInfo requestInfo = HTTP.getRequest(url);
@@ -81,16 +93,17 @@ public class Rapidlayerin extends PluginForDecrypt {
             Scriptable scope = cx.initStandardObjects();
             String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) decryptedLinks.add(this.createDownloadlink(link));
+            if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) {
+                decryptedLinks.add(this.createDownloadlink(link));
+            } else
+                return null;
             Context.exit();
-            // step.setParameter(decryptedLinks);
-
         } catch (MalformedURLException e) {
-            
             e.printStackTrace();
+            return null;
         } catch (IOException e) {
-            
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }
@@ -99,5 +112,4 @@ public class Rapidlayerin extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

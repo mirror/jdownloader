@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -34,13 +33,10 @@ public class RsprotectCom extends PluginForDecrypt {
     final static String host = "rsprotect.com";
 
     private String version = "1.0.0.0";
-    // www.rsprotect.com/rs-QDZkNWZyYTM/uds-AKeys-unp.rar
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public RsprotectCom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -55,7 +51,7 @@ public class RsprotectCom extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Rsprotect.com-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -75,22 +71,16 @@ public class RsprotectCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-
-            progress.setRange(1);
-
-            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\""))));
-            progress.increase(1);
-
-            // Decrypt abschliessen
-
-            // step.setParameter(decryptedLinks);
+            String link = new Regex(reqinfo.getHtmlCode(), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link == null) return null;
+            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

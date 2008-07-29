@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,23 +27,15 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-//http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
-//http://save.raidrush.ws/?id=e7ccb3ee67daff310402e5e629ab8a91
-//http://save.raidrush.ws/?id=c17ce92bc6154713f66b151b8f55684
-
 public class RaidrushOrg extends PluginForDecrypt {
 
     static private final String host = "save.raidrush.ws";
 
     private String version = "0.1";
-    // http://raidrush.org/ext/?fid=200634
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
-    // private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
 
     public RaidrushOrg() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -59,7 +50,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Raidrush.org" + version;
+        return host + "-" + version;
     }
 
     @Override
@@ -79,57 +70,44 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            Browser br = new Browser();
+            String page = br.getPage(parameter);
+            String title = new Regex(page, "<big><strong>(.*?)</strong></big>").getFirstMatch();
+            String pass = new Regex(page, "<strong>Passwort\\:</strong> <small>(.*?)</small>").getFirstMatch();
+            FilePackage fp = new FilePackage();
+            Vector<String> passes = new Vector<String>();
+            passes.add(pass);
+            fp.setName(title);
+            fp.setPassword(pass);
 
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
+            String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
+            this.progress.setRange(matches.length);
+            for (String[] match : matches) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+                String page2 = br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
+                String link = new Regex(page2, "unescape\\(\"(.*?)\"\\)").getFirstMatch();
 
-            try {
+                link = JDUtilities.htmlDecode(link);
+                link = new Regex(link, "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
+                DownloadLink dl = this.createDownloadlink(link);
+                dl.setSourcePluginPasswords(passes);
+                dl.setFilePackage(fp);
+                decryptedLinks.add(dl);
 
-                Browser br = new Browser();
-                String page = br.getPage(parameter);
-                String title = new Regex(page, "<big><strong>(.*?)</strong></big>").getFirstMatch();
-                String pass = new Regex(page, "<strong>Passwort\\:</strong> <small>(.*?)</small>").getFirstMatch();
-                FilePackage fp = new FilePackage();
-                Vector<String> passes = new Vector<String>();
-                passes.add(pass);
-                fp.setName(title);
-                fp.setPassword(pass);
-
-                String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
-                this.progress.setRange(matches.length);
-                for (String[] match : matches) {
-
-                    // match[0]= (JDUtilities.Base64Decode(match[0]);
-
-                    String page2 = br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
-                    String link = new Regex(page2, "unescape\\(\"(.*?)\"\\)").getFirstMatch();
-
-                    link = JDUtilities.htmlDecode(link);
-                    link = new Regex(link, "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
-                    DownloadLink dl = this.createDownloadlink(link);
-                    dl.setSourcePluginPasswords(passes);
-                    dl.setFilePackage(fp);
-                    decryptedLinks.add(dl);
-
-                    progress.increase(1);
-                }
-                //step.setParameter(decryptedLinks);
-                return decryptedLinks;
-
-            } catch (Exception e) {
-                e.printStackTrace();
+                progress.increase(1);
             }
 
-        
-
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
-
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

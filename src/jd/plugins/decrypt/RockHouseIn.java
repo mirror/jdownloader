@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -35,8 +34,6 @@ public class RockHouseIn extends PluginForDecrypt {
 
     public RockHouseIn() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -51,7 +48,7 @@ public class RockHouseIn extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Rock-House.in-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -71,23 +68,18 @@ public class RockHouseIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-
-            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td><a href=\'°\' target=\'_blank\'>");
-
-            default_password.add(jd.utils.JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>", "<")));
-            for (int i = 0; i < links.size(); i++) {
-                decryptedLinks.add(this.createDownloadlink(links.get(i).get(0).replaceAll("\n", "")));
+            String links[][] = new Regex(reqinfo.getHtmlCode(), "<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE).getMatches();
+            default_password.add(jd.utils.JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getFirstMatch()));
+            for (int i = 0; i < links.length; i++) {
+                decryptedLinks.add(this.createDownloadlink(links[i][0].replaceAll("\n", "")));
             }
-
-            // Decrypt abschliessen
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

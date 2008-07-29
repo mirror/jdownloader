@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -6,38 +22,20 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.parser.HTMLParser;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
 
 public class Rlslog extends PluginForDecrypt {
-    static private final String host = "Rlslog Comment Parser";
+    static private final String host = "rlslog.net";
     private String version = "1.0.0.0";
-    private static final String HOSTER_LIST = "HOSTER_LIST";
-    private String[] hosterList;
 
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
     public Rlslog() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        this.setConfigEelements();
-        this.hosterList = Regex.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
-    }
-
-    private boolean checkLink(String link) {
-
-        for (String hoster : hosterList) {
-            if (hoster.trim().length() > 2 && link.toLowerCase().contains(hoster.toLowerCase().trim())) return true;
-        }
-        return false;
     }
 
     @Override
@@ -52,7 +50,7 @@ public class Rlslog extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Rlslog Comment Parser";
+        return host + "-" + version;
     }
 
     @Override
@@ -83,7 +81,6 @@ public class Rlslog extends PluginForDecrypt {
         } else {
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
         }
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
@@ -91,15 +88,6 @@ public class Rlslog extends PluginForDecrypt {
             String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
             Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
             for (int i = 0; i < Links.length; i++) {
-
-                if (checkLink(Links[i])) {
-                    /*
-                     * links adden, die in der hosterlist stehen
-                     */
-                    DownloadLink l = this.createDownloadlink(Links[i]);
-                    decryptedLinks.add(l);
-                    l.addSourcePluginPasswords(passs);
-                }
                 if (Links[i].contains(followcomments) == true) {
                     /* weitere comment pages abrufen */
                     URL url2 = new URL(Links[i]);
@@ -107,27 +95,21 @@ public class Rlslog extends PluginForDecrypt {
                     String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
                     Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
                     for (int j = 0; j < Links2.length; j++) {
-
-                        if (checkLink(Links2[j])) {
-                            /*
-                             * links adden, die in der hosterlist stehen
-                             */
-                            DownloadLink l = this.createDownloadlink(Links2[j]);
-                            decryptedLinks.add(l);
-                            l.addSourcePluginPasswords(passs2);
-                        }
+                        DownloadLink l = this.createDownloadlink(Links2[j]);
+                        decryptedLinks.add(l);
+                        l.addSourcePluginPasswords(passs2);
                     }
+                } else {
+                    DownloadLink l = this.createDownloadlink(Links[i]);
+                    decryptedLinks.add(l);
+                    l.addSourcePluginPasswords(passs);
                 }
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
-    }
-
-    private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, getProperties(), HOSTER_LIST, JDLocale.L("plugins.decrypt.rlslog.hosterlist", "Liste der zu suchenden Hoster(Ein Hoster/Zeile)")).setDefaultValue("rapidshare.com"));
     }
 
     @Override

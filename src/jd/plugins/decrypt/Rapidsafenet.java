@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -34,14 +33,10 @@ public class Rapidsafenet extends PluginForDecrypt {
     static private final String host = "rapidsafe.net";
 
     private String version = "1.0.0.0";
-    // http://www.rapidsafe.net/rsAzNhVDZxYTM/ShapeInstall.zip.html
-    // http://3qt41pmhbf.rapidsafe.de/
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public Rapidsafenet() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-
     }
 
     @Override
@@ -56,7 +51,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Rapidsafe.net-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -76,24 +71,19 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        progress.setRange(1);
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
 
             // Links auslesen und konvertieren
-            progress.increase(1);
-            decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
+            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (link == null) return null;
+            decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(link))));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
-        // Decrypt abschliessen
-
-        // step.setParameter(decryptedLinks);
-
         return decryptedLinks;
     }
 
