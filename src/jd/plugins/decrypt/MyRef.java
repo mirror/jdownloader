@@ -22,7 +22,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -39,8 +38,6 @@ public class MyRef extends PluginForDecrypt {
 
     public MyRef() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -76,21 +73,20 @@ public class MyRef extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                String downloadid = new Regex(url.getFile(), "\\?([\\d].*)").getFirstMatch();
-                url = new URL("http://myref.de/go_counter.php?id=" + downloadid);
-                RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
-                decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //step.setParameter(decryptedLinks);
-        
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            String downloadid = new Regex(url.getFile(), "\\?([\\d].*)").getFirstMatch();
+            url = new URL("http://myref.de/go_counter.php?id=" + downloadid);
+            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
+            decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 

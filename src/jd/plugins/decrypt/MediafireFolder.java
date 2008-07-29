@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,14 +30,10 @@ import jd.plugins.RequestInfo;
 public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     private String version = "1.0.0.0";
-    // http://www.mediafire.com/?sharekey=
-    // b81a40fbdaa3d7d298f05b957ce1b5b4b7ae71a3e97d435e
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
     public MediafireFolder() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -53,7 +48,7 @@ public class MediafireFolder extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Mediafire.com-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -73,26 +68,23 @@ public class MediafireFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-
-            reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
-
-            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
-            progress.setRange(links.size());
-
-            for (int i = 0; i < links.size(); i++) {
-                decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links.get(i).get(1)));
+            String reqlink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
+            if (reqlink == null) return null;
+            reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + reqlink), reqinfo.getCookie(), parameter, true);
+            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("hm\\[.*?\\]=Array\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getMatches();
+            progress.setRange(links.length);
+            for (int i = 0; i < links.length; i++) {
+                decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links[i][0]));
                 progress.increase(1);
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 

@@ -22,7 +22,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -37,8 +36,6 @@ public class MirrorItDe extends PluginForDecrypt {
 
     public MirrorItDe() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -73,9 +70,7 @@ public class MirrorItDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
             RequestInfo reqInfo = HTTP.getRequest(new URL(parameter));
             String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
@@ -87,11 +82,10 @@ public class MirrorItDe extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(reqInfo.getLocation()));
                 progress.increase(1);
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 
@@ -99,5 +93,4 @@ public class MirrorItDe extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }
