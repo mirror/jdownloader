@@ -1,3 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -9,7 +26,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
@@ -23,7 +39,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
-    static private final String host = "gwarez.cc Decrypter";
+    static private final String host = "gwarez.cc";
     private String version = "1.0.0.0";
 
     private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
@@ -36,15 +52,12 @@ public class Gwarezcc extends PluginForDecrypt {
 
     public Gwarezcc() {
         super();
-        this.setConfigEelements();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        this.setConfigEelements();        
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
+        String cryptedLink = (String) parameter;       
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
@@ -120,12 +133,11 @@ public class Gwarezcc extends PluginForDecrypt {
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
+            return null;
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        //// step.setParameter(decryptedLinks);
-
+            return null;
+        }       
         return decryptedLinks;
     }
 
@@ -193,7 +205,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "gwarez.cc Decrypter";
+        return host + "-" + version;
     }
 
     @Override
