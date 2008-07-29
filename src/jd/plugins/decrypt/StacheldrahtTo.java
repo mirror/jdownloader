@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -37,13 +36,11 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
     public StacheldrahtTo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -73,18 +70,16 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         try {
             RequestInfo ri = HTTP.getRequest(new URL(parameter));
             String cookie = ri.getCookie().split(";")[0];
-            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
+            String links[][] = new Regex(ri.getHtmlCode(), "var InputVars = \"(.*?)\"", Pattern.CASE_INSENSITIVE).getMatches();
 
-            progress.setRange(links.size() / 2);
-            for (int i = 0; i < links.size(); i = i + 2) {
-                HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links.get(i).get(0)).openConnection());
+            progress.setRange(links.length / 2);
+            for (int i = 0; i < links.length; i = i + 2) {
+                HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i][0]).openConnection());
                 httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
                 httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
                 httpConnection.setRequestMethod("GET");
@@ -106,11 +101,10 @@ public class StacheldrahtTo extends PluginForDecrypt {
                 progress.increase(1);
                 decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 

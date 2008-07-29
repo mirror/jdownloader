@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -30,81 +29,67 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class SeCurNet extends PluginForDecrypt {
-    final static String HOST = "se-cur.net";
-    private String VERSION = "0.1.0";
-    private String CODER = "jD-Team";
-    private Pattern SUPPORT_PATTERN = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
-    private String LINK_OUT_PATTERN = "href=\"http://se-cur.net/out.php?d=°\"";
+    final static String host = "se-cur.net";
+    private String version = "0.1.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
+    private String LINK_OUT_PATTERN = "href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"";
     private String LINK_OUT_TEMPLATE = "http://se-cur.net/out.php?d=";
-    private String FRAME = "src=\"°\"";
+    private String FRAME = "src=\"(.*?)\"";
 
     public SeCurNet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public String getHost() {
-        return HOST;
+        return host;
     }
 
     @Override
     public String getPluginID() {
-        return HOST + "-" + VERSION;
+        return host + "-" + version;
     }
 
     @Override
     public String getPluginName() {
-        return HOST;
+        return host;
     }
 
     @Override
     public Pattern getSupportedLinks() {
-        return SUPPORT_PATTERN;
+        return patternSupported;
     }
 
     @Override
     public String getVersion() {
-        return VERSION;
+        return version;
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-            try {
-
-                URL url = new URL(parameter);
-                RequestInfo requestInfo = HTTP.getRequest(url);
-                ArrayList<ArrayList<String>> layerLinks = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), LINK_OUT_PATTERN);
-                progress.setRange(layerLinks.size());
-
-                for (int i = 0; i < layerLinks.size(); i++) {
-
-                    requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + layerLinks.get(i).get(0)));
-                    String link = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FRAME, 0);
-                    link = JDUtilities.htmlDecode(link);
-                    decryptedLinks.add(this.createDownloadlink(link));
-                    progress.increase(1);
-
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo requestInfo = HTTP.getRequest(url);
+            String layerLinks[][] = new Regex(requestInfo.getHtmlCode(), LINK_OUT_PATTERN, Pattern.CASE_INSENSITIVE).getMatches();
+            progress.setRange(layerLinks.length);
+            for (int i = 0; i < layerLinks.length; i++) {
+                requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + layerLinks[i][0]));
+                String link = new Regex(requestInfo.getHtmlCode(), FRAME, Pattern.CASE_INSENSITIVE).getFirstMatch();
+                link = JDUtilities.htmlDecode(link);
+                decryptedLinks.add(this.createDownloadlink(link));
+                progress.increase(1);
             }
-
-            return decryptedLinks;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return decryptedLinks;
 
     }
 
@@ -112,5 +97,4 @@ public class SeCurNet extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

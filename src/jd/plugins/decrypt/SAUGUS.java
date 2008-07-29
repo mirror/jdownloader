@@ -27,16 +27,12 @@ import jd.utils.HTMLEntities;
 
 public class SAUGUS extends PluginForDecrypt {
     final static String host = "saug.us";
-
     private static String VERSION = "1.0.0.0";
 
-    // http://s2.saug.us/folder-m304wzg6qreym6d8xvtpt3gmyfqzjh0.html
-    private Pattern patternSupported = Pattern.compile("http://.*?saug.us/folder-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
 
     public SAUGUS() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -107,7 +103,6 @@ public class SAUGUS extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             request.getRequest(parameter);
@@ -134,9 +129,9 @@ public class SAUGUS extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(string));
                 progress.increase(1);
             }
-            // step.setParameter(decryptedLinks);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

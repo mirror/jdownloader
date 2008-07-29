@@ -27,16 +27,12 @@ import jd.utils.JDUtilities;
 
 public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
-    // http://shareprotect.t-w.at/?id=F6FR
     private static String VERSION = "1.0.0.0";
 
-    // http://s2.saug.us/folder-m304wzg6qreym6d8xvtpt3gmyfqzjh0.html
-    private Pattern patternSupported = Pattern.compile("http://shareprotect.t-w.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
 
     public ShareProtect() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -71,7 +67,6 @@ public class ShareProtect extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
 
@@ -97,10 +92,9 @@ public class ShareProtect extends PluginForDecrypt {
             for (int i = 0; i < forms.length; i++) {
                 decryptedLinks.add(createDownloadlink(forms[i].action));
             }
-
-            // step.setParameter(decryptedLinks);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

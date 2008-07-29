@@ -21,29 +21,22 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
-//http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
-//http://save.raidrush.ws/?id=e7ccb3ee67daff310402e5e629ab8a91
-//http://save.raidrush.ws/?id=c17ce92bc6154713f66b151b8f55684
-
 public class SaveRaidrushWs extends PluginForDecrypt {
 
     static private final String host = "save.raidrush.ws";
 
     private String version = "1.1.0";
-    // http://raidrush.org/ext/?fid=200634
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
 
     public SaveRaidrushWs() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -58,7 +51,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Save.Raidrush.ws-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -78,40 +71,26 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-            try {
-
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-
-                progress.setRange(SimpleMatches.countOccurences(reqinfo.getHtmlCode(), patternCount));
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
-
-                for (int i = 0; i < links.size(); i++) {
-
-                    ArrayList<String> help = links.get(i);
-                    reqinfo = HTTP.getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
-                    progress.increase(1);
-                    decryptedLinks.add(this.createDownloadlink("http://" + reqinfo.getHtmlCode().trim()));
-
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+            progress.setRange(SimpleMatches.countOccurences(reqinfo.getHtmlCode(), patternCount));
+            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
+            for (int i = 0; i < links.size(); i++) {
+                ArrayList<String> help = links.get(i);
+                reqinfo = HTTP.getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
+                progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink("http://" + reqinfo.getHtmlCode().trim()));
             }
-
-            return decryptedLinks;
-
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return decryptedLinks;
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

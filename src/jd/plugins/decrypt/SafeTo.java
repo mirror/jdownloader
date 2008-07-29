@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -30,12 +29,12 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class SafeTo extends PluginForDecrypt {
-    private static final String CODER = "Bo0nZ";
-    private static final String HOST = "safe.to";
-    private static final String PLUGIN_NAME = HOST;
-    private static final String PLUGIN_VERSION = "1.0.0.0";
-    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
+    private static final String host = "safe.to";
+
+    private static final String version = "1.0.0.0";
+
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken
@@ -46,41 +45,36 @@ public class SafeTo extends PluginForDecrypt {
 
     public SafeTo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
-    /*
-     * Funktionen
-     */
     @Override
     public String getCoder() {
-        return CODER;
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
+        return "JD-Team";
     }
 
     @Override
     public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public String getVersion() {
-        return PLUGIN_VERSION;
+        return host;
     }
 
     @Override
     public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
+        return patternSupported;
+    }
+
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getVersion() {
+        return version;
+    }
+
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
     }
 
     @Override
@@ -90,7 +84,6 @@ public class SafeTo extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<ArrayList<String>> fileIDs = null;
         try {
@@ -128,21 +121,15 @@ public class SafeTo extends PluginForDecrypt {
                 }
             }
             progress.setRange(fileIDs.size());
-
             for (int i = 0; i < fileIDs.size(); i++) {
                 reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
-
                 String newLink = reqinfo.getLocation();
-
                 decryptedLinks.add(this.createDownloadlink(newLink));
                 progress.increase(1);
             }
-
-            // Decrypt abschliessen
-
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

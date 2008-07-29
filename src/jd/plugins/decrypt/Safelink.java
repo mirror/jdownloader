@@ -26,21 +26,14 @@ import jd.plugins.PluginForDecrypt;
 public class Safelink extends PluginForDecrypt {
     static private final String host = "safelink.in";
 
-    private String version = "2.0.0.0";
-    // rs-M2MjVTNyIjN/lvs0123.part1.rar.html
-    // http://www.rapidsafe.net/rs-M2MjVTNyIjN/lvs0123.part1.rar.html
-    // http://www.safelink.in/rc-UjZ4MWOwAjN/DG2.part02.rar.html
-    private Pattern patternSupported = Pattern.compile("http://.*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private String version = "2.0.0.0";    
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
     public Safelink() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
+        super();       
     }
 
-    /*
-     * Diese wichtigen Infos sollte man sich unbedingt durchlesen
-     */
+    
     @Override
     public String getCoder() {
         return "JD-Team";
@@ -53,7 +46,7 @@ public class Safelink extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Salfelink" + version;
+        return host + "-" + version;
     }
 
     @Override
@@ -77,21 +70,10 @@ public class Safelink extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // switch (step.getStep()) {
-        // //case PluginStep.STEP_DECRYPT :
-        // System.out.println(parameter);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        progress.setRange(1);
+    public ArrayList<DownloadLink> decryptIt(String parameter) {        
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();        
         parameter = parameter.replaceFirst("http://.*?/r", "http://serienjunkies.org/safe/r");
-        System.out.println(parameter);
-        decryptedLinks.add(this.createDownloadlink(parameter));
-        progress.increase(1);
-        // veraltet: firePluginEvent(new PluginEvent(this,
-        // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-        // currentStep = null;
-        // step.setParameter(decryptedLinks);
-
+        decryptedLinks.add(this.createDownloadlink(parameter));        
         return decryptedLinks;
     }
 }

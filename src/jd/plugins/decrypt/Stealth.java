@@ -33,15 +33,12 @@ import jd.utils.JDUtilities;
 
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
-
     private String version = "1.0.0.5";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public Stealth() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -81,7 +78,6 @@ public class Stealth extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             CaptchaInfo<File, String> captchaInfo = null;
@@ -92,9 +88,7 @@ public class Stealth extends PluginForDecrypt {
                     String sessid = new Regex(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
                     if (sessid == null) {
                         logger.severe("Error sessionid: " + request.getCookie());
-
-                        // step.setParameter(decryptedLinks);
-                        return decryptedLinks;
+                        return null;
                     }
                     logger.finest("Captcha Protected");
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
@@ -117,10 +111,9 @@ public class Stealth extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(decLinks[1])));
                 progress.increase(1);
             }
-
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

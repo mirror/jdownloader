@@ -38,8 +38,6 @@ public class SharebeeCom extends PluginForDecrypt {
 
     public SharebeeCom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,7 +72,6 @@ public class SharebeeCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
@@ -87,10 +84,9 @@ public class SharebeeCom extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(g[i]));
                 progress.increase(1);
             }
-
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

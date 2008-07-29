@@ -38,16 +38,12 @@ import jd.utils.JDUtilities;
  * 
  */
 public class Secured extends PluginForDecrypt {
-    // secured.in/download-2743-f4917fca.html
-    // secured.in/download-68751-35e358aa.html
-    // secured.in/download-93701-aaf2afda.html -
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_FILE_ID = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
     static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(captcha-[^\"]*)");
 
-    // simplepattern. ° ist platzhalter
     static private final String PAT_DOWNLOAD_CMD = "if (alreadyClicked == 0) {°alreadyClicked = 1;°document.getElementById('img-'+file_id).src = \"http://secured.in/images/file_loading.png\";°new Ajax.Request('ajax-handler.php',°method:'post',°parameters: {cmd: '°', download_id: dl_id},";
 
     static private final String HOST = "secured.in";
@@ -69,8 +65,7 @@ public class Secured extends PluginForDecrypt {
     private String cryptedLink;
 
     public Secured() {
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
+        super();
     }
 
     @Override
@@ -103,20 +98,6 @@ public class Secured extends PluginForDecrypt {
         return PLUGIN_ID;
     }
 
-    /**
-     * Eine Secured ID in eine URL übersetzen
-     * 
-     * @param id
-     *            Secured ID
-     * @return URL als String
-     * @throws IOException
-     * 
-     * 
-     * 
-     * 
-     * 
-     */
-
     public String decryptId(String id) throws IOException {
 
         HashMap<String, String> request = new HashMap<String, String>();
@@ -144,12 +125,9 @@ public class Secured extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // switch (step.getStep()) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.finest("Decrypt: " + cryptedLink);
         this.cryptedLink = cryptedLink;
-
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
             DOWNLOAD_CMD = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
@@ -205,16 +183,11 @@ public class Secured extends PluginForDecrypt {
                     fileUrl = null;
                 decryptedLinks.add(this.createDownloadlink(fileUrl));
                 progress.increase(1);
-
             }
-            // veraltet: firePluginEvent(new PluginEvent(this,
-            // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
-
         } catch (Exception e) {
             logger.warning("Exception: " + e);
+            return null;
         }
-        //// step.setParameter(decryptedLinks);
-
         return decryptedLinks;
     }
 

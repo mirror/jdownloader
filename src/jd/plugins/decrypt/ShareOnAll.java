@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -39,8 +38,6 @@ public class ShareOnAll extends PluginForDecrypt {
 
     public ShareOnAll() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -76,8 +73,6 @@ public class ShareOnAll extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        logger.info(cryptedLink);
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
@@ -96,15 +91,12 @@ public class ShareOnAll extends PluginForDecrypt {
                     if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                        // step.setParameter(null);
-                        // step.setStatus(PluginStep.STATUS_ERROR);
-                        return decryptedLinks;
+                        return null;
                     }
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */
-                        // step.setParameter(decryptedLinks);
-                        return decryptedLinks;
+                        return null;
                     }
                     captchaCode = captchaCode.toUpperCase();
                     form.put("c", captchaCode);
@@ -123,9 +115,9 @@ public class ShareOnAll extends PluginForDecrypt {
                     progress.increase(1);
                 }
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }
