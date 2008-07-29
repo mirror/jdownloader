@@ -24,15 +24,13 @@ import java.util.regex.Pattern;
 
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import de.savemytube.flv.FLV;
@@ -51,7 +49,7 @@ public class Youtube extends PluginForHost {
     public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
     public static final int CONVERT_ID_MP4 = 3;
     public static final int CONVERT_ID_3GP = 4;
-    
+
     static private final Pattern FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
     static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
     static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
@@ -59,7 +57,7 @@ public class Youtube extends PluginForHost {
 
     public Youtube() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
 
@@ -110,106 +108,98 @@ public class Youtube extends PluginForHost {
         return null;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(final DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
-        try {
-            if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                final int convert = Integer.parseInt(new Regex(downloadLink.getDownloadURL(), CONVERT).getFirstMatch());
-                requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getMatch( 1))-1);
-                if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
-                    return;
-                }
-                String name = new Regex(requestInfo.getHtmlCode(), FILENAME).getMatch( 1).trim(-1);
-                String downloadfile = new Regex(downloadLink.getDownloadURL(), DOWNLOADFILE).getMatch( 1).trim(-1);
 
-                if ((name == null) || (downloadfile == null)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
-                    return;
-
-                }
-                
-                switch (convert) {
-                case CONVERT_ID_MP4:
-                    downloadLink.setName(name + ".mp4");
-                    break;
-                case CONVERT_ID_3GP:
-                    downloadLink.setName(name + ".3gp");
-                    break;
-                default:
-                    downloadLink.setName(name + ".flv");
-                }
-
-                logger.info(downloadfile);
-
-                HTTPConnection urlConnection;
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
-                urlConnection = requestInfo.getConnection();
-
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setChunkNum(1);
-                dl.setRequestTimeout(100000);
-                dl.setReadTimeout(1000000);
-                dl.setResume(false);
-                if (dl.startDownload()) {
-
-                    new Thread() {
-                        public void run() {
-                            ProgressController progress = new ProgressController(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName(),3);
-                            progress.increase(1);
-                            switch (convert) {
-                            case CONVERT_ID_MP4:
-                                break;
-                            case CONVERT_ID_3GP:
-                                break;
-                            case CONVERT_ID_AUDIO:
-                               progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3")+" "+downloadLink.getName());
-                             
-                                new FLV(downloadLink.getFileOutput(), true, true);
-                                progress.increase(1);
-                                if (!new File(downloadLink.getFileOutput()).delete()) {
-                                    new File(downloadLink.getFileOutput()).deleteOnExit();
-                                }
-                                if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
-                                    new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
-                                }
-                            
-                                break;
-                            case CONVERT_ID_VIDEO:
-                                // nothing.flv stays
-                            
-                                break;
-                            case CONVERT_ID_AUDIO_AND_VIDEO:
-                               progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3")+" "+downloadLink.getName());
-                          
-                                new FLV(downloadLink.getFileOutput(), true, true);
-                                progress.increase(1);
-                                if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
-                                    new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
-                                }
-                               
-                                break;
-
-                            }
-                            progress.finalize();
-                        }
-                    }.start();
-                    //step.setStatus(PluginStep.STATUS_DONE);
-                    linkStatus.addStatus(LinkStatus.FINISHED);
-                }
-
-                return;
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        final int convert = Integer.parseInt(new Regex(downloadLink.getDownloadURL(), CONVERT).getFirstMatch());
+        requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getFirstMatch()));
+        if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+            return;
         }
-        return null;
+        String name = new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch().trim();
+        String downloadfile = new Regex(downloadLink.getDownloadURL(), DOWNLOADFILE).getFirstMatch().trim();
+
+        if ((name == null) || (downloadfile == null)) {
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+            return;
+
+        }
+
+        switch (convert) {
+        case CONVERT_ID_MP4:
+            downloadLink.setName(name + ".mp4");
+            break;
+        case CONVERT_ID_3GP:
+            downloadLink.setName(name + ".3gp");
+            break;
+        default:
+            downloadLink.setName(name + ".flv");
+        }
+
+        logger.info(downloadfile);
+
+        HTTPConnection urlConnection;
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
+        urlConnection = requestInfo.getConnection();
+
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setChunkNum(1);
+        dl.setRequestTimeout(100000);
+        dl.setReadTimeout(1000000);
+        dl.setResume(false);
+        if (dl.startDownload()) {
+
+            new Thread() {
+                public void run() {
+                    ProgressController progress = new ProgressController(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3") + " " + downloadLink.getName(), 3);
+                    progress.increase(1);
+                    switch (convert) {
+                    case CONVERT_ID_MP4:
+                        break;
+                    case CONVERT_ID_3GP:
+                        break;
+                    case CONVERT_ID_AUDIO:
+                        progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3") + " " + downloadLink.getName());
+
+                        new FLV(downloadLink.getFileOutput(), true, true);
+                        progress.increase(1);
+                        if (!new File(downloadLink.getFileOutput()).delete()) {
+                            new File(downloadLink.getFileOutput()).deleteOnExit();
+                        }
+                        if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
+                            new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
+                        }
+
+                        break;
+                    case CONVERT_ID_VIDEO:
+                        // nothing.flv stays
+
+                        break;
+                    case CONVERT_ID_AUDIO_AND_VIDEO:
+                        progress.setStatusText(JDLocale.L("plugins.host.YouTube.convert.audioAndVideo", "Erstelle *.mp3") + " " + downloadLink.getName());
+
+                        new FLV(downloadLink.getFileOutput(), true, true);
+                        progress.increase(1);
+                        if (!new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).delete()) {
+                            new File(downloadLink.getFileOutput().replaceAll(".flv", ".avi")).deleteOnExit();
+                        }
+
+                        break;
+
+                    }
+                    progress.finalize();
+                }
+            }.start();
+            // step.setStatus(PluginStep.STATUS_DONE);
+            linkStatus.addStatus(LinkStatus.FINISHED);
+        }
+
     }
 
     @Override
@@ -222,17 +212,19 @@ public class Youtube extends PluginForHost {
         // this.url = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
         try {
-            requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getMatch( 1))-1);
-            String name = new Regex(requestInfo,FILENAME).getFirstMatch();
-            
+            requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getFirstMatch()));
+            String name = new Regex(requestInfo, FILENAME).getFirstMatch();
+
             downloadLink.setName(name);
 
             if (name == null) return false;

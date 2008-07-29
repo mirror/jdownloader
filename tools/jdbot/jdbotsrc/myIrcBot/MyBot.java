@@ -58,7 +58,7 @@ public class MyBot extends PircBot {
          * 
          * public void run() { while (true) { if ((System.currentTimeMillis() -
          * lastping) > 200000) try { reconnect(); } catch
-         * (NickAlreadyInUseException e) { // TODO Auto-generated catch block
+         * (NickAlreadyInUseException e) { 
          * e.printStackTrace(); } catch (IOException e) { // TODO Auto-generated
          * catch block e.printStackTrace(); } catch (IrcException e) { // TODO
          * Auto-generated catch block e.printStackTrace(); } } } }).start();
@@ -111,7 +111,7 @@ public class MyBot extends PircBot {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             changeNick(name);
@@ -128,10 +128,10 @@ public class MyBot extends PircBot {
             Utilities.saveObject(settings, config);
             return "Es gab eine Quellcodeänderung von " + svn[5] + " am " + svn[1] + "." + svn[0] + " um " + svn[2] + ":" + svn[3] + " Uhr " + (svn[6].endsWith("--") ? "" : svn[5] + ": \"" + svn[6].replaceAll("[\n\r]", " ").replaceAll("\\&hellip\\;", "...") + "\" ") + ((settings.svnRev > version) ? " es wird bald die Version 0." + ((double) settings.svnRev) / 1000 + " oder höher verfügbar sein!" : "");
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return null;
@@ -925,7 +925,7 @@ public class MyBot extends PircBot {
             try {
                 Thread.sleep(delayOnUser);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             if (!delayedUserMsg) return;
@@ -934,7 +934,7 @@ public class MyBot extends PircBot {
             try {
                 Thread.sleep(delayOnVoice);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             if (!delayedMsg) return;
@@ -1004,7 +1004,7 @@ public class MyBot extends PircBot {
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
+                    
                     e.printStackTrace();
                 }
                 if (c++ == 1000) return null;

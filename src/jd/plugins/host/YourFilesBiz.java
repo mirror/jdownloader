@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
@@ -29,38 +28,37 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class YourFilesBiz extends PluginForHost {
-	
-    private static final String  CODER                    = "eXecuTe";
-    private static final String  HOST                     = "yourfiles.biz";
-    private static final String  PLUGIN_NAME              = HOST;
-    private static final String  PLUGIN_VERSION           = "0.1.0";
-    private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    
-    static private final Pattern PAT_SUPPORTED 			  = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
-    private static final int	 MAX_SIMULTAN_DOWNLOADS   = Integer.MAX_VALUE;
 
-    private String               downloadURL              = "";
-    private HTTPConnection        urlConnection;
-    
+    private static final String CODER = "eXecuTe";
+    private static final String HOST = "yourfiles.biz";
+    private static final String PLUGIN_NAME = HOST;
+    private static final String PLUGIN_VERSION = "0.1.0";
+    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
+    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
+
+    private String downloadURL = "";
+    private HTTPConnection urlConnection;
+
     // Suchmasken
-    private static final String  DOWNLOAD_SIZE            = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
-    private static final String  DOWNLOAD_NAME            = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
-    private static final String  DOWNLOAD_LINK            = "value='http://°'>";
-    
-    public YourFilesBiz() {
-        
-    	super();
+    private static final String DOWNLOAD_SIZE = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
+    private static final String DOWNLOAD_NAME = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
+    private static final String DOWNLOAD_LINK = "value='http://°'>";
 
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-        
+    public YourFilesBiz() {
+
+        super();
+
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+
     }
 
     @Override
@@ -100,130 +98,116 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public void reset() {
-    	
+
         this.downloadURL = "";
         urlConnection = null;
-        
+
     }
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS; 
+        return MAX_SIMULTAN_DOWNLOADS;
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
-    	
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         try {
-        	
+
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            
-            if ( requestInfo.getHtmlCode().equals("") ) {
-            	logger.severe("download not found");
-				linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-				return false;
-			}
-            
+
+            if (requestInfo.getHtmlCode().equals("")) {
+                logger.severe("download not found");
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return false;
+            }
+
             String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
             Integer length = getFileSize(requestInfo.getHtmlCode());
-            
+
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
-            	
+
                 downloadLink.setName(fileName);
 
                 try {
                     downloadLink.setDownloadMax(length);
-                } catch (Exception e) { }
-                
+                } catch (Exception e) {
+                }
+
                 return true;
-                
+
             }
 
         } catch (MalformedURLException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
 
         // unbekannter fehler
         return false;
-        
+
     }
-    
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-    	
-        try {
 
-            URL downloadUrl = new URL(downloadLink.getDownloadURL());
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-          //  switch (step.getStep()) {
-            	
-                //case PluginStep.STEP_PAGE:
-                	
-                    requestInfo = HTTP.getRequest(downloadUrl);
+        URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-                    // serverantwort leer (weiterleitung) -> download nicht verfügbar
-                    if (requestInfo.getHtmlCode().equals("")) {
-                        logger.severe("download not found");
-                        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        //step.setStatus(PluginStep.STATUS_ERROR);
-                        return;
-                    }
-                    
-                    String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
-                    downloadLink.setName(fileName);
-                    
-                    try {
-                    	int length = getFileSize(requestInfo.getHtmlCode());
-                        downloadLink.setDownloadMax(length);
-                    } catch (Exception e) {
-                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setStatus(PluginStep.STATUS_ERROR);
-                        return;
-                    }
-                    
-                    // downloadLink auslesen
-                    this.downloadURL = "http://"+JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
-                    return;
-                    
-                //case PluginStep.STEP_WAIT_TIME:
-                	
-                    // Download vorbereiten
-                    downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
-                    urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
-                    int length = urlConnection.getContentLength();
-                    
-//                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
-//                        logger.warning("Dateigrößenfehler -> Neustart");
-//                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-//                        //step.setStatus(PluginStep.STATUS_ERROR);
-//                        return;
-//                    }
-                    
-                    downloadLink.setDownloadMax(length);
-                    return;
+        // switch (step.getStep()) {
 
-                //case PluginStep.STEP_DOWNLOAD:
-                	
-                    // Download starten
-                   dl = new RAFDownload(this, downloadLink, urlConnection);
-               
-                  dl.startDownload();
-                   
-                   return;
-                   
-            }
-            
+        // case PluginStep.STEP_PAGE:
+
+        requestInfo = HTTP.getRequest(downloadUrl);
+
+        // serverantwort leer (weiterleitung) -> download nicht verfügbar
+        if (requestInfo.getHtmlCode().equals("")) {
+            logger.severe("download not found");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
-            
-        } catch (IOException e) {
-        	
-            e.printStackTrace();
-            return null;
-            
         }
-        
+
+        String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
+        downloadLink.setName(fileName);
+
+        try {
+            int length = getFileSize(requestInfo.getHtmlCode());
+            downloadLink.setDownloadMax(length);
+        } catch (Exception e) {
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+
+        // downloadLink auslesen
+        this.downloadURL = "http://" + JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+
+        // case PluginStep.STEP_WAIT_TIME:
+
+        // Download vorbereiten
+        downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
+        urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
+        int length = urlConnection.getContentLength();
+
+        // if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
+        // logger.warning("Dateigrößenfehler -> Neustart");
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
+
+        downloadLink.setDownloadMax(length);
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        // Download starten
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.startDownload();
+
     }
 
     @Override
@@ -236,24 +220,24 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     private int getFileSize(String source) {
-       
-    	int size = 0;
-    	String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
-		if ( sizeString == null ) sizeString = "";
-    	
-		if ( sizeString.contains("MB") ) {
-			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
-			size = (int) Math.round(Double.parseDouble(sizeString)*1024*1024);
-		} else if ( sizeString.contains("KB") ) {
-			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
-			size = (int) Math.round(Double.parseDouble(sizeString)*1024);
-		} else if ( sizeString.contains("Byte") ) {
-			sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
-			size = (int) Math.round(Double.parseDouble(sizeString));
-		}
-    	
-    	return size;
-    	
+
+        int size = 0;
+        String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
+        if (sizeString == null) sizeString = "";
+
+        if (sizeString.contains("MB")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString) * 1024 * 1024);
+        } else if (sizeString.contains("KB")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString) * 1024);
+        } else if (sizeString.contains("Byte")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString));
+        }
+
+        return size;
+
     }
 
 }

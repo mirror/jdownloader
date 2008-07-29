@@ -12,9 +12,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Zippysharecom extends PluginForHost {
@@ -24,6 +23,7 @@ public class Zippysharecom extends PluginForHost {
     static private final Pattern patternSupported = Pattern.compile("http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html", Pattern.CASE_INSENSITIVE);
     private String url;
     private RequestInfo requestInfo;
+
     //
     @Override
     public boolean doBotCheck(File file) {
@@ -62,79 +62,65 @@ public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
-          //  switch (step.getStep()) {
-            //case PluginStep.STEP_PAGE:
-                url = downloadLink.getDownloadURL();
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation(downloadLink)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            //case PluginStep.STEP_DOWNLOAD:
-                /* Link holen */                
-                String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);",Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                /* Datei herunterladen */
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                String filename = getFileNameFormHeader(urlConnection);
-                if (urlConnection.getContentLength() == 0) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                downloadLink.setDownloadMax(urlConnection.getContentLength());
-                downloadLink.setName(filename);
-                long length = downloadLink.getDownloadMax();
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setFilesize(length);
-               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            }
-        } catch (MalformedURLException e) {
-            
-            e.printStackTrace();
-        } catch (IOException e) {
-            
-            e.printStackTrace();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        // switch (step.getStep()) {
+        // case PluginStep.STEP_PAGE:
+        url = downloadLink.getDownloadURL();
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+
+        // case PluginStep.STEP_DOWNLOAD:
+        /* Link holen */
+        String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        /* Datei herunterladen */
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.startDownload();
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             for (int i = 1; i < 3; i++) {
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (!requestInfo.containsHTML("File does not exist")) {
-                    downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>",Pattern.CASE_INSENSITIVE)).getFirstMatch()));
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>",Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
+                    downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
                     return true;
                 }
                 Thread.sleep(250);
             }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         } catch (InterruptedException e) {
-            
+
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

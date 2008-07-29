@@ -28,9 +28,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -63,13 +62,12 @@ public class XupIn extends PluginForHost {
     public XupIn() {
 
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         /*
          * //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
          * haben aktuell keine captchas
          */
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -133,7 +131,8 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         try {
 
@@ -175,7 +174,8 @@ public class XupIn extends PluginForHost {
 
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         // if (aborted) {
         //    		
@@ -186,148 +186,122 @@ public class XupIn extends PluginForHost {
         //            
         // }
 
-        try {
+        URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-            URL downloadUrl = new URL(downloadLink.getDownloadURL());
+        // switch (step.getStep()) {
 
-          //  switch (step.getStep()) {
+        // case PluginStep.STEP_PAGE:
 
-            //case PluginStep.STEP_PAGE:
+        requestInfo = HTTP.getRequest(downloadUrl);
 
-                requestInfo = HTTP.getRequest(downloadUrl);
+        if (requestInfo.containsHTML(NOT_FOUND)) {
 
-                if (requestInfo.containsHTML(NOT_FOUND)) {
-
-                    if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
-
-                    vpass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-
-                }
-
-                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
-                downloadLink.setName(fileName);
-
-                try {
-
-                    int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
-                    downloadLink.setDownloadMax(length);
-
-                } catch (Exception e) {
-
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                cookie = requestInfo.getCookie();
-
-                if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
-
-                    logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-                    linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                if (new File(downloadLink.getFileOutput()).exists()) {
-
-                    logger.severe("File already exists: " + downloadLink.getFileOutput());
-                    linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                vid = new Regex(requestInfo.getHtmlCode(), VID).getFirstMatch();
-                vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                return;
-
-            //case PluginStep.STEP_GET_CAPTCHA_FILE:
-
-                File file = this.getLocalCaptchaFile(this);
-
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
-
-                if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
-
-                    logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                    //this.sleep(nul,downloadLink);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return;
-
-                } else {
-
-                    //step.setParameter(file);
-                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
-
-                }
-
-                break;
-
-            //case PluginStep.STEP_DOWNLOAD:
-
-                String vchep = this.getCaptchaCode(file);
-
-                if (vpass != "") {
-                    requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);
-                } else {
-                    requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vchep=" + vchep, true);
-                }
-
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                int length = urlConnection.getContentLength();
-
-                if (urlConnection.getContentType().contains("text/html")) {
-
-                    logger.severe("Captcha code or password wrong");
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
-
-                    logger.severe("Filesize Error");
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                // Download starten
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-
-               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-
-                }
-
-                return;
-
-            }
-
-            return;
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
+            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
         }
+
+        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
+
+            vpass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+
+        }
+
+        String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+        downloadLink.setName(fileName);
+
+        try {
+
+            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
+            downloadLink.setDownloadMax(length);
+
+        } catch (Exception e) {
+
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        cookie = requestInfo.getCookie();
+
+        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+
+            logger.severe("File already is in progress: " + downloadLink.getFileOutput());
+            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        if (new File(downloadLink.getFileOutput()).exists()) {
+
+            logger.severe("File already exists: " + downloadLink.getFileOutput());
+            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        vid = new Regex(requestInfo.getHtmlCode(), VID).getFirstMatch();
+        vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+        captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+
+        // case PluginStep.STEP_GET_CAPTCHA_FILE:
+
+        File file = this.getLocalCaptchaFile(this);
+
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
+
+        if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
+
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            // this.sleep(nul,downloadLink);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+                                                                    // ImageIO
+                                                                    // Error");
+            return;
+
+        }
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        String vchep = this.getCaptchaCode(file);
+
+        if (vpass != "") {
+            requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);
+        } else {
+            requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vchep=" + vchep, true);
+        }
+
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        int length = urlConnection.getContentLength();
+
+        if (urlConnection.getContentType().contains("text/html")) {
+
+            logger.severe("Captcha code or password wrong");
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
+
+            logger.severe("Filesize Error");
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        // Download starten
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.startDownload();
 
     }
 
