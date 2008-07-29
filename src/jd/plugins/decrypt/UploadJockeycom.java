@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -6,8 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -16,19 +31,14 @@ import jd.utils.JDUtilities;
 
 public class UploadJockeycom extends PluginForDecrypt {
 
-    static private final String HOST = "UploadJockey Decrypter";
-
+    static private final String HOST = "uploadjockey.com";
     private String VERSION = "1.0.0";
-
     private String CODER = "JD-Team";
 
-    static private final Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern(), Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
 
     public UploadJockeycom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -64,27 +74,23 @@ public class UploadJockeycom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         URL url;
         RequestInfo requestInfo;
         try {
             url = new URL(cryptedLink);
             requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-            ArrayList<String> links = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"http\\:\\/\\/www\\.uploadjockey\\.com\\/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE), 1);
-            for (int i = 0; i < links.size(); i++) {
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.Base64Decode(links.get(i))));
+            String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"http\\:\\/\\/www\\.uploadjockey\\.com\\/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            for (int i = 0; i < links.length; i++) {
+                decryptedLinks.add(this.createDownloadlink(JDUtilities.Base64Decode(links[i][0])));
             }
-
         } catch (MalformedURLException e) {
-            
             e.printStackTrace();
+            return null;
         } catch (IOException e) {
-            
             e.printStackTrace();
+            return null;
         }
-
-        // step.setParameter(decryptedLinks);
         return decryptedLinks;
     }
 
@@ -92,5 +98,4 @@ public class UploadJockeycom extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -32,15 +31,11 @@ import jd.utils.JDUtilities;
 public class UpPicoasisNet extends PluginForDecrypt {
 
     final static String host = "up.picoasis.net";
-
     private String version = "1.0.0.0";
-
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
 
     public UpPicoasisNet() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -55,7 +50,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "up.Picoasis.net-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -75,22 +70,17 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
 
-            progress.setRange(1);
-
-            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"", "\"></iframe>"))));
-            progress.increase(1);
-
-            // Decrypt abschliessen
-
-            // step.setParameter(decryptedLinks);
+            String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>",Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link == null) return null;
+            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

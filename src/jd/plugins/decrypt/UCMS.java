@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -45,7 +44,6 @@ public class UCMS extends PluginForDecrypt {
 
     public UCMS() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -80,7 +78,6 @@ public class UCMS extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
@@ -153,10 +150,9 @@ public class UCMS extends PluginForDecrypt {
                     decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(links[j][0])));
                 }
             }
-            // Decrypten abschliessen
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

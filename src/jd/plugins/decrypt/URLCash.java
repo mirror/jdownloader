@@ -31,14 +31,11 @@ import jd.plugins.RequestInfo;
 public class URLCash extends PluginForDecrypt {
 
     static private String host = "urlcash.net";
-
     private String version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)", Pattern.CASE_INSENSITIVE);
 
     public URLCash() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
+        super();        
     }
 
     @Override
@@ -72,21 +69,14 @@ public class URLCash extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) {        
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            progress.setRange(1);
-
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getFirstMatch();
-            progress.increase(1);
-            decryptedLinks.add(this.createDownloadlink(link));
-
-            // Decrypt abschliessen
-
-            // step.setParameter(decryptedLinks);
+            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">",Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link==null) return null;
+            decryptedLinks.add(this.createDownloadlink(link));           
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -23,7 +39,6 @@ import org.mozilla.javascript.Scriptable;
 public class UrlShieldnet extends PluginForDecrypt {
 
     static private final String host = "urlshield.net";
-
     private String version = "1.0.0.0";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?urlshield\\.net/l/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
@@ -33,7 +48,6 @@ public class UrlShieldnet extends PluginForDecrypt {
 
     public UrlShieldnet() {
         super();
-        
     }
 
     @Override
@@ -71,8 +85,6 @@ public class UrlShieldnet extends PluginForDecrypt {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            // if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
             URL url;
             url = new URL(cryptedLink);
             boolean do_continue = true;
@@ -135,27 +147,21 @@ public class UrlShieldnet extends PluginForDecrypt {
                         if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
-                            // step.setParameter(decryptedLinks);
-                            return decryptedLinks;
+                            return null;
                         }
                         /* CaptchaCode holen */
-                        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                            // step.setParameter(decryptedLinks);
-                            return decryptedLinks;
-                        }
+                        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return null; }
                         form.vars.put("userkey", captchaCode);
                         reqinfo = form.getRequestInfo(false);
                     }
                 }
             }
-            // step.setParameter(decryptedLinks);
-
         } catch (MalformedURLException e) {
-            
             e.printStackTrace();
+            return null;
         } catch (IOException e) {
-            
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }
