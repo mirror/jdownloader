@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,17 +30,13 @@ import jd.plugins.RequestInfo;
 public class Tinyurl extends PluginForDecrypt {
 
     static private String host = "tinyurl.com";
-
     private String version = "2.0.0.0";
-    // tinyurl.com/preview.php?num=37nt3d
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})", Pattern.CASE_INSENSITIVE);
 
-    private Pattern patternLink = Pattern.compile("http://tinyurl\\.com/.*");
+    private Pattern patternLink = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/.*");
 
     public Tinyurl() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -56,7 +51,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Tinyurl-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -76,10 +71,8 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            progress.setRange(1);
             if (!parameter.matches("http://.*?tinyurl\\.com/preview\\.php\\?num\\=[a-zA-Z0-9]{6}")) {
                 parameter = parameter.replaceFirst("tinyurl\\.com/", "tinyurl.com/preview.php?num=");
             }
@@ -88,20 +81,16 @@ public class Tinyurl extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
 
             // Besonderen Link herausfinden
-            if (SimpleMatches.countOccurences(parameter, patternLink) > 0) {
+            if (parameter.matches(patternLink.toString())) {
                 String[] result = parameter.split("/");
                 reqinfo = HTTP.getRequest(new URL("http://tinyurl.com/" + result[result.length - 1]));
             }
 
             // Link der Liste hinzufügen
-            progress.increase(1);
-            decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"", "\">Proceed to")));
-
-            // Decrypt abschliessen
-
-            // step.setParameter(decryptedLinks);
+            decryptedLinks.add(this.createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getFirstMatch()));
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

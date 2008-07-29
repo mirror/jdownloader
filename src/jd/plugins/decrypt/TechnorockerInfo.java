@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,20 +30,18 @@ import jd.plugins.RequestInfo;
 public class TechnorockerInfo extends PluginForDecrypt {
 
     final static String host = "technorocker.info";
-
     private String version = "0.1.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public TechnorockerInfo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
+        default_password.add("technorocker");
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -74,26 +71,17 @@ public class TechnorockerInfo extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-        default_password.add("technorocker");
-
         try {
-
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<a href=\"", "\"><b>here</b>");
-            progress.setRange(1);
+            String link = new Regex(reqinfo.getHtmlCode(), "<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link == null) return null;
             decryptedLinks.add(this.createDownloadlink(link));
-            progress.increase(1);
-            // step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
-
     }
 
     @Override
