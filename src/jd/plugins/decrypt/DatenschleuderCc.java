@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -31,13 +30,11 @@ import jd.plugins.RequestInfo;
 public class DatenschleuderCc extends PluginForDecrypt {
 
     final static String host = "datenschleuder.cc";
-    private String version = "0.2.0";
+    private String version = "1.0.0";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+", Pattern.CASE_INSENSITIVE);
 
     public DatenschleuderCc() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,27 +69,23 @@ public class DatenschleuderCc extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-            try {
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-                String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                progress.setRange(links.length);
-
-                for (int i = 0; i < links.length; i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + links[i]));
-                    String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
+            String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            progress.setRange(links.length);
+            for (int i = 0; i < links.length; i++) {
+                reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + links[i]));
+                String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (link != null) {
                     progress.increase(1);
-
                     decryptedLinks.add(createDownloadlink(link.replace("http://anonym.to?", "")));
                 }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
-        
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
@@ -100,5 +93,4 @@ public class DatenschleuderCc extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

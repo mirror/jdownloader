@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -31,12 +30,10 @@ import jd.plugins.RequestInfo;
 public class DDLMusicOrg extends PluginForDecrypt {
     final static String host = "ddl-music.org";
     private String version = "0.1.0";
-    private Pattern patternSupported = Pattern.compile("http://http://[\\w\\.]*?ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -71,34 +68,19 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
 
             if (parameter.indexOf("music_crypth.php") != -1) {
-
                 parameter = parameter.replace("music_crypth.php", "frame_crypth.php");
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                progress.setRange(1);
-
                 decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
-
-                progress.increase(1);
-                //// step.setParameter(decryptedLinks);
-
             } else if (parameter.indexOf("site=view_download") != -1) {
-
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-
                 // passwort auslesen
                 if (reqinfo.getHtmlCode().indexOf("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>") != -1) {
-
                     String password = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n" + "                      </tr>\n" + "                      <tr>\n" + "                      <td class=\"normal\"><div align=\"center\">", "</div></td>");
-
                     default_password.add(password);
-
                 }
 
                 ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
@@ -124,19 +106,12 @@ public class DDLMusicOrg extends PluginForDecrypt {
                         }
                     }
                     j++;
-
                 }
-
-                //// step.setParameter(decryptedLinks);
-
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return decryptedLinks;
-
     }
 
     @Override

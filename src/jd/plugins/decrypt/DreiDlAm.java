@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -33,15 +32,11 @@ public class DreiDlAm extends PluginForDecrypt {
     final static String host = "3dl.am";
 
     private String version = "0.6.1";
-
-    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" +
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
-            "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
 
     public DreiDlAm() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -76,9 +71,6 @@ public class DreiDlAm extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         if (parameter.indexOf("3dl.am/download/start/") != -1) {
@@ -91,35 +83,22 @@ public class DreiDlAm extends PluginForDecrypt {
                 link = decryptFromLink(links.get(i));
                 decryptedLinks.add(this.createDownloadlink(link));
             }
-
-            //// step.setParameter(decryptedLinks);
-
         } else if (parameter.indexOf("3dl.am/link/") != -1) {
-
             progress.setRange(1);
-
             String link = decryptFromLink(parameter);
             decryptedLinks.add(this.createDownloadlink(link));
-
             progress.increase(1);
-            //// step.setParameter(decryptedLinks);
-
         } else if (parameter.indexOf("3dl.am/download/") != -1) {
-
             String link1 = decryptFromDownload(parameter);
             ArrayList<String> links = decryptFromStart(link1);
             progress.setRange(links.size());
             String link2 = new String();
-
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link2 = decryptFromLink(links.get(i));
                 decryptedLinks.add(this.createDownloadlink(link2));
             }
-
-            //// step.setParameter(decryptedLinks);
         }
-
         return decryptedLinks;
     }
 
@@ -148,16 +127,14 @@ public class DreiDlAm extends PluginForDecrypt {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return link;
-
     }
 
     private ArrayList<String> decryptFromStart(String parameter) {
         ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
         ArrayList<String> linksReturn = new ArrayList<String>();
-
         try {
             RequestInfo request = HTTP.getRequest(new URL(parameter));
             links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "value='http://3dl.am/link/°/'");
@@ -165,24 +142,22 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 linksReturn.add("http://3dl.am/link/" + links.get(i).get(0) + "/");
             }
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return linksReturn;
     }
 
     private String decryptFromLink(String parameter) {
         String link = new String();
-
         try {
             RequestInfo request = HTTP.getRequest(new URL(parameter));
             String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<frame src=\"", "\" width=\"100%\"");
             link = layer;
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return link;
     }
