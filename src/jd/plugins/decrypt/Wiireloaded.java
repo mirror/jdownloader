@@ -34,14 +34,10 @@ public class Wiireloaded extends PluginForDecrypt {
     static private final String host = "wii-reloaded.ath.cx";
 
     private String version = "1.0.0.0";
-
-    // http://wii-reloaded.ath.cx/protect/get.php?i=fkqXV249FN5el5waT
     static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
     public Wiireloaded() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -78,36 +74,31 @@ public class Wiireloaded extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         Vector<String> link_passwds = new Vector<String>();
         link_passwds.add("wii-reloaded.info");
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        // step.setParameter(decryptedLinks);
         Browser br = new Browser();
         br.setFollowRedirects(false);
         progress.setRange(3);
         br.getPage(parameter);
         String page = br.getPage(parameter);
-
         progress.increase(1);
         int max = 10;
         while (page.contains("captcha/captcha.php") || page.contains("Sicherheitscode war falsch")) {
             if (max-- <= 0) {
                 logger.severe("Captcha Code has been wrong many times. abort.");
-                return decryptedLinks;
-
+                return null;
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
             File captchaFile = getLocalCaptchaFile(this, ".jpg");
             boolean fileDownloaded = JDUtilities.download(captchaFile, br.openGetConnection(adr));
             progress.addToMax(1);
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
-
+                return null;
             } else {
-                logger.info("captchafile: " + captchaFile);
                 String capTxt = Plugin.getCaptchaCode(captchaFile, this);
                 br.getPage(parameter);
                 Form[] forms = br.getForms();
                 Form post = forms[0];
-                logger.info("set " + post.setVariable(0, capTxt) + " = " + capTxt);
+                post.setVariable(0, capTxt);
                 page = br.submitForm(post);
             }
         }
@@ -133,11 +124,8 @@ public class Wiireloaded extends PluginForDecrypt {
             }
             progress.increase(1);
         }
-
         progress.increase(1);
-
         return decryptedLinks;
-
     }
 
     @Override
@@ -187,5 +175,4 @@ public class Wiireloaded extends PluginForDecrypt {
         }
         return value;
     }
-
 }
