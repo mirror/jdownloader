@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -30,36 +29,31 @@ import jd.plugins.RequestInfo;
 public class Bm4uin extends PluginForDecrypt {
     static private final String host = "bm4u.in";
     private String version = "1.0.0.0";
-
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public Bm4uin() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo requestInfo = HTTP.getRequest(url);
-                String pass = requestInfo.getFirstMatch("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>");
-                String[][] links = requestInfo.getRegexp("onClick=\"window\\.open\\('crypt\\.php\\?id=([\\d]+)&amp;mirror=([\\d\\w]+)&part=([\\d]+)").getMatches();
-
-                for (int i = 0; i < links.length; i++) {
-                    url = new URL("http://bm4u.in/crypt.php?id=" + links[i][0] + "&mirror=" + links[i][1] + "&part=" + links[i][2]);
-                    requestInfo = HTTP.getRequest(url);
-                    DownloadLink link = createDownloadlink(requestInfo.getFirstMatch("<iframe src=\"(.*?)\" width").trim());
-                    link.addSourcePluginPassword(pass);
-                    decryptedLinks.add(link);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo requestInfo = HTTP.getRequest(url);
+            String pass = requestInfo.getFirstMatch("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>");
+            String[][] links = requestInfo.getRegexp("onClick=\"window\\.open\\('crypt\\.php\\?id=([\\d]+)&amp;mirror=([\\d\\w]+)&part=([\\d]+)").getMatches();
+            for (int i = 0; i < links.length; i++) {
+                url = new URL("http://bm4u.in/crypt.php?id=" + links[i][0] + "&mirror=" + links[i][1] + "&part=" + links[i][2]);
+                requestInfo = HTTP.getRequest(url);
+                DownloadLink link = createDownloadlink(requestInfo.getFirstMatch("<iframe src=\"(.*?)\" width").trim());
+                link.addSourcePluginPassword(pass);
+                decryptedLinks.add(link);
             }
-            //step.setParameter(decryptedLinks);
-        
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
@@ -96,5 +90,6 @@ public class Bm4uin extends PluginForDecrypt {
     @Override
     public boolean doBotCheck(File file) {
         return false;
+
     }
 }
