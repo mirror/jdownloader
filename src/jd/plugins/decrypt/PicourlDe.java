@@ -21,8 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -34,12 +33,10 @@ public class PicourlDe extends PluginForDecrypt {
 
     private String version = "1.0.0.0";
 
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?picourl\\.de/[a-zA-Z0-9]{3}", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?picourl\\.de/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public PicourlDe() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -54,7 +51,7 @@ public class PicourlDe extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Picourl.de-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -74,24 +71,19 @@ public class PicourlDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-
-                progress.setRange(1);
-
-                decryptedLinks.add(this.createDownloadlink(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"", "\">")));
-                progress.increase(1);
-
-                // Decrypt abschliessen
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (link != null) {
+                decryptedLinks.add(this.createDownloadlink(link));
+            } else
+                return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
