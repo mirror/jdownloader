@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -52,7 +51,6 @@ public class YouTubeCom extends PluginForDecrypt {
 
     private static final String VIDEO_ID = "video_id";
     private static final String T = "\"t\"";
-    // private static final String HOST = "BASE_YT_URL";
     private static final String PLAYER = "get_video";
 
     public static final int CONVERT_ID_AUDIO = 0;
@@ -68,8 +66,6 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -229,7 +225,6 @@ public class YouTubeCom extends PluginForDecrypt {
     }
 
     private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
-
         yConvertDialog(hasMp4, has3gp);
         return useyConvert[0];
 
@@ -245,7 +240,6 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
@@ -291,11 +285,9 @@ public class YouTubeCom extends PluginForDecrypt {
 
                 decryptedLinks.add(this.createDownloadlink(link));
             }
-
-            // step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
         return decryptedLinks;
     }

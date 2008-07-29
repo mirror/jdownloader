@@ -22,9 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -35,19 +33,16 @@ import jd.utils.JDUtilities;
 public class YourFilesBizFolder extends PluginForDecrypt {
 
     final static String host = "yourfiles.biz";
-    final static String name = "yourfiles.biz Folder";
     private String version = "0.1.0";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
     public YourFilesBizFolder() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -62,7 +57,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
 
     @Override
     public String getPluginName() {
-        return name;
+        return host;
     }
 
     @Override
@@ -77,17 +72,10 @@ public class YourFilesBizFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
-
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-
             if (reqinfo.getHtmlCode().contains("Ordner Passwort")) {
-
                 String url = parameter.substring(0, parameter.lastIndexOf("/") + 1) + new Regex(reqinfo.getHtmlCode(), "action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getFirstMatch().trim();
                 String cookie = reqinfo.getCookie();
                 String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.decrypt.passwordProtected", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
@@ -99,27 +87,19 @@ public class YourFilesBizFolder extends PluginForDecrypt {
 
                 url = reqinfo.getConnection().getHeaderField("Location");
                 reqinfo = HTTP.getRequest(new URL(url), reqinfo.getCookie(), parameter, false);
-
             }
 
-            ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href='http://yourfiles.biz/?d=°'");
-            progress.setRange(ids.size());
-
-            for (int i = 0; i < ids.size(); i++) {
-
-                decryptedLinks.add(this.createDownloadlink("http://yourfiles.biz/?d=" + ids.get(i).get(0)));
+            String ids[][] = new Regex(reqinfo.getHtmlCode(), "href='http://yourfiles\\.biz/\\?d=(.*?)'", Pattern.CASE_INSENSITIVE).getMatches();
+            progress.setRange(ids.length);
+            for (String[] id : ids) {
+                decryptedLinks.add(this.createDownloadlink("http://yourfiles.biz/?d=" + id[0]));
                 progress.increase(1);
-
             }
-
-            // step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
-
     }
 
     @Override
