@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -37,9 +38,7 @@ public class NixPopOrg extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public NixPopOrg() {
-        super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        super();        
     }
 
     @Override
@@ -74,8 +73,7 @@ public class NixPopOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+       ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
@@ -83,20 +81,18 @@ public class NixPopOrg extends PluginForDecrypt {
                 String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
 
                 progress.setRange(links.length);
-                this.default_password.add(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><strong>Passwort</strong>:", "<").trim());
+                String pw=new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><strong>Passwort</strong>:(.*?)<",Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (pw !=null ) this.default_password.add(pw.trim());
 
                 // Link der Liste hinzufügen
                 for (int i = 0; i < links.length; i++) {
                     decryptedLinks.add(this.createDownloadlink(links[i].trim()));
                     progress.increase(1);
-                }
-
-                // Decrypt abschliessen
-                //step.setParameter(decryptedLinks);
+                }                
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-        
+                return null;
+            }        
         return decryptedLinks;
     }
 
@@ -104,5 +100,4 @@ public class NixPopOrg extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

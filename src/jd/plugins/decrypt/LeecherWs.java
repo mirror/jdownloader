@@ -81,7 +81,7 @@ public class LeecherWs extends PluginForDecrypt {
                 outLinks[0][0] = parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15);
             } else {
                 reqinfo = HTTP.getRequest(new URL(parameter));
-                outLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www.leecher.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                outLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www\\.leecher\\.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
             }
             progress.setRange(outLinks.length);
             for (int i = 0; i < outLinks.length; i++) {

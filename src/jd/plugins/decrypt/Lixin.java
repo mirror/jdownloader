@@ -56,7 +56,7 @@ public class Lixin extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Lix.in-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override

@@ -64,7 +64,7 @@ public class AdrefIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = parameter.replaceFirst("http://.*?adref.in/\\?", "");        
+        parameter = parameter.replaceFirst("http://[\\w\\.]*?adref\\.in/\\?", "");        
         if (!parameter.matches("^http://")) parameter = "http://" + parameter;
         decryptedLinks.add(this.createDownloadlink(parameter));
         return decryptedLinks;

@@ -22,9 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -38,13 +37,11 @@ public class NewzFindCom extends PluginForDecrypt {
 
     public NewzFindCom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -74,40 +71,29 @@ public class NewzFindCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        try {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1);
+            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
+            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<link title=\"(.*?)\"")).getMatches();
 
-            try {
+            reqinfo = HTTP.getRequest(new URL(parameter));
+            Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
+            default_password.addAll(pws);
 
-                String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1);
-                RequestInfo reqinfo = HTTP.getRequest(new URL(url));
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<link title=\"°\"");
+            progress.setRange(links.length);
 
-                reqinfo = HTTP.getRequest(new URL(parameter));
-                Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
-                default_password.addAll(pws);
-
-                progress.setRange(links.size());
-
-                for (int i = 0; i < links.size(); i++) {
-
-                    decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
-                    progress.increase(1);
-
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
+            for (int i = 0; i < links.length; i++) {
+                decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                progress.increase(1);
             }
-
-        
-
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
-
     }
 
     @Override

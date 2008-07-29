@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -32,15 +31,13 @@ import jd.utils.JDUtilities;
 public class NetfolderIn extends PluginForDecrypt {
     static private String host = "netfolder.in";
     private String version = "1.0.0.0";
-    // netfolder.in/folder.php?folder_id=b8b3b0b
+
     static private final Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
     public NetfolderIn() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -55,7 +52,7 @@ public class NetfolderIn extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Netfolder.in-1.0.0.";
+        return host + " - " + version;
     }
 
     @Override
@@ -76,7 +73,6 @@ public class NetfolderIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
@@ -92,10 +88,7 @@ public class NetfolderIn extends PluginForDecrypt {
                     int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
                     if (check > 0) {
                         password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                        if (password == null) {
-                            // step.setParameter(decryptedLinks);
-                            return decryptedLinks;
-                        }
+                        if (password == null) { return null; }
                         reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
                     } else {
                         break;
@@ -110,11 +103,10 @@ public class NetfolderIn extends PluginForDecrypt {
                     progress.increase(1);
                 }
             }
-            // step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 
