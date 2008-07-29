@@ -101,7 +101,7 @@ public class Moosharede extends PluginForHost {
 
      public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         
-        try {
+    
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -130,19 +130,7 @@ public class Moosharede extends PluginForHost {
             dl.setFilesize(length);
             dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             dl.setResume(true);
-           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            return;
-        } catch (Exception e) {
-            
-            e.printStackTrace();
-        }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+           dl.startDownload();
     }
 
     @Override

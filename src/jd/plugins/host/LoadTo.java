@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
@@ -29,36 +28,35 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class LoadTo extends PluginForHost {
-    private static final String  CODER                    = "Bo0nZ";
+    private static final String CODER = "Bo0nZ";
 
-    private static final String  HOST                     = "load.to";
+    private static final String HOST = "load.to";
 
-    private static final String  PLUGIN_NAME              = HOST;
+    private static final String PLUGIN_NAME = HOST;
 
-    private static final String  PLUGIN_VERSION           = "1.0.0.0";
+    private static final String PLUGIN_VERSION = "1.0.0.0";
 
-    private static final String  PLUGIN_ID                = PLUGIN_NAME + "-" + PLUGIN_VERSION;
-    //www.load.to/?d=f8tM7YMcq5
+    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    // www.load.to/?d=f8tM7YMcq5
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?load\\.to/\\?d\\=.{10}", Pattern.CASE_INSENSITIVE);
 
-    private String               downloadURL              = "";
+    private String downloadURL = "";
 
-    private HTTPConnection        urlConnection;
+    private HTTPConnection urlConnection;
 
     /*
      * Suchmasken (z.B. Fehler)
      */
-    private static final String  ERROR_DOWNLOAD_NOT_FOUND = "Can't find file. Please check URL.";
+    private static final String ERROR_DOWNLOAD_NOT_FOUND = "Can't find file. Please check URL.";
 
-    private static final String  DOWNLOAD_INFO            = "You are going to download<br>°<a href=\"http://www.load.to/?d=°\" style=\"font-size:16px; color:#960000; text-decoration:none; cursor:default;\"><b>°</b></a><br>Size: ° Bytes &nbsp;<font";
+    private static final String DOWNLOAD_INFO = "You are going to download<br>°<a href=\"http://www.load.to/?d=°\" style=\"font-size:16px; color:#960000; text-decoration:none; cursor:default;\"><b>°</b></a><br>Size: ° Bytes &nbsp;<font";
 
-    private static final String  DOWNLOAD_LINK            = "<form action=\"°\" method=\"post\" name=\"";
+    private static final String DOWNLOAD_LINK = "<form action=\"°\" method=\"post\" name=\"";
 
     /*
      * Konstruktor
@@ -66,10 +64,10 @@ public class LoadTo extends PluginForHost {
     public LoadTo() {
         super();
 
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     /*
@@ -77,8 +75,6 @@ public class LoadTo extends PluginForHost {
      */
     // muss aufgrund eines Bugs in DistributeData true zurÃ¼ckgeben, auch wenn
     // die Zwischenablage nicht vom Plugin verarbeitet wird
- 
-
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -126,13 +122,13 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
 
-String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
-String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
-
+            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+            String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
 
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
             if (fileName != null && fileSize != null) {
@@ -141,105 +137,86 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                 try {
                     int length = Integer.parseInt(fileSize.trim());
                     downloadLink.setDownloadMax(length);
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                 }
 
                 // Datei ist noch verfuegbar
                 return true;
             }
 
-        }
-        catch (MalformedURLException e) {
-             e.printStackTrace();
-        }
-        catch (IOException e) {
-             e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         // Datei scheinbar nicht mehr verfuegbar, Fehler?
         return false;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            URL downloadUrl = new URL(downloadLink.getDownloadURL());
+        URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-          //  switch (step.getStep()) {
-                //case PluginStep.STEP_PAGE:
-                    requestInfo = HTTP.getRequest(downloadUrl);
+        // switch (step.getStep()) {
+        // case PluginStep.STEP_PAGE:
+        requestInfo = HTTP.getRequest(downloadUrl);
 
-                    // Datei nicht gefunden?
-                    if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_NOT_FOUND) > 0) {
-                        logger.severe("download not found");
-                        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        //step.setStatus(PluginStep.STATUS_ERROR);
-                        return;
-                    }
-                    String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
-                    String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
-                   
-                    try {
-                        int length = Integer.parseInt(fileSize.trim());
-                        downloadLink.setDownloadMax(length);
-                    }
-                    catch (Exception e) {
-
-                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setStatus(PluginStep.STATUS_ERROR);
-                        return;
-                    }
-                    downloadLink.setName(fileName);
-                    // downloadLink auslesen
-                 
-                    this.downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
-
-                    return;
-
-                //case PluginStep.STEP_PENDING:
-
-                    // immer 5 Sekunden vor dem Download warten!
-                    this.sleep(10,downloadLink);
-                    return;
-                //case PluginStep.STEP_WAIT_TIME:
-                    // Download vorbereiten
-                    downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
-                    urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
-                    int length = urlConnection.getContentLength();
-                    if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
-                        logger.warning("Filesize Check fehler. Neustart");
-                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setStatus(PluginStep.STATUS_ERROR);
-                        return;
-                    }
-                    downloadLink.setDownloadMax(length);
-                    return;
-
-                //case PluginStep.STEP_DOWNLOAD:
-              
-                   
-                  dl = new RAFDownload(this, downloadLink,  urlConnection);
-              
-                   dl.startDownload();
-                    return;
-
-            }
+        // Datei nicht gefunden?
+        if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_NOT_FOUND) > 0) {
+            logger.severe("download not found");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        catch (IOException e) {
-             e.printStackTrace();
-             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-             downloadLink.getLinkStatus().setStatusText(e.getMessage());
-             //step.setStatus(PluginStep.STATUS_ERROR);
-             return;
+        String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
+        String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
+
+        try {
+            int length = Integer.parseInt(fileSize.trim());
+            downloadLink.setDownloadMax(length);
+        } catch (Exception e) {
+
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
+        downloadLink.setName(fileName);
+        // downloadLink auslesen
+
+        this.downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+
+        // case PluginStep.STEP_PENDING:
+
+        // immer 5 Sekunden vor dem Download warten!
+        this.sleep(10, downloadLink);
+
+        // case PluginStep.STEP_WAIT_TIME:
+        // Download vorbereiten
+        downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
+        urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
+        int length = urlConnection.getContentLength();
+        if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
+            logger.warning("Filesize Check fehler. Neustart");
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(length);
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.startDownload();
+
     }
 
     @Override
     public void resetPluginGlobals() {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override

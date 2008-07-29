@@ -32,8 +32,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -53,7 +52,7 @@ public class MeinUpload extends PluginForHost {
     public MeinUpload() {
 
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         setConfigElements();
     }
 
@@ -116,7 +115,8 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         try {
             String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
@@ -147,25 +147,27 @@ public class MeinUpload extends PluginForHost {
 
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
-            return doPremium(downloadLink);
+            doPremium(downloadLink);
         } else {
-            return doFree(step, downloadLink);
+            doFree(downloadLink);
         }
 
     }
 
-   private void doPremium( DownloadLink downloadLink)throws Exception {LinkStatus linkStatus=downloadLink.getLinkStatus();
+    private void doPremium(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
         downloadLink.requestGuiUpdate();
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         if (id == null) {
-            //step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
@@ -178,7 +180,7 @@ public class MeinUpload extends PluginForHost {
 
             String server = r.load();
             if (server == null) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
+                // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
@@ -198,12 +200,12 @@ public class MeinUpload extends PluginForHost {
             // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865
             // a2801d938ce3e59024b4ef1d6d30&id=3407292519
             // GET
-            ///download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
+            // /download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
             // id=9923945611
             // HTTP/1.1
             // v
             if (r.getResponseHeader("Content-Disposition") == null) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
+                // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
@@ -216,54 +218,49 @@ public class MeinUpload extends PluginForHost {
             dl.getFile();
             if (dl.getFile().length() < 6000) {
                 String page = JDUtilities.getLocalFile(dl.getFile());
-                //step.setStatus(PluginStep.STATUS_ERROR);
+                // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                //step.setParameter(JDLocale.L("errors.interbalhostererror", "Internal Hoster Error"));
+                // step.setParameter(JDLocale.L("errors.interbalhostererror",
+                // "Internal Hoster Error"));
                 logger.severe(page);
                 return;
             }
             return;
         } catch (IOException e) {
-            
+
             e.printStackTrace();
-            //step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
 
     }
 
-    public void doFree( DownloadLink downloadLink)throws Exception { LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
-            PostRequest r = new PostRequest(downloadLink.getDownloadURL());
-            r.setPostVariable("submit", "Kostenlos");
-            r.setPostVariable("sent", "1");
-            r.load();
-            Form[] forms = Form.getForms(r.getRequestInfo());
-            if (forms.length != 1 || !forms[0].vars.containsKey("download")) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                return;
-            }
-            sleep(15000, downloadLink);
-            r = (PostRequest) new PostRequest(forms[0]).connect();
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            if (r.getResponseHeader("Content-Disposition") == null) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                return;
-            }
-            int length = r.getHttpConnection().getContentLength();
-            downloadLink.setDownloadMax(length);
-            dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
-            dl.startDownload();
+        PostRequest r = new PostRequest(downloadLink.getDownloadURL());
+        r.setPostVariable("submit", "Kostenlos");
+        r.setPostVariable("sent", "1");
+        r.load();
+        Form[] forms = Form.getForms(r.getRequestInfo());
+        if (forms.length != 1 || !forms[0].vars.containsKey("download")) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        sleep(15000, downloadLink);
+        r = (PostRequest) new PostRequest(forms[0]).connect();
 
-        return null;
+        if (r.getResponseHeader("Content-Disposition") == null) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            return;
+        }
+        int length = r.getHttpConnection().getContentLength();
+        downloadLink.setDownloadMax(length);
+        dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
+        dl.startDownload();
     }
 
     private void setConfigElements() {

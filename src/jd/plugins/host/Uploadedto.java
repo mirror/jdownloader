@@ -264,7 +264,7 @@ public class Uploadedto extends PluginForHost {
                 if (useCaptchaVersion) {
                     this.finalURL = finalURL + this.getCaptchaCode(captchaFile);
                     logger.info("dl " + finalURL);
-                    postParameter.put(postTarget, (String) steps.get(1).getParameter());
+                    postParameter.put(postTarget, this.getCaptchaCode(captchaFile));
                     requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
                     // /?view=error_traffic_exceeded_free
                     if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {

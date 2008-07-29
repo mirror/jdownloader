@@ -94,7 +94,7 @@ public class Youtube extends PluginForHost {
     }
 
     public String getPluginNameExtension(DownloadLink link) {
-        int convert = Integer.parseInt(new Regex(link.getDownloadURL(), CONVERT).getMatch( 1)-1);
+        int convert = Integer.parseInt(new Regex(link.getDownloadURL(), CONVERT).getFirstMatch());
         switch (convert) {
         case CONVERT_ID_AUDIO:
             return JDLocale.L("plugins.host.YouTube.pluginextensions.audio", "->mp3");
@@ -114,7 +114,7 @@ public class Youtube extends PluginForHost {
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
-                final int convert = Integer.parseInt(new Regex(downloadLink.getDownloadURL(), CONVERT).getMatch( 1)-1);
+                final int convert = Integer.parseInt(new Regex(downloadLink.getDownloadURL(), CONVERT).getFirstMatch());
                 requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getMatch( 1))-1);
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
