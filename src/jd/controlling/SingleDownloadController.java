@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -205,10 +206,10 @@ public class SingleDownloadController extends Thread {
                 break;
             }
 
-            if (linkStatus.isStatus(LinkStatus.TODO) && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() && !downloadLink.isWaitingForReconnect()) {
-
-                onErrorRetry(downloadLink, currentPlugin);
-            }
+//            if (linkStatus.isStatus(LinkStatus.TODO) && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() && !downloadLink.isWaitingForReconnect()) {
+//
+//                onErrorRetry(downloadLink, currentPlugin);
+//            }
 
             // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.finished",
             // "Fertig"));
@@ -219,7 +220,7 @@ public class SingleDownloadController extends Thread {
             // this.onErrorRetry(downloadLink, currentPlugin);
             // return;
             // }
-            if (linkStatus.isStatus(LinkStatus.FINISHED)) {
+            if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
                 onDownloadFinishedSuccessFull(downloadLink);
             }
 
@@ -698,36 +699,33 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
-        // logger.finer("Error occurred: Wait Time " + step);
-        // long milliSeconds = (Long) step.getParameter();
-        // //this.sleep(nul,downloadLink);
-        // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
-        // milliSeconds);
-        // downloadLink.getLinkStatus().setStatusText(" " +
-        // JDLocale.L("controller.status.reconnect", "Reconnect "));
-        //
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        // // Download Zeit. Versuch durch eine Interaction einen reconnect
-        // // zu machen. wenn das klappt nochmal versuchen
-        //
-        // // if (Reconnecter.waitForNewIP(0)) {
-        // // linkStatus.addStatus(LinkStatus.TODO);
-        // // downloadLink.setEndOfWaittime(0);
-        // // }
-        // Reconnecter.requestReconnect();
-        // // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
-        // //
-        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
-        // // downloadLink);
-        // // try {
-        // // Thread.sleep(5000);
-        // // } catch (InterruptedException e) {
-        // // }
-        // //
-        // // }
-        // // linkStatus.addStatus(LinkStatus.TODO);
-        // // downloadLink.getLinkStatus().setStatusText("");
+        logger.finer("Error occurred: Wait Time ");
+        LinkStatus status = downloadLink.getLinkStatus();
+        int milliSeconds = downloadLink.getLinkStatus().getValue();
+
+        if (milliSeconds <= 0) {
+            logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
+            status.addStatus(LinkStatus.ERROR_FATAL);
+            status.setErrorMessage(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
+            return;
+        }
+        status.setWaitTime(milliSeconds);
+
+        // blockiert bis zu einem erfolgreichem recionnect
+        if (Reconnecter.waitForNewIP(0)) {
+            linkStatus.reset();
+        }
+        Reconnecter.requestReconnect();
+        while (status.getRemainingWaittime() > 0) {
+
+            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+
     }
 
     public DownloadLink getDownloadLink() {

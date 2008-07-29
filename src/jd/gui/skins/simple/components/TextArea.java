@@ -141,17 +141,17 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
 
 
     public void mouseClicked(MouseEvent e) {
-    // TODO Auto-generated method stub
+   
 
     }
 
     public void mouseEntered(MouseEvent e) {
-    // TODO Auto-generated method stub
+   
 
     }
 
     public void mouseExited(MouseEvent e) {
-    // TODO Auto-generated method stub
+   
 
     }
 
@@ -167,12 +167,12 @@ logger.info("PRESSED");
     }
 
     public void mouseReleased(MouseEvent e) {
-    // TODO Auto-generated method stub
+   
 
     }
 
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-        // TODO Auto-generated method stub
+       
         
     }
 

@@ -38,7 +38,7 @@ public class MyBot extends PircBot {
 
     // @Override
     // protected void onServerPing(String response) {
-    // TODO Auto-generated method stub
+   
     // lastping = System.currentTimeMillis();
     // super.onServerPing(response);
     // }
@@ -982,7 +982,7 @@ public class MyBot extends PircBot {
     }
 
     protected void onServerResponse(int code, String response) {
-        // TODO Auto-generated method stub
+       
         if (code != 372 && code > 5) {
             serverResponse.put(code, response);
         }

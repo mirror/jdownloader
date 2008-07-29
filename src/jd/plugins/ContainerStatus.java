@@ -71,7 +71,7 @@ public static final int STATUS_FAILED = 1<<2;
  
 
     public int getLatestStatus() {
-        // TODO Auto-generated method stub
+       
         return 0;
     }
 

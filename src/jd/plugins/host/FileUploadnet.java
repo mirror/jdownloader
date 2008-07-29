@@ -166,7 +166,7 @@ public class FileUploadnet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
     }
 
     @Override

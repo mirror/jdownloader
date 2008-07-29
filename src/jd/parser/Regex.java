@@ -226,7 +226,7 @@ public class Regex {
     }
 
     public static boolean matches(Object page, String string) {
-        // TODO Auto-generated method stub
+       
         return new Regex(page, string).matches();
     }
 

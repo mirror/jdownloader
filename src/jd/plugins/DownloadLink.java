@@ -54,11 +54,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // public static final int STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
     // 24;
 
-    public static final int CRC_STATUS_OK = 1;
 
-    public static final int CRC_STATUS_BAD = 2;
-
-    private static final int CRC_STATUS_UNCHECKED = 0;
 
     public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
 
@@ -66,7 +62,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Statustext der von der GUI abgefragt werden kann
      */
     // private transient boolean aborted = false;
-    private transient String statusText = "";
+//    private transient String statusText = "";
 
     /**
      * Beschreibung des Downloads
@@ -113,10 +109,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private boolean isEnabled;
 
-    /**
-     * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
-     */
-    private transient boolean inProgress = false;
+//    /**
+//     * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
+//     */
+//    private transient boolean inProgress = false;
 
     /**
      * Das Plugin, das für diesen Download zuständig ist
@@ -153,15 +149,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 //     */
 //    private int status = LinkStatus.TODO;
 
-    /**
-     * Timestamp bis zu dem die Wartezeit läuft
-     */
-    private transient long mustWaitTil = 0;
-
-    /**
-     * Ursprüngliche Wartezeit
-     */
-    private transient long waittime = 0;
+//    /**
+//     * Timestamp bis zu dem die Wartezeit läuft
+//     */
+//    private transient long mustWaitTil = 0;
+//
+//    /**
+//     * Ursprüngliche Wartezeit
+//     */
+//    private transient long waittime = 0;
 
     /**
      * Lokaler Pfad zum letzten captchafile
@@ -195,7 +191,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int partID = -1;
 
-    private int crcStatus = CRC_STATUS_UNCHECKED;
+   
 
     private transient SingleDownloadController downloadLinkController;
 
@@ -219,7 +215,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.plugin = plugin;
         this.setName(name);
         sourcePluginPasswords = new Vector<String>();
-        inProgress = false;
+  
         downloadMax = 0;
         this.host = host;
         this.isEnabled = isEnabled;
@@ -594,13 +590,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
-        setEndOfWaittime(0);
+       
         this.chunksProgress = null;
         this.downloadLinkController = null;
         downloadCurrent = 0;
-        this.waittime = 0;
-        // aborted = false;
-        this.crcStatus = CRC_STATUS_UNCHECKED;
+       
+        this.linkStatus= new LinkStatus(this);
+
     }
 
     /**
@@ -615,46 +611,46 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return this.getDownloadURL().substring(index + 1);
     }
 
-    /**
-     * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
-     * 
-     * @param l
-     */
-    public void setEndOfWaittime(long l) {
-        this.mustWaitTil = l;
-        waittime = l - System.currentTimeMillis();
-        if (waittime <= 0) {
-            ((PluginForHost) this.getPlugin()).resetPlugin();
-        }
+//    /**
+//     * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
+//     * 
+//     * @param l
+//     */
+//    public void setEndOfWaittime(long l) {
+//        this.mustWaitTil = l;
+//        waittime = l - System.currentTimeMillis();
+//        if (waittime <= 0) {
+//            ((PluginForHost) this.getPlugin()).resetPlugin();
+//        }
+//
+//    }
+//
+//    /**
+//     * Gibt die wartezeit des Downloads zurück
+//     * 
+//     * @return Totale Wartezeit
+//     */
+//    public int getWaitTime() {
+//        return (int) waittime;
+//    }
 
-    }
+//    /**
+//     * Gibt die Verbleibende Wartezeit zurück
+//     * 
+//     * @return verbleibende wartezeit
+//     */
+//    public long getRemainingWaittime() {
+//        return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
+//    }
 
-    /**
-     * Gibt die wartezeit des Downloads zurück
-     * 
-     * @return Totale Wartezeit
-     */
-    public int getWaitTime() {
-        return (int) waittime;
-    }
-
-    /**
-     * Gibt die Verbleibende Wartezeit zurück
-     * 
-     * @return verbleibende wartezeit
-     */
-    public long getRemainingWaittime() {
-        return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
-    }
-
-    /**
-     * Gibt zurück ob dieser download gerade auf einen reconnect wartet
-     * 
-     * @return true/False
-     */
-    public boolean isWaitingForReconnect() {
-        return getRemainingWaittime() > 0;
-    }
+//    /**
+//     * Gibt zurück ob dieser download gerade auf einen reconnect wartet
+//     * 
+//     * @return true/False
+//     */
+//    public boolean isWaitingForReconnect() {
+//        return getRemainingWaittime() > 0;
+//    }
 
     /**
      * Speichert das zuletzt geladene captchabild für diesen link
@@ -737,6 +733,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         if (this.getDownloadLinkController() == null) {
             logger.severe("TRied to abort download even it has no downlaodController");
+            this.linkStatus.setInProgress(false);
             return;
 
         }
@@ -1013,14 +1010,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     }
 
-    public void setCrcStatus(int crcStatusOk) {
-        this.crcStatus = crcStatusOk;
 
-    }
 
-    public int getCrcStatus() {
-        return crcStatus;
-    }
+
 
 
 

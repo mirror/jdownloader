@@ -55,7 +55,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public void onExit() {
-        // TODO Auto-generated method stub
+       
 
     }
 
@@ -215,7 +215,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getPluginID() {
-        // TODO Auto-generated method stub
+       
         return getPluginName() + " " + version;
     }
 
@@ -226,7 +226,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getVersion() {
-        // TODO Auto-generated method stub
+       
         return version;
     }
 

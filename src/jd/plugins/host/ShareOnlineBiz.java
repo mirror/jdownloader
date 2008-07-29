@@ -234,7 +234,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
     }
 
     @Override

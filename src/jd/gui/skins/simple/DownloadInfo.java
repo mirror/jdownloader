@@ -145,8 +145,8 @@ public class DownloadInfo extends JFrame {
         if (downloadLink.getFileOutput() != null) {
             addEntry(JDLocale.L("linkinformation.saveto.name", "Speichern in"), downloadLink.getFileOutput());
         }
-        if (downloadLink.getRemainingWaittime() > 0) {
-            addEntry(JDLocale.L("linkinformation.waittime.name", "Wartezeit"), downloadLink.getRemainingWaittime() + " sek");
+        if (downloadLink.getLinkStatus().getRemainingWaittime() > 0) {
+            addEntry(JDLocale.L("linkinformation.waittime.name", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
         }
         if (downloadLink.getLinkStatus().isPluginActive()) {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.underway", " ist in Bearbeitung"));

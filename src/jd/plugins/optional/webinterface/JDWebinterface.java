@@ -119,18 +119,18 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        // TODO Auto-generated method stub
+       
         return null;
     }
 
     public void actionPerformed(ActionEvent e) {
-        // TODO Auto-generated method stub
+       
 
     }
 
     @Override
     public void onExit() {
-        // TODO Auto-generated method stub
+       
 
     }
 }

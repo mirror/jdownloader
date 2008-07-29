@@ -32,7 +32,7 @@ public class HeadRequest extends Request {
 
     @Override
     public void postRequest(HTTPConnection httpConnection) throws IOException {
-        // TODO Auto-generated method stub
+       
         
     }
 

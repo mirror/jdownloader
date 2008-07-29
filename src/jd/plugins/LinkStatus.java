@@ -1,15 +1,23 @@
 package jd.plugins;
 
+import java.io.Serializable;
+
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class LinkStatus {
+public class LinkStatus implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 3885661829491436448L;
     private DownloadLink downloadLink;
     private int status = TODO;
-    private String statusText=null;
-    private int lastestStatus=  TODO;
-    private String errorMessage;
+    private transient String statusText = null;
+    private int lastestStatus = TODO;
+    private transient String errorMessage;
     private int value;
+    private long waitUntil = 0;
+    private int totalWaitTime = 0;
     /**
      * Link muß noch bearbeitet werden
      */
@@ -45,11 +53,10 @@ public class LinkStatus {
      */
     public final static int ERROR_BOT_DETECTED = 1 << 6;
 
-//    /**
-//     * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
-//     * werden
-//     */
-//    public final static int ERROR__RETRY = 1 << 7;
+    // /**
+    // * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
+    // * werden
+    // */
 
     /**
      * zeigt einen Premiumspezifischen fehler an
@@ -94,12 +101,13 @@ public class LinkStatus {
      * Ziegt an, dass das zugehörige PLugind en link gerade bearbeitet
      */
     public static final int PLUGIN_IN_PROGRESS = 1 << 18;
-    public static final int ERROR_LINK_IN_PROGRESS = 1<<19;
-    public static final int ERROR_TIMEOUT_REACHED = 1<<20;
-    public static final int ERROR_LOCAL_IO = 1<<21;
+    public static final int ERROR_LINK_IN_PROGRESS = 1 << 19;
+    public static final int ERROR_TIMEOUT_REACHED = 1 << 20;
+    public static final int ERROR_LOCAL_IO = 1 << 21;
 
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
+
     }
 
     /**
@@ -110,84 +118,66 @@ public class LinkStatus {
      */
 
     public String getStatusText() {
-        return "linksatus";
-        // String ret = "";
-        // int speed;
-        //
-        // if (getRemainingWaittime() > 0) { return this.statusText + "Warten:
-        // (" + JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000))
-        // + "sek)"; }
-        // if (this.isPluginActive() && (speed = getDownloadSpeed()) > 0) {
-        // if (getDownloadMax() < 0) {
-        // return JDUtilities.formatKbReadable(speed / 1024) + "/s " +
-        // JDLocale.L("gui.download.filesize_unknown", "(Dateigröße
-        // unbekannt)");
-        // } else {
-        // if (getDownloadSpeed() == 0) {
-        //
-        // if (this.downloadInstance != null && downloadInstance.getChunkNum() >
-        // 1) {
-        // return JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" +
-        // downloadInstance.getChunksDownloading() + "/" +
-        // downloadInstance.getChunkNum() + ")";
-        // } else {
-        // return JDUtilities.formatKbReadable(speed / 1024) + "/s ";
-        // }
-        // } else {
-        // long remainingBytes = this.getDownloadMax() -
-        // this.getDownloadCurrent();
-        // long eta = remainingBytes / speed;
-        // if (this.downloadInstance != null && downloadInstance.getChunkNum() >
-        // 1) {
-        // // logger.info("ETA " + JDUtilities.formatSeconds((int)
-        // // eta) + " @ " + (speed / 1024) + " kb/s." + "(" +
-        // // downloadInstance.getChunksDownloading() + "/" +
-        // // downloadInstance.getChunks() + ")");
-        // ret += "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " +
-        // JDUtilities.formatKbReadable(speed / 1024) + "/s " + "(" +
-        // downloadInstance.getChunksDownloading() + "/" +
-        // downloadInstance.getChunkNum() + ")";
-        // } else {
-        // ret += "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " +
-        // JDUtilities.formatKbReadable(speed / 1024) + "/s ";
-        // }
-        // if (this.statusText != null && this.statusText.length() > 0) {
-        // ret += " [" + statusText + "]";
-        // }
-        // return ret;
-        // }
-        // }
-        // }
-        //
-        // ret += this.toStatusString() + " ";
-        // if (!this.isEnabled() && this.getStatus() != LinkStatus.FINISHED) {
-        // ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]") + "
-        // ";
-        // this.getLinkStatus().setStatusText("");
-        // return ret;
-        // }
-        // if (this.isAborted() && this.getStatus() != LinkStatus.FINISHED) {
-        // ret += JDLocale.L("gui.downloadlink.aborted", "[abgebrochen]") + " ";
-        // this.getLinkStatus().setStatusText("");
-        // return ret;
-        // }
-        // if (this.isAvailabilityChecked() && !this.isAvailable() &&
-        // this.getStatus() != LinkStatus.FINISHED) {
-        // ret += JDLocale.L("gui.downloadlink.offline", "[offline]") + " ";
-        // }
-        //
-        // // logger.info(statusText == null ? ret : ret + statusText);
-        // if (this.getCrcStatus() == DownloadLink.CRC_STATUS_BAD) {
-        // ret += "[" + JDLocale.L("gui.downloadlink.status.crcfailed",
-        // "Checksum Fehler") + "] ";
-        //
-        // } else if (this.getCrcStatus() == DownloadLink.CRC_STATUS_OK) {
-        // ret += "[" + JDLocale.L("gui.downloadlink.status.crcok", "Checksum
-        // OK") + "] ";
-        // }
-        // if (statusText != null && ret.contains(statusText)) return ret;
-        // return statusText == null ? ret : ret + statusText;
+        String ret = "";
+        if (this.hasStatus(LinkStatus.FINISHED)) {
 
+        return JDLocale.L("gui.downloadlink.finished", "[finished]"); }
+
+        if (!downloadLink.isEnabled() && this.hasStatus(LinkStatus.FINISHED)) {
+            ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+            if (this.errorMessage != null)
+            ;
+            ret += ": " + errorMessage;
+            return errorMessage;
+
+        }
+
+        if (isFailed()) { return this.getErrorMessage(); }
+
+        // String ret = "";
+
+        //    
+        if (hasStatus(ERROR_TRAFFIC_LIMIT) && getRemainingWaittime() > 0) {
+            if (statusText == null) {
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)));
+            } else {
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000))) + statusText;
+
+            }
+            return ret;
+        }
+
+        // + "sek)"; }
+
+        if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+            int speed = Math.max(0, downloadLink.getDownloadSpeed());
+            String chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
+            if (downloadLink.getDownloadMax() < 0) {
+                return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
+            } else {
+                if (speed > 0) {
+
+                    long remainingBytes = downloadLink.getDownloadMax() - downloadLink.getDownloadCurrent();
+                    long eta = remainingBytes / speed;
+                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed) + "/s " + chunkString;
+                } else {
+                    return JDUtilities.formatKbReadable(speed) + "/s " + chunkString;
+
+                }
+
+            }
+        }
+
+        if (this.statusText != null) { return statusText; }
+        return "";
+
+    }
+
+    private String getErrorMessage() {
+        String ret = errorMessage;
+        if (ret == null) ret = this.getDefaultErrorMessage();
+        if (ret == null) ret = JDLocale.L("downloadlink.status.error_unexpected", "Unexpected Error");
+        return ret;
     }
 
     private String toStatusString() {
@@ -255,6 +245,46 @@ public class LinkStatus {
 
     }
 
+    private String getDefaultErrorMessage() {
+        switch (this.lastestStatus) {
+
+        case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
+            return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
+
+        case LinkStatus.ERROR_AGB_NOT_SIGNED:
+            return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
+        case LinkStatus.ERROR_ALREADYEXISTS:
+            return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
+        case LinkStatus.ERROR_BOT_DETECTED:
+            return JDLocale.L("downloadlink.status.error.bot_detected", "Bot detected");
+
+        case LinkStatus.ERROR_CAPTCHA_WRONG:
+            return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
+        case LinkStatus.ERROR_DOWNLOAD_FAILED:
+            return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
+        case LinkStatus.ERROR_TRAFFIC_LIMIT:
+            return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
+
+        case LinkStatus.ERROR_FILE_NOT_FOUND:
+            return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
+
+        case LinkStatus.ERROR_NO_CONNECTION:
+            return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
+
+        case LinkStatus.ERROR_PREMIUM:
+            return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
+
+        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+            return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
+
+        case LinkStatus.ERROR_FATAL:
+            return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
+
+        }
+        return null;
+
+    }
+
     /**
      * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet
      * werden
@@ -263,7 +293,8 @@ public class LinkStatus {
      */
     public void setStatus(int status) {
         this.status = status;
-        this.lastestStatus=status;
+        this.lastestStatus = status;
+        System.out.println("");
     }
 
     /**
@@ -274,13 +305,17 @@ public class LinkStatus {
      */
     public void addStatus(int status) {
         this.status |= status;
-        this.lastestStatus=status;
+        this.lastestStatus = status;
+
+        System.out.println("");
 
     }
 
     /** Entfernt eine Statusid */
     public void removeStatus(int status) {
-        this.status ^= status;
+        int mask = 0xffffffff;
+        mask &= ~status;
+        this.status &= mask;
     }
 
     /**
@@ -291,7 +326,7 @@ public class LinkStatus {
      */
     public boolean hasStatus(int status) {
 
-        return (this.status | status) > 0;
+        return (this.status & status) > 0;
     }
 
     public void setStatusText(String l) {
@@ -300,37 +335,41 @@ public class LinkStatus {
     }
 
     public boolean isFailed() {
-        // TODO Auto-generated method stub
-        return !this.isPluginActive() && !this.hasStatus(LinkStatus.FINISHED | LinkStatus.TODO);
+
+        return !this.hasStatus(LinkStatus.FINISHED | LinkStatus.TODO | LinkStatus.ERROR_LINK_IN_PROGRESS | LinkStatus.ERROR_TRAFFIC_LIMIT);
     }
 
     public boolean isPluginActive() {
-        this.addStatus(PLUGIN_IN_PROGRESS);
-        return false;
+        return this.hasStatus(PLUGIN_IN_PROGRESS);
+
     }
 
     public void setInProgress(boolean b) {
-        this.removeStatus(PLUGIN_IN_PROGRESS);
+        if (b) {
+            this.addStatus(PLUGIN_IN_PROGRESS);
+        } else {
+            this.removeStatus(PLUGIN_IN_PROGRESS);
+        }
 
     }
 
     public int getLatestStatus() {
-        // TODO Auto-generated method stub
-        return 0;
+
+        return this.lastestStatus;
     }
 
     public boolean isStatus(int status) {
-      return this.status==status;
+        return this.status == status;
     }
 
     public void setErrorMessage(String string) {
-       this.errorMessage=string;
-        
+        this.errorMessage = string;
+
     }
 
     public void setValue(int i) {
-    this.value=i;
-        
+        this.value = i;
+
     }
 
     public int getValue() {
@@ -339,7 +378,40 @@ public class LinkStatus {
 
     public void exceptionToErrorMessage(Exception e) {
         this.setErrorMessage(JDUtilities.convertExceptionReadable(e));
-        
+
+    }
+
+    public String toString() {
+        return Integer.toBinaryString(status);
+    }
+
+    public void setWaitTime(int milliSeconds) {
+        this.waitUntil = System.currentTimeMillis() + milliSeconds;
+        this.totalWaitTime = milliSeconds;
+
+    }
+
+    public void reset() {
+        setStatus(TODO);
+        waitUntil = 0;
+        this.errorMessage = null;
+        this.statusText = null;
+        totalWaitTime = 0;
+    }
+
+    public int getRemainingWaittime() {
+
+        return Math.max(0, (int) (waitUntil - System.currentTimeMillis()));
+    }
+
+    public int getTotalWaitTime() {
+
+        return totalWaitTime;
+    }
+
+    public void resetWaitTime() {
+        totalWaitTime = 0;
+        waitUntil = 0;
     }
 
 }

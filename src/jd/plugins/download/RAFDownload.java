@@ -322,9 +322,9 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            downloadLink.setCrcStatus(DownloadLink.CRC_STATUS_OK);
+                           // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
                         } else {
-                            downloadLink.setCrcStatus(DownloadLink.CRC_STATUS_BAD);
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L("system.download.errors.crcfailed","CRC Check failed"));
 
                         }

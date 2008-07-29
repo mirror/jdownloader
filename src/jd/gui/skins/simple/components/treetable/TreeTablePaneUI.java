@@ -152,11 +152,11 @@ public class TreeTablePaneUI extends BasicTableUI {
 
                     if (!dLink.isEnabled()) {
                         color = (COLOR_DISABLED);
-                    } else if (dLink.getRemainingWaittime() > 0) {
+                    } else if (dLink.getLinkStatus().getRemainingWaittime() > 0) {
                         color = (COLOR_WAIT);
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         color = (COLOR_DONE);
-                    } else if (!dLink.getLinkStatus().isStatus(LinkStatus.TODO) && !dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT|LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                    } else if (dLink.getLinkStatus().isFailed()) {
                         color = (COLOR_ERROR);
                     }
 

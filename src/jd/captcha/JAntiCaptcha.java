@@ -690,7 +690,7 @@ public class JAntiCaptcha {
         bt.addActionListener(new ActionListener(){
 
             public void actionPerformed(ActionEvent e) {
-                // TODO Auto-generated method stub
+               
                 JAntiCaptcha.this.trainCaptcha(captchafile, 4);
                 
             }

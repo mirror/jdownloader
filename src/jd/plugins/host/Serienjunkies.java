@@ -98,13 +98,13 @@ public class Serienjunkies extends PluginForHost {
 
     @Override
     public boolean collectCaptchas() {
-        // TODO Auto-generated method stub
+       
         return false;
     }
 
     @Override
     public boolean useUserinputIfCaptchaUnknown() {
-        // TODO Auto-generated method stub
+       
         return false;
     }
 

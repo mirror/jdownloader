@@ -65,7 +65,7 @@ public class Schedule extends PluginOptional implements ControlListener {
 
     @Override
     public void onExit() {
-        // TODO Auto-generated method stub
+       
         
     }
     

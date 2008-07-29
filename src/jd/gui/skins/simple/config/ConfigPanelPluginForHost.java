@@ -366,7 +366,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         private boolean stop = false;
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            // TODO Auto-generated method stub
+           
 
             this.btn = (JLinkButton) value;
             btn.addActionListener(this);
@@ -455,12 +455,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dragExit(DropTargetEvent dte) {
-        // TODO Auto-generated method stub
+       
 
     }
 
     public void dragOver(DropTargetDragEvent e) {
-        // TODO Auto-generated method stub
+       
         int id = table.rowAtPoint(e.getLocation());
 
         // table.setSelectionModel(newModel)
@@ -487,7 +487,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {
-        // TODO Auto-generated method stub
+       
 
     }
     // private class CheckBoxRenderer implements TableCellRenderer {

@@ -52,12 +52,12 @@ private static CESClient ces;
                addWindowListener(new WindowListener() {
 
                    public void windowActivated(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
 
                    public void windowClosed(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
 
@@ -67,22 +67,22 @@ private static CESClient ces;
                    }
 
                    public void windowDeactivated(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
 
                    public void windowDeiconified(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
 
                    public void windowIconified(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
 
                    public void windowOpened(WindowEvent e) {
-                       // TODO Auto-generated method stub
+                      
 
                    }
                });
@@ -178,7 +178,7 @@ private static CESClient ces;
        return captchaDialog.getCaptchaText();
    }
 public static void requestCode(File captchaFile, String specs, Rapidshare rapidshare) {
-    // TODO Auto-generated method stub
+   
     
 }
 }

@@ -215,13 +215,13 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
 
     }
 
     @Override
     public String getAGBLink() {
-        // TODO Auto-generated method stub
+       
         return "http://www.load.to/terms.php";
     }
 

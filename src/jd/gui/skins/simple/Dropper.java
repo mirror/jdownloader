@@ -136,11 +136,11 @@ public void mouseMoved(MouseEvent e) {
     
 }
 public void windowActivated(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 public void windowClosed(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 public void windowClosing(WindowEvent e) {
@@ -148,19 +148,19 @@ public void windowClosing(WindowEvent e) {
     
 }
 public void windowDeactivated(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 public void windowDeiconified(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 public void windowIconified(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 public void windowOpened(WindowEvent e) {
-    // TODO Auto-generated method stub
+   
     
 }
 

@@ -791,7 +791,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             private String last = null;
 
             public void keyPressed(KeyEvent e) {
-                // TODO Auto-generated method stub
+               
 
             }
 
@@ -861,7 +861,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
             public void keyTyped(KeyEvent e) {
-                // TODO Auto-generated method stub
+               
 
             }
 
@@ -1029,7 +1029,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private String prepareToSend(String trim) {
-        // TODO Auto-generated method stub
+       
 
         SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
         String dest = conf.getStringProperty(PARAM_DESLANGUAGE,map.get(System.getProperty("user.country")));
@@ -1094,7 +1094,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     String getNickname() {
-        // TODO Auto-generated method stub
+       
 
         String loc = System.getProperty("user.country");
         if (loc == null) loc = JDLocale.getLocale().substring(0, 3);
@@ -1327,7 +1327,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public String getNick() {
-        // TODO Auto-generated method stub
+       
         return conn.getNick();
     }
 
@@ -1360,7 +1360,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public boolean isLoggedIn() {
-        // TODO Auto-generated method stub
+       
         return loggedIn;
     }
 

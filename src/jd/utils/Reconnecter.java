@@ -126,8 +126,8 @@ public class Reconnecter {
               Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
               while (it2.hasNext()) {
                   nextDownloadLink = it2.next();
-                  if (nextDownloadLink.getRemainingWaittime() > 0) {
-                      nextDownloadLink.setEndOfWaittime(0);
+                  if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0) {
+                      nextDownloadLink.getLinkStatus().resetWaitTime();
                       logger.finer("REset GLOBALS: " + ((PluginForHost) nextDownloadLink.getPlugin()));
                       ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
                       nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);

@@ -220,7 +220,7 @@ public abstract class PluginForHost extends Plugin {
     // }
     /*
     private DownloadInterface getDownloadInstance() {
-        // TODO Auto-generated method stub
+       
         return this.dl;
     }
 */
@@ -394,7 +394,8 @@ public abstract class PluginForHost extends Plugin {
             Thread.sleep(1000);
 
         }
-
+        
+        downloadLink.getLinkStatus().setStatusText(null);
     }
 
 //    public void handleDownloadLimit( DownloadLink downloadLink) {

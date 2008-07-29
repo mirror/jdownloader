@@ -205,7 +205,7 @@ public class Upsharenet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
     }
 
     @Override

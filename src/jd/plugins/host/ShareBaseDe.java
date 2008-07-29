@@ -247,13 +247,13 @@ public class ShareBaseDe extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
 
     }
 
     @Override
     public String getAGBLink() {
-        // TODO Auto-generated method stub
+       
         return "http://sharebase.de/pp.html";
     }
 

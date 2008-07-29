@@ -381,7 +381,7 @@ public class CRequest {
         }
 
         public String toString() {
-            // TODO Auto-generated method stub
+           
             return captchaCode.toString();
         }
     }

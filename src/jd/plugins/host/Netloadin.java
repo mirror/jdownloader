@@ -210,7 +210,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
 
-        this.sleep(20000, downloadLink);
+       
         logger.info(url);
         requestInfo = HTTP.getRequest(new URL(url), sessionID, null, true);
 
@@ -249,6 +249,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
         File file = this.getLocalCaptchaFile(this);
+        this.sleep(20000, downloadLink);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
         if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
             logger.severe("Captcha donwload failed: " + captchaURL);
@@ -282,10 +283,12 @@ public class Netloadin extends PluginForHost {
         if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+           
             waitTime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
             waitTime = waitTime * 10L;
             // step.setParameter(waitTime);
             END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;
+            linkStatus.setValue(waitTime.intValue());
             return;
         }
         if (requestInfo.getHtmlCode().indexOf(CAPTCHA_WRONG) >= 0) {

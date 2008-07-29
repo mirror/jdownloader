@@ -464,7 +464,7 @@ try{
  
 
     public void propertyChange(PropertyChangeEvent evt) {
-        // TODO Auto-generated method stub
+       
         if(input[0]==null)return;
         //logger.info("New Value "+evt.getNewValue());
         if(this.getConfigEntry().isConditionalEnabled(evt)){

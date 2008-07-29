@@ -69,13 +69,13 @@ public class User implements Comparable<Object> {
     }
 
     public int compareTo(Object o) {
-        // TODO Auto-generated method stub
+       
 
         return getRangName().compareTo(((User) o).getRangName());
     }
 
     public String getStyle() {
-        // TODO Auto-generated method stub
+       
         
         return "color:#"+color;
     }

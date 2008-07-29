@@ -844,7 +844,7 @@ public class JDController implements ControlListener, UIListener {
                         while (it.hasNext()) {
 
                             localLink = it.next();
-                            if (localLink.getLinkStatus().isStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                            if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                                 it.remove();
                                 if (fp.getDownloadLinks().size() == 0) {
                                     iterator.remove();
@@ -1164,7 +1164,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || (nextDownloadLink.getLinkStatus().isPluginActive() && !nextDownloadLink.isWaitingForReconnect() && nextDownloadLink.isEnabled())) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || (nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().getRemainingWaittime()==0 && nextDownloadLink.isEnabled())) {
 
                         ret++;
                     }
@@ -1364,10 +1364,10 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
                     if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                        nextDownloadLink.getLinkStatus().setStatusText("");
-                        nextDownloadLink.reset();
-                        nextDownloadLink.setEndOfWaittime(0);
+//                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+//                        nextDownloadLink.getLinkStatus().setStatusText("");
+                        nextDownloadLink.getLinkStatus().reset();
+//                        nextDownloadLink.setEndOfWaittime(0);
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
                         al.add(nextDownloadLink);
                     }

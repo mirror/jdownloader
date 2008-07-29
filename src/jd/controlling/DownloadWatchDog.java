@@ -102,16 +102,15 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         linkStatus=link.getLinkStatus();
                         if (!link.isEnabled()) continue;
                         // Link mit Wartezeit in der queue
-                        if (!linkStatus.hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT|LinkStatus.PLUGIN_IN_PROGRESS)) {
-                            if (link.getRemainingWaittime() == 0) {
+                        if (linkStatus.hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT)&&!linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                            if (linkStatus.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
-                                linkStatus.setStatus(LinkStatus.TODO);
-                                link.setEndOfWaittime(0);
-
+                                linkStatus.reset();
+                               
                             }
 
                         }
-                        if (link.getRemainingWaittime() > 0) {
+                        if (linkStatus.getRemainingWaittime() > 0) {
                             hasWaittimeLinks = true;
                             updates.add(link);
 
@@ -184,7 +183,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                 }
             } catch (Exception e) {
-
+e.printStackTrace();
             }
             try {
                 Thread.sleep(1000);
@@ -360,7 +359,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     private void clearDownloadListStatus() {
 
         activeDownloadControllers.removeAllElements();
-        logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS ZURÜCKGESETZT!");
+        //logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS ZURÜCKGESETZT!");
         Vector<FilePackage> fps;
         Vector<DownloadLink> links;
         fps = controller.getPackages();
@@ -369,10 +368,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             for (int i = 0; i < links.size(); i++) {
                 if (!links.elementAt(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                    
-                    links.elementAt(i).getLinkStatus().setStatusText("");
+                    links.elementAt(i).getLinkStatus().setStatusText(null);
                     links.elementAt(i).setAborted(false);
-                    links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                    links.elementAt(i).setEndOfWaittime(0);
+                    //links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                    links.elementAt(i).getLinkStatus().resetWaitTime();
                 }
 
             }
@@ -459,7 +458,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                             if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
                                 if (nextDownloadLink.isEnabled()) {
                                     if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                        if (nextDownloadLink.getRemainingWaittime() == 0) {
+                                        if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
                                             if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
 
                                             return nextDownloadLink; }

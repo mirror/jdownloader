@@ -163,7 +163,7 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
     }
 
     @Override

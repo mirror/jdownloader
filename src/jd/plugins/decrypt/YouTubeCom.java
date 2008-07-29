@@ -137,7 +137,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
                     @Override
                     public String toString() {
-                        // TODO Auto-generated method stub
+                       
                         return name;
                     }
                 }
@@ -146,12 +146,12 @@ public class YouTubeCom extends PluginForDecrypt {
                 addWindowListener(new WindowListener() {
 
                     public void windowActivated(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
 
                     public void windowClosed(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
 
@@ -163,22 +163,22 @@ public class YouTubeCom extends PluginForDecrypt {
                     }
 
                     public void windowDeactivated(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
 
                     public void windowDeiconified(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
 
                     public void windowIconified(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
 
                     public void windowOpened(WindowEvent e) {
-                        // TODO Auto-generated method stub
+                       
 
                     }
                 });

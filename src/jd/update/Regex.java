@@ -193,7 +193,7 @@ public class Regex {
         return new Regex(str,pat).matches();
     }
     public static boolean matches(Object page, String string) {
-        // TODO Auto-generated method stub
+       
         return new Regex(page,string).matches();
     }
     /**

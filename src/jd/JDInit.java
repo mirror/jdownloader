@@ -665,7 +665,7 @@ public class JDInit {
     }
 
     public boolean installerWasVisible() {
-        // TODO Auto-generated method stub
+       
         return installerVisible;
     }
 

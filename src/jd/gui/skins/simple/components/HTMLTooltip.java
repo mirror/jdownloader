@@ -131,11 +131,11 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
         super.setLocation(p);
     }
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
+       
         
     }
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
+       
         
     }
     public void mouseExited(MouseEvent e) {
@@ -143,11 +143,11 @@ public class HTMLTooltip extends JWindow implements MouseListener,HyperlinkListe
         
     }
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
+       
         
     }
     public void mouseReleased(MouseEvent e) {
-        // TODO Auto-generated method stub
+       
         
     }
     public void destroy() {

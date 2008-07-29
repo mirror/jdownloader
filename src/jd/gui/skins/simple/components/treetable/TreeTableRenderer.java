@@ -125,7 +125,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return miniBar;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            if (dLink.getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0) {
+            if (dLink.getLinkStatus().getRemainingWaittime() == 0 && (int) dLink.getDownloadCurrent() > 0) {
 
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     progress.setString("");
@@ -161,15 +161,15 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 }
 
                 return progress;
-            } else if (dLink.getRemainingWaittime() > 0 && dLink.getWaitTime() >= dLink.getRemainingWaittime()) {
-                progress.setMaximum(dLink.getWaitTime());
+            } else if (dLink.getLinkStatus().getRemainingWaittime() > 0 ) {
+                progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 }
                 progress.setStringPainted(true);
-                progress.setValue((int) dLink.getRemainingWaittime());
+                progress.setValue( dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
             }

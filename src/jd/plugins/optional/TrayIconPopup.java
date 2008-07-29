@@ -239,7 +239,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     }
 
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
+       
 
     }
 

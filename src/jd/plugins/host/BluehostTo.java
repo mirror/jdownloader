@@ -244,13 +244,13 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
 
     }
 
     @Override
     public String getAGBLink() {
-        // TODO Auto-generated method stub
+       
         return "http://bluehost.to/agb.php";
     }
 }

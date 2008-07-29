@@ -1450,7 +1450,7 @@ public class PixelGrid extends Property {
         Collections.sort(ar, new Comparator<Integer[]>() {
 
             public int compare(Integer[] o1, Integer[] o2) {
-                // TODO Auto-generated method stub
+               
                 return o1[1].compareTo(o2[1]);
             }
         });

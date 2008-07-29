@@ -226,13 +226,13 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Auto-generated method stub
+       
 
     }
 
     @Override
     public String getAGBLink() {
-        // TODO Auto-generated method stub
+       
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 }
