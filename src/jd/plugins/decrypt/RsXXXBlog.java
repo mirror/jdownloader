@@ -19,13 +19,12 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class RsXXXBlog extends PluginForDecrypt {
@@ -36,8 +35,8 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     public RsXXXBlog() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
         default_password.add("xxx-blog.dl.am");
         default_password.add("xxx-blog.org");
     }
@@ -79,18 +78,17 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                parameter = parameter.substring(parameter.lastIndexOf("http://"));
-                URL url = new URL(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
-                RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
-                decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            //step.setParameter(decryptedLinks);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            parameter = parameter.substring(parameter.lastIndexOf("http://"));
+            URL url = new URL(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
+            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
+            decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        // step.setParameter(decryptedLinks);
+        return decryptedLinks;
     }
 }

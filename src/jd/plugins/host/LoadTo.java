@@ -166,7 +166,7 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
                 case PluginStep.STEP_PAGE:
                     requestInfo = HTTP.getRequest(downloadUrl);
 
@@ -174,8 +174,8 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                     if (requestInfo.getHtmlCode().indexOf(ERROR_DOWNLOAD_NOT_FOUND) > 0) {
                         logger.severe("download not found");
                         downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 2));
                     String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_INFO, 3));
@@ -187,21 +187,21 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                     catch (Exception e) {
 
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     downloadLink.setName(fileName);
                     // downloadLink auslesen
                  
                     this.downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
-                    return step;
+                    return;
 
                 case PluginStep.STEP_PENDING:
 
                     // immer 5 Sekunden vor dem Download warten!
                     //step.setParameter(10l);
-                    return step;
+                    return;
                 case PluginStep.STEP_WAIT_TIME:
                     // Download vorbereiten
                     downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
@@ -210,11 +210,11 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                     if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
                         logger.warning("Filesize Check fehler. Neustart");
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     downloadLink.setDownloadMax(length);
-                    return step;
+                    return;
 
                 case PluginStep.STEP_DOWNLOAD:
               
@@ -222,17 +222,17 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                   dl = new RAFDownload(this, downloadLink,  urlConnection);
               
                    dl.startDownload();
-                    return step;
+                    return;
 
             }
-            return step;
+            return;
         }
         catch (IOException e) {
              e.printStackTrace();
              downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
              downloadLink.getLinkStatus().setStatusText(e.getMessage());
-             step.setStatus(PluginStep.STATUS_ERROR);
-             return step;
+             //step.setStatus(PluginStep.STATUS_ERROR);
+             return;
         }
     }
 

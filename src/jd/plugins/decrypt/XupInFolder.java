@@ -19,14 +19,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 // http://www.xup.in/a,7220/Test4JD/list/
@@ -47,8 +46,8 @@ public class XupInFolder extends PluginForDecrypt {
     public XupInFolder() {
 
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
 
     }
 
@@ -90,32 +89,30 @@ public class XupInFolder extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
+        try {
 
-                RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));
-                String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
-                progress.setRange(links.length);
+            RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));
+            String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
+            progress.setRange(links.length);
 
-                for (String[] link : links) {
+            for (String[] link : links) {
 
-                    decryptedLinks.add(this.createDownloadlink(link[0]));
-                    progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink(link[0]));
+                progress.increase(1);
 
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
+            // step.setParameter(decryptedLinks);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        return decryptedLinks;
 
     }
 

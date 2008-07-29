@@ -89,8 +89,8 @@ public class FileBaseTo extends PluginForHost {
         try {
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
 
             /* Postdaten zusammenbaun */
@@ -115,20 +115,20 @@ public class FileBaseTo extends PluginForHost {
             dl.setChunkNum(1);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-        return step;
+        return;
     }
 
     @Override

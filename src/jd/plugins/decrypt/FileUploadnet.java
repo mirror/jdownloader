@@ -1,12 +1,12 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 
 public class FileUploadnet extends PluginForDecrypt {
     static private final String host = "File-Upload.net Decrypter";
@@ -50,7 +50,7 @@ public class FileUploadnet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             String user = new Regex(parameter, "upload\\.net/(.*?)/").getFirstMatch();
             String file = new Regex(parameter, user + "/(.*)").getFirstMatch();
@@ -58,8 +58,8 @@ public class FileUploadnet extends PluginForDecrypt {
             link.replaceAll(" ","%20");
             decryptedLinks.add(this.createDownloadlink(link));
             //step.setParameter(decryptedLinks);
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

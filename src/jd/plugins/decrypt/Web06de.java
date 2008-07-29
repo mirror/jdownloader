@@ -1,12 +1,12 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 
 public class Web06de extends PluginForDecrypt {
 
@@ -18,8 +18,8 @@ public class Web06de extends PluginForDecrypt {
 
     public Web06de() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -55,13 +55,12 @@ public class Web06de extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            String link = new Regex(cryptedLink, "user=\\d+site=(.*)").getFirstMatch();
-            if (link != null) decryptedLinks.add(this.createDownloadlink(link));
-            //step.setParameter(decryptedLinks);
-        }
-        return null;
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String link = new Regex(cryptedLink, "user=\\d+site=(.*)").getFirstMatch();
+        if (link != null) decryptedLinks.add(this.createDownloadlink(link));
+        // step.setParameter(decryptedLinks);
+        return decryptedLinks;
     }
 
     @Override

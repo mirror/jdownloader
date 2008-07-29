@@ -18,7 +18,7 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,7 +27,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -85,7 +84,7 @@ public class BestMovies extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 URL url = new URL(cryptedLink);
                 RequestInfo reqInfo = null;
@@ -115,14 +114,14 @@ public class BestMovies extends PluginForDecrypt {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
                             //step.setParameter(null);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
+                            //step.setStatus(PluginStep.STATUS_ERROR);
+                            return decryptedLinks;
                         }
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
                             //step.setParameter(decryptedLinks);
-                            return null;
+                            return decryptedLinks;
                         }
                         reqInfo = HTTP.postRequest(new URL(cryptedLink), cookie, cryptedLink, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
 
@@ -143,12 +142,12 @@ public class BestMovies extends PluginForDecrypt {
 
             } catch (Exception e) {
                 e.printStackTrace();
-                return null;
+                return decryptedLinks;
             }
 
-        }
+        
         //step.setParameter(decryptedLinks);
-        return null;
+        return decryptedLinks;
     }
 
     public boolean doBotCheck(File file) {

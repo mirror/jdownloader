@@ -101,7 +101,7 @@ public class CryptItCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String url = parameter;
@@ -116,7 +116,7 @@ public class CryptItCom extends PluginForDecrypt {
                         if (pass == null) {
                             /* auf abbruch geklickt */
                             //step.setParameter(decryptedLinks);
-                            return null;
+                            return decryptedLinks;
                         }
                         String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
                         ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
@@ -162,7 +162,7 @@ public class CryptItCom extends PluginForDecrypt {
                     }
                 }
                 if (decryptedLinks.size() == 0) {
-                    return containerStep(step, parameter);
+                    return containerStep(parameter);
                 } else {
                     //step.setParameter(decryptedLinks);
                 }
@@ -170,14 +170,14 @@ public class CryptItCom extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
+        
 
-        return null;
+        return decryptedLinks;
     }
 
-    private PluginStep containerStep(PluginStep step, String parameter) {
+    private ArrayList<DownloadLink> containerStep(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             // surpress jd warning
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -203,8 +203,8 @@ public class CryptItCom extends PluginForDecrypt {
 
                             logger.warning("Password wrong");
                             JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
+                            //step.setStatus(PluginStep.STATUS_ERROR);
+                            return decryptedLinks;
 
                         }
                     }
@@ -219,8 +219,8 @@ public class CryptItCom extends PluginForDecrypt {
                 if (name.equals("redir.ccf") || !name.contains(".ccf")) {
 
                     logger.severe("Container not found");
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return null;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return decryptedLinks;
 
                 }
 
@@ -254,8 +254,8 @@ public class CryptItCom extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     private String decrypt(String ciphertext) {

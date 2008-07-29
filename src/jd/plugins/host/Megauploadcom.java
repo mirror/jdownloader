@@ -175,21 +175,21 @@ public class Megauploadcom extends PluginForHost {
         }
 
         try {
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
                 
                 requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
                 if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     this.tempUnavailable = true;
                     //step.setParameter(60 * 30l);
-                    return step;
+                    return;
                 }
                 if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return step;
+                    return;
                 }
 
                 this.captchaURL = "http://" + new URL(link).getHost() + "/capgen.php?" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0);
@@ -197,10 +197,10 @@ public class Megauploadcom extends PluginForHost {
                 this.captchaPost = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL, 0);
                 //step.setParameter(captchaURL);
                 if (captchaURL.endsWith("null") || captchaPost == null) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 }
-                return step;
+                return;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 File file = this.getLocalCaptchaFile(this);
                 logger.info("Captcha " + captchaURL);
@@ -208,20 +208,20 @@ public class Megauploadcom extends PluginForHost {
                 if (!requestInfo.isOK() || !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
                     //step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return step;
+                    return;
                 } else {
                     //step.setParameter(file);
-                    step.setStatus(PluginStep.STATUS_USER_INPUT);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
+                    return;
                 }
             case PluginStep.STEP_PENDING:
                 requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, joinMap(fields, "=", "&") + "&imagestring=" + steps.get(1).getParameter(), true);
                 if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                    return step;
+                    return;
                 }
 
                 String pwdata =HTMLParser.getFormInputHidden(requestInfo.getHtmlCode(), "passwordbox", "passwordcountdown");
@@ -229,10 +229,10 @@ public class Megauploadcom extends PluginForHost {
                     logger.info("Password protected");
                     String pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password:");
                     if (pass == null) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                         //step.setParameter("wrong Password");
-                        return step;
+                        return;
                     }
                     if (countryID.equals("-")) {
 
@@ -242,16 +242,16 @@ public class Megauploadcom extends PluginForHost {
 
                     }
                     if (requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                         //step.setParameter("wrong Password");
-                        return step;
+                        return;
                     }
 
                 }
 
                 //step.setParameter(PENDING_WAITTIME);
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
 
                 Character l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
@@ -262,7 +262,7 @@ public class Megauploadcom extends PluginForHost {
                     requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
                     if (!requestInfo.isOK()) {
                         logger.warning("Download Limit!");
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         String wait = requestInfo.getConnection().getHeaderField("Retry-After");
                         logger.finer("Warten: " + wait + " minuten");
@@ -271,7 +271,7 @@ public class Megauploadcom extends PluginForHost {
                         } else {
                             //step.setParameter(120l * 60l * 1000l);
                         }
-                        return step;
+                        return;
 
                     }
                     int length = requestInfo.getConnection().getContentLength();
@@ -283,7 +283,7 @@ public class Megauploadcom extends PluginForHost {
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
-                    return step;
+                    return;
                 } catch (MalformedURLException e) {
 
                     e.printStackTrace();
@@ -292,12 +292,12 @@ public class Megauploadcom extends PluginForHost {
                     e.printStackTrace();
                 }
 
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
 
             }
-            return step;
+            return;
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -330,7 +330,7 @@ public class Megauploadcom extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");        
             br.postPage(url,"login=" + user + "&password=" + pass);        
             if (Browser.getCookie(url,"user")==null || Browser.getCookie(url,"user").length()==0) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
             }
            
@@ -358,7 +358,7 @@ public class Megauploadcom extends PluginForHost {
             step = nextStep(step);
             step = nextStep(step);
             step = nextStep(step);
-            return step;
+            return;
 
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block

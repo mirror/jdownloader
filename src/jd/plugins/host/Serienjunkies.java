@@ -426,8 +426,8 @@ public class Serienjunkies extends PluginForHost {
     public PluginStep doStep0(PluginStep step, DownloadLink downloadLink) {
         try {
 
-            switch (step.getStep()) {
-            case PluginStep.STEP_DECRYPT:
+          //  switch (step.getStep()) {
+            
                String link = (String) downloadLink.getProperty("link");
                 String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
                 downloadLink.getLinkStatus().setStatusText("decrypt");
@@ -436,10 +436,10 @@ public class Serienjunkies extends PluginForHost {
                 
                 if(dls.size() < 1) {
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
-                    return step;
+                    return;
                 }
                 
 //                if (aborted) return null;
@@ -502,9 +502,9 @@ public class Serienjunkies extends PluginForHost {
                 if (down.size() > 0) {
                     fp.add(downloadLink);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
-                    return step;
+                    return;
                 }
             }
         } catch (Exception e) {

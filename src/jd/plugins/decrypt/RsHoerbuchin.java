@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
@@ -29,7 +28,6 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -44,7 +42,7 @@ public class RsHoerbuchin extends PluginForDecrypt {
 
     public RsHoerbuchin() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -84,30 +82,29 @@ public class RsHoerbuchin extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo requestInfo = HTTP.getRequest(url);
-                
-                if (parameter.matches(patternLink_RS.pattern())) {
-                    HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                    String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(this.createDownloadlink(newURL));
-                } else if (parameter.matches(patternLink_DE.pattern())) {
-                    HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                    String newURL = "http://rapidshare.de" + JDUtilities.htmlDecode(fields.get("uri"));
-                    decryptedLinks.add(this.createDownloadlink(newURL));                    
-                } else if (parameter.matches(patternLink_UP.pattern())) {
-                    ArrayList<String> links = SimpleMatches.getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
-                    for (int i = 0; i < links.size(); i++)
-                        decryptedLinks.add(this.createDownloadlink(links.get(i)));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo requestInfo = HTTP.getRequest(url);
+
+            if (parameter.matches(patternLink_RS.pattern())) {
+                HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
+                decryptedLinks.add(this.createDownloadlink(newURL));
+            } else if (parameter.matches(patternLink_DE.pattern())) {
+                HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
+                String newURL = "http://rapidshare.de" + JDUtilities.htmlDecode(fields.get("uri"));
+                decryptedLinks.add(this.createDownloadlink(newURL));
+            } else if (parameter.matches(patternLink_UP.pattern())) {
+                ArrayList<String> links = SimpleMatches.getAllSimpleMatches(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE), 1);
+                for (int i = 0; i < links.size(); i++)
+                    decryptedLinks.add(this.createDownloadlink(links.get(i)));
             }
-            //step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        // step.setParameter(decryptedLinks);
+        return decryptedLinks;
     }
 }

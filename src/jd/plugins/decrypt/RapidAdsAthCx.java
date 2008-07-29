@@ -19,14 +19,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class RapidAdsAthCx extends PluginForDecrypt {
@@ -39,8 +38,8 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     public RapidAdsAthCx() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -75,30 +74,30 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
 
-                progress.setRange(1);
-                RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
-                String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
-                String help = "";
+            progress.setRange(1);
+            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+            String[] helpa = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<p><p><form action=\"", "\"").split("&#");
+            String help = "";
 
-                for (int i = 0; i < helpa.length; i++) {
-                    if (!helpa[i].equals("")) help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
-                }
-
-                progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink(help));
-
-                // Decrypten abschliessen
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+            for (int i = 0; i < helpa.length; i++) {
+                if (!helpa[i].equals("")) help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
             }
+
+            progress.increase(1);
+            decryptedLinks.add(this.createDownloadlink(help));
+
+            // Decrypten abschliessen
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

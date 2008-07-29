@@ -12,7 +12,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -27,7 +26,7 @@ public class Wordpress extends PluginForDecrypt {
         super();
         add_defaultpasswords();
         add_passwordpatterns();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     private void add_defaultpasswords() {
@@ -84,54 +83,53 @@ public class Wordpress extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                /* Defaultpasswörter der Seite setzen */
-                Vector<String> link_passwds = new Vector<String>();
-                for (int j = 0; j < defaultpasswords.size(); j++) {
-                    if (url.getHost().toLowerCase().contains(defaultpasswords.get(j)[0])) {
-                        for (int jj = 1; jj < defaultpasswords.get(j).length; jj++) {
-                            link_passwds.add(defaultpasswords.get(j)[jj]);
-                        }
-                        break;
+            /* Defaultpasswörter der Seite setzen */
+            Vector<String> link_passwds = new Vector<String>();
+            for (int j = 0; j < defaultpasswords.size(); j++) {
+                if (url.getHost().toLowerCase().contains(defaultpasswords.get(j)[0])) {
+                    for (int jj = 1; jj < defaultpasswords.get(j).length; jj++) {
+                        link_passwds.add(defaultpasswords.get(j)[jj]);
                     }
+                    break;
                 }
-
-                /* Passwort suchen */
-                String[] password = null;
-                for (int i = 0; i < passwordpattern.size(); i++) {
-                    password = new Regex(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE)).getMatches(1);
-                    if (password.length != 0) {
-                        for (int ii = 0; ii < password.length; ii++) {
-                            link_passwds.add(JDUtilities.htmlDecode(password[ii]));
-                        }
-                        break;
-                    }
-                }
-
-                /* Alle Parts suchen */
-                String[] links = new Regex(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE)).getMatches(2);
-                for (int i = 0; i < links.length; i++) {
-                    if (!new Regex(links[i], patternSupported).matches()) {
-                        Vector<DownloadLink> LinkList = new DistributeData(links[i]).findLinks();
-                        for (int ii = 0; ii < LinkList.size(); ii++) {
-                            DownloadLink link = this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
-                            link.setSourcePluginPasswords(link_passwds);
-                            decryptedLinks.add(link);
-                        }
-                    }
-                }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+
+            /* Passwort suchen */
+            String[] password = null;
+            for (int i = 0; i < passwordpattern.size(); i++) {
+                password = new Regex(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE)).getMatches(1);
+                if (password.length != 0) {
+                    for (int ii = 0; ii < password.length; ii++) {
+                        link_passwds.add(JDUtilities.htmlDecode(password[ii]));
+                    }
+                    break;
+                }
+            }
+
+            /* Alle Parts suchen */
+            String[] links = new Regex(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE)).getMatches(2);
+            for (int i = 0; i < links.length; i++) {
+                if (!new Regex(links[i], patternSupported).matches()) {
+                    Vector<DownloadLink> LinkList = new DistributeData(links[i]).findLinks();
+                    for (int ii = 0; ii < LinkList.size(); ii++) {
+                        DownloadLink link = this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
+                        link.setSourcePluginPasswords(link_passwds);
+                        decryptedLinks.add(link);
+                    }
+                }
+            }
+
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

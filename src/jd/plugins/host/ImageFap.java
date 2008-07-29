@@ -121,8 +121,8 @@ public class ImageFap extends PluginForHost {
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation2(downloadLink)) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 /* DownloadLink holen */
                 String Imagelink = DecryptLink(new Regex(requestInfo.getHtmlCode(), Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
@@ -138,18 +138,18 @@ public class ImageFap extends PluginForHost {
                 dl.setChunkNum(1);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

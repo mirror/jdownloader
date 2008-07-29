@@ -84,8 +84,8 @@ public class UploadStube extends PluginForHost {
 //		if (aborted) {
 //			logger.warning("Plugin abgebrochen");
 //			downloadLink.setStatus(LinkStatus.TODO);
-//			step.setStatus(PluginStep.STATUS_TODO);
-//			return step;
+//			//step.setStatus(PluginStep.STATUS_TODO);
+//			return;
 //		}
 		try {
 			
@@ -97,8 +97,8 @@ public class UploadStube extends PluginForHost {
 				logger.severe("Datei nicht gefunden");
 				downloadLink
 						.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-				step.setStatus(PluginStep.STATUS_ERROR);
-				return step;
+				//step.setStatus(PluginStep.STATUS_ERROR);
+				return;
 			}
 			requestInfo=HTTP.getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink
 					.getDownloadURL(), true);
@@ -112,16 +112,16 @@ public class UploadStube extends PluginForHost {
 			        
 			    
 			        
-		return step;
+		return;
 
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		 step.setStatus(PluginStep.STATUS_ERROR);
+		 //step.setStatus(PluginStep.STATUS_ERROR);
 		 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-		return step;
+		return;
 	}
 
 	@Override

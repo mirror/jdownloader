@@ -72,28 +72,28 @@ public class FastShareorg extends PluginForHost {
 
     public void handle( DownloadLink downloadLink) {
         try {
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 /* Link holen */                
                 Form form = requestInfo.getForms()[0];
                 requestInfo = form.getRequestInfo();
                 if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 10seks */
                 //step.setParameter(10000l);
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
                 // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url),
@@ -103,8 +103,8 @@ public class FastShareorg extends PluginForHost {
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 downloadLink.setName(filename);
@@ -113,10 +113,10 @@ public class FastShareorg extends PluginForHost {
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -125,9 +125,9 @@ public class FastShareorg extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

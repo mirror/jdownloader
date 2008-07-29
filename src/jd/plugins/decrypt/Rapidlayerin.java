@@ -1,20 +1,21 @@
 package jd.plugins.decrypt;
 
-import jd.plugins.PluginForDecrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.PluginStep;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class Rapidlayerin extends PluginForDecrypt {
 
@@ -27,7 +28,7 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     public Rapidlayerin() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -63,26 +64,27 @@ public class Rapidlayerin extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-                String link = null;
-                URL url = new URL(cryptedLink);
-                RequestInfo requestInfo = HTTP.getRequest(url);
+            // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-                /* DownloadLink entschlüsseln */
-                String fun_id = new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                String all = "function " + new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                String dec = new Regex(requestInfo.getHtmlCode(), Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String link = null;
+            URL url = new URL(cryptedLink);
+            RequestInfo requestInfo = HTTP.getRequest(url);
 
-                Context cx = Context.enter();
-                Scriptable scope = cx.initStandardObjects();
-                String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) decryptedLinks.add(this.createDownloadlink(link));
-                Context.exit();
-                //step.setParameter(decryptedLinks);
-            }
+            /* DownloadLink entschlüsseln */
+            String fun_id = new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String all = "function " + new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String dec = new Regex(requestInfo.getHtmlCode(), Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) decryptedLinks.add(this.createDownloadlink(link));
+            Context.exit();
+            // step.setParameter(decryptedLinks);
+
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -90,7 +92,7 @@ public class Rapidlayerin extends PluginForDecrypt {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

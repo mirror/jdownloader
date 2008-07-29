@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class DDLMusicOrg extends PluginForDecrypt {
@@ -37,8 +35,8 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     public DDLMusicOrg() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -73,73 +71,71 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
+        try {
 
-                if (parameter.indexOf("music_crypth.php") != -1) {
+            if (parameter.indexOf("music_crypth.php") != -1) {
 
-                    parameter = parameter.replace("music_crypth.php", "frame_crypth.php");
-                    RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                    progress.setRange(1);
+                parameter = parameter.replace("music_crypth.php", "frame_crypth.php");
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+                progress.setRange(1);
 
-                    decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
 
-                    progress.increase(1);
-                    //step.setParameter(decryptedLinks);
+                progress.increase(1);
+                //// step.setParameter(decryptedLinks);
 
-                } else if (parameter.indexOf("site=view_download") != -1) {
+            } else if (parameter.indexOf("site=view_download") != -1) {
 
-                    RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
 
-                    // passwort auslesen
-                    if (reqinfo.getHtmlCode().indexOf("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>") != -1) {
+                // passwort auslesen
+                if (reqinfo.getHtmlCode().indexOf("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>") != -1) {
 
-                        String password = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n" + "                      </tr>\n" + "                      <tr>\n" + "                      <td class=\"normal\"><div align=\"center\">", "</div></td>");
+                    String password = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n" + "                      </tr>\n" + "                      <tr>\n" + "                      <td class=\"normal\"><div align=\"center\">", "</div></td>");
 
-                        default_password.add(password);
-
-                    }
-
-                    ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
-                    progress.setRange(ids.size());
-
-                    int j = 0;
-
-                    for (int i = 0; i < ids.size(); i++) {
-
-                        reqinfo = HTTP.getRequest(new URL("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0)));
-                        logger.info("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0));
-                        decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
-                        progress.increase(1);
-
-                        // nach 3 anfragen schnell hintereinander streikt der
-                        // server -> http 403
-                        // => ab 3. aufruf jeweils 0.5 sekunden warten
-                        if (j >= 2) {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        j++;
-
-                    }
-
-                    //step.setParameter(decryptedLinks);
+                    default_password.add(password);
 
                 }
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"/music_crypth.php°\" target=\"_blank\"");
+                progress.setRange(ids.size());
+
+                int j = 0;
+
+                for (int i = 0; i < ids.size(); i++) {
+
+                    reqinfo = HTTP.getRequest(new URL("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0)));
+                    logger.info("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0));
+                    decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                    progress.increase(1);
+
+                    // nach 3 anfragen schnell hintereinander streikt der
+                    // server -> http 403
+                    // => ab 3. aufruf jeweils 0.5 sekunden warten
+                    if (j >= 2) {
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    j++;
+
+                }
+
+                //// step.setParameter(decryptedLinks);
+
             }
 
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        return decryptedLinks;
 
     }
 

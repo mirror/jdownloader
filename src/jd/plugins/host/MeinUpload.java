@@ -165,9 +165,9 @@ public class MeinUpload extends PluginForHost {
         downloadLink.requestGuiUpdate();
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         if (id == null) {
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            return step;
+            return;
         }
         try {
             GetRequest r = new GetRequest("http://MeinUpload.com/server.api?id=" + id);
@@ -178,9 +178,9 @@ public class MeinUpload extends PluginForHost {
 
             String server = r.load();
             if (server == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             server = server.trim();
             HeadRequest hr = new HeadRequest(downloadLink.getDownloadURL());
@@ -203,9 +203,9 @@ public class MeinUpload extends PluginForHost {
             // HTTP/1.1
             // v
             if (r.getResponseHeader("Content-Disposition") == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             int length = r.getHttpConnection().getContentLength();
             downloadLink.setDownloadMax(length);
@@ -216,19 +216,19 @@ public class MeinUpload extends PluginForHost {
             dl.getFile();
             if (dl.getFile().length() < 6000) {
                 String page = JDUtilities.getLocalFile(dl.getFile());
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                 //step.setParameter(JDLocale.L("errors.interbalhostererror", "Internal Hoster Error"));
                 logger.severe(page);
-                return step;
+                return;
             }
-            return step;
+            return;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            return step;
+            return;
         }
 
     }
@@ -241,23 +241,23 @@ public class MeinUpload extends PluginForHost {
             r.load();
             Form[] forms = Form.getForms(r.getRequestInfo());
             if (forms.length != 1 || !forms[0].vars.containsKey("download")) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             sleep(15000, downloadLink);
             r = (PostRequest) new PostRequest(forms[0]).connect();
 
             if (r.getResponseHeader("Content-Disposition") == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             int length = r.getHttpConnection().getContentLength();
             downloadLink.setDownloadMax(length);
             dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
             dl.startDownload();
-            return step;
+            return;
 
         } catch (Exception e) {
             e.printStackTrace();

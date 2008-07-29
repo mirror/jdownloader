@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -29,7 +28,6 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -40,8 +38,8 @@ public class XinkIt extends PluginForDecrypt {
 
     public XinkIt() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -77,75 +75,73 @@ public class XinkIt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
+        try {
 
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                File captchaFile = null;
-                String capTxt = "";
-                String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
+            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+            File captchaFile = null;
+            String capTxt = "";
+            String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
 
-                while (true) { // läuft bis kein Captcha mehr abgefragt wird
+            while (true) { // läuft bis kein Captcha mehr abgefragt wird
 
-                    if (reqinfo.getHtmlCode().indexOf("captcha_send") != -1) {
+                if (reqinfo.getHtmlCode().indexOf("captcha_send") != -1) {
 
-                        logger.info("Captcha Protected");
+                    logger.info("Captcha Protected");
 
-                        if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                        }
-
-                        String captchaAdress = "http://xink.it/captcha-" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"captcha-", "\"");
-                        captchaAdress += "?" + session;
-
-                        captchaFile = getLocalCaptchaFile(this);
-                        JDUtilities.download(captchaFile, captchaAdress);
-
-                        capTxt = JDUtilities.getCaptcha(this, "xink.it", captchaFile, false);
-
-                        String post = "captcha=" + capTxt.toUpperCase() + "&x=70&y=11&" + session;
-
-                        HashMap<String, String> requestHeaders = new HashMap<String, String>();
-                        requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-
-                        reqinfo = HTTP.postRequest(new URL(parameter), null, parameter, requestHeaders, post, true);
-
-                    } else {
-
-                        if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                        }
-
-                        break;
-
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
 
+                    String captchaAdress = "http://xink.it/captcha-" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"captcha-", "\"");
+                    captchaAdress += "?" + session;
+
+                    captchaFile = getLocalCaptchaFile(this);
+                    JDUtilities.download(captchaFile, captchaAdress);
+
+                    capTxt = JDUtilities.getCaptcha(this, "xink.it", captchaFile, false);
+
+                    String post = "captcha=" + capTxt.toUpperCase() + "&x=70&y=11&" + session;
+
+                    HashMap<String, String> requestHeaders = new HashMap<String, String>();
+                    requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+
+                    reqinfo = HTTP.postRequest(new URL(parameter), null, parameter, requestHeaders, post, true);
+
+                } else {
+
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                    }
+
+                    break;
+
                 }
 
-                ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "startDownload('°');");
-
-                progress.setRange(ids.size());
-
-                for (int i = 0; i < ids.size(); i++) {
-
-                    reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + ids.get(i).get(0)));
-                    decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
-                    progress.increase(1);
-
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
 
+            ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "startDownload('°');");
+
+            progress.setRange(ids.size());
+
+            for (int i = 0; i < ids.size(); i++) {
+
+                reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + ids.get(i).get(0)));
+                decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
+                progress.increase(1);
+
+            }
+
+            // step.setParameter(decryptedLinks);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        return decryptedLinks;
 
     }
 

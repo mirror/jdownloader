@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -48,8 +46,8 @@ public class SafeTo extends PluginForDecrypt {
 
     public SafeTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     /*
@@ -92,62 +90,61 @@ public class SafeTo extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            ArrayList<ArrayList<String>> fileIDs = null;
-            try {
-                String strURL = parameter;
-                URL url = new URL(strURL);
-                RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<ArrayList<String>> fileIDs = null;
+        try {
+            String strURL = parameter;
+            URL url = new URL(strURL);
+            RequestInfo reqinfo = HTTP.getRequest(url); // Seite aufrufen
 
-                String frameURL = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
+            String frameURL = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), FRAME_URL, 0);
 
-                if (frameURL == null) {
-                    logger.severe("Cannot find frame-URL!");
-                    return null;
-                }
-
-                // frame aufrufen
-                reqinfo = HTTP.getRequest(new URL(frameURL));
-
-                boolean password = false;
-                if (reqinfo.getHtmlCode().contains(PASSWORD)) password = true;
-
-                // Solange, bis Passwort richtig eingegeben wurde (also Links
-                // gefunden)
-                while (true) {
-                    // Im HTML-Code nach "file-ids"/"Form-Inputs" suchen
-                    fileIDs = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_ID);
-
-                    // Passwort-Abfrage?
-                    if (fileIDs.isEmpty() && password) {
-                        // Passwort abfragen
-                        String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                        // Passwort senden
-                        reqinfo = HTTP.postRequest(new URL(frameURL), "pw=" + pwd + "&chk=Check");
-                    } else {
-                        break;
-                    }
-                }
-                progress.setRange(fileIDs.size());
-
-                for (int i = 0; i < fileIDs.size(); i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
-
-                    String newLink = reqinfo.getLocation();
-
-                    decryptedLinks.add(this.createDownloadlink(newLink));
-                    progress.increase(1);
-                }
-
-                // Decrypt abschliessen
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (frameURL == null) {
+                logger.severe("Cannot find frame-URL!");
+                return null;
             }
+
+            // frame aufrufen
+            reqinfo = HTTP.getRequest(new URL(frameURL));
+
+            boolean password = false;
+            if (reqinfo.getHtmlCode().contains(PASSWORD)) password = true;
+
+            // Solange, bis Passwort richtig eingegeben wurde (also Links
+            // gefunden)
+            while (true) {
+                // Im HTML-Code nach "file-ids"/"Form-Inputs" suchen
+                fileIDs = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), FILE_ID);
+
+                // Passwort-Abfrage?
+                if (fileIDs.isEmpty() && password) {
+                    // Passwort abfragen
+                    String pwd = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
+                    // Passwort senden
+                    reqinfo = HTTP.postRequest(new URL(frameURL), "pw=" + pwd + "&chk=Check");
+                } else {
+                    break;
+                }
+            }
+            progress.setRange(fileIDs.size());
+
+            for (int i = 0; i < fileIDs.size(); i++) {
+                reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
+
+                String newLink = reqinfo.getLocation();
+
+                decryptedLinks.add(this.createDownloadlink(newLink));
+                progress.increase(1);
+            }
+
+            // Decrypt abschliessen
+
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
 }

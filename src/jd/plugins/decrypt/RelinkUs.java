@@ -30,7 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -42,7 +41,7 @@ public class RelinkUs extends PluginForDecrypt {
     private String version = "1.0.0.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
-    
+
     private static final String USE_RSDF = "USE_RSDF";
     private static final String USE_CCF = "USE_CCF";
     private static final String USE_DLC = "USE_DLC";
@@ -50,8 +49,8 @@ public class RelinkUs extends PluginForDecrypt {
     public RelinkUs() {
         super();
         this.setConfigEelements();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -87,39 +86,38 @@ public class RelinkUs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                if (getProperties().getBooleanProperty(USE_RSDF, true)) {
-                    add_relinkus_container(reqinfo, cryptedLink, "rsdf");
-                }
-                if (getProperties().getBooleanProperty(USE_CCF, true)) {
-                    add_relinkus_container(reqinfo, cryptedLink, "ccf");
-                }
-                if (getProperties().getBooleanProperty(USE_DLC, true)) {
-                    add_relinkus_container(reqinfo, cryptedLink, "dlc");
-                }
-
-                add_relinkus_links(reqinfo, decryptedLinks);
-                ArrayList<String> more_links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"go\\.php\\?id\\=(\\d*)\\&seite\\=(\\d*)\">", Pattern.CASE_INSENSITIVE), 0);
-                for (int i = 0; i < more_links.size(); i++) {
-                    url = new URL("http://relink.us/" + JDUtilities.htmlDecode(SimpleMatches.getBetween(more_links.get(i), "<a href=\"", "\">")));
-                    reqinfo = HTTP.getRequest(url);
-                    add_relinkus_links(reqinfo, decryptedLinks);
-                }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (getProperties().getBooleanProperty(USE_RSDF, true)) {
+                add_relinkus_container(reqinfo, cryptedLink, "rsdf");
             }
+            if (getProperties().getBooleanProperty(USE_CCF, true)) {
+                add_relinkus_container(reqinfo, cryptedLink, "ccf");
+            }
+            if (getProperties().getBooleanProperty(USE_DLC, true)) {
+                add_relinkus_container(reqinfo, cryptedLink, "dlc");
+            }
+
+            add_relinkus_links(reqinfo, decryptedLinks);
+            ArrayList<String> more_links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"go\\.php\\?id\\=(\\d*)\\&seite\\=(\\d*)\">", Pattern.CASE_INSENSITIVE), 0);
+            for (int i = 0; i < more_links.size(); i++) {
+                url = new URL("http://relink.us/" + JDUtilities.htmlDecode(SimpleMatches.getBetween(more_links.get(i), "<a href=\"", "\">")));
+                reqinfo = HTTP.getRequest(url);
+                add_relinkus_links(reqinfo, decryptedLinks);
+            }
+
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
-    private void add_relinkus_links(RequestInfo reqinfo, Vector<DownloadLink> decryptedLinks) throws IOException {
+    private void add_relinkus_links(RequestInfo reqinfo, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
         progress.addToMax(links.size());
         for (int i = 0; i < links.size(); i++) {

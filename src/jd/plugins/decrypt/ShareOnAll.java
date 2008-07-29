@@ -19,8 +19,9 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,7 +29,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -39,8 +39,8 @@ public class ShareOnAll extends PluginForDecrypt {
 
     public ShareOnAll() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -77,58 +77,57 @@ public class ShareOnAll extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         logger.info(cryptedLink);
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
-                URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + id + ".htm");
-                RequestInfo reqInfo = HTTP.getRequest(url);
-                boolean do_continue = false;
-                Form form;
-                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                    if (reqInfo.containsHTML("<img src='code")) {
-                        form = reqInfo.getForms()[0];
-                        String captchaAddress = new Regex(reqInfo.getHtmlCode(), Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                        captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
-                        HTTPConnection captcha_con = new HTTPConnection(new URL(captchaAddress).openConnection());
-                        captcha_con.setRequestProperty("Cookie", reqInfo.getCookie());
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                            /* Fehler beim Captcha */
-                            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            //step.setParameter(null);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
-                        }
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                        if (captchaCode == null) {
-                            /* abbruch geklickt */
-                            //step.setParameter(decryptedLinks);
-                            return null;
-                        }
-                        captchaCode = captchaCode.toUpperCase();
-                        form.put("c", captchaCode);
-                        reqInfo = form.getRequestInfo();
-                    } else {
-                        do_continue = true;
-                        break;
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+            URL url = new URL("http://www.shareonall.com/showlinks.php?f=" + id + ".htm");
+            RequestInfo reqInfo = HTTP.getRequest(url);
+            boolean do_continue = false;
+            Form form;
+            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                if (reqInfo.containsHTML("<img src='code")) {
+                    form = reqInfo.getForms()[0];
+                    String captchaAddress = new Regex(reqInfo.getHtmlCode(), Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
+                    HTTPConnection captcha_con = new HTTPConnection(new URL(captchaAddress).openConnection());
+                    captcha_con.setRequestProperty("Cookie", reqInfo.getCookie());
+                    File captchaFile = this.getLocalCaptchaFile(this);
+                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                        /* Fehler beim Captcha */
+                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                        // step.setParameter(null);
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return decryptedLinks;
                     }
-                }
-                if (do_continue == true) {
-                    // Links herausfiltern
-                    String links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
-                    progress.setRange(links.length);
-                    for (int i = 0; i < links.length; i++) {
-                        decryptedLinks.add(this.createDownloadlink(links[i][0]));
-                        progress.increase(1);
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                    if (captchaCode == null) {
+                        /* abbruch geklickt */
+                        // step.setParameter(decryptedLinks);
+                        return decryptedLinks;
                     }
+                    captchaCode = captchaCode.toUpperCase();
+                    form.put("c", captchaCode);
+                    reqInfo = form.getRequestInfo();
+                } else {
+                    do_continue = true;
+                    break;
                 }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            if (do_continue == true) {
+                // Links herausfiltern
+                String links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
+                progress.setRange(links.length);
+                for (int i = 0; i < links.length; i++) {
+                    decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                    progress.increase(1);
+                }
+            }
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

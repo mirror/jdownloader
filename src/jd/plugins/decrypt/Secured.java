@@ -30,7 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -70,8 +69,8 @@ public class Secured extends PluginForDecrypt {
     private String cryptedLink;
 
     public Secured() {
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -145,80 +144,78 @@ public class Secured extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        switch (step.getStep()) {
-        case PluginStep.STEP_DECRYPT:
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            logger.finest("Decrypt: " + cryptedLink);
-            this.cryptedLink = cryptedLink;
+        // switch (step.getStep()) {
 
-            try {
-                RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
-                DOWNLOAD_CMD = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        logger.finest("Decrypt: " + cryptedLink);
+        this.cryptedLink = cryptedLink;
 
-                progress.setRange(1);
-                URL url = new URL(cryptedLink);
-                requestInfo = HTTP.getRequest(url);
+        try {
+            RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
+            DOWNLOAD_CMD = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
 
-                String html = requestInfo.getHtmlCode();
-                File captchaFile = null;
-                String capTxt = null;
-                for (;;) { // for() läuft bis kein Captcha mehr abgefragt
-                    // wird
-                    Matcher matcher = PAT_CAPTCHA.matcher(html);
+            progress.setRange(1);
+            URL url = new URL(cryptedLink);
+            requestInfo = HTTP.getRequest(url);
 
-                    if (matcher.find()) {
-                        if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                        }
+            String html = requestInfo.getHtmlCode();
+            File captchaFile = null;
+            String capTxt = null;
+            for (;;) { // for() läuft bis kein Captcha mehr abgefragt
+                // wird
+                Matcher matcher = PAT_CAPTCHA.matcher(html);
 
-                        logger.finest("Captcha Protected");
-                        String capHash = matcher.group(1).substring(8);
-                        capHash = capHash.substring(0, capHash.length() - 4);
-                        String captchaAdress = "http://" + HOST + "/" + matcher.group(1);
-                        captchaFile = getLocalCaptchaFile(this);
-                        JDUtilities.download(captchaFile, captchaAdress);
-
-                        capTxt = Plugin.getCaptchaCode(captchaFile, this);
-                        String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
-
-                        requestInfo = HTTP.postRequest(url, postData);
-                        html = requestInfo.getHtmlCode();
-                    } else {
-                        if (captchaFile != null && capTxt != null) {
-                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                        }
-                        break;
+                if (matcher.find()) {
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
-                }
 
-                // Alle File ID aus dem HTML-Code ziehen
-                Matcher matcher = PAT_FILE_ID.matcher(html);
-                Vector<String> ids = new Vector<String>();
-                while (matcher.find()) {
-                    ids.add(matcher.group(1));
-                }
-                progress.setRange(ids.size());
-                while (ids.size() > 0) {
-                    String fileUrl = this.decryptId(ids.remove(0));
-                    if (fileUrl != null) {
-                        fileUrl = fileUrl.trim();
-                    } else
-                        fileUrl = null;
-                    decryptedLinks.add(this.createDownloadlink(fileUrl));
-                    progress.increase(1);
+                    logger.finest("Captcha Protected");
+                    String capHash = matcher.group(1).substring(8);
+                    capHash = capHash.substring(0, capHash.length() - 4);
+                    String captchaAdress = "http://" + HOST + "/" + matcher.group(1);
+                    captchaFile = getLocalCaptchaFile(this);
+                    JDUtilities.download(captchaFile, captchaAdress);
 
-                }
-                // veraltet: firePluginEvent(new PluginEvent(this,
-                // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+                    capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                    String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
 
-            } catch (Exception e) {
-                logger.warning("Exception: " + e);
+                    requestInfo = HTTP.postRequest(url, postData);
+                    html = requestInfo.getHtmlCode();
+                } else {
+                    if (captchaFile != null && capTxt != null) {
+                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                    }
+                    break;
+                }
             }
-            //step.setParameter(decryptedLinks);
-            break;
 
+            // Alle File ID aus dem HTML-Code ziehen
+            Matcher matcher = PAT_FILE_ID.matcher(html);
+            Vector<String> ids = new Vector<String>();
+            while (matcher.find()) {
+                ids.add(matcher.group(1));
+            }
+            progress.setRange(ids.size());
+            while (ids.size() > 0) {
+                String fileUrl = this.decryptId(ids.remove(0));
+                if (fileUrl != null) {
+                    fileUrl = fileUrl.trim();
+                } else
+                    fileUrl = null;
+                decryptedLinks.add(this.createDownloadlink(fileUrl));
+                progress.increase(1);
+
+            }
+            // veraltet: firePluginEvent(new PluginEvent(this,
+            // PluginEvent.PLUGIN_PROGRESS_FINISH, null));
+
+        } catch (Exception e) {
+            logger.warning("Exception: " + e);
         }
-        return null;
+        //// step.setParameter(decryptedLinks);
+
+        return decryptedLinks;
     }
 
     class Cypher {

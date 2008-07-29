@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -76,7 +77,8 @@ public class ImagefapCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
                 if (!parameter.contains("view=2")) parameter += "&view=2";
@@ -94,9 +96,9 @@ public class ImagefapCom extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        
 
-        return null;
+        return decryptedLinks;
     }
 
     @Override

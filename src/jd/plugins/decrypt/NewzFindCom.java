@@ -28,7 +28,6 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class NewzFindCom extends PluginForDecrypt {
@@ -76,7 +75,7 @@ public class NewzFindCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -105,9 +104,9 @@ public class NewzFindCom extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
+        
 
-        return null;
+        return decryptedLinks;
 
     }
 

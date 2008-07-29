@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -28,7 +27,6 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class FrozenRomsIn extends PluginForDecrypt {
@@ -38,8 +36,8 @@ public class FrozenRomsIn extends PluginForDecrypt {
 
     public FrozenRomsIn() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,34 +72,34 @@ public class FrozenRomsIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            RequestInfo reqinfo;
-            ArrayList<ArrayList<String>> getLinks = new ArrayList<ArrayList<String>>();
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        RequestInfo reqinfo;
+        ArrayList<ArrayList<String>> getLinks = new ArrayList<ArrayList<String>>();
 
-            try {
-                if (parameter.indexOf("get") != -1) {
-                    ArrayList<String> tempVector = new ArrayList<String>();
-                    tempVector.add(new Regex(parameter, Pattern.compile("http://frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                    getLinks.add(tempVector);
-                } else {
-                    reqinfo = HTTP.getRequest(new URL(parameter));
-                    getLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://frozen-roms.in/get_°.html\"");
-                }
-                progress.setRange(getLinks.size());
-
-                for (int i = 0; i < getLinks.size(); i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + getLinks.get(i).get(0) + ".html"));
-                    decryptedLinks.add(this.createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
-                    progress.increase(1);
-                }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if (parameter.indexOf("get") != -1) {
+                ArrayList<String> tempVector = new ArrayList<String>();
+                tempVector.add(new Regex(parameter, Pattern.compile("http://frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                getLinks.add(tempVector);
+            } else {
+                reqinfo = HTTP.getRequest(new URL(parameter));
+                getLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://frozen-roms.in/get_°.html\"");
             }
+            progress.setRange(getLinks.size());
+
+            for (int i = 0; i < getLinks.size(); i++) {
+                reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + getLinks.get(i).get(0) + ".html"));
+                decryptedLinks.add(this.createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
+                progress.increase(1);
+            }
+
+            //// step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

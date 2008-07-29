@@ -19,7 +19,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -81,7 +80,7 @@ public class Lixin extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(cryptedLink);
@@ -101,14 +100,14 @@ public class Lixin extends PluginForDecrypt {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                             //step.setParameter(null);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
+                            //step.setStatus(PluginStep.STATUS_ERROR);
+                            return decryptedLinks;
                         }
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
                             //step.setParameter(decryptedLinks);
-                            return null;
+                            return decryptedLinks;
                         }
                         captchaCode = captchaCode.toUpperCase();
                         form.put("capt", captchaCode);
@@ -145,9 +144,9 @@ public class Lixin extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
+        
 
-        return null;
+        return decryptedLinks;
     }
 
     @Override

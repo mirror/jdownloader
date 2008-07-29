@@ -73,24 +73,24 @@ public class UploadServiceinfo extends PluginForHost {
 
     public void handle( DownloadLink downloadLink) {
         try {
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 /* Link holen */
                 url = requestInfo.getForms()[0].action;
                 HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
                 postdata = "key=" + JDUtilities.urlEncode(submitvalues.get("key"));
                 postdata = postdata + "&mysubmit=Download";
-                return step;
+                return;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 10seks, kann man auch weglassen */
                 //step.setParameter(10000l);
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
                 requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
@@ -98,8 +98,8 @@ public class UploadServiceinfo extends PluginForHost {
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 downloadLink.setName(filename);
@@ -110,10 +110,10 @@ public class UploadServiceinfo extends PluginForHost {
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -122,9 +122,9 @@ public class UploadServiceinfo extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

@@ -116,8 +116,8 @@ public class Upsharenet extends PluginForHost {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             Form form = requestInfo.getForms()[1];
             /* Captcha File holen */
@@ -128,15 +128,15 @@ public class Upsharenet extends PluginForHost {
             if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                return step;
+                return;
             }
             /* CaptchaCode holen */
             if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }
             form.vars.put("captchacode", captchaCode);
             /* Passwort holen holen */
@@ -154,43 +154,43 @@ public class Upsharenet extends PluginForHost {
             if (requestInfo.containsHTML("<span>Password Error</span>")){
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }            
             if (requestInfo.containsHTML("<span>Captcha number error or expired</span>")){                
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }            
             if (requestInfo.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")){                
-                step.setStatus(PluginStep.STATUS_ERROR);
-                step.setParameter(60 * 60 * 1000L);
+                //step.setStatus(PluginStep.STATUS_ERROR);
+               // step.setParameter(60 * 60 * 1000L);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_DOWNLOAD_LIMIT);
-                return step;
+                return;
             }
             /* PassCode war richtig, also Speichern */
             downloadLink.setProperty("pass", passCode);
             /*DownloadLink holen*/
             String link = new Regex(requestInfo.getHtmlCode(),Pattern.compile("document.location=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (link== null){
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                return step;
+                return;
             }
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
             if (requestInfo.getLocation()!=null){
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-                return step;
+                return;
             }
             /* Datei herunterladen */
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             downloadLink.setName(filename);
@@ -201,17 +201,17 @@ public class Upsharenet extends PluginForHost {
             dl.setResume(false);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

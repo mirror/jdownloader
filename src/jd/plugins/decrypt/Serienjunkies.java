@@ -332,8 +332,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        switch (step.getStep()) {
-        case PluginStep.STEP_DECRYPT:
+      //  switch (step.getStep()) {
+        
             request.redirect = true;
             request.withHtmlCode = false;
             request.getRequest("http://serienjunkies.org/enter/");
@@ -356,13 +356,13 @@ public class Serienjunkies extends PluginForDecrypt {
                             break;
                         }
                     }
-                    if (name == null) return null;
+                    if (name == null)   return decryptedLinks;
                     request.getRequest(parameter);
                     name += " ";
                     String[] bet = null;
                     while (bet == null) {
                         name = name.substring(0, name.length() - 1);
-                        if (name.length() == 0) return null;
+                        if (name.length() == 0)   return decryptedLinks;
                         try {
                             bet = request.getRegexp("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
                         } catch (Exception e) {
@@ -377,7 +377,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
 
                     //step.setParameter(decryptedLinks);
-                    return null;
+                    return decryptedLinks;
                 } else if (catst == sCatGrabb) {
 
                     String htmlcode = "";
@@ -422,9 +422,9 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
 
                     //step.setParameter(decryptedLinks);
-                    return null;
+                    return decryptedLinks;
                 } else {
-                    return null;
+                    return decryptedLinks;
                 }
             }
             if (this.getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
@@ -445,8 +445,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 decryptedLinks.add(createdl(parameter, info));
                 //step.setParameter(decryptedLinks);
             }
-        }
-        return null;
+            return decryptedLinks;
     }
 
     private DownloadLink createdl(String parameter, String[] info) {

@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class MediafireFolder extends PluginForDecrypt {
@@ -39,8 +37,8 @@ public class MediafireFolder extends PluginForDecrypt {
 
     public MediafireFolder() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -75,27 +73,27 @@ public class MediafireFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
+            reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "script language=\"JavaScript\" src=\"/js/myfiles.php/", "\"")), reqinfo.getCookie(), parameter, true);
 
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
-                progress.setRange(links.size());
+            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "hm[°]=Array(\'°\'");
+            progress.setRange(links.size());
 
-                for (int i = 0; i < links.size(); i++) {
-                    decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links.get(i).get(1)));
-                    progress.increase(1);
-                }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+            for (int i = 0; i < links.size(); i++) {
+                decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links.get(i).get(1)));
+                progress.increase(1);
             }
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

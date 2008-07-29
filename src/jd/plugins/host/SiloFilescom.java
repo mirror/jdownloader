@@ -107,16 +107,16 @@ public class SiloFilescom extends PluginForHost {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
 
             /* Downloadlimit */
             if (requestInfo.containsHTML("<span>Maximale Parallele")) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 //step.setParameter(120000L);
                 downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
-                return step;
+                return;
             }
 
             /* DownloadLink holen */
@@ -128,8 +128,8 @@ public class SiloFilescom extends PluginForHost {
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             downloadLink.setName(filename);
@@ -140,17 +140,17 @@ public class SiloFilescom extends PluginForHost {
             dl.setResume(false);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.utils.JDUtilities;
 
 //http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
@@ -80,7 +80,7 @@ public class RaidrushOrg extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -115,15 +115,15 @@ public class RaidrushOrg extends PluginForDecrypt {
                     progress.increase(1);
                 }
                 //step.setParameter(decryptedLinks);
-                return step;
+                return decryptedLinks;
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-        }
+        
 
-        return null;
+        return decryptedLinks;
 
     }
 

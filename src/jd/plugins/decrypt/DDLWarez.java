@@ -17,15 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
 import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class DDLWarez extends PluginForDecrypt {
@@ -73,7 +74,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             for (int retry = 1; retry <= 10; retry++) {
                 try {
@@ -116,8 +117,8 @@ public class DDLWarez extends PluginForDecrypt {
                     logger.finest("DDLWarez: PostRequest-Error, try again!");
                 }
             }
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

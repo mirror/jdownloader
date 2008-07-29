@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -41,8 +39,8 @@ public class NetfolderIn extends PluginForDecrypt {
 
     public NetfolderIn() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -78,46 +76,46 @@ public class NetfolderIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                if (cryptedLink.matches(patternSupported_2.pattern())) {
-                    /* weiterleitung */
-                    decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
-                } else if (cryptedLink.matches(patternSupported_1.pattern())) {
-                    /* richtiger folder */
-                    String password = "";
-                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                        int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
-                        if (check > 0) {
-                            password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                            if (password == null) {
-                                //step.setParameter(decryptedLinks);
-                                return null;
-                            }
-                            reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
-                        } else {
-                            break;
+            if (cryptedLink.matches(patternSupported_2.pattern())) {
+                /* weiterleitung */
+                decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+            } else if (cryptedLink.matches(patternSupported_1.pattern())) {
+                /* richtiger folder */
+                String password = "";
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    int check = SimpleMatches.countOccurences(reqinfo.getHtmlCode(), Pattern.compile("input type=\"password\" name=\"password\""));
+                    if (check > 0) {
+                        password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
+                        if (password == null) {
+                            // step.setParameter(decryptedLinks);
+                            return decryptedLinks;
                         }
-                    }
-
-                    ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
-                    progress.setRange(links.size());
-                    // Link der Liste hinzufügen
-                    for (int i = 0; i < links.size(); i++) {
-                        decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
-                        progress.increase(1);
+                        reqinfo = HTTP.postRequest(url, "password=" + password + "&save=Absenden");
+                    } else {
+                        break;
                     }
                 }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+
+                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://netload.in/°\"");
+                progress.setRange(links.size());
+                // Link der Liste hinzufügen
+                for (int i = 0; i < links.size(); i++) {
+                    decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
+                    progress.increase(1);
+                }
             }
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

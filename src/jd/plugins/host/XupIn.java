@@ -181,8 +181,8 @@ public class XupIn extends PluginForHost {
         //    		
         // logger.warning("Plugin aborted");
         // downloadLink.setStatus(LinkStatus.TODO);
-        // step.setStatus(PluginStep.STATUS_TODO);
-        // return step;
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
         //            
         // }
 
@@ -190,7 +190,7 @@ public class XupIn extends PluginForHost {
 
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_PAGE:
 
@@ -200,8 +200,8 @@ public class XupIn extends PluginForHost {
 
                     if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -222,8 +222,8 @@ public class XupIn extends PluginForHost {
                 } catch (Exception e) {
 
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -233,8 +233,8 @@ public class XupIn extends PluginForHost {
 
                     logger.severe("File already is in progress: " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -242,15 +242,15 @@ public class XupIn extends PluginForHost {
 
                     logger.severe("File already exists: " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
                 vid = new Regex(requestInfo.getHtmlCode(), VID).getFirstMatch();
                 vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
                 captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-                return step;
+                return;
 
             case PluginStep.STEP_GET_CAPTCHA_FILE:
 
@@ -262,14 +262,14 @@ public class XupIn extends PluginForHost {
 
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                     //step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return step;
+                    return;
 
                 } else {
 
                     //step.setParameter(file);
-                    step.setStatus(PluginStep.STATUS_USER_INPUT);
+                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
 
                 }
 
@@ -292,8 +292,8 @@ public class XupIn extends PluginForHost {
 
                     logger.severe("Captcha code or password wrong");
                     downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -301,8 +301,8 @@ public class XupIn extends PluginForHost {
 
                     logger.severe("Filesize Error");
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -312,20 +312,20 @@ public class XupIn extends PluginForHost {
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
 
                 }
 
-                return step;
+                return;
 
             }
 
-            return step;
+            return;
 
         } catch (IOException e) {
 
             e.printStackTrace();
-            return step;
+            return;
 
         }
 

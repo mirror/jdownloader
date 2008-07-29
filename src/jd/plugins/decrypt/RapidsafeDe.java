@@ -81,7 +81,7 @@ public class RapidsafeDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             if (!parameter.endsWith("/")) parameter += "/";
             try {
@@ -210,8 +210,8 @@ public class RapidsafeDe extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     private String spin(String string) {

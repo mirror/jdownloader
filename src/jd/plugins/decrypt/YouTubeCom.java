@@ -28,7 +28,7 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
@@ -36,12 +36,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -68,8 +68,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -118,8 +118,8 @@ public class YouTubeCom extends PluginForDecrypt {
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
             /**
-		 * 
-		 */
+             * 
+             */
             private static final long serialVersionUID = -4282205277016215186L;
 
             void init() {
@@ -245,60 +245,59 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                String video_id = "";
-                String t = "";
+            String video_id = "";
+            String t = "";
 
-                String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
-                if (match == null) return null;
-                String[] lineSub = match.split(",|:");
+            String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
+            if (match == null) return null;
+            String[] lineSub = match.split(",|:");
 
-                for (int i = 0; i < lineSub.length; i++) {
-                    String s = lineSub[i];
+            for (int i = 0; i < lineSub.length; i++) {
+                String s = lineSub[i];
 
-                    if (s.indexOf(VIDEO_ID) > -1) {
-                        video_id = clean(lineSub[i + 1]);
-                    }
-
-                    if (s.indexOf(T) > -1) {
-                        t = clean(lineSub[i + 1]);
-                    }
+                if (s.indexOf(VIDEO_ID) > -1) {
+                    video_id = clean(lineSub[i + 1]);
                 }
 
-                String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-
-                boolean hasMp4 = false;
-                boolean has3gp = false;
-
-                if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) hasMp4 = true;
-                if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) has3gp = true;
-
-                int convertId = getYoutubeConvertTo(hasMp4, has3gp);
-                if (convertId != -1) {
-
-                    if (convertId == CONVERT_ID_MP4) {
-                        link += "&fmt=18";
-                    } else if (convertId == CONVERT_ID_3GP) {
-                        link += "&fmt=13";
-                    }
-
-                    link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
-
-                    decryptedLinks.add(this.createDownloadlink(link));
+                if (s.indexOf(T) > -1) {
+                    t = clean(lineSub[i + 1]);
                 }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+
+            String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
+
+            boolean hasMp4 = false;
+            boolean has3gp = false;
+
+            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) hasMp4 = true;
+            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) has3gp = true;
+
+            int convertId = getYoutubeConvertTo(hasMp4, has3gp);
+            if (convertId != -1) {
+
+                if (convertId == CONVERT_ID_MP4) {
+                    link += "&fmt=18";
+                } else if (convertId == CONVERT_ID_3GP) {
+                    link += "&fmt=13";
+                }
+
+                link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
+
+                decryptedLinks.add(this.createDownloadlink(link));
+            }
+
+            // step.setParameter(decryptedLinks);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

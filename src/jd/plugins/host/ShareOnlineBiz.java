@@ -145,8 +145,8 @@ public class ShareOnlineBiz extends PluginForHost {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
@@ -156,16 +156,16 @@ public class ShareOnlineBiz extends PluginForHost {
             if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                return step;
+                return;
             }
 
             /* CaptchaCode holen */
             if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }
             /* Passwort holen holen */
             if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
@@ -184,16 +184,16 @@ public class ShareOnlineBiz extends PluginForHost {
                     /* PassCode war falsch, also Löschen */
                     downloadLink.setProperty("pass", null);
                 }
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }
             /* Downloadlimit erreicht */
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 //step.setParameter(60 * 60 * 1000L);
                 downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                return step;
+                return;
             }
             /* PassCode war richtig, also Speichern */
             downloadLink.setProperty("pass", passCode);
@@ -216,8 +216,8 @@ public class ShareOnlineBiz extends PluginForHost {
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             downloadLink.setName(filename);
@@ -228,10 +228,10 @@ public class ShareOnlineBiz extends PluginForHost {
             dl.setFilesize(length);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
 
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -243,9 +243,9 @@ public class ShareOnlineBiz extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 //http://save.raidrush.ws/?id=8b891e864bc42ffa7bfcdaf72503f2a0
@@ -81,7 +79,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -107,9 +105,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
-
-        return null;
+            return decryptedLinks;
 
     }
 

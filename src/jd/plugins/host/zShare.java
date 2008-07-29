@@ -80,8 +80,8 @@ public class zShare extends PluginForHost {
 //        if (aborted) {
 //            logger.warning("Plugin abgebrochen");
 //            downloadLink.setStatus(LinkStatus.TODO);
-//            step.setStatus(PluginStep.STATUS_TODO);
-//            return step;
+//            //step.setStatus(PluginStep.STATUS_TODO);
+//            return;
 //        }
         try {
             logger.info(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
@@ -99,13 +99,13 @@ public class zShare extends PluginForHost {
            dl = new RAFDownload(this, downloadLink, urlConnection);
     
             dl.startDownload();
-            return step;
+            return;
         }
         catch (Exception e) {
             e.printStackTrace();
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            return step;
+            return;
         }
     }
 

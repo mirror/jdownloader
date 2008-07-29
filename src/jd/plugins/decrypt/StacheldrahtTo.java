@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
@@ -28,7 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class StacheldrahtTo extends PluginForDecrypt {
@@ -39,8 +37,8 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
     public StacheldrahtTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -76,45 +74,44 @@ public class StacheldrahtTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
-                RequestInfo ri = HTTP.getRequest(new URL(parameter));
-                String cookie = ri.getCookie().split(";")[0];
-                ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
+        try {
+            RequestInfo ri = HTTP.getRequest(new URL(parameter));
+            String cookie = ri.getCookie().split(";")[0];
+            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "var InputVars = \"°\"");
 
-                progress.setRange(links.size() / 2);
-                for (int i = 0; i < links.size(); i = i + 2) {
-                    HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links.get(i).get(0)).openConnection());
-                    httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
-                    httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
-                    httpConnection.setRequestMethod("GET");
-                    httpConnection.setInstanceFollowRedirects(true);
-                    httpConnection.setRequestProperty("Host", "stacheldraht.to");
-                    httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                    httpConnection.setRequestProperty("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
-                    httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-                    httpConnection.setRequestProperty("Accept-Encoding", "gzip,deflate");
-                    httpConnection.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-                    httpConnection.setRequestProperty("Keep-Alive", "300");
-                    httpConnection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
-                    httpConnection.setRequestProperty("X-Prototype-Version", "1.6.0.2");
-                    httpConnection.setRequestProperty("Referer", parameter);
-                    httpConnection.setRequestProperty("Cookie", cookie);
-                    RequestInfo reqinfo = HTTP.readFromURL(httpConnection);
-                    reqinfo.setConnection(httpConnection);
+            progress.setRange(links.size() / 2);
+            for (int i = 0; i < links.size(); i = i + 2) {
+                HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links.get(i).get(0)).openConnection());
+                httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
+                httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
+                httpConnection.setRequestMethod("GET");
+                httpConnection.setInstanceFollowRedirects(true);
+                httpConnection.setRequestProperty("Host", "stacheldraht.to");
+                httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+                httpConnection.setRequestProperty("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
+                httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
+                httpConnection.setRequestProperty("Accept-Encoding", "gzip,deflate");
+                httpConnection.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+                httpConnection.setRequestProperty("Keep-Alive", "300");
+                httpConnection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+                httpConnection.setRequestProperty("X-Prototype-Version", "1.6.0.2");
+                httpConnection.setRequestProperty("Referer", parameter);
+                httpConnection.setRequestProperty("Cookie", cookie);
+                RequestInfo reqinfo = HTTP.readFromURL(httpConnection);
+                reqinfo.setConnection(httpConnection);
 
-                    progress.increase(1);
-                    decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
-                }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+                progress.increase(1);
+                decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
             }
-
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

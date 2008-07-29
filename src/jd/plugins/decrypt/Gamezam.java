@@ -3,7 +3,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -11,7 +11,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -29,11 +28,12 @@ public class Gamezam extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         logger.info(id);
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             try {
                 boolean gamez_continue = false;
-                ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+             
                 URL url;
                 RequestInfo reqInfo = HTTP.getRequest(new URL("http://www.gamez.am/start.php?"), null, null, false);
                 String cookie = reqInfo.getConnection().getHeaderFields().get("Set-Cookie").toString().replaceAll("\\[|\\]", "");
@@ -48,8 +48,8 @@ public class Gamezam extends PluginForDecrypt {
                     if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         //step.setParameter(null);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
                     }
                     String captchaCode = JDUtilities.getCaptcha(this, "gamez.am", captchaFile, false);
                     if (captchaCode == null) {
@@ -106,8 +106,8 @@ public class Gamezam extends PluginForDecrypt {
                 e.printStackTrace();
             }
 
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

@@ -4,13 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class FlyLoadnet extends PluginForDecrypt {
@@ -23,49 +23,49 @@ public class FlyLoadnet extends PluginForDecrypt {
 
     public FlyLoadnet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                RequestInfo requestInfo;
-                if (new Regex(cryptedLink, patternSupported_Download).matches()) {
-                    String id = new Regex(cryptedLink, patternSupported_Download).getFirstMatch();
-                    decryptedLinks.add(this.createDownloadlink("http://flyload.net/request_window.php?" + id));
-                } else if (new Regex(cryptedLink, patternSupported_Request).matches()) {
-                    String id = new Regex(cryptedLink, patternSupported_Request).getFirstMatch();
-                    requestInfo = HTTP.getRequest(new URL("http://flyload.net/download.php?view." + id));
-                    String pw = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td color:red;' class='forumheader3'>(?!<b>)(.*?)</td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    requestInfo = HTTP.getRequest(url);
-                    String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value='(.*?)' readonly onclick", Pattern.CASE_INSENSITIVE)).getMatches();
-                    for (int i = 0; i < links.length; i++) {
-                        DownloadLink link = this.createDownloadlink(links[i][0]);
-                        if (!pw.matches("-") && !pw.matches("Kein Passwort")) link.addSourcePluginPassword(pw);
-                        decryptedLinks.add(link);
-                    }
-                } else if (new Regex(cryptedLink, patternSupported_Safe).matches()) {
-                    requestInfo = HTTP.getRequest(url);
-                    String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='popup\\(\"([a-zA-Z0-9]+)\",\"([a-zA-Z0-9]+)\"\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-                    for (int i = 0; i < links.length; i++) {
-                        requestInfo = HTTP.getRequest(new URL("http://flyload.net/safe.php?link_id=" + links[i][0] + "&link_hash=" + links[i][1]));
-                        if (requestInfo.getLocation() != null) decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
-                    }
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo requestInfo;
+            if (new Regex(cryptedLink, patternSupported_Download).matches()) {
+                String id = new Regex(cryptedLink, patternSupported_Download).getFirstMatch();
+                decryptedLinks.add(this.createDownloadlink("http://flyload.net/request_window.php?" + id));
+            } else if (new Regex(cryptedLink, patternSupported_Request).matches()) {
+                String id = new Regex(cryptedLink, patternSupported_Request).getFirstMatch();
+                requestInfo = HTTP.getRequest(new URL("http://flyload.net/download.php?view." + id));
+                String pw = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td color:red;' class='forumheader3'>(?!<b>)(.*?)</td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                requestInfo = HTTP.getRequest(url);
+                String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value='(.*?)' readonly onclick", Pattern.CASE_INSENSITIVE)).getMatches();
+                for (int i = 0; i < links.length; i++) {
+                    DownloadLink link = this.createDownloadlink(links[i][0]);
+                    if (!pw.matches("-") && !pw.matches("Kein Passwort")) link.addSourcePluginPassword(pw);
+                    decryptedLinks.add(link);
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } else if (new Regex(cryptedLink, patternSupported_Safe).matches()) {
+                requestInfo = HTTP.getRequest(url);
+                String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='popup\\(\"([a-zA-Z0-9]+)\",\"([a-zA-Z0-9]+)\"\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+                for (int i = 0; i < links.length; i++) {
+                    requestInfo = HTTP.getRequest(new URL("http://flyload.net/safe.php?link_id=" + links[i][0] + "&link_hash=" + links[i][1]));
+                    if (requestInfo.getLocation() != null) decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                }
             }
-            //step.setParameter(decryptedLinks);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-        return null;
+        //// step.setParameter(decryptedLinks);
+
+        return decryptedLinks;
     }
 
     @Override

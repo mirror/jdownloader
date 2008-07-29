@@ -16,7 +16,7 @@ jd.plugins.decrypt.DDLMusicOrg
 jd.plugins.decrypt.DDLWarez
 #jd.plugins.decrypt.DipurlCom
 jd.plugins.decrypt.Divxvid
-jd.plugins.decrypt.DLC
+#jd.plugins.decrypt.DLC
 jd.plugins.decrypt.DreiDlAm
 jd.plugins.decrypt.EinsKhDe
 #jd.plugins.decrypt.FastDomainNet

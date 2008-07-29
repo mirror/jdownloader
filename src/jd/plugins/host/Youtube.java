@@ -118,18 +118,18 @@ public class Youtube extends PluginForHost {
                 requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
-                    return step;
+                    return;
                 }
                 String name = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), FILENAME, 1).trim();
                 String downloadfile = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), DOWNLOADFILE, 1).trim();
 
                 if ((name == null) || (downloadfile == null)) {
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
-                    return step;
+                    return;
 
                 }
                 
@@ -198,11 +198,11 @@ public class Youtube extends PluginForHost {
                             progress.finalize();
                         }
                     }.start();
-                    step.setStatus(PluginStep.STATUS_DONE);
+                    //step.setStatus(PluginStep.STATUS_DONE);
                     downloadLink.setStatus(LinkStatus.FINISHED);
                 }
 
-                return step;
+                return;
 
             }
         } catch (IOException e) {

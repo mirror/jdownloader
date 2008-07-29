@@ -19,14 +19,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class NixPopOrg extends PluginForDecrypt {
@@ -75,7 +74,7 @@ public class NixPopOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(parameter);
@@ -97,8 +96,8 @@ public class NixPopOrg extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

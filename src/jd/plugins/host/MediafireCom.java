@@ -88,16 +88,16 @@ public class MediafireCom extends PluginForHost {
     public void handle( final DownloadLink downloadLink) {
 
         try {
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo.containsHTML(offlinelink)) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
                 String[] para = new Regex(requestInfo.getHtmlCode(), "cg\\(\'(.*?)\',\'(.*?)\',\'(.*?)\'\\)").getMatches(0);
                 para = para[0].split("'");
@@ -111,20 +111,20 @@ public class MediafireCom extends PluginForHost {
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-        return step;
+        return;
     }
 
     @Override

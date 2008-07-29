@@ -3,14 +3,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -23,7 +22,7 @@ public class Xailicom extends PluginForDecrypt {
 
     public Xailicom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -58,30 +57,29 @@ public class Xailicom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                progress.setRange(links.length);
-                for (int i = 0; i < links.length; i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + links[i]));
-                    String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    if (link != null) {
-                        link = JDUtilities.htmlDecode(link);
-                        decryptedLinks.add(this.createDownloadlink(link));
-                    }
-                    progress.increase(1);
+            String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            progress.setRange(links.length);
+            for (int i = 0; i < links.length; i++) {
+                reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + links[i]));
+                String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (link != null) {
+                    link = JDUtilities.htmlDecode(link);
+                    decryptedLinks.add(this.createDownloadlink(link));
                 }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+                progress.increase(1);
             }
+
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

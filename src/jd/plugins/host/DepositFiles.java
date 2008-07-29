@@ -144,8 +144,8 @@ public class DepositFiles extends PluginForHost {
         //
         // logger.warning("Plugin aborted");
         // downloadLink.setStatus(LinkStatus.TODO);
-        // step.setStatus(PluginStep.STATUS_TODO);
-        // return step;
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
         // }
         logger.info("get Next Step " + step);
         // premium
@@ -164,7 +164,7 @@ public class DepositFiles extends PluginForHost {
         String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
         try {
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
 
@@ -179,32 +179,32 @@ public class DepositFiles extends PluginForHost {
                 if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
                     logger.severe("File already is in progress. " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
                 if (new File(downloadLink.getFileOutput()).exists()) {
                     logger.severe("File already exists. " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
 
                 // Datei geloescht?
                 if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
                     logger.severe("Download not found");
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
 
                 if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("Download not possible now");
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setParameter(60000l);
-                    return step;
+                    return;
 
                 }
 
@@ -230,20 +230,20 @@ public class DepositFiles extends PluginForHost {
                 finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL).getFirstMatch();
 
                 if (finalURL == null) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    return step;
+                    return;
 
                 }
-                return step;
+                return;
                 // case PluginStep.STEP_GET_CAPTCHA_FILE:
-                // step.setStatus(PluginStep.STATUS_SKIP);
+                // //step.setStatus(PluginStep.STATUS_SKIP);
                 // downloadLink.getLinkStatus().setStatusText("Premiumdownload");
                 // step = nextStep(step);
 
             case PluginStep.STEP_PENDING:
 
-                step.setStatus(PluginStep.STATUS_SKIP);
+                //step.setStatus(PluginStep.STATUS_SKIP);
                 downloadLink.getLinkStatus().setStatusText("Connecting");
                 step = nextStep(step);
 
@@ -253,10 +253,10 @@ public class DepositFiles extends PluginForHost {
 
                 if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
 
@@ -264,10 +264,10 @@ public class DepositFiles extends PluginForHost {
 
                 if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
 
@@ -280,15 +280,15 @@ public class DepositFiles extends PluginForHost {
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
 
                 }
-                return step;
+                return;
 
             }
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            step.setStatus(PluginStep.STATUS_ERROR);
-            return step;
+            //step.setStatus(PluginStep.STATUS_ERROR);
+            return;
 
         } catch (IOException e) {
 
@@ -296,8 +296,8 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        step.setStatus(PluginStep.STATUS_ERROR);
-        return step;
+        //step.setStatus(PluginStep.STATUS_ERROR);
+        return;
     }
 
     public PluginStep doFreeStep(PluginStep step, DownloadLink parameter) {
@@ -309,7 +309,7 @@ public class DepositFiles extends PluginForHost {
             DownloadLink downloadLink = (DownloadLink) parameter;
             Browser br = new Browser();
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
                 Browser.clearCookies("depositfiles.com");
@@ -327,8 +327,8 @@ public class DepositFiles extends PluginForHost {
 
                     logger.severe("File already is in progress. " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -336,8 +336,8 @@ public class DepositFiles extends PluginForHost {
 
                     logger.severe("File already exists. " + downloadLink.getFileOutput());
                     downloadLink.setStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -346,18 +346,18 @@ public class DepositFiles extends PluginForHost {
 
                     logger.severe("Download not found");
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
                 if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("Download not possible now");
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setParameter(60000l);
-                    return step;
+                    return;
 
                 }
 
@@ -379,10 +379,10 @@ public class DepositFiles extends PluginForHost {
                 if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
 
                     logger.severe("Unknown error. Retry in 20 seconds");
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
                 // else {
@@ -393,9 +393,9 @@ public class DepositFiles extends PluginForHost {
                 // if (icid == null) {
                 //
                 // logger.severe("Session error");
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                // //step.setStatus(PluginStep.STATUS_ERROR);
                 // downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                // return step;
+                // return;
                 //
                 // }
                 //
@@ -403,7 +403,7 @@ public class DepositFiles extends PluginForHost {
                 // "http://depositfiles.com/get_download_img_code.php?icid=" +
                 // icid;
                 // cookie = requestInfo.getCookie();
-                // return step;
+                // return;
                 //
                 // }
 
@@ -416,26 +416,26 @@ public class DepositFiles extends PluginForHost {
                 //
                 // logger.severe("Captcha donwload failed: " + captchaAddress);
                 // //step.setParameter(null);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                // //step.setStatus(PluginStep.STATUS_ERROR);
                 // downloadLink.setStatus(DownloadLink.
                 // STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                // return step;
+                // return;
                 //
                 // }
                 // else {
                 //
                 // //step.setParameter(file);
-                // step.setStatus(PluginStep.STATUS_USER_INPUT);
-                // return step;
+                // //step.setStatus(PluginStep.STATUS_USER_INPUT);
+                // return;
                 // }
                 finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getFirstMatch();
             case PluginStep.STEP_PENDING:
-                step.setStatus(PluginStep.STATUS_SKIP);
+                //step.setStatus(PluginStep.STATUS_SKIP);
                 downloadLink.getLinkStatus().setStatusText("Connecting");
                 step = nextStep(step);
 
                 // //step.setParameter(60000l);
-                // return step;
+                // return;
 
             case PluginStep.STEP_DOWNLOAD:
 
@@ -444,19 +444,19 @@ public class DepositFiles extends PluginForHost {
                 // if (code == null || code.length() != 4) {
                 //
                 // logger.severe("Captcha donwload failed: " + captchaAddress);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                // //step.setStatus(PluginStep.STATUS_ERROR);
                 // downloadLink.setStatus(DownloadLink.
                 // STATUS_ERROR_CAPTCHA_IMAGEERROR);
-                // return step;
+                // return;
                 //
                 // }
                 //
                 // if (code.length() != 4) {
                 //
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                // //step.setStatus(PluginStep.STATUS_ERROR);
                 //downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG
                 // );
-                // return step;
+                // return;
                 //
                 // }
 
@@ -468,10 +468,10 @@ public class DepositFiles extends PluginForHost {
                 HTTPConnection con = br.openGetConnection(finalURL);
                 if (con.getHeaderField("Location") != null && con.getHeaderField("Location").indexOf("error") > 0) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
 
@@ -481,10 +481,10 @@ public class DepositFiles extends PluginForHost {
 
                 if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
 
@@ -495,15 +495,15 @@ public class DepositFiles extends PluginForHost {
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
 
                 }
-                return step;
+                return;
 
             }
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            step.setStatus(PluginStep.STATUS_ERROR);
-            return step;
+            //step.setStatus(PluginStep.STATUS_ERROR);
+            return;
 
         } catch (IOException e) {
 
@@ -511,8 +511,8 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        step.setStatus(PluginStep.STATUS_ERROR);
-        return step;
+        //step.setStatus(PluginStep.STATUS_ERROR);
+        return;
 
     }
 

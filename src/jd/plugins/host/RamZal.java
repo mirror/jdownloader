@@ -84,8 +84,8 @@ public class RamZal extends PluginForHost {
 //		if (aborted) {
 //			logger.warning("Plugin abgebrochen");
 //			downloadLink.setStatus(LinkStatus.TODO);
-//			step.setStatus(PluginStep.STATUS_TODO);
-//			return step;
+//			//step.setStatus(PluginStep.STATUS_TODO);
+//			return;
 //		}
 		try {
 			requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink
@@ -100,9 +100,9 @@ public class RamZal extends PluginForHost {
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 			
-				step.setStatus(PluginStep.STATUS_ERROR);
+				//step.setStatus(PluginStep.STATUS_ERROR);
 			}
-			return step;
+			return;
 
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
@@ -111,9 +111,9 @@ public class RamZal extends PluginForHost {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		step.setStatus(PluginStep.STATUS_ERROR);
+		//step.setStatus(PluginStep.STATUS_ERROR);
 		downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-		return step;
+		return;
 	}
 
 	@Override

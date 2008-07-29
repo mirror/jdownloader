@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Form;
@@ -30,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -44,8 +42,8 @@ public class RsLayerCom extends PluginForDecrypt {
 
     public RsLayerCom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -81,101 +79,99 @@ public class RsLayerCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
+        try {
 
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
 
-                if (parameter.indexOf("/link-") != -1) {
+            if (parameter.indexOf("/link-") != -1) {
 
-                    String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<iframe src=\"", "\" ");
-                    link = decryptEntities(link);
+                String link = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "<iframe src=\"", "\" ");
+                link = decryptEntities(link);
 
-                    progress.setRange(1);
-                    decryptedLinks.add(this.createDownloadlink(link));
-                    progress.increase(1);
-                    //step.setParameter(decryptedLinks);
+                progress.setRange(1);
+                decryptedLinks.add(this.createDownloadlink(link));
+                progress.increase(1);
+                // step.setParameter(decryptedLinks);
 
-                } else if (parameter.indexOf("/directory-") != -1) {
+            } else if (parameter.indexOf("/directory-") != -1) {
 
-                    Form[] forms = Form.getForms(reqinfo);
+                Form[] forms = Form.getForms(reqinfo);
 
-                    if (forms != null && forms.length != 0 && forms[0] != null) {
-                        Form captchaForm = forms[0];
+                if (forms != null && forms.length != 0 && forms[0] != null) {
+                    Form captchaForm = forms[0];
 
-                        String captchaFileName = new Regex(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
+                    String captchaFileName = new Regex(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
 
-                        if (captchaFileName == null) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
-                        }
-                        String captchaUrl = "http://" + host + "/" + captchaFileName;
-                        File captchaFile = getLocalCaptchaFile(this, ".png");
-                        boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaUrl), reqinfo.getCookie(), null, true).getConnection());
+                    if (captchaFileName == null) {
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
+                    }
+                    String captchaUrl = "http://" + host + "/" + captchaFileName;
+                    File captchaFile = getLocalCaptchaFile(this, ".png");
+                    boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaUrl), reqinfo.getCookie(), null, true).getConnection());
 
-                        if (!fileDownloaded) {
-                            logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
-                        }
-
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-
-                        if (null == captchaCode || captchaCode.length() == 0) {
-                            logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
-                        }
-
-                        captchaForm.put("captcha_input", captchaCode);
-
-                        reqinfo = HTTP.readFromURL(captchaForm.getConnection());
-
-                        if (reqinfo.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
-                            logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
-                        }
-
-                        if (reqinfo.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
-
-                            logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return null;
-
-                        }
-
+                    if (!fileDownloaded) {
+                        logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
                     }
 
-                    ArrayList<String> layerLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
-                    progress.setRange(layerLinks.size());
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
 
-                    for (String fileId : layerLinks) {
-
-                        String layerLink = "http://rs-layer.com/link-" + fileId + ".html";
-
-                        RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
-                        String link = SimpleMatches.getBetween(request2.getHtmlCode(), "<iframe src=\"", "\" ");
-
-                        decryptedLinks.add(this.createDownloadlink(link));
-                        progress.increase(1);
-
+                    if (null == captchaCode || captchaCode.length() == 0) {
+                        logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
                     }
 
-                    //step.setParameter(decryptedLinks);
+                    captchaForm.put("captcha_input", captchaCode);
+
+                    reqinfo = HTTP.readFromURL(captchaForm.getConnection());
+
+                    if (reqinfo.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
+                        logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
+                    }
+
+                    if (reqinfo.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
+
+                        logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
+                        // step.setStatus(PluginStep.STATUS_ERROR);
+                        return null;
+
+                    }
 
                 }
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                ArrayList<String> layerLinks = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), linkPattern, 1);
+                progress.setRange(layerLinks.size());
+
+                for (String fileId : layerLinks) {
+
+                    String layerLink = "http://rs-layer.com/link-" + fileId + ".html";
+
+                    RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
+                    String link = SimpleMatches.getBetween(request2.getHtmlCode(), "<iframe src=\"", "\" ");
+
+                    decryptedLinks.add(this.createDownloadlink(link));
+                    progress.increase(1);
+
+                }
+
+                // step.setParameter(decryptedLinks);
+
             }
 
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        return decryptedLinks;
 
     }
 

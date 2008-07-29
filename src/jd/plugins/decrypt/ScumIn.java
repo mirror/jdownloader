@@ -80,7 +80,7 @@ public class ScumIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
@@ -104,8 +104,8 @@ public class ScumIn extends PluginForDecrypt {
                 File captchaFile = this.getLocalCaptchaFile(this);
                 if (!JDUtilities.download(captchaFile, con) || !captchaFile.exists()) {
                     //step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                       return decryptedLinks;
                 }
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
 
@@ -124,8 +124,7 @@ public class ScumIn extends PluginForDecrypt {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        return null;
+            return decryptedLinks;
     }
 
     @Override

@@ -99,8 +99,8 @@ public class Divxvid extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        switch (step.getStep()) {
-            case PluginStep.STEP_DECRYPT:
+      //  switch (step.getStep()) {
+            
                 progress.setRange(1000);
                 ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
                 URL url;
@@ -143,10 +143,9 @@ public class Divxvid extends PluginForDecrypt {
                     e.printStackTrace();
                 }
 
-                //step.setParameter(decryptedLinks);
-                break;
+          
 
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 }

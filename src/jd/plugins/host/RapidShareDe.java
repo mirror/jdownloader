@@ -144,17 +144,17 @@ public class RapidShareDe extends PluginForHost {
 
     public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) throws Exception {
 
-        switch (step.getStep()) {
+      //  switch (step.getStep()) {
         case PluginStep.STEP_WAIT_TIME:
-            step.setStatus(PluginStep.STATUS_SKIP);
+            //step.setStatus(PluginStep.STATUS_SKIP);
             downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_PENDING:
-            step.setStatus(PluginStep.STATUS_SKIP);
+            //step.setStatus(PluginStep.STATUS_SKIP);
             downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_GET_CAPTCHA_FILE:
-            step.setStatus(PluginStep.STATUS_SKIP);
+            //step.setStatus(PluginStep.STATUS_SKIP);
             downloadLink.getLinkStatus().setStatusText("Premium");
             step = nextStep(step);
         case PluginStep.STEP_DOWNLOAD:
@@ -179,8 +179,8 @@ String error=new Regex(page,"alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
 if(error!=null){
     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
     //step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
-    step.setStatus(PluginStep.STATUS_ERROR);
-    return step;
+    //step.setStatus(PluginStep.STATUS_ERROR);
+    return;
     
     
     
@@ -200,7 +200,7 @@ if(error!=null){
                 // new File(downloadLink.getFileOutput()).delete();
                 //
                 // logger.warning(error);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                // //step.setStatus(PluginStep.STATUS_ERROR);
                 // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
                 // downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
                 // //step.setParameter(premium);
@@ -216,7 +216,7 @@ if(error!=null){
                 // //step.setParameter(error);
                 // }
                 //
-                // return step;
+                // return;
                 // } else {
                 // new File(downloadLink.getFileOutput()).delete();
                 //
@@ -224,8 +224,8 @@ if(error!=null){
                 //
                 // this.reportUnknownError(page, 6);
                 //
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                // return step;
+                // //step.setStatus(PluginStep.STATUS_ERROR);
+                // return;
                 // }
 
             }
@@ -242,21 +242,21 @@ if(error!=null){
             dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
             dl.startDownload();
 
-            // step.setStatus(PluginStep.STATUS_DONE);
+            // //step.setStatus(PluginStep.STATUS_DONE);
             // downloadLink.setStatus(LinkStatus.FINISHED);
 
-            return step;
+            return;
         }
         // 2448143-%31%38%36%35%34%31
 return null;
     }
 
     public PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) throws Exception {
-        switch (step.getStep()) {
+      //  switch (step.getStep()) {
         case PluginStep.STEP_WAIT_TIME:
             Form[] forms = Form.getForms(downloadLink.getDownloadURL());
             if (forms.length < 2) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("konnte den Download nicht finden");
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return null;
@@ -265,13 +265,13 @@ return null;
             form.remove("dl.start");
             form.put("dl.start", "Free");
             requestInfo = form.getRequestInfo();
-            return step;
+            return;
         case PluginStep.STEP_PENDING:
             // if (aborted) {
             // logger.warning("Plugin abgebrochen");
             // downloadLink.setStatus(LinkStatus.TODO);
-            // step.setStatus(PluginStep.STATUS_TODO);
-            // return step;
+            // //step.setStatus(PluginStep.STATUS_TODO);
+            // return;
             // }
             try {
                 waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
@@ -279,16 +279,16 @@ return null;
                 try {
                     waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
                     downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                 } catch (Exception es) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("kann wartezeit nicht setzen");
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     return null;
                 }
             }
             //step.setParameter((long) waittime);
-            return step;
+            return;
         case PluginStep.STEP_GET_CAPTCHA_FILE:
             String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
             RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
@@ -301,8 +301,8 @@ return null;
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                 logger.severe("Captcha not found");
                 downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             try {
                 code = Plugin.getCaptchaCode(captchaFile, this);
@@ -312,19 +312,19 @@ return null;
             if (code == null || code == "") {
                 logger.severe("Bot erkannt");
                 downloadLink.setStatus(LinkStatus.ERROR_BOT_DETECTED);
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
-                return step;
+                return;
             }
             form.put("captcha", code);
-            step.setStatus(PluginStep.STATUS_SKIP);
-            return step;
+            //step.setStatus(PluginStep.STATUS_SKIP);
+            return;
         case PluginStep.STEP_DOWNLOAD:
             // if (aborted) {
             // logger.warning("Plugin abgebrochen");
             // downloadLink.setStatus(LinkStatus.TODO);
-            // step.setStatus(PluginStep.STATUS_TODO);
-            // return step;
+            // //step.setStatus(PluginStep.STATUS_TODO);
+            // return;
             // }
             HTTPConnection urlConnection = form.getConnection();
             downloadLink.setName(getFileNameFormHeader(urlConnection));
@@ -335,16 +335,16 @@ return null;
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                 logger.severe("captcha wrong");
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 JDUtilities.appendInfoToFilename(this, captchaFile, "_" + code, false);
             }
-            return step;
+            return;
 
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

@@ -19,14 +19,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -41,7 +40,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     public Rapidsafenet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
 
     }
 
@@ -77,26 +76,25 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            progress.setRange(1);
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        progress.setRange(1);
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                // Links auslesen und konvertieren
-                progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // Decrypt abschliessen
-
-            //step.setParameter(decryptedLinks);
+            // Links auslesen und konvertieren
+            progress.increase(1);
+            decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(SimpleMatches.getBetween(reqinfo.getHtmlCode(), "&nbsp;<FORM ACTION=\"", "\" METHOD=\"post\" ID=\"postit\"")))));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        // Decrypt abschliessen
+
+        // step.setParameter(decryptedLinks);
+
+        return decryptedLinks;
     }
 
     @Override

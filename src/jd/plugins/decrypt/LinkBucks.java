@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -39,7 +40,7 @@ public class LinkBucks extends PluginForDecrypt {
 
     public LinkBucks() {
         super();
-        steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+
     }
 
     @Override
@@ -73,20 +74,20 @@ public class LinkBucks extends PluginForDecrypt {
     }
 
     @Override
-    public PluginStep doStep(PluginStep step, String parameter) {
-        if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 URL url = new URL(parameter);
                 RequestInfo reqinfo = HTTP.getRequest(url);
                 String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getFirstMatch();
                 decryptedLinks.add(this.createDownloadlink(link));
-                step.setParameter(decryptedLinks);
+               // step.setParameter(decryptedLinks);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

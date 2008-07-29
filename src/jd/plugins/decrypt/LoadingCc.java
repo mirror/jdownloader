@@ -19,14 +19,13 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class LoadingCc extends PluginForDecrypt {
@@ -45,8 +44,8 @@ public class LoadingCc extends PluginForDecrypt {
     // http://collectr.net/out/376910
     public LoadingCc() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -81,58 +80,58 @@ public class LoadingCc extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
 
-                progress.setRange(1);
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+            progress.setRange(1);
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>(.*?)\\<!-- Rechte Navigation --\\>").getFirstMatch();
-                progress.increase(1);
+            String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>(.*?)\\<!-- Rechte Navigation --\\>").getFirstMatch();
+            progress.increase(1);
 
-                // logger.info(content);
-                String[] links = new Regex(content, "<a href=\"([^\"]*?)\" target=\"\\_blank\"><img src='images[^>]*?' border=\"0\" />").getMatches(1);
-                // ArrayList<ArrayList<String>> links =
-                // SimpleMatches.getAllSimpleMatches(content, "<a
-                // target=\"_blank\" href="'°"'>");
+            // logger.info(content);
+            String[] links = new Regex(content, "<a href=\"([^\"]*?)\" target=\"\\_blank\"><img src='images[^>]*?' border=\"0\" />").getMatches(1);
+            // ArrayList<ArrayList<String>> links =
+            // SimpleMatches.getAllSimpleMatches(content, "<a
+            // target=\"_blank\" href="'°"'>");
 
-                progress.setRange(links.length);
+            progress.setRange(links.length);
 
-                for (int i = 0; i < links.length; i++) {
-                    // logger.info(links.get(i).get(0));
+            for (int i = 0; i < links.length; i++) {
+                // logger.info(links.get(i).get(0));
 
-                    if (!links[i].matches("(?is)http://.*?loading\\.cc.*")) // Achtung:
-                                                                            // Loading.cc
-                                                                            // hat
-                                                                            // bei
-                                                                            // Files
-                                                                            // ohne
-                                                                            // DLC
-                                                                            // statt
-                                                                            // des
-                                                                            // dllinks
-                                                                            // einen
-                                                                            // Backlink
-                                                                            // auf
-                                                                            // die
-                                                                            // eigene
-                                                                            // URL
-                    {
-                        // System.out.println(links[i]);
-                        decryptedLinks.add(this.createDownloadlink(links[i]));
-                    }
-                    progress.increase(1);
+                if (!links[i].matches("(?is)http://.*?loading\\.cc.*")) // Achtung:
+                // Loading.cc
+                // hat
+                // bei
+                // Files
+                // ohne
+                // DLC
+                // statt
+                // des
+                // dllinks
+                // einen
+                // Backlink
+                // auf
+                // die
+                // eigene
+                // URL
+                {
+                    // System.out.println(links[i]);
+                    decryptedLinks.add(this.createDownloadlink(links[i]));
                 }
-
-                //step.setParameter(decryptedLinks);
-
-            } catch (IOException e) {
-                e.printStackTrace();
+                progress.increase(1);
             }
+
+            // step.setParameter(decryptedLinks);
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

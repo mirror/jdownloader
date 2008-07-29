@@ -20,14 +20,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class MirrorItDe extends PluginForDecrypt {
@@ -38,8 +37,8 @@ public class MirrorItDe extends PluginForDecrypt {
 
     public MirrorItDe() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -74,27 +73,26 @@ public class MirrorItDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            try {
-                RequestInfo reqInfo = HTTP.getRequest(new URL(parameter));
-                String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
-                progress.setRange(links.length);
+        try {
+            RequestInfo reqInfo = HTTP.getRequest(new URL(parameter));
+            String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
+            progress.setRange(links.length);
 
-                for (int i = 0; i < links.length; i++) {
-                    reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links[i][0], "UTF-8") + "&num=" + links[i][1]));
-                    reqInfo = HTTP.getRequest(new URL(reqInfo.getLocation()));
-                    decryptedLinks.add(this.createDownloadlink(reqInfo.getLocation()));
-                    progress.increase(1);
-                }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+            for (int i = 0; i < links.length; i++) {
+                reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links[i][0], "UTF-8") + "&num=" + links[i][1]));
+                reqInfo = HTTP.getRequest(new URL(reqInfo.getLocation()));
+                decryptedLinks.add(this.createDownloadlink(reqInfo.getLocation()));
+                progress.increase(1);
             }
-
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

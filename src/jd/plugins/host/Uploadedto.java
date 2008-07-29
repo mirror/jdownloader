@@ -134,7 +134,7 @@ public class Uploadedto extends PluginForHost {
         RequestInfo requestInfo;
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_WAIT_TIME:
 
                 requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
@@ -142,17 +142,17 @@ public class Uploadedto extends PluginForHost {
                 if (requestInfo.containsHTML(TRAFFIC_EXCEEDED_FREE) || requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
                     int waitTime = 61 * 60 * 1000;
                     downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     logger.info("Traffic Limit reached....");
                     //step.setParameter((long) waitTime);
-                    return step;
+                    return;
                 }
                 // Datei geloescht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                     logger.severe("download not found");
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
 
                 
@@ -172,8 +172,8 @@ public class Uploadedto extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setParameter("Wrong Password");
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
                 if (filepass != null) {
@@ -199,16 +199,16 @@ public class Uploadedto extends PluginForHost {
 
                         int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
                         //step.setParameter((long) waitTime);
-                        return step;
+                        return;
                     }
                     if (requestInfo.getConnection().getHeaderField("Location") != null) {
                         this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
-                        return step;
+                        return;
                     }
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 } else {
                     useCaptchaVersion = true;
@@ -219,45 +219,45 @@ public class Uploadedto extends PluginForHost {
 
                         int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
                         //step.setParameter((long) waitTime);
-                        return step;
+                        return;
                     }
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                         logger.severe("Unbekannter fehler.. retry in 20 sekunden");
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         //step.setParameter(20000l);
-                        return step;
+                        return;
                     }
                     if (requestInfo.getConnection().getHeaderField("Location") != null) {
                         this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
-                        return step;
+                        return;
                     }
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 }
-                return step;
+                return;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 if (useCaptchaVersion) {
                     File file = this.getLocalCaptchaFile(this);
                     if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                         //step.setParameter(null);
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                        return step;
+                        return;
                     } else {
                         //step.setParameter(file);
-                        step.setStatus(PluginStep.STATUS_USER_INPUT);
+                        //step.setStatus(PluginStep.STATUS_USER_INPUT);
                     }
                     break;
                 } else {
-                    step.setStatus(PluginStep.STATUS_SKIP);
+                    //step.setStatus(PluginStep.STATUS_SKIP);
                     downloadLink.getLinkStatus().setStatusText("No Captcha");
-                    return step;
+                    return;
 
                 }
             case PluginStep.STEP_DOWNLOAD:
@@ -271,44 +271,44 @@ public class Uploadedto extends PluginForHost {
 
                         int waitTime = 61 * 60 * 1000;
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.info("Traffic Limit reached....");
                         //step.setParameter((long) waitTime);
-                        return step;
+                        return;
                     }
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error-captcha") > 0) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("captcha Falsch");
                         downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
 
-                        return step;
+                        return;
                     }
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         //step.setParameter(20000l);
-                        return step;
+                        return;
                     }
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
                     logger.info("Filenam1e: " + getFileNameFormHeader(requestInfo.getConnection()));
 
                     if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         //step.setParameter(20000l);
-                        return step;
+                        return;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     dl.startDownload();
-                    return step;
+                    return;
                 } else {
                     this.finalURL = finalURL + "";
                     logger.info("dl " + finalURL);
@@ -316,12 +316,12 @@ public class Uploadedto extends PluginForHost {
                     requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
 
                     if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         //step.setParameter(20000l);
-                        return step;
+                        return;
                     }
                     int length = requestInfo.getConnection().getContentLength();
                     downloadLink.setDownloadMax(length);
@@ -349,11 +349,11 @@ public class Uploadedto extends PluginForHost {
                     // logger.info("Code: \r\n" + requestInfo.getHtmlCode());
 
                     if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         //step.setParameter(20000l);
-                        return step;
+                        return;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
@@ -361,17 +361,17 @@ public class Uploadedto extends PluginForHost {
 
                     dl.startDownload();
 
-                    return step;
+                    return;
                 }
             }
-            return step;
+            return;
         } catch (IOException e) {
             e.printStackTrace();
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Unbekannter Fehler. siehe Exception");
             parameter.setStatus(LinkStatus.ERROR_UNKNOWN);
             //step.setParameter(20000l);
-            return step;
+            return;
         }
     }
 
@@ -384,34 +384,34 @@ public class Uploadedto extends PluginForHost {
 
         if (user == null || pass == null) {
 
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Premiumfehler Logins are incorrect");
             parameter.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             //step.setParameter(JDLocale.L("plugins.host.premium.loginError", "Login Fehler") + ": " + user);
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-            return step;
+            return;
 
         }
         try {
             DownloadLink downloadLink = (DownloadLink) parameter;
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             // Wird als login verwendet
             case PluginStep.STEP_WAIT_TIME:
                 logger.info("login");
                 requestInfo = HTTP.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=" + user + "&password=" + pass, false);
 
                 if (requestInfo.getCookie().indexOf("auth") < 0) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     parameter.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setParameter("Login Error: " + user);
                     getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-                    return step;
+                    return;
                 }
                 cookie = requestInfo.getCookie();
 
-                return step;
+                return;
             case PluginStep.STEP_GET_CAPTCHA_FILE:
-                step.setStatus(PluginStep.STATUS_SKIP);
+                //step.setStatus(PluginStep.STATUS_SKIP);
                 downloadLink.getLinkStatus().setStatusText("Premiumdownload");
                 step = nextStep(step);
 
@@ -422,17 +422,17 @@ public class Uploadedto extends PluginForHost {
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
                     logger.severe("download not found");
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 // Traffic aufgebraucht?
                 if (requestInfo.getHtmlCode().contains(TRAFFIC_EXCEEDED)) {
                     logger.warning("Premium traffic exceeded (> 50 GiB in the last 10 days)");
                     downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
                     //step.setParameter("Premium overload (> 50 GiB)");
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-                    return step;
+                    return;
                 }
 
                 String filepass = null;
@@ -452,8 +452,8 @@ public class Uploadedto extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setParameter("Wrong Password");
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
                 if (filepass != null) {
@@ -469,8 +469,8 @@ public class Uploadedto extends PluginForHost {
 
                         downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                         //step.setParameter("Indirect Link Error");
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     if (!newURL.startsWith("http")) {
                         newURL = "http://uploaded.to" + newURL;
@@ -479,11 +479,11 @@ public class Uploadedto extends PluginForHost {
 
                     if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
                         if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-                            step.setStatus(PluginStep.STATUS_ERROR);
+                            //step.setStatus(PluginStep.STATUS_ERROR);
                             logger.severe("Endlink not found");
                             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-                            return step;
+                            return;
                         }
 
                     }
@@ -503,11 +503,11 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setDownloadMax(length);
                 logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
                 if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-                    return step;
+                    return;
                 }
                 downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
@@ -515,16 +515,16 @@ public class Uploadedto extends PluginForHost {
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 dl.setResume(true);
                 dl.startDownload();
-                return step;
+                return;
             }
-            return step;
+            return;
         } catch (Exception e) {
             e.printStackTrace();
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Unbekannter Fehler. siehe Exception");
             parameter.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-            return step;
+            return;
         }
     }
 

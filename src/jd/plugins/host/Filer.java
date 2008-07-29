@@ -156,10 +156,10 @@ public class Filer extends PluginForHost {
             downloadLink.setDownloadMax(length);
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 //step.setParameter(20000l);
-                return step;
+                return;
             }
             downloadLink.setName(getFileNameFormHeader(con));
 
@@ -169,15 +169,15 @@ public class Filer extends PluginForHost {
 
             dl.startDownload();
 
-            return step;
+            return;
         } catch (Exception e) {
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
 
             String error = JDUtilities.convertExceptionReadable(e);
             logger.severe("Error: " + error);
             //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
             downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            return step;
+            return;
         }
 
     }
@@ -200,37 +200,37 @@ public class Filer extends PluginForHost {
                 if (!page.contains("captcha.png")) break;
             }
             if (page.contains("captcha.png")) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                return step;
+                return;
             }
 
             if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
                 logger.severe("Error: " + error);
                 //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
                 downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                return step;
+                return;
 
             }
 
             br.setFollowRedirects(false);
             String wait=new Regex(br,"Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
             if(wait!=null){
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 //step.setParameter(Long.parseLong(wait)*60*1000);
                 downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                return step;
+                return;
                 
                 
             }
             Form[] forms = br.getForms();
             if(forms.length<2){
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 //step.setParameter(Long.parseLong("1")*60*1000);
                 downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                return step;
+                return;
                 
                 
             }
@@ -240,14 +240,14 @@ public class Filer extends PluginForHost {
             // logger.severe("Free User Limit reached");
             // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             // //step.setParameter("Free User Limit");
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            // return step;
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // return;
             // }
             // if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
             // logger.severe("Die Datei existiert nicht");
             // downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            // return step;
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // return;
             // }
             //
             // String strWaitTime =
@@ -257,10 +257,10 @@ public class Filer extends PluginForHost {
             // logger.severe("wait " + strWaitTime + " minutes");
             // waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
             // downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            // //step.setStatus(PluginStep.STATUS_ERROR);
             // logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
             // //step.setParameter((long) waitTime);
-            // return step;
+            // return;
             // }
 
             sleep(61000, downloadLink);
@@ -270,10 +270,10 @@ public class Filer extends PluginForHost {
             downloadLink.setDownloadMax(length);
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 //step.setParameter(20000l);
-                return step;
+                return;
             }
             downloadLink.setName(getFileNameFormHeader(con));
 
@@ -281,7 +281,7 @@ public class Filer extends PluginForHost {
             dl.setChunkNum(1);
             dl.startDownload();
 
-            return step;
+            return;
 
         } catch (Exception e) {
             e.printStackTrace();

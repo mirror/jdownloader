@@ -102,7 +102,7 @@ public abstract class PluginForHost extends Plugin {
 //        }
 //        logger.finer("Current Step:  " + currentStep + "/" + steps);
 //        if (!this.isAGBChecked()) {
-//            currentStep.setStatus(PluginStep.STATUS_ERROR);
+//            current//step.setStatus(PluginStep.STATUS_ERROR);
 //            logger.severe("AGB not signed : " + this.getPluginID());
 //            ((DownloadLink) parameter).setStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
 //            return currentStep;
@@ -246,18 +246,18 @@ public abstract class PluginForHost extends Plugin {
 //            logger.finer("got/return step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
 //            return ret;
 //            // if(ret==null){
-//            // return step;
+//            // return;
 //            // }else{
 //            // return ret;
 //            // }
 //        } catch (Exception e) {
 //            e.printStackTrace();
-//            step.setStatus(PluginStep.STATUS_ERROR);
+//            //step.setStatus(PluginStep.STATUS_ERROR);
 //            ((DownloadLink) parameter).setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
 //            //step.setParameter(e.getLocalizedMessage());
 //            logger.finer("got/return 2 step: " + step + " Linkstatus: " + ((DownloadLink) parameter).getStatus());
 //
-//            return step;
+//            return;
 //        }
 //    }
 
@@ -285,7 +285,7 @@ public abstract class PluginForHost extends Plugin {
 //            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 //                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 //
-//                step.setStatus(PluginStep.STATUS_ERROR);
+//                //step.setStatus(PluginStep.STATUS_ERROR);
 //
 //            }
 //            return true;
@@ -297,7 +297,7 @@ public abstract class PluginForHost extends Plugin {
 //            e.printStackTrace();
 //        }
 //
-//        step.setStatus(PluginStep.STATUS_ERROR);
+//        //step.setStatus(PluginStep.STATUS_ERROR);
 //        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 //        return false;
 //
@@ -401,10 +401,10 @@ public abstract class PluginForHost extends Plugin {
 //        long waitTime = getRemainingWaittime();
 //        logger.finer("wait (intern) " + waitTime + " minutes");
 //        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-//        //step.setStatus(PluginStep.STATUS_ERROR);
+//        ////step.setStatus(PluginStep.STATUS_ERROR);
 //        logger.info(" Waittime(intern) set to " + step + " : " + waitTime);
 //        //step.setParameter((long) waitTime);
-//        return step;
+//        return;
 //    }
 
    

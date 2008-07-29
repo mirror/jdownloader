@@ -92,8 +92,8 @@ public class ArchivTo extends PluginForHost {
 //        if (aborted) {
 //            logger.warning("Plugin aborted");
 //            downloadLink.setStatus(LinkStatus.TODO);
-//            step.setStatus(PluginStep.STATUS_TODO);
-//            return step;
+//            //step.setStatus(PluginStep.STATUS_TODO);
+//            return;
 //        }
         try {
             String url = downloadLink.getDownloadURL();
@@ -103,8 +103,8 @@ public class ArchivTo extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             final long length = downloadLink.getDownloadMax();
             downloadLink.setName(getFileNameFormHeader(urlConnection));
@@ -114,10 +114,10 @@ public class ArchivTo extends PluginForHost {
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
 
         }
         catch (MalformedURLException e) {
@@ -126,10 +126,10 @@ public class ArchivTo extends PluginForHost {
         catch (IOException e) {
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
-        return step;
+        return;
     }
 
     @Override

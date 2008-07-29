@@ -38,96 +38,96 @@ public class Gwarezcc extends PluginForDecrypt {
     public Gwarezcc() {
         super();
         this.setConfigEelements();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(cryptedLink);
-                RequestInfo requestInfo;
-                boolean dlc_found = false;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(cryptedLink);
+            RequestInfo requestInfo;
+            boolean dlc_found = false;
 
-                if (cryptedLink.matches(patternLink_Details_Main.pattern())) {
-                    /* Link aus der Übersicht */
-                    String downloadid = url.getFile().substring(1);
-                    /* weiterleiten zur Download Info Seite */
-                    decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "#details"));
-                } else if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
-                    /* Link aus der Mirror Check Seite */
-                    String downloadid = url.getFile().replaceAll("check", "parts");
-                    /* weiterleiten zur Mirror Parts Seite */
-                    decryptedLinks.add(this.createDownloadlink("http://gwarez.cc" + downloadid));
-                } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
-                    /* Link auf die Download Info Seite */
-                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                    String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getFirstMatch();
+            if (cryptedLink.matches(patternLink_Details_Main.pattern())) {
+                /* Link aus der Übersicht */
+                String downloadid = url.getFile().substring(1);
+                /* weiterleiten zur Download Info Seite */
+                decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "#details"));
+            } else if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
+                /* Link aus der Mirror Check Seite */
+                String downloadid = url.getFile().replaceAll("check", "parts");
+                /* weiterleiten zur Mirror Parts Seite */
+                decryptedLinks.add(this.createDownloadlink("http://gwarez.cc" + downloadid));
+            } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
+                /* Link auf die Download Info Seite */
+                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
+                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getFirstMatch();
 
-                    if (getProperties().getBooleanProperty(PREFER_DLC, false) == true) {
-                        /* DLC Suchen */
-                        ArrayList<String> dlc = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE), 0);
-                        if (dlc.size() == 1) {
-                            decryptedLinks.add(this.createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
-                            dlc_found = true;
-                        } else
-                            logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
-                    }
-
-                    if (dlc_found == false) {
-                        /* Mirrors suchen (Verschlüsselt) */
-                        ArrayList<String> mirror_pages = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE), 1);
-                        for (int i = 0; i < mirror_pages.size(); i++) {
-                            /* Mirror Page zur weiteren Verarbeitung adden */
-                            decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages.get(i) + "/"));
-                        }
-                    }
-
-                } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
-                    /* Link zu den Parts des Mirrors (Verschlüsselt) */
-                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                    String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getFirstMatch();
-                    /* Parts suchen */
-                    ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
-                    /* Passwort suchen */
-                    url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                    Vector<String> link_passwds = new Vector<String>();
-                    requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                    ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
-                    if (password.size() == 1) {
-                        /* Passwort gefunden */
-                        link_passwds.add(JDUtilities.htmlDecode(password.get(0)));
+                if (getProperties().getBooleanProperty(PREFER_DLC, false) == true) {
+                    /* DLC Suchen */
+                    ArrayList<String> dlc = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE), 0);
+                    if (dlc.size() == 1) {
+                        decryptedLinks.add(this.createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
+                        dlc_found = true;
                     } else
-                        logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-
-                    for (int ii = 0; ii < parts.size(); ii++) {
-                        /* Parts decrypten und adden */
-                        DownloadLink link = this.createDownloadlink(gwarezdecrypt(parts.get(ii)));
-                        link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
-                        link.setSourcePluginPasswords(link_passwds);
-                        decryptedLinks.add(link);
-                    }
-                } else if (cryptedLink.matches(patternLink_Download_DLC.pattern())) {
-                    /* DLC laden */
-                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                    HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-                    dlc_con.setRequestProperty("Referer", cryptedLink);
-                    JDUtilities.download(container, dlc_con);
-                    JDUtilities.getController().loadContainerFile(container);
+                        logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
                 }
 
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                if (dlc_found == false) {
+                    /* Mirrors suchen (Verschlüsselt) */
+                    ArrayList<String> mirror_pages = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE), 1);
+                    for (int i = 0; i < mirror_pages.size(); i++) {
+                        /* Mirror Page zur weiteren Verarbeitung adden */
+                        decryptedLinks.add(this.createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages.get(i) + "/"));
+                    }
+                }
+
+            } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
+                /* Link zu den Parts des Mirrors (Verschlüsselt) */
+                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
+                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getFirstMatch();
+                /* Parts suchen */
+                ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
+                /* Passwort suchen */
+                url = new URL("http://gwarez.cc/" + downloadid + "#details");
+                Vector<String> link_passwds = new Vector<String>();
+                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
+                ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
+                if (password.size() == 1) {
+                    /* Passwort gefunden */
+                    link_passwds.add(JDUtilities.htmlDecode(password.get(0)));
+                } else
+                    logger.severe("Please Update Gwarez Plugin(PW Pattern)");
+
+                for (int ii = 0; ii < parts.size(); ii++) {
+                    /* Parts decrypten und adden */
+                    DownloadLink link = this.createDownloadlink(gwarezdecrypt(parts.get(ii)));
+                    link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
+                    link.setSourcePluginPasswords(link_passwds);
+                    decryptedLinks.add(link);
+                }
+            } else if (cryptedLink.matches(patternLink_Download_DLC.pattern())) {
+                /* DLC laden */
+                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+                dlc_con.setRequestProperty("Referer", cryptedLink);
+                JDUtilities.download(container, dlc_con);
+                JDUtilities.getController().loadContainerFile(container);
             }
 
-            //step.setParameter(decryptedLinks);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+
+        //// step.setParameter(decryptedLinks);
+
+        return decryptedLinks;
     }
 
     private String gwarezdecrypt(String link) {
@@ -142,42 +142,42 @@ public class Gwarezcc extends PluginForDecrypt {
         replace.put("CH\\|", "8");
         replace.put("BI\\|", "9");
         replace.put("AJ\\|", "0");
-        
-        replace.put("\\|JQ\\|", "a"); 
-        replace.put("\\|GR\\|", "b"); 
-        replace.put("\\|JK\\|", "c"); 
-        replace.put("\\|VH\\|", "d"); 
-        replace.put("\\|ND\\|", "e"); 
-        replace.put("\\|YK\\|", "f"); 
-        replace.put("\\|ZB\\|", "g"); 
-        replace.put("\\|FJ\\|", "h"); 
-        replace.put("\\|FK\\|", "i"); 
-        replace.put("\\|ZD\\|", "j"); 
-        replace.put("\\|ZS\\|", "k"); 
-        replace.put("\\|KI\\|", "l"); 
-        replace.put("\\|GI\\|", "m"); 
-        replace.put("\\|SI\\|", "n"); 
-        replace.put("\\|KA\\|", "o"); 
-        replace.put("\\|SU\\|", "p"); 
-        replace.put("\\|PO\\|", "q"); 
-        replace.put("\\|OP\\|", "r"); 
-        replace.put("\\|YX\\|", "s"); 
-        replace.put("\\|SX\\|", "t"); 
-        replace.put("\\|UY\\|", "u"); 
-        replace.put("\\|UM\\|", "v"); 
-        replace.put("\\|QS\\|", "w"); 
-        replace.put("\\|AK\\|", "x"); 
-        replace.put("\\|VP\\|", "y"); 
-        replace.put("\\|YY\\|", "z"); 
-         
-        replace.put("\\|DD\\|", ":"); 
-        replace.put("\\|SS\\|", "/"); 
+
+        replace.put("\\|JQ\\|", "a");
+        replace.put("\\|GR\\|", "b");
+        replace.put("\\|JK\\|", "c");
+        replace.put("\\|VH\\|", "d");
+        replace.put("\\|ND\\|", "e");
+        replace.put("\\|YK\\|", "f");
+        replace.put("\\|ZB\\|", "g");
+        replace.put("\\|FJ\\|", "h");
+        replace.put("\\|FK\\|", "i");
+        replace.put("\\|ZD\\|", "j");
+        replace.put("\\|ZS\\|", "k");
+        replace.put("\\|KI\\|", "l");
+        replace.put("\\|GI\\|", "m");
+        replace.put("\\|SI\\|", "n");
+        replace.put("\\|KA\\|", "o");
+        replace.put("\\|SU\\|", "p");
+        replace.put("\\|PO\\|", "q");
+        replace.put("\\|OP\\|", "r");
+        replace.put("\\|YX\\|", "s");
+        replace.put("\\|SX\\|", "t");
+        replace.put("\\|UY\\|", "u");
+        replace.put("\\|UM\\|", "v");
+        replace.put("\\|QS\\|", "w");
+        replace.put("\\|AK\\|", "x");
+        replace.put("\\|VP\\|", "y");
+        replace.put("\\|YY\\|", "z");
+
+        replace.put("\\|DD\\|", ":");
+        replace.put("\\|SS\\|", "/");
         replace.put("\\|OO\\|", ".");
 
         for (Iterator<String> it = replace.keySet().iterator(); it.hasNext();) {
             String key = it.next();
-            String with=replace.get(key);
-            link = link.replaceAll(key , with);
+            String with = replace.get(key);
+            link = link.replaceAll(key, with);
         }
         return link;
     }

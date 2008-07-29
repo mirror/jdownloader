@@ -101,8 +101,8 @@ public class FilesTo extends PluginForHost {
         // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
         // logger.warning("Plugin abgebrochen");
         // downloadLink.setStatus(LinkStatus.TODO);
-        // step.setStatus(PluginStep.STATUS_TODO);
-        // return step;
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
         //            
         // }
 
@@ -112,7 +112,7 @@ public class FilesTo extends PluginForHost {
 
             String parameterString = downloadLink.getDownloadURL().toString();
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
 
@@ -123,8 +123,8 @@ public class FilesTo extends PluginForHost {
 
                     logger.severe("download not found");
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -132,15 +132,15 @@ public class FilesTo extends PluginForHost {
 
                     session = new Regex(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
                     captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getFirstMatch() + "?" + session;
-                    return step;
+                    return;
 
                 } else {
 
                     logger.severe("Unknown error.. retry in 20 sekunden");
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 }
 
@@ -152,14 +152,14 @@ public class FilesTo extends PluginForHost {
 
                     logger.severe("Captcha download failed: " + captchaAddress);
                     //step.setParameter(null);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return step;
+                    return;
 
                 } else {
 
                     //step.setParameter(file);
-                    step.setStatus(PluginStep.STATUS_USER_INPUT);
+                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
 
                 }
 
@@ -176,16 +176,16 @@ public class FilesTo extends PluginForHost {
 
                 if (requestInfo.getHtmlCode() == null) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                     //step.setParameter(20000l);
-                    return step;
+                    return;
 
                 } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                    return step;
+                    return;
 
                 }
 
@@ -205,15 +205,15 @@ public class FilesTo extends PluginForHost {
                 dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
 
-                return step;
+                return;
 
             }
 
-            return step;
+            return;
 
         } catch (IOException e) {
 

@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class DreiDlAm extends PluginForDecrypt {
@@ -42,8 +40,8 @@ public class DreiDlAm extends PluginForDecrypt {
 
     public DreiDlAm() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -79,50 +77,50 @@ public class DreiDlAm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
 
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-            if (parameter.indexOf("3dl.am/download/start/") != -1) {
-                ArrayList<String> links = decryptFromStart(parameter);
-                progress.setRange(links.size());
-                String link = new String();
+        if (parameter.indexOf("3dl.am/download/start/") != -1) {
+            ArrayList<String> links = decryptFromStart(parameter);
+            progress.setRange(links.size());
+            String link = new String();
 
-                for (int i = 0; i < links.size(); i++) {
-                    progress.increase(1);
-                    link = decryptFromLink(links.get(i));
-                    decryptedLinks.add(this.createDownloadlink(link));
-                }
-
-                //step.setParameter(decryptedLinks);
-
-            } else if (parameter.indexOf("3dl.am/link/") != -1) {
-
-                progress.setRange(1);
-
-                String link = decryptFromLink(parameter);
-                decryptedLinks.add(this.createDownloadlink(link));
-
+            for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
-                //step.setParameter(decryptedLinks);
-
-            } else if (parameter.indexOf("3dl.am/download/") != -1) {
-
-                String link1 = decryptFromDownload(parameter);
-                ArrayList<String> links = decryptFromStart(link1);
-                progress.setRange(links.size());
-                String link2 = new String();
-
-                for (int i = 0; i < links.size(); i++) {
-                    progress.increase(1);
-                    link2 = decryptFromLink(links.get(i));
-                    decryptedLinks.add(this.createDownloadlink(link2));
-                }
-
-                //step.setParameter(decryptedLinks);
+                link = decryptFromLink(links.get(i));
+                decryptedLinks.add(this.createDownloadlink(link));
             }
+
+            //// step.setParameter(decryptedLinks);
+
+        } else if (parameter.indexOf("3dl.am/link/") != -1) {
+
+            progress.setRange(1);
+
+            String link = decryptFromLink(parameter);
+            decryptedLinks.add(this.createDownloadlink(link));
+
+            progress.increase(1);
+            //// step.setParameter(decryptedLinks);
+
+        } else if (parameter.indexOf("3dl.am/download/") != -1) {
+
+            String link1 = decryptFromDownload(parameter);
+            ArrayList<String> links = decryptFromStart(link1);
+            progress.setRange(links.size());
+            String link2 = new String();
+
+            for (int i = 0; i < links.size(); i++) {
+                progress.increase(1);
+                link2 = decryptFromLink(links.get(i));
+                decryptedLinks.add(this.createDownloadlink(link2));
+            }
+
+            //// step.setParameter(decryptedLinks);
         }
-        return null;
+
+        return decryptedLinks;
     }
 
     @Override

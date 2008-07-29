@@ -3,6 +3,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -13,7 +14,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 
@@ -27,7 +27,7 @@ public class Rlslog extends PluginForDecrypt {
 
     public Rlslog() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
         this.setConfigEelements();
         this.hosterList = Regex.getLines(getProperties().getStringProperty(HOSTER_LIST, "rapidshare.com"));
     }
@@ -83,46 +83,47 @@ public class Rlslog extends PluginForDecrypt {
         } else {
             followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
         }
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
-                Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
-                for (int i = 0; i < Links.length; i++) {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
+            Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
+            for (int i = 0; i < Links.length; i++) {
 
-                    if (checkLink(Links[i])) {
-                        /*
-                         * links adden, die in der hosterlist stehen
-                         */
-                        decryptedLinks.add(this.createDownloadlink(Links[i]));
-                        decryptedLinks.lastElement().addSourcePluginPasswords(passs);
-                    }
-                    if (Links[i].contains(followcomments) == true) {
-                        /* weitere comment pages abrufen */
-                        URL url2 = new URL(Links[i]);
-                        RequestInfo reqinfo2 = HTTP.getRequest(url2);
-                        String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
-                        Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
-                        for (int j = 0; j < Links2.length; j++) {
+                if (checkLink(Links[i])) {
+                    /*
+                     * links adden, die in der hosterlist stehen
+                     */
+                    DownloadLink l = this.createDownloadlink(Links[i]);
+                    decryptedLinks.add(l);
+                    l.addSourcePluginPasswords(passs);
+                }
+                if (Links[i].contains(followcomments) == true) {
+                    /* weitere comment pages abrufen */
+                    URL url2 = new URL(Links[i]);
+                    RequestInfo reqinfo2 = HTTP.getRequest(url2);
+                    String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
+                    Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
+                    for (int j = 0; j < Links2.length; j++) {
 
-                            if (checkLink(Links2[j])) {
-                                /*
-                                 * links adden, die in der hosterlist stehen
-                                 */
-                                decryptedLinks.add(this.createDownloadlink(Links2[j]));
-                                decryptedLinks.lastElement().addSourcePluginPasswords(passs2);
-                            }
+                        if (checkLink(Links2[j])) {
+                            /*
+                             * links adden, die in der hosterlist stehen
+                             */
+                            DownloadLink l = this.createDownloadlink(Links2[j]);
+                            decryptedLinks.add(l);
+                            l.addSourcePluginPasswords(passs2);
                         }
                     }
                 }
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     private void setConfigEelements() {

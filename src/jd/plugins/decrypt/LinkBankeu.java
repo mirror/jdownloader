@@ -3,7 +3,7 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -12,7 +12,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -33,7 +32,7 @@ public class LinkBankeu extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
 
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
@@ -55,8 +54,8 @@ public class LinkBankeu extends PluginForDecrypt {
                 e.printStackTrace();
             }
             //step.setParameter(decryptedLinks);
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

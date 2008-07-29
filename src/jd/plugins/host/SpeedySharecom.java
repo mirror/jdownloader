@@ -73,14 +73,14 @@ public class SpeedySharecom extends PluginForHost {
 
     public void handle( DownloadLink downloadLink) {        
         try {
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 /* Link holen */                
                 HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
@@ -93,11 +93,11 @@ public class SpeedySharecom extends PluginForHost {
                         postdata = postdata + "&password=" + JDUtilities.urlEncode(password);
                     }
                 }
-                return step;
+                return;
             case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 30seks */
                 //step.setParameter(30000l);
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
                 requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), null, url, postdata, false);
@@ -105,15 +105,15 @@ public class SpeedySharecom extends PluginForHost {
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     downloadLink.getLinkStatus().setStatusText("Wrong Password");
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter("Wrong Password");
-                    return step;
+                    return;
                 }
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 downloadLink.setName(filename);
@@ -122,10 +122,10 @@ public class SpeedySharecom extends PluginForHost {
                 dl.setFilesize(length);
                 if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
-                return step;
+                return;
             }
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -134,9 +134,9 @@ public class SpeedySharecom extends PluginForHost {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

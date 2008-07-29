@@ -19,15 +19,15 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -45,7 +45,7 @@ public class UCMS extends PluginForDecrypt {
 
     public UCMS() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -80,86 +80,85 @@ public class UCMS extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
 
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                File captchaFile = null;
-                String capTxt = "";
-                String host = url.getHost();
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            File captchaFile = null;
+            String capTxt = "";
+            String host = url.getHost();
 
-                if (!host.startsWith("http")) host = "http://" + host;
+            if (!host.startsWith("http")) host = "http://" + host;
 
-                String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                if (pass != null) {
-                    if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) this.default_password.add(pass);
-                }
-                String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-                for (int i = 0; i < forms.length; i++) {
-                    for (int retry = 0; retry < 5; retry++) {
-                        Matcher matcher = PAT_CAPTCHA.matcher(forms[i][2]);
+            String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (pass != null) {
+                if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) this.default_password.add(pass);
+            }
+            String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+            for (int i = 0; i < forms.length; i++) {
+                for (int retry = 0; retry < 5; retry++) {
+                    Matcher matcher = PAT_CAPTCHA.matcher(forms[i][2]);
 
-                        if (matcher.find()) {
-                            if (captchaFile != null && capTxt != null) {
-                                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                            }
+                    if (matcher.find()) {
+                        if (captchaFile != null && capTxt != null) {
+                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
+                        }
 
-                            logger.finest("Captcha Protected");
-                            String captchaAdress = host + new Regex(forms[i][2], Pattern.compile("<IMG SRC=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                            captchaFile = getLocalCaptchaFile(this);
-                            JDUtilities.download(captchaFile, captchaAdress);
-                            capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
+                        logger.finest("Captcha Protected");
+                        String captchaAdress = host + new Regex(forms[i][2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        captchaFile = getLocalCaptchaFile(this);
+                        JDUtilities.download(captchaFile, captchaAdress);
+                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
+                        String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
+                        if (forms[i][0].startsWith("http")) {
+                            reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp + "&code=" + capTxt);
+                        } else {
+                            reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp + "&code=" + capTxt);
+                        }
+                    } else {
+                        if (captchaFile != null && capTxt != null) {
+                            JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
+                        }
+
+                        Matcher matcher_no = PAT_NO_CAPTCHA.matcher(forms[i][2]);
+                        if (matcher_no.find()) {
+                            logger.finest("Not Captcha protected");
                             String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
                             if (forms[i][0].startsWith("http")) {
-                                reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp + "&code=" + capTxt);
+                                reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp);
                             } else {
-                                reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp + "&code=" + capTxt);
+                                reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp);
                             }
-                        } else {
-                            if (captchaFile != null && capTxt != null) {
-                                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                            }
-
-                            Matcher matcher_no = PAT_NO_CAPTCHA.matcher(forms[i][2]);
-                            if (matcher_no.find()) {
-                                logger.finest("Not Captcha protected");
-                                String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
-                                if (forms[i][0].startsWith("http")) {
-                                    reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp);
-                                } else {
-                                    reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp);
-                                }
-                                break;
-                            }
-                        }
-                        if (reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
-                            logger.warning("Captcha Detection failed");
-                            reqinfo = HTTP.getRequest(url);
-                        } else {
                             break;
                         }
-                        if (reqinfo.getConnection().getURL().toString().equals(host + forms[i][0])) break;
                     }
-                    String links[][] = null;
-                    if (reqinfo.containsHTML("unescape")) {
-                        String temp = JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
-                        links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getMatches();                         
+                    if (reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
+                        logger.warning("Captcha Detection failed");
+                        reqinfo = HTTP.getRequest(url);
                     } else {
-                        links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                        break;
                     }
-                    for (int j = 0; j < links.length; j++) {
-                        decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(links[j][0])));
-                    }
+                    if (reqinfo.getConnection().getURL().toString().equals(host + forms[i][0])) break;
                 }
-                // Decrypten abschliessen
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+                String links[][] = null;
+                if (reqinfo.containsHTML("unescape")) {
+                    String temp = JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+                    links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                } else {
+                    links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                }
+                for (int j = 0; j < links.length; j++) {
+                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(links[j][0])));
+                }
             }
+            // Decrypten abschliessen
+            // step.setParameter(decryptedLinks);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

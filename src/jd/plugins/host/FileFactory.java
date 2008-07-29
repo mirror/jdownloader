@@ -161,7 +161,7 @@ public class FileFactory extends PluginForHost {
 
             downloadLink = (DownloadLink) parameter;
             logger.info(downloadLink.getDownloadURL());
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
 
@@ -169,21 +169,21 @@ public class FileFactory extends PluginForHost {
 
                 if (requestInfo.containsHTML(NOT_AVAILABLE)) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return step;
+                    return;
 
                 } else if (requestInfo.containsHTML(SERVER_DOWN)) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    return step;
+                    return;
 
                 } else if (requestInfo.containsHTML(NO_SLOT)) {
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    return step;
+                    return;
 
                 }
 
@@ -206,8 +206,8 @@ public class FileFactory extends PluginForHost {
                 }
 
                 logger.info(captchaAddress + " : " + postTarget);
-                step.setStatus(PluginStep.STATUS_DONE);
-                return step;
+                //step.setStatus(PluginStep.STATUS_DONE);
+                return;
 
             case PluginStep.STEP_GET_CAPTCHA_FILE:
                 captchaFile = this.getLocalCaptchaFile(this);
@@ -216,16 +216,16 @@ public class FileFactory extends PluginForHost {
 
                     logger.severe("Captcha Download failed: " + captchaAddress);
 
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return step;
+                    return;
 
                 }
                 //step.setParameter(captchaFile);
                 // wird in diesem step null zurückgegeben findet keine
                 // captchaerkennung statt. der captcha wird im nächsten schritt
                 // erkannt
-                return step;
+                return;
             case PluginStep.STEP_DOWNLOAD:
 
                 String captchaCode = (String) steps.get(1).getParameter();
@@ -235,10 +235,10 @@ public class FileFactory extends PluginForHost {
 
                     if (requestInfo.getHtmlCode().contains(CAPTCHA_WRONG)) {
 
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
 
-                        return step;
+                        return;
 
                     }
 
@@ -248,7 +248,7 @@ public class FileFactory extends PluginForHost {
                 } catch (Exception e) {
 
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     e.printStackTrace();
 
                 }
@@ -283,10 +283,10 @@ public class FileFactory extends PluginForHost {
                             }
 
                             downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                            step.setStatus(PluginStep.STATUS_ERROR);
+                            //step.setStatus(PluginStep.STATUS_ERROR);
                             logger.info("Traffic Limit reached....");
                             //step.setParameter((long) wait);
-                            return step;
+                            return;
 
                         } else {
 
@@ -309,24 +309,24 @@ public class FileFactory extends PluginForHost {
                             logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) an retry afterwards");
 
                             downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                            step.setStatus(PluginStep.STATUS_ERROR);
+                            //step.setStatus(PluginStep.STATUS_ERROR);
 
                             //step.setParameter(10 * 60000l);
 
-                            return step;
+                            return;
                         }
                         logger.info(requestInfo.getHtmlCode());
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
 
                     }
 
@@ -334,8 +334,8 @@ public class FileFactory extends PluginForHost {
 
                     logger.severe("URL could not be opened" + e.toString());
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
 
                 }
 
@@ -344,13 +344,13 @@ public class FileFactory extends PluginForHost {
         } catch (Exception e) {
 
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             e.printStackTrace();
-            return step;
+            return;
 
         }
 
-        return step;
+        return;
 
     }
 
@@ -363,12 +363,12 @@ public class FileFactory extends PluginForHost {
 
         if (user == null || pass == null) {
 
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Please enter premium data");
             parameter.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             //step.setParameter(JDLocale.L("plugins.host.premium.loginError", "Loginfehler"));
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-            return step;
+            return;
 
         }
 
@@ -376,7 +376,7 @@ public class FileFactory extends PluginForHost {
 
             downloadLink = (DownloadLink) parameter;
 
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
 
             case PluginStep.STEP_WAIT_TIME:
                 PostRequest req = new PostRequest(downloadLink.getDownloadURL());
@@ -390,13 +390,13 @@ public class FileFactory extends PluginForHost {
                 greq.load();
 
                 if (greq.containsHTML(NOT_AVAILABLE)) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return step;
+                    return;
                 } else if (greq.containsHTML(SERVER_DOWN)) {
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    return step;
+                    return;
                 } else {
                     String link = "http://www.filefactory.com" + greq.getLocation();
                     /* falls direct-download eingeschalten ist */
@@ -409,16 +409,16 @@ public class FileFactory extends PluginForHost {
                     }
                 }
 
-                step.setStatus(PluginStep.STATUS_DONE);
-                return step;
+                //step.setStatus(PluginStep.STATUS_DONE);
+                return;
 
             case PluginStep.STEP_GET_CAPTCHA_FILE:
 
-                // step.setStatus(PluginStep.STATUS_SKIP);
-                step.setStatus(PluginStep.STATUS_SKIP);
+                // //step.setStatus(PluginStep.STATUS_SKIP);
+                //step.setStatus(PluginStep.STATUS_SKIP);
                 downloadLink.getLinkStatus().setStatusText("Premium");
                 step = nextStep(step);
-                // return step;
+                // return;
 
             case PluginStep.STEP_DOWNLOAD:
 
@@ -435,20 +435,20 @@ public class FileFactory extends PluginForHost {
                     if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
                         downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
 
                     }
 
-                    return step;
+                    return;
 
                 } catch (Exception e) {
 
                     logger.severe(JDLocale.L("URL could not be opened") + e.toString());
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
+                    //step.setStatus(PluginStep.STATUS_ERROR);
                     e.printStackTrace();
-                    return step;
+                    return;
 
                 }
 
@@ -457,13 +457,13 @@ public class FileFactory extends PluginForHost {
         } catch (Exception e) {
 
             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            step.setStatus(PluginStep.STATUS_ERROR);
+            //step.setStatus(PluginStep.STATUS_ERROR);
             e.printStackTrace();
-            return step;
+            return;
 
         }
         logger.severe("UNKNOWN STEP?: " + step + " (" + step.getStep());
-        return step;
+        return;
 
     }
 

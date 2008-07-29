@@ -114,8 +114,8 @@ public class Odsiebiecom extends PluginForHost {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
                 downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             /*
              * Zuerst schaun ob wir nen Button haben oder direkt das File
@@ -137,8 +137,8 @@ public class Odsiebiecom extends PluginForHost {
                 /* kein Link gefunden */
                 if (downloadurl == null) {
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
             } else {
                 /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
@@ -165,23 +165,23 @@ public class Odsiebiecom extends PluginForHost {
                     if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen!");
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                        return step;
+                        return;
                     }
                     /* CaptchaCode holen */
                     if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                        return step;
+                        return;
                     }
                     /* Überprüfen(Captcha,Password) */
                     downloadurl = "http://odsiebie.com/pobierz/" + steplink + ".html?captcha=" + captchaCode;
                     requestInfo = HTTP.getRequest((new URL(downloadurl)), downloadcookie, referrerurl, false);
                     if (requestInfo.getLocation() != null && requestInfo.getLocation().contains("html?err")) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                        return step;
+                        return;
                     }
                     downloadcookie = downloadcookie + requestInfo.getCookie();
                 }
@@ -189,21 +189,21 @@ public class Odsiebiecom extends PluginForHost {
                 steplink = requestInfo.getRegexp("<a href=\"/download/(.*?)\"").getFirstMatch();
                 if (steplink == null) {
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 downloadurl = "http://odsiebie.com/download/" + steplink;
                 requestInfo = HTTP.getRequest(new URL(downloadurl), downloadcookie, referrerurl, false);
                 if (requestInfo.getLocation() == null || requestInfo.getLocation().contains("upload")) {
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
                 downloadurl = requestInfo.getLocation();
                 if (downloadurl == null) {
                     downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    step.setStatus(PluginStep.STATUS_ERROR);
-                    return step;
+                    //step.setStatus(PluginStep.STATUS_ERROR);
+                    return;
                 }
             }
             /*Leerzeichen müssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie von new URL() abgeschnitten*/
@@ -214,8 +214,8 @@ public class Odsiebiecom extends PluginForHost {
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             downloadLink.setName(filename);
@@ -226,17 +226,17 @@ public class Odsiebiecom extends PluginForHost {
             dl.setFilesize(length);
             if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                step.setStatus(PluginStep.STATUS_ERROR);
-                return step;
+                //step.setStatus(PluginStep.STATUS_ERROR);
+                return;
             }
-            return step;
+            return;
 
         } catch (Exception e) {
             e.printStackTrace();
         }
-        step.setStatus(PluginStep.STATUS_ERROR);
+        //step.setStatus(PluginStep.STATUS_ERROR);
         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return step;
+        return;
     }
 
     @Override

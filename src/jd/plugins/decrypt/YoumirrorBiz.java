@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.MissingResourceException;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,8 +29,8 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -47,7 +46,6 @@ public class YoumirrorBiz extends PluginForDecrypt {
     private String CODER = "JD-Team";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youmirror\\.biz/(.*/)?(file|folder)/.+", Pattern.CASE_INSENSITIVE);
 
-    
     private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
     private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
 
@@ -69,8 +67,8 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
     public YoumirrorBiz() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();        
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // currentStep = steps.firstElement();
     }
 
     @Override
@@ -101,115 +99,114 @@ public class YoumirrorBiz extends PluginForDecrypt {
     @Override
     public String getVersion() {
         return VERSION;
-    }   
+    }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            Context cx = null;
-            try {
+        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        Context cx = null;
+        try {
 
-                Scriptable scope = null;
+            Scriptable scope = null;
 
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
 
-                // just to fetch the link count
-                String[] links = new Regex(reqinfo.getHtmlCode(), patternLink).getMatches(1);
-                progress.setRange(links.length);
+            // just to fetch the link count
+            String[] links = new Regex(reqinfo.getHtmlCode(), patternLink).getMatches(1);
+            progress.setRange(links.length);
 
-                String[] rowCandidates = new Regex(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
+            String[] rowCandidates = new Regex(reqinfo.getHtmlCode(), patternTableRowLink).getMatches(1);
 
-                for (String rowCandiate : rowCandidates) {
+            for (String rowCandiate : rowCandidates) {
 
-                    // check if there is a link in rowCandidate
-                    String link = new Regex(rowCandiate, patternLink).getFirstMatch(1);
+                // check if there is a link in rowCandidate
+                String link = new Regex(rowCandiate, patternLink).getFirstMatch(1);
 
-                    if (null == link) {
+                if (null == link) {
+                    continue;
+                }
+
+                // check if there is a filename in row Candidate
+                String fileName = new Regex(rowCandiate, patternFileName).getFirstMatch();
+
+                URL mirrorUrl = new URL("http://" + (getHost() + link));
+                RequestInfo mirrorInfo = HTTP.getRequest(mirrorUrl, null, null, true);
+
+                ArrayList<ArrayList<String>> groups = SimpleMatches.getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);
+
+                for (ArrayList<String> pair : groups) {
+
+                    URL fileURL = new URL("http://" + getHost() + pair.get(0));
+
+                    // System.out.println(fileURL);
+                    RequestInfo fileInfo = HTTP.getRequest(fileURL, null, null, true);
+
+                    if (null == cx) {
+                        // setup the JavaScrip interpreter context
+                        cx = Context.enter();
+                        scope = cx.initStandardObjects();
+
+                        // fetch the file that contains the JavaScript
+                        // Implementation of DES
+                        String jsDESLink = new Regex(fileInfo.getHtmlCode(), patternJSDESFile).getFirstMatch();
+                        URL jsDESURL = new URL("http://" + getHost() + "/" + jsDESLink);
+                        RequestInfo desInfo = HTTP.getRequest(jsDESURL);
+
+                        // compile the script and load it into context and
+                        // scope
+                        cx.compileString(desInfo.getHtmlCode(), "<des>", 1, null).exec(cx, scope);
+                    }
+
+                    // get the script that contains the link and the
+                    // decipher recipe
+                    Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
+
+                    if (!matcher.find()) {
+                        logger.severe("Unable to find decypher recipe - step to next link");
                         continue;
                     }
 
-                    // check if there is a filename in row Candidate
-                    String fileName = new Regex(rowCandiate, patternFileName).getFirstMatch();
+                    // put the script together and run it
+                    String decypherScript = matcher.group(1) + matcher.group(2);
+                    Object result = cx.evaluateString(scope, decypherScript, "<cmd>", 1, null);
 
-                    URL mirrorUrl = new URL("http://" + (getHost() + link));
-                    RequestInfo mirrorInfo = HTTP.getRequest(mirrorUrl, null, null, true);
+                    // fetch the result of the javascript interpreter and
+                    // finally find the link :)
+                    String iframe = Context.toString(result);
+                    String hosterURL = new Regex(iframe, patternHosterIframe).getFirstMatch();
 
-                    ArrayList<ArrayList<String>> groups = SimpleMatches.getAllSimpleMatches(mirrorInfo.getHtmlCode(), patternMirrorLink);
-
-                    for (ArrayList<String> pair : groups) {
-
-                        URL fileURL = new URL("http://" + getHost() + pair.get(0));
-
-                        // System.out.println(fileURL);
-                        RequestInfo fileInfo = HTTP.getRequest(fileURL, null, null, true);
-
-                        if (null == cx) {
-                            // setup the JavaScrip interpreter context
-                            cx = Context.enter();
-                            scope = cx.initStandardObjects();
-
-                            // fetch the file that contains the JavaScript
-                            // Implementation of DES
-                            String jsDESLink = new Regex(fileInfo.getHtmlCode(), patternJSDESFile).getFirstMatch();
-                            URL jsDESURL = new URL("http://" + getHost() + "/" + jsDESLink);
-                            RequestInfo desInfo = HTTP.getRequest(jsDESURL);
-
-                            // compile the script and load it into context and
-                            // scope
-                            cx.compileString(desInfo.getHtmlCode(), "<des>", 1, null).exec(cx, scope);
-                        }
-
-                        // get the script that contains the link and the
-                        // decipher recipe
-                        Matcher matcher = patternJsScript.matcher(fileInfo.getHtmlCode());
-
-                        if (!matcher.find()) {
-                            logger.severe("Unable to find decypher recipe - step to next link");
-                            continue;
-                        }
-
-                        // put the script together and run it
-                        String decypherScript = matcher.group(1) + matcher.group(2);
-                        Object result = cx.evaluateString(scope, decypherScript, "<cmd>", 1, null);
-
-                        // fetch the result of the javascript interpreter and
-                        // finally find the link :)
-                        String iframe = Context.toString(result);
-                        String hosterURL = new Regex(iframe, patternHosterIframe).getFirstMatch();
-
-                        if (null == hosterURL) {
-                            logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
-                            continue;
-                        }
-
-                        DownloadLink downloadLink = createDownloadlink(hosterURL);
-                        downloadLink.setName(fileName);
-
-                        decryptedLinks.add(downloadLink);
+                    if (null == hosterURL) {
+                        logger.severe("Unable to determin hosterURL - adapt patternHosterIframe");
+                        continue;
                     }
-                    progress.increase(1);
-                }
 
-                logger.info(decryptedLinks.size() + " downloads decrypted");
+                    DownloadLink downloadLink = createDownloadlink(hosterURL);
+                    downloadLink.setName(fileName);
 
-                //step.setParameter(decryptedLinks);
-            } catch (MissingResourceException e) {
-                step.setStatus(PluginStep.STATUS_ERROR);
-                logger.severe("MissingResourceException class name: " + e.getClassName() + " key: " + e.getKey());
-                e.printStackTrace();
-            } catch (IOException e) {
-                step.setStatus(PluginStep.STATUS_ERROR);
-                e.printStackTrace();
-            } finally {
-                // Exit from the context.
-                if (null != cx) {
-                    Context.exit();
+                    decryptedLinks.add(downloadLink);
                 }
+                progress.increase(1);
+            }
+
+            logger.info(decryptedLinks.size() + " downloads decrypted");
+
+            // step.setParameter(decryptedLinks);
+        } catch (MissingResourceException e) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("MissingResourceException class name: " + e.getClassName() + " key: " + e.getKey());
+            e.printStackTrace();
+        } catch (IOException e) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            e.printStackTrace();
+        } finally {
+            // Exit from the context.
+            if (null != cx) {
+                Context.exit();
             }
         }
-        return null;
+        return decryptedLinks;
     }
 
     @Override

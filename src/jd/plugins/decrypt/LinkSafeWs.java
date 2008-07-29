@@ -88,7 +88,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        //if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             try {
                 String strURL = parameter;
@@ -121,8 +121,8 @@ public class LinkSafeWs extends PluginForDecrypt {
             catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        return null;
+        
+        return decryptedLinks;
     }
 
     @Override

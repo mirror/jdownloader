@@ -107,7 +107,7 @@ public class QshareCom extends PluginForHost {
     }
 
     public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
-        return step;
+        return;
 
     }
 
@@ -125,10 +125,10 @@ public class QshareCom extends PluginForHost {
           
             if (dat==null||dat.length==0) {
 
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
 
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             Form[] forms = br.getForms();
             page=br.submitForm(forms[0]);
@@ -136,29 +136,29 @@ public class QshareCom extends PluginForHost {
             String wait = new Regex(page,"Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getFirstMatch();
          if(wait!=null){
              long waitTime=Long.parseLong(wait)*60*1000;
-             step.setStatus(PluginStep.STATUS_ERROR);
+             //step.setStatus(PluginStep.STATUS_ERROR);
              //step.setParameter(waitTime);
              downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-             return step;
+             return;
          }
             String link = new Regex(page,"<div id=\"download_link\"><a href=\"(.*?)\"").getFirstMatch();
            
            if (link==null) {
 
-               step.setStatus(PluginStep.STATUS_ERROR);
+               //step.setStatus(PluginStep.STATUS_ERROR);
 
                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-               return step;
+               return;
            }
             HTTPConnection con = br.openGetConnection(link);
             int length = con.getContentLength();
             downloadLink.setDownloadMax(length);
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                 //step.setParameter(20000l);
-                return step;
+                return;
             }
             downloadLink.setName(getFileNameFormHeader(con));
 

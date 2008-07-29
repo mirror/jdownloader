@@ -90,8 +90,8 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     		catch(IOException e) {
     			 e.printStackTrace();
     		}
-    	}
-    	return null;
+    
+    	return decryptedLinks;
     }
 
     @Override

@@ -139,7 +139,7 @@ public class ShareBaseDe extends PluginForHost {
             URL downloadUrl = new URL(downloadLink.getDownloadURL());
             String finishURL = null;
             
-            switch (step.getStep()) {
+          //  switch (step.getStep()) {
             
                 case PluginStep.STEP_PAGE:
                 	
@@ -148,7 +148,7 @@ public class ShareBaseDe extends PluginForHost {
                     String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
                     
                     if(requestInfo.containsHTML(DOWLOAD_RUNNING)){
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         //step.setParameter((long)(60 * 1000));
                         
@@ -173,10 +173,10 @@ public class ShareBaseDe extends PluginForHost {
                         	
                         }
                         
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         //step.setParameter((long)(waittime * 1000));
-                        return step;
+                        return;
                         
                     }
 
@@ -184,15 +184,15 @@ public class ShareBaseDe extends PluginForHost {
                     if (fileName == null) {
                         logger.severe("download not found");
                         downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        step.setStatus(PluginStep.STATUS_ERROR);
-                        return step;
+                        //step.setStatus(PluginStep.STATUS_ERROR);
+                        return;
                     }
                     
                     fileName = fileName.trim();
 
                     //SessionId auslesen
                     this.cookies = requestInfo.getCookie().split("; ")[0];
-                    return step;
+                    return;
                     
                 case PluginStep.STEP_DOWNLOAD:
                 	
@@ -202,13 +202,13 @@ public class ShareBaseDe extends PluginForHost {
                         
                         if (finishURL == null) {
                             downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                            step.setStatus(PluginStep.STATUS_ERROR);
-                            return step;
+                            //step.setStatus(PluginStep.STATUS_ERROR);
+                            return;
                         }
                         
                     } catch (Exception e) {
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                          e.printStackTrace();
                     }
                     
@@ -226,10 +226,10 @@ public class ShareBaseDe extends PluginForHost {
                        dl = new RAFDownload(this, downloadLink, urlConnection);
                     
                         dl.startDownload();
-                      	return step;
+                      	return;
                       
                     } catch (IOException e) {
-                        step.setStatus(PluginStep.STATUS_ERROR);
+                        //step.setStatus(PluginStep.STATUS_ERROR);
                         downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
                         logger.severe("URL could not be opened. " + e.toString());
                     }
@@ -237,7 +237,7 @@ public class ShareBaseDe extends PluginForHost {
                     break;
             }
             
-            return step;    
+            return;    
             
         } catch (IOException e) {
              e.printStackTrace();

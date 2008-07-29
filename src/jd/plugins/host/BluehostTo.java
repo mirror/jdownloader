@@ -112,7 +112,7 @@ public class BluehostTo extends PluginForHost {
     }
 
     public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
-        return step;
+        return;
 
     }
 
@@ -130,10 +130,10 @@ public class BluehostTo extends PluginForHost {
           
             if (dat.length != 5) {
 
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
 
                 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return step;
+                return;
             }
             int wait = Integer.parseInt(dat[4].trim());
 
@@ -144,11 +144,11 @@ public class BluehostTo extends PluginForHost {
             //}
             br.getPage(downloadLink);
             if(Regex.matches(br,"Sie haben diese Datei in der letzten Stunde")){
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
                 //step.setParameter(60*60*1000l);
                 logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
-                return step;
+                return;
             }
             Form[] forms = br.getForms();
             HTTPConnection con = br.openFormConnection(forms[2]);
@@ -156,11 +156,11 @@ public class BluehostTo extends PluginForHost {
             downloadLink.setDownloadMax(length);
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                step.setStatus(PluginStep.STATUS_ERROR);
+                //step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setParameter(60*60*1000l);
                
-                return step;
+                return;
             }
             downloadLink.setName(getFileNameFormHeader(con));
 
