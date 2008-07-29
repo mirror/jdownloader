@@ -19,27 +19,21 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class AdrefIn extends PluginForDecrypt {
-
     final static String host = "adref.in";
-
     private String version = "2.0.0.0";
-
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?adref\\.in/\\?.+", Pattern.CASE_INSENSITIVE);
 
     public AdrefIn() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "JD-Team|JD-Team v2";
+        return "JD-Team";
     }
 
     @Override
@@ -69,17 +63,10 @@ public class AdrefIn extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-            progress.setRange(1);
-            parameter = parameter.replaceFirst("http://.*?adref.in/\\?", "");
-            if (!parameter.matches("^http://")) parameter = "http://" + parameter;
-            decryptedLinks.add(this.createDownloadlink(parameter));
-            progress.increase(1);
-
-            //step.setParameter(decryptedLinks);
-        //}
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        parameter = parameter.replaceFirst("http://.*?adref.in/\\?", "");        
+        if (!parameter.matches("^http://")) parameter = "http://" + parameter;
+        decryptedLinks.add(this.createDownloadlink(parameter));
         return decryptedLinks;
     }
 

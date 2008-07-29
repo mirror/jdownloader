@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -29,17 +28,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class AnimeANet extends PluginForDecrypt {
-
     final static String host = "animea.net";
-
     private String version = "1.0.0.0";
-
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/.*", Pattern.CASE_INSENSITIVE);
 
     public AnimeANet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -54,7 +48,7 @@ public class AnimeANet extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "AnimeA.net-1.0.0.";
+        return host + "-" + version;
     }
 
     @Override
@@ -74,31 +68,25 @@ public class AnimeANet extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            parameter = parameter.replaceAll(" ", "+");
-
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-
-                String[] links = reqinfo.getRegexp("onclick=\"reqLink\\(\'(.*?)\'\\)").getMatches(1);
-                progress.setRange(links.length);
-
-                for (int i = 0; i < links.length; i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links[i]));
-                    ArrayList<String> erg = new XPath(reqinfo.getHtmlCode(), "//td[1]/a").getAttributeMatches("href");
-                    for(int j=0; j<erg.size(); j++) {
-                        decryptedLinks.add(this.createDownloadlink(erg.get(j)));
-                    }
-                    progress.increase(1);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        parameter = parameter.replaceAll(" ", "+");
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String[] links = reqinfo.getRegexp("onclick=\"reqLink\\(\'(.*?)\'\\)").getMatches(1);
+            progress.setRange(links.length);
+            for (int i = 0; i < links.length; i++) {
+                reqinfo = HTTP.getRequest(new URL("http://www.animea.net/download_link.php?e_id=" + links[i]));
+                ArrayList<String> erg = new XPath(reqinfo.getHtmlCode(), "//td[1]/a").getAttributeMatches("href");
+                for (int j = 0; j < erg.size(); j++) {
+                    decryptedLinks.add(this.createDownloadlink(erg.get(j)));
                 }
-
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+                progress.increase(1);
             }
-        
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
