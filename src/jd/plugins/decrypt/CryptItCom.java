@@ -37,7 +37,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

@@ -11,9 +11,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 
 public class FileUploadnet extends PluginForHost {
     private static final String CODER = "JD-Team";
@@ -83,7 +83,7 @@ public class FileUploadnet extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
                 /* LinkCheck für DownloadFiles */
@@ -120,12 +120,12 @@ public class FileUploadnet extends PluginForHost {
         return false;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        if (step == null) return null;
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+        
         try {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -141,7 +141,7 @@ public class FileUploadnet extends PluginForHost {
                 downloadurl = requestInfo.getRegexp("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getFirstMatch();
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
             } else {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -150,7 +150,7 @@ public class FileUploadnet extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -161,8 +161,8 @@ public class FileUploadnet extends PluginForHost {
             dl.setFilesize(length);
             dl.setChunkNum(1);
             dl.setResume(false);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -172,7 +172,7 @@ public class FileUploadnet extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 

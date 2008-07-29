@@ -29,9 +29,9 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
@@ -105,7 +105,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         url = downloadLink.getDownloadURL();
         for (int i = 1; i < 3; i++) {
             try {
@@ -138,13 +138,13 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        if (step == null) return null;
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+        
         try {
             url = downloadLink.getDownloadURL();
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -157,14 +157,14 @@ public class ShareOnlineBiz extends PluginForHost {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                 return;
             }
 
             /* CaptchaCode holen */
             if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 return;
             }
             /* Passwort holen holen */
@@ -185,14 +185,14 @@ public class ShareOnlineBiz extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                 }
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 return;
             }
             /* Downloadlimit erreicht */
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 //step.setParameter(60 * 60 * 1000L);
-                downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                 return;
             }
             /* PassCode war richtig, also Speichern */
@@ -215,7 +215,7 @@ public class ShareOnlineBiz extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -226,8 +226,8 @@ public class ShareOnlineBiz extends PluginForHost {
             dl.setChunkNum(1);
             dl.setResume(false);
             dl.setFilesize(length);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -244,7 +244,7 @@ public class ShareOnlineBiz extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 

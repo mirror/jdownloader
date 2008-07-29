@@ -30,9 +30,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class FileBaseTo extends PluginForHost {
@@ -85,10 +85,10 @@ public class FileBaseTo extends PluginForHost {
         //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( final DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -113,8 +113,8 @@ public class FileBaseTo extends PluginForHost {
             dl.setFilesize(length);
             dl.setResume(false);
             dl.setChunkNum(1);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -126,13 +126,13 @@ public class FileBaseTo extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
         return;
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));

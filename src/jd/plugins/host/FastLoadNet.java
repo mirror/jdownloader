@@ -28,9 +28,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
@@ -61,9 +61,9 @@ public class FastLoadNet extends PluginForHost {
     public FastLoadNet() {
 
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
 
@@ -114,6 +114,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
 
@@ -123,7 +124,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
                 return false;
 
@@ -131,7 +132,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
                 return false;
 
@@ -167,147 +168,128 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    public void handle( DownloadLink downloadLink) {
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        // switch (step.getStep()) {
+
+        // case PluginStep.STEP_PAGE:
+
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
+
+        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+        cookie = requestInfo.getCookie();
+
+        if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
+
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
+
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+        downloadLink.setName(fileName);
 
         try {
 
-          //  switch (step.getStep()) {
+            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+            downloadLink.setDownloadMax(length);
 
-            case PluginStep.STEP_PAGE:
+        } catch (Exception e) {
 
-                downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.exceptionToErrorMessage(e);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
 
-                requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-                cookie = requestInfo.getCookie();
+        }
 
-                if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
+        // case PluginStep.STEP_GET_CAPTCHA_FILE:
 
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
+        File file = this.getLocalCaptchaFile(this);
+
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
+
+        if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
+
+            logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
+            // step.setParameter(null);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);// step.setParameter("Captcha
+                                                                    // ImageIO
+                                                                    // Error");
+            linkStatus.setErrorMessage(JDLocale.L("plugins.errors.captchadownloaderror", "Captcha could not be downloaded"));
+            return;
+
+        }
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        String code = getCaptchaCode(file);
+
+        String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
+
+        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);
+
+        // Download vorbereiten
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        int length = urlConnection.getContentLength();
+
+        if (urlConnection.getContentType() != null) {
+
+            if (urlConnection.getContentType().contains("text/html")) {
+
+                if (length == 13) {
+
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                    // step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
-                }
+                } else if (length == 184) {
 
-                if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
-
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
-                downloadLink.setName(fileName);
-
-                try {
-
-                    int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
-                    downloadLink.setDownloadMax(length);
-
-                } catch (Exception e) {
-
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                return;
-
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
-
-                File file = this.getLocalCaptchaFile(this);
-
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
-
-                if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
-
-                    logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
-                    //step.setParameter(null);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                    logger.info("System overload: Retry in 20 seconds");
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                    // step.setStatus(PluginStep.STATUS_ERROR);
+                    // step.setParameter(20000l);
                     return;
 
                 } else {
 
-                    //step.setParameter(file);
-                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
+                    logger.severe("Unknown error page - [Length: " + length + "]");
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    // step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
                 }
-
-            case PluginStep.STEP_DOWNLOAD:
-
-                String code = (String) steps.get(1).getParameter();
-                String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
-
-                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);
-
-                // Download vorbereiten
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                int length = urlConnection.getContentLength();
-
-                if (urlConnection.getContentType() != null) {
-
-                    if (urlConnection.getContentType().contains("text/html")) {
-
-                        if (length == 13) {
-
-                            downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                            //step.setStatus(PluginStep.STATUS_ERROR);
-                            return;
-
-                        } else if (length == 184) {
-
-                            logger.info("System overload: Retry in 20 seconds");
-                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                            //step.setStatus(PluginStep.STATUS_ERROR);
-                            //step.setParameter(20000l);
-                            return;
-
-                        } else {
-
-                            logger.severe("Unknown error page - [Length: " + length + "]");
-                            downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                            //step.setStatus(PluginStep.STATUS_ERROR);
-                            return;
-
-                        }
-
-                    }
-
-                } else {
-
-                    logger.severe("Couldn't get HTTP connection");
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                downloadLink.setDownloadMax(length);
-                downloadLink.setName(this.getFileNameFormHeader(urlConnection));
-
-                // Download starten
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setResume(false);
-                dl.setChunkNum(1);
-                dl.startDownload();
-
-                return;
 
             }
 
+        } else {
+
+            logger.severe("Couldn't get HTTP connection");
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-            //step.setStatus(PluginStep.STATUS_ERROR);
-
         }
-        return;
+
+        downloadLink.setDownloadMax(length);
+        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+
+        // Download starten
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        dl.startDownload();
 
     }
 

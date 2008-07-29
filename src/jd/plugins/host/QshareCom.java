@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
-import jd.plugins.download.RAFDownload;
+
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
@@ -77,7 +77,7 @@ public class QshareCom extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         if (step == null) {
             logger.info("Plugin Ende erreicht.");
@@ -90,14 +90,14 @@ public class QshareCom extends PluginForHost {
 
         if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
             try {
-                return this.doPremiumStep(step, downloadLink);
+               this.doPremium(downloadLink);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         } else {
             try {
-                return this.doFreeStep(step, downloadLink);
+                this.doFree(downloadLink);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -106,12 +106,12 @@ public class QshareCom extends PluginForHost {
         return null;
     }
 
-    public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
+    public void doPremium( DownloadLink downloadLink) {
         return;
 
     }
 
-    public PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
+    public void doFree( DownloadLink downloadLink)throws Exception { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String page = null;
 
@@ -127,7 +127,7 @@ public class QshareCom extends PluginForHost {
 
                 //step.setStatus(PluginStep.STATUS_ERROR);
 
-                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
             Form[] forms = br.getForms();
@@ -138,7 +138,7 @@ public class QshareCom extends PluginForHost {
              long waitTime=Long.parseLong(wait)*60*1000;
              //step.setStatus(PluginStep.STATUS_ERROR);
              //step.setParameter(waitTime);
-             downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+             linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
              return;
          }
             String link = new Regex(page,"<div id=\"download_link\"><a href=\"(.*?)\"").getFirstMatch();
@@ -147,7 +147,7 @@ public class QshareCom extends PluginForHost {
 
                //step.setStatus(PluginStep.STATUS_ERROR);
 
-               downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+               linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                return;
            }
             HTTPConnection con = br.openGetConnection(link);
@@ -156,7 +156,7 @@ public class QshareCom extends PluginForHost {
             logger.info("Filename: " + getFileNameFormHeader(con));
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 //step.setParameter(20000l);
                 return;
             }
@@ -184,12 +184,12 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis

@@ -12,9 +12,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class Shareplacecom extends PluginForHost {
@@ -69,30 +69,30 @@ public class Shareplacecom extends PluginForHost {
         //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
           //  switch (step.getStep()) {
-            case PluginStep.STEP_PAGE:
+            //case PluginStep.STEP_PAGE:
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
                 /* Link holen */                
                 url = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";",Pattern.CASE_INSENSITIVE)).getFirstMatch());                
                 return;
-            case PluginStep.STEP_PENDING:
+            //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 20seks*/
                 //step.setParameter(20000l);
                 return;
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
                 requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
                 HTTPConnection urlConnection = requestInfo.getConnection();
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
@@ -103,8 +103,8 @@ public class Shareplacecom extends PluginForHost {
                 dl.setResume(false);
                 dl.setChunkNum(1);
                 dl.setFilesize(length);
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
@@ -118,12 +118,12 @@ public class Shareplacecom extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));

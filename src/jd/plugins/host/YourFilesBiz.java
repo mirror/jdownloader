@@ -29,9 +29,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class YourFilesBiz extends PluginForHost {
@@ -112,7 +112,7 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
     	
         try {
         	
@@ -120,7 +120,7 @@ public class YourFilesBiz extends PluginForHost {
             
             if ( requestInfo.getHtmlCode().equals("") ) {
             	logger.severe("download not found");
-				downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+				linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
 				return false;
 			}
             
@@ -151,7 +151,7 @@ public class YourFilesBiz extends PluginForHost {
         
     }
     
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
     	
         try {
 
@@ -159,14 +159,14 @@ public class YourFilesBiz extends PluginForHost {
 
           //  switch (step.getStep()) {
             	
-                case PluginStep.STEP_PAGE:
+                //case PluginStep.STEP_PAGE:
                 	
                     requestInfo = HTTP.getRequest(downloadUrl);
 
                     // serverantwort leer (weiterleitung) -> download nicht verfügbar
                     if (requestInfo.getHtmlCode().equals("")) {
                         logger.severe("download not found");
-                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
                     }
@@ -178,7 +178,7 @@ public class YourFilesBiz extends PluginForHost {
                     	int length = getFileSize(requestInfo.getHtmlCode());
                         downloadLink.setDownloadMax(length);
                     } catch (Exception e) {
-                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
                     }
@@ -187,7 +187,7 @@ public class YourFilesBiz extends PluginForHost {
                     this.downloadURL = "http://"+JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
                     return;
                     
-                case PluginStep.STEP_WAIT_TIME:
+                //case PluginStep.STEP_WAIT_TIME:
                 	
                     // Download vorbereiten
                     downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
@@ -196,7 +196,7 @@ public class YourFilesBiz extends PluginForHost {
                     
 //                    if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
 //                        logger.warning("Dateigrößenfehler -> Neustart");
-//                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+//                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 //                        //step.setStatus(PluginStep.STATUS_ERROR);
 //                        return;
 //                    }
@@ -204,7 +204,7 @@ public class YourFilesBiz extends PluginForHost {
                     downloadLink.setDownloadMax(length);
                     return;
 
-                case PluginStep.STEP_DOWNLOAD:
+                //case PluginStep.STEP_DOWNLOAD:
                 	
                     // Download starten
                    dl = new RAFDownload(this, downloadLink, urlConnection);

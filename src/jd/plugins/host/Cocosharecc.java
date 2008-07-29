@@ -12,7 +12,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -34,7 +33,7 @@ public class Cocosharecc extends PluginForHost {
 
     public Cocosharecc() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -83,13 +82,14 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             downloadurl = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(downloadurl));
             if (requestInfo.containsHTML("Download startet automatisch")) {
                 String filename = requestInfo.getRegexp("<h1>(.*?)</h1>").getFirstMatch();
                 String filesize;
-                if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getFirstMatch()) != null) {                    
+                if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getFirstMatch()) != null) {
                     downloadLink.setDownloadMax(new Integer(filesize.trim().replaceAll("\\.", "")));
                 }
                 downloadLink.setName(filename);
@@ -106,70 +106,59 @@ public class Cocosharecc extends PluginForHost {
         return false;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        if (step == null) return null;
-        try {
-            /* Nochmals das File überprüfen */
-            if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+    public void handle(DownloadLink downloadLink) throws Exception {
 
-            /*Warten*/
-            String waittime=requestInfo.getRegexp("var num_timeout = (\\d+);").getFirstMatch();
-            if (waittime!=null){
-                this.sleep(new Integer(waittime.trim())*1000, downloadLink);    
-            }
-            
-            /* DownloadLink holen */            
-            downloadurl="http://www.cocoshare.cc"+requestInfo.getRegexp("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getFirstMatch();
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-            downloadurl= requestInfo.getLocation();
-            if (downloadurl==null) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            downloadurl="http://www.cocoshare.cc"+downloadurl;
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-            
-            /* DownloadLimit? */
-            if (requestInfo.getLocation() != null) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(120000L);
-                downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
-                return;
-            }
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            /* Datei herunterladen */
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            String filename = getFileNameFormHeader(urlConnection);
-            if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            downloadLink.setName(filename);
-            long length = downloadLink.getDownloadMax();
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setFilesize(length);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            dl.setResume(true);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return;
+
+        /* Warten */
+        String waittime = requestInfo.getRegexp("var num_timeout = (\\d+);").getFirstMatch();
+        if (waittime != null) {
+            this.sleep(new Integer(waittime.trim()) * 1000, downloadLink);
+        }
+
+        /* DownloadLink holen */
+        downloadurl = "http://www.cocoshare.cc" + requestInfo.getRegexp("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getFirstMatch();
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
+        downloadurl = requestInfo.getLocation();
+        if (downloadurl == null) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadurl = "http://www.cocoshare.cc" + downloadurl;
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
+
+        /* DownloadLimit? */
+        if (requestInfo.getLocation() != null) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setParameter(120000L);
+            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            return;
+        }
+
+        /* Datei herunterladen */
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setResume(true);
+        dl.startDownload();
     }
 
     @Override

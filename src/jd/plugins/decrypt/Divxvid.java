@@ -26,7 +26,6 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class Divxvid extends PluginForDecrypt {

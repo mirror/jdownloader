@@ -30,9 +30,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import de.savemytube.flv.FLV;
@@ -110,14 +110,14 @@ public class Youtube extends PluginForHost {
         return null;
     }
 
-    public void handle( final DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         RequestInfo requestInfo;
         try {
             if (step.getStep() == PluginStep.STEP_DOWNLOAD) {
                 final int convert = Integer.parseInt(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), CONVERT, 1));
                 requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));
                 if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
                     return;
@@ -126,7 +126,7 @@ public class Youtube extends PluginForHost {
                 String downloadfile = SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), DOWNLOADFILE, 1).trim();
 
                 if ((name == null) || (downloadfile == null)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
                     return;
@@ -199,7 +199,7 @@ public class Youtube extends PluginForHost {
                         }
                     }.start();
                     //step.setStatus(PluginStep.STATUS_DONE);
-                    downloadLink.setStatus(LinkStatus.FINISHED);
+                    linkStatus.addStatus(LinkStatus.FINISHED);
                 }
 
                 return;
@@ -222,12 +222,12 @@ public class Youtube extends PluginForHost {
         // this.url = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         RequestInfo requestInfo;
         try {
             requestInfo = HTTP.getRequest(new URL(SimpleMatches.getFirstMatch(downloadLink.getDownloadURL(), YouTubeURL, 1)));

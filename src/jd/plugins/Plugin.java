@@ -84,6 +84,10 @@ public abstract class Plugin implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         return;
     }
+    
+    public String getCaptchaCode(File file) {
+        return Plugin.getCaptchaCode(file, this);
+    }
 
 //    /**
 //     * Versionsinformationen
@@ -242,7 +246,7 @@ public abstract class Plugin implements ActionListener {
 //     * @param parameter
 //     * @return der gerade ausgeführte Schritt
 //     */
-//    public abstract PluginStep doStep(PluginStep step, Object parameter);
+//    public abstract PluginStep doStep( Object parameter);
 
 //    /**
 //     * Hier werden alle notwendigen Schritte des Plugins hinterlegt
@@ -322,7 +326,7 @@ public abstract class Plugin implements ActionListener {
 //     *            Der aktuelle Schritt
 //     * @return nächster step
 //     */
-//    public PluginStep nextStep(PluginStep currentStep) {
+//    public void nextStep(PluginStep currentStep) {
 //
 //        if (steps != null && steps.size() > 0) {
 //
@@ -354,7 +358,7 @@ public abstract class Plugin implements ActionListener {
 //     * @param step
 //     * @return
 //     */
-//    public PluginStep getNextStep(PluginStep step) {
+//    public void getNextStep(PluginStep step) {
 //        if (steps != null && steps.size() > 0) {
 //
 //            if (//currentStep == null) {
@@ -381,7 +385,7 @@ public abstract class Plugin implements ActionListener {
 //     * @param currentStep
 //     * @return Gibt den vorherigen step relativ zu currentstep zurück
 //     */
-//    public PluginStep previousStep(PluginStep currentStep) {
+//    public void previousStep(PluginStep currentStep) {
 //
 //        if (steps != null || steps.size() > 0) {
 //
@@ -459,7 +463,7 @@ public abstract class Plugin implements ActionListener {
 //     * @author JD-Team
 //     * @return Gibt den aktuellen Schritt oder null zurück
 //     */
-//    public PluginStep getCurrentStep() {
+//    public void getCurrentStep() {
 //        return currentStep;
 //    }
 

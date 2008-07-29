@@ -28,7 +28,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -57,7 +57,7 @@ public abstract class PluginForHost extends Plugin {
      * etc)
      */
     public abstract void reset();
-    public abstract void  handle(DownloadLink link);
+    public abstract void handle(DownloadLink link) throws Exception;
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -92,7 +92,7 @@ public abstract class PluginForHost extends Plugin {
 //     *            Ein Übergabeparameter
 //     * @return der nächste Schritt oder null, falls alle abgearbeitet wurden
 //     */
-//    public PluginStep doNextStep(Object parameter) {
+//    public void doNextStep(Object parameter) {
 //
 //        nextStep(currentStep);
 //
@@ -193,7 +193,7 @@ public abstract class PluginForHost extends Plugin {
 //     * @param parameter
 //     * @return
 //     */
-//    public abstract PluginStep doStep(PluginStep step, DownloadLink parameter) throws Exception;
+//    public abstract PluginStep doStep( DownloadLink parameter) throws Exception;
 
     public abstract int getMaxSimultanDownloadNum();
 
@@ -272,7 +272,7 @@ public abstract class PluginForHost extends Plugin {
 //     * @param redirect
 //     * @return
 //     */
-//    protected boolean defaultDownloadStep(DownloadLink downloadLink, PluginStep step, String url, String cookie, boolean redirect) {
+//    protected boolean defaultDownloadStep(DownloadLink downloadLink,  String url, String cookie, boolean redirect) {
 //        try {
 //            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), cookie, null, redirect);
 //
@@ -282,8 +282,8 @@ public abstract class PluginForHost extends Plugin {
 //
 //            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 //            dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-//            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-//                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+//           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+//                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 //
 //                //step.setStatus(PluginStep.STATUS_ERROR);
 //
@@ -298,7 +298,7 @@ public abstract class PluginForHost extends Plugin {
 //        }
 //
 //        //step.setStatus(PluginStep.STATUS_ERROR);
-//        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+//        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 //        return false;
 //
 //    }
@@ -397,7 +397,7 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-//    public PluginStep handleDownloadLimit(PluginStep step, DownloadLink downloadLink) {
+//    public void handleDownloadLimit( DownloadLink downloadLink) {
 //        long waitTime = getRemainingWaittime();
 //        logger.finer("wait (intern) " + waitTime + " minutes");
 //        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);

@@ -44,7 +44,6 @@ import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

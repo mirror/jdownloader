@@ -10,9 +10,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class SharedZillacom extends PluginForHost {
@@ -80,7 +80,7 @@ public class SharedZillacom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             if (!requestInfo.containsHTML("Upload not found")) {
@@ -100,12 +100,12 @@ public class SharedZillacom extends PluginForHost {
         return false;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        if (step == null) return null;
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+        
         try {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -129,7 +129,7 @@ public class SharedZillacom extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                 }
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                 return;
             }
             /*PassCode war richtig, also Speichern*/
@@ -139,7 +139,7 @@ public class SharedZillacom extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -153,8 +153,8 @@ public class SharedZillacom extends PluginForHost {
                                * es nicht schneller wird
                                */
             dl.setResume(true);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -164,7 +164,7 @@ public class SharedZillacom extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 

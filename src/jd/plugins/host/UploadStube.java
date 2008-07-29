@@ -29,8 +29,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
-import jd.plugins.download.RAFDownload;
+
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 
 public class UploadStube extends PluginForHost {
 	private static final String HOST = "uploadstube.de";
@@ -80,10 +80,10 @@ public class UploadStube extends PluginForHost {
 		//steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 	}
 
-	public void handle( DownloadLink downloadLink) {
+	public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 //		if (aborted) {
 //			logger.warning("Plugin abgebrochen");
-//			downloadLink.setStatus(LinkStatus.TODO);
+//			linkStatus.addStatus(LinkStatus.TODO);
 //			//step.setStatus(PluginStep.STATUS_TODO);
 //			return;
 //		}
@@ -120,12 +120,12 @@ public class UploadStube extends PluginForHost {
 			e.printStackTrace();
 		}
 		 //step.setStatus(PluginStep.STATUS_ERROR);
-		 downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+		 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 		return;
 	}
 
 	@Override
-	public boolean getFileInformation(DownloadLink downloadLink) {
+	public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
 		try {
 			requestInfo = HTTP.getRequest(new URL(downloadLink
 					.getDownloadURL()));

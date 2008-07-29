@@ -29,8 +29,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
-import jd.plugins.download.RAFDownload;
+
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 
 public class MediafireCom extends PluginForHost {
 
@@ -85,20 +85,20 @@ public class MediafireCom extends PluginForHost {
         //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( final DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         try {
           //  switch (step.getStep()) {
-            case PluginStep.STEP_PAGE:
+            //case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo.containsHTML(offlinelink)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
                 return;
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
                 String[] para = new Regex(requestInfo.getHtmlCode(), "cg\\(\'(.*?)\',\'(.*?)\',\'(.*?)\'\\)").getMatches(0);
                 para = para[0].split("'");
                 requestInfo = HTTP.getRequest(new URL("http://www.mediafire.com/dynamic/download.php?qk=" + para[1] + "&pk=" + para[3] + "&r=" + para[5]), requestInfo.getCookie(), url, true);
@@ -109,8 +109,8 @@ public class MediafireCom extends PluginForHost {
                 long length = downloadLink.getDownloadMax();
                 dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setFilesize(length);
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
@@ -122,13 +122,13 @@ public class MediafireCom extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
         return;
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));

@@ -39,7 +39,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -48,7 +47,7 @@ abstract public class DownloadInterface {
     //
     // // Errorids unter 100 sind für DownloadLink reserviert
     // public static final int ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
-    // LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK;
+    // LinkStatus.ERROR_LINK_IN_PROGRESS;
     //
     // public static final int ERROR_OUTPUTFILE_INVALID = 100;
     //
@@ -63,7 +62,7 @@ abstract public class DownloadInterface {
     //
     // public static final int ERROR_SECURITY = LinkStatus.ERROR_SECURITY;
     //
-    // public static final int ERROR_UNKNOWN = LinkStatus.ERROR_UNKNOWN;
+    // public static final int ERROR_UNKNOWN = LinkStatus.ERROR_RETRY;
     //
     // public static final int ERROR_COULD_NOT_RENAME = 101;
     //
@@ -209,7 +208,7 @@ abstract public class DownloadInterface {
         this.linkStatus.addStatus(id);
         this.linkStatus.setErrorMessage(string);
         switch (id) {
-        case LinkStatus.ERROR_UNKNOWN:
+        case LinkStatus.ERROR_RETRY:
         case LinkStatus.ERROR_FATAL:
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_FILE_NOT_FOUND:
@@ -252,7 +251,7 @@ abstract public class DownloadInterface {
 
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            // downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+            // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
 
             error(LinkStatus.ERROR_LINK_IN_PROGRESS, JDLocale.L("system.download.errors.linkisinprogress", "Downloadlink is already in progress"));
             if (!handleErrors()) return false;
@@ -314,7 +313,7 @@ abstract public class DownloadInterface {
             // if (plugin.getCurrentStep().getStatus() !=
             // PluginStep.STATUS_ERROR) {
             // // e.printStackTrace();
-            // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             //
             // plugin.getCurrentStep().setParameter(JDUtilities.convertExceptionReadable(e));
             // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
@@ -369,53 +368,53 @@ abstract public class DownloadInterface {
         //
         // if (errors.contains(ERROR_ABORTED_BY_USER)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_TODO);
-        // downloadLink.setStatus(LinkStatus.TODO);
+        // linkStatus.addStatus(LinkStatus.TODO);
         // return false;
         // }
         // if (errors.contains(ERROR_TOO_MUCH_BUFFERMEMORY)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
+        // linkStatus.addStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
         // return false;
         // }
         // if (errors.contains(ERROR_CHUNKLOAD_FAILED)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
+        // linkStatus.addStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
         //
         // return false;
         // }
         //
         // if (errors.contains(ERROR_COULD_NOT_RENAME)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         // return false;
         // }
         // if (errors.contains(ERROR_FILE_NOT_FOUND)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
         // return false;
         // }
         // if (errors.contains(ERROR_OUTPUTFILE_ALREADYEXISTS)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        // linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
         //
         // return false;
         // }
         //
         // if (errors.contains(ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+        // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
         // return false;
         // }
         //
         // if (errors.contains(ERROR_SECURITY)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_SECURITY);
+        // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
         // return false;
         // }
         //
         // if (errors.contains(ERROR_TIMEOUT_REACHED)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_NOCONNECTION);
+        // linkStatus.addStatus(LinkStatus.ERROR_NOCONNECTION);
         // return false;
         // }
         // if (errors.contains(ERROR_LOCAL_IO)) {
@@ -423,12 +422,12 @@ abstract public class DownloadInterface {
         // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.io",
         // "Schreibfehler"));
         //
-        // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
         // return false;
         // }
         // if (errors.contains(ERROR_NIBBLE_LIMIT_REACHED)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
         // downloadLink.setEnabled(false);
         // downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("download.error.message.nibble",
         // "Nibbling aborted after %s bytes"), "" + this.maxBytes));
@@ -436,7 +435,7 @@ abstract public class DownloadInterface {
         // }
         // if (errors.contains(ERROR_CRC)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
         // // downloadLink.setEnabled(false);
         // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.crc",
         // "Falsche Checksum"));
@@ -445,7 +444,7 @@ abstract public class DownloadInterface {
         //
         // if (exceptions != null) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
         // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.exception",
         // "Ausnahmefehler: ") +
         // JDUtilities.convertExceptionReadable(exceptions.get(0)));
@@ -453,17 +452,17 @@ abstract public class DownloadInterface {
         // }
         // if (errors.contains(ERROR_UNKNOWN)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         // return false;
         // }
         // if (abortByError) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         // return false;
         // }
         // if (errors.contains(ERROR_CHUNK_INCOMPLETE)) {
         // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
         // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.chunk_incomplete",
         // "Chunk(s) incomplete"));
         // return false;
@@ -953,7 +952,7 @@ abstract public class DownloadInterface {
                 return Math.min(maxSpeed, (int) (this.desiredBps * 1.3));
             } catch (Exception e) {
                 addException(e);
-                error(LinkStatus.ERROR_UNKNOWN, JDUtilities.convertExceptionReadable(e));
+                error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
             }
             return 0;
         }
@@ -1477,7 +1476,7 @@ abstract public class DownloadInterface {
             } catch (Exception e) {
 
                 e.printStackTrace();
-                error(LinkStatus.ERROR_UNKNOWN,JDUtilities.convertExceptionReadable(e));
+                error(LinkStatus.ERROR_RETRY,JDUtilities.convertExceptionReadable(e));
                 addException(e);
 
             }

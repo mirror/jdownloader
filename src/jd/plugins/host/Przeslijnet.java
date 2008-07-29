@@ -12,9 +12,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class Przeslijnet extends PluginForHost {
@@ -68,23 +68,23 @@ public class Przeslijnet extends PluginForHost {
         //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
           //  switch (step.getStep()) {
-            case PluginStep.STEP_PAGE:
+            //case PluginStep.STEP_PAGE:
                 url = downloadLink.getDownloadURL();
                 /* Nochmals das File überprüfen */
                 if (!getFileInformation(downloadLink)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }                
                 return;
-            case PluginStep.STEP_PENDING:
+            //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 15seks */
                 //step.setParameter(15000l);
                 return;
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
                 /* Link holen */
                 String linkurl = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getFirstMatch());
                 /* Datei herunterladen */
@@ -92,7 +92,7 @@ public class Przeslijnet extends PluginForHost {
                 HTTPConnection urlConnection = requestInfo.getConnection();
                 String filename = getFileNameFormHeader(urlConnection);
                 if (urlConnection.getContentLength() == 0) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
@@ -101,8 +101,8 @@ public class Przeslijnet extends PluginForHost {
                 long length = downloadLink.getDownloadMax();
                 dl = new RAFDownload(this, downloadLink, urlConnection);
                 dl.setFilesize(length);
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
                 }
@@ -116,12 +116,12 @@ public class Przeslijnet extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
 

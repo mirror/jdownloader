@@ -10,7 +10,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
@@ -31,7 +30,7 @@ public class Dataupde extends PluginForHost {
 
     public Dataupde() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -80,6 +79,7 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             downloadurl = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(downloadurl));
@@ -102,59 +102,63 @@ public class Dataupde extends PluginForHost {
         return false;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        if (step == null) return null;
-        try {
-            /* Nochmals das File überprüfen */
-            if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            /* 10 seks warten, kann weggelassen werden */
-            // this.sleep(10000, downloadLink);
-            /* DownloadLink holen */
-            Form form = requestInfo.getForms()[2];
-            form.withHtmlCode = false;
-            requestInfo = form.getRequestInfo(false);
-
-            /* DownloadLimit? */
-            if (requestInfo.getLocation() != null) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(120000L);
-                downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
-                return;
-            }
-
-            /* Datei herunterladen */
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            String filename = getFileNameFormHeader(urlConnection);
-            if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            downloadLink.setName(filename);
-            long length = downloadLink.getDownloadMax();
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setFilesize(length);
-            dl.setChunkNum(1);
-            dl.setResume(false);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return;
+
+        /* 10 seks warten, kann weggelassen werden */
+        // this.sleep(10000, downloadLink);
+        /* DownloadLink holen */
+        Form form = requestInfo.getForms()[2];
+        form.withHtmlCode = false;
+        requestInfo = form.getRequestInfo(false);
+
+        /* DownloadLimit? */
+        if (requestInfo.getLocation() != null) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setParameter(120000L);
+            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            return;
+        }
+
+        /* Datei herunterladen */
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        dl.startDownload();
+        //           
+        // \r\n if (!dl.startDownload() && step.getStatus() !=
+        // PluginStep.STATUS_ERROR && step.getStatus() !=
+        // PluginStep.STATUS_TODO) {
+        // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
+        // return;
+        // } catch (Exception e) {
+        // // TODO Auto-generated catch block
+        // e.printStackTrace();
+        // }
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+        // return;
     }
 
     @Override

@@ -26,13 +26,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
     // http://bluehost.to/dl=uScPWKtIN
-    
+
     // http://bluehost.to/file/uScPWKtIN/rnt-cckw.r07
     // http://bluehost.to/file/uScPWKtIN/
     // http://bluehost.to/file/uScPWKtIN
@@ -47,7 +46,7 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         // setConfigElements();
 
     }
@@ -82,109 +81,98 @@ public class BluehostTo extends PluginForHost {
         return PLUGIN_ID;
     }
 
-    public void handle( DownloadLink downloadLink) {
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        if (step == null) {
-            logger.info("Plugin Ende erreicht.");
-            return null;
-        }
-
-        logger.info("get Next Step " + step);
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
             try {
-                return this.doPremiumStep(step, downloadLink);
+                this.doPremium(downloadLink);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         } else {
             try {
-                return this.doFreeStep(step, downloadLink);
+                this.doFree(downloadLink);
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        return null;
+        return;
     }
 
-    public PluginStep doPremiumStep(PluginStep step, DownloadLink downloadLink) {
+    public void doPremium(DownloadLink downloadLink) {
         return;
 
     }
 
-    public PluginStep doFreeStep(PluginStep step, DownloadLink downloadLink) {
-        try {
-            String page = null;
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            Browser br = new Browser();
+        String page = null;
 
-           correctUrl(downloadLink);
-           
-           
-            page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
-            String[] dat = page.split("\\, ");
-          
-            if (dat.length != 5) {
+        Browser br = new Browser();
 
-                //step.setStatus(PluginStep.STATUS_ERROR);
+        correctUrl(downloadLink);
 
-                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-                return;
-            }
-            int wait = Integer.parseInt(dat[4].trim());
+        page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
+        String[] dat = page.split("\\, ");
 
-          //  if (wait == 0) {
+        if (dat.length != 5) {
 
-                
-                br.getPage("http://bluehost.to/fetchinfo");
-            //}
-            br.getPage(downloadLink);
-            if(Regex.matches(br,"Sie haben diese Datei in der letzten Stunde")){
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_WAITTIME);
-                //step.setParameter(60*60*1000l);
-                logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
-                return;
-            }
-            Form[] forms = br.getForms();
-            HTTPConnection con = br.openFormConnection(forms[2]);
-            int length = con.getContentLength();
-            downloadLink.setDownloadMax(length);
-            logger.info("Filename: " + getFileNameFormHeader(con));
-            if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setParameter(60*60*1000l);
-               
-                return;
-            }
-            downloadLink.setName(getFileNameFormHeader(con));
+            // step.setStatus(PluginStep.STATUS_ERROR);
 
-            dl = new RAFDownload(this, downloadLink, con);
-            dl.setResume(false);
-            dl.setChunkNum(1);
-
-            dl.startDownload();
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            return;
         }
+        int wait = Integer.parseInt(dat[4].trim());
+
+        // if (wait == 0) {
+
+        br.getPage("http://bluehost.to/fetchinfo");
+        // }
+        br.getPage(downloadLink);
+        if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.setValue(60 * 60 * 1000);
+            // step.setParameter(60*60*1000l);
+            logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
+            return;
+        }
+        Form[] forms = br.getForms();
+        HTTPConnection con = br.openFormConnection(forms[2]);
+        int length = con.getContentLength();
+        downloadLink.setDownloadMax(length);
+        logger.info("Filename: " + getFileNameFormHeader(con));
+        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setParameter(60*60*1000l);
+
+            return;
+        }
+        downloadLink.setName(getFileNameFormHeader(con));
+
+        dl = new RAFDownload(this, downloadLink, con);
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        dl.startDownload();
+
     }
 
     private void correctUrl(DownloadLink downloadLink) {
-        String url=downloadLink.getDownloadURL();
-        
-       url= url.replaceFirst("\\?dl=","dl=");
-        downloadLink.setUrlDownload(url);
-            
+        String url = downloadLink.getDownloadURL();
 
-         //   http://bluehost.to/?dl=kmuevIKM7
-        
+        url = url.replaceFirst("\\?dl=", "dl=");
+        downloadLink.setUrlDownload(url);
+
+        // http://bluehost.to/?dl=kmuevIKM7
+
     }
 
     @Override
@@ -198,11 +186,13 @@ public class BluehostTo extends PluginForHost {
     }
 
     public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             correctUrl(downloadLink);
             String page;
@@ -229,7 +219,7 @@ public class BluehostTo extends PluginForHost {
         // {
         // return 20;
         // } else {
-        return 1;
+        return 2;
         // }
     }
 

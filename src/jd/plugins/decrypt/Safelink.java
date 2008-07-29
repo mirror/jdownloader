@@ -79,7 +79,7 @@ public class Safelink extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         // switch (step.getStep()) {
-        // case PluginStep.STEP_DECRYPT :
+        // //case PluginStep.STEP_DECRYPT :
         // System.out.println(parameter);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         progress.setRange(1);

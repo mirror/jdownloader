@@ -35,9 +35,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -148,11 +148,11 @@ public class Megauploadcom extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    public void handle( DownloadLink parameter) {
+    public void handle(DownloadLink parameter) throws Exception{
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
-        return doPremiumStep(step, parameter); }
+        return doPremium(parameter); }
 
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
@@ -176,19 +176,19 @@ public class Megauploadcom extends PluginForHost {
 
         try {
           //  switch (step.getStep()) {
-            case PluginStep.STEP_WAIT_TIME:
+            //case PluginStep.STEP_WAIT_TIME:
                 
                 requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
                 if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     this.tempUnavailable = true;
                     //step.setParameter(60 * 30l);
                     return;
                 }
                 if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return;
                 }
 
@@ -198,10 +198,10 @@ public class Megauploadcom extends PluginForHost {
                 //step.setParameter(captchaURL);
                 if (captchaURL.endsWith("null") || captchaPost == null) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 }
                 return;
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
+            //case PluginStep.STEP_GET_CAPTCHA_FILE:
                 File file = this.getLocalCaptchaFile(this);
                 logger.info("Captcha " + captchaURL);
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
@@ -209,18 +209,18 @@ public class Megauploadcom extends PluginForHost {
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
                     //step.setParameter(null);
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
                 } else {
                     //step.setParameter(file);
                     //step.setStatus(PluginStep.STATUS_USER_INPUT);
                     return;
                 }
-            case PluginStep.STEP_PENDING:
+            //case PluginStep.STEP_PENDING:
                 requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, joinMap(fields, "=", "&") + "&imagestring=" + steps.get(1).getParameter(), true);
                 if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                     return;
                 }
 
@@ -230,7 +230,7 @@ public class Megauploadcom extends PluginForHost {
                     String pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password:");
                     if (pass == null) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                        linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                         //step.setParameter("wrong Password");
                         return;
                     }
@@ -243,7 +243,7 @@ public class Megauploadcom extends PluginForHost {
                     }
                     if (requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                        linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                         //step.setParameter("wrong Password");
                         return;
                     }
@@ -252,7 +252,7 @@ public class Megauploadcom extends PluginForHost {
 
                 //step.setParameter(PENDING_WAITTIME);
                 return;
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
 
                 Character l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
                 String i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
@@ -263,7 +263,7 @@ public class Megauploadcom extends PluginForHost {
                     if (!requestInfo.isOK()) {
                         logger.warning("Download Limit!");
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         String wait = requestInfo.getConnection().getHeaderField("Retry-After");
                         logger.finer("Warten: " + wait + " minuten");
                         if (wait != null) {
@@ -293,7 +293,7 @@ public class Megauploadcom extends PluginForHost {
                 }
 
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
 
             }
@@ -304,7 +304,7 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    private PluginStep doPremiumStep(PluginStep step, DownloadLink parameter) {
+   private void doPremium( DownloadLink parameter)throws Exception {LinkStatus linkStatus=parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
@@ -331,7 +331,7 @@ public class Megauploadcom extends PluginForHost {
             br.postPage(url,"login=" + user + "&password=" + pass);        
             if (Browser.getCookie(url,"user")==null || Browser.getCookie(url,"user").length()==0) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
+                linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             }
            
             String id=Request.parseQuery(link).get("d");
@@ -382,13 +382,13 @@ public class Megauploadcom extends PluginForHost {
         this.fields = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         RequestInfo requestInfo;
 
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));

@@ -1489,7 +1489,7 @@ public class JDController implements ControlListener, UIListener {
     // logger.finer("REset GLOBALS: " + ((PluginForHost)
     // nextDownloadLink.getPlugin()));
     // ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-    // nextDownloadLink.setStatus(LinkStatus.TODO);
+    // nextlinkStatus.addStatus(LinkStatus.TODO);
     //
     // }
     // }

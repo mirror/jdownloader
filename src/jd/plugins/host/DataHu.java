@@ -17,8 +17,6 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -28,7 +26,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
 
 public class DataHu extends PluginForHost {
@@ -77,68 +74,63 @@ public class DataHu extends PluginForHost {
 
     public DataHu() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( final DownloadLink downloadLink) {
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (aborted) {
         // logger.warning("Plugin aborted");
-        // downloadLink.setStatus(LinkStatus.TODO);
+        // linkStatus.addStatus(LinkStatus.TODO);
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
 
-            String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'",Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            String[] test = link.split("/");
-            String name = test[test.length - 1];
-            downloadLink.setName(name);
+        String url = downloadLink.getDownloadURL();
+        requestInfo = HTTP.getRequest(new URL(url));
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, url, false);
+        String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String[] test = link.split("/");
+        String name = test[test.length - 1];
+        downloadLink.setName(name);
 
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, url, false);
 
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            final long length = downloadLink.getDownloadMax();
-
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setFilesize(length);
-            // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
-            // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
 
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        final long length = downloadLink.getDownloadMax();
+
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
+        // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.startDownload();
+        // if (!dl.startDownload() && step.getStatus() !=
+        // PluginStep.STATUS_ERROR && step.getStatus() !=
+        // PluginStep.STATUS_TODO) {
+        //
+        // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
         return;
+
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (requestInfo.getHtmlCode().length() == 0) return false;
-            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'",Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
+            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
             String name = test[test.length - 1];
             downloadLink.setName(name);
             return true;

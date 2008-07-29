@@ -24,15 +24,11 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
-import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet
@@ -137,7 +133,7 @@ public class SingleDownloadController extends Thread {
 
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
 
-                // downloadLink.setStatus(LinkStatus.ERROR_SECURITY);
+                // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
 
@@ -149,7 +145,16 @@ public class SingleDownloadController extends Thread {
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
             currentPlugin.init();
-            currentPlugin.handle(downloadLink);
+            try {
+                currentPlugin.handle(downloadLink);
+            } catch (Exception e) {
+                logger.severe("Plugin error: " + e.getMessage());
+                e.printStackTrace();
+
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.plugindefekterror", "The Plugin seems to be defekt"));
+
+            }
 
             if (this.isAborted()) {
 
@@ -166,10 +171,10 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
                 this.onErrorTemporarilyUnavailable(downloadLink, currentPlugin);
                 break;
-     
+
             case LinkStatus.ERROR_AGB_NOT_SIGNED:
                 this.onErrorAGBNotSigned(downloadLink, currentPlugin);
-                break;      
+                break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 this.onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
@@ -200,19 +205,20 @@ public class SingleDownloadController extends Thread {
                 break;
             }
 
-           
             if (linkStatus.isStatus(LinkStatus.TODO) && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() && !downloadLink.isWaitingForReconnect()) {
-            
+
                 onErrorRetry(downloadLink, currentPlugin);
             }
 
             // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.finished",
             // "Fertig"));
-//            if (resultPluginStatus != PluginStep.STATUS_ERROR && resultLinkStatus != LinkStatus.FINISHED) {
-//                logger.severe("Pluginerror: resultStep returned null and Downloadlink status != STATUS_DONE.  retry Link");
-//                this.onErrorRetry(downloadLink, currentPlugin);
-//                return;
-//            }
+            // if (resultPluginStatus != PluginStep.STATUS_ERROR &&
+            // resultLinkStatus != LinkStatus.FINISHED) {
+            // logger.severe("Pluginerror: resultStep returned null and
+            // Downloadlink status != STATUS_DONE. retry Link");
+            // this.onErrorRetry(downloadLink, currentPlugin);
+            // return;
+            // }
             if (linkStatus.isStatus(LinkStatus.FINISHED)) {
                 onDownloadFinishedSuccessFull(downloadLink);
             }
@@ -224,8 +230,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-   
-      
+
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
         }
@@ -246,119 +251,142 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorNoConnection(DownloadLink downloadLink2, PluginForHost plugin) {
-//        logger.severe("Error occurred: No Serverconnection");
-//        long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
-//
-//        while (milliSeconds > 0 && !isInterrupted() && !this.downloadLink.isAborted()) {
-//
-//            downloadLink.getLinkStatus().setStatusText(JDUtilities.formatSeconds((int) (milliSeconds / 1000)));
-//            downloadLink.requestGuiUpdate();
-//            try {
-//                Thread.sleep(1000);
-//            } catch (InterruptedException e) {
-//                return;
-//            }
-//            milliSeconds -= 1000;
-//        }
-//
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        // downloadLink.setEndOfWaittime(0);
-//        // downloadLink.reset();
-//        // downloadLink.setEnabled(false);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        onErrorRetry(downloadLink2, plugin, step);
+        // logger.severe("Error occurred: No Serverconnection");
+        // long milliSeconds =
+        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS,
+        // 5 * 60) * 1000;
+        //
+        // while (milliSeconds > 0 && !isInterrupted() &&
+        // !this.downloadLink.isAborted()) {
+        //
+        // downloadLink.getLinkStatus().setStatusText(JDUtilities.formatSeconds((int)
+        // (milliSeconds / 1000)));
+        // downloadLink.requestGuiUpdate();
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // return;
+        // }
+        // milliSeconds -= 1000;
+        // }
+        //
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // // downloadLink.setEndOfWaittime(0);
+        // // downloadLink.reset();
+        // // downloadLink.setEnabled(false);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // onErrorRetry(downloadLink2, plugin, step);
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
 
-//        logger.severe("Chunkload failed: ");
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.chunkloadfailed", "Multidownload fehlgeschlagen"));
-//
-//        // downloadLink.setEnabled(false);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // logger.severe("Chunkload failed: ");
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.chunkloadfailed",
+        // "Multidownload fehlgeschlagen"));
+        //
+        // // downloadLink.setEnabled(false);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
     private void onErrorFileInProgress(DownloadLink downloadLink2, PluginForHost plugin) {
-//        downloadLink.setEnabled(false);
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileinprogress", "Datei wird schon geladen"));
-//
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // downloadLink.setEnabled(false);
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileinprogress",
+        // "Datei wird schon geladen"));
+        //
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
     private void onErrorIncomplete(DownloadLink downloadLink2, PluginForHost plugin) {
 
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        downloadLink.setEndOfWaittime(0);
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(0);
 
     }
 
     private void onErrorFileExists(DownloadLink downloadLink2, PluginForHost plugin) {
 
-//        String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
-//
-//        if (todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
-//            downloadLink.setEnabled(false);
-//            downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileexists.skip", "Datei schon vorhanden"));
-//
-//            downloadLink.setStatus(LinkStatus.TODO);
-//            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        } else {
-//            if (new File(downloadLink.getFileOutput()).delete()) {
-//
-//                downloadLink.setStatus(LinkStatus.TODO);
-//                downloadLink.setEndOfWaittime(0);
-//            } else {
-//                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
-//
-//            }
-//
-//        }
-//
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // String todo =
+        // JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS,
+        // JDLocale.L("system.download.triggerfileexists.skip", "Link
+        // überspringen"));
+        //
+        // if (todo.equals(JDLocale.L("system.download.triggerfileexists.skip",
+        // "Link überspringen"))) {
+        // downloadLink.setEnabled(false);
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileexists.skip",
+        // "Datei schon vorhanden"));
+        //
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // } else {
+        // if (new File(downloadLink.getFileOutput()).delete()) {
+        //
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(0);
+        // } else {
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileexists.overwritefailed",
+        // "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
+        //
+        // }
+        //
+        // }
+        //
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) {
 
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
-//
-//        new AgbDialog(downloadLink2);
-//
-//        /*
-//         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-//         * 0)==0){
-//         * JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-//         * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
-//         * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
-//         * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
-//         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
-//         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
-//         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-//         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
-//         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-//         * Anbieter: </font></p>")+plugin.getHost(); String
-//         * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
-//         * JDUtilities.getGUI().showHelpMessage(title, message, url); }
-//         */
-//
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos",
+        // "AGB nicht akzeptiert"));
+        //
+        // new AgbDialog(downloadLink2);
+        //
+        // /*
+        // *
+        // if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+        // * 0)==0){
+        // *
+        // JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+        // * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
+        // * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
+        // * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
+        // * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
+        // * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen
+        // (AGB)</font></strong><font
+        // * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+        // * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
+        // * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+        // * Anbieter: </font></p>")+plugin.getHost(); String
+        // * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
+        // * JDUtilities.getGUI().showHelpMessage(title, message, url); }
+        // */
+        //
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
     private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin) {
-//        String message = (String) step.getParameter();
-//        logger.severe("Error occurred: " + message);
-//        //step.setParameter(null);
-//        if (message != null) downloadLink.getLinkStatus().setStatusText(message);
-//        // downloadLink.setStatus(LinkStatus.TODO);
-//        // downloadLink.setEnabled(false);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // String message = (String) step.getParameter();
+        // logger.severe("Error occurred: " + message);
+        // //step.setParameter(null);
+        // if (message != null)
+        // downloadLink.getLinkStatus().setStatusText(message);
+        // // linkStatus.addStatus(LinkStatus.TODO);
+        // // downloadLink.setEnabled(false);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
-
 
     /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
@@ -369,22 +397,22 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-//        logger.severe("Error occurred: Temporarily unavailably");
-//        // long milliSeconds = (Long) step.getParameter();
-//        // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
-//        // milliSeconds);
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            return;
-//        }
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        downloadLink.setEnabled(false);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // logger.severe("Error occurred: Temporarily unavailably");
+        // // long milliSeconds = (Long) step.getParameter();
+        // // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
+        // // milliSeconds);
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.tempUnavailable",
+        // "kurzzeitig nicht verfügbar"));
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // return;
+        // }
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEnabled(false);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
-
-
 
     /**
      * Fehlerfunktion für einen UNbekannten premiumfehler.
@@ -395,17 +423,19 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin) {
-//        logger.warning("disable PREMIUM for: " + plugin + " Reason: " + step.getParameter());
-//        String str = (String) step.getParameter();
-//        //step.setParameter(null);
-//        if (str == null) {
-//            plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM, false);
-//        } else {
-//            plugin.getProperties().setProperty(str, false);
-//            downloadLink.getLinkStatus().setStatusText(str);
-//        }
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        downloadLink.setEndOfWaittime(0);
+        // logger.warning("disable PREMIUM for: " + plugin + " Reason: " +
+        // step.getParameter());
+        // String str = (String) step.getParameter();
+        // //step.setParameter(null);
+        // if (str == null) {
+        // plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM,
+        // false);
+        // } else {
+        // plugin.getProperties().setProperty(str, false);
+        // downloadLink.getLinkStatus().setStatusText(str);
+        // }
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(0);
     }
 
     // /**
@@ -443,7 +473,7 @@ public class SingleDownloadController extends Thread {
     // // this);
     // Reconnecter.requestReconnect();
     // // if (Reconnecter.waitForNewIP(0)) {
-    // // downloadLink.setStatus(LinkStatus.TODO);
+    // // linkStatus.addStatus(LinkStatus.TODO);
     // // downloadLink.setEndOfWaittime(0);
     // // }
     // // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
@@ -455,7 +485,7 @@ public class SingleDownloadController extends Thread {
     // // }
     // //
     // // }
-    // downloadLink.setStatus(LinkStatus.TODO);
+    // linkStatus.addStatus(LinkStatus.TODO);
     //
     // downloadLink.getLinkStatus().setStatusText("");
     // }
@@ -468,25 +498,28 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin) {
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.filenotfound", "File Not Found"));
-//        // downloadLink.setStatus(LinkStatus.TODO);
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//    }
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.filenotfound",
+        // "File Not Found"));
+        // // linkStatus.addStatus(LinkStatus.TODO);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // }
 
-    // /**
-    // * Wird bei einem File abused Fehler aufgerufen
-    // *
-    // * @param downloadLink
-    // * @param plugin
-    // * @param step
-    // */
-    // private void onErrorAbused(DownloadLink downloadLink, PluginForHost
-    // plugin) {
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.abused", "File
-    // Abused"));
-    // downloadLink.setStatus(LinkStatus.TODO);
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // /**
+        // * Wird bei einem File abused Fehler aufgerufen
+        // *
+        // * @param downloadLink
+        // * @param plugin
+        // * @param step
+        // */
+        // private void onErrorAbused(DownloadLink downloadLink, PluginForHost
+        // plugin) {
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.abused",
+        // "File
+        // Abused"));
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
 
     // /**
@@ -500,7 +533,7 @@ public class SingleDownloadController extends Thread {
     // plugin) {
     // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.incompleteUpload",
     // "File not full uploaded"));
-    // downloadLink.setStatus(LinkStatus.TODO);
+    // linkStatus.addStatus(LinkStatus.TODO);
     // fireControlEvent(new ControlEvent(this,
     // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     // }
@@ -530,37 +563,40 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorRetry(DownloadLink downloadLink, PluginForHost plugin) {
-//        if (plugin.getRetryCount() >= plugin.getMaxRetries()) {
-//            onErrorUnknown(downloadLink, plugin, step);
-//            return;
-//        }
-//        logger.info("Retry " + plugin.getRetryCount());
-//
-//        downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("controller.status.retryonerror", "Neuer Versuch(%s/%s) in 3 Sekunden"), (1 + plugin.getRetryCount()) + "", plugin.getMaxRetries()));
-//        downloadLink.requestGuiUpdate();
-//        JDUtilities.sleep(3000);
-//        plugin.setRetryCount(plugin.getRetryCount() + 1);
-//
-//        // if (step != null && step.getParameter() != null) {
-//        // try {
-//        // logger.info("step.getParameter() " + step.getParameter());
-//        // long milliSeconds = (Long) step.getParameter();
-//        // downloadLink.getLinkStatus().setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.wait",
-//        // "Warten: %s sek."), new String[] { JDUtilities.formatSeconds((int)
-//        // (milliSeconds / 1000)) }));
-//        // fireControlEvent(new ControlEvent(this,
-//        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, null));
-//        // try {
-//        // Thread.sleep(milliSeconds);
-//        // } catch (InterruptedException e) {
-//        // }
-//        // } catch (Exception e2) {
-//        //
-//        // }
-//        // }
-//
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        downloadLink.setEndOfWaittime(0);
+        // if (plugin.getRetryCount() >= plugin.getMaxRetries()) {
+        // onErrorUnknown(downloadLink, plugin, step);
+        // return;
+        // }
+        // logger.info("Retry " + plugin.getRetryCount());
+        //
+        // downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("controller.status.retryonerror",
+        // "Neuer Versuch(%s/%s) in 3 Sekunden"), (1 + plugin.getRetryCount()) +
+        // "", plugin.getMaxRetries()));
+        // downloadLink.requestGuiUpdate();
+        // JDUtilities.sleep(3000);
+        // plugin.setRetryCount(plugin.getRetryCount() + 1);
+        //
+        // // if (step != null && step.getParameter() != null) {
+        // // try {
+        // // logger.info("step.getParameter() " + step.getParameter());
+        // // long milliSeconds = (Long) step.getParameter();
+        // //
+        // downloadLink.getLinkStatus().setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.wait",
+        // // "Warten: %s sek."), new String[] { JDUtilities.formatSeconds((int)
+        // // (milliSeconds / 1000)) }));
+        // // fireControlEvent(new ControlEvent(this,
+        // // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, null));
+        // // try {
+        // // Thread.sleep(milliSeconds);
+        // // } catch (InterruptedException e) {
+        // // }
+        // // } catch (Exception e2) {
+        // //
+        // // }
+        // // }
+        //
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(0);
     }
 
     /**
@@ -572,12 +608,15 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorUnknown(DownloadLink downloadLink, PluginForHost plugin) {
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.unknownError", "Unbekannter Fehler"));
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        logger.severe("Error occurred while downloading file");
-//
-//        Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
-   }
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.unknownError",
+        // "Unbekannter Fehler"));
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // logger.severe("Error occurred while downloading file");
+        //
+        // Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED,
+        // this);
+    }
 
     /**
      * Diese Funktion wird aufgerufen sobald ein Download wegen einer
@@ -588,38 +627,45 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorBotdetection(DownloadLink downloadLink, PluginForHost plugin) {
-//        // Bot erkannt. Interaction!
-//        logger.severe("Error occurred: Bot detected");
-//        downloadLink.setEndOfWaittime(0);
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botDetected", "Bot erkannt/Reconnect"));
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        if (plugin.getBotWaittime() <= 0) {
-//            Reconnecter.requestReconnect();
-//            downloadLink.setStatus(LinkStatus.TODO);
-//            downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 * 1000);
-//            downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWaitReconnect", "Bot. Warte auf Reconnect"));
-//        } else if (plugin.getBotWaittime() > 0) {
-//
-//            long wait = plugin.getBotWaittime();
-//
-//            while (wait > 0 && !isInterrupted()) {
-//                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWait", "Botwait ") + JDUtilities.formatSeconds((int) wait / 1000));
-//                fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    return;
-//                }
-//                wait -= 1000;
-//
-//            }
-//            downloadLink.setStatus(LinkStatus.TODO);
-//
-//            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//
-//        }
-//
-//        logger.severe("Bot detected");
+        // // Bot erkannt. Interaction!
+        // logger.severe("Error occurred: Bot detected");
+        // downloadLink.setEndOfWaittime(0);
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botDetected",
+        // "Bot erkannt/Reconnect"));
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // if (plugin.getBotWaittime() <= 0) {
+        // Reconnecter.requestReconnect();
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 *
+        // 1000);
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWaitReconnect",
+        // "Bot. Warte auf Reconnect"));
+        // } else if (plugin.getBotWaittime() > 0) {
+        //
+        // long wait = plugin.getBotWaittime();
+        //
+        // while (wait > 0 && !isInterrupted()) {
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWait",
+        // "Botwait ") + JDUtilities.formatSeconds((int) wait / 1000));
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // downloadLink);
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // return;
+        // }
+        // wait -= 1000;
+        //
+        // }
+        // linkStatus.addStatus(LinkStatus.TODO);
+        //
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        //
+        // }
+        //
+        // logger.severe("Bot detected");
     }
 
     /**
@@ -631,14 +677,16 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorCaptcha(DownloadLink downloadLink, PluginForHost plugin) {
-//        logger.severe("Error occurred: Captcha Wrong");
-//        // captcha Falsch. Download wiederholen
-//        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.captchaFailed", "Code falsch"));
-//
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        downloadLink.setStatus(LinkStatus.TODO);
-//        downloadLink.setEndOfWaittime(0);
-//        onErrorRetry(downloadLink, plugin, step);
+        // logger.severe("Error occurred: Captcha Wrong");
+        // // captcha Falsch. Download wiederholen
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.captchaFailed",
+        // "Code falsch"));
+        //
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // downloadLink.setEndOfWaittime(0);
+        // onErrorRetry(downloadLink, plugin, step);
     }
 
     /**
@@ -650,32 +698,36 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
-//        logger.finer("Error occurred: Wait Time " + step);
-//        long milliSeconds = (Long) step.getParameter();
-//        //step.setParameter(null);
-//        downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-//        downloadLink.getLinkStatus().setStatusText(" " + JDLocale.L("controller.status.reconnect", "Reconnect "));
-//
-//        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-//        // Download Zeit. Versuch durch eine Interaction einen reconnect
-//        // zu machen. wenn das klappt nochmal versuchen
-//
-//        // if (Reconnecter.waitForNewIP(0)) {
-//        // downloadLink.setStatus(LinkStatus.TODO);
-//        // downloadLink.setEndOfWaittime(0);
-//        // }
-//        Reconnecter.requestReconnect();
-//        // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
-//        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
-//        // downloadLink);
-//        // try {
-//        // Thread.sleep(5000);
-//        // } catch (InterruptedException e) {
-//        // }
-//        //
-//        // }
-//        // downloadLink.setStatus(LinkStatus.TODO);
-//        // downloadLink.getLinkStatus().setStatusText("");
+        // logger.finer("Error occurred: Wait Time " + step);
+        // long milliSeconds = (Long) step.getParameter();
+        // //step.setParameter(null);
+        // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
+        // milliSeconds);
+        // downloadLink.getLinkStatus().setStatusText(" " +
+        // JDLocale.L("controller.status.reconnect", "Reconnect "));
+        //
+        // fireControlEvent(new ControlEvent(this,
+        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        // // Download Zeit. Versuch durch eine Interaction einen reconnect
+        // // zu machen. wenn das klappt nochmal versuchen
+        //
+        // // if (Reconnecter.waitForNewIP(0)) {
+        // // linkStatus.addStatus(LinkStatus.TODO);
+        // // downloadLink.setEndOfWaittime(0);
+        // // }
+        // Reconnecter.requestReconnect();
+        // // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
+        // //
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // // downloadLink);
+        // // try {
+        // // Thread.sleep(5000);
+        // // } catch (InterruptedException e) {
+        // // }
+        // //
+        // // }
+        // // linkStatus.addStatus(LinkStatus.TODO);
+        // // downloadLink.getLinkStatus().setStatusText("");
     }
 
     public DownloadLink getDownloadLink() {

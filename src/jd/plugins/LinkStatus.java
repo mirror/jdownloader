@@ -9,6 +9,7 @@ public class LinkStatus {
     private String statusText=null;
     private int lastestStatus=  TODO;
     private String errorMessage;
+    private int value;
     /**
      * Link muß noch bearbeitet werden
      */
@@ -22,7 +23,7 @@ public class LinkStatus {
     /**
      * Ein unbekannter Fehler ist aufgetreten
      */
-    public final static int ERROR_UNKNOWN = 1 << 2;
+    public final static int ERROR_RETRY = 1 << 2;
 
     /**
      * Captcha Text war falsch
@@ -44,11 +45,11 @@ public class LinkStatus {
      */
     public final static int ERROR_BOT_DETECTED = 1 << 6;
 
-    /**
-     * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
-     * werden
-     */
-    public final static int ERROR__RETRY = 1 << 7;
+//    /**
+//     * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
+//     * werden
+//     */
+//    public final static int ERROR__RETRY = 1 << 7;
 
     /**
      * zeigt einen Premiumspezifischen fehler an
@@ -226,7 +227,7 @@ public class LinkStatus {
             // Free Space");
         case LinkStatus.ERROR_NO_CONNECTION:
             return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
-            // case LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK:
+            // case LinkStatus.ERROR_LINK_IN_PROGRESS:
             // return JDLocale.L("downloadlink.status.error.not_owner", "Link is
             // already in progress");
         case LinkStatus.ERROR_PLUGIN_SPECIFIC:
@@ -236,7 +237,7 @@ public class LinkStatus {
             // case LinkStatus.ERROR_SECURITY:
             // return JDLocale.L("downloadlink.status.error.security",
             // "Read/Write Error");
-            // case LinkStatus.ERROR_WAITTIME:
+            // case LinkStatus.ERROR_TRAFFIC_LIMIT:
             // return JDLocale.L("downloadlink.status.error.static_wait",
             // "Waittime");
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
@@ -244,7 +245,7 @@ public class LinkStatus {
             // case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             // return JDLocale.L("downloadlink.status.error.many_users", "Too
             // many User");
-        case LinkStatus.ERROR_UNKNOWN:
+        case LinkStatus.ERROR_RETRY:
             return JDLocale.L("downloadlink.status.error.unknown", "Unknown Error");
         case LinkStatus.ERROR_FATAL:
             return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
@@ -324,6 +325,20 @@ public class LinkStatus {
 
     public void setErrorMessage(String string) {
        this.errorMessage=string;
+        
+    }
+
+    public void setValue(int i) {
+    this.value=i;
+        
+    }
+
+    public int getValue() {
+        return value;
+    }
+
+    public void exceptionToErrorMessage(Exception e) {
+        this.setErrorMessage(JDUtilities.convertExceptionReadable(e));
         
     }
 

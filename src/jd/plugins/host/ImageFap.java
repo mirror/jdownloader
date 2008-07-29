@@ -28,7 +28,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -49,7 +48,7 @@ public class ImageFap extends PluginForHost {
 
     public ImageFap() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -92,7 +91,7 @@ public class ImageFap extends PluginForHost {
                 // logger.info("decrypt4 " + i);
                 // logger.info("decrypt5 " + ((int) (s1.charAt(i+1) - '0')));
                 // logger.info("decrypt6 " +
-                //(Integer.parseInt(code.substring(code.length()-1,code.length()
+                // (Integer.parseInt(code.substring(code.length()-1,code.length()
                 // ))));
                 int charcode = ((int) (s1.charAt(i))) - (Integer.parseInt(code.substring(code.length() - 1, code.length())));
                 // logger.info("decrypt7 " + charcode);
@@ -103,7 +102,7 @@ public class ImageFap extends PluginForHost {
             }
             // logger.info(t);
             // var s1=unescape(s.substr(0,s.length-1)); var t='';
-            //for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.
+            // for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.
             // substr(s.length-1,1));
             // return unescape(t);
             // logger.info("return of DecryptLink(): " +
@@ -115,41 +114,37 @@ public class ImageFap extends PluginForHost {
         return null;
     }
 
-    public void handle( DownloadLink downloadLink) {
-        try {
-            if (step.getStep() == PluginStep.STEP_COMPLETE) {
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation2(downloadLink)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                /* DownloadLink holen */
-                String Imagelink = DecryptLink(new Regex(requestInfo.getHtmlCode(), Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(Imagelink), requestInfo.getCookie(), null, null, false);
-                if (requestInfo.getLocation() != null) {
-                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), null, false);
-                }
-                /* Downloaden */
-                String filename = getFileNameFormHeader(requestInfo.getConnection()).replaceAll("getimg\\.php\\?img=", "");
-                downloadLink.setName(gallery_name + File.separator + filename);
-                dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-                dl.setResume(false);
-                dl.setChunkNum(1);
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus(); 
+
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation2(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        /* DownloadLink holen */
+        String Imagelink = DecryptLink(new Regex(requestInfo.getHtmlCode(), Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(Imagelink), requestInfo.getCookie(), null, null, false);
+        if (requestInfo.getLocation() != null) {
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), null, false);
+        }
+        /* Downloaden */
+        String filename = getFileNameFormHeader(requestInfo.getConnection()).replaceAll("getimg\\.php\\?img=", "");
+        downloadLink.setName(gallery_name + File.separator + filename);
+        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        dl.startDownload();
+        // if (!dl.startDownload() && step.getStatus() !=
+        // PluginStep.STATUS_ERROR && step.getStatus() !=
+        // PluginStep.STATUS_TODO) {
+        // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
         return;
+
     }
 
     @Override
@@ -161,7 +156,7 @@ public class ImageFap extends PluginForHost {
     public void reset() {
     }
 
-    private boolean getFileInformation2(DownloadLink downloadLink) {
+    private boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
@@ -177,7 +172,7 @@ public class ImageFap extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();

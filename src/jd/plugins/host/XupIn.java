@@ -28,9 +28,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -133,7 +133,7 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         try {
 
@@ -142,7 +142,7 @@ public class XupIn extends PluginForHost {
             if (requestInfo.containsHTML(NOT_FOUND)) {
 
                 if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return false;
 
             }
@@ -175,12 +175,12 @@ public class XupIn extends PluginForHost {
 
     }
 
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         // if (aborted) {
         //    		
         // logger.warning("Plugin aborted");
-        // downloadLink.setStatus(LinkStatus.TODO);
+        // linkStatus.addStatus(LinkStatus.TODO);
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         //            
@@ -192,14 +192,14 @@ public class XupIn extends PluginForHost {
 
           //  switch (step.getStep()) {
 
-            case PluginStep.STEP_PAGE:
+            //case PluginStep.STEP_PAGE:
 
                 requestInfo = HTTP.getRequest(downloadUrl);
 
                 if (requestInfo.containsHTML(NOT_FOUND)) {
 
                     if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -221,7 +221,7 @@ public class XupIn extends PluginForHost {
 
                 } catch (Exception e) {
 
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -232,7 +232,7 @@ public class XupIn extends PluginForHost {
                 if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
 
                     logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-                    downloadLink.setStatus(LinkStatus.ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK);
+                    linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -241,7 +241,7 @@ public class XupIn extends PluginForHost {
                 if (new File(downloadLink.getFileOutput()).exists()) {
 
                     logger.severe("File already exists: " + downloadLink.getFileOutput());
-                    downloadLink.setStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                    linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -252,7 +252,7 @@ public class XupIn extends PluginForHost {
                 captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
                 return;
 
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
+            //case PluginStep.STEP_GET_CAPTCHA_FILE:
 
                 File file = this.getLocalCaptchaFile(this);
 
@@ -263,7 +263,7 @@ public class XupIn extends PluginForHost {
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                     //step.setParameter(null);
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
 
                 } else {
@@ -275,7 +275,7 @@ public class XupIn extends PluginForHost {
 
                 break;
 
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
 
                 String vchep = (String) steps.get(1).getParameter();
 
@@ -291,7 +291,7 @@ public class XupIn extends PluginForHost {
                 if (urlConnection.getContentType().contains("text/html")) {
 
                     logger.severe("Captcha code or password wrong");
-                    downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -300,7 +300,7 @@ public class XupIn extends PluginForHost {
                 if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
 
                     logger.severe("Filesize Error");
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -309,9 +309,9 @@ public class XupIn extends PluginForHost {
                 // Download starten
                 dl = new RAFDownload(this, downloadLink, urlConnection);
 
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
 
                 }

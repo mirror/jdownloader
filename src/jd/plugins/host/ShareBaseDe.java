@@ -31,9 +31,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class ShareBaseDe extends PluginForHost {
@@ -85,7 +85,7 @@ public class ShareBaseDe extends PluginForHost {
         return 1;
     }
     
-    @Override public boolean getFileInformation(DownloadLink downloadLink) {
+    @Override public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         
     	try {
         	
@@ -130,7 +130,7 @@ public class ShareBaseDe extends PluginForHost {
         
     }
     
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
     	
         try {
         	
@@ -141,7 +141,7 @@ public class ShareBaseDe extends PluginForHost {
             
           //  switch (step.getStep()) {
             
-                case PluginStep.STEP_PAGE:
+                //case PluginStep.STEP_PAGE:
                 	
                     requestInfo = HTTP.getRequest(downloadUrl);
                
@@ -149,7 +149,7 @@ public class ShareBaseDe extends PluginForHost {
                     
                     if(requestInfo.containsHTML(DOWLOAD_RUNNING)){
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         //step.setParameter((long)(60 * 1000));
                         
                     }
@@ -174,7 +174,7 @@ public class ShareBaseDe extends PluginForHost {
                         }
                         
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                        linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                         //step.setParameter((long)(waittime * 1000));
                         return;
                         
@@ -183,7 +183,7 @@ public class ShareBaseDe extends PluginForHost {
                     //DownloadInfos nicht gefunden? --> Datei nicht vorhanden
                     if (fileName == null) {
                         logger.severe("download not found");
-                        downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
                     }
@@ -194,20 +194,20 @@ public class ShareBaseDe extends PluginForHost {
                     this.cookies = requestInfo.getCookie().split("; ")[0];
                     return;
                     
-                case PluginStep.STEP_DOWNLOAD:
+                //case PluginStep.STEP_DOWNLOAD:
                 	
                     try {
                         requestInfo = HTTP.postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
                         finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
                         
                         if (finishURL == null) {
-                            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                             //step.setStatus(PluginStep.STATUS_ERROR);
                             return;
                         }
                         
                     } catch (Exception e) {
-                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                          e.printStackTrace();
                     }
@@ -230,7 +230,7 @@ public class ShareBaseDe extends PluginForHost {
                       
                     } catch (IOException e) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                         logger.severe("URL could not be opened. " + e.toString());
                     }
                     

@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 
 public class CryptGetMoviesOrg extends PluginForDecrypt {

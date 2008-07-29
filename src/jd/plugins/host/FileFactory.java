@@ -34,9 +34,9 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -126,7 +126,7 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         if (step == null) { return null; }
 
@@ -139,7 +139,7 @@ public class FileFactory extends PluginForHost {
                 logger.info("Premium");
             }
 
-            return this.doPremiumStep(step, downloadLink);
+           this.doPremium(downloadLink);
 
         } else {
 
@@ -147,13 +147,13 @@ public class FileFactory extends PluginForHost {
                 logger.info("Free");
             }
 
-            return this.doFreeStep(step, downloadLink);
+            this.doFree(downloadLink);
 
         }
 
     }
 
-    public PluginStep doFreeStep(PluginStep step, DownloadLink parameter) {
+    public void doFree( DownloadLink parameter)throws Exception { LinkStatus linkStatus=parameter.getLinkStatus();
 
         DownloadLink downloadLink = null;
 
@@ -163,26 +163,26 @@ public class FileFactory extends PluginForHost {
             logger.info(downloadLink.getDownloadURL());
           //  switch (step.getStep()) {
 
-            case PluginStep.STEP_WAIT_TIME:
+            //case PluginStep.STEP_WAIT_TIME:
 
                 requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
 
                 if (requestInfo.containsHTML(NOT_AVAILABLE)) {
 
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return;
 
                 } else if (requestInfo.containsHTML(SERVER_DOWN)) {
 
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return;
 
                 } else if (requestInfo.containsHTML(NO_SLOT)) {
 
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return;
 
                 }
@@ -209,7 +209,7 @@ public class FileFactory extends PluginForHost {
                 //step.setStatus(PluginStep.STATUS_DONE);
                 return;
 
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
+            //case PluginStep.STEP_GET_CAPTCHA_FILE:
                 captchaFile = this.getLocalCaptchaFile(this);
 
                 if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
@@ -217,7 +217,7 @@ public class FileFactory extends PluginForHost {
                     logger.severe("Captcha Download failed: " + captchaAddress);
 
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
 
                 }
@@ -226,7 +226,7 @@ public class FileFactory extends PluginForHost {
                 // captchaerkennung statt. der captcha wird im nächsten schritt
                 // erkannt
                 return;
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
 
                 String captchaCode = (String) steps.get(1).getParameter();
                 try {
@@ -236,7 +236,7 @@ public class FileFactory extends PluginForHost {
                     if (requestInfo.getHtmlCode().contains(CAPTCHA_WRONG)) {
 
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        downloadLink.setStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
 
                         return;
 
@@ -247,7 +247,7 @@ public class FileFactory extends PluginForHost {
 
                 } catch (Exception e) {
 
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     e.printStackTrace();
 
@@ -282,7 +282,7 @@ public class FileFactory extends PluginForHost {
                                 wait = wait * 1000 + 5000;
                             }
 
-                            downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                             //step.setStatus(PluginStep.STATUS_ERROR);
                             logger.info("Traffic Limit reached....");
                             //step.setParameter((long) wait);
@@ -308,7 +308,7 @@ public class FileFactory extends PluginForHost {
 
                             logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) an retry afterwards");
 
-                            downloadLink.setStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                             //step.setStatus(PluginStep.STATUS_ERROR);
 
                             //step.setParameter(10 * 60000l);
@@ -316,15 +316,15 @@ public class FileFactory extends PluginForHost {
                             return;
                         }
                         logger.info(requestInfo.getHtmlCode());
-                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
                     }
                     dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
-                    if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                   dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
-                        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
 
@@ -333,7 +333,7 @@ public class FileFactory extends PluginForHost {
                 } catch (IOException e) {
 
                     logger.severe("URL could not be opened" + e.toString());
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 
@@ -343,7 +343,7 @@ public class FileFactory extends PluginForHost {
 
         } catch (Exception e) {
 
-            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             //step.setStatus(PluginStep.STATUS_ERROR);
             e.printStackTrace();
             return;
@@ -355,7 +355,7 @@ public class FileFactory extends PluginForHost {
     }
 
     // by eXecuTe
-    public PluginStep doPremiumStep(PluginStep step, DownloadLink parameter) {
+    public void doPremium( DownloadLink parameter) {
 
         DownloadLink downloadLink = null;
         String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
@@ -378,7 +378,7 @@ public class FileFactory extends PluginForHost {
 
           //  switch (step.getStep()) {
 
-            case PluginStep.STEP_WAIT_TIME:
+            //case PluginStep.STEP_WAIT_TIME:
                 PostRequest req = new PostRequest(downloadLink.getDownloadURL());
                 req.setPostVariable("email", JDUtilities.urlEncode(user));
                 req.setPostVariable("password", JDUtilities.urlEncode(pass));
@@ -391,11 +391,11 @@ public class FileFactory extends PluginForHost {
 
                 if (greq.containsHTML(NOT_AVAILABLE)) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return;
                 } else if (greq.containsHTML(SERVER_DOWN)) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     return;
                 } else {
                     String link = "http://www.filefactory.com" + greq.getLocation();
@@ -412,7 +412,7 @@ public class FileFactory extends PluginForHost {
                 //step.setStatus(PluginStep.STATUS_DONE);
                 return;
 
-            case PluginStep.STEP_GET_CAPTCHA_FILE:
+            //case PluginStep.STEP_GET_CAPTCHA_FILE:
 
                 // //step.setStatus(PluginStep.STATUS_SKIP);
                 //step.setStatus(PluginStep.STATUS_SKIP);
@@ -420,7 +420,7 @@ public class FileFactory extends PluginForHost {
                 step = nextStep(step);
                 // return;
 
-            case PluginStep.STEP_DOWNLOAD:
+            //case PluginStep.STEP_DOWNLOAD:
 
                 try {
 
@@ -432,9 +432,9 @@ public class FileFactory extends PluginForHost {
                     dl = new RAFDownload(this, downloadLink, urlConnection);
                     dl.setResume(true);
                     dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-                    if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                   dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
 
-                        downloadLink.setStatus(LinkStatus.ERROR_PREMIUM);
+                        linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return;
 
@@ -445,7 +445,7 @@ public class FileFactory extends PluginForHost {
                 } catch (Exception e) {
 
                     logger.severe(JDLocale.L("URL could not be opened") + e.toString());
-                    downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     e.printStackTrace();
                     return;
@@ -456,7 +456,7 @@ public class FileFactory extends PluginForHost {
 
         } catch (Exception e) {
 
-            downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             //step.setStatus(PluginStep.STATUS_ERROR);
             e.printStackTrace();
             return;
@@ -488,7 +488,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
@@ -515,7 +515,7 @@ public class FileFactory extends PluginForHost {
      * }
      */
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));

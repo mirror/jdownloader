@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.host;
 
 import java.io.File;
@@ -29,7 +28,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.download.RAFDownload;
 
 //http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
@@ -37,15 +35,15 @@ import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
 
-    private static final String  HOST             = "archiv.to";
+    private static final String HOST = "archiv.to";
 
-    private static final String  VERSION          = "1.2.0";
+    private static final String VERSION = "1.2.0";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 
-    static private final String  FILESIZE         = "<td width=\".*\">: ([0-9]+) Byte";
+    static private final String FILESIZE = "<td width=\".*\">: ([0-9]+) Byte";
 
-    static private final String  FILENAME         = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
+    static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
 
     //
     @Override
@@ -85,16 +83,12 @@ public class ArchivTo extends PluginForHost {
 
     public ArchivTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+
     }
 
-    public void handle( final DownloadLink downloadLink) {
-//        if (aborted) {
-//            logger.warning("Plugin aborted");
-//            downloadLink.setStatus(LinkStatus.TODO);
-//            //step.setStatus(PluginStep.STATUS_TODO);
-//            return;
-//        }
+    public void handle(DownloadLink downloadLink) throws Exception {
+
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
 
@@ -102,50 +96,41 @@ public class ArchivTo extends PluginForHost {
 
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return;
             }
             final long length = downloadLink.getDownloadMax();
             downloadLink.setName(getFileNameFormHeader(urlConnection));
 
-           dl = new RAFDownload(this, downloadLink, urlConnection);
+            dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.setFilesize(length);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-
-                downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+            dl.startDownload();
             return;
 
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
+        // step.setStatus(PluginStep.STATUS_ERROR);
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
         return;
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
                 downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
-            }
-            else
+            } else
                 return false;
             return true;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
@@ -157,10 +142,12 @@ public class ArchivTo extends PluginForHost {
     }
 
     @Override
-    public void reset() {}
+    public void reset() {
+    }
 
     @Override
-    public void resetPluginGlobals() {}
+    public void resetPluginGlobals() {
+    }
 
     @Override
     public String getAGBLink() {

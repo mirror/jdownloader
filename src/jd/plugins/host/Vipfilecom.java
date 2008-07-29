@@ -9,9 +9,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
+import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
 
 public class Vipfilecom extends PluginForHost {
@@ -79,7 +79,7 @@ public class Vipfilecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         downloadurl = downloadLink.getDownloadURL();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadurl));
@@ -104,12 +104,12 @@ public class Vipfilecom extends PluginForHost {
         return false;
     }
 
-    public PluginStep doStep(PluginStep step, DownloadLink downloadLink) {
-        if (step == null) return null;
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+        
         try {
             /* Nochmals das File überprüfen */
             if (!getFileInformation(downloadLink)) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -117,19 +117,19 @@ public class Vipfilecom extends PluginForHost {
             String link = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch());
             if (link == null) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 return;
             }            
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
             if (requestInfo.getLocation() == null) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 return;
             }
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
             if (requestInfo.getLocation() == null) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
                 return;
             }
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
@@ -137,7 +137,7 @@ public class Vipfilecom extends PluginForHost {
             HTTPConnection urlConnection = requestInfo.getConnection();
             String filename = getFileNameFormHeader(urlConnection);
             if (urlConnection.getContentLength() == 0) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -148,8 +148,8 @@ public class Vipfilecom extends PluginForHost {
             dl.setFilesize(length);
             dl.setChunkNum(1);
             dl.setResume(false);
-            if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                downloadLink.setStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
+           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
+                linkStatus.addStatus(DownloadLink.STATUS_ERROR_TEMPORARILY_UNAVAILABLE);
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 return;
             }
@@ -159,7 +159,7 @@ public class Vipfilecom extends PluginForHost {
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
+        linkStatus.addStatus(DownloadLink.STATUS_ERROR_UNKNOWN);
         return;
     }
 

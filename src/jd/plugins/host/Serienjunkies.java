@@ -40,7 +40,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
+
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -416,14 +416,14 @@ public class Serienjunkies extends PluginForHost {
         return links;
     }
 
-    public void handle( DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
         PluginStep ret = doStep0(step, downloadLink);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         return ret;
     }
 
-    public PluginStep doStep0(PluginStep step, DownloadLink downloadLink) {
+     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
 
           //  switch (step.getStep()) {
@@ -435,7 +435,7 @@ public class Serienjunkies extends PluginForHost {
                 Vector<DownloadLink> dls = getDLinks(link);
                 
                 if(dls.size() < 1) {
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
                     logger.warning("SJ returned no Downloadlinks");
@@ -501,7 +501,7 @@ public class Serienjunkies extends PluginForHost {
                 }
                 if (down.size() > 0) {
                     fp.add(downloadLink);
-                    downloadLink.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     //step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
                     return;
@@ -514,7 +514,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         return true;
     }
 

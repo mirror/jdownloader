@@ -14,7 +14,6 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginStep;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -65,73 +64,59 @@ public class FastShareorg extends PluginForHost {
 
     public FastShareorg() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    public void handle( DownloadLink downloadLink) {
-        try {
-          //  switch (step.getStep()) {
-            case PluginStep.STEP_PAGE:
-                url = downloadLink.getDownloadURL();
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation(downloadLink)) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                /* Link holen */                
-                Form form = requestInfo.getForms()[0];
-                requestInfo = form.getRequestInfo();
-                if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
-                    downloadLink.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            case PluginStep.STEP_PENDING:
-                /* Zwangswarten, 10seks */
-                //step.setParameter(10000l);
-                return;
-            case PluginStep.STEP_DOWNLOAD:
-                /* Datei herunterladen */
-                // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url),
-                // null, url, postdata, false);
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), null, url, false);
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                String filename = getFileNameFormHeader(urlConnection);
-                if (urlConnection.getContentLength() == 0) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                downloadLink.setDownloadMax(urlConnection.getContentLength());
-                downloadLink.setName(filename);
-                long length = downloadLink.getDownloadMax();
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setFilesize(length);
-                if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    downloadLink.setStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            }
-        } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        url = downloadLink.getDownloadURL();
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        downloadLink.setStatus(LinkStatus.ERROR_UNKNOWN);
-        return;
+        /* Link holen */
+        Form form = requestInfo.getForms()[0];
+        requestInfo = form.getRequestInfo();
+        if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+
+        // case PluginStep.STEP_PENDING:
+        /* Zwangswarten, 10seks */
+        // step.setParameter(10000l);
+        this.sleep(10000, downloadLink);
+
+        // case PluginStep.STEP_DOWNLOAD:
+        /* Datei herunterladen */
+        // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url),
+        // null, url, postdata, false);
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), null, url, false);
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.startDownload();
+
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));

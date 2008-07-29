@@ -40,8 +40,10 @@ public class TempEmail {
 	 * @return
 	 * @throws IOException 
 	 * @throws MalformedURLException 
+	 * @throws IOException 
+	 * @throws MalformedURLException 
 	 */
-	public String[][] getMailInfos() throws MalformedURLException, IOException {
+	public String[][] getMailInfos() throws MalformedURLException, IOException  {
 		if(emails!=null)
 		return emails;
 		RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com/maildir.jsp?email="+emailname));
@@ -52,10 +54,12 @@ public class TempEmail {
 	 * Gibt den Inhalt der mail i zurück
 	 * @param index
 	 * @return
+	 * @throws IOException 
+	 * @throws MalformedURLException 
 	 * @throws MalformedURLException
 	 * @throws IOException
 	 */
-	public String getMail(int index) throws MalformedURLException, IOException
+	public String getMail(int index) throws MalformedURLException, IOException 
 	{
 		if(getEmailAdress()==null || emails.length<=index)
 		return null;
