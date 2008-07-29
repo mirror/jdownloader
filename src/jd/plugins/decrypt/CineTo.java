@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -36,9 +35,7 @@ public class CineTo extends PluginForDecrypt {
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
     public CineTo() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
+        super();        
     }
 
     @Override
@@ -73,13 +70,9 @@ public class CineTo extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
+        String cryptedLink = (String) parameter;        
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         RequestInfo reqinfo;
-
         try {
             if (cryptedLink.matches(patternLink_Show.pattern())) {
                 reqinfo = HTTP.getRequest(new URL(cryptedLink));
@@ -97,7 +90,6 @@ public class CineTo extends PluginForDecrypt {
                         capText = capText + extractCaptcha(captcha, j);
                     }
                 }
-
                 reqinfo = HTTP.postRequest(new URL(cryptedLink), reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
                 String[][] links = reqinfo.getRegexp("window.open\\(\'(.*?)\'").getMatches();
                 progress.setRange(links.length);
@@ -107,17 +99,15 @@ public class CineTo extends PluginForDecrypt {
                     decryptedLinks.add(link);
                     progress.increase(1);
                 }
-            }
-            //// step.setParameter(decryptedLinks);
+            }            
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 
     private String extractCaptcha(String[][] source, int captchanumber) {
-
         String[] erg = new String[15];
 
         erg[0] = source[(captchanumber * 4) - 4][0];

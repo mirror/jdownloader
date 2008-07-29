@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -5,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.controlling.DistributeData;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,7 +43,6 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     public Cryptlinkws() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -63,7 +77,6 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = null;
@@ -98,7 +111,6 @@ public class Cryptlinkws extends PluginForDecrypt {
                         String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
                         if (password == null) {
                             /* auf abbruch geklickt */
-                            //// step.setParameter(decryptedLinks);
                             return decryptedLinks;
                         }
                         post_parameter += "folderpass=" + JDUtilities.urlEncode(password);
@@ -112,14 +124,10 @@ public class Cryptlinkws extends PluginForDecrypt {
                         if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
-                            //// step.setParameter(decryptedLinks);
-                            return null;
+                            return decryptedLinks;
                         }
                         /* CaptchaCode holen */
-                        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                            //// step.setParameter(decryptedLinks);
-                            return null;
-                        }
+                        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return decryptedLinks; }
                         if (post_parameter != "") post_parameter += "&";
                         post_parameter += "captchainput=" + JDUtilities.urlEncode(captchaCode);
                     }
@@ -138,12 +146,10 @@ public class Cryptlinkws extends PluginForDecrypt {
                     }
                 }
             }
-
-            //// step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 

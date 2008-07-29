@@ -27,8 +27,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
-import jd.controlling.JDController;
 import jd.crypt.AESdecrypt;
 import jd.parser.HTMLParser;
 import jd.parser.SimpleMatches;
@@ -60,11 +58,7 @@ public class CryptItCom extends PluginForDecrypt {
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
 
     public CryptItCom() {
-
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
-
     }
 
     @Override
@@ -99,161 +93,119 @@ public class CryptItCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                String url = parameter;
-                if (!url.endsWith("/")) url += "/";
-                String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
-                String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
-                RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-                String pass = "";
-                if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
-                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                        pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
-                        if (pass == null) {
-                            /* auf abbruch geklickt */
-                            //step.setParameter(decryptedLinks);
-                            return decryptedLinks;
-                        }
-                        String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                        ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
-                        if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) break;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            String url = parameter;
+            if (!url.endsWith("/")) url += "/";
+            String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
+            String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
+            RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
+            String pass = "";
+            if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
+                    if (pass == null) {
+                        /* auf abbruch geklickt */
+                        return null;
                     }
+                    String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                    ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
+                    if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) break;
                 }
-                String cookie = ri.getCookie();
-                String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
-                String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
-                if (password != null) password = password.trim();
-                HashMap<String, String> header = new HashMap<String, String>();
-                header.put("Content-Type", "application/x-amf");
-                // alt: byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00,
-                // 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74,
-                // 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00,
-                // 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00,
-                // 0x00, 0x01, 0x02, 0x00, 0x06 };
-                byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
-                byte[] b2 = new byte[] { 0x02, 0x00 };
-                ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass, false);
-                ArrayList<String> ciphers = SimpleMatches.getAllSimpleMatches(ri, "url°size", 1);
-                progress.setRange(ciphers.size());
-                Vector<String> p = new Vector<String>();
-                progress.setRange(ciphers.size());
-                FilePackage fp = new FilePackage();
-                fp.setName(packagename);
-                fp.setPassword(password);
-                p.add(password);
-                for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
-                    String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
-                    String linktext = decrypt(cipher);
-                    progress.increase(1);
-                    String[] links;
-
-                    links = HTMLParser.getHttpLinks(linktext, null);
-                    if (links.length > 0 && links[0].startsWith("http")) {
-                        DownloadLink link = this.createDownloadlink(links[0]);
-                        link.setSourcePluginPasswords(p);
-                        link.setSourcePluginComment(packagename);
-
-                        fp.add(link);
-                        decryptedLinks.add(link);
-                    }
-                }
-                if (decryptedLinks.size() == 0) {
-                    return containerStep(parameter);
-                } else {
-                    //step.setParameter(decryptedLinks);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-
-        
-
+            String cookie = ri.getCookie();
+            String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
+            String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
+            if (password != null) password = password.trim();
+            HashMap<String, String> header = new HashMap<String, String>();
+            header.put("Content-Type", "application/x-amf");
+            // alt: byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00,
+            // 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74,
+            // 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00,
+            // 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00,
+            // 0x00, 0x01, 0x02, 0x00, 0x06 };
+            byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
+            byte[] b2 = new byte[] { 0x02, 0x00 };
+            ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass, false);
+            ArrayList<String> ciphers = SimpleMatches.getAllSimpleMatches(ri, "url°size", 1);
+            progress.setRange(ciphers.size());
+            Vector<String> p = new Vector<String>();
+            FilePackage fp = new FilePackage();
+            fp.setName(packagename);
+            fp.setPassword(password);
+            p.add(password);
+            for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
+                String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
+                String linktext = decrypt(cipher);
+                progress.increase(1);
+                String[] links;
+                links = HTMLParser.getHttpLinks(linktext, null);
+                if (links.length > 0 && links[0].startsWith("http")) {
+                    DownloadLink link = this.createDownloadlink(links[0]);
+                    link.setSourcePluginPasswords(p);
+                    link.setSourcePluginComment(packagename);
+                    fp.add(link);
+                    decryptedLinks.add(link);
+                }
+            }
+            if (decryptedLinks.size() == 0) { return containerStep(parameter); }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
     private ArrayList<DownloadLink> containerStep(String parameter) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
+        parameter = parameter.replace("/s/", "/d/");
+        parameter = parameter.replace("/e/", "/d/");
+        parameter = parameter.replace("ccf://", "http://");
 
-            // surpress jd warning
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            //step.setParameter(decryptedLinks);
+        try {
 
-            parameter = parameter.replace("/s/", "/d/");
-            parameter = parameter.replace("/e/", "/d/");
-            parameter = parameter.replace("ccf://", "http://");
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
 
-            try {
+            if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
+                requestInfo = HTTP.readFromURL(requestInfo.getConnection());
+                String cookie = requestInfo.getCookie();
+                if (requestInfo.containsHTML(PATTERN_PW)) {
 
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
-
-                if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
-                    requestInfo = HTTP.readFromURL(requestInfo.getConnection());
-                    String cookie = requestInfo.getCookie();
+                    String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+                    String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                    requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                     if (requestInfo.containsHTML(PATTERN_PW)) {
-
-                        String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-                        String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
-                        requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
-                        if (requestInfo.containsHTML(PATTERN_PW)) {
-
-                            logger.warning("Password wrong");
-                            JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
-                            //step.setStatus(PluginStep.STATUS_ERROR);
-                            return decryptedLinks;
-
-                        }
+                        logger.warning("Password wrong");
+                        JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
+                        return decryptedLinks;
                     }
-
-                    parameter = parameter.replace("/c/", "/d/");
-                    requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
                 }
-
-                String folder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
-                String name = this.getFileNameFormHeader(requestInfo.getConnection());
-
-                if (name.equals("redir.ccf") || !name.contains(".ccf")) {
-
-                    logger.severe("Container not found");
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return decryptedLinks;
-
-                }
-
-                // download
-                File file = new File(folder, name);
-                int i = 0;
-
-                while (file.exists()) {
-
-                    String newName = name.substring(0, name.length() - 4) + "-" + String.valueOf(i) + ".ccf";
-                    file = new File(folder, newName);
-                    i++;
-
-                }
-
-                logger.info("Download container: " + file.getAbsolutePath());
-                JDUtilities.download(file, requestInfo.getConnection());
-
-                // read container
-                JDController controller = JDUtilities.getController();
-                controller.loadContainerFile(file);
-
-                // delete container
-                file.deleteOnExit();
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+                parameter = parameter.replace("/c/", "/d/");
+                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
             }
 
-        
+            String name = this.getFileNameFormHeader(requestInfo.getConnection());
+
+            if (name.equals("redir.ccf") || !name.contains(".ccf")) {
+                logger.severe("Container not found");
+                return null;
+            }
+
+            File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+            JDUtilities.download(containerfile, requestInfo.getConnection());
+            JDUtilities.getController().loadContainerFile(containerfile);
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
@@ -287,15 +239,12 @@ public class CryptItCom extends PluginForDecrypt {
             System.arraycopy(output, 0, cipher, blocks * blockSize, cb);
             if (rest <= blockSize) break;
             blocks++;
-
         }
         return new String(cipher).trim();
-
     }
 
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, byte[] parameter, boolean redirect) throws IOException {
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
-
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null)
             httpConnection.setRequestProperty("Referer", referrer);
@@ -315,19 +264,13 @@ public class CryptItCom extends PluginForDecrypt {
             }
         }
         if (parameter != null) {
-
             httpConnection.setRequestProperty("Content-Length", parameter.length + "");
         }
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-
         httpConnection.post(parameter);
-
         RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
-
         requestInfo.setConnection(httpConnection);
-        // logger.finer("postRequest " + url + ": " +
-        // (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
     }
 
@@ -335,5 +278,4 @@ public class CryptItCom extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

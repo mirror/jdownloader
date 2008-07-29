@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,12 +30,10 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     static private final String host = "crypt.get-movies.org";
     private String version = "1.0.0.0";
 
-    private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/[\\d]{4}", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
 
     public CryptGetMoviesOrg() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
         default_password.add("www.get-movies.6x.to");
         default_password.add("get-movies.6x.to");
         default_password.add("get-movies.org");
@@ -73,24 +70,21 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
         return version;
     }
 
-    @Override public ArrayList<DownloadLink> decryptIt(String parameter) {
-    	//if(step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-    		try {
-    			URL url = new URL(parameter);
-    			RequestInfo reqinfo = HTTP.getRequest(url);
-
-    			progress.setRange(1);
-    			decryptedLinks.add(createDownloadlink(reqinfo.getFirstMatch("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").trim()));
-    			progress.increase(1);
-
-    			//step.setParameter(decryptedLinks);
-    		}
-    		catch(IOException e) {
-    			 e.printStackTrace();
-    		}
-    
-    	return decryptedLinks;
+    @Override
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String link = reqinfo.getFirstMatch("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>");
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link.trim()));
+            } else
+                return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return decryptedLinks;
     }
 
     @Override

@@ -14,125 +14,86 @@
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://gnu.org/licenses/>.
 
+package jd.plugins.decrypt;
 
-package jd.plugins.decrypt;  import java.io.File;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Collectr extends PluginForDecrypt {
 
-static private String host = "collectr.net";
+    static private String host = "collectr.net";
 
-private String version = "1.2.0.0";
-private Pattern patternSupported = Pattern.compile("http://.*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
-static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?");
+    private String version = "1.2.0.0";
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?");
 
-//Testlinks: http://collectr.net/out/756338/steelwarez.com   (Als Ab-18 markiert)
-//           http://collectr.net/out/376910/sceneload.to     (Keine Alterskontrolle)
-//
-//Erkennung auch für:
-//           http://collectr.net/out/376910/
-//           http://collectr.net/out/376910
-public Collectr() {
-  super();
-  //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-  //currentStep = steps.firstElement();
-}
+    public Collectr() {
+        super();
+    }
 
-@Override
-public String getCoder() {
-  return "b0ffed";
-}
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
 
-@Override
-public String getHost() {
-  return host;
-}
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-@Override
-public String getPluginID() {
-  return host+"-"+version;
-}
+    @Override
+    public String getPluginID() {
+        return host + "-" + version;
+    }
 
-@Override
-public String getPluginName() {
-  return host;
-}
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-@Override
-public Pattern getSupportedLinks() {
-  return patternSupported;
-}
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-@Override
-public String getVersion() {
-  return version;
-}
+    @Override
+    public String getVersion() {
+        return version;
+    }
 
-@Override
-public ArrayList<DownloadLink> decryptIt(String parameter) {
-  ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-      ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-      try {
-          
-          progress.setRange(1);
-          URL url = new URL(parameter);
-          //Erster Request, der entweder zur Seite führt oder zur Altersabfrage.    
-          RequestInfo reqinfo = HTTP.getRequest(url);
-          
-          
-          Matcher matcher = patternAb18.matcher(reqinfo.getHtmlCode());
-          
-          if( matcher.find())  // = Datei ab 18
-          {  
-              logger.finest("CollectrDecrypt - Angeforderte Datei(en) ab 18.");
+    @Override
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            Matcher matcher = patternAb18.matcher(reqinfo.getHtmlCode());
+            if (matcher.find()) {
+                reqinfo = HTTP.postRequest(url, "o18=true");
+            }
+            String link = new Regex(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
+            if (link != null) {
+                decryptedLinks.add(this.createDownloadlink(link));
+            } else
+                return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return decryptedLinks;
+    }
 
-              if(JDUtilities.getGUI().showConfirmDialog(
-                    "Du hast ein Suchergebnis der Kategorie \"Erotik\" ausgewählt.\n" +
-                    "Diese Suchergebnisse verweisen meist auf Internetseiten mit nicht jugendfreien Inhalten.\n" +
-                    "Da uns der Jugendschutz jedoch sehr am Herzen liegt, \n" +
-                    "bitten wir dich hier um die ausdrückliche Bestätigung deiner Volljährigkeit!\n\n\n" +
-                    "Hast du das 18 Lebensjahr bereits abgeschlossen?\n  "))
-              {
-                  logger.finest("Nutzer hat das 18te Lebensjahr erreicht. Decrypten wird fortgesetzt.");
-                  reqinfo = HTTP.postRequest(url, "o18=true"); 
-              }
-              else
-              {  
-                  logger.finest("Nutzer hat das 18te Lebensjahr noch nicht erreicht. Abbruch.");
-                  return decryptedLinks;
-              }
-          }
-          else
-          {
-              logger.finest("CollectrDecrypt - Angeforderte Datei(en) ohne Jugendschutz."); 
-          }
-          
-          String link = new Regex(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
-          progress.increase(1);
-          decryptedLinks.add(this.createDownloadlink(link));
-
-          // Decrypt abschliessen
-
-          //step.setParameter(decryptedLinks);
-      } catch (IOException e) {
-          e.printStackTrace();
-      }
-
-  return decryptedLinks;
-}
-@Override
-public boolean doBotCheck(File file) {
-  return false;
-}
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 }
