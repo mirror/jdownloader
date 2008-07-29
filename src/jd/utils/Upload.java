@@ -61,10 +61,10 @@ public class Upload {
 
             return "http://jdservice.ath.cx/tools/log.php?id=" + ri.getHtmlCode();
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return null;
@@ -233,7 +233,7 @@ public class Upload {
                 return null;
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
 
@@ -266,7 +266,7 @@ public class Upload {
      * requestInfo.getForm(); form.fileToPost=Captcha; try {
      * if(form.getRequestInfo().getHtmlCode().contains("true")) return true; }
      * catch (Exception e) { // TODO: handle exception } } catch
-     * (MalformedURLException e1) { // TODO Auto-generated catch block
+     * (MalformedURLException e1) { 
      * e1.printStackTrace(); } catch (IOException e1) { // TODO Auto-generated
      * catch block e1.printStackTrace(); }
      * 

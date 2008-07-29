@@ -271,7 +271,7 @@ public class JDController implements ControlListener, UIListener {
 
                     fileLogger.close();
                 } catch (IOException e) {
-                    // TODO Auto-generated catch block
+                    
                     e.printStackTrace();
                 }
             }

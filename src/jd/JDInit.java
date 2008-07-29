@@ -591,7 +591,7 @@ public class JDInit {
 
                                             JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
                                         } catch (IOException e) {
-                                            // TODO Auto-generated catch block
+                                            
                                             e.printStackTrace();
                                         }
 
@@ -608,7 +608,7 @@ public class JDInit {
                                     System.exit(0);
                                 }
                             } catch (HeadlessException e) {
-                                // TODO Auto-generated catch block
+                                
                                 e.printStackTrace();
                             }
 

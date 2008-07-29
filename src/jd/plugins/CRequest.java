@@ -117,10 +117,10 @@ public class CRequest {
             else
                 setRequestInfo(HTTP.getRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return this;
@@ -143,10 +143,10 @@ public class CRequest {
             else
                 setRequestInfo(HTTP.postRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), parameter, redirect));
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return this;

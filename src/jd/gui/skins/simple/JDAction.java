@@ -121,7 +121,7 @@ public class JDAction extends AbstractAction{
                    int m = (Integer) f.get(null);                  
                    putValue(Action.MNEMONIC_KEY, m);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             } 
             }

@@ -24,15 +24,15 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 /**
@@ -128,6 +128,7 @@ public class Gulli extends PluginForHost {
     // return null;
     // }
     public void handle(DownloadLink parameter) throws Exception{
+        LinkStatus linkStatus = parameter.getLinkStatus();
         RequestInfo requestInfo = null;
         String dlUrl=null;
         try {
@@ -140,9 +141,9 @@ public class Gulli extends PluginForHost {
                     // con.setRequestProperty("Cookie",
                     // Plugin.joinMap(cookieMap,"=","; "));
                     requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-                    fileId = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_FILE_ID, 1);
-                    String captchaLocalUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_CAPTCHA, 1);
-                    dlUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                    fileId = new Regex(requestInfo.getHtmlCode(), PAT_FILE_ID).getMatch( 1-1);
+                    String captchaLocalUrl = new Regex(requestInfo.getHtmlCode(), PAT_CAPTCHA).getMatch( 1-1);
+                    dlUrl = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL).getMatch( 1-1);
                   
 
                     if (captchaLocalUrl == null) {
@@ -180,7 +181,7 @@ public class Gulli extends PluginForHost {
                         logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
                         requestInfo = HTTP.postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);
                     
-                    dlUrl = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL, 1);
+                    dlUrl = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL).getMatch( 1-1);
                     
                     if (dlUrl == null) {
                         logger.finest("Error Page");

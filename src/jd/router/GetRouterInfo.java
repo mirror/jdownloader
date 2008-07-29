@@ -122,10 +122,10 @@ public class GetRouterInfo {
                             }
                         }
                     } catch (UnknownHostException e) {
-                        // TODO Auto-generated catch block
+                        
                         e.printStackTrace();
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
+                        
                         e.printStackTrace();
                     }
                 }
@@ -210,10 +210,10 @@ public class GetRouterInfo {
             routerDatas = retRouterData;
             return retRouterData;
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return null;

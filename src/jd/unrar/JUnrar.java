@@ -870,7 +870,7 @@ public class JUnrar {
 	 * 
 	 * public void run() { long tempfs = 0; long std = long1 / steps; int step =
 	 * steps; while (step > 0) { try { Thread.sleep(100); } catch
-	 * (InterruptedException e) { // TODO Auto-generated catch block
+	 * (InterruptedException e) { 
 	 * e.printStackTrace(); } if (file.isFile()) { long size = file.length() -
 	 * tempfs;
 	 * 

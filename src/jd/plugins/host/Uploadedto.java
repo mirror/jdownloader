@@ -182,9 +182,9 @@ public class Uploadedto extends PluginForHost {
                 }
 
                 // logger.info(requestInfo.getHtmlCode());
-                this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_FLE, 1);
+                this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getMatch( 1-1);
 
-                this.postTarget = SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD, 1);
+                this.postTarget = new Regex(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD).getMatch( 1-1);
                 String url = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
                 if (url == null) {
                     this.useCaptchaVersion = false;

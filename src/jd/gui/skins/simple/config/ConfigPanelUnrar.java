@@ -106,7 +106,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
             		bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
                 JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
 

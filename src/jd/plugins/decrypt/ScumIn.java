@@ -101,7 +101,7 @@ public class ScumIn extends PluginForDecrypt {
 
                 File captchaFile = this.getLocalCaptchaFile(this);
                 if (!JDUtilities.download(captchaFile, con) || !captchaFile.exists()) {
-                    //step.setParameter(null);
+                    //this.sleep(nul,downloadLink);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                        return decryptedLinks;
                 }

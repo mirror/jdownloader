@@ -433,7 +433,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
+                            
                             e.printStackTrace();
                         }
                         boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
@@ -462,7 +462,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
+                            
                             e.printStackTrace();
                         }
                         JDUtilities.getController().exit();
@@ -488,7 +488,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
+                            
                             e.printStackTrace();
                         }
                         JDUtilities.restartJD();

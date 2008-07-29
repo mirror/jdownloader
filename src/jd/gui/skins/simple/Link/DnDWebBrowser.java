@@ -79,7 +79,7 @@ public class DnDWebBrowser extends JDialog {
             browserPane.setPage(url);
             toolBar.urlTextField.setText(url.toString());
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
     }

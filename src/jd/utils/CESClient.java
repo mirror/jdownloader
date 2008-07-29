@@ -255,7 +255,7 @@ public class CESClient implements Serializable {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
+                    
                     e.printStackTrace();
                 }
 
@@ -348,10 +348,10 @@ public class CESClient implements Serializable {
             }
             return true;
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return false;
@@ -380,10 +380,10 @@ public class CESClient implements Serializable {
                 config.setProperty(LASTEST_INSTANCE, this);
                 printMessage(ri.getHtmlCode());
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         } else {
@@ -404,10 +404,10 @@ public class CESClient implements Serializable {
         try {
            this.printMessage( HTTP.postRequest(new URL(server + "index.php?Nick=" + user + "&Pass=" + pass + "&State=1"), "logout=Stop+captcha+recognition&State=4&Nick=" + user + "&Pass=" + pass).getHtmlCode());
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         config.setProperty(LASTEST_INSTANCE, this);

@@ -281,7 +281,7 @@ public class Netloadin extends PluginForHost {
                     if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                        waitTime = Long.parseLong(SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME, 1));
+                        waitTime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME).getMatch( 1)-1);
                         waitTime = waitTime * 10L;
                         //step.setParameter(waitTime);
                         END_OF_DOWNLOAD_LIMIT = System.currentTimeMillis() + waitTime;

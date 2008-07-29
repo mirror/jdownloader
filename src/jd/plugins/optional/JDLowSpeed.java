@@ -84,7 +84,7 @@ public class JDLowSpeed extends PluginOptional {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
+                            
                             e.printStackTrace();
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
@@ -161,7 +161,7 @@ public class JDLowSpeed extends PluginOptional {
                         try {
                             Thread.sleep(20000);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
+                            
                             e.printStackTrace();
                         }
                     }

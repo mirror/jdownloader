@@ -38,7 +38,7 @@ public static void main(String[] a) {
     try {
         f.getContentPane().add(new JLinkButton("AGB", new URL("http://rapidshare.com/de/faq.html")));
     } catch (MalformedURLException e) {
-        // TODO Auto-generated catch block
+        
         e.printStackTrace();
     }
     f.setSize(600, 200);

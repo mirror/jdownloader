@@ -61,7 +61,7 @@ public class ftp2share extends PluginForDecrypt {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //// step.setParameter(decryptedLinks);

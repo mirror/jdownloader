@@ -550,7 +550,7 @@ public class JDUtilities {
             if (currentDir.isFile()) currentDir = currentDir.getParentFile();
 
         } catch (URISyntaxException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
 
@@ -613,7 +613,7 @@ public class JDUtilities {
 
                 e.printStackTrace();
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
@@ -684,7 +684,7 @@ public class JDUtilities {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
@@ -1441,7 +1441,7 @@ public class JDUtilities {
             // logger.info("Dev.: Local splitted");
             return RUNTYPE_LOCAL;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return 0;

@@ -384,13 +384,13 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             response.addContent(t.output());
             response.setOk();
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IllegalStateException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
     }

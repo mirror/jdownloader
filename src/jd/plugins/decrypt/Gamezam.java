@@ -47,7 +47,7 @@ public class Gamezam extends PluginForDecrypt {
                     File captchaFile = this.getLocalCaptchaFile(this);
                     if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
-                        //step.setParameter(null);
+                        //this.sleep(nul,downloadLink);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         return null;
                     }
@@ -102,7 +102,7 @@ public class Gamezam extends PluginForDecrypt {
                 }
                 //step.setParameter(decryptedLinks);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
 

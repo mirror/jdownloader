@@ -99,7 +99,7 @@ public class Lixin extends PluginForDecrypt {
                         if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            //step.setParameter(null);
+                            //this.sleep(nul,downloadLink);
                             //step.setStatus(PluginStep.STATUS_ERROR);
                             return decryptedLinks;
                         }

@@ -83,7 +83,7 @@ public class DownloadInfo extends JFrame {
                     try {
                         Thread.sleep(1500);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
+                        
                         e.printStackTrace();
                     }
                     initDialog();

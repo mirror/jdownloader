@@ -375,7 +375,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
                 save();
                 JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
             } catch (MalformedURLException e1) {
-                // TODO Auto-generated catch block
+                
                 e1.printStackTrace();
             }
         }else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {

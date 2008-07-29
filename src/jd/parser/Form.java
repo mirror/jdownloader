@@ -315,11 +315,11 @@ public class Form {
                 return HTTPConnection;
             }
             catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
@@ -343,11 +343,11 @@ public class Form {
                 return connection;
             }
             catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
@@ -377,7 +377,7 @@ public class Form {
                 return urlConn;
             }
             catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
 

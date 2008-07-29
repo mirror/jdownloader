@@ -61,7 +61,7 @@ public static void main(String[] args) {
 	try {
 		zip.zip();
 	} catch (Exception e) {
-		// TODO Auto-generated catch block
+		
 		e.printStackTrace();
 	}
    }

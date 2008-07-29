@@ -224,7 +224,7 @@ public class LogDialog extends JFrame implements ActionListener {
                     try {
                         JLinkButton.openURL(url);
                     } catch (MalformedURLException e1) {
-                        // TODO Auto-generated catch block
+                        
                         e1.printStackTrace();
                     }
                 }

@@ -20,7 +20,7 @@ public class JDHexUtils {
         try {
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             return null;
         }
@@ -41,7 +41,7 @@ public class JDHexUtils {
 
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             return null;
         }

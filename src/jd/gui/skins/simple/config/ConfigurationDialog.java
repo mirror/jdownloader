@@ -308,7 +308,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             linkButton.setBorder(null);
             headerPanel.add(linkButton, BorderLayout.WEST);
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         headerPanel.add(new JXTitledSeparator(""), BorderLayout.SOUTH);

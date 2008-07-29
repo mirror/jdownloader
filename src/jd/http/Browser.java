@@ -180,7 +180,7 @@ public class Browser {
             }
             return ret;
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return null;
@@ -208,7 +208,7 @@ public class Browser {
         try {
             currentURL = new URL(string);
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
 

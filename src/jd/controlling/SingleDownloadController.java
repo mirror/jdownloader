@@ -378,7 +378,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin) {
         // String message = (String) step.getParameter();
         // logger.severe("Error occurred: " + message);
-        // //step.setParameter(null);
+        // //this.sleep(nul,downloadLink);
         // if (message != null)
         // downloadLink.getLinkStatus().setStatusText(message);
         // // linkStatus.addStatus(LinkStatus.TODO);
@@ -426,7 +426,7 @@ public class SingleDownloadController extends Thread {
         // logger.warning("disable PREMIUM for: " + plugin + " Reason: " +
         // step.getParameter());
         // String str = (String) step.getParameter();
-        // //step.setParameter(null);
+        // //this.sleep(nul,downloadLink);
         // if (str == null) {
         // plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM,
         // false);
@@ -700,7 +700,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
         // logger.finer("Error occurred: Wait Time " + step);
         // long milliSeconds = (Long) step.getParameter();
-        // //step.setParameter(null);
+        // //this.sleep(nul,downloadLink);
         // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
         // milliSeconds);
         // downloadLink.getLinkStatus().setStatusText(" " +

@@ -911,7 +911,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
+                        
                         e.printStackTrace();
                     }
                 }
@@ -1078,13 +1078,13 @@ public class JDChat extends PluginOptional implements ControlListener {
                 // conn.doPrivmsg("#jdDev", "JDChat Addon 0.1");
                 break;
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
                 e.printStackTrace();
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
                 initIRC();

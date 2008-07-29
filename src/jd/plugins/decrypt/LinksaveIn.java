@@ -94,10 +94,10 @@ public class LinksaveIn extends PluginForDecrypt {
                     JDUtilities.getController().loadContainerFile(container);
                 }
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
 

@@ -125,7 +125,7 @@ public class JLinkButton extends JButton {
                     url = new URL(text);
                 }
                 catch (MalformedURLException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
             }
@@ -134,7 +134,7 @@ public class JLinkButton extends JButton {
                     url = new URL("http://" + text);
                 }
                 catch (MalformedURLException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
             }
@@ -179,11 +179,11 @@ public class JLinkButton extends JButton {
             
                 }
                 catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
                 catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
 
@@ -219,11 +219,11 @@ public class JLinkButton extends JButton {
                     launcher.openURLinBrowser(Browser, url.toString());
                 }
                 catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
                 catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
 
@@ -244,7 +244,7 @@ public class JLinkButton extends JButton {
                     url = new URL(text);
                 }
                 catch (MalformedURLException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
             }
@@ -253,7 +253,7 @@ public class JLinkButton extends JButton {
                     url = new URL("http://" + text);
                 }
                 catch (MalformedURLException e1) {
-                    // TODO Auto-generated catch block
+                    
                     e1.printStackTrace();
                 }
             }

@@ -119,7 +119,7 @@ public class JDSimpleWebserver extends Thread {
                     index++;
                 }
             } catch (IOException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             return new String(buffer).substring(0, index);

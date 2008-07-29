@@ -59,10 +59,10 @@ public class CLRLoader {
                 }
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         
@@ -191,7 +191,7 @@ if(router.trim().length()==0){
             return new String[] { man, router, hlh.toString(), "(?s).*(" + man + ").*", "", "" };
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             return null;
         }

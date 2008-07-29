@@ -228,7 +228,7 @@ public class JDLocale {
 
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             return msg;
         }
@@ -270,7 +270,7 @@ public class JDLocale {
 
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             return null;
         }
