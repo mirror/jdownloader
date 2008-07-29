@@ -21,54 +21,42 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
-// http://www.xup.in/a,7220/Test4JD/list/
-// http://www.xup.in/a,7220/Test4JD/mini
-// http://www.xup.in/a,7220/Test4JD/
-// http://www.xup.in/a,7220
-
 public class XupInFolder extends PluginForDecrypt {
 
-    final static String HOST = "xup.in";
-    final static String NAME = HOST + " Folder";
-    private String VERSION = "0.1.0";
-    private String CODER = "jD-Team";
-    private String ID = HOST + "/a-" + VERSION;
+    final static String host = "xup.in";
+    private String version = "0.1.0";
+
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
-    private String LINK_PATTERN = "href=\"(http://www.xup.in/dl,[0-9]*/.*?/)\"";
+    private String LINK_PATTERN = "href=\"(http://www\\.xup\\.in/dl,[0-9]*/.*?/)\"";
 
     public XupInFolder() {
-
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
-
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public String getHost() {
-        return HOST;
+        return host;
     }
 
     @Override
     public String getPluginID() {
-        return ID;
+        return host + "-" + version;
     }
 
     @Override
     public String getPluginName() {
-        return NAME;
+        return host;
     }
 
     @Override
@@ -78,7 +66,7 @@ public class XupInFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return VERSION;
+        return version;
     }
 
     @Override
@@ -88,32 +76,19 @@ public class XupInFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
-
             RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));
             String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
             progress.setRange(links.length);
-
             for (String[] link : links) {
-
                 decryptedLinks.add(this.createDownloadlink(link[0]));
                 progress.increase(1);
-
             }
-
-            // step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
-
     }
-
 }

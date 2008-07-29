@@ -22,9 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -38,13 +36,11 @@ public class XinkIt extends PluginForDecrypt {
 
     public XinkIt() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -74,19 +70,14 @@ public class XinkIt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
-
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             File captchaFile = null;
             String capTxt = "";
             String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
-
-            while (true) { // läuft bis kein Captcha mehr abgefragt wird
+            boolean do_continue = false;
+            for (int retry = 1; retry < 5; retry++) {
 
                 if (reqinfo.getHtmlCode().indexOf("captcha_send") != -1) {
 
@@ -96,7 +87,7 @@ public class XinkIt extends PluginForDecrypt {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
 
-                    String captchaAdress = "http://xink.it/captcha-" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=\"captcha-", "\"");
+                    String captchaAdress = "http://xink.it/captcha-" + new Regex(reqinfo.getHtmlCode(), "src=\"captcha-(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
                     captchaAdress += "?" + session;
 
                     captchaFile = getLocalCaptchaFile(this);
@@ -112,35 +103,26 @@ public class XinkIt extends PluginForDecrypt {
                     reqinfo = HTTP.postRequest(new URL(parameter), null, parameter, requestHeaders, post, true);
 
                 } else {
-
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
                     }
-
+                    do_continue = true;
                     break;
-
                 }
-
             }
-
-            ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "startDownload('°');");
-
-            progress.setRange(ids.size());
-
-            for (int i = 0; i < ids.size(); i++) {
-
-                reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + ids.get(i).get(0)));
-                decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
-                progress.increase(1);
-
+            if (do_continue == true) {
+                String ids[][] = new Regex(reqinfo.getHtmlCode(), "startDownload\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE).getMatches();
+                progress.setRange(ids.length);
+                for (int i = 0; i < ids.length; i++) {
+                    reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + ids[i][0]));
+                    decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
+                    progress.increase(1);
+                }
             }
-
-            // step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
 
     }
@@ -164,7 +146,7 @@ public class XinkIt extends PluginForDecrypt {
 
         // implementiert von js vorlage http.xink.it/lcv1.js
         // l001011l10110101l11010101l101l01l( decodiert Base64
-
+        // TODO: hier bitte die JS lib nutzen
         String evalCode = JDUtilities.Base64Decode(source);
 
         String l010 = JDUtilities.Base64Decode(new Regex(evalCode, "l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
