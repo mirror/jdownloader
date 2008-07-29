@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -29,18 +28,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class ImagefapCom extends PluginForDecrypt {
-    static private final String host = "imagefap.com folder";
+    static private final String host = "imagefap.com";
     private String version = "1.0.0.0";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
 
-    private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private URL url;
 
     public ImagefapCom() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-
     }
 
     @Override
@@ -75,27 +71,23 @@ public class ImagefapCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-                if (!parameter.contains("view=2")) parameter += "&view=2";
-                url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-                progress.setRange(links.length);
-                for (int i = 0; i < links.length; i++) {
-                    DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links[i][0]);
-                    decryptedLinks.add(link);
-                    progress.increase(1);
-                }
-                // Decrypt abschliessen
-                //step.setParameter(decryptedLinks);
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
+            if (!parameter.contains("view=2")) parameter += "&view=2";
+            url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
+            progress.setRange(links.length);
+            for (int i = 0; i < links.length; i++) {
+                DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links[i][0]);
+                decryptedLinks.add(link);
+                progress.increase(1);
             }
-        
-
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
