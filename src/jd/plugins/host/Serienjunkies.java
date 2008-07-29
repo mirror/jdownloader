@@ -40,7 +40,6 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -94,7 +93,7 @@ public class Serienjunkies extends PluginForHost {
 
     public Serienjunkies() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -109,7 +108,7 @@ public class Serienjunkies extends PluginForHost {
         return false;
     }
 
-    public Vector<DownloadLink> getDLinks(String parameter) {
+    public ArrayList<DownloadLink> getDLinks(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
 
@@ -124,13 +123,13 @@ public class Serienjunkies extends PluginForHost {
             logger.fine("using patternCaptcha:" + patternCaptcha);
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
             if (reqinfo.getLocation() != null) reqinfo = HTTP.getRequest(url, null, null, true);
-            if(reqinfo.containsHTML("Download-Limit")){
+            if (reqinfo.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
-                if(Reconnecter.waitForNewIP(2*60*1000l)){
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
                     reqinfo = HTTP.getRequest(url, null, null, true);
                     if (reqinfo.getLocation() != null) reqinfo = HTTP.getRequest(url, null, null, true);
-                }else{
+                } else {
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
                 }
@@ -154,19 +153,19 @@ public class Serienjunkies extends PluginForHost {
             if (parameter.indexOf("/safe/") >= 0 || parameter.indexOf("/save/") >= 0) {
                 logger.info("safe link");
                 helpstring = EinzelLinks(parameter);
-//                if (aborted) return null;
+                // if (aborted) return null;
                 decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpstring), true));
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
-//                if (aborted) return null;
+                // if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                 }
             } else if (parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
-//                if (aborted) return null;
+                // if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
                     decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                 }
@@ -174,14 +173,14 @@ public class Serienjunkies extends PluginForHost {
                 logger.info("else link");
                 // Kategorien
                 for (int i = 0; i < links.size(); i++) {
-//                    if (aborted) return null;
+                    // if (aborted) return null;
                     if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                         helpstring = EinzelLinks(links.get(i).get(0));
-//                        if (aborted) return null;
+                        // if (aborted) return null;
                         decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpstring), true));
                     } else if (links.get(i).get(0).indexOf("/sjsafe/") >= 0) {
                         helpvector = ContainerLinks(links.get(i).get(0));
-//                        if (aborted) return null;
+                        // if (aborted) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
                             decryptedLinks.add(new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
                         }
@@ -211,7 +210,7 @@ public class Serienjunkies extends PluginForHost {
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
-//                if (aborted) return null;
+            // if (aborted) return null;
                 reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
@@ -238,10 +237,8 @@ public class Serienjunkies extends PluginForHost {
 
                     }
                     if (con.getContentLength() < 1000) {
-                        if(!Reconnecter.waitForNewIP(5*60l)){
-                            return null;
-                        }
-                    
+                        if (!Reconnecter.waitForNewIP(5 * 60l)) { return null; }
+
                         reqinfo = HTTP.getRequest(new URL(url));
                         cookie = reqinfo.getCookie();
 
@@ -343,7 +340,7 @@ public class Serienjunkies extends PluginForHost {
             File captchaFile = null;
             String capTxt = null;
             while (true) { // for() läuft bis kein Captcha mehr abgefragt
-//                if (aborted) return null;
+            // if (aborted) return null;
                 reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
                 Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
                 if (matcher.find()) {
@@ -364,9 +361,9 @@ public class Serienjunkies extends PluginForHost {
                         continue;
                     }
                     capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile, false);
-//                    System.out.println(capTxt);
+                    // System.out.println(capTxt);
                     reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
-//                    System.out.println(reqinfo);
+                    // System.out.println(reqinfo);
                 } else {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
@@ -416,105 +413,104 @@ public class Serienjunkies extends PluginForHost {
         return links;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        PluginStep ret = doStep0(step, downloadLink);
+        handle0(downloadLink);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-        return ret;
+        return;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
+    public void handle0(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-          //  switch (step.getStep()) {
-            
-               String link = (String) downloadLink.getProperty("link");
-                String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
-                downloadLink.getLinkStatus().setStatusText("decrypt");
-                downloadLink.requestGuiUpdate();
-                Vector<DownloadLink> dls = getDLinks(link);
-                
-                if(dls.size() < 1) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    //step.setParameter(JDLocale.L("plugin.serienjunkies.pageerror","SJ liefert keine Downloadlinks"));
-                    logger.warning("SJ returned no Downloadlinks");
-                    return;
-                }
-                
-//                if (aborted) return null;
-                FilePackage fp = downloadLink.getFilePackage();
-                int index= fp.indexOf(downloadLink);
-                fp.remove(downloadLink);
-                Vector<Integer> down = new Vector<Integer>();
-                Vector<DownloadLink> ret = new Vector<DownloadLink>();
-                for (int i = dls.size()-1; i >=0; i--) {
-                    DistributeData distributeData = new DistributeData(dls.get(i).getDownloadURL());
-                    Vector<DownloadLink> links = distributeData.findLinks();
-                    Iterator<DownloadLink> it2 = links.iterator();
-                    boolean online = false;
-                    while (it2.hasNext()) {
-                        DownloadLink downloadLink3 = (DownloadLink) it2.next();
-                        if (downloadLink3.isAvailable()) {
-                            fp.add(index, downloadLink3);
-                          
-                            online = true;
-                        } else {
-                            down.add(i);
-                        }
+        // switch (step.getStep()) {
 
-                    }
-                    if (online) ret.addAll(links);
-                }
-                if (mirrors != null) {
-	                for (int i = 0; i < mirrors.length; i++) {
-	                    if (down.size() > 0) {
-	                        try {
-	                            dls = getDLinks(mirrors[i]);
-//	                            if (aborted) { return null; }
-	
-	                            Iterator<Integer> iter = down.iterator();
-	                            while (iter.hasNext()) {
-	                                Integer integer = (Integer) iter.next();
-	                                DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
-	                                Vector<DownloadLink> links = distributeData.findLinks();
-	                                Iterator<DownloadLink> it2 = links.iterator();
-	                                boolean online = false;
-	                                while (it2.hasNext()) {
-	                                    DownloadLink downloadLink3 = (DownloadLink) it2.next();
-	                                    if (downloadLink3.isAvailable()) {
-	                                        fp.add(index, downloadLink3);
-	                                        online = true;
-	                                        iter.remove();
-	                                    }
-	
-	                                }
-	                                if (online) ret.addAll(links);
-	                            }
-	                        } catch (Exception e) {
-	                            // TODO: handle exception
-	                        }
-	
-	                    } else
-	                        break;
-	                }
-                }
-                if (down.size() > 0) {
-                    fp.add(downloadLink);
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    //step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
-                    return;
-                }
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
+        String link = (String) downloadLink.getProperty("link");
+        String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
+        downloadLink.getLinkStatus().setStatusText("decrypt");
+        downloadLink.requestGuiUpdate();
+        ArrayList<DownloadLink> dls = getDLinks(link);
+
+        if (dls.size() < 1) {
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
+            logger.warning("SJ returned no Downloadlinks");
+            return;
         }
-       return null;
+
+        // if (aborted) return null;
+        FilePackage fp = downloadLink.getFilePackage();
+        int index = fp.indexOf(downloadLink);
+        fp.remove(downloadLink);
+        Vector<Integer> down = new Vector<Integer>();
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        for (int i = dls.size() - 1; i >= 0; i--) {
+            DistributeData distributeData = new DistributeData(dls.get(i).getDownloadURL());
+            Vector<DownloadLink> links = distributeData.findLinks();
+            Iterator<DownloadLink> it2 = links.iterator();
+            boolean online = false;
+            while (it2.hasNext()) {
+                DownloadLink downloadLink3 = (DownloadLink) it2.next();
+                if (downloadLink3.isAvailable()) {
+                    fp.add(index, downloadLink3);
+
+                    online = true;
+                } else {
+                    down.add(i);
+                }
+
+            }
+            if (online) ret.addAll(links);
+        }
+        if (mirrors != null) {
+            for (int i = 0; i < mirrors.length; i++) {
+                if (down.size() > 0) {
+                    try {
+                        dls = getDLinks(mirrors[i]);
+                        // if (aborted) { return null; }
+
+                        Iterator<Integer> iter = down.iterator();
+                        while (iter.hasNext()) {
+                            Integer integer = (Integer) iter.next();
+                            DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
+                            Vector<DownloadLink> links = distributeData.findLinks();
+                            Iterator<DownloadLink> it2 = links.iterator();
+                            boolean online = false;
+                            while (it2.hasNext()) {
+                                DownloadLink downloadLink3 = (DownloadLink) it2.next();
+                                if (downloadLink3.isAvailable()) {
+                                    fp.add(index, downloadLink3);
+                                    online = true;
+                                    iter.remove();
+                                }
+
+                            }
+                            if (online) ret.addAll(links);
+                        }
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+
+                } else
+                    break;
+            }
+        }
+        if (down.size() > 0) {
+            fp.add(downloadLink);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv
+            // nicht komplett"));
+            return;
+        }
+
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return true;
     }
 
