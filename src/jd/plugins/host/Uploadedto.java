@@ -229,7 +229,7 @@ public class Uploadedto extends PluginForHost {
                         logger.severe("Unbekannter fehler.. retry in 20 sekunden");
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setParameter(20000l);
+                        this.sleep(20000,downloadLink);
                         return;
                     }
                     if (requestInfo.getConnection().getHeaderField("Location") != null) {
@@ -245,7 +245,7 @@ public class Uploadedto extends PluginForHost {
                     File file = this.getLocalCaptchaFile(this);
                     if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                        //step.setParameter(null);
+                        //this.sleep(nul,downloadLink);
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                         return;
@@ -262,7 +262,7 @@ public class Uploadedto extends PluginForHost {
                 }
             //case PluginStep.STEP_DOWNLOAD:
                 if (useCaptchaVersion) {
-                    this.finalURL = finalURL + (String) steps.get(1).getParameter();
+                    this.finalURL = finalURL + this.getCaptchaCode(captchaFile);
                     logger.info("dl " + finalURL);
                     postParameter.put(postTarget, (String) steps.get(1).getParameter());
                     requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
@@ -289,7 +289,7 @@ public class Uploadedto extends PluginForHost {
                         logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setParameter(20000l);
+                        this.sleep(20000,downloadLink);
                         return;
                     }
                     int length = requestInfo.getConnection().getContentLength();
@@ -300,7 +300,7 @@ public class Uploadedto extends PluginForHost {
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setParameter(20000l);
+                        this.sleep(20000,downloadLink);
                         return;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
@@ -320,7 +320,7 @@ public class Uploadedto extends PluginForHost {
                         logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setParameter(20000l);
+                        this.sleep(20000,downloadLink);
                         return;
                     }
                     int length = requestInfo.getConnection().getContentLength();
@@ -352,7 +352,7 @@ public class Uploadedto extends PluginForHost {
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                        //step.setParameter(20000l);
+                        this.sleep(20000,downloadLink);
                         return;
                     }
                     downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
@@ -370,7 +370,7 @@ public class Uploadedto extends PluginForHost {
             //step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Unbekannter Fehler. siehe Exception");
             parameter.setStatus(LinkStatus.ERROR_RETRY);
-            //step.setParameter(20000l);
+            this.sleep(20000,downloadLink);
             return;
         }
     }

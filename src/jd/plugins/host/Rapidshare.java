@@ -868,7 +868,7 @@ public class Rapidshare extends PluginForHost {
  				*/
                 
                 // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                // //step.setParameter(1000l);
+                // this.sleep(1000,downloadLink);
                 // //step.setStatus(PluginStep.STATUS_ERROR);
 
                 // if(true)return;
@@ -1001,7 +1001,7 @@ public class Rapidshare extends PluginForHost {
             //step.setStatus(PluginStep.STATUS_ERROR);
             return;
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
 
@@ -1177,7 +1177,7 @@ public class Rapidshare extends PluginForHost {
         }
         if (!JDUtilities.download(captchaFile, r.getHttpConnection()) || !captchaFile.exists()) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            //step.setParameter(null);
+            //this.sleep(nul,downloadLink);
             //step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
             return null;
@@ -1187,7 +1187,7 @@ public class Rapidshare extends PluginForHost {
 
             linkStatus.addStatus(LinkStatus.ERROR_BOT_DETECTED);
             //step.setStatus(PluginStep.STATUS_ERROR);
-            //step.setParameter(null);
+            //this.sleep(nul,downloadLink);
 
             try {
                 new GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash=" + JDUtilities.getLocalHash(captchaFile)).load();
@@ -1286,7 +1286,7 @@ public class Rapidshare extends PluginForHost {
         }
 
         //step.setStatus(PluginStep.STATUS_ERROR);
-        //step.setParameter(0L);
+        this.sleep(0,downloadLink);
         linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
     }

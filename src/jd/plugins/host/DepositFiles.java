@@ -380,7 +380,7 @@ public class DepositFiles extends PluginForHost {
         // !file.exists()) {
         //
         // logger.severe("Captcha donwload failed: " + captchaAddress);
-        // //step.setParameter(null);
+        // //this.sleep(nul,downloadLink);
         // //step.setStatus(PluginStep.STATUS_ERROR);
         // linkStatus.addStatus(DownloadLink.
         // STATUS_ERROR_CAPTCHA_IMAGEERROR);
@@ -397,12 +397,12 @@ public class DepositFiles extends PluginForHost {
         // case PluginStep.STEP_PENDING:
         // step.setStatus(PluginStep.STATUS_SKIP);
 
-        // //step.setParameter(60000l);
+        // this.sleep(60000,downloadLink);
         // return;
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        // String code = (String) steps.get(1).getParameter();
+        // String code = this.getCaptchaCode(captchaFile);
         //
         // if (code == null || code.length() != 4) {
         //

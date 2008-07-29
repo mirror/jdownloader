@@ -84,7 +84,7 @@ public class Shareplacecom extends PluginForHost {
                 return;
             //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 20seks*/
-                //step.setParameter(20000l);
+                this.sleep(20000,downloadLink);
                 return;
             //case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
@@ -111,10 +111,10 @@ public class Shareplacecom extends PluginForHost {
                 return;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
@@ -140,10 +140,10 @@ public class Shareplacecom extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

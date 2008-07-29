@@ -130,7 +130,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     return true;
                 }
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
@@ -191,7 +191,7 @@ public class ShareOnlineBiz extends PluginForHost {
             /* Downloadlimit erreicht */
             if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(60 * 60 * 1000L);
+                this.sleep(60 * 60 * 1000,downloadLink);
                 linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                 return;
             }
@@ -234,13 +234,13 @@ public class ShareOnlineBiz extends PluginForHost {
             return;
 
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);

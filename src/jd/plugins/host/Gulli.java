@@ -150,7 +150,7 @@ public class Gulli extends PluginForHost {
                         logger.severe("Download for your Ip Temp. not available");
                         //step.setStatus(PluginStep.STATUS_ERROR);
                         linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                        //step.setParameter(30 * 1000l);
+                        this.sleep(30 * 1000,downloadLink);
                         return;
                     }
                     else {
@@ -161,7 +161,7 @@ public class Gulli extends PluginForHost {
                         File file = this.getLocalCaptchaFile(this);
                         if (!JDUtilities.download(file, captchaUrl) || !file.exists()) {
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
-                            //step.setParameter(null);
+                            //this.sleep(nul,downloadLink);
                             //step.setStatus(PluginStep.STATUS_ERROR);
                             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                             break;
@@ -175,7 +175,7 @@ public class Gulli extends PluginForHost {
                     }
                 //case PluginStep.STEP_WAIT_TIME:
                    
-                        String captchaTxt = (String) steps.get(0).getParameter();
+                        String captchaTxt = this.getCaptchaCode(captchaFile);
 
                         logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
                         requestInfo = HTTP.postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);

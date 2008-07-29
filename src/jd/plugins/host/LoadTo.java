@@ -200,7 +200,7 @@ String fileSize = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInf
                 //case PluginStep.STEP_PENDING:
 
                     // immer 5 Sekunden vor dem Download warten!
-                    //step.setParameter(10l);
+                    this.sleep(10,downloadLink);
                     return;
                 //case PluginStep.STEP_WAIT_TIME:
                     // Download vorbereiten

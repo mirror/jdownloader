@@ -89,7 +89,7 @@ public class UploadServiceinfo extends PluginForHost {
                 return;
             //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 10seks, kann man auch weglassen */
-                //step.setParameter(10000l);
+                this.sleep(10000,downloadLink);
                 return;
             //case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
@@ -116,10 +116,10 @@ public class UploadServiceinfo extends PluginForHost {
                 return;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
@@ -141,10 +141,10 @@ public class UploadServiceinfo extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

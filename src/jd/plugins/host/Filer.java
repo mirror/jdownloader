@@ -31,8 +31,7 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -74,7 +73,7 @@ public class Filer extends PluginForHost {
 
     public Filer() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         setConfigElements();
 
     }
@@ -109,184 +108,163 @@ public class Filer extends PluginForHost {
         return PLUGIN_ID;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        if (step == null) {
-            logger.info("Plugin Ende erreicht.");
-            return null;
-        }
-
-        logger.info("get Next Step " + step);
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)&&JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) ) {
+        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             try {
-               this.doPremium(downloadLink);
+                this.doPremium(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+
                 e.printStackTrace();
             }
         } else {
             try {
                 this.doFree(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+
                 e.printStackTrace();
             }
         }
-        return null;
+        return;
     }
 
-    public void doPremium( DownloadLink downloadLink) {
-        try {
-            String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-            String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+    public void doPremium(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            String page = null;
-            Browser br = new Browser();
-            br.postPage("http://www.filer.net/login", "username=" + JDUtilities.urlEncode(user) + "&password=" + JDUtilities.urlEncode(pass) + "&commit=Einloggen");
-            page = br.getPage(downloadLink.getDownloadURL());
-            br.setFollowRedirects(false);
-            String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getFirstMatch();
-            br.getPage("http://www.filer.net/dl/" + id);
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-            HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-            int length = con.getContentLength();
-            downloadLink.setDownloadMax(length);
-            logger.info("Filename: " + getFileNameFormHeader(con));
-            if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                //step.setParameter(20000l);
-                return;
-            }
-            downloadLink.setName(getFileNameFormHeader(con));
+        String page = null;
+        Browser br = new Browser();
+        br.postPage("http://www.filer.net/login", "username=" + JDUtilities.urlEncode(user) + "&password=" + JDUtilities.urlEncode(pass) + "&commit=Einloggen");
+        page = br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
+        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getFirstMatch();
+        br.getPage("http://www.filer.net/dl/" + id);
 
-            dl = new RAFDownload(this, downloadLink, con);
-            dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-            dl.startDownload();
-
-            return;
-        } catch (Exception e) {
-            //step.setStatus(PluginStep.STATUS_ERROR);
-
-            String error = JDUtilities.convertExceptionReadable(e);
-            logger.severe("Error: " + error);
-            //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
+        int length = con.getContentLength();
+        downloadLink.setDownloadMax(length);
+        logger.info("Filename: " + getFileNameFormHeader(con));
+        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
             return;
         }
+        downloadLink.setName(getFileNameFormHeader(con));
+
+        dl = new RAFDownload(this, downloadLink, con);
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
+        dl.startDownload();
 
     }
 
-    public void doFree( DownloadLink downloadLink)throws Exception { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void doFree(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
         String code;
         String page = null;
-        try {
-            Browser br = new Browser();
-            Browser.clearCookies("filer.net");
-            br.getPage(downloadLink.getDownloadURL());
-            int tries = 0;
-            while (tries < maxCaptchaTries) {
-                File captchaFile = getLocalCaptchaFile(this, ".png");
-                JDUtilities.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-                code = Plugin.getCaptchaCode(captchaFile, this);
-                page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
-                tries++;
-                if (!page.contains("captcha.png")) break;
-            }
-            if (page.contains("captcha.png")) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                return;
-            }
 
-            if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
-                logger.severe("Error: " + error);
-                //step.setParameter(JDLocale.L("plugin.host.filernet.error." + JDUtilities.getMD5(error), error));
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-                return;
+        Browser br = new Browser();
+        Browser.clearCookies("filer.net");
+        br.getPage(downloadLink.getDownloadURL());
+        int tries = 0;
+        while (tries < maxCaptchaTries) {
+            File captchaFile = getLocalCaptchaFile(this, ".png");
+            JDUtilities.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
+            code = Plugin.getCaptchaCode(captchaFile, this);
+            page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
+            tries++;
+            if (!page.contains("captcha.png")) break;
+        }
+        if (page.contains("captcha.png")) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            return;
+        }
 
-            }
-
-            br.setFollowRedirects(false);
-            String wait=new Regex(br,"Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
-            if(wait!=null){
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(Long.parseLong(wait)*60*1000);
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                return;
-                
-                
-            }
-            Form[] forms = br.getForms();
-            if(forms.length<2){
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(Long.parseLong("1")*60*1000);
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-                return;
-                
-                
-            }
-            page = br.submitForm(forms[1]);
-            //        
-            // if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
-            // logger.severe("Free User Limit reached");
-            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            // //step.setParameter("Free User Limit");
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // return;
-            // }
-            // if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
-            // logger.severe("Die Datei existiert nicht");
-            // linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // return;
-            // }
-            //
-            // String strWaitTime =
-            // SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), WAITTIME,
-            // 1);
-            // if (strWaitTime != null) {
-            // logger.severe("wait " + strWaitTime + " minutes");
-            // waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
-            // linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
-            // //step.setParameter((long) waitTime);
-            // return;
-            // }
-
-            sleep(61000, downloadLink);
-
-            HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-            int length = con.getContentLength();
-            downloadLink.setDownloadMax(length);
-            logger.info("Filename: " + getFileNameFormHeader(con));
-            if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                //step.setParameter(20000l);
-                return;
-            }
-            downloadLink.setName(getFileNameFormHeader(con));
-
-            dl = new RAFDownload(this, downloadLink, con);
-            dl.setChunkNum(1);
-            dl.startDownload();
-
+        if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
+            logger.severe("Error: " + error);
+            // step.setParameter(JDLocale.L("plugin.host.filernet.error." +
+            // JDUtilities.getMD5(error), error));
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             return;
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
+
+        br.setFollowRedirects(false);
+        String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
+        if (wait != null) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setParameter(Long.parseLong(wait)*60*1000);
+            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            return;
+
+        }
+        Form[] forms = br.getForms();
+        if (forms.length < 2) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            // step.setParameter(Long.parseLong("1")*60*1000);
+            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            return;
+
+        }
+        page = br.submitForm(forms[1]);
+        //        
+        // if (requestInfo.containsHTML(FREE_USER_LIMIT)) {
+        // logger.severe("Free User Limit reached");
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+        // //step.setParameter("Free User Limit");
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
+        // if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+        // logger.severe("Die Datei existiert nicht");
+        // linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // return;
+        // }
+        //
+        // String strWaitTime =
+        // SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(), WAITTIME,
+        // 1);
+        // if (strWaitTime != null) {
+        // logger.severe("wait " + strWaitTime + " minutes");
+        // waitTime = Integer.parseInt(strWaitTime) * 60 * 1000;
+        // linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+        // //step.setStatus(PluginStep.STATUS_ERROR);
+        // logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
+        // //step.setParameter((long) waitTime);
+        // return;
+        // }
+
+        sleep(61000, downloadLink);
+
+        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
+        int length = con.getContentLength();
+        downloadLink.setDownloadMax(length);
+        logger.info("Filename: " + getFileNameFormHeader(con));
+        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
+            return;
+        }
+        downloadLink.setName(getFileNameFormHeader(con));
+
+        dl = new RAFDownload(this, downloadLink, con);
+        dl.setChunkNum(1);
+        dl.startDownload();
+
     }
 
     @Override
@@ -299,12 +277,14 @@ public class Filer extends PluginForHost {
 
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         String page;
         File captchaFile;
         String code;
@@ -325,7 +305,7 @@ public class Filer extends PluginForHost {
                 downloadLink.setDownloadMax(bytes);
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
-                if(forms.length<2)return true;
+                if (forms.length < 2) return true;
                 br.submitForm(forms[1]);
                 downloadLink.setName(getFileNameFormURL(new URL(br.getRedirectLocation())));
                 return true;

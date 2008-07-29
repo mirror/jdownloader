@@ -82,7 +82,7 @@ public class Przeslijnet extends PluginForHost {
                 return;
             //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 15seks */
-                //step.setParameter(15000l);
+                this.sleep(15000,downloadLink);
                 return;
             //case PluginStep.STEP_DOWNLOAD:
                 /* Link holen */
@@ -109,10 +109,10 @@ public class Przeslijnet extends PluginForHost {
                 return;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
@@ -137,10 +137,10 @@ public class Przeslijnet extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

@@ -149,7 +149,7 @@ public class Netloadin extends PluginForHost {
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-        logger.info("get Next Step " + step);
+        
         // premium
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
            this.doPremium(downloadLink);
@@ -296,7 +296,7 @@ public class Netloadin extends PluginForHost {
                     return;
                 }
             //case PluginStep.STEP_PENDING:
-                //step.setParameter(20000l);
+                this.sleep(20000,downloadLink);
                 return;
             //case PluginStep.STEP_GET_CAPTCHA_FILE:
                 try {
@@ -307,7 +307,7 @@ public class Netloadin extends PluginForHost {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha donwload failed: " + captchaURL);
-                    //step.setParameter(null);
+                    //this.sleep(nul,downloadLink);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
@@ -427,7 +427,7 @@ public class Netloadin extends PluginForHost {
                 return;
             }
         //case PluginStep.STEP_PENDING:
-            //step.setParameter(100l);
+            this.sleep(100,downloadLink);
 
             return;
         //case PluginStep.STEP_GET_CAPTCHA_FILE:
@@ -499,7 +499,7 @@ br.setConnectTimeout(15000);
         	try {
 				Thread.sleep(150);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+				
 				e.printStackTrace();
 			}
         	page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);

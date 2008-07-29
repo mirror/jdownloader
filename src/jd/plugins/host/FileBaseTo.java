@@ -86,7 +86,7 @@ public class FileBaseTo extends PluginForHost {
     }
 
      public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
+    
             if (!getFileInformation(downloadLink)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 //step.setStatus(PluginStep.STATUS_ERROR);
@@ -113,22 +113,7 @@ public class FileBaseTo extends PluginForHost {
             dl.setFilesize(length);
             dl.setResume(false);
             dl.setChunkNum(1);
-           dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
-            return;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-
-        return;
+           dl.startDownload();
     }
 
     @Override

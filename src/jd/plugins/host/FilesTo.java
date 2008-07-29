@@ -30,9 +30,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
@@ -59,9 +58,9 @@ public class FilesTo extends PluginForHost {
 
     public FilesTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -94,7 +93,8 @@ public class FilesTo extends PluginForHost {
         return HOST + "-" + PLUGIN_VERSION;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         // if ( aborted ) {
         //    		
@@ -108,120 +108,93 @@ public class FilesTo extends PluginForHost {
 
         RequestInfo requestInfo;
 
-        try {
+        String parameterString = downloadLink.getDownloadURL().toString();
 
-            String parameterString = downloadLink.getDownloadURL().toString();
+        // switch (step.getStep()) {
 
-          //  switch (step.getStep()) {
+        // case PluginStep.STEP_WAIT_TIME:
 
-            //case PluginStep.STEP_WAIT_TIME:
+        requestInfo = HTTP.getRequest(new URL(parameterString));
 
-                requestInfo = HTTP.getRequest(new URL(parameterString));
+        // Datei gelöscht?
+        if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
 
-                // Datei gelöscht?
-                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
-
-                    logger.severe("download not found");
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-
-                }
-
-                if (requestInfo.getHtmlCode() != null) {
-
-                    session = new Regex(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
-                    captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getFirstMatch() + "?" + session;
-                    return;
-
-                } else {
-
-                    logger.severe("Unknown error.. retry in 20 sekunden");
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    //step.setParameter(20000l);
-                    return;
-
-                }
-
-            //case PluginStep.STEP_GET_CAPTCHA_FILE:
-
-                File file = this.getLocalCaptchaFile(this);
-
-                if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
-
-                    logger.severe("Captcha download failed: " + captchaAddress);
-                    //step.setParameter(null);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
-                    return;
-
-                } else {
-
-                    //step.setParameter(file);
-                    //step.setStatus(PluginStep.STATUS_USER_INPUT);
-
-                }
-
-                break;
-
-            //case PluginStep.STEP_DOWNLOAD:
-
-                String code = (String) steps.get(1).getParameter();
-
-                HashMap<String, String> requestHeaders = new HashMap<String, String>();
-                requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-
-                requestInfo = HTTP.postRequest(new URL(parameterString + "?"), session, parameterString + "?" + session, requestHeaders, "txt_ccode=" + code + "&btn_next=", true);
-
-                if (requestInfo.getHtmlCode() == null) {
-
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    //step.setParameter(20000l);
-                    return;
-
-                } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
-
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
-                    return;
-
-                }
-
-                finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
-                logger.info(finalURL);
-
-                // Download vorbereiten
-                urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
-                int fileSize = urlConnection.getContentLength();
-                downloadLink.setDownloadMax(fileSize);
-                String filename = getFileNameFormHeader(urlConnection);
-                downloadLink.setName(filename);
-
-                // Download starten
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setResume(true);
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-
-                return;
-
-            }
-
+            logger.severe("download not found");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            return null;
 
         }
 
+        if (requestInfo.getHtmlCode() != null) {
+
+            session = new Regex(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
+            captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getFirstMatch() + "?" + session;
+
+        } else {
+
+            logger.severe("Unknown error.. retry in 20 sekunden");
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            this.sleep(20000, downloadLink);
+            return;
+
+        }
+
+        // case PluginStep.STEP_GET_CAPTCHA_FILE:
+
+        File file = this.getLocalCaptchaFile(this);
+
+        if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
+
+            logger.severe("Captcha download failed: " + captchaAddress);
+            // this.sleep(nul,downloadLink);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            // ImageIO
+            // Error");
+            return;
+
+        }
+        // case PluginStep.STEP_DOWNLOAD:
+
+        String code = this.getCaptchaCode(file);
+
+        HashMap<String, String> requestHeaders = new HashMap<String, String>();
+        requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+
+        requestInfo = HTTP.postRequest(new URL(parameterString + "?"), session, parameterString + "?" + session, requestHeaders, "txt_ccode=" + code + "&btn_next=", true);
+
+        if (requestInfo.getHtmlCode() == null) {
+
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            this.sleep(20000, downloadLink);
+            return;
+
+        } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
+
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            return;
+
+        }
+
+        finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
+        logger.info(finalURL);
+
+        // Download vorbereiten
+        urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
+        int fileSize = urlConnection.getContentLength();
+        downloadLink.setDownloadMax(fileSize);
+        String filename = getFileNameFormHeader(urlConnection);
+        downloadLink.setName(filename);
+
+        // Download starten
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.startDownload();
     }
 
     @Override
@@ -235,12 +208,14 @@ public class FilesTo extends PluginForHost {
         this.urlConnection = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         RequestInfo requestInfo;
 

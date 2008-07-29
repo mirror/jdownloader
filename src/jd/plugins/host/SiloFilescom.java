@@ -94,7 +94,7 @@ public class SiloFilescom extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -114,7 +114,7 @@ public class SiloFilescom extends PluginForHost {
             /* Downloadlimit */
             if (requestInfo.containsHTML("<span>Maximale Parallele")) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                //step.setParameter(120000L);
+                this.sleep(120000,downloadLink);
                 linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
                 return;
             }
@@ -145,7 +145,7 @@ public class SiloFilescom extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);

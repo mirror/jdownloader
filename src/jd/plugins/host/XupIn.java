@@ -261,7 +261,7 @@ public class XupIn extends PluginForHost {
                 if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
 
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                    //step.setParameter(null);
+                    //this.sleep(nul,downloadLink);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
@@ -277,7 +277,7 @@ public class XupIn extends PluginForHost {
 
             //case PluginStep.STEP_DOWNLOAD:
 
-                String vchep = (String) steps.get(1).getParameter();
+                String vchep = this.getCaptchaCode(file);
 
                 if (vpass != "") {
                     requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);

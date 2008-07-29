@@ -96,10 +96,10 @@ public class Cocosharecc extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

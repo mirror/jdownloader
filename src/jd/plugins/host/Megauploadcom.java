@@ -166,7 +166,7 @@ public class Megauploadcom extends PluginForHost {
             try {
                 link = "http://"+new URL(link).getHost()+"/"+countryID+"/?d="+link.substring(link.indexOf("?d=")+3);
             } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
             
@@ -183,7 +183,7 @@ public class Megauploadcom extends PluginForHost {
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     this.tempUnavailable = true;
-                    //step.setParameter(60 * 30l);
+                    this.sleep(60 * 30,downloadLink);
                     return;
                 }
                 if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
@@ -195,7 +195,7 @@ public class Megauploadcom extends PluginForHost {
                 this.captchaURL = "http://" + new URL(link).getHost() + "/capgen.php?" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0);
                 this.fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "checkverificationform", "passwordhtml");
                 this.captchaPost = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL, 0);
-                //step.setParameter(captchaURL);
+                this.sleep(captchaUR,downloadLink);
                 if (captchaURL.endsWith("null") || captchaPost == null) {
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -207,7 +207,7 @@ public class Megauploadcom extends PluginForHost {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
                 if (!requestInfo.isOK() || !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
                     logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
-                    //step.setParameter(null);
+                    //this.sleep(nul,downloadLink);
                     //step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
                     return;
@@ -267,9 +267,9 @@ public class Megauploadcom extends PluginForHost {
                         String wait = requestInfo.getConnection().getHeaderField("Retry-After");
                         logger.finer("Warten: " + wait + " minuten");
                         if (wait != null) {
-                            //step.setParameter(Long.parseLong(wait.trim()) * 60l * 1000l);
+                            this.sleep(Long.parseLong(wait.trim()) * 60l * 1000,downloadLink);
                         } else {
-                            //step.setParameter(120l * 60l * 1000l);
+                            this.sleep(120l * 60l * 1000,downloadLink);
                         }
                         return;
 
@@ -361,7 +361,7 @@ public class Megauploadcom extends PluginForHost {
             return;
 
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         return null;

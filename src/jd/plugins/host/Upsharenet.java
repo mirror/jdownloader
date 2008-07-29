@@ -103,7 +103,7 @@ public class Upsharenet extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -206,7 +206,7 @@ public class Upsharenet extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);

@@ -96,7 +96,7 @@ public class SpeedySharecom extends PluginForHost {
                 return;
             //case PluginStep.STEP_PENDING:
                 /* Zwangswarten, 30seks */
-                //step.setParameter(30000l);
+                this.sleep(30000,downloadLink);
                 return;
             //case PluginStep.STEP_DOWNLOAD:
                 /* Datei herunterladen */
@@ -128,10 +128,10 @@ public class SpeedySharecom extends PluginForHost {
                 return;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);
@@ -155,10 +155,10 @@ public class SpeedySharecom extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);

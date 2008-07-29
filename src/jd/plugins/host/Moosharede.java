@@ -92,7 +92,7 @@ public class Moosharede extends PluginForHost {
                 }
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -137,7 +137,7 @@ public class Moosharede extends PluginForHost {
             }
             return;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
         }
         //step.setStatus(PluginStep.STATUS_ERROR);

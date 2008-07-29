@@ -79,12 +79,8 @@ public class QshareCom extends PluginForHost {
 
      public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
 
-        if (step == null) {
-            logger.info("Plugin Ende erreicht.");
-            return null;
-        }
-
-        logger.info("get Next Step " + step);
+      
+        
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
@@ -92,21 +88,21 @@ public class QshareCom extends PluginForHost {
             try {
                this.doPremium(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         } else {
             try {
                 this.doFree(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
         return null;
     }
 
-    public void doPremium( DownloadLink downloadLink) {
+    public void doPremium( DownloadLink downloadLink) throws Exception { LinkStatus linkStatus=downloadLink.getLinkStatus();
         return;
 
     }
@@ -157,7 +153,7 @@ public class QshareCom extends PluginForHost {
             if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
                 //step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                //step.setParameter(20000l);
+                this.sleep(20000,downloadLink);
                 return;
             }
             downloadLink.setName(getFileNameFormHeader(con));

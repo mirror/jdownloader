@@ -120,7 +120,7 @@ public class RapidShareDe extends PluginForHost {
             return null;
         }
 
-        logger.info("get Next Step " + step);
+        
         String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
         String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
@@ -128,14 +128,14 @@ public class RapidShareDe extends PluginForHost {
             try {
                this.doPremium(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         } else {
             try {
                 this.doFree(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }

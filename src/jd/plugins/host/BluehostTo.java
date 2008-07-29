@@ -91,21 +91,22 @@ public class BluehostTo extends PluginForHost {
             try {
                 this.doPremium(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         } else {
             try {
                 this.doFree(downloadLink);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
+                
                 e.printStackTrace();
             }
         }
         return;
     }
 
-    public void doPremium(DownloadLink downloadLink) {
+    public void doPremium( DownloadLink downloadLink) throws Exception { 
+        LinkStatus linkStatus=downloadLink.getLinkStatus();
         return;
 
     }

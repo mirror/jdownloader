@@ -224,7 +224,7 @@ public class MeinUpload extends PluginForHost {
             }
             return;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+            
             e.printStackTrace();
             //step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);

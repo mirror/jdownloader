@@ -15,9 +15,8 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;import jd.plugins.LinkStatus;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Freaksharenet extends PluginForHost {
@@ -67,72 +66,58 @@ public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
-          //  switch (step.getStep()) {
-            //case PluginStep.STEP_PAGE:
-                /* Nochmals das File überprüfen */
-                if (!getFileInformation(downloadLink)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                /* Link holen */
-                url = requestInfo.getForms()[1].action;
-                HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-                postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
-                postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
-                postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
-                postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
-                postdata = postdata + "&wait=Download";
-                return;
-            //case PluginStep.STEP_PENDING:
-                /* Zwangswarten, 10seks, kann man auch weglassen */
-                //step.setParameter(10000l);
-                return;
-            //case PluginStep.STEP_DOWNLOAD:
-                /* Datei herunterladen */
-                requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
-                HTTPConnection urlConnection = requestInfo.getConnection();
-                String filename = getFileNameFormHeader(urlConnection);
-                if (urlConnection.getContentLength() == 0) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                downloadLink.setDownloadMax(urlConnection.getContentLength());
-                downloadLink.setName(filename);
-                long length = downloadLink.getDownloadMax();
-                dl = new RAFDownload(this, downloadLink, urlConnection);
-                dl.setChunkNum(1);
-                dl.setResume(false);
-                dl.setFilesize(length);
-               dl.startDownload(); \r\n if (!dl.startDownload() && step.getStatus() != PluginStep.STATUS_ERROR && step.getStatus() != PluginStep.STATUS_TODO) {
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    //step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                return;
-            }
-        } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        // switch (step.getStep()) {
+        // case PluginStep.STEP_PAGE:
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
         }
-        //step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+        /* Link holen */
+        url = requestInfo.getForms()[1].action;
+        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
+        postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
+        postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
+        postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
+        postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
+        postdata = postdata + "&wait=Download";
+
+        // case PluginStep.STEP_PENDING:
+        /* Zwangswarten, 10seks, kann man auch weglassen */
+        this.sleep(10000, downloadLink);
+
+        // case PluginStep.STEP_DOWNLOAD:
+        /* Datei herunterladen */
+        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        String filename = getFileNameFormHeader(urlConnection);
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setName(filename);
+        long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        dl.setFilesize(length);
+        dl.startDownload();
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
@@ -149,10 +134,10 @@ public class Freaksharenet extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
+
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
+
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
