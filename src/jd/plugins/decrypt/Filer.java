@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.decrypt;
 
 import java.io.File;
@@ -22,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -30,15 +28,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class Filer extends PluginForDecrypt {
-    static private String        host             = "filer.net";
-    private String               version          = "0.1";
+    static private String host = "filer.net";
+    private String version = "0.1";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern INFO             = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -53,7 +49,7 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "Filer-0.1";
+        return host + "-" + version;
     }
 
     @Override
@@ -73,28 +69,22 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
-                progress.setRange(matches.size());
-                //String link = SimpleMatches.getFirstMatch(parameter, patternSupported, 1);
-                DownloadLink dl;
-                for (int i = 0; i < matches.size(); i++) {
-                    decryptedLinks.add(dl=this.createDownloadlink("http://www.filer.net/get/" + matches.get(i).get(0)+".html"));
-                    dl.setName(matches.get(i).get(1));
-                    progress.increase(1);
-                }
-
-                //step.setParameter(decryptedLinks);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
+            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
+            progress.setRange(matches.size());
+            DownloadLink dl;
+            for (int i = 0; i < matches.size(); i++) {
+                decryptedLinks.add(dl = this.createDownloadlink("http://www.filer.net/get/" + matches.get(i).get(0) + ".html"));
+                dl.setName(matches.get(i).get(1));
+                progress.increase(1);
             }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-        
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 

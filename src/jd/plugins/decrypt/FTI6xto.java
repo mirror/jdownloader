@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -36,8 +35,6 @@ public class FTI6xto extends PluginForDecrypt {
 
     public FTI6xto() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        //currentStep = steps.firstElement();
     }
 
     @Override
@@ -72,25 +69,20 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        ////if (step.getStep() == PluginStep.STEP_DECRYPT) {
-            try {
-                if (!parameter.endsWith(".dlc")) {
-                    URL url = new URL(parameter);
-                    RequestInfo requestInfo = HTTP.getRequest(url);
-                    parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + 
-                            requestInfo.getFirstMatch("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc") + ".dlc";
-                }
-
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                if (JDUtilities.download(container, parameter)) {
-                    JDUtilities.getController().loadContainerFile(container);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+        try {
+            if (!parameter.endsWith(".dlc")) {
+                URL url = new URL(parameter);
+                RequestInfo requestInfo = HTTP.getRequest(url);
+                parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + requestInfo.getFirstMatch("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc") + ".dlc";
             }
-
-            //step.setParameter(new Vector<DownloadLink>());
-        
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            if (JDUtilities.download(container, parameter)) {
+                JDUtilities.getController().loadContainerFile(container);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return null;
     }
 
@@ -98,5 +90,4 @@ public class FTI6xto extends PluginForDecrypt {
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }

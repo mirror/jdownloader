@@ -21,32 +21,26 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
-// http://www.filefactory.com//f/ef45b5179409a229/
-
 public class FileFactoryFolder extends PluginForDecrypt {
 
     final static String host = "filefactory.com";
-    final static String name = "filefactory.com Folder";
     private String version = "0.1.0";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public FileFactoryFolder() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
-        // currentStep = steps.firstElement();
     }
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override
@@ -56,12 +50,12 @@ public class FileFactoryFolder extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return "filefactory.com/f-" + version;
+        return host + "-" + version;
     }
 
     @Override
     public String getPluginName() {
-        return name;
+        return host;
     }
 
     @Override
@@ -76,38 +70,24 @@ public class FileFactoryFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
         try {
-
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-
-            ArrayList<ArrayList<String>> ids = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "href=\"http://www.filefactory.com/file/°\"");
-            progress.setRange(ids.size());
-
-            for (int i = 0; i < ids.size(); i++) {
-
-                decryptedLinks.add(this.createDownloadlink("http://www.filefactory.com/file/" + ids.get(i).get(0)));
+            String ids[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www.filefactory.com/file/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            progress.setRange(ids.length);
+            for (int i = 0; i < ids.length; i++) {
+                decryptedLinks.add(this.createDownloadlink("http://www.filefactory.com/file/" + ids[i][0]));
                 progress.increase(1);
-
             }
-
-            //// step.setParameter(decryptedLinks);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
-
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
-
 }
