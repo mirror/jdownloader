@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -40,7 +39,6 @@ public class EinsKhDe extends PluginForDecrypt {
 
     public EinsKhDe() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
     @Override
@@ -75,17 +73,18 @@ public class EinsKhDe extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
-        // //if (step.getStep() == PluginStep.STEP_DECRYPT) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-
             progress.setRange(1);
             URL url = new URL(cryptedLink);
             RequestInfo reqinfo = HTTP.getRequest(url);
             if (cryptedLink.matches(patternSupported_File.pattern())) {
                 /* eine einzelne Datei */
                 String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
-                decryptedLinks.add(this.createDownloadlink(link));
+                if (link != null) {
+                    decryptedLinks.add(this.createDownloadlink(link));
+                } else
+                    return null;
             } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                 /* ein Folder */
                 if (reqinfo.containsHTML("Der Ordner ist Passwortgesch&uuml;tzt.")) {
@@ -94,8 +93,7 @@ public class EinsKhDe extends PluginForDecrypt {
                         String password = JDUtilities.getGUI().showUserInputDialog("1kh.de - Ordnerpasswort?");
                         if (password == null) {
                             /* auf abbruch geklickt */
-                            //// step.setParameter(decryptedLinks);
-                            return decryptedLinks;
+                            return null;
                         }
                         reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
                         if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) break;
@@ -108,12 +106,10 @@ public class EinsKhDe extends PluginForDecrypt {
                     progress.increase(1);
                 }
             }
-
-            //// step.setParameter(decryptedLinks);
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
-
         return decryptedLinks;
     }
 
