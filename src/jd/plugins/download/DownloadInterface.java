@@ -474,7 +474,7 @@ abstract public class DownloadInterface {
         }
 
         if (getExceptions() != null && getExceptions().size() > 0) {
-            error(LinkStatus.ERROR_PLUGIN_SPECIFIC, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
+            error(LinkStatus.ERROR_RETRY, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
 
             return false;
         }

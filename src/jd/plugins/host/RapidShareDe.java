@@ -151,10 +151,8 @@ public class RapidShareDe extends PluginForHost {
         String page = r.load();
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
         if (error != null) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            // step.setParameter(JDLocale.L("plugins.host.rapidshareDE.errors."
-            // +
-            // JDUtilities.getMD5(error), error));
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+         linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
@@ -246,7 +244,7 @@ public class RapidShareDe extends PluginForHost {
         } catch (Exception e) {
             try {
                 waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
             } catch (Exception es) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
@@ -268,7 +266,7 @@ public class RapidShareDe extends PluginForHost {
         boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
         if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
             logger.severe("Captcha not found");
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
             // ImageIO
             // Error");
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -281,7 +279,8 @@ public class RapidShareDe extends PluginForHost {
         }
         if (code == null || code == "") {
             logger.severe("Bot erkannt");
-            linkStatus.addStatus(LinkStatus.ERROR_BOT_DETECTED);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(60000);
             // step.setStatus(PluginStep.STATUS_ERROR);
             JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
             return;

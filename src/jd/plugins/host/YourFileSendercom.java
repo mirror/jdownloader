@@ -113,7 +113,7 @@ public class YourFileSendercom extends PluginForHost {
         if (requestInfo.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(60 * 60 * 1000L);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 

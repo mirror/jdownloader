@@ -158,7 +158,7 @@ public class ShareOnlineBiz extends PluginForHost {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
             // ImageIO
             // Error");
             return;
@@ -167,7 +167,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* CaptchaCode holen */
         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Passwort holen holen */
@@ -188,14 +188,14 @@ public class ShareOnlineBiz extends PluginForHost {
                 downloadLink.setProperty("pass", null);
             }
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Downloadlimit erreicht */
         if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             this.sleep(60 * 60 * 1000, downloadLink);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
         /* PassCode war richtig, also Speichern */

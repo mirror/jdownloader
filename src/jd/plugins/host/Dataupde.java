@@ -123,7 +123,7 @@ public class Dataupde extends PluginForHost {
         if (requestInfo.getLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(120000L);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 

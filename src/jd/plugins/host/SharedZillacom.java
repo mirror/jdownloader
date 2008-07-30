@@ -129,7 +129,7 @@ public class SharedZillacom extends PluginForHost {
                     downloadLink.setProperty("pass", null);
                 }
                 //step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
             /*PassCode war richtig, also Speichern*/

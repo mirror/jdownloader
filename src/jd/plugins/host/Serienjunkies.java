@@ -433,7 +433,7 @@ public class Serienjunkies extends PluginForHost {
         ArrayList<DownloadLink> dls = getDLinks(link);
 
         if (dls.size() < 1) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
             logger.warning("SJ returned no Downloadlinks");
@@ -499,10 +499,9 @@ public class Serienjunkies extends PluginForHost {
         }
         if (down.size() > 0) {
             fp.add(downloadLink);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            // step.setParameter(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv
-            // nicht komplett"));
+            linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete","Archiv nicht komplett"));
             return;
         }
 

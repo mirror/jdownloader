@@ -110,8 +110,8 @@ public class SpeedySharecom extends PluginForHost {
             return;
         }
         if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            downloadLink.getLinkStatus().setStatusText("Wrong Password");
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            downloadLink.getLinkStatus().setErrorMessage("Wrong Password");
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter("Wrong Password");
             return;

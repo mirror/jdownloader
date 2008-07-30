@@ -127,7 +127,7 @@ public class QshareCom extends PluginForHost {
             long waitTime = Long.parseLong(wait) * 60 * 1000;
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(waitTime);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
         String link = new Regex(page, "<div id=\"download_link\"><a href=\"(.*?)\"").getFirstMatch();

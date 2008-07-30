@@ -130,13 +130,13 @@ public class Upsharenet extends PluginForHost {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* CaptchaCode holen */
         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         form.vars.put("captchacode", captchaCode);
@@ -156,18 +156,18 @@ public class Upsharenet extends PluginForHost {
             /* PassCode war falsch, also Löschen */
             downloadLink.setProperty("pass", null);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         if (requestInfo.containsHTML("<span>Captcha number error or expired</span>")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         if (requestInfo.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(60 * 60 * 1000);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
         /* PassCode war richtig, also Speichern */

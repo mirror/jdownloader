@@ -219,7 +219,7 @@ public class MeinUpload extends PluginForHost {
             if (dl.getFile().length() < 6000) {
                 String page = JDUtilities.getLocalFile(dl.getFile());
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 // step.setParameter(JDLocale.L("errors.interbalhostererror",
                 // "Internal Hoster Error"));
                 logger.severe(page);

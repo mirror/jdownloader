@@ -167,7 +167,7 @@ public class SingleDownloadController extends Thread {
 
             switch (linkStatus.getLatestStatus()) {
 
-            case LinkStatus.ERROR_TRAFFIC_LIMIT:
+            case LinkStatus.ERROR_IP_BLOCKED:
                 this.onErrorWaittime(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
@@ -180,18 +180,13 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 this.onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
-            case LinkStatus.ERROR_CAPTCHA_WRONG:
+            case LinkStatus.ERROR_CAPTCHA:
                 this.onErrorCaptcha(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_PREMIUM:
                 this.onErrorPremium(downloadLink, currentPlugin);
                 break;
-            case LinkStatus.ERROR_PLUGIN_SPECIFIC:
-                this.onErrorPluginSpecific(downloadLink, currentPlugin);
-                break;
-            case LinkStatus.ERROR_BOT_DETECTED:
-                this.onErrorBotdetection(downloadLink, currentPlugin);
-                break;
+     
             case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
                 this.onErrorIncomplete(downloadLink, currentPlugin);
                 break;

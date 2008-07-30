@@ -206,7 +206,7 @@ public class Megauploadcom extends PluginForHost {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
             // this.sleep(nul,downloadLink);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                                                                     // ImageIO
                                                                     // Error");
             return;
@@ -216,7 +216,7 @@ public class Megauploadcom extends PluginForHost {
         requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, joinMap(fields, "=", "&") + "&imagestring=" + code, true);
         if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
 
@@ -226,7 +226,8 @@ public class Megauploadcom extends PluginForHost {
             String pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password:");
             if (pass == null) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword","Password wrong"));
                 // step.setParameter("wrong Password");
                 return;
             }
@@ -239,7 +240,8 @@ public class Megauploadcom extends PluginForHost {
             }
             if (requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword","Password wrong"));
                 // step.setParameter("wrong Password");
                 return;
             }
@@ -255,7 +257,7 @@ public class Megauploadcom extends PluginForHost {
         if (!requestInfo.isOK()) {
             logger.warning("Download Limit!");
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             String wait = requestInfo.getConnection().getHeaderField("Retry-After");
             logger.finer("Warten: " + wait + " minuten");
             if (wait != null) {

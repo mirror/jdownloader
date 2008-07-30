@@ -775,7 +775,7 @@ public class Rapidshare extends PluginForHost {
             String error = null;
             if ((error = findError(req + "")) != null) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 linkStatus.setErrorMessage(error);
                 return;
             }
@@ -794,7 +794,7 @@ public class Rapidshare extends PluginForHost {
 
         if ((error = findError(req + "")) != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             linkStatus.setErrorMessage(error);
             return;
         }
@@ -805,7 +805,7 @@ public class Rapidshare extends PluginForHost {
         if (strWaitTime != null) {
             waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
             logger.info("DownloadLimit reached. Wait " + JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
          
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(waitTime);
@@ -823,7 +823,7 @@ public class Rapidshare extends PluginForHost {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
 
             waitTime = 120 * 1000;
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
             // setDownloadLimitTime(waitTime);
 
@@ -834,7 +834,7 @@ public class Rapidshare extends PluginForHost {
             reportUnknownError(pReq, 2);
 
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             linkStatus.setErrorMessage(error);
             return;
         }
@@ -963,7 +963,7 @@ public class Rapidshare extends PluginForHost {
 
                     new File(downloadLink.getFileOutput()).delete();
 
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
 
                     // if (hashFound) {
 
@@ -982,7 +982,8 @@ public class Rapidshare extends PluginForHost {
                 if (new Regex(page, PATTERN_MATCHER_BOT).matches()) {
                     new File(downloadLink.getFileOutput()).delete();
 
-                    linkStatus.addStatus(LinkStatus.ERROR_BOT_DETECTED);
+                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                    linkStatus.setValue(Math.max((int)getBotWaittime(), 60000));
                     logger.info("Error detected. Bot detected");
 
                     // step.setStatus(PluginStep.STATUS_ERROR);
@@ -995,7 +996,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
 
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
                     linkStatus.setErrorMessage(error);
                     logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
@@ -1321,7 +1322,7 @@ public class Rapidshare extends PluginForHost {
                     logger.warning(error);
                     // step.setStatus(PluginStep.STATUS_ERROR);
 
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     downloadLink.getLinkStatus().setStatusText(error);
                     linkStatus.setErrorMessage(error);
 
@@ -1354,7 +1355,7 @@ public class Rapidshare extends PluginForHost {
                 if (new File(downloadLink.getFileOutput()).length() < 6000 && Regex.matches(JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())), PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
                     new File(downloadLink.getFileOutput()).delete();
 
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
                     // step.setParameter("Download error(>log)");
                     logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
@@ -1689,7 +1690,7 @@ public class Rapidshare extends PluginForHost {
                     // step.setParameter(premium);
                     downloadLink.getLinkStatus().setStatusText(error);
                 } else {
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     downloadLink.getLinkStatus().setStatusText(error);
                     linkStatus.setErrorMessage(error);
                 }

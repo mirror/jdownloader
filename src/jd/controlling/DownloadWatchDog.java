@@ -102,7 +102,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         linkStatus = link.getLinkStatus();
                         if (!link.isEnabled()) continue;
                         // Link mit Wartezeit in der queue
-                        if (linkStatus.hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                        if (linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             if (linkStatus.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
                                 linkStatus.reset();

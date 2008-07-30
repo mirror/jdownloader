@@ -186,7 +186,7 @@ public class Filer extends PluginForHost {
         }
         if (page.contains("captcha.png")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
 
@@ -196,7 +196,7 @@ public class Filer extends PluginForHost {
             logger.severe("Error: " + error);
             // step.setParameter(JDLocale.L("plugin.host.filernet.error." +
             // JDUtilities.getMD5(error), error));
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
 
         }
@@ -206,7 +206,7 @@ public class Filer extends PluginForHost {
         if (wait != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(Long.parseLong(wait)*60*1000);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
 
         }
@@ -214,7 +214,7 @@ public class Filer extends PluginForHost {
         if (forms.length < 2) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(Long.parseLong("1")*60*1000);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
 
         }

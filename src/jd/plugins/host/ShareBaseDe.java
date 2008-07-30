@@ -175,7 +175,7 @@ public class ShareBaseDe extends PluginForHost {
 
         if (requestInfo.containsHTML(DOWLOAD_RUNNING)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60 * 1000);
             return;
         }
@@ -201,7 +201,7 @@ public class ShareBaseDe extends PluginForHost {
             }
 
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setParameter((long)(waittime * 1000));
             return;
 

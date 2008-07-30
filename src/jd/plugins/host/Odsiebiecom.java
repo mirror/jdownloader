@@ -166,13 +166,13 @@ public class Odsiebiecom extends PluginForHost {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen!");
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);//step.setParameter("Captcha ImageIO Error");
+                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);//step.setParameter("Captcha ImageIO Error");
                         return;
                     }
                     /* CaptchaCode holen */
                     if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                         return;
                     }
                     /* Überprüfen(Captcha,Password) */
@@ -180,7 +180,7 @@ public class Odsiebiecom extends PluginForHost {
                     requestInfo = HTTP.getRequest((new URL(downloadurl)), downloadcookie, referrerurl, false);
                     if (requestInfo.getLocation() != null && requestInfo.getLocation().contains("html?err")) {
                         //step.setStatus(PluginStep.STATUS_ERROR);
-                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                        linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                         return;
                     }
                     downloadcookie = downloadcookie + requestInfo.getCookie();

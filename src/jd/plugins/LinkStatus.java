@@ -19,39 +19,42 @@ public class LinkStatus implements Serializable {
     private long waitUntil = 0;
     private int totalWaitTime = 0;
     /**
-     * Link muß noch bearbeitet werden
+     * Controlling:
+     * Link muß noch bearbeitet werden. 
      */
     public final static int TODO = 1 << 0;
 
     /**
+     * Controlling & Downloadinterface:
      * Link wurde erfolgreich heruntergeladen
      */
     public final static int FINISHED = 1 << 1;
 
     /**
-     * Ein unbekannter Fehler ist aufgetreten
+     * Plugins:
+     *   Ein unbekannter Fehler ist aufgetreten
      */
     public final static int ERROR_RETRY = 1 << 2;
 
     /**
+     * PLugins:
      * Captcha Text war falsch
      */
-    public final static int ERROR_CAPTCHA_WRONG = 1 << 3;
+    public final static int ERROR_CAPTCHA = 1 << 3;
 
     /**
+     * Plugins:
      * Download Limit wurde erreicht
      */
-    public final static int ERROR_TRAFFIC_LIMIT = 1 << 4;
+    public final static int ERROR_IP_BLOCKED = 1 << 4;
 
     /**
+     * Plugins & Downloadinterface:
      * Die Datei konnte nicht gefunden werden
      */
     public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
 
-    /**
-     * Die Datei konnte nicht gefunden werden
-     */
-    public final static int ERROR_BOT_DETECTED = 1 << 6;
+   
 
     // /**
     // * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
@@ -59,51 +62,83 @@ public class LinkStatus implements Serializable {
     // */
 
     /**
+     * Plugins | Controlling
      * zeigt einen Premiumspezifischen fehler an
      */
     public static final int ERROR_PREMIUM = 1 << 8;
 
     /**
+     * Downloadinterface
      * Zeigt an dass der Link nicht vollständig geladen wurde
      */
     public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
 
     /**
+     * Controlling
      * Zeigt an dass der Link gerade heruntergeladen wird
      */
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
 
     /**
+     * PLugins
      * Der download ist zur Zeit nicht möglich
      */
     public static final int ERROR_TEMPORARILY_UNAVAILABLE = 1 << 11;
 
-    /**
-     * das PLugin meldet einen Fehler. Der Fehlerstring kann via Parameter
-     * übergeben werden
-     */
-    public static final int ERROR_PLUGIN_SPECIFIC = 1 << 12;
 
+/**
+ * Controlling,Downloadinterface
+ * Zeigt an dass die Datei auf der festplatte schon existiert
+ */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;
-
+/**
+ * Downloadinterface
+ * Zeigt an dass der Eigentliche Download im Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
+ */
     public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
-
+/**
+ * DownloadInterface
+ * Zeigt an dass es einen Timeout gab und es scheinbar keine Verbindung emhr zum internet gibt
+ */
     public static final int ERROR_NO_CONNECTION = 1 << 15;
-
+/**
+ * Controlling
+ * Die AGB wurde noch nicht unterzeichnet.
+ */
     public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
 
     /**
+     * Plugins & Downloadinterface
      * Schwerwiegender fehler. Der Download wird sofort abgebrochen. Es werden
      * keine weiteren versuche mehr gestartet
      */
     public static final int ERROR_FATAL = 1 << 17;
     /**
-     * Ziegt an, dass das zugehörige PLugind en link gerade bearbeitet
-     */
+     *Controlling
+     * Ziegt an, dass das zugehörige Plugin den link gerade bearbeitet
+     */   
     public static final int PLUGIN_IN_PROGRESS = 1 << 18;
+    /**
+     * Conttrolling, Downloadinterface, Plugins
+     * Zeigt an, dass gerade ein anderes Plugin an der Lokalen Datei arbeitet. Wird eingesetzt um dem Controller mitzuteilen, dass bereits ein Mirror dieser Datei geladen wird.
+     * 
+     */
     public static final int ERROR_LINK_IN_PROGRESS = 1 << 19;
+    /**
+     * DownloadINterface & Controlling
+     * zeigt an dass es zu einem plugintimeout gekommen ist
+     */
     public static final int ERROR_TIMEOUT_REACHED = 1 << 20;
+    /**
+     * Downloadinterface
+     * LOCAL Input output Fehler. Es kann nicht geschrieben werden etc.
+     */
     public static final int ERROR_LOCAL_IO = 1 << 21;
+    /**
+     * Plugins
+     * Wird bei Schwerenb Parsing fehler eingesetzt. Über diesen Code kann das Plugin mitteilen dass es defekt ist und aktualisiert werden muss
+     */
+    public static final int ERROR_PLUGIN_DEFEKT = 1 << 22;
 
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -137,7 +172,7 @@ public class LinkStatus implements Serializable {
         // String ret = "";
 
         //    
-        if (hasStatus(ERROR_TRAFFIC_LIMIT) && getRemainingWaittime() > 0) {
+        if (hasStatus(ERROR_IP_BLOCKED) && getRemainingWaittime() > 0) {
             if (statusText == null) {
                 ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)));
             } else {
@@ -196,17 +231,12 @@ if(downloadLink.getDownloadInstance()==null&&hasStatus(LinkStatus.DOWNLOADINTERF
             return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
         case LinkStatus.ERROR_ALREADYEXISTS:
             return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
-        case LinkStatus.ERROR_BOT_DETECTED:
-            return JDLocale.L("downloadlink.status.error.bot_detected", "Bot detected");
-            // case LinkStatus.ERROR_CAPTCHA_IMAGEERROR:
-            // return
-            // JDLocale.L("downloadlink.status.error.captcha_image_error",
-            // "Captcha Img Error");
-        case LinkStatus.ERROR_CAPTCHA_WRONG:
+       
+        case LinkStatus.ERROR_CAPTCHA:
             return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
-        case LinkStatus.ERROR_TRAFFIC_LIMIT:
+        case LinkStatus.ERROR_IP_BLOCKED:
             return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
             // case LinkStatus.ERROR_FILE_NOT_FOUND:
             // return JDLocale.L("downloadlink.status.error.file_abused", "File
@@ -222,8 +252,7 @@ if(downloadLink.getDownloadInstance()==null&&hasStatus(LinkStatus.DOWNLOADINTERF
             // case LinkStatus.ERROR_LINK_IN_PROGRESS:
             // return JDLocale.L("downloadlink.status.error.not_owner", "Link is
             // already in progress");
-        case LinkStatus.ERROR_PLUGIN_SPECIFIC:
-            return JDLocale.L("downloadlink.status.error.plugin_specific", "Plg.:");
+  
         case LinkStatus.ERROR_PREMIUM:
             return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
             // case LinkStatus.ERROR_SECURITY:
@@ -257,14 +286,12 @@ if(downloadLink.getDownloadInstance()==null&&hasStatus(LinkStatus.DOWNLOADINTERF
             return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
         case LinkStatus.ERROR_ALREADYEXISTS:
             return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
-        case LinkStatus.ERROR_BOT_DETECTED:
-            return JDLocale.L("downloadlink.status.error.bot_detected", "Bot detected");
 
-        case LinkStatus.ERROR_CAPTCHA_WRONG:
+        case LinkStatus.ERROR_CAPTCHA:
             return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
-        case LinkStatus.ERROR_TRAFFIC_LIMIT:
+        case LinkStatus.ERROR_IP_BLOCKED:
             return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
 
         case LinkStatus.ERROR_FILE_NOT_FOUND:
@@ -338,7 +365,7 @@ if(downloadLink.getDownloadInstance()==null&&hasStatus(LinkStatus.DOWNLOADINTERF
 
     public boolean isFailed() {
 
-        return !this.hasStatus(LinkStatus.FINISHED | LinkStatus.TODO | LinkStatus.ERROR_LINK_IN_PROGRESS | LinkStatus.ERROR_TRAFFIC_LIMIT);
+        return !this.hasStatus(LinkStatus.FINISHED | LinkStatus.TODO | LinkStatus.ERROR_LINK_IN_PROGRESS | LinkStatus.ERROR_IP_BLOCKED);
     }
 
     public boolean isPluginActive() {

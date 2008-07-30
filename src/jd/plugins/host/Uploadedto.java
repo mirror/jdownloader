@@ -145,7 +145,7 @@ public class Uploadedto extends PluginForHost {
         // /?view=error_traffic_exceeded_free
         if (requestInfo.containsHTML(TRAFFIC_EXCEEDED_FREE) || requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
             int waitTime = 61 * 60 * 1000;
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.info("Traffic Limit reached....");
             linkStatus.setValue(waitTime);
@@ -173,7 +173,7 @@ public class Uploadedto extends PluginForHost {
             logger.severe("Wrong password entered");
             /* PassCode war falsch, also Löschen */
             downloadLink.setProperty("pass", null);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage("Wrong Password");
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
@@ -201,7 +201,7 @@ public class Uploadedto extends PluginForHost {
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
                 int waitTime = 61 * 60 * 1000;
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
                 // step.setParameter((long) waitTime);
@@ -221,7 +221,7 @@ public class Uploadedto extends PluginForHost {
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
                 int waitTime = 61 * 60 * 1000;
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
                 // step.setParameter((long) waitTime);
@@ -251,7 +251,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                 // this.sleep(nul,downloadLink);
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                 // ImageIO
                 // Error");
 
@@ -273,7 +273,7 @@ public class Uploadedto extends PluginForHost {
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
 
                 int waitTime = 61 * 60 * 1000;
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
                 // step.setParameter((long) waitTime);
@@ -282,7 +282,7 @@ public class Uploadedto extends PluginForHost {
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error-captcha") > 0) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("captcha Falsch");
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
 
                 return;
             }
@@ -380,7 +380,7 @@ public class Uploadedto extends PluginForHost {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Premiumfehler Logins are incorrect");
-            linkStatus.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.premium.loginError", "Login Fehler") + ": " + user);
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
             return;
@@ -396,7 +396,7 @@ public class Uploadedto extends PluginForHost {
 
         if (requestInfo.getCookie().indexOf("auth") < 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setErrorMessage("Login Error: " + user);
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
             return;
@@ -438,7 +438,7 @@ public class Uploadedto extends PluginForHost {
             logger.severe("Wrong password entered");
             /* PassCode war falsch, also Löschen */
             downloadLink.setProperty("pass", null);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage("Wrong Password");
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
@@ -455,7 +455,7 @@ public class Uploadedto extends PluginForHost {
             if (newURL == null) {
                 logger.severe("Indirekter Link konnte nicht gefunden werden");
 
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage("Indirect Link Error");
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 return;

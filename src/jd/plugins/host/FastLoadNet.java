@@ -224,7 +224,7 @@ public class FastLoadNet extends PluginForHost {
             logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
             // step.setParameter(null);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                                                                     // ImageIO
                                                                     // Error");
             linkStatus.setErrorMessage(JDLocale.L("plugins.errors.captchadownloaderror", "Captcha could not be downloaded"));
@@ -250,7 +250,7 @@ public class FastLoadNet extends PluginForHost {
 
                 if (length == 13) {
 
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     return;
 

@@ -147,7 +147,7 @@ public class Gulli extends PluginForHost {
 
             logger.severe("Download for your Ip Temp. not available");
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(30 * 1000);
             return;
         } else {
@@ -160,7 +160,7 @@ public class Gulli extends PluginForHost {
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
                 // this.sleep(nul,downloadLink);
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                                                                         // ImageIO
                                                                         // Error");
                 return;
@@ -202,7 +202,7 @@ public class Gulli extends PluginForHost {
         logger.info("abbruch bei :" + red);
         if (waittime != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(Integer.parseInt(waittime) * 60 * 1000);
             return;
         } else if (error != null) {

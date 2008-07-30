@@ -204,7 +204,7 @@ public class FileFactory extends PluginForHost {
             logger.severe("Captcha Download failed: " + captchaAddress);
 
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
             // ImageIO
             // Error");
             return;
@@ -225,7 +225,7 @@ public class FileFactory extends PluginForHost {
             if (requestInfo.getHtmlCode().contains(CAPTCHA_WRONG)) {
 
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
 
                 return;
 
@@ -270,7 +270,7 @@ public class FileFactory extends PluginForHost {
                     wait = wait * 1000 + 5000;
                 }
 
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
                 // step.setParameter((long) wait);
@@ -296,7 +296,7 @@ public class FileFactory extends PluginForHost {
 
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) an retry afterwards");
 
-                linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
 
                 // step.setParameter(10 * 60000l);
@@ -325,7 +325,7 @@ public class FileFactory extends PluginForHost {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Please enter premium data");
-            linkStatus.setStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             // step.setParameter(JDLocale.L("plugins.host.premium.loginError",
             // "Loginfehler"));
             getProperties().setProperty(PROPERTY_USE_PREMIUM, false);

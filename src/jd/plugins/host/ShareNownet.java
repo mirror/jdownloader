@@ -130,13 +130,13 @@ public class ShareNownet extends PluginForHost {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
             /* CaptchaCode holen */
             if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
             form.vars.put("captcha", captchaCode);
@@ -145,7 +145,7 @@ public class ShareNownet extends PluginForHost {
         requestInfo = form.getRequestInfo(false);
         if (requestInfo.getLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Datei herunterladen */

@@ -115,7 +115,7 @@ public class SiloFilescom extends PluginForHost {
         if (requestInfo.containsHTML("<span>Maximale Parallele")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             this.sleep(120000, downloadLink);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 

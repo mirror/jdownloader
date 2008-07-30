@@ -150,7 +150,7 @@ public class FilesTo extends PluginForHost {
             logger.severe("Captcha download failed: " + captchaAddress);
             // this.sleep(nul,downloadLink);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
             // ImageIO
             // Error");
             return;
@@ -175,7 +175,7 @@ public class FilesTo extends PluginForHost {
         } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
 
         }

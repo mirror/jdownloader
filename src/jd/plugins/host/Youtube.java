@@ -115,7 +115,7 @@ public class Youtube extends PluginForHost {
         final int convert = Integer.parseInt(new Regex(downloadLink.getDownloadURL(), CONVERT).getFirstMatch());
         requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getFirstMatch()));
         if (requestInfo.getHtmlCode() == null || requestInfo.getHtmlCode().trim().length() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
             return;
@@ -124,7 +124,7 @@ public class Youtube extends PluginForHost {
         String downloadfile = new Regex(downloadLink.getDownloadURL(), DOWNLOADFILE).getFirstMatch().trim();
 
         if ((name == null) || (downloadfile == null)) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
             return;

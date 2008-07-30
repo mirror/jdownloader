@@ -260,7 +260,7 @@ public class XupIn extends PluginForHost {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             // this.sleep(nul,downloadLink);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                                                                     // ImageIO
                                                                     // Error");
             return;
@@ -283,7 +283,7 @@ public class XupIn extends PluginForHost {
         if (urlConnection.getContentType().contains("text/html")) {
 
             logger.severe("Captcha code or password wrong");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 

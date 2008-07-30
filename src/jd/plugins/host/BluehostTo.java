@@ -139,7 +139,7 @@ public class BluehostTo extends PluginForHost {
         br.getPage(downloadLink);
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60 * 60 * 1000);
             // step.setParameter(60*60*1000l);
             logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");

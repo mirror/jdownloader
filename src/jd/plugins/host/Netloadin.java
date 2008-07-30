@@ -173,7 +173,7 @@ public class Netloadin extends PluginForHost {
         if (END_OF_DOWNLOAD_LIMIT > System.currentTimeMillis()) {
             long waitTime = END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis();
             logger.severe("wait (intern) " + waitTime + " minutes");
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
 
             linkStatus.setValue((int) waitTime);
@@ -255,7 +255,7 @@ public class Netloadin extends PluginForHost {
             logger.severe("Captcha donwload failed: " + captchaURL);
             // this.sleep(nul,downloadLink);
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
                                                                     // ImageIO
                                                                     // Error");
             return;
@@ -282,7 +282,7 @@ public class Netloadin extends PluginForHost {
         }
         if (requestInfo.getHtmlCode().indexOf(LIMIT_REACHED) >= 0 || requestInfo.containsHTML(DOWNLOAD_LIMIT)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
            
             waitTime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
             waitTime = waitTime * 10L;
@@ -293,7 +293,7 @@ public class Netloadin extends PluginForHost {
         }
         if (requestInfo.getHtmlCode().indexOf(CAPTCHA_WRONG) >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA_WRONG);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         this.finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
