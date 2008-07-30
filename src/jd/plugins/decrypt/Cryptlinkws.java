@@ -37,7 +37,7 @@ public class Cryptlinkws extends PluginForDecrypt {
     static private String host = "cryptlink.ws";
     final static private Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+", Pattern.CASE_INSENSITIVE);
     final static private Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-   
+
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
     // private String version = "1.0.0.0";
@@ -46,7 +46,6 @@ public class Cryptlinkws extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -71,7 +70,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                     decryptedLinks.addAll(new DistributeData(reqinfo.getHtmlCode()).findLinks(false));
                 } else {
                     /* direkte weiterleitung */
-                    decryptedLinks.add(this.createDownloadlink(link));
+                    decryptedLinks.add(createDownloadlink(link));
                 }
             } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                 /* ein Folder */
@@ -101,10 +100,14 @@ public class Cryptlinkws extends PluginForDecrypt {
                         }
                         /* CaptchaCode holen */
                         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return decryptedLinks; }
-                        if (post_parameter != "") post_parameter += "&";
+                        if (post_parameter != "") {
+                            post_parameter += "&";
+                        }
                         post_parameter += "captchainput=" + JDUtilities.urlEncode(captchaCode);
                     }
-                    if (post_parameter != "") reqinfo = HTTP.postRequest(new URL("http://www.cryptlink.ws/index.php?action=getfolder"), reqinfo.getCookie(), cryptedLink, null, post_parameter, false);
+                    if (post_parameter != "") {
+                        reqinfo = HTTP.postRequest(new URL("http://www.cryptlink.ws/index.php?action=getfolder"), reqinfo.getCookie(), cryptedLink, null, post_parameter, false);
+                    }
                     if (!reqinfo.containsHTML("Wrong Password! Klicken Sie") && !reqinfo.containsHTML("Wrong Captchacode! Klicken Sie")) {
                         do_continue = true;
                         break;
@@ -113,8 +116,8 @@ public class Cryptlinkws extends PluginForDecrypt {
                 if (do_continue == true) {
                     String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"crypt\\.php\\?file=(\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
                     progress.setRange(links.length);
-                    for (int i = 0; i < links.length; i++) {
-                        decryptedLinks.add(this.createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + links[i]));
+                    for (String element : links) {
+                        decryptedLinks.add(createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + element));
                         progress.increase(1);
                     }
                 }
@@ -126,27 +129,21 @@ public class Cryptlinkws extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
@@ -157,9 +154,9 @@ public class Cryptlinkws extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

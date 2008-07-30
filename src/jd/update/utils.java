@@ -14,9 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.update;
-
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -25,51 +23,45 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-
-
 public class utils {
-   
+
     public static Object loadObject(File fileInput) {
- 
-        Object objectLoaded = null;    
+
+        Object objectLoaded = null;
         if (fileInput != null) {
-      
+
             try {
-                FileInputStream fis = new FileInputStream(fileInput);             
-                    ObjectInputStream ois = new ObjectInputStream(fis);
-                    objectLoaded = ois.readObject();
-                    ois.close();       
+                FileInputStream fis = new FileInputStream(fileInput);
+                ObjectInputStream ois = new ObjectInputStream(fis);
+                objectLoaded = ois.readObject();
+                ois.close();
                 return objectLoaded;
-            }
-           catch (Exception e) {
-               // e.printStackTrace();
+            } catch (Exception e) {
+                // e.printStackTrace();
             }
         }
         return null;
-     
+
     }
 
-
     public static void saveObject(Object objectToSave, File fileOutput) {
-   
-        if (fileOutput != null) {          
-         
-            if (fileOutput.exists()) fileOutput.delete();
+
+        if (fileOutput != null) {
+
+            if (fileOutput.exists()) {
+                fileOutput.delete();
+            }
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
-             
-                    ObjectOutputStream oos = new ObjectOutputStream(fos);
-                    oos.writeObject(objectToSave);
-                    oos.close();             
-            }
-            catch (IOException e) {
+
+                ObjectOutputStream oos = new ObjectOutputStream(fos);
+                oos.writeObject(objectToSave);
+                oos.close();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
 
-      
-            }
         }
+    }
 
-    
-    
 }

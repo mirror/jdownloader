@@ -38,13 +38,14 @@ public class PackageCreaterUP {
         frame.setVisible(true);
         frame.add(new JLabel("JDU Packer"));
         frame.pack();
-       
 
         File srcDir = new File("D:/jd_jdu");
 
         String[] packages = srcDir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".svn")) return false;
+                if (name.endsWith(".svn")) {
+                    return false;
+                }
                 if (new File(dir, name).isDirectory()) {
                     return true;
                 } else {
@@ -54,7 +55,7 @@ public class PackageCreaterUP {
             }
 
         });
-       // ArrayList<File> upload = new ArrayList<File>();
+        // ArrayList<File> upload = new ArrayList<File>();
 
         String uid = "70683";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
@@ -62,7 +63,9 @@ public class PackageCreaterUP {
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                    if (name.endsWith(".svn")) return false;
+                    if (name.endsWith(".svn")) {
+                        return false;
+                    }
                     return true;
 
                 }
@@ -72,7 +75,7 @@ public class PackageCreaterUP {
             String filename = null;
             String[] dat = p.split("__");
             String name = dat[1];
-           // String id = dat[0];
+            // String id = dat[0];
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
@@ -86,16 +89,14 @@ public class PackageCreaterUP {
                 if (pw != null) {
                     url = Upload.toUploadedToPremium(new File(srcDir, filename), uid, pw);
                     System.out.println("<tr>");
-                    System.out.println("<th><a href=\"http://wiki.jdownloader.org/index.php?go=Seite&search="+name.replaceAll("JD","")+"\">"+name+"</a></th><td>"+(df.format(dt) + "_v" + i)+"</td>");
-                    System.out.println("<td><a href='"+url+"' target='_blank'>Download package</a></td>");
+                    System.out.println("<th><a href=\"http://wiki.jdownloader.org/index.php?go=Seite&search=" + name.replaceAll("JD", "") + "\">" + name + "</a></th><td>" + (df.format(dt) + "_v" + i) + "</td>");
+                    System.out.println("<td><a href='" + url + "' target='_blank'>Download package</a></td>");
                     System.out.println("</tr>");
-                   
-                    
-                    
+
                 }
 
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
             }
         }

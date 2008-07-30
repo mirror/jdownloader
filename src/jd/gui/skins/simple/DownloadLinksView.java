@@ -18,12 +18,12 @@ import jd.utils.JDUtilities;
 public abstract class DownloadLinksView extends JPanel implements ControlListener {
 
     public final static int REFRESH_ALL_DATA_CHANGED = 1;
-	public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
+    public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
     public static final int REFRESH_SPECIFIED_LINKS = 2;
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
@@ -48,7 +48,7 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
     }
 
     public void controlEvent(final ControlEvent event) {
-        if(event==null){
+        if (event == null) {
             logger.warning("vent==null");
             return;
         }
@@ -58,20 +58,20 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
             public void run() {
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
-                    fireTableChanged(REFRESH_SPECIFIED_LINKS,event.getParameter());
+                    fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
                     // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                     break;
-                    
+
                 case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
-                    fireTableChanged(REFRESH_ALL_DATA_CHANGED,null);
+                    fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
                     // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                     break;
                 case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
                     if (event.getSource().getClass() == JDController.class) {
                         DownloadLinksView.this.setPackages(JDUtilities.getController().getPackages());
                     }
-                    fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED,null);
-                    
+                    fireTableChanged(REFRESH_DATA_AND_STRUCTURE_CHANGED, null);
+
                 }
             }
         });

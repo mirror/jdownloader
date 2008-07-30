@@ -40,19 +40,20 @@ public class ImagefapCom extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-            if (!parameter.contains("view=2")) parameter += "&view=2";
+            if (!parameter.contains("view=2")) {
+                parameter += "&view=2";
+            }
             url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                DownloadLink link = this.createDownloadlink("http://imagefap.com/image.php?id=" + links[i][0]);
+            for (String[] element : links) {
+                DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element[0]);
                 decryptedLinks.add(link);
                 progress.increase(1);
             }
@@ -63,42 +64,35 @@ public class ImagefapCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
 }

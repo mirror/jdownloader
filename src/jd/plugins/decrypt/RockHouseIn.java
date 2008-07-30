@@ -31,13 +31,13 @@ import jd.plugins.RequestInfo;
 public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public RockHouseIn() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,8 +46,8 @@ public class RockHouseIn extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), "<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE).getMatches();
             default_password.add(jd.utils.JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getFirstMatch()));
-            for (int i = 0; i < links.length; i++) {
-                decryptedLinks.add(this.createDownloadlink(links[i][0].replaceAll("\n", "")));
+            for (String[] element : links) {
+                decryptedLinks.add(createDownloadlink(element[0].replaceAll("\n", "")));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -56,41 +56,34 @@ public class RockHouseIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

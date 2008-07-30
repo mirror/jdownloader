@@ -36,8 +36,10 @@ import jd.utils.JDUtilities;
 import de.savemytube.flv.FLV;
 
 public class Youtube extends PluginForHost {
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
     static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
@@ -52,7 +54,6 @@ public class Youtube extends PluginForHost {
 
     static private final String HOST = "youtube.com";
     static private final Pattern PAT_SUPPORTED = Pattern.compile("\\< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" \\>", Pattern.CASE_INSENSITIVE);
-    static private final String PLUGIN_NAME = HOST;
     static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
 
     public Youtube() {
@@ -61,25 +62,21 @@ public class Youtube extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -90,7 +87,7 @@ public class Youtube extends PluginForHost {
 
             downloadLink.setName(name);
 
-            if (name == null) return false;
+            if (name == null) { return false; }
 
             return true;
         } catch (MalformedURLException e) {
@@ -99,17 +96,11 @@ public class Youtube extends PluginForHost {
         return true;
     }
 
-    
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
-
-    
-    
-        
-    
 
     @Override
     public String getHost() {
@@ -121,13 +112,11 @@ public class Youtube extends PluginForHost {
         return 50;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginNameExtension(DownloadLink link) {
         int convert = Integer.parseInt(new Regex(link.getDownloadURL(), CONVERT).getFirstMatch());
@@ -151,13 +140,12 @@ public class Youtube extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(final DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -174,7 +162,7 @@ public class Youtube extends PluginForHost {
         String name = new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch().trim();
         String downloadfile = new Regex(downloadLink.getDownloadURL(), DOWNLOADFILE).getFirstMatch().trim();
 
-        if ((name == null) || (downloadfile == null)) {
+        if (name == null || downloadfile == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
@@ -254,13 +242,11 @@ public class Youtube extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
         // this.url = null;
     }
 
-    
     @Override
     public void resetPluginGlobals() {
 

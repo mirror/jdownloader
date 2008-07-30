@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.update;
 
 import java.io.BufferedInputStream;
@@ -43,8 +42,6 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
-
-
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
@@ -56,9 +53,10 @@ public class WebUpdater implements Serializable {
     private static final long serialVersionUID = 1946622313175234371L;
 
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
+
     public static String htmlDecode(String str) {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
-        if (str == null) return null;
+        if (str == null) { return null; }
         String pattern = "\\&\\#x(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
@@ -75,64 +73,61 @@ public class WebUpdater implements Serializable {
         }
         try {
             str = URLDecoder.decode(str, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
         }
         return HTMLEntities.unhtmlentities(str);
     }
-    private int cid=-1;
+
+    private int cid = -1;
 
     /**
      * Pfad zur lis.php auf dem updateserver
      */
-    public String             listPath;
+    public String listPath;
 
-    private StringBuffer      logger;
+    private StringBuffer logger;
 
     /**
      * Pfad zum Online-Bin verzeichniss
      */
-    public String             onlinePath;
+    public String onlinePath;
 
- 
+    private JProgressBar progresslist = null;
 
-    private JProgressBar      progresslist     = null;
-
-    private JProgressBar      progressload     = null;
+    private JProgressBar progressload = null;
 
     /**
      * Anzahl der ganzen Files
      */
-    private transient int     totalFiles       = 0;
+    private transient int totalFiles = 0;
 
     /**
      * anzahl der aktualisierten Files
      */
-    private transient int     updatedFiles     = 0;
+    private transient int updatedFiles = 0;
 
     /**
-     * @param path (Dir Pfad zum Updateserver)
+     * @param path
+     *            (Dir Pfad zum Updateserver)
      */
     public WebUpdater(String path) {
         logger = new StringBuffer();
         if (path != null) {
-            this.setListPath(path);
-        }
-        else {
+            setListPath(path);
+        } else {
 
-
-            if(SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",false)){
+            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
                 log("BETA");
-                this.setListPath("http://jdbetaupdate.ath.cx");  
-            }else{
+                setListPath("http://jdbetaupdate.ath.cx");
+            } else {
                 log("STABLE");
-            this.setListPath("http://jdupdatescript.ath.cx");
+                setListPath("http://jdupdatescript.ath.cx");
             }
 
         }
-//        
-//        this.listPath = "http://jdbetaupdate.ath.cx/extern.php";
-//        this.onlinePath = listPath + "/bin";
+        //        
+        // this.listPath = "http://jdbetaupdate.ath.cx/extern.php";
+        // this.onlinePath = listPath + "/bin";
 
     }
 
@@ -178,18 +173,15 @@ public class WebUpdater implements Serializable {
             input.close();
 
             return true;
-        }
-        catch (FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
             return false;
 
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
             return false;
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
 
@@ -203,10 +195,10 @@ public class WebUpdater implements Serializable {
      * @param files
      */
     public void filterAvailableUpdates(Vector<Vector<String>> files) {
-        //log(files.toString());
+        // log(files.toString());
         String akt;
         String hash;
-     
+
         for (int i = files.size() - 1; i >= 0; i--) {
             akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
             String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
@@ -222,12 +214,13 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-//            if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
-//               if(tmp[0].startsWith("jd/captcha/methods/")&&tmp[0].endsWith("mth")){ 
-//                   log("Autotrain filter: "+tmp[0]);
-//                continue;
-//               }
-//            }
+            // if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER,
+            // false)){
+            // if(tmp[0].startsWith("jd/captcha/methods/")&&tmp[0].endsWith("mth")){
+            // log("Autotrain filter: "+tmp[0]);
+            // continue;
+            // }
+            // }
             // log("OLD: " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
@@ -235,7 +228,7 @@ public class WebUpdater implements Serializable {
     }
 
     public void filterAvailableUpdates(Vector<Vector<String>> files, File dir) {
-        //log(files.toString());
+        // log(files.toString());
         String akt;
         String hash;
         try {
@@ -249,23 +242,23 @@ public class WebUpdater implements Serializable {
                     continue;
                 }
                 hash = getLocalHash(new File(akt));
-                log(new File(akt)+"");
+                log(new File(akt) + "");
                 if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
                     log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                     continue;
                 }
-//                if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER, false)){
-//                    if(tmp[0].startsWith("jd/captcha/methods/")&& tmp[0].endsWith("mth")){ 
-//                        log("Autotrain filter: "+tmp[0]);
-//                     continue;
-//                    }
-//                 }
-                 //log("OLD: " + files.elementAt(i) + " - " + hash);
-               
+                // if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER,
+                // false)){
+                // if(tmp[0].startsWith("jd/captcha/methods/")&& tmp[0].endsWith("mth")){
+                // log("Autotrain filter: "+tmp[0]);
+                // continue;
+                // }
+                // }
+                // log("OLD: " + files.elementAt(i) + " - " + hash);
+
                 files.removeElementAt(i);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log(e.getLocalizedMessage());
         }
 
@@ -279,36 +272,40 @@ public class WebUpdater implements Serializable {
      */
     public Vector<Vector<String>> getAvailableFiles() {
         String source;
-        if (progresslist != null) this.progresslist.setMaximum(100);
+        if (progresslist != null) {
+            progresslist.setMaximum(100);
+        }
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
         try {
-            if (progresslist != null) progresslist.setValue(20);
-            
-            if(this.cid>0){
-                source = getRequest(new URL(listPath+"?cid="+cid)); 
-            }else{
-                
-          
-            source = getRequest(new URL(listPath));
+            if (progresslist != null) {
+                progresslist.setValue(20);
             }
-            if (this.cid<0 &&source != null && source.indexOf("<br>") > 0) {
+
+            if (cid > 0) {
+                source = getRequest(new URL(listPath + "?cid=" + cid));
+            } else {
+
+                source = getRequest(new URL(listPath));
+            }
+            if (cid < 0 && source != null && source.indexOf("<br>") > 0) {
                 String cid = source.substring(0, source.indexOf("<br>")).trim();
-                if (cid != null){
-                    try{
-                  log("New CID: "+cid);
-                    this.cid=Integer.parseInt(cid);
-                    }catch(Exception e){
-                        log("CID Error: "+cid);
-                        this.cid=0;
+                if (cid != null) {
+                    try {
+                        log("New CID: " + cid);
+                        this.cid = Integer.parseInt(cid);
+                    } catch (Exception e) {
+                        log("CID Error: " + cid);
+                        this.cid = 0;
                     }
                 }
-               
 
-            }else{
+            } else {
                 log("NO CID: ");
             }
-         
-            if (progresslist != null) progresslist.setValue(80);
+
+            if (progresslist != null) {
+                progresslist.setValue(80);
+            }
             String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
 
             if (source == null) {
@@ -325,35 +322,35 @@ public class WebUpdater implements Serializable {
                     if ((tmp = r.group(x).trim()).length() > 0) {
                         entry.add(UTF8Decode(tmp));
 
-                        tmp2 += htmlDecode(UTF8Decode(tmp)) + " ";
+                        tmp2 += WebUpdater.htmlDecode(UTF8Decode(tmp)) + " ";
 
                     }
                 }
                 boolean osFound = false;
                 boolean correctOS = false;
-                for (int i = 0; i < os.length; i++) {
-                    if (tmp2.toLowerCase().indexOf(os[i]) >= 0) {
+                for (String element : os) {
+                    if (tmp2.toLowerCase().indexOf(element) >= 0) {
                         osFound = true;
-                        if (System.getProperty("os.name").toLowerCase().indexOf(os[i]) >= 0) {
+                        if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
                             correctOS = true;
                         }
                     }
 
                 }
-                if (!osFound || (osFound && correctOS)) {
+                if (!osFound || osFound && correctOS) {
                     ret.add(entry);
-                }
-                else {
+                } else {
                     log("OS Filter: " + tmp2);
 
                 }
 
             }
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-        if (progresslist != null) progresslist.setValue(100);
+        if (progresslist != null) {
+            progresslist.setValue(100);
+        }
         return ret;
     }
 
@@ -370,7 +367,7 @@ public class WebUpdater implements Serializable {
 
     private String getLocalHash(File f) {
         try {
-            if (!f.exists()) return null;
+            if (!f.exists()) { return null; }
             MessageDigest md;
             md = MessageDigest.getInstance("md5");
             byte[] b = new byte[1024];
@@ -380,15 +377,16 @@ public class WebUpdater implements Serializable {
             }
             byte[] digest = md.digest();
             String ret = "";
-            for (int i = 0; i < digest.length; i++) {
-                String tmp = Integer.toHexString(digest[i] & 0xFF);
-                if (tmp.length() < 2) tmp = "0" + tmp;
+            for (byte element : digest) {
+                String tmp = Integer.toHexString(element & 0xFF);
+                if (tmp.length() < 2) {
+                    tmp = "0" + tmp;
+                }
                 ret += tmp;
             }
             in.close();
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -419,8 +417,7 @@ public class WebUpdater implements Serializable {
             BufferedReader rd;
             if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
-            }
-            else {
+            } else {
                 rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
             }
             String line;
@@ -432,8 +429,7 @@ public class WebUpdater implements Serializable {
             httpConnection.disconnect();
 
             return htmlCode.toString();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -455,8 +451,6 @@ public class WebUpdater implements Serializable {
         return updatedFiles;
     }
 
-
-
     /**
      * Gibt die Anzahl der aktualisierbaren files zurück.
      * 
@@ -465,7 +459,7 @@ public class WebUpdater implements Serializable {
     public int getUpdateNum() {
         Vector<Vector<String>> files = getAvailableFiles();
 
-        if (files == null) return 0;
+        if (files == null) { return 0; }
 
         totalFiles = files.size();
         filterAvailableUpdates(files);
@@ -474,11 +468,13 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
-        buf=buf.replaceAll("http\\:\\/\\/.*\\.googlecode\\.com\\/svn\\/trunk", "...");
+        buf = buf.replaceAll("http\\:\\/\\/.*\\.googlecode\\.com\\/svn\\/trunk", "...");
         System.out.println(buf);
         Date dt = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        if (logger != null) logger.append(df.format(dt) + ":" + buf + System.getProperty("line.separator"));
+        if (logger != null) {
+            logger.append(df.format(dt) + ":" + buf + System.getProperty("line.separator"));
+        }
     }
 
     /**
@@ -488,7 +484,7 @@ public class WebUpdater implements Serializable {
 
         Vector<Vector<String>> files = getAvailableFiles();
         if (files != null) {
-            //log(files.toString());
+            // log(files.toString());
             totalFiles = files.size();
             filterAvailableUpdates(files);
             updateFiles(files);
@@ -500,17 +496,18 @@ public class WebUpdater implements Serializable {
     }
 
     public void setDownloadProgress(JProgressBar progresslist) {
-        this.progressload = progresslist;
+        progressload = progresslist;
 
     }
 
     /**
-     * @param listPath the listPath to set
+     * @param listPath
+     *            the listPath to set
      */
     public void setListPath(String listPath) {
         this.listPath = listPath + "/list.php";
-        this.onlinePath = listPath + "/bin";
-        this.log("Update from "+listPath);
+        onlinePath = listPath + "/bin";
+        log("Update from " + listPath);
 
     }
 
@@ -521,7 +518,7 @@ public class WebUpdater implements Serializable {
 
     public void setLogger(StringBuffer log) {
 
-        this.logger = log;
+        logger = log;
     }
 
     /**
@@ -531,7 +528,9 @@ public class WebUpdater implements Serializable {
      */
     public void updateFiles(Vector<Vector<String>> files) {
         String akt;
-        if (progressload != null) this.progressload.setMaximum(files.size());
+        if (progressload != null) {
+            progressload.setMaximum(files.size());
+        }
         updatedFiles = 0;
         for (int i = files.size() - 1; i >= 0; i--) {
 
@@ -543,16 +542,19 @@ public class WebUpdater implements Serializable {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
                     log("Webupdater: directfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
                     downloadBinary(tmp[0], tmp[1]);
-                }
-                else {
+                } else {
                     log("Webupdater: file: " + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
                     downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0));
                 }
                 log("Webupdater: ready");
             }
-            if (progressload != null) progressload.setValue(files.size() - i);
+            if (progressload != null) {
+                progressload.setValue(files.size() - i);
+            }
         }
-        if (progressload != null) progressload.setValue(100);
+        if (progressload != null) {
+            progressload.setValue(100);
+        }
     }
 
     /**
@@ -571,14 +573,12 @@ public class WebUpdater implements Serializable {
                 char letter = str.charAt(i);
                 if (allowed.indexOf(letter) >= 0) {
                     ret += letter;
-                }
-                else {
+                } else {
                     ret += "%" + Integer.toString(letter, 16);
                 }
             }
             return ret;
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
         return str;
@@ -592,8 +592,7 @@ public class WebUpdater implements Serializable {
     private String UTF8Decode(String str) {
         try {
             return new String(str.getBytes(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return null;
         }

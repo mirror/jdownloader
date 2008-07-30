@@ -1,4 +1,5 @@
 package jd.unrar;
+
 /*
  * Copyright (C) 2002 - 2005 Leonardo Ferracci
  *
@@ -20,18 +21,16 @@ package jd.unrar;
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
 
-
 import java.io.File;
 
-public abstract class AxeWriterWorker extends AxeWorker
-{
-    protected abstract boolean checkNoOverwrite (File f);
+public abstract class AxeWriterWorker extends AxeWorker {
+    protected abstract boolean checkNoOverwrite(File f);
 
-    protected String formatWidth (int n, int nWidth)
-    {
+    protected String formatWidth(int n, int nWidth) {
         String s = Integer.toString(n);
-        while (s.length()  < nWidth)
+        while (s.length() < nWidth) {
             s = "0" + s;
+        }
 
         return s;
     }

@@ -31,13 +31,13 @@ import jd.plugins.RequestInfo;
 public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public MediafireFolder() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,12 +45,14 @@ public class MediafireFolder extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String reqlink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
-            if (reqlink == null) return null;
+            if (reqlink == null) {
+                return null;
+            }
             reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + reqlink), reqinfo.getCookie(), parameter, true);
             String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("hm\\[.*?\\]=Array\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                decryptedLinks.add(this.createDownloadlink("http://www.mediafire.com/download.php?" + links[i][0]));
+            for (String[] element : links) {
+                decryptedLinks.add(createDownloadlink("http://www.mediafire.com/download.php?" + element[0]));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -60,41 +62,34 @@ public class MediafireFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

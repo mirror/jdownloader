@@ -33,13 +33,13 @@ public class LoadingCc extends PluginForDecrypt {
     static private String host = "loading.cc";
 
     private Pattern patternSupported = Pattern.compile("http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public LoadingCc() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -51,7 +51,7 @@ public class LoadingCc extends PluginForDecrypt {
             progress.setRange(links.length);
             for (int i = 0; i < links.length; i++) {
                 if (!links[i].matches("(?is)http://.*?loading\\.cc.*")) {
-                    decryptedLinks.add(this.createDownloadlink(links[i]));
+                    decryptedLinks.add(createDownloadlink(links[i]));
                 }
                 progress.increase(1);
             }
@@ -63,41 +63,34 @@ public class LoadingCc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

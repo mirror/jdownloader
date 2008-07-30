@@ -33,17 +33,17 @@ import jd.utils.JDUtilities;
 
 public class BestMovies extends PluginForDecrypt {
     static private final String HOST = "best-movies.us";
-    static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");    
+    static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
     static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternSupported = Pattern.compile("http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0";
 
     public BestMovies() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -93,7 +93,7 @@ public class BestMovies extends PluginForDecrypt {
                 if (matcher.find()) {
                     /* EinzelLink gefunden */
                     String link = matcher.group(1);
-                    decryptedLinks.add(this.createDownloadlink((link)));
+                    decryptedLinks.add(createDownloadlink(link));
                 }
             }
         } catch (Exception e) {
@@ -103,33 +103,26 @@ public class BestMovies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
@@ -137,6 +130,7 @@ public class BestMovies extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

@@ -41,8 +41,8 @@ public class RAFDownload extends DownloadInterface {
         public ChunkBuffer(ByteBuffer buffer, long position, int chunkposition, int chunkid) {
             this.buffer = buffer;
             this.position = position;
-            this.chunkPosition=chunkposition;
-            this.chunkID=chunkid;
+            chunkPosition = chunkposition;
+            chunkID = chunkid;
         }
     }
 
@@ -79,9 +79,11 @@ public class RAFDownload extends DownloadInterface {
                         synchronized (outputChannel) {
                             outputFile.seek(buf.position);
                             outputChannel.write(buf.buffer);
-                            
-                            if (buf.chunkID >= 0) downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
-                            
+
+                            if (buf.chunkID >= 0) {
+                                downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
+                            }
+
                             // logger.info("Wrote buffer. rest: " +
                             // bufferList.size());
                         }
@@ -89,7 +91,7 @@ public class RAFDownload extends DownloadInterface {
                     } catch (Exception e) {
 
                         // e.printStackTrace();
-                        error(LinkStatus.ERROR_LOCAL_IO,JDUtilities.convertExceptionReadable(e));
+                        error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
 
                         addException(e);
                     }
@@ -120,15 +122,14 @@ public class RAFDownload extends DownloadInterface {
 
     private Boolean writeType;
 
-    
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         super(plugin, downloadLink, urlConnection);
-        this.writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
+        writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
     }
 
     private boolean checkResumabled() {
 
-        if (!isResume() || downloadLink.getChunksProgress() == null) return false;
+        if (!isResume() || downloadLink.getChunksProgress() == null) { return false; }
 
         int loaded = 0;
         int fileSize = (int) getFileSize();
@@ -140,7 +141,7 @@ public class RAFDownload extends DownloadInterface {
         }
         if (chunks > 0) {
 
-            this.setChunkNum(chunks);
+            setChunkNum(chunks);
             logger.info("Resume with " + chunks + " chunks");
 
             return true;
@@ -149,7 +150,6 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    
     @Override
     protected void onChunksReady() {
         if (writer != null) {
@@ -169,7 +169,7 @@ public class RAFDownload extends DownloadInterface {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    
+
                     e.printStackTrace();
                 }
             }
@@ -180,7 +180,7 @@ public class RAFDownload extends DownloadInterface {
         //
         logger.info("CLOSE HD FILE");
         try {
-          this.outputChannel.force(false);
+            outputChannel.force(false);
         } catch (Exception e) {
             // e.printStackTrace();
         }
@@ -201,7 +201,7 @@ public class RAFDownload extends DownloadInterface {
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                error(LinkStatus.ERROR_LOCAL_IO,JDLocale.L("system.download.errors.couldnotrename","Could not rename partfile"));
+                error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("system.download.errors.couldnotrename", "Could not rename partfile"));
 
             }
             DownloadLink sfv;
@@ -222,10 +222,10 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                           // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
+                            // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
                         } else {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L("system.download.errors.crcfailed","CRC Check failed"));
+                            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
 
                         }
 
@@ -251,14 +251,14 @@ public class RAFDownload extends DownloadInterface {
                 int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)), getChunkNum());
                 if (tmp != getChunkNum()) {
                     logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
-                    this.setChunkNum(tmp);
+                    setChunkNum(tmp);
                 }
             }
 
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             downloadLink.setDownloadMax((int) fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-            if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum() ) {
+            if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
                 logger.info("Resume: " + fileSize);
                 long parts = fileSize / getChunkNum();
 
@@ -269,7 +269,7 @@ public class RAFDownload extends DownloadInterface {
                 outputChannel = outputFile.getChannel();
                 addToChunksInProgress(getChunkNum());
                 for (int i = 0; i < getChunkNum(); i++) {
-                    if (i == (getChunkNum() - 1)) {
+                    if (i == getChunkNum() - 1) {
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
                         chunk.setLoaded((int) (downloadLink.getChunksProgress()[i] - i * parts + 1));
                     } else {
@@ -281,9 +281,9 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             } else {
-          
-                this.setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-                this.totaleLinkBytesLoaded = 0;
+
+                setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
+                totaleLinkBytesLoaded = 0;
                 downloadLink.setDownloadCurrent(0);
                 long parts = fileSize > 0 ? fileSize / getChunkNum() : -1;
                 if (parts == -1) {
@@ -307,13 +307,11 @@ public class RAFDownload extends DownloadInterface {
                 addToChunksInProgress(getChunkNum());
                 for (int i = 0; i < getChunkNum(); i++) {
 
-                    if (i == (getChunkNum() - 1)) {
+                    if (i == getChunkNum() - 1) {
 
-                       
-                            chunk = new Chunk(i * parts, -1, connection);
-                            // total+=(fileSize-i * parts);
-                            logger.info("+part " + (fileSize - i * parts));
-                    
+                        chunk = new Chunk(i * parts, -1, connection);
+                        // total+=(fileSize-i * parts);
+                        logger.info("+part " + (fileSize - i * parts));
 
                     } else {
                         chunk = new Chunk(i * parts, (i + 1) * parts - 1, connection);
@@ -344,48 +342,48 @@ public class RAFDownload extends DownloadInterface {
 
     @Override
     protected boolean writeChunkBytes(Chunk chunk) {
-     
 
-            if (writeType) {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
-                buffer.put(chunk.buffer);
-                buffer.flip();
-                synchronized (bufferList) {
-                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),(int) chunk.getCurrentBytesPosition() - 1,chunk.getID()));
-                    // logger.info("new buffer. size: " + bufferList.size());
+        if (writeType) {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
+            buffer.put(chunk.buffer);
+            buffer.flip();
+            synchronized (bufferList) {
+                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(), (int) chunk.getCurrentBytesPosition() - 1, chunk.getID()));
+                // logger.info("new buffer. size: " + bufferList.size());
+            }
+
+            if (writer == null) {
+                writer = new WriterWorker();
+
+            }
+
+            synchronized (writer) {
+                if (writer.waitFlag) {
+                    writer.waitFlag = false;
+                    writer.notify();
                 }
 
-                if (this.writer == null) {
-                    writer = new WriterWorker();
-
-                }
-
-                synchronized (writer) {
-                    if (writer.waitFlag) {
-                        writer.waitFlag = false;
-                        writer.notify();
-                    }
-
-                }
-//            } else {
-//                try {
-//                    synchronized (outputChannel) {
-//                        outputFile.seek(chunk.getWritePosition());
-//                        outputChannel.write(chunk.buffer);
-//                        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
-//                        
-//                        return true;
-//                    }
-//
-//                } catch (Exception e) {
-//
-//                    // e.printStackTrace();
-//                    error(ERROR_LOCAL_IO);
-//                    addException(e);
-//                    return false;
-//                }
-//
-//            }
+            }
+            // } else {
+            // try {
+            // synchronized (outputChannel) {
+            // outputFile.seek(chunk.getWritePosition());
+            // outputChannel.write(chunk.buffer);
+            // if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] =
+            // (int) chunk.getCurrentBytesPosition() - 1;
+            //                        
+            // return true;
+            // }
+            //
+            // } catch (Exception e) {
+            //
+            // // e.printStackTrace();
+            // error(ERROR_LOCAL_IO);
+            // addException(e);
+            // return false;
+            // }
+            //
+            // }
 
         } else {
             chunk.buffer.clear();

@@ -32,13 +32,13 @@ import jd.plugins.RequestInfo;
 public class DDLMusicOrg extends PluginForDecrypt {
     final static String host = "ddl-music.org";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public DDLMusicOrg() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,7 +47,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
             if (parameter.indexOf("music_crypth.php") != -1) {
                 parameter = parameter.replace("music_crypth.php", "frame_crypth.php");
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                decryptedLinks.add(createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
             } else if (parameter.indexOf("site=view_download") != -1) {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 // passwort auslesen
@@ -65,7 +65,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
                     reqinfo = HTTP.getRequest(new URL("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0)));
                     logger.info("http://ddl-music.org/frame_crypth.php" + ids.get(i).get(0));
-                    decryptedLinks.add(this.createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
+                    decryptedLinks.add(createDownloadlink("http://" + SimpleMatches.getBetween(reqinfo.getHtmlCode(), "src=http://", " target=\"_self\">")));
                     progress.increase(1);
 
                     // nach 3 anfragen schnell hintereinander streikt der
@@ -87,41 +87,34 @@ public class DDLMusicOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "jD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

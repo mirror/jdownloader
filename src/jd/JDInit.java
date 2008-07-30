@@ -69,31 +69,33 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            //für evtl authentifizierung: http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
-            //nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            // für evtl authentifizierung:
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
+            // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
             System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
             System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
-            logger.info("http-proxy: enabled");           
+            logger.info("http-proxy: enabled");
         } else {
-            System.setProperty("http.proxyHost", "");            
+            System.setProperty("http.proxyHost", "");
             logger.info("http-proxy: disabled");
         }
     }
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
             System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
-            logger.info("socks-proxy: enabled");           
+            logger.info("socks-proxy: enabled");
         } else {
-            System.setProperty("socksProxyHost", "");            
+            System.setProperty("socksProxyHost", "");
             logger.info("socks-proxy: disabled");
         }
     }
+
     private int cid = -1;
 
     private boolean installerVisible = false;
@@ -139,7 +141,9 @@ public class JDInit {
             logger.info("Returned from Update");
             String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
             if (lastLog.trim().length() > 5) {
-                if (splashScreen != null) splashScreen.finish();
+                if (splashScreen != null) {
+                    splashScreen.finish();
+                }
                 JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
             }
 
@@ -180,13 +184,15 @@ public class JDInit {
                 ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
                 String[] jdus = JDUtilities.getResourceFile("packages").list(new FilenameFilter() {
                     public boolean accept(File dir, String name) {
-                        if (name.endsWith(".jdu")) return true;
-                       return false;
+                        if (name.endsWith(".jdu")) { return true; }
+                        return false;
 
                     }
 
                 });
-                if(jdus==null)jdus= new String[0];
+                if (jdus == null) {
+                    jdus = new String[0];
+                }
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 
@@ -201,7 +207,7 @@ public class JDInit {
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
                 // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
@@ -213,7 +219,7 @@ public class JDInit {
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
-            
+
                 cid = updater.getCid();
                 if (getCid() > 0 && getCid() != JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
@@ -225,72 +231,70 @@ public class JDInit {
                     return;
                 }
 
-                if (files == null&&jdus.length==0) {
+                if (files == null && jdus.length == 0) {
                     logger.severe("Webupdater offline");
                     progress.finalize();
                     return;
                 }
-                if(files==null)files= new  Vector<Vector<String>>();
+                if (files == null) {
+                    files = new Vector<Vector<String>>();
+                }
                 int org;
                 progress.setRange(org = files.size());
                 logger.finer("Files found: " + files);
 
                 logger.finer("init progressbar");
                 progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
-                if (files.size()>0||jdus.length>0) {
+                if (files.size() > 0 || jdus.length > 0) {
 
-                    progress.setStatus(org - (files.size()+jdus.length));
+                    progress.setStatus(org - (files.size() + jdus.length));
                     logger.finer("FIles to update: " + files);
                     logger.finer("JDUs to update: " + jdus.length);
-                    
-                        createQueueBackup();
 
-                        
+                    createQueueBackup();
 
-                        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                            JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                    if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
-                            JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                            logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                            System.exit(0);
-                        } else {
+                        JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                        System.exit(0);
+                    } else {
 
-                            try {
-                                JHelpDialog d = new JHelpDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size()+jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
-                                d.getBtn3().setText("Cancel");
-                                d.getBtn1().setText("Show changes");
-                                d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
-                                d.action1 = d.new Action() {
-                                    public boolean doAction() {
+                        try {
+                            JHelpDialog d = new JHelpDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
+                            d.getBtn3().setText("Cancel");
+                            d.getBtn1().setText("Show changes");
+                            d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
+                            d.action1 = d.new Action() {
+                                public boolean doAction() {
 
-                                        try {
+                                    try {
 
-                                            String update = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
+                                        String update = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
 
-                                            JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
-                                        } catch (IOException e) {
-                                            
-                                            e.printStackTrace();
-                                        }
+                                        JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
+                                    } catch (IOException e) {
 
-                                        return true;
+                                        e.printStackTrace();
                                     }
-                                };
-                                d.showDialog();
 
-                                if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
-                                    JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-
-                                    JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                                    System.exit(0);
+                                    return true;
                                 }
-                            } catch (HeadlessException e) {
-                                
-                                e.printStackTrace();
-                            }
+                            };
+                            d.showDialog();
 
-                        
+                            if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
+                                JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+
+                                JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                                logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                                System.exit(0);
+                            }
+                        } catch (HeadlessException e) {
+
+                            e.printStackTrace();
+                        }
 
                     }
 
@@ -343,11 +347,11 @@ public class JDInit {
             // // TODO: handle exception
             // }
             // JDController controller = JDUtilities.getController();
-            JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
-            JDUtilities.setPluginForHostList(this.loadPluginForHost());
-            JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
+            JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
+            JDUtilities.setPluginForHostList(loadPluginForHost());
+            JDUtilities.setPluginForContainerList(loadPluginForContainer());
             try {
-                JDUtilities.setPluginOptionalList(this.loadPluginOptional());
+                JDUtilities.setPluginOptionalList(loadPluginOptional());
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
@@ -379,7 +383,7 @@ public class JDInit {
     }
 
     public boolean installerWasVisible() {
-       
+
         return installerVisible;
     }
 
@@ -413,20 +417,26 @@ public class JDInit {
                     // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
                     // einstellungen");
                     allOK = false;
-                    if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
+                    if (JDUtilities.getConfiguration() == null) {
+                        JDUtilities.getConfiguration().setDefaultValues();
+                    }
                 }
             } else {
                 logger.info("no configuration loaded");
                 logger.info("Konfigurationskonflikt. Lade Default einstellungen");
 
                 allOK = false;
-                if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
+                if (JDUtilities.getConfiguration() == null) {
+                    JDUtilities.getConfiguration().setDefaultValues();
+                }
             }
         } catch (Exception e) {
             logger.info("Konfigurationskonflikt. Lade Default einstellungen");
             e.printStackTrace();
             allOK = false;
-            if (JDUtilities.getConfiguration() == null) JDUtilities.setConfiguration(new Configuration());
+            if (JDUtilities.getConfiguration() == null) {
+                JDUtilities.setConfiguration(new Configuration());
+            }
             JDUtilities.getConfiguration().setDefaultValues();
         }
 
@@ -447,7 +457,9 @@ public class JDInit {
                 logger.info("Home Dir: " + newHome);
                 File homeDirectoryFile = new File(newHome);
                 boolean createSuccessfull = true;
-                if (!homeDirectoryFile.exists()) createSuccessfull = homeDirectoryFile.mkdirs();
+                if (!homeDirectoryFile.exists()) {
+                    createSuccessfull = homeDirectoryFile.mkdirs();
+                }
                 if (createSuccessfull && homeDirectoryFile.canWrite()) {
                     System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
                     String dlDir = inst.getDownloadDir();
@@ -483,7 +495,7 @@ public class JDInit {
         // } catch (Exception e) {
         // // TODO: handle exception
         // }
-        this.afterConfigIsLoaded();
+        afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
 
@@ -520,9 +532,9 @@ public class JDInit {
             logger.severe("Could not find the img directory");
             return;
         }
-        for (int i = 0; i < images.length; i++) {
-            if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
-                File f = new File(images[i]);
+        for (String element : images) {
+            if (element.toLowerCase().endsWith(".png") || element.toLowerCase().endsWith(".gif")) {
+                File f = new File(element);
                 // try {
                 // splashScreen.increase(2);
                 // } catch (Exception e) {
@@ -540,7 +552,7 @@ public class JDInit {
         logger.finer("create Module: Unrar");
         JDUtilities.getController().setUnrarModule(Unrar.getInstance());
         logger.finer("create Module: InfoFileWriter");
-     
+
     }
 
     @SuppressWarnings("unchecked")
@@ -642,8 +654,6 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
 
-        
-        
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         Double version = JDUtilities.getJavaVersion();
@@ -700,16 +710,18 @@ public class JDInit {
         return pluginsOptional;
 
     }
-    
+
     public void removeFiles() {
         String[] remove = null;
         remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
-                     
-        if (remove != null) for (String file : remove) {
-            if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file.trim()))) {
-                logger.warning("Removed " + file);
-            }
 
+        if (remove != null) {
+            for (String file : remove) {
+                if (JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile(file.trim()))) {
+                    logger.warning("Removed " + file);
+                }
+
+            }
         }
 
     }

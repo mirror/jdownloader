@@ -29,27 +29,35 @@ import jd.utils.JDUtilities;
 
 public class Browser {
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
+
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
 
     }
+
     public static void forwardCookies(Request request) {
-        if (request == null) return;
-        String host = getHost(request.getUrl());
+        if (request == null) {
+            return;
+        }
+        String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
-        if (cookies == null) return;
+        if (cookies == null) {
+            return;
+        }
         request.getCookies().putAll(cookies);
 
     }
+
     public static String getCookie(String url, String string) {
         String host;
 
-        host = getHost(url);
+        host = Browser.getHost(url);
 
         HashMap<String, String> cookies = COOKIES.get(host);
         return cookies.get(string);
 
     }
+
     public static String getHost(Object url) {
         try {
             String ret = new URL(url + "").getHost();
@@ -66,9 +74,12 @@ public class Browser {
         return null;
 
     }
+
     public static void updateCookies(Request request) {
-        if (request == null) return;
-        String host = getHost(request.getUrl());
+        if (request == null) {
+            return;
+        }
+        String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
         if (cookies == null) {
             cookies = new HashMap<String, String>();
@@ -77,6 +88,7 @@ public class Browser {
         cookies.putAll(request.getCookies());
 
     }
+
     private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
     private int connectTimeout = -1;
     private URL currentURL;
@@ -113,7 +125,9 @@ public class Browser {
     }
 
     public HashMap<String, String> getHeaders() {
-        if (headers == null) headers = new HashMap<String, String>();
+        if (headers == null) {
+            headers = new HashMap<String, String>();
+        }
         return headers;
     }
 
@@ -123,24 +137,30 @@ public class Browser {
 
     public String getPage(String string) {
         try {
-            if (string.equals("http://bluehost.to/fetchinfo")) string = "http://bluehost.to/image/head.gif";
+            if (string.equals("http://bluehost.to/fetchinfo")) {
+                string = "http://bluehost.to/image/head.gif";
+            }
 
-            if (currentURL == null) this.currentURL = new URL(string);
+            if (currentURL == null) {
+                currentURL = new URL(string);
+            }
             GetRequest request = new GetRequest(string);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-            forwardCookies(request);
+            Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
-            if (headers != null) request.getHeaders().putAll(this.headers);
+            if (headers != null) {
+                request.getHeaders().putAll(headers);
+            }
             request.connect();
             String ret = null;
             if (request.getHttpConnection().getHeaderField("Content-Length") == null || Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
                 ret = request.read();
             }
 
-            updateCookies(request);
+            Browser.updateCookies(request);
             this.request = request;
-            this.currentURL = new URL(string);
+            currentURL = new URL(string);
             return ret;
 
         } catch (MalformedURLException e) {
@@ -157,7 +177,9 @@ public class Browser {
     }
 
     public String getRedirectLocation() {
-        if (request == null) return null;
+        if (request == null) {
+            return null;
+        }
         return request.getLocation();
 
     }
@@ -175,22 +197,25 @@ public class Browser {
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
             for (Map.Entry<String, String> entry : form.vars.entrySet()) {
-                if (first)
+                if (first) {
                     first = false;
-                else
+                } else {
                     stbuffer.append("&");
+                }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
                 stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches(".*\\?.+"))
+                if (action.matches(".*\\?.+")) {
                     action += "&";
-                else if (action.matches("[^\\?]*")) action += "?";
+                } else if (action.matches("[^\\?]*")) {
+                    action += "?";
+                }
                 action += varString;
             }
-            return this.openGetConnection(action);
+            return openGetConnection(action);
 
         case Form.METHOD_POST:
 
@@ -202,18 +227,22 @@ public class Browser {
 
     public HTTPConnection openGetConnection(String string) {
         try {
-            if (currentURL == null) this.currentURL = new URL(string);
+            if (currentURL == null) {
+                currentURL = new URL(string);
+            }
             GetRequest request = new GetRequest(string);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-            forwardCookies(request);
+            Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
-            if (headers != null) request.getHeaders().putAll(this.headers);
+            if (headers != null) {
+                request.getHeaders().putAll(headers);
+            }
             request.connect();
 
-            updateCookies(request);
+            Browser.updateCookies(request);
             this.request = request;
-            this.currentURL = new URL(string);
+            currentURL = new URL(string);
             return request.getHttpConnection();
 
         } catch (MalformedURLException e) {
@@ -227,19 +256,23 @@ public class Browser {
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
         try {
-            if (currentURL == null) this.currentURL = new URL(url);
+            if (currentURL == null) {
+                currentURL = new URL(url);
+            }
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
 
-            forwardCookies(request);
+            Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             request.getPostData().putAll(post);
-            if (headers != null) request.getHeaders().putAll(this.headers);
+            if (headers != null) {
+                request.getHeaders().putAll(headers);
+            }
             request.connect();
 
             this.request = request;
-            this.currentURL = new URL(url);
+            currentURL = new URL(url);
             return request.getHttpConnection();
 
         } catch (MalformedURLException e) {
@@ -258,25 +291,33 @@ public class Browser {
 
     public String postPage(String url, HashMap<String, String> post) {
         try {
-            if (currentURL == null) this.currentURL = new URL(url);
+            if (currentURL == null) {
+                currentURL = new URL(url);
+            }
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-            if (connectTimeout > 0) request.setConnectTimeout(connectTimeout);
-            if (readTimeout > 0) request.setReadTimeout(readTimeout);
-            forwardCookies(request);
+            if (connectTimeout > 0) {
+                request.setConnectTimeout(connectTimeout);
+            }
+            if (readTimeout > 0) {
+                request.setReadTimeout(readTimeout);
+            }
+            Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             request.getPostData().putAll(post);
-            if (headers != null) request.getHeaders().putAll(this.headers);
+            if (headers != null) {
+                request.getHeaders().putAll(headers);
+            }
             request.connect();
             String ret = null;
-            if (request.getHttpConnection().getHeaderField("Content-Length") == null || (limit > 0 && Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit)) {
+            if (request.getHttpConnection().getHeaderField("Content-Length") == null || limit > 0 && Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
                 ret = request.read();
             }
 
-            updateCookies(request);
+            Browser.updateCookies(request);
             this.request = request;
-            this.currentURL = new URL(url);
+            currentURL = new URL(url);
             return ret;
 
         } catch (MalformedURLException e) {
@@ -313,17 +354,17 @@ public class Browser {
     }
 
     public void setFollowRedirects(boolean b) {
-        this.doRedirects = b;
+        doRedirects = b;
 
     }
 
     public void setHeaders(HashMap<String, String> h) {
-        this.headers = h;
+        headers = h;
 
     }
 
     public void setLoadLimit(int i) {
-        this.limit = i;
+        limit = i;
 
     }
 
@@ -340,19 +381,22 @@ public class Browser {
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
             for (Map.Entry<String, String> entry : form.vars.entrySet()) {
-                if (first)
+                if (first) {
                     first = false;
-                else
+                } else {
                     stbuffer.append("&");
+                }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
                 stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches(".*\\?.+"))
+                if (action.matches(".*\\?.+")) {
                     action += "&";
-                else if (action.matches("[^\\?]*")) action += "?";
+                } else if (action.matches("[^\\?]*")) {
+                    action += "?";
+                }
                 action += varString;
             }
             return this.getPage(action);
@@ -366,7 +410,9 @@ public class Browser {
 
     @Override
     public String toString() {
-        if (request == null) return "Browser. no rquest yet";
+        if (request == null) {
+            return "Browser. no rquest yet";
+        }
         return request.toString();
     }
 

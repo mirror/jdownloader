@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components;
 
 import java.awt.Component;
@@ -32,11 +31,11 @@ import jd.utils.JDUtilities;
 public class ContextMenu extends JPopupMenu {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 8890840310244673205L;
+     * 
+     */
+    private static final long serialVersionUID = 8890840310244673205L;
 
-	protected Logger          logger = JDUtilities.getLogger();
+    protected Logger logger = JDUtilities.getLogger();
 
     // public void mousePressed(MouseEvent e) {
     // logger.info("PRESSED");
@@ -51,19 +50,19 @@ public class ContextMenu extends JPopupMenu {
 
     private Vector<JMenuItem> menus;
 
-  //  private int[]             indeces;
+    // private int[] indeces;
 
     private Point point;
 
     public ContextMenu(Component parent, Point point, String[] options, ActionListener list) {
         super();
-        this.menus= new Vector<JMenuItem>();
+        menus = new Vector<JMenuItem>();
         int x = (int) point.getX();
         int y = (int) point.getY();
-        this.point=point;
-        for (int i = 0; i < options.length; i++) {
+        this.point = point;
+        for (String element : options) {
             JMenuItem menu;
-            this.menus.add(menu = new JMenuItem(options[i]));
+            menus.add(menu = new JMenuItem(element));
             menu.addActionListener(list);
             this.add(menu);
         }

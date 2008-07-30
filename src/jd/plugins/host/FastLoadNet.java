@@ -42,9 +42,11 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
 
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     private static final String HOST = "fast-load.net";
 
@@ -67,25 +69,21 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.fast-load.net/infos.php";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -142,39 +140,30 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -235,8 +224,8 @@ public class FastLoadNet extends PluginForHost {
             // step.setParameter(null);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-                                                                    // ImageIO
-                                                                    // Error");
+            // ImageIO
+            // Error");
             linkStatus.setErrorMessage(JDLocale.L("plugins.errors.captchadownloaderror", "Captcha could not be downloaded"));
             return;
 
@@ -293,7 +282,7 @@ public class FastLoadNet extends PluginForHost {
         }
 
         downloadLink.setDownloadMax(length);
-        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+        downloadLink.setName(getFileNameFormHeader(urlConnection));
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
@@ -303,13 +292,11 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
-        this.cookie = "";
+        cookie = "";
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

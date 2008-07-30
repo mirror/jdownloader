@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.event;
 
 import java.awt.AWTEvent;
@@ -30,66 +29,70 @@ public class PluginEvent extends AWTEvent {
     /**
      * Drag & Drop soll aktiviert werden
      */
-    public static final int   PLUGIN_CONTROL_DND           = 10;
-   
+    public static final int PLUGIN_CONTROL_DND = 10;
+
     /**
      * JDownloader soll beendet werden
      */
-    public static final int   PLUGIN_CONTROL_EXIT          = 11;
+    public static final int PLUGIN_CONTROL_EXIT = 11;
     /**
      * Die Verbindung sol getrennt werden
      */
-    public static final int   PLUGIN_CONTROL_RECONNECT     = 13;
+    public static final int PLUGIN_CONTROL_RECONNECT = 13;
     /**
      * Die Konfiguration soll angezeigt werden
      */
-    public static final int   PLUGIN_CONTROL_SHOW_CONFIG   = 9;
+    public static final int PLUGIN_CONTROL_SHOW_CONFIG = 9;
     /**
      * Die UI soll angezeigt werden
      */
-    public static final int   PLUGIN_CONTROL_SHOW_UI       = 8;
+    public static final int PLUGIN_CONTROL_SHOW_UI = 8;
     /**
      * Die Downloads sollen gestartet/gestoppt werden
      */
-    public static final int   PLUGIN_CONTROL_START_STOP    = 12;
+    public static final int PLUGIN_CONTROL_START_STOP = 12;
     /**
      * Links wurden entschlüsselt
      */
-    public static final int   PLUGIN_CRYPT_LINKS_DECRYPTED = 5;
+    public static final int PLUGIN_CRYPT_LINKS_DECRYPTED = 5;
     /**
      * Daten des Plugins haben sich geändert
      */
-    public static final int   PLUGIN_DATA_CHANGED          = 6;
+    public static final int PLUGIN_DATA_CHANGED = 6;
     /**
      * Download Geschwindigkeit hat sich geändert
      */
-    public static final int   PLUGIN_DOWNLOAD_SPEED        = 7;
+    public static final int PLUGIN_DOWNLOAD_SPEED = 7;
     /**
      * serialVersionUID
      */
-    private static final long serialVersionUID             = -7243557276278230057L;
+    private static final long serialVersionUID = -7243557276278230057L;
     /**
      * Neue Bytes wurden geladen bytes anzahl als parameter
      */
-    //public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
+    // public static final int PLUGIN_DOWNLOAD_BYTES = 0;
     /**
      * ID des Events
      */
-    private int               eventID;
+    private int eventID;
     /**
      * Optionaler Parameter
      */
-    private Object            parameter;
+    private Object parameter;
     /**
      * Plugin, von dem dieses Event ausgegangen ist
      */
-    private Plugin            source;
+    private Plugin source;
+
     /**
      * Erstellt ein neues PluginEvent
      * 
-     * @param source Das Plugin, daß dieses Event ausgelöst hat
-     * @param eventID Die ID des Events
-     * @param parameter Ein optionaler Parameter
+     * @param source
+     *            Das Plugin, daß dieses Event ausgelöst hat
+     * @param eventID
+     *            Die ID des Events
+     * @param parameter
+     *            Ein optionaler Parameter
      */
     public PluginEvent(Plugin source, int eventID, Object parameter) {
         super(source, eventID);
@@ -97,14 +100,16 @@ public class PluginEvent extends AWTEvent {
         this.eventID = eventID;
         this.parameter = parameter;
     }
-    
+
     public int getEventID() {
         return eventID;
     }
+
     // Hat das einen grund warumd as getParameter1 heißt?
     public Object getParameter1() {
         return parameter;
     }
+
     @Override
     public Plugin getSource() {
         return source;

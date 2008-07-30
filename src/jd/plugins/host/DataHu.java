@@ -32,43 +32,37 @@ public class DataHu extends PluginForHost {
 
     private static final String HOST = "data.hu";
 
-   
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?data.hu/get/.+/.+", Pattern.CASE_INSENSITIVE);
 
     //
-    
+
     public DataHu() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
-            if (requestInfo.getHtmlCode().length() == 0) return false;
+            if (requestInfo.getHtmlCode().length() == 0) { return false; }
             String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
             String name = test[test.length - 1];
             downloadLink.setName(name);
@@ -79,12 +73,6 @@ public class DataHu extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -100,19 +88,17 @@ public class DataHu extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -160,12 +146,10 @@ public class DataHu extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

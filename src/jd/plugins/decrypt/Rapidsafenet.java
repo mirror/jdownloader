@@ -34,13 +34,13 @@ public class Rapidsafenet extends PluginForDecrypt {
     static private final String host = "rapidsafe.net";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Rapidsafenet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,8 +50,10 @@ public class Rapidsafenet extends PluginForDecrypt {
 
             // Links auslesen und konvertieren
             String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (link == null) return null;
-            decryptedLinks.add(this.createDownloadlink((JDUtilities.htmlDecode(link))));
+            if (link == null) {
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -59,41 +61,34 @@ public class Rapidsafenet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

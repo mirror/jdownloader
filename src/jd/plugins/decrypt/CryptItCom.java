@@ -58,11 +58,14 @@ public class CryptItCom extends PluginForDecrypt {
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, byte[] parameter, boolean redirect) throws IOException {
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
         httpConnection.setInstanceFollowRedirects(redirect);
-        if (referrer != null)
+        if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
-        else
+        } else {
             httpConnection.setRequestProperty("Referer", "http://" + url.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        }
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -90,12 +93,10 @@ public class CryptItCom extends PluginForDecrypt {
 
     // private String version = "0.2.0";
 
-    
     public CryptItCom() {
         super();
     }
 
-    
     private ArrayList<DownloadLink> containerStep(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -125,7 +126,7 @@ public class CryptItCom extends PluginForDecrypt {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
             }
 
-            String name = this.getFileNameFormHeader(requestInfo.getConnection());
+            String name = getFileNameFormHeader(requestInfo.getConnection());
 
             if (name.equals("redir.ccf") || !name.contains(".ccf")) {
                 logger.severe("Container not found");
@@ -149,9 +150,6 @@ public class CryptItCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-   
-
-    
     private String decrypt(String ciphertext) {
         // alt: byte[] key = new byte[] { (byte) 55, (byte) 55, (byte) 107,
         // (byte) 47, (byte) 108, (byte) 65, (byte) 87, (byte) 72, (byte) 83,
@@ -180,19 +178,22 @@ public class CryptItCom extends PluginForDecrypt {
             System.arraycopy(cipher, blocks * blockSize, input, 0, cb);
             aes.InvCipher(input, output);
             System.arraycopy(output, 0, cipher, blocks * blockSize, cb);
-            if (rest <= blockSize) break;
+            if (rest <= blockSize) {
+                break;
+            }
             blocks++;
         }
         return new String(cipher).trim();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             String url = parameter;
-            if (!url.endsWith("/")) url += "/";
+            if (!url.endsWith("/")) {
+                url += "/";
+            }
             String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
             String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
             RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
@@ -206,13 +207,17 @@ public class CryptItCom extends PluginForDecrypt {
                     }
                     String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
                     ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
-                    if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) break;
+                    if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+                        break;
+                    }
                 }
             }
             String cookie = ri.getCookie();
             String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
             String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
-            if (password != null) password = password.trim();
+            if (password != null) {
+                password = password.trim();
+            }
             HashMap<String, String> header = new HashMap<String, String>();
             header.put("Content-Type", "application/x-amf");
             // alt: byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -230,14 +235,14 @@ public class CryptItCom extends PluginForDecrypt {
             fp.setName(packagename);
             fp.setPassword(password);
             p.add(password);
-            for (Iterator<String> it = ciphers.iterator(); it.hasNext();) {
-                String cipher = JDUtilities.filterString(it.next(), "1234567890abcdefABCDEF");
+            for (String string : ciphers) {
+                String cipher = JDUtilities.filterString(string, "1234567890abcdefABCDEF");
                 String linktext = decrypt(cipher);
                 progress.increase(1);
                 String[] links;
                 links = HTMLParser.getHttpLinks(linktext, null);
                 if (links.length > 0 && links[0].startsWith("http")) {
-                    DownloadLink link = this.createDownloadlink(links[0]);
+                    DownloadLink link = createDownloadlink(links[0]);
                     link.setSourcePluginPasswords(p);
                     link.setSourcePluginComment(packagename);
                     fp.add(link);
@@ -252,13 +257,11 @@ public class CryptItCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
@@ -279,9 +282,9 @@ public class CryptItCom extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

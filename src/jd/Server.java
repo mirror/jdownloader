@@ -52,7 +52,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                         // leave out last element if there are more than one
                         // folders
                         short max = (short) paths.size();
-                        if (max > 1) max -= 1;
+                        if (max > 1) {
+                            max -= 1;
+                        }
 
                         for (int i = 0; i < max; i++) {
 
@@ -101,7 +103,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                     } else {
 
-                        if (isServer) System.exit(0);
+                        if (isServer) {
+                            System.exit(0);
+                        }
                         break;
 
                     }
@@ -116,26 +120,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
     public static void showCmdHelp() {
 
-        String[][] help = new String[][] {
-        		{ JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" },
-        		{ "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
-        		{ "-h/--help\t", "Show this help message" },
-        		{ "-a/--add-link(s)", "Add links" },
-        		{ "-c/--add-container(s)", "Add containers" },
-        		{ "-p/--add-password(s)", "Add passwords" },
-        		{ "-d/--start-download", "Start download" },
-        		{ "-D/--stop-download", "Stop download" },
-        		{ "-H/--hide\t", "Don't open Linkgrabber when adding Links" },
-        		{ "-m/--minimize\t", "Minimize download window" },
-        		{ "-f/--focus\t", "Get jD to foreground/focus" },
-        		{ "-s/--show\t", "Show JAC prepared captchas" },
-        		{ "-t/--train\t", "Train a JAC method" },
-        		{ "-r/--reconnect\t", "Perform a Reconnect" },
-        		{ "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
-        		{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
-                { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" },
-                { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" },
-                { "-n --new-instance", "Force new instance if another jD is running" } };
+        String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" }, { "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-c/--add-container(s)", "Add containers" }, { "-p/--add-password(s)", "Add passwords" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
+                { "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" }, { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" }, { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" }, { "-n --new-instance", "Force new instance if another jD is running" } };
 
         for (String helpLine[] : help) {
             System.out.println(helpLine[0] + "\t" + helpLine[1]);
@@ -182,7 +168,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         boolean doExtract = false;
         boolean hideGrabber = false;
         boolean startDownload = false;
-        
+
         JDController controller = JDUtilities.getController();
 
         for (String currentArg : input) {
@@ -194,7 +180,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addPasswordsSwitch = false;
                 extractSwitch = false;
 
-                showCmdHelp();
+                Server.showCmdHelp();
 
             } else if (currentArg.equals("--add-links") || currentArg.equals("--add-link") || currentArg.equals("-a")) {
 
@@ -235,10 +221,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
                 extractSwitch = false;
-                
+
                 logger.info(currentArg + " parameter");
                 startDownload = true;
-                
 
             } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
 
@@ -248,11 +233,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
 
                 logger.info(currentArg + " parameter");
-                if ( controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-            		// only in this way the button state is correctly set
-            		// stopDownloads() is called by button itself so it cannot handle this
-            		controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
-            	}
+                if (controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+                    // only in this way the button state is correctly set
+                    // stopDownloads() is called by button itself so it cannot
+                    // handle this
+                    controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                }
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
 
@@ -290,7 +276,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
-                
+
             } else if (currentArg.equals("--hide") || currentArg.equals("-H")) {
 
                 addLinksSwitch = false;
@@ -299,7 +285,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 hideGrabber = true;
-                
+
             } else if (currentArg.equals("--reconnect") || currentArg.equals("-r")) {
 
                 addLinksSwitch = false;
@@ -308,7 +294,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 Reconnecter.waitForNewIP(1);
-                
+
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
 
                 linksToAdd.add(currentArg);
@@ -338,8 +324,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                     if (currentArg.matches("[\\d]+")) {
                         extractTime = Integer.parseInt(currentArg);
-                    } else
+                    } else {
                         extractTime = 0;
+                    }
 
                 } else if (!currentArg.matches("[\\s]*")) {
 
@@ -374,8 +361,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
         }
 
-        if (linksToAdd.size() > 0) logger.info("Links to add: " + linksToAdd.toString());
-        if (containersToAdd.size() > 0) logger.info("Containers to add: " + containersToAdd.toString());
+        if (linksToAdd.size() > 0) {
+            logger.info("Links to add: " + linksToAdd.toString());
+        }
+        if (containersToAdd.size() > 0) {
+            logger.info("Containers to add: " + containersToAdd.toString());
+        }
 
         for (int i = 0; i < containersToAdd.size(); i++) {
             JDUtilities.getController().loadContainerFile(new File(containersToAdd.get(i)));
@@ -386,28 +377,29 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         for (int i = 0; i < linksToAdd.size(); i++) {
             linksToAddString += linksToAdd.get(i) + "\n";
         }
-        
+
         if (!linksToAddString.equals("")) {
-        	
-        	DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);
+
+            DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);
             distributeData.addControlListener(JDUtilities.getController());
             distributeData.start();
-            
+
         } else if (startDownload) {
-        	
-        	if ( controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING ) {
-        		// only in this way the button state is correctly set
-        		// startDownloads() is called by button itself so it cannot handle this
-        		controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
-        	}
-        	
+
+            if (controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
+                // only in this way the button state is correctly set
+                // startDownloads() is called by button itself so it cannot
+                // handle this
+                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+            }
+
         }
 
         if (doExtract) {
             logger.info("Extract: [" + paths.toString() + " | " + extractTime + "]");
             Server.extract(paths, extractTime, false);
         }
-        
+
     }
 
 }

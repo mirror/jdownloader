@@ -32,23 +32,24 @@ public class TreeTableTransferHandler extends TransferHandler {
     private DownloadTreeTable treeTable;
 
     public TreeTableTransferHandler(DownloadTreeTable downloadTreeTable) {
-        this.treeTable = downloadTreeTable;
+        treeTable = downloadTreeTable;
     }
 
     public boolean canDrop(JComponent comp, DataFlavor[] transferFlavors) {
-        if (draggingPathes == null || draggingPathes.length <= 0) return false;
+        if (draggingPathes == null || draggingPathes.length <= 0) { return false;
         // logger.info("KKK "+info.getDropLocation()+" -
         // "+((JTable.DropLocation)info.getDropLocation()).getRow());
+        }
 
         int row = treeTable.rowAtPoint(treeTable.getMousePosition());
 
         TreePath current = treeTable.getPathForRow(row);
 
         for (TreePath path : draggingPathes) {
-            if (path.getLastPathComponent() == current.getLastPathComponent()) return false;
+            if (path.getLastPathComponent() == current.getLastPathComponent()) { return false; }
         }
         if (draggingPathes[0].getLastPathComponent() instanceof FilePackage) {
-            if (current.getLastPathComponent() instanceof FilePackage) return true;
+            if (current.getLastPathComponent() instanceof FilePackage) { return true; }
             return false;
         } else {
             return true;
@@ -65,19 +66,19 @@ public class TreeTableTransferHandler extends TransferHandler {
     @Override
     public boolean canImport(TreeTableTransferHandler.TransferSupport info) {
 
-        if (draggingPathes == null || draggingPathes.length <= 0) return false;
+        if (draggingPathes == null || draggingPathes.length <= 0) { return false; }
         // logger.info("KKK "+info.getDropLocation()+" -
         // "+((JTable.DropLocation)info.getDropLocation()).getRow());
         int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
 
         TreePath current = treeTable.getPathForRow(row);
-        if(current==null)return false;
+        if (current == null) { return false; }
         for (TreePath path : draggingPathes) {
-            if (path.getLastPathComponent() == current.getLastPathComponent()) return false;
+            if (path.getLastPathComponent() == current.getLastPathComponent()) { return false; }
         }
 
         if (draggingPathes[0].getLastPathComponent() instanceof FilePackage) {
-            if (current.getLastPathComponent() instanceof FilePackage) return true;
+            if (current.getLastPathComponent() instanceof FilePackage) { return true; }
             return false;
         } else {
             return true;
@@ -94,11 +95,11 @@ public class TreeTableTransferHandler extends TransferHandler {
         Vector<TreePath> packages = new Vector<TreePath>();
         Vector<TreePath> downloadLinks = new Vector<TreePath>();
 
-        for (int i = 0; i < rows.length; i++) {
-            if (treeTable.getPathForRow(rows[i]).getLastPathComponent() instanceof DownloadLink) {
-                downloadLinks.add(treeTable.getPathForRow(rows[i]));
+        for (int element : rows) {
+            if (treeTable.getPathForRow(element).getLastPathComponent() instanceof DownloadLink) {
+                downloadLinks.add(treeTable.getPathForRow(element));
             } else {
-                packages.add(treeTable.getPathForRow(rows[i]));
+                packages.add(treeTable.getPathForRow(element));
             }
 
             // draggingPathes[i]=getPathForRow(rows[i]);
@@ -119,14 +120,14 @@ public class TreeTableTransferHandler extends TransferHandler {
             final TreePath current = treeTable.getPathForRow(row);
             final TreePath pre = treeTable.getPathForRow(row - 1);
             final TreePath post = treeTable.getPathForRow(row + 1);
-            if (current == null) return false;
+            if (current == null) { return false; }
             JPopupMenu popup = new JPopupMenu();
 
             JMenuItem m;
 
             if (current.getLastPathComponent() instanceof DownloadLink) {
-                final Object preLink = pre == null ? null : (pre.getLastPathComponent() instanceof DownloadLink) ? pre.getLastPathComponent() : null;
-                final Object postLink = post == null ? null : (post.getLastPathComponent() instanceof DownloadLink) ? post.getLastPathComponent() : null;
+                final Object preLink = pre == null ? null : pre.getLastPathComponent() instanceof DownloadLink ? pre.getLastPathComponent() : null;
+                final Object postLink = post == null ? null : post.getLastPathComponent() instanceof DownloadLink ? post.getLastPathComponent() : null;
                 popup.add(m = new JMenuItem(String.format(JDLocale.L("gui.table.draganddrop.before", "Vor '%s' ablegen"), (treeTable.getDownladTreeTableModel().getValueAt(current.getLastPathComponent(), 0) + "").trim())));
                 m.setIcon(JDTheme.II("gui.images.go_top", 16, 16));
                 m.addActionListener(new ActionListener() {
@@ -150,13 +151,13 @@ public class TreeTableTransferHandler extends TransferHandler {
 
                 });
 
-                if (post != null && post.getLastPathComponent() == this.draggingPathes[0].getLastPathComponent()) {
+                if (post != null && post.getLastPathComponent() == draggingPathes[0].getLastPathComponent()) {
 
                 return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, preLink, current.getLastPathComponent()));
 
                 }
 
-                if (pre != null && pre.getLastPathComponent() == this.draggingPathes[draggingPathes.length - 1].getLastPathComponent()) {
+                if (pre != null && pre.getLastPathComponent() == draggingPathes[draggingPathes.length - 1].getLastPathComponent()) {
 
                 return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, current.getLastPathComponent(), postLink));
 
@@ -211,13 +212,10 @@ public class TreeTableTransferHandler extends TransferHandler {
 
                     });
 
-                    if (post != null && post.getLastPathComponent() == this.draggingPathes[0].getLastPathComponent()) {
-                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, current.getLastPathComponent()));
+                    if (post != null && post.getLastPathComponent() == draggingPathes[0].getLastPathComponent()) { return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, current.getLastPathComponent()));
 
-                   
                     }
-                    if (pre != null && pre.getLastPathComponent() == this.draggingPathes[draggingPathes.length - 1].getLastPathComponent()) { 
-                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, current.getLastPathComponent(), null));
+                    if (pre != null && pre.getLastPathComponent() == draggingPathes[draggingPathes.length - 1].getLastPathComponent()) { return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, current.getLastPathComponent(), null));
 
                     }
 
@@ -276,9 +274,10 @@ public class TreeTableTransferHandler extends TransferHandler {
     }
 
     private boolean wishSound(boolean doit) {
-        if (doit) JDSounds.PT("sound.gui.onDragAndDrop");
-       
-        
+        if (doit) {
+            JDSounds.PT("sound.gui.onDragAndDrop");
+        }
+
         return doit;
     }
 }

@@ -41,9 +41,11 @@ public class ShareOnlineBiz extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "2.0.0.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "2.0.0.0";
 
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
@@ -57,25 +59,21 @@ public class ShareOnlineBiz extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -99,7 +97,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     } else if (type.equals("kb")) {
                         filesize = (int) (1024 * size);
                     } else {
-                        filesize = (int) (size);
+                        filesize = (int) size;
                     }
                     downloadLink.setDownloadMax(filesize);
                     downloadLink.setName(filename);
@@ -114,39 +112,30 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -184,7 +173,9 @@ public class ShareOnlineBiz extends PluginForHost {
         /* Passwort holen holen */
         if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) passCode = "";
+                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
+                    passCode = "";
+                }
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
@@ -205,7 +196,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* Downloadlimit erreicht */
         if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            this.sleep(60 * 60 * 1000, downloadLink);
+            sleep(60 * 60 * 1000, downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
@@ -222,7 +213,7 @@ public class ShareOnlineBiz extends PluginForHost {
         Context.exit();
 
         /* 15 seks warten */
-        this.sleep(15000, downloadLink);
+        sleep(15000, downloadLink);
 
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
@@ -243,15 +234,13 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
+
     }
 
 }

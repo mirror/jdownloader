@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components.treetable;
 
 import java.awt.event.ActionEvent;
@@ -25,12 +24,10 @@ import javax.swing.Action;
 
 import jd.config.Property;
 
-
-public class TreeTableAction extends AbstractAction{
-
+public class TreeTableAction extends AbstractAction {
 
     public static final int DOWNLOAD_ABORT = 18;
-	public static final int DOWNLOAD_BROWSE_LINK = 7;
+    public static final int DOWNLOAD_BROWSE_LINK = 7;
     public static final int DOWNLOAD_DELETE = 2;
     public static final int DOWNLOAD_DISABLE = 6;
     public static final int DOWNLOAD_DLC = 20;
@@ -53,41 +50,44 @@ public class TreeTableAction extends AbstractAction{
     public static final int PACKAGE_RESET = 16;
     public static final int PACKAGE_SORT = 17;
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-   
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     private int actionID;
     private ActionListener actionListener;
 
     private Property property;
     private String ressourceName;
 
-    public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID){      
+    public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID) {
         this(actionListener, ressourceName, actionID, null);
-      
 
     }
+
     public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID, Property obj) {
         super();
         this.ressourceName = ressourceName;
         this.actionID = actionID;
-        this.actionListener = actionListener; 
-        this.property=obj;
+        this.actionListener = actionListener;
+        property = obj;
 
-    
-        putValue(Action.NAME,              ressourceName);
-    
+        putValue(Action.NAME, ressourceName);
+
     }
+
     public void actionPerformed(ActionEvent e) {
-        actionListener.actionPerformed(new ActionEvent(e.getSource(),actionID,ressourceName));
+        actionListener.actionPerformed(new ActionEvent(e.getSource(), actionID, ressourceName));
     }
-    public int getActionID(){
+
+    public int getActionID() {
         return actionID;
     }
+
     public Property getProperty() {
         return property;
     }
+
     public void setProperty(Property property) {
         this.property = property;
     }

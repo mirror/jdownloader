@@ -32,13 +32,13 @@ import jd.plugins.RequestInfo;
 public class GappingOrg extends PluginForDecrypt {
     final static String host = "gapping.org";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?gapping\\.org/(index\\.php\\?folderid=[0-9]+|file\\.php\\?id=.+|f/.+)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public GappingOrg() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,13 +46,13 @@ public class GappingOrg extends PluginForDecrypt {
             if (parameter.indexOf("index.php") != -1) {
 
                 RequestInfo request = HTTP.getRequest(new URL(parameter));
-                String ids[][] = new Regex(request.getHtmlCode(), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >",Pattern.CASE_INSENSITIVE)).getMatches();
+                String ids[][] = new Regex(request.getHtmlCode(), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >", Pattern.CASE_INSENSITIVE)).getMatches();
 
                 progress.setRange(ids.length);
-                for (int i = 0; i < ids.length; i++) {
-                    request = HTTP.getRequest(new URL("http://gapping.org/decry.php?fileid=" + ids[i][0]));
-                    String link = new Regex(request.getHtmlCode(), Pattern.compile("src=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    decryptedLinks.add(this.createDownloadlink(link));
+                for (String[] element : ids) {
+                    request = HTTP.getRequest(new URL("http://gapping.org/decry.php?fileid=" + element[0]));
+                    String link = new Regex(request.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    decryptedLinks.add(createDownloadlink(link));
                     progress.increase(1);
                 }
 
@@ -60,9 +60,9 @@ public class GappingOrg extends PluginForDecrypt {
 
                 parameter = parameter.replace("file.php?id=", "decry.php?fileid=");
                 RequestInfo request = HTTP.getRequest(new URL(parameter));
-                String link = new Regex(request.getHtmlCode(), Pattern.compile("src=\"(.*?)\"",Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String link = new Regex(request.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 progress.setRange(1);
-                decryptedLinks.add(this.createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
 
             } else {
@@ -73,8 +73,8 @@ public class GappingOrg extends PluginForDecrypt {
                 for (String link : links) {
                     RequestInfo ri = HTTP.getRequest(new URL("http://gapping.org/d/" + link));
                     String url = SimpleMatches.getSimpleMatch(ri, "<iframe height=° width=°  name=° src=\"°\" frameborder=\"0\"   />", 3);
-                    decryptedLinks.add(this.createDownloadlink(url.trim()));
-                }                
+                    decryptedLinks.add(createDownloadlink(url.trim()));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -83,42 +83,35 @@ public class GappingOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-
-    
     @Override
     public String getCoder() {
         return "jD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
 }

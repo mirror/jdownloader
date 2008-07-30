@@ -34,13 +34,13 @@ public class Wiireloaded extends PluginForDecrypt {
     static private final String host = "wii-reloaded.ath.cx";
 
     static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Wiireloaded() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         Vector<String> link_passwds = new Vector<String>();
@@ -59,7 +59,7 @@ public class Wiireloaded extends PluginForDecrypt {
                 return null;
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
-            File captchaFile = getLocalCaptchaFile(this, ".jpg");
+            File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
             boolean fileDownloaded = JDUtilities.download(captchaFile, br.openGetConnection(adr));
             progress.addToMax(1);
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
@@ -75,8 +75,8 @@ public class Wiireloaded extends PluginForDecrypt {
         }
         String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
         progress.addToMax(ids.length);
-        for (int i = 0; i < ids.length; i++) {
-            String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + ids[i][0];
+        for (String[] element : ids) {
+            String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
             String calc_page = br.getPage(u);
             String rechnung[][] = new Regex(calc_page, Pattern.compile("\\((\\w+) (\\+|\\-) (\\w+) = \\?\\)", Pattern.CASE_INSENSITIVE)).getMatches();
             Integer calc_result;
@@ -89,7 +89,7 @@ public class Wiireloaded extends PluginForDecrypt {
             form.setVariable(0, calc_result.toString());
             br.submitForm(form);
             if (br.getRedirectLocation() != null) {
-                DownloadLink link = this.createDownloadlink(br.getRedirectLocation());
+                DownloadLink link = createDownloadlink(br.getRedirectLocation());
                 link.setSourcePluginPasswords(link_passwds);
                 decryptedLinks.add(link);
             }
@@ -99,45 +99,35 @@ public class Wiireloaded extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     public int RomanToInt(String roman) {
@@ -148,28 +138,31 @@ public class Wiireloaded extends PluginForDecrypt {
         for (int i = chars.length - 1; i >= 0; i--) {
             switch (chars[i]) {
             case 'I':
-                if (lastChar == 'X' || lastChar == 'V')
+                if (lastChar == 'X' || lastChar == 'V') {
                     value -= 1;
-                else
+                } else {
                     value += 1;
+                }
                 break;
             case 'V':
                 value += 5;
                 break;
             case 'X':
-                if (lastChar == 'C' || lastChar == 'L')
+                if (lastChar == 'C' || lastChar == 'L') {
                     value -= 10;
-                else
+                } else {
                     value += 10;
+                }
                 break;
             case 'L':
                 value += 50;
                 break;
             case 'C':
-                if (lastChar == 'M' || lastChar == 'D')
+                if (lastChar == 'M' || lastChar == 'D') {
                     value -= 100;
-                else
+                } else {
                     value += 100;
+                }
                 break;
             case 'D':
                 value += 500;

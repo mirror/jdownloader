@@ -68,7 +68,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     };
 
     protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
+        DownloadLink dl = new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(link), true);
         return dl;
     }
 
@@ -104,8 +104,8 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             logger.warning(" Progress ist besetzt von " + progress);
         }
 
-        progress = new ProgressController("Decrypter: " + this.getLinkName());
-        progress.setStatusText("decrypt-" + getPluginName() + ": " + this.getLinkName());
+        progress = new ProgressController("Decrypter: " + getLinkName());
+        progress.setStatusText("decrypt-" + getPluginName() + ": " + getLinkName());
         ArrayList<DownloadLink> tmpLinks = decryptIt(cryptedLink);
         if (tmpLinks == null) {
             logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");
@@ -129,13 +129,13 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     }
 
     public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {
-        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
+        fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        for (int i = 0; i < cryptedLinks.length; i++) {
-            decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
+        for (String element : cryptedLinks) {
+            decryptedLinks.addAll(decryptLink(element));
         }
 
-        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
+        fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 
         return decryptedLinks;
     }
@@ -154,10 +154,12 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
             for (int i = hits.length - 1; i >= 0; i--) {
                 String file = hits[i];
-                while (file.charAt(0) == '"')
+                while (file.charAt(0) == '"') {
                     file = file.substring(1);
-                while (file.charAt(file.length() - 1) == '"')
+                }
+                while (file.charAt(file.length() - 1) == '"') {
                     file = file.substring(0, file.length() - 1);
+                }
                 hits[i] = file;
 
             }
@@ -185,7 +187,9 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     @Override
     public String getLinkName() {
-        if (cryptedLink == null) return "";
+        if (cryptedLink == null) {
+            return "";
+        }
         try {
             return new URL(cryptedLink).getFile();
         } catch (MalformedURLException e) {

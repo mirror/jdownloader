@@ -13,62 +13,54 @@ import jd.gui.skins.simple.config.ConfigPanelReconnect;
 import jd.utils.JDUtilities;
 import jd.wizardry7.view.DefaultWizardPage;
 
-
 public class Reconnect extends DefaultWizardPage {
-	
-	private static final Reconnect INSTANCE = new Reconnect();
-	
-	public static Reconnect getInstance() {
-		return INSTANCE;
-	}
-	
-	JCheckBox checkbox;
-	
-	private Reconnect() {
-		super();
-		setPreferredSize(new Dimension(700,800));
-	}
 
-	
-	@Override
+    private static final Reconnect INSTANCE = new Reconnect();
+
+    public static Reconnect getInstance() {
+        return INSTANCE;
+    }
+
+    JCheckBox checkbox;
+
+    private Reconnect() {
+        super();
+        setPreferredSize(new Dimension(700, 800));
+    }
+
+    @Override
     protected Component createBody() {
-		initComponents();
+        initComponents();
 
-		int n = 10;
-        JPanel panel = new JPanel(new BorderLayout(n ,n));
-        panel.setBorder(new EmptyBorder(n,n,n,n));
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
         panel.add(new ConfigPanelReconnect(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
         panel.add(checkbox, BorderLayout.SOUTH);
-        
-		return panel;
-	}
-	
-	@Override
+
+        return panel;
+    }
+
+    @Override
     public void enterWizardPageAfterForward() {
-		this.checkbox.setSelected(false);
-	}
-	
-	
-	// Validation ##########################################################
+        checkbox.setSelected(false);
+    }
 
-	@Override
+    // Validation ##########################################################
+
+    @Override
     public String forwardValidation() {
-		if (checkbox.isSelected()) {
-			checkbox.setSelected(false);
-			return "";
-		}
-		else return "To achive the full functionality of JDownloader we recommend to set up a reconnect method.";
-	}
-	
-	
-	@Override
+        if (checkbox.isSelected()) {
+            checkbox.setSelected(false);
+            return "";
+        } else {
+            return "To achive the full functionality of JDownloader we recommend to set up a reconnect method.";
+        }
+    }
+
+    @Override
     protected void initComponents() {
-		checkbox = new JCheckBox();
-		checkbox.setText(" I want to continue without setting up a Reconnect method.");
-	}
+        checkbox = new JCheckBox();
+        checkbox.setText(" I want to continue without setting up a Reconnect method.");
+    }
 }
-
-
-
-
-

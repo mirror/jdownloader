@@ -34,13 +34,13 @@ public class Xailicom extends PluginForDecrypt {
     static private String host = "xaili.com";
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Xailicom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -51,12 +51,12 @@ public class Xailicom extends PluginForDecrypt {
 
             String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + links[i]));
+            for (String element : links) {
+                reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + element));
                 String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 if (link != null) {
                     link = JDUtilities.htmlDecode(link);
-                    decryptedLinks.add(this.createDownloadlink(link));
+                    decryptedLinks.add(createDownloadlink(link));
                 }
                 progress.increase(1);
             }
@@ -67,30 +67,21 @@ public class Xailicom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
@@ -101,9 +92,9 @@ public class Xailicom extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

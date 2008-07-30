@@ -48,7 +48,7 @@ public class PixelObject implements Comparable {
      * angesehen wird
      */
     private int avgIsSaveNum = 10;
-    private boolean bordered=true;
+    private boolean bordered = true;
     public int colorpixel = 0;
 
     /**
@@ -126,12 +126,12 @@ public class PixelObject implements Comparable {
     public void add(int x, int y, int color) {
         int[] tmp = { x, y, color };
         int tmpAvg = avg;
-      
+
         avg = UTILITIES.mixColors(avg, color, getSize(), 1);
-        
+
         // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+"
         // ("+color+")");
-        if (Math.abs(avg - tmpAvg) < (owner.getMaxPixelValue() * this.contrast)) {
+        if (Math.abs(avg - tmpAvg) < owner.getMaxPixelValue() * contrast) {
             noAvgChanges++;
             if (avgIsSaveNum <= noAvgChanges && saveAvg == 0) {
                 saveAvg = avg;
@@ -170,7 +170,7 @@ public class PixelObject implements Comparable {
         int angle;
         // UTILITIES.trace(getWidthToHeight()+" : right:"+r.getWidthToHeight()+"
         // left:"+l.getWidthToHeight());
-        if (r.getWidthToHeight() >= getWidthToHeight() && l.getWidthToHeight() >= getWidthToHeight()) return this;
+        if (r.getWidthToHeight() >= getWidthToHeight() && l.getWidthToHeight() >= getWidthToHeight()) { return this; }
         int steps = r.getWidthToHeight() < l.getWidthToHeight() ? -accuracy : accuracy;
         angle = steps * 2;
         PixelObject ret = r.getWidthToHeight() < l.getWidthToHeight() ? r : l;
@@ -221,8 +221,8 @@ public class PixelObject implements Comparable {
     }
 
     public int compareTo(Object arg) {
-        if (((PixelObject) arg).getLocation()[0] < this.getLocation()[0]) return 1;
-        if (((PixelObject) arg).getLocation()[0] > this.getLocation()[0]) return -1;
+        if (((PixelObject) arg).getLocation()[0] < getLocation()[0]) { return 1; }
+        if (((PixelObject) arg).getLocation()[0] > getLocation()[0]) { return -1; }
         return 0;
     }
 
@@ -230,38 +230,41 @@ public class PixelObject implements Comparable {
         PixelObject pre = new PixelObject(owner);
         PixelObject post = new PixelObject(owner);
         PixelObject cutter = new PixelObject(owner);
-       if(x1<this.owner.owner.getJas().getInteger("minimumLetterWidth"))pre=null;
-       if(xMax-xMin-x2<this.owner.owner.getJas().getInteger("minimumLetterWidth"))post=null;
-            for (int i = 0; i < getSize(); i++) {
-                int[] akt = elementAt(i);
-                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-//                if (pre!=null&&akt[0] < xMin + x1 + overlap) {
-//                    pre.add(akt[0], akt[1], this.saveAvg);
-//                }else if(pre==null&&akt[0] < xMin + x1 + overlap){
-//                    cutter.add(akt[0], akt[1], this.saveAvg);
-//                }
-//                if (post!=null&&akt[0] > (xMin + x2) - overlap) {
-//                    post.add(akt[0], akt[1], this.saveAvg);
-//                }else if (post==null&&akt[0] > (xMin + x2) - overlap){
-//                    cutter.add(akt[0], akt[1], this.saveAvg);
-//                }
-                if (pre!=null&&akt[0] < xMin + x1) {
-                    pre.add(akt[0], akt[1], this.saveAvg);
-                }else if(pre==null&&akt[0] < xMin + x1){
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-                if (post!=null&&akt[0] > (xMin + x2)) {
-                    post.add(akt[0], akt[1], this.saveAvg);
-                }else if (post==null&&akt[0] > (xMin + x2)){
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-
+        if (x1 < owner.owner.getJas().getInteger("minimumLetterWidth")) {
+            pre = null;
+        }
+        if (xMax - xMin - x2 < owner.owner.getJas().getInteger("minimumLetterWidth")) {
+            post = null;
+        }
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            if (akt[0] >= xMin + x1 - overlap && akt[0] <= xMin + x2 + overlap) {
+                cutter.add(akt[0], akt[1], saveAvg);
+            }
+            // if (pre!=null&&akt[0] < xMin + x1 + overlap) {
+            // pre.add(akt[0], akt[1], this.saveAvg);
+            // }else if(pre==null&&akt[0] < xMin + x1 + overlap){
+            // cutter.add(akt[0], akt[1], this.saveAvg);
+            // }
+            // if (post!=null&&akt[0] > (xMin + x2) - overlap) {
+            // post.add(akt[0], akt[1], this.saveAvg);
+            // }else if (post==null&&akt[0] > (xMin + x2) - overlap){
+            // cutter.add(akt[0], akt[1], this.saveAvg);
+            // }
+            if (pre != null && akt[0] < xMin + x1) {
+                pre.add(akt[0], akt[1], saveAvg);
+            } else if (pre == null && akt[0] < xMin + x1) {
+                cutter.add(akt[0], akt[1], saveAvg);
+            }
+            if (post != null && akt[0] > xMin + x2) {
+                post.add(akt[0], akt[1], saveAvg);
+            } else if (post == null && akt[0] > xMin + x2) {
+                cutter.add(akt[0], akt[1], saveAvg);
             }
 
-      
-        return new PixelObject[] {pre, cutter, post };
+        }
+
+        return new PixelObject[] { pre, cutter, post };
     }
 
     /**
@@ -271,7 +274,9 @@ public class PixelObject implements Comparable {
      */
     public boolean doesColorAverageFit(int color) {
         if (getSize() > 50000) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
+            }
             return false;
         }
 
@@ -283,10 +288,10 @@ public class PixelObject implements Comparable {
         // this.contrast))));
 
         // Filtere zu helle Pixel aus
-        if (color > (int) (whiteContrast * owner.getMaxPixelValue())) return false;
-        if (getSize() == 0) return true;
+        if (color > (int) (whiteContrast * owner.getMaxPixelValue())) { return false; }
+        if (getSize() == 0) { return true; }
 
-        return (Math.abs(tavg - color) < (int) (owner.getMaxPixelValue() * this.contrast));
+        return Math.abs(tavg - color) < (int) (owner.getMaxPixelValue() * contrast);
 
     }
 
@@ -324,7 +329,9 @@ public class PixelObject implements Comparable {
      */
     public Vector<int[]> getBorderVector(Letter letter) {
         Vector<int[]> ret = new Vector<int[]>();
-        if (letter == null) letter = this.toLetter();
+        if (letter == null) {
+            letter = toLetter();
+        }
         int[][] grid = letter.getGrid();
 
         for (int i = 0; i < getSize(); i++) {
@@ -342,7 +349,9 @@ public class PixelObject implements Comparable {
                     }
                 }
             }
-            if (c) ret.add(akt);
+            if (c) {
+                ret.add(akt);
+            }
         }
 
         return ret;
@@ -350,14 +359,14 @@ public class PixelObject implements Comparable {
     }
 
     public int getDistanceTo(int x, int y) {
-       int mindist=Integer.MAX_VALUE;
-       
-       for(int[]akt:object){
-           int xd=Math.abs(x-akt[0]);
-           int yd=Math.abs(y-akt[1]);
-           int dis= (int)Math.sqrt(xd*xd+yd*yd);
-           mindist=Math.min(mindist, dis);
-       }
+        int mindist = Integer.MAX_VALUE;
+
+        for (int[] akt : object) {
+            int xd = Math.abs(x - akt[0]);
+            int yd = Math.abs(y - akt[1]);
+            int dis = (int) Math.sqrt(xd * xd + yd * yd);
+            mindist = Math.min(mindist, dis);
+        }
         return mindist;
     }
 
@@ -449,8 +458,8 @@ public class PixelObject implements Comparable {
     }
 
     public void setBordered(boolean b) {
-        bordered=b;
-        
+        bordered = b;
+
     }
 
     public void setColor(int pixelValue) {
@@ -473,7 +482,7 @@ public class PixelObject implements Comparable {
      * @param objectContrast
      */
     public void setWhiteContrast(double objectContrast) {
-        this.whiteContrast = objectContrast;
+        whiteContrast = objectContrast;
 
     }
 
@@ -504,8 +513,8 @@ public class PixelObject implements Comparable {
         for (int i = 0; i < getSize(); i++) {
             int[] akt = elementAt(i);
             for (int x = 0; x < splitNum; x++) {
-                if (akt[0] >= xMin + x * part - overlap && akt[0] <= (xMin + (x + 1) * part) + overlap) {
-                    ret.elementAt(x).add(akt[0], akt[1], this.saveAvg);
+                if (akt[0] >= xMin + x * part - overlap && akt[0] <= xMin + (x + 1) * part + overlap) {
+                    ret.elementAt(x).add(akt[0], akt[1], saveAvg);
 
                 }
             }
@@ -523,12 +532,14 @@ public class PixelObject implements Comparable {
             int[] akt = elementAt(i);
             boolean b = true;
             for (int x = 0; x < 2; x++) {
-                if (akt[0] >= xMin + x * position && akt[0] <= (xMin + (x + 1) * position)) {
-                    ret[x].add(akt[0], akt[1], this.saveAvg);
+                if (akt[0] >= xMin + x * position && akt[0] <= xMin + (x + 1) * position) {
+                    ret[x].add(akt[0], akt[1], saveAvg);
                     b = false;
                 }
             }
-            if (b) ret[1].add(akt[0], akt[1], this.saveAvg);
+            if (b) {
+                ret[1].add(akt[0], akt[1], saveAvg);
+            }
 
         }
         return ret;
@@ -543,7 +554,7 @@ public class PixelObject implements Comparable {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 ret[x][y] = owner.getMaxPixelValue();
-              
+
             }
         }
         for (int i = 0; i < getSize(); i++) {
@@ -553,7 +564,7 @@ public class PixelObject implements Comparable {
         }
         Letter l = owner.createLetter();
         l.setElementPixel(getSize());
-        l.setLocation(new int[] { this.getXMin(), this.getYMin() });
+        l.setLocation(new int[] { getXMin(), getYMin() });
         l.setGrid(ret);
         l.detected = detected;
         return l;
@@ -562,7 +573,7 @@ public class PixelObject implements Comparable {
 
     @Override
     public String toString() {
-        return super.toString() + " " + this.getLocation()[0];
+        return super.toString() + " " + getLocation()[0];
     }
 
     /**
@@ -580,5 +591,5 @@ public class PixelObject implements Comparable {
         }
         return po;
     }
-    
+
 }

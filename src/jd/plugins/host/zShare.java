@@ -30,37 +30,31 @@ import jd.plugins.download.RAFDownload;
 public class zShare extends PluginForHost {
     private static final String HOST = "zshare.net";
 
-   
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
 
     //
-    
+
     public zShare() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
 
         return "http://www.zshare.net/TOS.html";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -89,12 +83,6 @@ public class zShare extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -110,19 +98,17 @@ public class zShare extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -150,13 +136,11 @@ public class zShare extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub

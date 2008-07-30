@@ -2,27 +2,21 @@ package jd.plugins;
 
 import java.io.File;
 
-
 public class ContainerStatus {
 
-    public static final int STATUS_FAILED = 1<<2;
-    public static final int STATUS_FINISHED = 1<<1;
-    public static final int TODO =1<<0;
+    public static final int STATUS_FAILED = 1 << 2;
+    public static final int STATUS_FINISHED = 1 << 1;
+    public static final int TODO = 1 << 0;
     private File container;
-    private String errorMessage;
-   private int lastestStatus=  TODO;
-private int status = TODO;
-private String statusText=null;
+    private int status = TODO;
 
     public ContainerStatus() {
-       
-    }
 
+    }
 
     public ContainerStatus(File lc) {
-      this.container=lc;
+        container = lc;
     }
-
 
     /**
      * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht
@@ -32,7 +26,6 @@ private String statusText=null;
      */
     public void addStatus(int status) {
         this.status |= status;
-        this.lastestStatus=status;
 
     }
 
@@ -41,7 +34,7 @@ private String statusText=null;
     }
 
     public int getLatestStatus() {
-       
+
         return 0;
     }
 
@@ -57,10 +50,8 @@ private String statusText=null;
     }
 
     public boolean isStatus(int status) {
-      return this.status==status;
+        return this.status == status;
     }
-
- 
 
     /** Entfernt eine Statusid */
     public void removeStatus(int status) {
@@ -68,8 +59,7 @@ private String statusText=null;
     }
 
     public void setErrorMessage(String string) {
-       this.errorMessage=string;
-        
+
     }
 
     /**
@@ -80,12 +70,9 @@ private String statusText=null;
      */
     public void setStatus(int status) {
         this.status = status;
-        this.lastestStatus=status;
     }
 
-
     public void setStatusText(String l) {
-        this.statusText = l;
 
     }
 

@@ -19,38 +19,34 @@ import jd.utils.JDUtilities;
 public class Zippysharecom extends PluginForHost {
 
     private static final String HOST = "zippyshare.com";
-   
+
     static private final Pattern patternSupported = Pattern.compile("http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String url;
 
     //
-    
+
     public Zippysharecom() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.zippyshare.com/terms.html";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -79,12 +75,6 @@ public class Zippysharecom extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -100,19 +90,17 @@ public class Zippysharecom extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -147,12 +135,10 @@ public class Zippysharecom extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

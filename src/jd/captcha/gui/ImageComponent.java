@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.gui;
 
 import java.awt.Dimension;
@@ -30,47 +29,47 @@ import javax.swing.JComponent;
  */
 
 public class ImageComponent extends JComponent {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1497469256400862388L;
-	private Image image;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -1497469256400862388L;
+    private Image image;
 
-	/**
-	 * @param image
-	 */
-	public ImageComponent(Image image) {
-		this.image = image;
-		if(image!=null){
-		setPreferredSize(new Dimension(image.getWidth(null), image
-				.getHeight(null)));
-		}
-	}
+    /**
+     * @param image
+     */
+    public ImageComponent(Image image) {
+        this.image = image;
+        if (image != null) {
+            setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
+        }
+    }
 
-	/**
-	 * 
-	 * @return ImageHeight
-	 */
-	public int getImageHeight() {
-		return image.getHeight(this);
+    /**
+     * 
+     * @return ImageHeight
+     */
+    public int getImageHeight() {
+        return image.getHeight(this);
 
-	}
+    }
 
-	/**
-	 * 
-	 * @return imagewidth
-	 */
-	public int getImageWidth() {
-		return image.getWidth(this);
+    /**
+     * 
+     * @return imagewidth
+     */
+    public int getImageWidth() {
+        return image.getWidth(this);
 
-	}
+    }
 
-	/**
-	 * zeichnet Bild
-	 * @param g 
-	 */
-	@Override
+    /**
+     * zeichnet Bild
+     * 
+     * @param g
+     */
+    @Override
     public void paintComponent(Graphics g) {
-		g.drawImage(image, 0, 0, null);
-	}
+        g.drawImage(image, 0, 0, null);
+    }
 }

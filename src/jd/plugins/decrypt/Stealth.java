@@ -41,7 +41,6 @@ public class Stealth extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -71,10 +70,10 @@ public class Stealth extends PluginForDecrypt {
             String[] links = new Regex(request.getHtmlCode(), Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(links.length);
 
-            for (int j = 0; j < links.length; j++) {
-                reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + links[j]));
+            for (String element : links) {
+                reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + element));
                 String[] decLinks = new Regex(reqhelp.getHtmlCode(), Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(decLinks[1])));
+                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(decLinks[1])));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -84,44 +83,34 @@ public class Stealth extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

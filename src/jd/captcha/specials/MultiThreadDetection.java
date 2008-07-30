@@ -1,7 +1,6 @@
 package jd.captcha.specials;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -14,7 +13,7 @@ public class MultiThreadDetection {
         public Letter letter;
 
         public DetectionThread(Letter l) {
-            this.letter = l;
+            letter = l;
         }
 
         @Override
@@ -23,15 +22,16 @@ public class MultiThreadDetection {
             startDetection(this);
         }
     }
+
     private static ArrayList<Letter> DETECTION_QUEUE = new ArrayList<Letter>();
     private static ArrayList<DetectionThread> DETECTION_THREADS = new ArrayList<DetectionThread>();
+
     public static Letter[] multiCore(Letter[] org, JAntiCaptcha jac) {
-       
+
         int ths = Runtime.getRuntime().availableProcessors();
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
-  
 
-//        jac.getJas().getInteger("borderVarianceX");
+        // jac.getJas().getInteger("borderVarianceX");
 
         for (Letter l : org) {
             mtd.queueDetection(l);
@@ -39,6 +39,7 @@ public class MultiThreadDetection {
         mtd.waitFor(null);
         return org;
     }
+
     private JAntiCaptcha jac;
 
     private Logger logger = JDUtilities.getLogger();
@@ -47,7 +48,7 @@ public class MultiThreadDetection {
 
     public MultiThreadDetection(int threads, JAntiCaptcha jac) {
         logger.info("Run Detection on " + threads + " CPU Cores");
-        this.maxThreads = threads;
+        maxThreads = threads;
         this.jac = jac;
     }
 
@@ -79,27 +80,30 @@ public class MultiThreadDetection {
         DETECTION_THREADS.add(th);
 
     };
-    
-    
+
     public void waitFor(Vector<Letter> list) {
 
         while (true) {
             if (list == null) {
-                if (DETECTION_THREADS.size() == 0 && DETECTION_QUEUE.size() == 0) return;
+                if (DETECTION_THREADS.size() == 0 && DETECTION_QUEUE.size() == 0) {
+                    return;
+                }
             } else {
                 boolean found = false;
-                for (Iterator<DetectionThread> it = DETECTION_THREADS.iterator(); it.hasNext();) {
-                    if (list.contains(it.next().letter)) {
+                for (DetectionThread detectionThread : DETECTION_THREADS) {
+                    if (list.contains(detectionThread.letter)) {
                         found = true;
                         break;
                     }
                 }
-                if (!found) return;
+                if (!found) {
+                    return;
+                }
             }
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                
+
                 e.printStackTrace();
             }
         }

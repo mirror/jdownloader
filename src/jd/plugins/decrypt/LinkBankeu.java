@@ -37,14 +37,14 @@ public class LinkBankeu extends PluginForDecrypt {
     static private final String host = "LinkBank.eu";
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public LinkBankeu() {
         super();
-        this.setConfigEelements();
+        setConfigEelements();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -54,14 +54,14 @@ public class LinkBankeu extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.getRequest(url);
             String[][] links = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches();
             String[] mirrors = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches(1);
-            for (int i = 0; i < links.length; i++) {
-                url = new URL("http://www.linkbank.eu/posli.php?match=" + links[i][0] + "&id=" + links[i][1]);
+            for (String[] element : links) {
+                url = new URL("http://www.linkbank.eu/posli.php?match=" + element[0] + "&id=" + element[1]);
                 requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, cryptedLink, false);
-                decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
             }
             if (getProperties().getBooleanProperty(CHECK_MIRRORS, false) == true) {
-                for (int i = 0; i < mirrors.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(mirrors[i])));
+                for (String element : mirrors) {
+                    decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(element)));
                 }
             }
         } catch (IOException e) {
@@ -71,33 +71,26 @@ public class LinkBankeu extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-  
-
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
@@ -105,10 +98,10 @@ public class LinkBankeu extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     private void setConfigEelements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
     }

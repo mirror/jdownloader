@@ -1,7 +1,5 @@
 package jd.plugins.optional.jdchat;
 
-
-
 public class User implements Comparable<Object> {
     public static final int RANK_DEFAULT = -1;
     public static final int RANK_OP = 0;
@@ -16,21 +14,22 @@ public class User implements Comparable<Object> {
 
     public User(String name, String color) {
         if (name.startsWith("@")) {
-            this.rank = RANK_OP;
+            rank = RANK_OP;
             name = name.substring(1);
         }
         if (name.startsWith("+")) {
-            this.rank = RANK_VOICE;
+            rank = RANK_VOICE;
             name = name.substring(1);
         }
         this.name = name;
-        if (color == null) color = Utils.getRandomColor();
+        if (color == null) {
+            color = Utils.getRandomColor();
+        }
         this.color = color;
 
     }
 
     public int compareTo(Object o) {
-       
 
         return getRangName().compareTo(((User) o).getRangName());
     }
@@ -61,9 +60,8 @@ public class User implements Comparable<Object> {
     }
 
     public String getStyle() {
-       
-        
-        return "color:#"+color;
+
+        return "color:#" + color;
     }
 
     public boolean isUser(String name) {

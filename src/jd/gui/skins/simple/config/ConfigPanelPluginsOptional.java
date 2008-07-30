@@ -68,7 +68,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
         @Override
         public String getColumnName(int column) {
-            switch (column) {            
+            switch (column) {
             case 0:
                 return JDLocale.L("gui.config.plugin.optional.column_status", "Status");
             case 1:
@@ -88,7 +88,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            switch (columnIndex) {            
+            switch (columnIndex) {
             case 0:
                 return configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
             case 1:
@@ -176,15 +176,13 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         }
     }
 
-    
     public void fireTableChanged() {
         int rowIndex = table.getSelectedRow();
 
-        table.tableChanged(new TableModelEvent(this.table.getModel()));
+        table.tableChanged(new TableModelEvent(table.getModel()));
         table.getSelectionModel().addSelectionInterval(rowIndex, rowIndex);
     }
 
-    
     private String getConfigParamKey(PluginOptional pluginOptional) {
         return "OPTIONAL_PLUGIN_" + pluginOptional.getPluginName();
     }
@@ -219,8 +217,10 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     private PluginOptional getSelectedPlugin() {
         int index = getSelectedIndex();
-        if (index < 0) return null;
-        return this.plugins.elementAt(index);
+        if (index < 0) {
+            return null;
+        }
+        return plugins.elementAt(index);
     }
 
     @Override
@@ -258,10 +258,11 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         btnEdit.setEnabled(false);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if ((((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex() != -1) && (plugins.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0))
+                if (((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex() != -1 && plugins.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) {
                     btnEdit.setEnabled(true);
-                else
+                } else {
                     btnEdit.setEnabled(false);
+                }
             }
         });
 
@@ -344,9 +345,11 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
         // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-        PluginOptional plugin = this.getSelectedPlugin();
+        PluginOptional plugin = getSelectedPlugin();
         // currentPlugin = plugin;
-        if (plugin == null) return;
+        if (plugin == null) {
+            return;
+        }
 
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);

@@ -36,40 +36,38 @@ public class XPath {
     private String query;
     private String source;
     private javax.xml.xpath.XPath xpath;
-    
+
     public XPath(String source, String query) {
         this(source, query, true);
     }
-    
+
     public XPath(String source, String query, boolean transform) {
-        try  {
-            if(transform) {
+        try {
+            if (transform) {
                 cleaner = new HtmlCleaner();
                 CleanerProperties props = cleaner.getProperties();
                 props.setNamespacesAware(true);
                 doc = new DomSerializer(props, true).createDOM(cleaner.clean(source));
-            }
-            else {
+            } else {
                 DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
                 domFactory.setNamespaceAware(true);
                 DocumentBuilder builder = domFactory.newDocumentBuilder();
                 doc = builder.parse(new InputSource(new ByteArrayInputStream(source.getBytes())));
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         } catch (SAXException e) {
             e.printStackTrace();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
-        
+
         XPathFactory factory = XPathFactory.newInstance();
         xpath = factory.newXPath();
         this.source = source;
         this.query = query;
     }
-    
+
     /**
      * Gibt von einen bestimmten Treffer mit einem bestimmten Attribut zurück
      */
@@ -77,19 +75,20 @@ public class XPath {
         try {
             NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
             int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+            for (int j = 0; j < result.item(0).getAttributes().getLength(); j++) {
+                if (result.item(0).getAttributes().item(j).getNodeValue().equals(attribute)) {
                     attr = j;
+                }
             }
-            
+
             return result.item(group).getAttributes().item(attr).getNodeValue();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return "";
     }
-    
+
     /**
      * Gibt von allen Treffern ein bestimmtes Attribut zurück
      */
@@ -98,11 +97,12 @@ public class XPath {
         try {
             NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
             int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+            for (int j = 0; j < result.item(0).getAttributes().getLength(); j++) {
+                if (result.item(0).getAttributes().item(j).getNodeValue().equals(attribute)) {
                     attr = j;
+                }
             }
-            for(int i=0; i<result.getLength(); i++) {
+            for (int i = 0; i < result.getLength(); i++) {
                 erg.add(result.item(i).getAttributes().item(attr).getNodeValue());
             }
         } catch (Exception e) {
@@ -110,22 +110,22 @@ public class XPath {
         }
         return erg;
     }
-    
+
     /**
      * Gibt die Anzahl der Treffer zurück
      */
     public int getCount() {
         try {
             NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
-            
+
             return result.getLength();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return 0;
     }
-    
+
     /**
      * Gibt den ersten Treffer mit einem bestimmten Attribut zurück
      */
@@ -133,19 +133,20 @@ public class XPath {
         try {
             NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
             int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+            for (int j = 0; j < result.item(0).getAttributes().getLength(); j++) {
+                if (result.item(0).getAttributes().item(j).getNodeValue().equals(attribute)) {
                     attr = j;
+                }
             }
-            
+
             return result.item(0).getAttributes().item(attr).getNodeValue();
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         return "";
     }
-    
+
     /**
      * Gibt den ersten Treffer zurück
      */
@@ -158,7 +159,7 @@ public class XPath {
         }
         return "";
     }
-    
+
     /**
      * Gibt einen beliebigen Treffer zurück
      */
@@ -171,7 +172,7 @@ public class XPath {
         }
         return "";
     }
-    
+
     /**
      * Gibt den alle Treffer zurück
      */
@@ -179,7 +180,7 @@ public class XPath {
         ArrayList<String> erg = new ArrayList<String>();
         try {
             NodeList result = (NodeList) xpath.compile(query + "/text()").evaluate(doc, XPathConstants.NODESET);
-            for(int i=0; i<result.getLength(); i++) {
+            for (int i = 0; i < result.getLength(); i++) {
                 erg.add(result.item(i).getNodeValue());
             }
         } catch (Exception e) {
@@ -187,7 +188,7 @@ public class XPath {
         }
         return erg;
     }
-    
+
     /**
      * Gibt den Transformierten HTML Code zurück
      */
@@ -195,9 +196,8 @@ public class XPath {
         try {
             cleaner = new HtmlCleaner();
             CleanerProperties props = cleaner.getProperties();
-            return (new SimpleXmlSerializer(props).getXmlAsString(cleaner.clean(source)));
-        }
-        catch(IOException e) {
+            return new SimpleXmlSerializer(props).getXmlAsString(cleaner.clean(source));
+        } catch (IOException e) {
             e.printStackTrace();
         }
         return "";

@@ -40,13 +40,13 @@ public class Rapidlayerin extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     private String CODER = "JD-Team";
+
     // private String version = "1.0.0";
 
     public Rapidlayerin() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -66,9 +66,10 @@ public class Rapidlayerin extends PluginForDecrypt {
             String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
             if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) {
-                decryptedLinks.add(this.createDownloadlink(link));
-            } else
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
                 return null;
+            }
             Context.exit();
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -80,41 +81,34 @@ public class Rapidlayerin extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

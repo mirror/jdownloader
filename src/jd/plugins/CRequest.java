@@ -55,7 +55,7 @@ public class CRequest {
 
         @Override
         public String toString() {
-           
+
             return captchaCode.toString();
         }
     }
@@ -100,7 +100,9 @@ public class CRequest {
         String ct = con.getContentType().toLowerCase();
         if (ct != null && ct.contains("image/")) {
             ct = ct.replaceFirst("image/", "");
-            if (ct.equals("jpeg")) ct = "jpg";
+            if (ct.equals("jpeg")) {
+                ct = "jpg";
+            }
         } else {
             ct = "jpg";
         }
@@ -258,15 +260,16 @@ public class CRequest {
 
         try {
             URL mURL = new URL(url);
-            if (withHtmlCode)
+            if (withHtmlCode) {
                 setRequestInfo(HTTP.getRequest(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
-            else
+            } else {
                 setRequestInfo(HTTP.getRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), redirect));
+            }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         return this;
@@ -309,15 +312,16 @@ public class CRequest {
 
         try {
             URL mURL = new URL(url);
-            if (withHtmlCode)
+            if (withHtmlCode) {
                 setRequestInfo(HTTP.postRequest(mURL, getCookie(mURL.getHost()), urlToString(), null, parameter, redirect));
-            else
+            } else {
                 setRequestInfo(HTTP.postRequestWithoutHtmlCode(mURL, getCookie(mURL.getHost()), urlToString(), parameter, redirect));
+            }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         return this;
@@ -364,7 +368,7 @@ public class CRequest {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        this.cookie.put(host, clist);
+        cookie.put(host, clist);
         return this;
     }
 

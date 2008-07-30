@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.Color;
@@ -38,130 +37,146 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * Die Dropperklasse zeigt einen DropTarget Dialog an. Zieht man links oder text darauf, so wird das eingefügt.
+ * Die Dropperklasse zeigt einen DropTarget Dialog an. Zieht man links oder text
+ * darauf, so wird das eingefügt.
  * 
  * @author Tom
  */
-public class Dropper extends JDialog implements MouseListener, MouseMotionListener,WindowListener {
+public class Dropper extends JDialog implements MouseListener, MouseMotionListener, WindowListener {
 
     /**
      * 8764525546298642601L
      */
     private static final long serialVersionUID = 8764525546298642601L;
-    
+
     private JLabel label;
-  //  private Logger logger;
+    // private Logger logger;
     private DragNDrop target;
 
-  //  private Point point;
+    // private Point point;
     /**
-     * @param owner  Owner ist der Parent Frame
+     * @param owner
+     *            Owner ist der Parent Frame
      */
     public Dropper(JFrame owner) {
         super(owner);
         setModal(false);
         setLayout(new GridBagLayout());
-        JPanel p= new JPanel(new GridBagLayout());
+        JPanel p = new JPanel(new GridBagLayout());
         p.addMouseListener(this);
         p.addMouseMotionListener(this);
-        this.addWindowListener(this);
+        addWindowListener(this);
         target = new DragNDrop();
-       // logger= JDUtilities.getLogger();
-        label= new JLabel(JDLocale.L("gui.droptarget.label","Ziehe Links auf mich!"));
+        // logger= JDUtilities.getLogger();
+        label = new JLabel(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(p, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(p, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
         JDUtilities.addToGridBag(this, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-       // p.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
-        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        setSize(50,70);
-        this.setResizable(false);
-        this.setUndecorated(false);
-      //this.setBackground(new Color(255,255,255,100));
-      p.setBackground(new Color(255,255,255,100)); 
-        this.setTitle(JDLocale.L("gui.droptarget.title","Linksammler aktiv (D&D + Clipboard)"));
-    
-        setLocation(20,20);
-        this.setAlwaysOnTop(true);
-      
+        // p.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        setSize(50, 70);
+        setResizable(false);
+        setUndecorated(false);
+        // this.setBackground(new Color(255,255,255,100));
+        p.setBackground(new Color(255, 255, 255, 100));
+        setTitle(JDLocale.L("gui.droptarget.title", "Linksammler aktiv (D&D + Clipboard)"));
+
+        setLocation(20, 20);
+        setAlwaysOnTop(true);
+
         pack();
     }
+
     /**
      * Deligiert den UILIstener zur Targetkomponente
+     * 
      * @param listener
      */
     public void addUIListener(UIListener listener) {
         target.addUIListener(listener);
     }
+
     public void mouseClicked(MouseEvent e) {
         JDUtilities.getLogger().info("click");
-        
+
     }
-public void mouseDragged(MouseEvent e) {
-   //this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
-    
-}
-public void mouseEntered(MouseEvent e) {
-    JDUtilities.getLogger().info("enter");
-    
-}
-public void mouseExited(MouseEvent e) {
-    JDUtilities.getLogger().info("exit");
-    
-}
-public void mouseMoved(MouseEvent e) {
-    //JDUtilities.getLogger().info("move");
-    
-}
-public void mousePressed(MouseEvent e) {
-  //  this.point=e.getPoint();
-    
-}
-public void mouseReleased(MouseEvent e) {
-    JDUtilities.getLogger().info("release");
-    
-}
-/**
- * Entfernt die Targetkomponente als Listener
- * @param listener
- */
+
+    public void mouseDragged(MouseEvent e) {
+        // this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+        JDUtilities.getLogger().info("enter");
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+        JDUtilities.getLogger().info("exit");
+
+    }
+
+    public void mouseMoved(MouseEvent e) {
+        // JDUtilities.getLogger().info("move");
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+        // this.point=e.getPoint();
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+        JDUtilities.getLogger().info("release");
+
+    }
+
+    /**
+     * Entfernt die Targetkomponente als Listener
+     * 
+     * @param listener
+     */
     public void removeUIListener(UIListener listener) {
         target.removeUIListener(listener);
     }
-/**
- * Setzt den Südlichen text im Target
- * @param text
- */
-public void setText(String text){
-    label.setText(text);
-    this.pack();
-}
-public void windowActivated(WindowEvent e) {
-   
-    
-}
-public void windowClosed(WindowEvent e) {
-   
-    
-}
-public void windowClosing(WindowEvent e) {
-    this.setVisible(false);
-    
-}
-public void windowDeactivated(WindowEvent e) {
-   
-    
-}
-public void windowDeiconified(WindowEvent e) {
-   
-    
-}
-public void windowIconified(WindowEvent e) {
-   
-    
-}
-public void windowOpened(WindowEvent e) {
-   
-    
-}
+
+    /**
+     * Setzt den Südlichen text im Target
+     * 
+     * @param text
+     */
+    public void setText(String text) {
+        label.setText(text);
+        pack();
+    }
+
+    public void windowActivated(WindowEvent e) {
+
+    }
+
+    public void windowClosed(WindowEvent e) {
+
+    }
+
+    public void windowClosing(WindowEvent e) {
+        setVisible(false);
+
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+
+    }
+
+    public void windowIconified(WindowEvent e) {
+
+    }
+
+    public void windowOpened(WindowEvent e) {
+
+    }
 
 }

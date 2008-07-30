@@ -60,19 +60,21 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         try {
             list = (Vector<String>) JDUtilities.getSubConfig("GUI").getProperty(string, new Vector<String>());
         } catch (Exception e) {
-e.printStackTrace();
+            e.printStackTrace();
             list = new Vector<String>();
         }
-        this.files = list;
+        files = list;
 
-        this.setName(string);
+        setName(string);
         initGUI();
     }
 
     public ComboBrowseFile(Vector<String> files) {
 
         super();
-        if (files == null) files = new Vector<String>();
+        if (files == null) {
+            files = new Vector<String>();
+        }
         this.files = files;
         initGUI();
     }
@@ -86,12 +88,12 @@ e.printStackTrace();
             if (sel != null) {
                 newPath = new File(sel.toString());
                 setCurrentPath(newPath);
-                this.dispatchEvent(event);
+                dispatchEvent(event);
             }
         } else if (e.getSource() == btnBrowse) {
             newPath = getPath();
             setCurrentPath(newPath);
-            this.dispatchEvent(event);
+            dispatchEvent(event);
         }
 
     }
@@ -196,13 +198,15 @@ e.printStackTrace();
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) return;
+        if (currentPath == null) {
+            return;
+        }
         this.currentPath = currentPath;
         String item = currentPath.toString();
         if (!files.contains(item)) {
             files.add(0, item);
 
-            JDUtilities.getSubConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size() , 20))));
+            JDUtilities.getSubConfig("GUI").setProperty(getName(), new Vector<String>(files.subList(0, Math.min(files.size(), 20))));
             JDUtilities.getSubConfig("GUI").save();
         }
 
@@ -237,7 +241,9 @@ e.printStackTrace();
     }
 
     public void setText(String text) {
-        if (text == null) text = "";
+        if (text == null) {
+            text = "";
+        }
         setCurrentPath(new File(text));
     }
 

@@ -11,44 +11,41 @@ import javax.swing.border.EmptyBorder;
 
 import jd.wizardry7.view.DefaultWizardPage;
 
-
 public class Finished extends DefaultWizardPage {
-	
-	private static final Finished INSTANCE = new Finished();
-	
-	public static Finished getInstance() {
-		return INSTANCE;
-	}
-	
-	private JLabel label;
-	
+
+    private static final Finished INSTANCE = new Finished();
+
+    public static Finished getInstance() {
+        return INSTANCE;
+    }
+
+    private JLabel label;
+
     private Finished() {
-		super();
-		setPreferredSize(new Dimension(500,600));
-	}
+        super();
+        setPreferredSize(new Dimension(500, 600));
+    }
 
-	
-	@Override
+    @Override
     protected Component createBody() {
-		initComponents();
+        initComponents();
 
-		int n = 10;
-        JPanel panel = new JPanel(new BorderLayout(n ,n));
-        panel.setBorder(new EmptyBorder(n,n,n,n));
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
         panel.add(label, BorderLayout.NORTH);
-        
-		return panel;
-	}
-	
-	@Override
+
+        return panel;
+    }
+
+    @Override
     public void exitWizardPage() {
-	    JOptionPane.showMessageDialog(null, "You finsished the Wizard!");
-	}
-	
-	
-	@Override
+        JOptionPane.showMessageDialog(null, "You finsished the Wizard!");
+    }
+
+    @Override
     protected void initComponents() {
-	    label = new JLabel("You did it! Press the finish button to use JDownloader.");
-	}
+        label = new JLabel("You did it! Press the finish button to use JDownloader.");
+    }
 
 }

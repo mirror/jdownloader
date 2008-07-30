@@ -34,39 +34,41 @@ import jd.utils.JDUtilities;
  */
 public class UploadedTo {
 
-    private static final double FILLEDMAX               = 0.9;
+    private static final double FILLEDMAX = 0.9;
 
-    private static final double FILLEDMIN               = 0.2;
+    private static final double FILLEDMIN = 0.2;
 
-    private static Logger       logger                  = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
-    private static final int    MAXAREA                 = 1200;
+    private static final int MAXAREA = 1200;
 
     // private static final int LETTERNUM = 4;
 
-    private static final int    MAXHEIGHT               = 30;
+    private static final int MAXHEIGHT = 30;
 
-    private static final int    MAXWIDTH                = 40;
+    private static final int MAXWIDTH = 40;
 
-    private static final double MAXWIDTHTOHEIGHT        = 2;
+    private static final double MAXWIDTHTOHEIGHT = 2;
 
-    private static final int    MINAREA                 = 200;
+    private static final int MINAREA = 200;
 
-    private static final int    MINHEIGHT               = 15;
+    private static final int MINHEIGHT = 15;
 
-    private static final int    MINWIDTH                = 8;
+    private static final int MINWIDTH = 8;
 
-    private static final double MINWIDTHTOHEIGHT        = 0.2;
+    private static final double MINWIDTHTOHEIGHT = 0.2;
 
-    private static final double OBJECTCOLORCONTRAST     = 0.001;
+    private static final double OBJECTCOLORCONTRAST = 0.001;
 
     private static final double OBJECTDETECTIONCONTRAST = 1;
 
     public static Letter[] getLetters(Captcha captcha) {
 
-        Vector<PixelObject> letters = getObjects(captcha);
+        Vector<PixelObject> letters = UploadedTo.getObjects(captcha);
 
-        if (letters == null) return null;
+        if (letters == null) {
+            return null;
+        }
 
         Letter[] ret = new Letter[letters.size()];
         for (int i = 0; i < letters.size(); i++) {
@@ -101,16 +103,24 @@ public class UploadedTo {
 
         Vector<PixelObject> objects = captcha.getObjects(OBJECTCOLORCONTRAST, OBJECTDETECTIONCONTRAST);
         // if(JAntiCaptcha.isLoggerActive())logger.info(""+objects);
-        if (JAntiCaptcha.isLoggerActive()) logger.info("start");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.info("start");
+        }
         Collections.sort(objects, new Comparator<PixelObject>() {
             public int compare(PixelObject obj1, PixelObject obj2) {
 
-                if (obj1.getLocation()[0] < obj2.getLocation()[0]) return 1;
-                if (obj1.getLocation()[0] > obj2.getLocation()[0]) return -1;
+                if (obj1.getLocation()[0] < obj2.getLocation()[0]) {
+                    return 1;
+                }
+                if (obj1.getLocation()[0] > obj2.getLocation()[0]) {
+                    return -1;
+                }
                 return 0;
             }
         });
-        if (JAntiCaptcha.isLoggerActive()) logger.info("end");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.info("end");
+        }
         // if(JAntiCaptcha.isLoggerActive())logger.info(""+objects);
         Vector<PixelObject> filtered = new Vector<PixelObject>();
 
@@ -134,7 +144,7 @@ public class UploadedTo {
 
         // Kleine Objekte ausfiltern
         for (int i = objects.size() - 1; i >= 0; i--) {
-            double filled = ((double) objects.elementAt(i).getSize()) / ((double) objects.elementAt(i).getArea());
+            double filled = (double) objects.elementAt(i).getSize() / (double) objects.elementAt(i).getArea();
             if (objects.elementAt(i).getArea() < MAXAREA && objects.elementAt(i).getArea() > MINAREA) {
 
                 if (filled < FILLEDMAX && filled > FILLEDMIN) {
@@ -166,7 +176,9 @@ public class UploadedTo {
         // Sortiert die Objekte nun endlich in der richtigen Reihenfolge (von
         // link nach rechts)
 
-        if (JAntiCaptcha.isLoggerActive()) logger.finer("Found " + objects.size() + " Elements");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.finer("Found " + objects.size() + " Elements");
+        }
         return objects;
     }
 

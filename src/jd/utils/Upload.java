@@ -40,10 +40,10 @@ public class Upload {
 
             return "http://jdservice.ath.cx/tools/log.php?id=" + ri.getHtmlCode();
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         return null;
@@ -57,15 +57,17 @@ public class Upload {
             // URL("http://uploaded.to"));
             Form[] forms = Form.getForms("http://pastebin.ca/index.php");
             Form form = null;
-            for (int i = 0; i < forms.length; i++) {
+            for (Form element : forms) {
 
-                if (forms[i].vars.containsKey("content")) {
-                    form = forms[i];
+                if (element.vars.containsKey("content")) {
+                    form = element;
                     break;
                 }
             }
-            if (form == null) return null;
-            // logger.info("iiiii"+form);
+            if (form == null) {
+                return null;
+                // logger.info("iiiii"+form);
+            }
 
             form.vars.put("content", str);
             form.vars.put("description", desc);
@@ -78,7 +80,9 @@ public class Upload {
             form.action = "http://pastebin.ca/index.php";
             RequestInfo ri = form.getRequestInfo();
             //
-            if (!ri.containsHTML("Ihr Paste wurde angenommen")) return null;
+            if (!ri.containsHTML("Ihr Paste wurde angenommen")) {
+                return null;
+            }
 
             String ret = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "Die URL lautet:</p><p><a href=\"/°\">http://pastebin", 0);
 
@@ -137,7 +141,6 @@ public class Upload {
     public static String toRapidshareComPremium(File file, String userid, String pass) {
         try {
             Browser br = new Browser();
-    
 
             String[] data = br.getPage("http://rapidshare.com/cgi-bin/upload.cgi?intsysdata=1").split("\\,");
             HTTPPost up = new HTTPPost("http://rs" + data[0].trim() + "cg.rapidshare.com/cgi-bin/upload.cgi", true);
@@ -153,7 +156,6 @@ public class Upload {
             up.close();
             String code = up.getRequestInfo().getHtmlCode();
 
-          
             String[] lines = Regex.getLines(code);
 
             return lines[1];
@@ -211,12 +213,13 @@ public class Upload {
                 return null;
             }
         } catch (Exception e) {
-            
+
             e.printStackTrace();
         }
 
         return null;
     }
+
     /*
      * public static boolean uploadToCollector(Plugin plugin, File Captcha) {
      * JDUtilities.getLogger().info("File:"+Captcha); if (
@@ -244,9 +247,8 @@ public class Upload {
      * requestInfo.getForm(); form.fileToPost=Captcha; try {
      * if(form.getRequestInfo().getHtmlCode().contains("true")) return true; }
      * catch (Exception e) { // TODO: handle exception } } catch
-     * (MalformedURLException e1) { 
-     * e1.printStackTrace(); } catch (IOException e1) { // TODO Auto-generated
-     * catch block e1.printStackTrace(); }
+     * (MalformedURLException e1) { e1.printStackTrace(); } catch (IOException
+     * e1) { // TODO Auto-generated catch block e1.printStackTrace(); }
      * 
      * return false; } public static boolean sendToCaptchaExchangeServer(Plugin
      * plugin, String PixelString, String Character) { // if

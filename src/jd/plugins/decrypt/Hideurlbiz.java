@@ -34,13 +34,13 @@ public class Hideurlbiz extends PluginForDecrypt {
     static private final String host = "hideurl.biz";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hideurl\\.biz/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Hideurlbiz() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -49,15 +49,17 @@ public class Hideurlbiz extends PluginForDecrypt {
             URL url = new URL(cryptedLink);
             RequestInfo requestInfo = HTTP.getRequest(url);
             String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value=\"(Download|Free Download)\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            for (int i = 0; i < links.length; i++) {
-                requestInfo = HTTP.getRequest(new URL(links[i][1]));
+            for (String[] element : links) {
+                requestInfo = HTTP.getRequest(new URL(element[1]));
                 if (requestInfo.getLocation() != null) {
                     /* direkt aus dem locationheader */
-                    decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                    decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
                 } else {
                     /* aus dem htmlcode den link finden */
                     String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    if (link != null) decryptedLinks.add(this.createDownloadlink(link));
+                    if (link != null) {
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
                 }
             }
         } catch (MalformedURLException e) {
@@ -70,41 +72,34 @@ public class Hideurlbiz extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

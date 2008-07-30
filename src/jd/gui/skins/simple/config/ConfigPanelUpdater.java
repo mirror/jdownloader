@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -29,71 +28,67 @@ import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
- *
+ * 
  */
-public class ConfigPanelUpdater extends ConfigPanel{
+public class ConfigPanelUpdater extends ConfigPanel {
 
-
-
-/**
+    /**
      * 
      */
     private static final long serialVersionUID = 4145243293360008779L;
-private SubConfiguration config;
-private Configuration configuration;
-   
-    
-    
-  
-    
-public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface){
+    private SubConfiguration config;
+    private Configuration configuration;
+
+    public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-      this.configuration=configuration;
+        this.configuration = configuration;
         initPanel();
 
         load();
-    
+
     }
+
     @Override
     public String getName() {
-        
-        return JDLocale.L("gui.config.webupdate.name","Webupdate");
+
+        return JDLocale.L("gui.config.webupdate.name", "Webupdate");
     }
-   
 
     @Override
     public void initPanel() {
-       
-       config = JDUtilities.getSubConfig("WEBUPDATE");
+
+        config = JDUtilities.getSubConfig("WEBUPDATE");
         GUIConfigEntry ce;
-//      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, JDLocale.L("gui.config.general.webupdate.osFilter", "Webupdate: Alle Erweiterungen aktualisieren (auch OS-fremde)")).setDefaultValue(false).setExpertEntry(true));
-//      addGUIConfigEntry(ce);
-       ConfigEntry conditionEntry;
-        ce = new GUIConfigEntry(conditionEntry=new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false));
+        // ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS,
+        // JDLocale.L("gui.config.general.webupdate.osFilter", "Webupdate: Alle
+        // Erweiterungen aktualisieren (auch
+        // OS-fremde)")).setDefaultValue(false).setExpertEntry(true));
+        // addGUIConfigEntry(ce);
+        ConfigEntry conditionEntry;
+        ce = new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false));
         addGUIConfigEntry(ce);
-        
-      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false));
-      addGUIConfigEntry(ce);
-        
-      ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.beta", "Auf Betaversion aktualisieren(Neustart nötig)")).setDefaultValue(false));
-      addGUIConfigEntry(ce);  
-        
-        
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false));
+        addGUIConfigEntry(ce);
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.beta", "Auf Betaversion aktualisieren(Neustart nötig)")).setDefaultValue(false));
+        addGUIConfigEntry(ce);
+
         add(panel, BorderLayout.NORTH);
     }
-    
+
     @Override
     public void load() {
-  this.loadConfigEntries();
-        
+        loadConfigEntries();
+
     }
-    
-    
+
     @Override
-    public void save(){
+    public void save() {
         logger.info("save");
-        this.saveConfigEntries();
+        saveConfigEntries();
         config.save();
-     }
-    
+    }
+
 }

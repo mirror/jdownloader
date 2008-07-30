@@ -1,6 +1,5 @@
 package jd.utils;
 
-
 public class OSDetector {
 
     private static byte OS_ID = -1;
@@ -14,7 +13,7 @@ public class OSDetector {
 
     private static void getOS() {
         String OS = System.getProperty("os.name").toLowerCase();
-        if ((OS.indexOf("windows xp") > -1)) {
+        if (OS.indexOf("windows xp") > -1) {
             OS_ID = OS_WINDOWS_XP;
         } else if (OS.indexOf("windows vista") > -1) {
             OS_ID = OS_WINDOWS_VISTA;
@@ -36,14 +35,14 @@ public class OSDetector {
 
     public static byte getOSID() {
         if (OS_ID < 0) {
-            getOS();
+            OSDetector.getOS();
         }
         return OS_ID;
 
     }
 
     public static boolean isLinux() {
-        byte id = getOSID();
+        byte id = OSDetector.getOSID();
         switch (id) {
         case OS_LINUX_OTHER:
 
@@ -54,7 +53,7 @@ public class OSDetector {
     }
 
     public static boolean isMac() {
-        byte id = getOSID();
+        byte id = OSDetector.getOSID();
         switch (id) {
         case OS_MAC_OTHER:
 
@@ -65,7 +64,7 @@ public class OSDetector {
     }
 
     public static boolean isWindows() {
-        byte id = getOSID();
+        byte id = OSDetector.getOSID();
         switch (id) {
         case OS_WINDOWS_XP:
         case OS_WINDOWS_VISTA:

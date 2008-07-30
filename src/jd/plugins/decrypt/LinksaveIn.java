@@ -29,7 +29,6 @@ import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-
 public class LinksaveIn extends PluginForDecrypt {
 
     static private final String HOST = "Linksave.in";
@@ -41,70 +40,62 @@ public class LinksaveIn extends PluginForDecrypt {
     // private String version = "1.0.0";
 
     public LinksaveIn() {
-        super();        
+        super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = parameter;        
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            URL url;
-            try {
-                if (cryptedLink.matches(patternSupported.pattern())) {
-                    cryptedLink = cryptedLink + ".dlc";
-                    url = new URL(cryptedLink);
-                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                    HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-                    dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
-                    JDUtilities.download(container, dlc_con);
-                    JDUtilities.getController().loadContainerFile(container);
-                }
-            } catch (MalformedURLException e) {                
-                e.printStackTrace();
-                return null;
-            } catch (IOException e) {                
-                e.printStackTrace();
-                return null;
-            }       
+        String cryptedLink = parameter;
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        URL url;
+        try {
+            if (cryptedLink.matches(patternSupported.pattern())) {
+                cryptedLink = cryptedLink + ".dlc";
+                url = new URL(cryptedLink);
+                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+                dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
+                JDUtilities.download(container, dlc_con);
+                JDUtilities.getController().loadContainerFile(container);
+            }
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

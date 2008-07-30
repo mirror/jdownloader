@@ -35,13 +35,13 @@ import jd.utils.JDUtilities;
 public class ShareOnAll extends PluginForDecrypt {
     final static String host = "shareonall.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public ShareOnAll() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -82,8 +82,8 @@ public class ShareOnAll extends PluginForDecrypt {
                 // Links herausfiltern
                 String links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
                 progress.setRange(links.length);
-                for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                for (String[] element : links) {
+                    decryptedLinks.add(createDownloadlink(element[0]));
                     progress.increase(1);
                 }
             }
@@ -94,44 +94,34 @@ public class ShareOnAll extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-       
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

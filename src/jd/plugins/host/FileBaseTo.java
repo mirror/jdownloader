@@ -36,39 +36,34 @@ public class FileBaseTo extends PluginForHost {
 
     private static final String HOST = "filebase.to";
 
-   
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
 
     //
-    
+
     public FileBaseTo() {
         super();
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://filebase.to/tos/";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
@@ -91,12 +86,6 @@ public class FileBaseTo extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -107,14 +96,13 @@ public class FileBaseTo extends PluginForHost {
         return Integer.MAX_VALUE;
     }
 
-     @Override
+    @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     private int getSize(String size) {
-        if (size == null) return 0;
+        if (size == null) { return 0; }
         String[] help = size.split(" ");
         int loops = 0;
         Double s = Double.parseDouble(help[0]);
@@ -144,51 +132,49 @@ public class FileBaseTo extends PluginForHost {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
-    public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
-    
-            if (!getFileInformation(downloadLink)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                //step.setStatus(PluginStep.STATUS_ERROR);
-                return;
-            }
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            /* Postdaten zusammenbaun */
-            String linkurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<form name=\"waitform\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            String submit_wait_value = new Regex(requestInfo.getHtmlCode(), Pattern.compile("wait.value = \"Download (.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-            String postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
-            postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
-            postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
-            postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
-            postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
 
-            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            String filename = getFileNameFormHeader(urlConnection);
-            downloadLink.setName(filename);
-            final long length = downloadLink.getDownloadMax();
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setFilesize(length);
-            dl.setResume(false);
-            dl.setChunkNum(1);
-           dl.startDownload();
+        /* Postdaten zusammenbaun */
+        String linkurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<form name=\"waitform\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String submit_wait_value = new Regex(requestInfo.getHtmlCode(), Pattern.compile("wait.value = \"Download (.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
+        String postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
+        postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
+        postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
+        postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
+        postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
+
+        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
+        HTTPConnection urlConnection = requestInfo.getConnection();
+        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        String filename = getFileNameFormHeader(urlConnection);
+        downloadLink.setName(filename);
+        final long length = downloadLink.getDownloadMax();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesize(length);
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

@@ -34,15 +34,15 @@ public class EinsKhDe extends PluginForDecrypt {
     static private String host = "1kh.de";
     final static private Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
     final static private Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?1kh\\.de/f/[0-9/]+", Pattern.CASE_INSENSITIVE);
-   
+
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public EinsKhDe() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -55,9 +55,10 @@ public class EinsKhDe extends PluginForDecrypt {
                 /* eine einzelne Datei */
                 String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
                 if (link != null) {
-                    decryptedLinks.add(this.createDownloadlink(link));
-                } else
+                    decryptedLinks.add(createDownloadlink(link));
+                } else {
                     return null;
+                }
             } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                 /* ein Folder */
                 if (reqinfo.containsHTML("Der Ordner ist Passwortgesch&uuml;tzt.")) {
@@ -69,13 +70,15 @@ public class EinsKhDe extends PluginForDecrypt {
                             return null;
                         }
                         reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
-                        if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) break;
+                        if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) {
+                            break;
+                        }
                     }
                 }
                 String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
                 progress.setRange(links.length);
-                for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink("http://1kh.de/" + links[i]));
+                for (String element : links) {
+                    decryptedLinks.add(createDownloadlink("http://1kh.de/" + element));
                     progress.increase(1);
                 }
             }
@@ -86,27 +89,21 @@ public class EinsKhDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
@@ -117,9 +114,9 @@ public class EinsKhDe extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

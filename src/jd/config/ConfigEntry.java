@@ -47,7 +47,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     private PropertyChangeListener guiListener;
     private String instantHelp;
 
-    private String label;    
+    private String label;
 
     private Object[] list;
 
@@ -89,13 +89,13 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
         this.type = type;
         this.label = label;
-        this.actionListener = listener;
+        actionListener = listener;
         enabled = true;
     }
 
     public ConfigEntry(int type, ConfigContainer premiumConfig) {
         this.type = type;
-        this.container = premiumConfig;
+        container = premiumConfig;
         enabled = true;
     }
 
@@ -195,14 +195,14 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public ConfigEntry(int type, String label, String link) {
         this.type = type;
-        this.propertyName = link;
+        propertyName = link;
         this.label = label;
         enabled = true;
     }
 
     private void addConditionListener(ConfigEntry configEntry) {
         if (configEntry != null) {
-            this.listener.add(configEntry);
+            listener.add(configEntry);
 
         }
 
@@ -210,7 +210,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     public void addListener(ConfigEntry configEntry) {
         if (configEntry != null) {
-            this.listener.add(configEntry);
+            listener.add(configEntry);
 
         }
 
@@ -380,7 +380,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     public ConfigEntry setEnabled(boolean value) {
-        this.enabled = value;
+        enabled = value;
         return this;
     }
 
@@ -398,12 +398,14 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     public void setGuiListener(PropertyChangeListener gce) {
-        if (guiListener == null) this.guiListener = gce;
+        if (guiListener == null) {
+            guiListener = gce;
+        }
 
     }
 
     public ConfigEntry setInstantHelp(String l) {
-        this.instantHelp = l;
+        instantHelp = l;
         return this;
 
     }
@@ -457,7 +459,9 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         ConfigEntry next;
         for (Iterator<ConfigEntry> it = listener.iterator(); it.hasNext();) {
             next = it.next();
-            if (next.getGuiListener() != null) next.getGuiListener().propertyChange(new PropertyChangeEvent(this, this.getPropertyName(), null, newValue));
+            if (next.getGuiListener() != null) {
+                next.getGuiListener().propertyChange(new PropertyChangeEvent(this, getPropertyName(), null, newValue));
+            }
         }
     }
 

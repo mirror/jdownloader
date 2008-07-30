@@ -37,8 +37,6 @@ public class ArchivTo extends PluginForHost {
 
     static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
 
-   
-
     static private final String FILESIZE = "<td width=\".*\">: ([0-9]+) Byte";
 
     private static final String HOST = "archiv.to";
@@ -46,31 +44,27 @@ public class ArchivTo extends PluginForHost {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 
     //
-    
+
     public ArchivTo() {
         super();
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
         return "http://archiv.to/?Module=Policy";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -80,8 +74,9 @@ public class ArchivTo extends PluginForHost {
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
                 downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
-            } else
+            } else {
                 return false;
+            }
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -89,12 +84,6 @@ public class ArchivTo extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -110,19 +99,17 @@ public class ArchivTo extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
@@ -156,12 +143,10 @@ public class ArchivTo extends PluginForHost {
         return;
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

@@ -2,7 +2,6 @@ package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.util.Iterator;
 import java.util.Vector;
 
 import javax.swing.JScrollPane;
@@ -22,25 +21,26 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
-        this.setVisible(false);
+        setVisible(false);
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
         this.add(scrollPane);
     }
 
-    
     @Override
     public void fireTableChanged(int id, Object param) {
-        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
+        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) {
+            setVisible(false);
+        }
         internalTreeTable.fireTableChanged(id, param);
-        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !this.isVisible()) {
+        if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED && !isVisible()) {
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            this.setVisible(true);
+            setVisible(true);
         }
     }
 
@@ -51,8 +51,9 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     public void removeSelectedLinks() {
         Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
-        for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();)
-            links.addAll(it.next().getDownloadLinks());
+        for (FilePackage filePackage : fps) {
+            links.addAll(filePackage.getDownloadLinks());
+        }
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
     }

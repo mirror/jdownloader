@@ -35,13 +35,13 @@ public class DreiDlAm extends PluginForDecrypt {
 
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.6.1";
 
     public DreiDlAm() {
         super();
     }
 
-    
     private String decryptFromDownload(String parameter) {
         String link = new String();
 
@@ -57,7 +57,9 @@ public class DreiDlAm extends PluginForDecrypt {
 
                 String password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
 
-                if (!password.contains("kein") && !password.contains("kein P")) default_password.add(password);
+                if (!password.contains("kein") && !password.contains("kein P")) {
+                    default_password.add(password);
+                }
 
             }
         } catch (IOException e) {
@@ -67,7 +69,6 @@ public class DreiDlAm extends PluginForDecrypt {
         return link;
     }
 
-    
     private String decryptFromLink(String parameter) {
         String link = new String();
         try {
@@ -81,9 +82,6 @@ public class DreiDlAm extends PluginForDecrypt {
         return link;
     }
 
-  
-
-    
     private ArrayList<String> decryptFromStart(String parameter) {
         ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
         ArrayList<String> linksReturn = new ArrayList<String>();
@@ -101,7 +99,6 @@ public class DreiDlAm extends PluginForDecrypt {
         return linksReturn;
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -114,12 +111,12 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link = decryptFromLink(links.get(i));
-                decryptedLinks.add(this.createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link));
             }
         } else if (parameter.indexOf("3dl.am/link/") != -1) {
             progress.setRange(1);
             String link = decryptFromLink(parameter);
-            decryptedLinks.add(this.createDownloadlink(link));
+            decryptedLinks.add(createDownloadlink(link));
             progress.increase(1);
         } else if (parameter.indexOf("3dl.am/download/") != -1) {
             String link1 = decryptFromDownload(parameter);
@@ -129,25 +126,22 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link2 = decryptFromLink(links.get(i));
-                decryptedLinks.add(this.createDownloadlink(link2));
+                decryptedLinks.add(createDownloadlink(link2));
             }
         }
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "jD-Team|b0ffed";
     }
 
-    
     @Override
     public String getHost() {
         return host;
@@ -165,6 +159,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

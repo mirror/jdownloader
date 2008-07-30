@@ -37,12 +37,12 @@ import jd.utils.JDUtilities;
 public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener {
 
     private static final int ACTION_ADD = 4;
-	private static final int ACTION_CONFIG = 6;
-    private static final int ACTION_EXIT = 11; 
+    private static final int ACTION_CONFIG = 6;
+    private static final int ACTION_EXIT = 11;
     private static final int ACTION_LOAD = 0;
     private static final int ACTION_LOG = 7;
     private static final int ACTION_PAUSE = 3;
-private static final int ACTION_RECONNECT = 8;
+    private static final int ACTION_RECONNECT = 8;
     private static final int ACTION_START = 1;
     private static final int ACTION_STOP = 2;
     private static final int ACTION_TOGGLE_CLIPBOARD = 9;
@@ -56,21 +56,21 @@ private static final int ACTION_RECONNECT = 8;
     private static final Color HIGHLIGHT_COLOR = Color.BLUE;
     private static final Insets INSETS = new Insets(1, 1, 1, 1);
     private static final int MARGIN = 2;
-    //    private static final int FILL_BOTH = GridBagConstraints.BOTH;
+    // private static final int FILL_BOTH = GridBagConstraints.BOTH;
     private static final int MENUENTRY_HEIGHT = 16;
-    private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT+12;
+    private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT + 12;
     private static final int MENUENTRY_LABEL_WIDTH = 220;
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private JPanel bottomPanel;
     private boolean enteredPopup;
     private ArrayList<Integer> entries = new ArrayList<Integer>();
     private JPanel leftPanel;
-    //    private JDLightTray owner;
+    // private JDLightTray owner;
     private int midPanelCounter = 0;
-private int mouseOverRow;
+    private int mouseOverRow;
     private Point point;
     private JPanel rightPanel;
     private JSpinner spMax;
@@ -78,7 +78,7 @@ private int mouseOverRow;
     private JPanel topPanel;
 
     TrayIconPopup(JDLightTray tracIcon) {
-//        this.owner = tracIcon;
+        // this.owner = tracIcon;
         setLayout(new GridBagLayout());
         addMouseMotionListener(this);
         addMouseListener(this);
@@ -102,7 +102,9 @@ private int mouseOverRow;
             addDisabledMenuEntry(JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
 
         }
-        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) addMenuEntry(ACTION_PAUSE, JDTheme.II("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
+        if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+            addMenuEntry(ACTION_PAUSE, JDTheme.II("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
+        }
         addMenuEntry(ACTION_ADD, JDTheme.II("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
 
         addMenuEntry(ACTION_UPDATE, JDTheme.II("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
@@ -130,7 +132,7 @@ private int mouseOverRow;
 
         JDUtilities.addToGridBag(rightPanel, b = new JLabel(l), 0, midPanelCounter, 1, 1, 0, 1, new Insets(1, 4, 1, 1), FILL_NONE, ANCHOR_NORTH_WEST);
         entries.add(null);
-        this.midPanelCounter++;
+        midPanelCounter++;
         b.setHorizontalAlignment(SwingConstants.LEFT);
 
         b.setOpaque(false);
@@ -151,7 +153,7 @@ private int mouseOverRow;
 
         JDUtilities.addToGridBag(rightPanel, b = new JLabel(l), 0, midPanelCounter, 1, 1, 0, 1, new Insets(1, 4, 1, 1), FILL_NONE, ANCHOR_NORTH_WEST);
         entries.add(id);
-        this.midPanelCounter++;
+        midPanelCounter++;
         b.setHorizontalAlignment(SwingConstants.LEFT);
 
         b.setOpaque(false);
@@ -162,7 +164,7 @@ private int mouseOverRow;
     }
 
     private boolean checkUpdate(Point p) {
-        if (this.mouseOverRow != getRow(p)) {
+        if (mouseOverRow != getRow(p)) {
             mouseOverRow = getRow(p);
             paint();
             return true;
@@ -172,19 +174,21 @@ private int mouseOverRow;
     }
 
     private ImageIcon getClipBoardImage() {
-        if (ClipboardHandler.getClipboard().isEnabled())
+        if (ClipboardHandler.getClipboard().isEnabled()) {
             return JDTheme.II("gui.images.clipboardon");
-        else
+        } else {
             return JDTheme.II("gui.images.clipboardoff");
+        }
 
     }
 
     private ImageIcon getReconnectImage() {
 
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false))
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             return JDTheme.II("gui.images.reconnect_ok");
-        else
+        } else {
             return JDTheme.II("gui.images.reconnect_bad");
+        }
 
     }
 
@@ -192,7 +196,7 @@ private int mouseOverRow;
         int y = e.y;
         y -= rightPanel.getY();
         if (y < 0) { return -1; }
-        y /= (rightPanel.getHeight() / midPanelCounter);
+        y /= rightPanel.getHeight() / midPanelCounter;
 
         return y;
 
@@ -259,26 +263,23 @@ private int mouseOverRow;
     }
 
     public void mouseClicked(MouseEvent e) {
-       
 
     }
 
-  
-
     public void mouseDragged(MouseEvent e) {
-        this.point = e.getPoint();
+        point = e.getPoint();
         checkUpdate(point);
 
     }
 
     public void mouseEntered(MouseEvent e) {
-        this.enteredPopup = true;
+        enteredPopup = true;
 
     }
 
     public void mouseExited(MouseEvent e) {
         if (e.getSource() == this && enteredPopup && !this.contains(e.getPoint())) {
-          
+
             dispose();
 
         }
@@ -286,21 +287,23 @@ private int mouseOverRow;
     }
 
     public void mouseMoved(MouseEvent e) {
-        this.point = e.getPoint();
+        point = e.getPoint();
         checkUpdate(point);
 
     }
 
     public void mousePressed(MouseEvent e) {
-        this.point = e.getPoint();
+        point = e.getPoint();
         checkUpdate(point);
 
     }
 
     public void mouseReleased(MouseEvent e) {
-        this.point = e.getPoint();
+        point = e.getPoint();
         checkUpdate(point);
-        if (mouseOverRow < 0 || entries.get(mouseOverRow) != null) onAction(mouseOverRow);
+        if (mouseOverRow < 0 || entries.get(mouseOverRow) != null) {
+            onAction(mouseOverRow);
+        }
     }
 
     private void onAction(int row) {
@@ -339,7 +342,7 @@ private int mouseOverRow;
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,  JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
 
             JDUtilities.saveConfig();
             break;
@@ -355,7 +358,7 @@ private int mouseOverRow;
     }
 
     private void paint() {
-        Graphics g = this.getContentPane().getParent().getGraphics();
+        Graphics g = getContentPane().getParent().getGraphics();
         getContentPane().setBackground(BACKGROUNDCOLOR);
         Point p = rightPanel.getLocation();
 
@@ -364,7 +367,7 @@ private int mouseOverRow;
         for (int i = 0; i < midPanelCounter; i++) {
             y = i * (rightPanel.getHeight() / midPanelCounter) + p.y;
 
-            if (mouseOverRow >= 0 && point.y >= y && point.y < ((i + 1) * (rightPanel.getHeight() / midPanelCounter) + p.y)) {
+            if (mouseOverRow >= 0 && point.y >= y && point.y < (i + 1) * (rightPanel.getHeight() / midPanelCounter) + p.y) {
                 if (entries.get(mouseOverRow) != null) {
                     g.setColor(HIGHLIGHT_COLOR);
                 } else {
@@ -374,7 +377,7 @@ private int mouseOverRow;
             } else {
                 g.setColor(BACKGROUNDCOLOR);
             }
-            g.drawRect(2, y, getWidth() - 4, (rightPanel.getHeight() / midPanelCounter) - 1);
+            g.drawRect(2, y, getWidth() - 4, rightPanel.getHeight() / midPanelCounter - 1);
             // if (i % 2 == 0) {
             // g.setColor(Color.RED);
             // } else {
@@ -397,7 +400,7 @@ private int mouseOverRow;
             }
 
         }
-        if (e.getSource() == this.spMaxDls) {
+        if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
 
             if (max != value) {
@@ -406,7 +409,6 @@ private int mouseOverRow;
             }
 
         }
-   
 
     }
 

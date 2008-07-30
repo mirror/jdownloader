@@ -14,28 +14,27 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.event;
 
 import java.awt.AWTEvent;
 
 import jd.gui.UIInterface;
 
-public class UIEvent extends AWTEvent{
-    
+public class UIEvent extends AWTEvent {
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = -5178146758475854235L;
-    
+
     /**
      * DragAndDrop Event
      */
-    public static final int UI_DRAG_AND_DROP      = 12;
+    public static final int UI_DRAG_AND_DROP = 12;
     /**
      * Die Anwendung soll geschlossen werden
      */
-    public static final int UI_EXIT               = 11;
+    public static final int UI_EXIT = 11;
     /**
      * Ein Reconnect soll gemacht werden
      */
@@ -43,66 +42,72 @@ public class UIEvent extends AWTEvent{
     /**
      * Die Konfiguration soll gespeichtert werden
      */
-    //public static final int UI_SAVE_CONFIG        = 7;
+    // public static final int UI_SAVE_CONFIG = 7;
     /**
      * Ein Update soll durchgeführt werden
      */
-    public static final int UI_INTERACT_UPDATE    = 9;
+    public static final int UI_INTERACT_UPDATE = 9;
     /**
      * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
      */
-    public static final int UI_LINKS_TO_PROCESS   = 6;
+    public static final int UI_LINKS_TO_PROCESS = 6;
     /**
      * Alle Links sollen geladen werden
      */
-    public static final int UI_LOAD_LINKS         = 4;
+    public static final int UI_LOAD_LINKS = 4;
     /**
      * Der Linkgrabber hat Links zurückgegeben
      */
-    public static final int UI_PACKAGE_GRABBED      = 14;
+    public static final int UI_PACKAGE_GRABBED = 14;
     /**
      * Eine Containerdatei soll geladen werden
      */
-  //  public static final int UI_LOAD_CONTAINER     = 15;
-
+    // public static final int UI_LOAD_CONTAINER = 15;
     public static final int UI_PAUSE_DOWNLOADS = 16;
     /**
      * Alle Links sollen gespeichert werden
      */
-    public static final int UI_SAVE_LINKS         = 5;
+    public static final int UI_SAVE_LINKS = 5;
     /**
      * Der Download sol gestartet werden
      */
-    public static final int UI_START_DOWNLOADS    = 2;
+    public static final int UI_START_DOWNLOADS = 2;
     /**
      * Der Download soll angehalten werden
      */
-    public static final int UI_STOP_DOWNLOADS     = 3;
+    public static final int UI_STOP_DOWNLOADS = 3;
     /**
      * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
      */
-    public static final int UI_UPDATED_LINKLIST      = 1;
+    public static final int UI_UPDATED_LINKLIST = 1;
     private int actionID;
 
     private Object parameter;
     private UIInterface uiInterface;
 
-    
-    public UIEvent(Object uiInterface, int actionID, Object parameter){
+    public UIEvent(Object uiInterface, int actionID, Object parameter) {
         super(uiInterface, actionID);
-        if(uiInterface instanceof UIInterface){
-        this.uiInterface = (UIInterface)uiInterface;
+        if (uiInterface instanceof UIInterface) {
+            this.uiInterface = (UIInterface) uiInterface;
         }
         this.actionID = actionID;
         this.parameter = parameter;
     }
-    
-    public UIEvent(UIInterface uiInterface, int actionID){
-        this(uiInterface,actionID,null);
+
+    public UIEvent(UIInterface uiInterface, int actionID) {
+        this(uiInterface, actionID, null);
     }
 
-    public int getActionID()            { return actionID;    }
-    public Object getParameter()        { return parameter;   }
-    public UIInterface getUiInterface() { return uiInterface; }
-    
+    public int getActionID() {
+        return actionID;
+    }
+
+    public Object getParameter() {
+        return parameter;
+    }
+
+    public UIInterface getUiInterface() {
+        return uiInterface;
+    }
+
 }

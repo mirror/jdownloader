@@ -48,7 +48,6 @@ public class ResetLink extends Interaction implements Serializable {
     public ResetLink() {
     }
 
-    
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Rest Link");
@@ -85,12 +84,10 @@ public class ResetLink extends Interaction implements Serializable {
 
     }
 
-    
     @Override
     public void resetInteraction() {
     }
 
-    
     /**
      * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
      */
@@ -98,7 +95,6 @@ public class ResetLink extends Interaction implements Serializable {
     public void run() {
     }
 
-    
     @Override
     public String toString() {
         return NAME;

@@ -38,8 +38,8 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    private static HashMap<Class,Integer>HOSTER_WAIT_TIMES = new HashMap<Class,Integer>();
-    private static HashMap<Class,Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class,Long>();
+    private static HashMap<Class, Integer> HOSTER_WAIT_TIMES = new HashMap<Class, Integer>();
+    private static HashMap<Class, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class, Long>();
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     // public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
     // private static long END_OF_DOWNLOAD_LIMIT = 0;
@@ -56,9 +56,9 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public void clean() {
-        this.requestInfo = null;
-        this.request = null;
-        this.dl = null;
+        requestInfo = null;
+        request = null;
+        dl = null;
 
         super.clean();
     }
@@ -140,13 +140,13 @@ public abstract class PluginForHost extends Plugin {
         String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
         if (hits != null && hits.length > 0) {
             links = new Vector<DownloadLink>();
-            for (int i = 0; i < hits.length; i++) {
-                String file = hits[i];
-
-                while (file.charAt(0) == '"')
+            for (String file : hits) {
+                while (file.charAt(0) == '"') {
                     file = file.substring(1);
-                while (file.charAt(file.length() - 1) == '"')
+                }
+                while (file.charAt(file.length() - 1) == '"') {
                     file = file.substring(0, file.length() - 1);
+                }
 
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
@@ -155,7 +155,9 @@ public abstract class PluginForHost extends Plugin {
 
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
-                    if (fp != null) link.setFilePackage(fp);
+                    if (fp != null) {
+                        link.setFilePackage(fp);
+                    }
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
@@ -205,7 +207,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Wird nicht gebraucht muss aber implementiert werden.
      */
-    
+
     @Override
     public String getLinkName() {
 
@@ -323,8 +325,8 @@ public abstract class PluginForHost extends Plugin {
 
     public int getRemainingHosterWaittime() {
         // TODO Auto-generated method stub
-        if(!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass()))return 0;
-        return Math.max(0,(int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
+        if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) { return 0; }
+        return Math.max(0, (int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
 
     public int getRetryCount() {
@@ -334,8 +336,8 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handle(DownloadLink link) throws Exception;
 
     public boolean isAGBChecked() {
-        if (!this.getProperties().hasProperty(AGB_CHECKED)) {
-            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + this.getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + this.getHost(), false));
+        if (!getProperties().hasProperty(AGB_CHECKED)) {
+            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + getHost(), false));
             getProperties().save();
         }
         return getProperties().getBooleanProperty(AGB_CHECKED, false);
@@ -359,7 +361,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public final void resetPlugin() {
         // this.resetSteps();
-        this.reset();
+        reset();
         // this.aborted = false;
     }
 
@@ -398,8 +400,7 @@ public abstract class PluginForHost extends Plugin {
     // }
 
     public void setHosterWaittime(int milliSeconds) {
-        
-        
+
         HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
 

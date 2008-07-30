@@ -1,4 +1,5 @@
 package jd.unrar;
+
 /*
  * Copyright (C) 2002 - 2005 Leonardo Ferracci
  *
@@ -20,11 +21,9 @@ package jd.unrar;
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
 
-
 import java.io.IOException;
 
-public abstract class AxeWorker extends Thread
-{
+public abstract class AxeWorker extends Thread {
     protected AxeEventListener ael = null;
     protected boolean bStopped;
     protected long lCurrent;
@@ -34,66 +33,57 @@ public abstract class AxeWorker extends Thread
 
     protected abstract void computeJobSize() throws IOException;
 
-    protected void dispatchEvent (AxeEvent ae)
-    {
-        if (ael != null)
-            ael.handleEvent (ae);
+    protected void dispatchEvent(AxeEvent ae) {
+        if (ael != null) {
+            ael.handleEvent(ae);
+        }
     }
 
-    protected void dispatchIncrementalProgress (long l)
-    {
+    protected void dispatchIncrementalProgress(long l) {
         lCurrent += l;
         dispatchProgress();
     }
 
-    protected void dispatchProgress ()
-    {
-        pe.setCurrent (lCurrent);
-        dispatchProgressEvent (pe);
+    protected void dispatchProgress() {
+        pe.setCurrent(lCurrent);
+        dispatchProgressEvent(pe);
     }
 
-    protected void dispatchProgress (long l)
-    {
+    protected void dispatchProgress(long l) {
         lCurrent = l;
         dispatchProgress();
     }
 
-    protected void dispatchProgressEvent (ProgressEvent pe)
-    {
-        if (pel != null)
-            pel.handleEvent (pe);
+    protected void dispatchProgressEvent(ProgressEvent pe) {
+        if (pel != null) {
+            pel.handleEvent(pe);
+        }
     }
 
-    public void freeze()
-    {
+    public void freeze() {
         bStopped = true;
-//      interrupt();
-        System.out.println ("Freezed!");
+        // interrupt();
+        System.out.println("Freezed!");
     }
 
-    public AxeEventListener getEventListener()
-    {
+    public AxeEventListener getEventListener() {
         return ael;
     }
 
-    public ProgressEventListener getProgressEventListener()
-    {
+    public ProgressEventListener getProgressEventListener() {
         return pel;
     }
 
-    protected void initProgress()
-    {
+    protected void initProgress() {
         lCurrent = 0;
-        pe = new ProgressEvent (this, 0, lJobSize);
+        pe = new ProgressEvent(this, 0, lJobSize);
     }
 
-    public void setEventListener (AxeEventListener ael)
-    {
+    public void setEventListener(AxeEventListener ael) {
         this.ael = ael;
     }
 
-    public void setProgressEventListener (ProgressEventListener pel)
-    {
+    public void setProgressEventListener(ProgressEventListener pel) {
         this.pel = pel;
     }
 }

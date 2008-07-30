@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.Serializable;
@@ -31,41 +30,47 @@ public class JDExit extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final String NAME              = JDLocale.L("interaction.jdexit.name","JD Beenden");
+    private static final String NAME = JDLocale.L("interaction.jdexit.name", "JD Beenden");
     /**
      * Führt die Normale Interaction zurück. Nach dem Aufruf dieser methode
      * läuft der Download wie geowhnt weiter.
      */
-    public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
+    public static String PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
     /**
      * 
      */
     private static final long serialVersionUID = -4825002404662625527L;
+
     public JDExit() {
-     }
-    
+    }
+
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
-      System.exit(0);
-      return true;
+        System.exit(0);
+        return true;
     }
+
     @Override
     public String getInteractionName() {
         return NAME;
     }
+
     @Override
-    public void initConfig() {}
-    
+    public void initConfig() {
+    }
+
     @Override
-    public void resetInteraction() {}
-    
+    public void resetInteraction() {
+    }
+
     /**
      * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
      */
     @Override
-    public void run() {}
-    
+    public void run() {
+    }
+
     @Override
     public String toString() {
         return NAME;

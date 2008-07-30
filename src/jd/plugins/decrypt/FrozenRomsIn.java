@@ -31,13 +31,13 @@ import jd.plugins.RequestInfo;
 public class FrozenRomsIn extends PluginForDecrypt {
     final static String host = "frozen-roms.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.2.0";
 
     public FrozenRomsIn() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -51,9 +51,9 @@ public class FrozenRomsIn extends PluginForDecrypt {
                 getLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html\"")).getMatches();
             }
             progress.setRange(getLinks.length);
-            for (int i = 0; i < getLinks.length; i++) {
-                reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + getLinks[i][0] + ".html"));
-                decryptedLinks.add(this.createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
+            for (String[] element : getLinks) {
+                reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + element[0] + ".html"));
+                decryptedLinks.add(createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -63,41 +63,34 @@ public class FrozenRomsIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

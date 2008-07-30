@@ -32,8 +32,10 @@ import jd.utils.JDUtilities;
 public class BluehostTo extends PluginForHost {
     // http://bluehost.to/dl=uScPWKtIN
 
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
     static private final String HOST = "bluehost.to";
@@ -42,7 +44,6 @@ public class BluehostTo extends PluginForHost {
     // http://bluehost.to/file/uScPWKtIN
     // http://bluehost.to/?dl=0DEH7n9A8
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", Pattern.CASE_INSENSITIVE);
-    static private final String PLUGIN_NAME = HOST;
 
     public BluehostTo() {
         super();
@@ -51,7 +52,6 @@ public class BluehostTo extends PluginForHost {
 
     }
 
-    
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();
 
@@ -62,13 +62,11 @@ public class BluehostTo extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -124,24 +122,17 @@ public class BluehostTo extends PluginForHost {
 
     }
 
-    
-    public void doPremium( DownloadLink downloadLink) throws Exception { 
-        LinkStatus linkStatus=downloadLink.getLinkStatus();
+    public void doPremium(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return;
 
     }
 
-    
     @Override
     public String getAGBLink() {
-       
+
         return "http://bluehost.to/agb.php";
     }
-
-    
-    
-        
-    
 
     @Override
     public String getCoder() {
@@ -159,7 +150,7 @@ public class BluehostTo extends PluginForHost {
             Browser br = new Browser();
             page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
             String[] dat = page.split("\\, ");
-            if (dat.length != 5) return false;
+            if (dat.length != 5) { return false; }
             downloadLink.setName(dat[0]);
             downloadLink.setDownloadMax(Integer.parseInt(dat[2]));
             return true;
@@ -179,7 +170,6 @@ public class BluehostTo extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         // if
@@ -193,7 +183,6 @@ public class BluehostTo extends PluginForHost {
         // }
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
@@ -204,32 +193,31 @@ public class BluehostTo extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
             try {
-                this.doPremium(downloadLink);
+                doPremium(downloadLink);
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
             }
         } else {
             try {
-                this.doFree(downloadLink);
+                doFree(downloadLink);
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
             }
         }
@@ -254,16 +242,13 @@ public class BluehostTo extends PluginForHost {
     //
     // }
 
-    
     @Override
     public void reset() {
 
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
 
     }
 }

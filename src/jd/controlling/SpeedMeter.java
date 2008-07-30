@@ -14,9 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling;
-
 
 /**
  * Diese Klasse kann einen Laufenden durschschnitt erstellen
@@ -25,91 +23,80 @@ package jd.controlling;
  * 
  */
 public class SpeedMeter {
-	private static final int capacity = 5;
-	
-	private int c=0;
-	private int lastSpeed = 0;
-	private int[] speeds = new int[capacity];
+    private static final int capacity = 5;
 
+    private int c = 0;
+    private int lastSpeed = 0;
+    private int[] speeds = new int[capacity];
 
-//    private Logger logger;
-	/**
-	 * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
-	 * eführt wird
-	 * 
-	 * @param average
-	 */
-	public SpeedMeter() {
-//	    logger=JDUtilities.getLogger();
-		for (int i = 0; i < capacity; i++) {
-		    speeds[i]=-1;
-		
-			
-		}
-	}
-	/**
-	 * Fügt einen weiteren wert hinzu
-	 * 
-	 * @param value
-	 */
-	public void addSpeedValue(int value) {
-	 
-	
-		
-	
-	    speeds[c]=value;
-		c++;
-		  if(c==capacity){
-	            c=0;
-	        }
-		
-		
-	}
+    // private Logger logger;
+    /**
+     * KOnstruktor dem die Zeit übergeben werden kann über die der durchschnitt
+     * eführt wird
+     * 
+     * @param average
+     */
+    public SpeedMeter() {
+        // logger=JDUtilities.getLogger();
+        for (int i = 0; i < capacity; i++) {
+            speeds[i] = -1;
 
-	/**
-	 * Gibt die durschnittsgeschwindigkeit des letzten intervals zurück
-	 * 
-	 * @return speed
-	 */
-
-	public int getSpeed() {
-	    /*
-	    if(lastAccess+System.currentTimeMillis()<100)
-            return lastSpeed;
-    
-        lastAccess=-System.currentTimeMillis();
-        */
-        long totalValue=0;
-        int i = 0;
-       
-        while(i<capacity){
-            if(speeds[i]==-1)break;          
-            totalValue+=speeds[i];
-            i++;            
         }
-      
-     if(i!=0)  lastSpeed=(int)(totalValue/i);
-       //logger.info(totalValue+"/"+dif+"="+lastSpeed+" - "+(lastSpeed/1024));
+    }
+
+    /**
+     * Fügt einen weiteren wert hinzu
+     * 
+     * @param value
+     */
+    public void addSpeedValue(int value) {
+
+        speeds[c] = value;
+        c++;
+        if (c == capacity) {
+            c = 0;
+        }
+
+    }
+
+    /**
+     * Gibt die durschnittsgeschwindigkeit des letzten intervals zurück
+     * 
+     * @return speed
+     */
+
+    public int getSpeed() {
+        /*
+         * if(lastAccess+System.currentTimeMillis()<100) return lastSpeed;
+         * 
+         * lastAccess=-System.currentTimeMillis();
+         */
+        long totalValue = 0;
+        int i = 0;
+
+        while (i < capacity) {
+            if (speeds[i] == -1) {
+                break;
+            }
+            totalValue += speeds[i];
+            i++;
+        }
+
+        if (i != 0) {
+            lastSpeed = (int) (totalValue / i);
+        }
+        // logger.info(totalValue+"/"+dif+"="+lastSpeed+" - "+(lastSpeed/1024));
         return lastSpeed;
-	
-	    /*
-		//doppelzugriffe sind unnötig
-		if(lastAccess+System.currentTimeMillis()<100)
-			return lastSpeed;
-	
-		lastAccess=-System.currentTimeMillis();
-		lastSpeed=0;
-		int i = 0;
-		while(i<capacity)
-		{
-			if(speed[i]==-1)break;
-			lastSpeed+=speed[i++];
-		}
-		if(i!=0)
-		lastSpeed/=i;
-		return lastSpeed;
-		*/
-		
-	}
+
+        /*
+         * //doppelzugriffe sind unnötig
+         * if(lastAccess+System.currentTimeMillis()<100) return lastSpeed;
+         * 
+         * lastAccess=-System.currentTimeMillis(); lastSpeed=0; int i = 0;
+         * while(i<capacity) { if(speed[i]==-1)break; lastSpeed+=speed[i++]; }
+         * if(i!=0) lastSpeed/=i; return lastSpeed;
+         */
+
+    }
 
 }

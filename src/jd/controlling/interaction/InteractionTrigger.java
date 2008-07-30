@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.Serializable;
@@ -32,49 +31,53 @@ public class InteractionTrigger implements Serializable {
     /**
      * Vector mit allen bisher angelegten triggern
      */
-    
-        private static Vector<InteractionTrigger> events           = new Vector<InteractionTrigger>();
 
- 
-protected static Logger                   logger           = JDUtilities.getLogger();
+    private static Vector<InteractionTrigger> events = new Vector<InteractionTrigger>();
+
+    protected static Logger logger = JDUtilities.getLogger();
 
     /**
      * serialVersionUID
      */
-    private static final long                 serialVersionUID = 8656898503474841842L;
+    private static final long serialVersionUID = 8656898503474841842L;
 
     /**
      * Gibt alle bisher angelegten Trigger zurück
+     * 
      * @return
      */
-        public static InteractionTrigger[] getAllTrigger() {
-            InteractionTrigger[] ret = new InteractionTrigger[events.size()];
-            for (int i = 0; i < events.size(); i++)
-                ret[i] = events.elementAt(i);
-            return ret;
+    public static InteractionTrigger[] getAllTrigger() {
+        InteractionTrigger[] ret = new InteractionTrigger[events.size()];
+        for (int i = 0; i < events.size(); i++) {
+            ret[i] = events.elementAt(i);
         }
-/**
- * Triggerbeschreibung
- */
-    private String                            description;
-/**
- * EventiD
- */
-private int                               eventID;
-/**
- * Trigger Name
- */
-    private String                            name;
-    
+        return ret;
+    }
 
-/**
- * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die TRigger gleich in einen vector geschrieben und dadurch NIE! vom GarbageCollector erfasst.
- * Man sollte also im Normalen programmablauf keine neuen Trigger mehr Instanzieren
- * @param id
- * @param name
- * @param description
- */
-    public InteractionTrigger(int id,String name, String description) {
+    /**
+     * Triggerbeschreibung
+     */
+    private String description;
+    /**
+     * EventiD
+     */
+    private int eventID;
+    /**
+     * Trigger Name
+     */
+    private String name;
+
+    /**
+     * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die TRigger
+     * gleich in einen vector geschrieben und dadurch NIE! vom GarbageCollector
+     * erfasst. Man sollte also im Normalen programmablauf keine neuen Trigger mehr
+     * Instanzieren
+     * 
+     * @param id
+     * @param name
+     * @param description
+     */
+    public InteractionTrigger(int id, String name, String description) {
         eventID = id;
         events.add(this);
         this.name = name;
@@ -83,31 +86,38 @@ private int                               eventID;
 
     /**
      * Gibt die Triggerbeschreibung zurück
+     * 
      * @return
      */
-        public String getDescription() {
-            return description;
-        }
+    public String getDescription() {
+        return description;
+    }
+
     /**
      * Gibt die EventID zurück. Es gibt keine setID!
+     * 
      * @return
      */
-        public int getID() {
-            return eventID;
-        }
-public String getName(){
-    return name;
-}
-/**
- * Setzt die TRiggerbeschreibung
- * @param description
- */
+    public int getID() {
+        return eventID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Setzt die TRiggerbeschreibung
+     * 
+     * @param description
+     */
     public void setDescription(String description) {
         this.description = description;
     }
-@Override
-public String toString() {
-    return name+" ("+description+")";
-}
+
+    @Override
+    public String toString() {
+        return name + " (" + description + ")";
+    }
 
 }

@@ -33,40 +33,33 @@ public class MediafireCom extends PluginForHost {
 
     private static final String HOST = "mediafire.com";
 
-   
-
     static private final String offlinelink = "tos_aup_violation";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)", Pattern.CASE_INSENSITIVE);
 
     private String url;
 
-    
     public MediafireCom() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.mediafire.com/terms_of_service.php";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -74,7 +67,7 @@ public class MediafireCom extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
 
-            if (requestInfo.containsHTML(offlinelink)) return false;
+            if (requestInfo.containsHTML(offlinelink)) { return false; }
 
             downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<title>", "</title>"));
             return true;
@@ -84,12 +77,6 @@ public class MediafireCom extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -105,19 +92,17 @@ public class MediafireCom extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -139,19 +124,17 @@ public class MediafireCom extends PluginForHost {
         String finishURL = "http://" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn\\+'/'\\+ ", " \\+'g/'") + " = '", "'") + "g/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jU='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jK='", "'");
         HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
         downloadLink.setDownloadMax(urlConnection.getContentLength());
-        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+        downloadLink.setName(getFileNameFormHeader(urlConnection));
         long length = downloadLink.getDownloadMax();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setFilesize(length);
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

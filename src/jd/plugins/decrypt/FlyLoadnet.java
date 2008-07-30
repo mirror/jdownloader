@@ -35,14 +35,11 @@ public class FlyLoadnet extends PluginForDecrypt {
     private static final Pattern patternSupported_Request = Pattern.compile("http://[\\w\\.]*?flyload\\.net/request_window\\.php\\?(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Safe = Pattern.compile("http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Safe.pattern() + "|" + patternSupported_Request.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
-    
-    
 
     public FlyLoadnet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -52,24 +49,28 @@ public class FlyLoadnet extends PluginForDecrypt {
             RequestInfo requestInfo;
             if (new Regex(cryptedLink, patternSupported_Download).matches()) {
                 String id = new Regex(cryptedLink, patternSupported_Download).getFirstMatch();
-                decryptedLinks.add(this.createDownloadlink("http://flyload.net/request_window.php?" + id));
+                decryptedLinks.add(createDownloadlink("http://flyload.net/request_window.php?" + id));
             } else if (new Regex(cryptedLink, patternSupported_Request).matches()) {
                 String id = new Regex(cryptedLink, patternSupported_Request).getFirstMatch();
                 requestInfo = HTTP.getRequest(new URL("http://flyload.net/download.php?view." + id));
                 String pw = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td color:red;' class='forumheader3'>(?!<b>)(.*?)</td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 requestInfo = HTTP.getRequest(url);
                 String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value='(.*?)' readonly onclick", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < links.length; i++) {
-                    DownloadLink link = this.createDownloadlink(links[i][0]);
-                    if (!pw.matches("-") && !pw.matches("Kein Passwort")) link.addSourcePluginPassword(pw);
+                for (String[] element : links) {
+                    DownloadLink link = createDownloadlink(element[0]);
+                    if (!pw.matches("-") && !pw.matches("Kein Passwort")) {
+                        link.addSourcePluginPassword(pw);
+                    }
                     decryptedLinks.add(link);
                 }
             } else if (new Regex(cryptedLink, patternSupported_Safe).matches()) {
                 requestInfo = HTTP.getRequest(url);
                 String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("onclick='popup\\(\"([a-zA-Z0-9]+)\",\"([a-zA-Z0-9]+)\"\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < links.length; i++) {
-                    requestInfo = HTTP.getRequest(new URL("http://flyload.net/safe.php?link_id=" + links[i][0] + "&link_hash=" + links[i][1]));
-                    if (requestInfo.getLocation() != null) decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                for (String[] element : links) {
+                    requestInfo = HTTP.getRequest(new URL("http://flyload.net/safe.php?link_id=" + element[0] + "&link_hash=" + element[1]));
+                    if (requestInfo.getLocation() != null) {
+                        decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
+                    }
                 }
             }
         } catch (MalformedURLException e) {
@@ -82,41 +83,34 @@ public class FlyLoadnet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-  
-
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

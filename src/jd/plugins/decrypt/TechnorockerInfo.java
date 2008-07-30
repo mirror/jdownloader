@@ -40,15 +40,16 @@ public class TechnorockerInfo extends PluginForDecrypt {
         default_password.add("technorocker");
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             String link = new Regex(reqinfo.getHtmlCode(), "<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) return null;
-            decryptedLinks.add(this.createDownloadlink(link));
+            if (link == null) {
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(link));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -56,44 +57,34 @@ public class TechnorockerInfo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

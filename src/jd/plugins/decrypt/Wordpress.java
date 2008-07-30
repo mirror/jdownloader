@@ -36,6 +36,7 @@ public class Wordpress extends PluginForDecrypt {
     private ArrayList<String[]> defaultpasswords = new ArrayList<String[]>();
     private Vector<String> passwordpattern = new Vector<String>();
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Wordpress() {
@@ -66,7 +67,6 @@ public class Wordpress extends PluginForDecrypt {
         passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) <\\/p>");
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -90,8 +90,8 @@ public class Wordpress extends PluginForDecrypt {
             for (int i = 0; i < passwordpattern.size(); i++) {
                 password = new Regex(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE)).getMatches(1);
                 if (password.length != 0) {
-                    for (int ii = 0; ii < password.length; ii++) {
-                        link_passwds.add(JDUtilities.htmlDecode(password[ii]));
+                    for (String element : password) {
+                        link_passwds.add(JDUtilities.htmlDecode(element));
                     }
                     break;
                 }
@@ -103,7 +103,7 @@ public class Wordpress extends PluginForDecrypt {
                 if (!new Regex(links[i], patternSupported).matches()) {
                     Vector<DownloadLink> LinkList = new DistributeData(links[i]).findLinks();
                     for (int ii = 0; ii < LinkList.size(); ii++) {
-                        DownloadLink link = this.createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
+                        DownloadLink link = createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
                         link.setSourcePluginPasswords(link_passwds);
                         decryptedLinks.add(link);
                     }
@@ -116,44 +116,34 @@ public class Wordpress extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

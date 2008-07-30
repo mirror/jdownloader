@@ -15,7 +15,7 @@ public class Executer extends Thread {
         private StringBuffer sb;
 
         public StreamObserver(InputStream stream, StringBuffer sb) {
-            this.reader = new BufferedReader(new InputStreamReader(stream));
+            reader = new BufferedReader(new InputStreamReader(stream));
             this.sb = sb;
         }
 
@@ -33,6 +33,7 @@ public class Executer extends Thread {
         }
 
     }
+
     private String command;
     private Logger logger = JDUtilities.getLogger();
     private ArrayList<String> parameter;
@@ -47,7 +48,7 @@ public class Executer extends Thread {
         parameter = new ArrayList<String>();
         sb = new StringBuffer();
         sbe = new StringBuffer();
-        this.setName("Executer: " + command);
+        setName("Executer: " + command);
 
     }
 
@@ -56,8 +57,9 @@ public class Executer extends Thread {
     }
 
     public void addParameters(String[] par) {
-        for (String p : par)
+        for (String p : par) {
             parameter.add(p);
+        }
     }
 
     public String getCommand() {
@@ -115,13 +117,15 @@ public class Executer extends Thread {
         try {
             process = pb.start();
 
-            if (waitTimeout == 0) return;
+            if (waitTimeout == 0) {
+                return;
+            }
             StreamObserver sbeObserver = new StreamObserver(process.getErrorStream(), sbe);
             StreamObserver sbObserver = new StreamObserver(process.getInputStream(), sb);
             sbeObserver.start();
             sbObserver.start();
 
-            long waiter = System.currentTimeMillis() + waitTimeout*1000;
+            long waiter = System.currentTimeMillis() + waitTimeout * 1000;
             while (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sbObserver.isAlive())) {
 
                 try {
@@ -145,7 +149,7 @@ public class Executer extends Thread {
             } catch (Exception e) {
             }
         } catch (IOException e1) {
-            
+
             e1.printStackTrace();
             return;
         }
@@ -160,7 +164,7 @@ public class Executer extends Thread {
     }
 
     public void setRunin(String runin) {
-        this.runIn = runin;
+        runIn = runin;
     }
 
     public void setWaitTimeout(int waitTimeout) {

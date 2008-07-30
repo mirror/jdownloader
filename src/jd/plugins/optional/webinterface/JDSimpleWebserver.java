@@ -26,7 +26,7 @@ public class JDSimpleWebserver extends Thread {
         private Logger logger = JDUtilities.getLogger();
 
         public JDRequestHandler(Socket Client_Socket) {
-            this.Current_Socket = Client_Socket;
+            Current_Socket = Client_Socket;
         }
 
         public String readline(BufferedInputStream reader) {
@@ -53,12 +53,14 @@ public class JDSimpleWebserver extends Thread {
                             }
                         }
                     }
-                    if (index > max_buf) return null;
+                    if (index > max_buf) {
+                        return null;
+                    }
                     buffer[index] = (byte) byteread;
                     index++;
                 }
             } catch (IOException e) {
-                
+
                 e.printStackTrace();
             }
             return new String(buffer).substring(0, index);
@@ -110,7 +112,9 @@ public class JDSimpleWebserver extends Thread {
                                     byte[] cbuf = new byte[post_len];
                                     int indexstart = 0;
                                     while (post_len_toread > 0) {
-                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
+                                        if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) {
+                                            break;
+                                        }
                                         indexstart = indexstart + post_len_read;
                                         post_len_toread = post_len_toread - post_len_read;
                                     }
@@ -124,8 +128,9 @@ public class JDSimpleWebserver extends Thread {
                                         String[] requ = request.split(" ");
                                         if (Method.compareToIgnoreCase("post") == 0) {
                                             headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
-                                        } else
+                                        } else {
                                             logger.severe("POST Daten bei nem GET aufruf???");
+                                        }
                                     } else {
                                         logger.severe("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
                                     }
@@ -155,7 +160,9 @@ public class JDSimpleWebserver extends Thread {
                                         limiter = "--" + limiter;
                                         limiter = JDHexUtils.getHexString(limiter);
                                         while (post_len_toread > 0) {
-                                            if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) break;
+                                            if ((post_len_read = reader.read(cbuf, indexstart, post_len_toread)) == -1) {
+                                                break;
+                                            }
                                             indexstart = indexstart + post_len_read;
                                             post_len_toread = post_len_toread - post_len_read;
                                         }
@@ -165,16 +172,18 @@ public class JDSimpleWebserver extends Thread {
                                              * momentan wird multipart nur für
                                              * containerupload genutzt, daher
                                              * form-data parsing unnötig
-                                             *                                           
+                                             * 
                                              */
-                                            String MultiPartData[][] = new Regex(JDHexUtils.getHexString(cbuf), Pattern.compile(limiter + JDHexUtils.getHexString("\r") + "{0,1}" +  JDHexUtils.getHexString("\n") + "{0,1}" + JDHexUtils.REGEX_MATCH_ALL_HEX +"(?=" + "" + JDHexUtils.getHexString("\r")  + "{0,1}"  + JDHexUtils.getHexString("\n") + "{0,1}" + limiter + ")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-                                            for (int i = 0; i < MultiPartData.length; i++) {
-                                                if (MultiPartData[i][0].contains(JDHexUtils.getHexString("Content-Disposition: form-data; name=\"container\""))) {
-                                                    String containertyp = new Regex(MultiPartData[i][0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                                                    if (containertyp != null) containertyp = new String(JDHexUtils.getByteArray(containertyp));
+                                            String MultiPartData[][] = new Regex(JDHexUtils.getHexString(cbuf), Pattern.compile(limiter + JDHexUtils.getHexString("\r") + "{0,1}" + JDHexUtils.getHexString("\n") + "{0,1}" + JDHexUtils.REGEX_MATCH_ALL_HEX + "(?=" + "" + JDHexUtils.getHexString("\r") + "{0,1}" + JDHexUtils.getHexString("\n") + "{0,1}" + limiter + ")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+                                            for (String[] element : MultiPartData) {
+                                                if (element[0].contains(JDHexUtils.getHexString("Content-Disposition: form-data; name=\"container\""))) {
+                                                    String containertyp = new Regex(element[0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                                    if (containertyp != null) {
+                                                        containertyp = new String(JDHexUtils.getByteArray(containertyp));
+                                                    }
                                                     if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf"))) {
                                                         File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
-                                                        if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(MultiPartData[i][0].substring(MultiPartData[i][0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
+                                                        if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(element[0].substring(element[0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
                                                             /*
                                                              * RequestParameter
                                                              * zusammenbauen
@@ -183,7 +192,9 @@ public class JDSimpleWebserver extends Thread {
                                                             break;
                                                         }
                                                     } else {
-                                                        if (containertyp != null) logger.severe("unknown container typ: " + containertyp);
+                                                        if (containertyp != null) {
+                                                            logger.severe("unknown container typ: " + containertyp);
+                                                        }
                                                     }
                                                 }
                                             }
@@ -195,8 +206,9 @@ public class JDSimpleWebserver extends Thread {
                                             String[] requ = request.split(" ");
                                             if (Method.compareToIgnoreCase("post") == 0) {
                                                 headers.put(null, requ[0] + " " + requ[1] + "?" + RequestParams + " " + requ[2]);
-                                            } else
+                                            } else {
                                                 logger.severe("POST Daten bei nem GET aufruf???");
+                                            }
                                         } else {
                                             logger.severe("POST Fehler postlen soll = " + post_len + " postlen gelesen = " + post_len_read);
                                         }

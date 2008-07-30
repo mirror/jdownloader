@@ -35,7 +35,6 @@ import java.util.logging.Logger;
 import java.util.logging.StreamHandler;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -65,7 +64,6 @@ public class LogDialog extends JFrame implements ActionListener {
      */
     private class LogStream extends OutputStream {
 
-        
         @Override
         public void write(final int b) throws IOException {
             // Another example where some non-EDT Thread accesses calls a Swing
@@ -76,7 +74,7 @@ public class LogDialog extends JFrame implements ActionListener {
             if (logField != null) {
                 EventQueue.invokeLater(new Runnable() {
                     public void run() {
-                        logField.append((String.valueOf((char) b)));
+                        logField.append(String.valueOf((char) b));
                     }
                 });
             }
@@ -150,9 +148,9 @@ public class LogDialog extends JFrame implements ActionListener {
     public LogDialog(JFrame owner, Logger logger) {
         this.owner = owner;
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
-        this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
+        setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         setLayout(new GridBagLayout());
-        this.setName("LOGDIALOG");
+        setName("LOGDIALOG");
 
         Handler streamHandler = new LogStreamHandler(new PrintStream(new LogStream()));
         streamHandler.setLevel(Level.ALL);
@@ -177,31 +175,35 @@ public class LogDialog extends JFrame implements ActionListener {
         logScrollPane = new JScrollPane(logField);
         logField.setEditable(true);
 
-//        JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-//        JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//        JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(this, logScrollPane, 0, 0, 5, 1, 1, 1, null,
+        // GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(this, btnOK, 0, 1, 1, 1, 1, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(this, btnSave, 1, 1, 1, 1, 0, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         // JDUtilities.addToGridBag(this, btnCensor, 2, 1, 1, 1, 1, 0, null,
         // GridBagConstraints.NONE, GridBagConstraints.EAST);
-//        JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(this, btnUpload, 2, 1, 1, 1, 0, 0, null,
+        // GridBagConstraints.NONE, GridBagConstraints.EAST);
         LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-        this.addWindowListener(list);
-        
+        addComponentListener(list);
+        addWindowListener(list);
+
         int n = 10;
-        JPanel panel = new JPanel(new BorderLayout(n,n));
-        panel.setBorder(new EmptyBorder(n,n,n,n));
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
         setContentPane(panel);
-        
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n,0));
+
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         getContentPane().add(bpanel, BorderLayout.SOUTH);
         panel.add(logScrollPane, BorderLayout.CENTER);
-        
+
         bpanel.add(btnOK);
         bpanel.add(btnSave);
         bpanel.add(btnUpload);
 
-        setPreferredSize(new Dimension(640,480));
+        setPreferredSize(new Dimension(640, 480));
 
         pack();
         setLocationRelativeTo(null);
@@ -260,7 +262,9 @@ public class LogDialog extends JFrame implements ActionListener {
             }
             content = TextAreaDialog.showDialog(owner, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 
-            if (content == null || content.length() == 0) return;
+            if (content == null || content.length() == 0) {
+                return;
+            }
 
             String name = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName", "Your name?"));
             String question = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));
@@ -279,7 +283,7 @@ public class LogDialog extends JFrame implements ActionListener {
                     try {
                         JLinkButton.openURL(url);
                     } catch (MalformedURLException e1) {
-                        
+
                         e1.printStackTrace();
                     }
                 }

@@ -40,7 +40,6 @@ public class Rlslog extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String followcomments = "";
@@ -60,20 +59,20 @@ public class Rlslog extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
             Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
-            for (int i = 0; i < Links.length; i++) {
-                if (Links[i].contains(followcomments) == true) {
+            for (String element : Links) {
+                if (element.contains(followcomments) == true) {
                     /* weitere comment pages abrufen */
-                    URL url2 = new URL(Links[i]);
+                    URL url2 = new URL(element);
                     RequestInfo reqinfo2 = HTTP.getRequest(url2);
                     String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
                     Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
-                    for (int j = 0; j < Links2.length; j++) {
-                        DownloadLink l = this.createDownloadlink(Links2[j]);
+                    for (String element2 : Links2) {
+                        DownloadLink l = createDownloadlink(element2);
                         decryptedLinks.add(l);
                         l.addSourcePluginPasswords(passs2);
                     }
                 } else {
-                    DownloadLink l = this.createDownloadlink(Links[i]);
+                    DownloadLink l = createDownloadlink(element);
                     decryptedLinks.add(l);
                     l.addSourcePluginPasswords(passs);
                 }
@@ -85,41 +84,34 @@ public class Rlslog extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

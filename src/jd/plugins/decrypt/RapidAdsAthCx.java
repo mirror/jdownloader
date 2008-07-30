@@ -40,7 +40,6 @@ public class RapidAdsAthCx extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,13 +48,17 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
             String temp = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><p><form action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (temp == null) return null;
+            if (temp == null) {
+                return null;
+            }
             String[] helpa = temp.split("&#");
             String help = "";
             for (int i = 0; i < helpa.length; i++) {
-                if (!helpa[i].equals("")) help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
+                if (!helpa[i].equals("")) {
+                    help = help + String.valueOf((char) Integer.parseInt(helpa[i]));
+                }
             }
-            decryptedLinks.add(this.createDownloadlink(help));
+            decryptedLinks.add(createDownloadlink(help));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -63,41 +66,34 @@ public class RapidAdsAthCx extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

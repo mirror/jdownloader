@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Level;
-import java.util.logging.Logger; 
+import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 
@@ -102,7 +102,9 @@ public class Main {
             } else {
 
                 file = new File(path);
-                if (!file.exists()) return "File does not exist";
+                if (!file.exists()) {
+                    return "File does not exist";
+                }
 
             }
 
@@ -143,7 +145,9 @@ public class Main {
             }
         }
 
-        if (!new CheckJava().check()) System.exit(0);
+        if (!new CheckJava().check()) {
+            System.exit(0);
+        }
 
         // int t=0;
         // for( t=0; t<200;t++)
@@ -156,7 +160,9 @@ public class Main {
         long extractTime = 0;
         Vector<String> paths = new Vector<String>();
         boolean enoughtMemory = !(Runtime.getRuntime().maxMemory() < 100000000);
-        if (!enoughtMemory) showSplash = false;
+        if (!enoughtMemory) {
+            showSplash = false;
+        }
         // pre start parameters //
         for (int i = 0; i < args.length; i++) {
             if (extractSwitch) {
@@ -168,8 +174,9 @@ public class Main {
 
                     if (args[i].matches("[\\d]+")) {
                         extractTime = Integer.parseInt(args[i]);
-                    } else
+                    } else {
                         extractTime = 0;
+                    }
 
                 } else if (!args[i].matches("[\\s]*")) {
 
@@ -224,7 +231,9 @@ public class Main {
                 extractSwitch = false;
                 stop = true;
 
-            } else if (showSplash && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) showSplash = false;
+            } else if (showSplash && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) {
+                showSplash = false;
+            }
 
         }
         splashScreen = null;
@@ -238,7 +247,7 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
 
@@ -254,7 +263,7 @@ public class Main {
         JDTheme.setTheme("default");
         JDSounds.setSoundTheme("default");
 
-        if (!newInstance && tryConnectToServer(args)) {
+        if (!newInstance && Main.tryConnectToServer(args)) {
 
             if (args.length > 0) {
 
@@ -264,7 +273,7 @@ public class Main {
             } else {
 
                 logger.info("There is already a running jD instance");
-                tryConnectToServer(new String[] { "--focus" });
+                Main.tryConnectToServer(new String[] { "--focus" });
                 System.exit(0);
 
             }
@@ -292,7 +301,6 @@ public class Main {
 
                     final Main main = new Main();
 
- 
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
                             Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
@@ -325,7 +333,9 @@ public class Main {
 
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         // System.out.println(l);
-        if (splashScreen == null) return;
+        if (splashScreen == null) {
+            return;
+        }
         try {
             splashScreen.setText(l);
             splashScreen.setValue(splashScreen.getValue() + i);
@@ -361,7 +371,7 @@ public class Main {
         init.init();
         init.loadImages();
 
-        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
 
         init.loadConfiguration();
         if (debug) {
@@ -383,7 +393,7 @@ public class Main {
             JDUtilities.saveConfig();
 
         }
-        setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));
 
         final JDController controller = init.initController();
 
@@ -404,19 +414,19 @@ public class Main {
 
         } else {
 
-            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
             init.initPlugins();
-            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
+            Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
             init.initGUI(controller);
-            setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
+            Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
 
             init.loadDownloadQueue();
-            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
+            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
 
             init.loadModules();
-            setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
+            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
             init.checkUpdate();
 
@@ -425,7 +435,7 @@ public class Main {
             }
 
         }
-        setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
+        Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
@@ -444,6 +454,7 @@ public class Main {
         logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
         logger.info("Application directory: " + JDUtilities.getCurrentWorkingDirectory(null));
         new Thread("packetmanager") {
+            @Override
             public void run() {
 
                 new PackageManager().interact(this);

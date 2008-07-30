@@ -89,7 +89,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Letztes package file geladen
      */
     public static final InteractionTrigger INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished", "Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc", "Wird aufgerufen wenn ein Paket fertig geladen wurde"));
-    public static final InteractionTrigger INTERACTION_EXIT= new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
+    public static final InteractionTrigger INTERACTION_EXIT = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
 
     // Download IDS
     /**
@@ -131,12 +131,11 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static Interaction[] getInteractionList() {
         return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink(), /*
-                                                                                                             * new
-                                                                                                             * DLCConverter(),
-                                                                                                             */new Backup() };
+         * new
+         * DLCConverter(),
+         */new Backup() };
     }
 
-    
     /**
      * Gibt alle Interactionen zum Trigger zurück
      * 
@@ -160,6 +159,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static int getInteractionsRunning() {
         return interactionsRunning;
     }
+
     /**
      * 
      * @return Anzahl der gerade aktiven Interactionen
@@ -188,7 +188,9 @@ public abstract class Interaction extends Property implements Serializable {
         int interacts = 0;
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
-            if (interaction == null || interaction.getTrigger() == null || interactionevent == null) continue;
+            if (interaction == null || interaction.getTrigger() == null || interactionevent == null) {
+                continue;
+            }
 
             if (interaction.getTrigger().getID() == interactionevent.getID()) {
 
@@ -205,11 +207,13 @@ public abstract class Interaction extends Property implements Serializable {
 
             }
         }
-        if(interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED)&&interactionsRunning == 0 && JDUtilities.getController().getFinishedLinks().size() > 0){
+        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && interactionsRunning == 0 && JDUtilities.getController().getFinishedLinks().size() > 0) {
 
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
-        if (interacts == 0) return false;
+        if (interacts == 0) {
+            return false;
+        }
         return ret;
     }
 
@@ -231,7 +235,9 @@ public abstract class Interaction extends Property implements Serializable {
 
         for (int i = 0; i < interactions.size(); i++) {
             Interaction interaction = interactions.get(i);
-            if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) continue;
+            if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) {
+                continue;
+            }
             if (interaction.getTrigger().getID() == interactionEvent.getID()) {
                 if (id == 0) {
 
@@ -272,7 +278,7 @@ public abstract class Interaction extends Property implements Serializable {
     public Interaction() {
         config = null;
 
-        this.setTrigger(Interaction.INTERACTION_NO_EVENT);
+        setTrigger(Interaction.INTERACTION_NO_EVENT);
     }
 
     protected abstract boolean doInteraction(Object arg);
@@ -299,7 +305,7 @@ public abstract class Interaction extends Property implements Serializable {
     }
 
     public ConfigContainer getConfig() {
-        //logger.info(config + " # ");
+        // logger.info(config + " # ");
         if (config == null) {
             config = new ConfigContainer(this);
             initConfig();
@@ -358,11 +364,11 @@ public abstract class Interaction extends Property implements Serializable {
         logger.finer("Interactions(start) running: " + interactionsRunning + " - " + this);
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, arg);
         resetInteraction();
-        this.setCallCode(Interaction.INTERACTION_CALL_RUNNING);
+        setCallCode(Interaction.INTERACTION_CALL_RUNNING);
         boolean success = doInteraction(arg);
         // fireControlEvent(new ControlEvent(this,
         // ControlEvent.CONTROL_PLUGIN_INTERACTION_RETURNED, this));
-        if (!this.isAlive()) {
+        if (!isAlive()) {
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, arg);
 
             interactionsRunning--;
@@ -383,7 +389,9 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean isAlive() {
-        if (thread == null) return false;
+        if (thread == null) {
+            return false;
+        }
         return thread.isAlive();
     }
 
@@ -403,7 +411,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Wird vom neuen Thread aufgerufen, setzt die ThreadVariable
      */
     private void runThreadAction() {
-        this.run();
+        run();
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, null);
         if (getWaitForTermination()) {
             interactionsRunning--;
@@ -421,7 +429,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @param callCode
      */
     public void setCallCode(int callCode) {
-        this.lastCallCode = callCode;
+        lastCallCode = callCode;
     }
 
     public void setConfig(ConfigContainer config) {

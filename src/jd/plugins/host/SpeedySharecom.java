@@ -22,14 +22,14 @@ import jd.utils.JDUtilities;
 public class SpeedySharecom extends PluginForHost {
 
     private static final String HOST = "speedy-share.com";
-   
+
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
     private String postdata;
     RequestInfo requestInfo;
     private String url;
 
     //
-    
+
     public SpeedySharecom() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
@@ -37,25 +37,21 @@ public class SpeedySharecom extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.speedy-share.com/tos.html";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -83,12 +79,6 @@ public class SpeedySharecom extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -104,19 +94,17 @@ public class SpeedySharecom extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -144,7 +132,7 @@ public class SpeedySharecom extends PluginForHost {
 
         // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 30seks */
-        this.sleep(30000, downloadLink);
+        sleep(30000, downloadLink);
 
         // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
@@ -171,12 +159,10 @@ public class SpeedySharecom extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

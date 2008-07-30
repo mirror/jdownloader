@@ -41,7 +41,6 @@ public class LeecherWs extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -56,10 +55,10 @@ public class LeecherWs extends PluginForDecrypt {
                 outLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www\\.leecher\\.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
             }
             progress.setRange(outLinks.length);
-            for (int i = 0; i < outLinks.length; i++) {
-                reqinfo = HTTP.getRequest(new URL("http://leecher.ws/out/" + outLinks[i][0]));
+            for (String[] element : outLinks) {
+                reqinfo = HTTP.getRequest(new URL("http://leecher.ws/out/" + element[0]));
                 String cryptedLink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(cryptedLink)));
+                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(cryptedLink)));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -69,41 +68,34 @@ public class LeecherWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

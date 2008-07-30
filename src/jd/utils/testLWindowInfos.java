@@ -15,21 +15,20 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.utils;
 
 import jd.utils.LWindowInfos.WindowInformations;
 
 public class testLWindowInfos {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		WindowInformations[] infos = LWindowInfos.getWindowInfos();
-		for (int i = 0; i < infos.length; i++) {
-			System.out.println(infos[i].toString());
-		}
-	}
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        WindowInformations[] infos = LWindowInfos.getWindowInfos();
+        for (WindowInformations element : infos) {
+            System.out.println(element.toString());
+        }
+    }
 
 }

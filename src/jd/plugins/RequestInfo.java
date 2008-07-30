@@ -14,9 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
-
 
 import java.util.List;
 import java.util.Map;
@@ -26,8 +24,9 @@ import jd.parser.Form;
 import jd.parser.Regex;
 
 /**
- * Diese Klasse bildet alle Informationen ab, die bei einem Request herausgefunden werden können
- *
+ * Diese Klasse bildet alle Informationen ab, die bei einem Request
+ * herausgefunden werden können
+ * 
  * @author astaldo
  */
 public class RequestInfo {
@@ -35,11 +34,11 @@ public class RequestInfo {
     /**
      * Cookie
      */
-    private String cookie   = null;
+    private String cookie = null;
     /**
      * Die zurückgelieferten Header
      */
-    private  Map<String,List<String>> headers  = null;
+    private Map<String, List<String>> headers = null;
     /**
      * Der Quelltext der Seite
      */
@@ -54,93 +53,125 @@ public class RequestInfo {
      */
     private int responseCode;
 
-    public RequestInfo(String htmlCode, String location, String cookie, Map<String,List<String>> headers, int responseCode){
+    public RequestInfo(String htmlCode, String location, String cookie, Map<String, List<String>> headers, int responseCode) {
         this.htmlCode = htmlCode;
         this.location = location;
-        this.cookie   = cookie;
-        this.headers  = headers;
+        this.cookie = cookie;
+        this.headers = headers;
         this.responseCode = responseCode;
-        
+
     }
-    public boolean containsHTML(String pattern){
-        return getHtmlCode().indexOf(pattern)>=0;
+
+    public boolean containsHTML(String pattern) {
+        return getHtmlCode().indexOf(pattern) >= 0;
     }
+
     /**
      * @return the connection
      */
     public HTTPConnection getConnection() {
         return connection;
     }
-    public String getCookie()                    { return cookie;       }
+
+    public String getCookie() {
+        return cookie;
+    }
+
     /**
      * gibt den ersten Match aus
      */
-    public String getFirstMatch(String pattern)
-    {
-    	return getRegexp(pattern).getFirstMatch();
+    public String getFirstMatch(String pattern) {
+        return getRegexp(pattern).getFirstMatch();
     }
+
     /**
      * gibt die erste Form der requestInfo aus
+     * 
      * @return
      */
-    public Form getForm()
-    {
-    	return getForms()[0];
+    public Form getForm() {
+        return getForms()[0];
     }
+
     /**
      * gibt die Forms der requestInfo aus
+     * 
      * @param pattern
      * @return
      */
-    public Form[] getForms()
-    {
-    	return Form.getForms(this);
+    public Form[] getForms() {
+        return Form.getForms(this);
     }
-    public Map<String,List<String>> getHeaders() { return headers;      }
-    public String getHtmlCode()                  { return htmlCode;     }
-    public String getLocation()                  { return location;     }
+
+    public Map<String, List<String>> getHeaders() {
+        return headers;
+    }
+
+    public String getHtmlCode() {
+        return htmlCode;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
     /**
      * Macht einen Regexp auf die requestInfo
+     * 
      * @param pattern
      * @return
      */
-    public Regex getRegexp(String pattern)
-    {
-    	return new Regex(this, pattern);
+    public Regex getRegexp(String pattern) {
+        return new Regex(this, pattern);
     }
+
     public Request getRequest() {
         return request;
     }
-    public int getResponseCode()                 { return responseCode; }
+
+    public int getResponseCode() {
+        return responseCode;
+    }
+
     /**
-     * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder nicht.
-     * HTTP Codes zwischen -2 und 499 gelten als erfolgreich
-     * Negative Codes beudeuten dass der Server ( wie es z.B. machne Router HTTP Server machen) keinen responseCode zurückgegeben hat). In diesem Fall wird trotzdem true zurückgegeben
+     * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder
+     * nicht. HTTP Codes zwischen -2 und 499 gelten als erfolgreich Negative
+     * Codes beudeuten dass der Server ( wie es z.B. machne Router HTTP Server
+     * machen) keinen responseCode zurückgegeben hat). In diesem Fall wird
+     * trotzdem true zurückgegeben
      * 
      * 
      * @return Wahr, wenn der HTTP Code zwischen -2 und 499 lag
      */
-    public boolean isOK(){
-        if(responseCode>-2 && responseCode<500)
+    public boolean isOK() {
+        if (responseCode > -2 && responseCode < 500) {
             return true;
-        else
+        } else {
             return false;
+        }
     }
+
     public void setConnection(HTTPConnection connection) {
         this.connection = connection;
     }
+
     /**
-     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein JavaScript die Form verändert
+     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein
+     * JavaScript die Form verändert
+     * 
      * @param htmlCode
      */
-    public void setHtmlCode(String htmlCode)
-    {
-    	this.htmlCode=htmlCode;
+    public void setHtmlCode(String htmlCode) {
+        this.htmlCode = htmlCode;
     }
+
     public void setRequest(Request request) {
-       this.request=request;
-        
+        this.request = request;
+
     }
+
     @Override
-    public String toString()	{ return getHtmlCode(); }
+    public String toString() {
+        return getHtmlCode();
+    }
 }

@@ -46,9 +46,11 @@ public class DepositFiles extends PluginForHost {
 
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.3";
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.3";
 
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String HOST = "depositfiles.com";
 
@@ -62,8 +64,6 @@ public class DepositFiles extends PluginForHost {
     // private Pattern ICID = Pattern.compile("name=\"icid\" value=\"(.*?)\"");
 
     private static final String PATTERN_PREMIUM_REDIRECT = "window.location.href = '(.*?)';";
-
-    static private final String PLUGIN_NAME = HOST;
 
     private String cookie;
 
@@ -95,7 +95,6 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
-    
     public void doFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
@@ -289,13 +288,12 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    
     private void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         RequestInfo requestInfo;
-        String user = (String) this.getProperties().getProperty("PREMIUM_USER");
-        String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
+        String user = (String) getProperties().getProperty("PREMIUM_USER");
+        String pass = (String) getProperties().getProperty("PREMIUM_PASS");
 
         // switch (step.getStep()) {
 
@@ -412,18 +410,17 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    
+    @Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -467,11 +464,6 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    
-    
-        
-   
-
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -483,21 +475,20 @@ public class DepositFiles extends PluginForHost {
         return HOST;
     }
 
+    @Override
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
         }
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
@@ -505,35 +496,33 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink parameter) throws Exception {
         DownloadLink downloadLink = parameter;
 
         // premium
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            this.doPremium(downloadLink);
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            doPremium(downloadLink);
         } else {
-            this.doFree(downloadLink);
+            doFree(downloadLink);
         }
 
     }
 
-    
     @Override
     public void reset() {
-        this.finalURL = null;
+        finalURL = null;
     }
 
-    
+    @Override
     public void resetPluginGlobals() {
-        this.finalURL = "";
+        finalURL = "";
     }
 
-    
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));

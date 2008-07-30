@@ -21,41 +21,34 @@
 
 package jd.unrar;
 
-public class ProgressEvent
-{
-	protected long lCurrent;
-	protected long lMax;
-	protected Object oSource;
+public class ProgressEvent {
+    protected long lCurrent;
+    protected long lMax;
+    protected Object oSource;
 
-	public ProgressEvent (Object o, long lC, long lM)
-	{
-		oSource = o;
-		lCurrent = lC;
-		lMax = lM;
-	}
+    public ProgressEvent(Object o, long lC, long lM) {
+        oSource = o;
+        lCurrent = lC;
+        lMax = lM;
+    }
 
-	public long getCurrent()
-	{
-		return lCurrent;
-	}
+    public long getCurrent() {
+        return lCurrent;
+    }
 
-	public long getMax()
-	{
-		return lMax;
-	}
+    public long getMax() {
+        return lMax;
+    }
 
-	public Object getSource()
-	{
-		return oSource;
-	}
+    public Object getSource() {
+        return oSource;
+    }
 
-	public void setCurrent (long l)
-	{
-		lCurrent = l;
-	}
+    public void setCurrent(long l) {
+        lCurrent = l;
+    }
 
-	public void setMax (long l)
-	{
-		lMax = l;
-	}
+    public void setMax(long l) {
+        lMax = l;
+    }
 }

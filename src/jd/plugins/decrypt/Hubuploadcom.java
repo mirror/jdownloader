@@ -34,13 +34,13 @@ public class Hubuploadcom extends PluginForDecrypt {
     static private String host = "hubupload.com";
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hubupload\\.com/files/[a-zA-Z0-9]+/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Hubuploadcom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -52,10 +52,12 @@ public class Hubuploadcom extends PluginForDecrypt {
             String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<form action=\"(.*?)\"><input type=\"submit\" class=\"dlbutton\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
 
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                reqinfo = HTTP.getRequest(new URL(links[i]), Cookie, cryptedLink, false);
+            for (String element : links) {
+                reqinfo = HTTP.getRequest(new URL(element), Cookie, cryptedLink, false);
                 String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                if (link != null) decryptedLinks.add(this.createDownloadlink(link));
+                if (link != null) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -65,27 +67,21 @@ public class Hubuploadcom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
@@ -96,9 +92,9 @@ public class Hubuploadcom extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

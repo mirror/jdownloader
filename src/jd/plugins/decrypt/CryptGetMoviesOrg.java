@@ -42,7 +42,6 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
         default_password.add("www.get-movies.org");
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -52,49 +51,43 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
             String link = reqinfo.getFirstMatch("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>");
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link.trim()));
-            } else
+            } else {
                 return null;
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

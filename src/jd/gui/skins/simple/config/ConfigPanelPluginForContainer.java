@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -60,13 +59,13 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         @Override
         public String getColumnName(int column) {
             switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.plugin.container.column_host","Host");
-                case 1:
-//                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
-                    return JDLocale.L("gui.config.plugin.container.column_version","Version");
-                case 2:
-                    return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
+            case 0:
+                return JDLocale.L("gui.config.plugin.container.column_host", "Host");
+            case 1:
+                // return JDLocale.L("gui.config.plugin.container.column_id","ID");
+                return JDLocale.L("gui.config.plugin.container.column_version", "Version");
+            case 2:
+                return JDLocale.L("gui.config.plugin.container.column_author", "Ersteller");
 
             }
             return super.getColumnName(column);
@@ -79,37 +78,38 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         public Object getValueAt(int rowIndex, int columnIndex) {
 
             switch (columnIndex) {
-                case 0:
-                    return pluginsForContainer.elementAt(rowIndex).getPluginName();
-                case 1:
-//                    return pluginsForContainer.elementAt(rowIndex).getPluginID();
-                    return pluginsForContainer.elementAt(rowIndex).getVersion();
-                case 2:
-                    return pluginsForContainer.elementAt(rowIndex).getCoder();
+            case 0:
+                return pluginsForContainer.elementAt(rowIndex).getPluginName();
+            case 1:
+                // return pluginsForContainer.elementAt(rowIndex).getPluginID();
+                return pluginsForContainer.elementAt(rowIndex).getVersion();
+            case 2:
+                return pluginsForContainer.elementAt(rowIndex).getCoder();
 
             }
             return null;
         }
     }
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -169660462836773855L;
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -169660462836773855L;
     /**
      * 
      */
 
-    private JButton                  btnEdit;
- 
+    private JButton btnEdit;
+
     private Configuration configuration;
-//  private PluginForDecrypt         currentPlugin;
+    // private PluginForDecrypt currentPlugin;
     private Vector<PluginForContainer> pluginsForContainer;
-    private JTable                   table;
+    private JTable table;
 
     public ConfigPanelPluginForContainer(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration=configuration;
-        this.pluginsForContainer = JDUtilities.getPluginsForContainer();
+        this.configuration = configuration;
+        pluginsForContainer = JDUtilities.getPluginsForContainer();
         initPanel();
 
         load();
@@ -122,7 +122,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         }
     }
 
-    
     private void editEntry() {
         PluginForContainer plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
@@ -132,42 +131,41 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     @Override
     public String getName() {
-        return JDLocale.L("gui.config.plugin.container.name","Container");
+        return JDLocale.L("gui.config.plugin.container.name", "Container");
     }
 
-    
     private int getSelectedInteractionIndex() {
         return table.getSelectedRow();
     }
 
     private PluginForContainer getSelectedPlugin() {
         int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return this.pluginsForContainer.elementAt(index);
+        if (index < 0) { return null; }
+        return pluginsForContainer.elementAt(index);
     }
 
     @Override
     public void initPanel() {
         setLayout(new BorderLayout());
-        table = new JTable(); //new InternalTable();
+        table = new JTable(); // new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(new InternalTableModel());
-        this.setPreferredSize(new Dimension(700, 350));
+        setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
 
-                case 0:
-                    column.setPreferredWidth(250);
-                    break;
-                case 1:
-                    column.setPreferredWidth(200);
-                    break;
-                case 2:
-                    column.setPreferredWidth(250);
-                    break;
+            case 0:
+                column.setPreferredWidth(250);
+                break;
+            case 1:
+                column.setPreferredWidth(200);
+                break;
+            case 2:
+                column.setPreferredWidth(250);
+                break;
 
             }
         }
@@ -178,19 +176,24 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton(JDLocale.L("gui.config.plugin.container.btn_settings","Einstellungen"));
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.container.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if (pluginsForContainer.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
-                else btnEdit.setEnabled(false);
+                if (pluginsForContainer.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) {
+                    btnEdit.setEnabled(true);
+                } else {
+                    btnEdit.setEnabled(false);
+                }
             }
         });
 
         btnEdit.addActionListener(this);
-//        JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-//
-//        JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        //
+        // JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
@@ -207,23 +210,33 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     public void load() {
 
     }
+
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             editEntry();
         }
     }
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
+
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
     private void openPopupPanel(ConfigPanel config) {
         JPanel panel = new JPanel(new BorderLayout());
 
-//      InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-        PluginForContainer plugin = this.getSelectedPlugin();
-//      currentPlugin = plugin;
-        if (plugin == null) return;
+        PluginForContainer plugin = getSelectedPlugin();
+        // currentPlugin = plugin;
+        if (plugin == null) { return; }
 
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
@@ -232,10 +245,10 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
-    
+
     /**
-     * Speichert alle Änderungen auf der Maske
-     * TODO: PluginsForDecrypt haben noch keinen properties laoder. 
+     * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
+     * noch keinen properties laoder.
      */
     @Override
     public void save() {
@@ -243,7 +256,9 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         PluginForContainer plg;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             plg = pluginsForContainer.elementAt(i);
-            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getProperties() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            }
         }
 
     }

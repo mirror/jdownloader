@@ -21,8 +21,6 @@ package jd.unrar;
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
 
-
-public interface AxeEventListener
-{
-	public void handleEvent (AxeEvent ae);
+public interface AxeEventListener {
+    public void handleEvent(AxeEvent ae);
 }

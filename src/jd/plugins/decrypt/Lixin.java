@@ -40,13 +40,13 @@ public class Lixin extends PluginForDecrypt {
 
     static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?lix\\.in/[-]{0,1}[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Lixin() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -89,17 +89,17 @@ public class Lixin extends PluginForDecrypt {
                 if (matcher.find()) {
                     /* EinzelLink gefunden */
                     String link = matcher.group(1);
-                    decryptedLinks.add(this.createDownloadlink((link)));
+                    decryptedLinks.add(createDownloadlink(link));
                 } else {
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
                     Form[] forms = reqInfo.getForms();
-                    for (int i = 0; i < forms.length; i++) {
-                        RequestInfo reqInfo2 = forms[i].getRequestInfo();
+                    for (Form element : forms) {
+                        RequestInfo reqInfo2 = element.getRequestInfo();
                         matcher = patternIframe.matcher(reqInfo2.getHtmlCode());
                         if (matcher.find()) {
                             /* EinzelLink gefunden */
                             String link = matcher.group(1);
-                            decryptedLinks.add(this.createDownloadlink((link)));
+                            decryptedLinks.add(createDownloadlink(link));
                         }
                     }
                 }
@@ -111,41 +111,34 @@ public class Lixin extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

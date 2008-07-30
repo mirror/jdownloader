@@ -77,10 +77,10 @@ public class JDController implements ControlListener, UIListener {
         public EventSender() {
             super("EventSender");
 
-            this.watchDog = new Thread("EventSenderWatchDog") {
+            watchDog = new Thread("EventSenderWatchDog") {
                 public void run() {
                     while (true) {
-                        if (eventStart > 0 && (System.currentTimeMillis() - eventStart) > MAX_EVENT_TIME) {
+                        if (eventStart > 0 && System.currentTimeMillis() - eventStart > MAX_EVENT_TIME) {
                             JDUtilities.getLogger().finer("WATCHDOG: Execution Limit reached");
                             JDUtilities.getLogger().finer("ControlListener: " + currentListener);
                             JDUtilities.getLogger().finer("Event: " + event);
@@ -117,17 +117,21 @@ public class JDController implements ControlListener, UIListener {
                     // JDUtilities.getLogger().severe("THREAD");
                     if (eventQueue != null && eventQueue.size() > 0) {
                         event = eventQueue.remove(0);
-                        if (event == null) continue;
+                        if (event == null) {
+                            continue;
+                        }
                         eventStart = System.currentTimeMillis();
                         currentListener = JDController.this;
                         controlEvent(event);
                         eventStart = 0;
-                        if (controlListener == null) controlListener = new ArrayList<ControlListener>();
+                        if (controlListener == null) {
+                            controlListener = new ArrayList<ControlListener>();
+                        }
                         synchronized (controlListener) {
                             Iterator<ControlListener> iterator = controlListener.iterator();
                             while (iterator.hasNext()) {
                                 eventStart = System.currentTimeMillis();
-                                currentListener = ((ControlListener) iterator.next());
+                                currentListener = (ControlListener) iterator.next();
                                 currentListener.controlEvent(event);
                                 eventStart = 0;
                             }
@@ -139,7 +143,7 @@ public class JDController implements ControlListener, UIListener {
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
-                    //e.printStackTrace();
+                    // e.printStackTrace();
                     eventStart = 0;
                 }
             }
@@ -147,6 +151,7 @@ public class JDController implements ControlListener, UIListener {
         }
 
     }
+
     /**
      * Es läuft kein Download
      */
@@ -204,7 +209,6 @@ public class JDController implements ControlListener, UIListener {
 
     private int initStatus = -1;
 
-
     // public static Property FLAGS = new Property();
 
     private File lastCaptchaLoaded;
@@ -240,7 +244,7 @@ public class JDController implements ControlListener, UIListener {
         packages = new Vector<FilePackage>();
 
         downloadStatus = DOWNLOAD_NOT_RUNNING;
-        this.eventSender = getEventSender();
+        eventSender = getEventSender();
 
         fp = new FilePackage();
         fp.setName(JDLocale.L("controller.packages.defaultname", "various"));
@@ -252,8 +256,9 @@ public class JDController implements ControlListener, UIListener {
 
     public void addAllLinks(Vector<DownloadLink> links) {
         Iterator<DownloadLink> it = links.iterator();
-        while (it.hasNext())
-            this.addLink(it.next());
+        while (it.hasNext()) {
+            addLink(it.next());
+        }
 
     }
 
@@ -264,7 +269,9 @@ public class JDController implements ControlListener, UIListener {
      *            Ein neuer Listener
      */
     public synchronized void addControlListener(ControlListener listener) {
-        if (controlListener == null) controlListener = new ArrayList<ControlListener>();
+        if (controlListener == null) {
+            controlListener = new ArrayList<ControlListener>();
+        }
         synchronized (controlListener) {
             if (controlListener.indexOf(listener) == -1) {
                 controlListener.add(listener);
@@ -274,14 +281,18 @@ public class JDController implements ControlListener, UIListener {
 
     public void addLink(DownloadLink link) {
         int index;
-        if (link.getFilePackage() == null) link.setFilePackage(fp);
+        if (link.getFilePackage() == null) {
+            link.setFilePackage(fp);
+        }
         synchronized (packages) {
             if ((index = packages.indexOf(link.getFilePackage())) >= 0) {
 
                 packages.get(index).add(link);
             } else {
                 packages.add(link.getFilePackage());
-                if (!link.getFilePackage().contains(link)) link.getFilePackage().add(link);
+                if (!link.getFilePackage().contains(link)) {
+                    link.getFilePackage().add(link);
+                }
 
             }
         }
@@ -351,7 +362,9 @@ public class JDController implements ControlListener, UIListener {
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
 
                 File file = new File(new File(downloadDir), packages.get(i));
-                if (!file.exists()) file.mkdirs();
+                if (!file.exists()) {
+                    file.mkdirs();
+                }
 
                 if (file.exists()) {
                     fp.setDownloadDirectory(file.getAbsolutePath());
@@ -390,11 +403,15 @@ public class JDController implements ControlListener, UIListener {
 
     public void addPackageAt(FilePackage fp, int index) {
         if (packages.size() == 0) {
-            this.addPackage(fp);
+            addPackage(fp);
             return;
         }
-        if (index > packages.size() - 1) index = packages.size() - 1;
-        if (index < 0) index = 0;
+        if (index > packages.size() - 1) {
+            index = packages.size() - 1;
+        }
+        if (index < 0) {
+            index = 0;
+        }
         synchronized (packages) {
             packages.add(index, fp);
         }
@@ -407,7 +424,7 @@ public class JDController implements ControlListener, UIListener {
      * @param lastDownloadFinished
      */
     private void addToFinished(DownloadLink lastDownloadFinished) {
-        this.finishedLinks.add(lastDownloadFinished);
+        finishedLinks.add(lastDownloadFinished);
 
     }
 
@@ -487,9 +504,10 @@ public class JDController implements ControlListener, UIListener {
                     }
                 }
 
-              //  if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
-                    finalLinks.add(link);
-              //  }
+                // if (link.isAvailable() || ((PluginForHost)
+                // link.getPlugin()).isListOffline()) {
+                finalLinks.add(link);
+                // }
 
             }
 
@@ -503,13 +521,17 @@ public class JDController implements ControlListener, UIListener {
 
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) c++;
+            if (a.charAt(i) == b.charAt(i)) {
+                c++;
+            }
         }
 
-        if (Math.min(a.length(), b.length()) == 0) return 0;
+        if (Math.min(a.length(), b.length()) == 0) {
+            return 0;
+        }
         // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
         // (b.length()) + ")");
-        return (c * 100) / (b.length());
+        return c * 100 / b.length();
     }
 
     /**
@@ -547,28 +569,30 @@ public class JDController implements ControlListener, UIListener {
 
                     fileLogger.close();
                 } catch (IOException e) {
-                    
+
                     e.printStackTrace();
                 }
             }
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getSource() instanceof PluginForHost)) {
+                return;
+            }
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            this.addToFinished(lastDownloadFinished);
+            addToFinished(lastDownloadFinished);
 
             // Prüfen ob das Paket fertig ist
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
             }
             // Prüfen obd er Link entfernt werden soll.
             if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
 
-                this.removeDownloadLink(lastDownloadFinished);
+                removeDownloadLink(lastDownloadFinished);
                 this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             }
@@ -583,8 +607,10 @@ public class JDController implements ControlListener, UIListener {
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            if (uiInterface == null) return;
-            // logger.info("rvc event" + links);
+            if (uiInterface == null) {
+                return;
+                // logger.info("rvc event" + links);
+            }
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
                 Vector links = (Vector) event.getParameter();
@@ -617,7 +643,7 @@ public class JDController implements ControlListener, UIListener {
 
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
             // Interaction interaction = (Interaction) event.getParameter();
-            this.saveDownloadLinks();
+            saveDownloadLinks();
             break;
 
         default:
@@ -651,7 +677,7 @@ public class JDController implements ControlListener, UIListener {
             // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
             Collections.sort(services, new Comparator<Object>() {
                 public int compare(Object a, Object b) {
-                    return (int) ((Math.random() * 4.0) - 2.0);
+                    return (int) (Math.random() * 4.0 - 2.0);
 
                 }
 
@@ -697,16 +723,20 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
-        if (controlEvent == null) return;
+        if (controlEvent == null) {
+            return;
+        }
         if (controlEvent.getID() == ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED) {
-            this.increaseChangeID();
+            increaseChangeID();
         }
         try {
             // this.controlEvent(controlEvent);
             // if (controlListener == null) controlListener = new
             // ArrayList<ControlListener>();
-            if (this.eventQueue == null) this.eventQueue = new ArrayList<ControlEvent>();
-            this.eventQueue.add(controlEvent);
+            if (eventQueue == null) {
+                eventQueue = new ArrayList<ControlEvent>();
+            }
+            eventQueue.add(controlEvent);
 
             synchronized (eventSender) {
                 if (eventSender.waitFlag) {
@@ -786,7 +816,9 @@ public class JDController implements ControlListener, UIListener {
                 for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
 
                     nextDownloadLink = linkIterator.next();
-                    if (lastElement == lastDownloadLink) return nextDownloadLink;
+                    if (lastElement == lastDownloadLink) {
+                        return nextDownloadLink;
+                    }
                     lastDownloadLink = nextDownloadLink;
 
                 }
@@ -808,7 +840,9 @@ public class JDController implements ControlListener, UIListener {
                 for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
 
                     nextDownloadLink = linkIterator.next();
-                    if (downloadLink == nextDownloadLink) return lastDownloadLink;
+                    if (downloadLink == nextDownloadLink) {
+                        return lastDownloadLink;
+                    }
                     lastDownloadLink = nextDownloadLink;
 
                 }
@@ -865,7 +899,7 @@ public class JDController implements ControlListener, UIListener {
         if (watchdog == null || watchdog.isAborted() && downloadStatus == DOWNLOAD_RUNNING) {
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
         }
-        return this.downloadStatus;
+        return downloadStatus;
 
     }
 
@@ -882,7 +916,9 @@ public class JDController implements ControlListener, UIListener {
             FilePackage fp;
             while (it.hasNext()) {
                 fp = it.next();
-                if (fp.contains(link)) return fp;
+                if (fp.contains(link)) {
+                    return fp;
+                }
             }
         }
         logger.severe("Link " + link + " does not belong to any Package");
@@ -911,7 +947,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || (nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().getRemainingWaittime()==0 && nextDownloadLink.isEnabled())) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0 && nextDownloadLink.isEnabled()) {
 
                         ret++;
                     }
@@ -919,7 +955,7 @@ public class JDController implements ControlListener, UIListener {
             }
         }
 
-        if (watchdog != null && !this.watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.getActiveDownloadControllers().size(), ret); }
+        if (watchdog != null && !watchdog.isAborted() && watchdog.isAlive()) { return Math.min(watchdog.getActiveDownloadControllers().size(), ret); }
         return ret;
     }
 
@@ -932,8 +968,10 @@ public class JDController implements ControlListener, UIListener {
      * @return ZUletzt bearbeiteter Captcha
      */
     public String getLastCaptchaImage() {
-        if (this.lastCaptchaLoaded == null) return "";
-        return this.lastCaptchaLoaded.getAbsolutePath();
+        if (lastCaptchaLoaded == null) {
+            return "";
+        }
+        return lastCaptchaLoaded.getAbsolutePath();
     }
 
     /**
@@ -950,8 +988,10 @@ public class JDController implements ControlListener, UIListener {
      * @return Die zuletzte fertiggestellte datei
      */
     public String getLastFinishedFile() {
-        if (this.lastDownloadFinished == null) return "";
-        return this.lastDownloadFinished.getFileOutput();
+        if (lastDownloadFinished == null) {
+            return "";
+        }
+        return lastDownloadFinished.getFileOutput();
     }
 
     /**
@@ -967,7 +1007,9 @@ public class JDController implements ControlListener, UIListener {
 
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if (fp.contains(downloadLink)) return fp.getDownloadLinks();
+                if (fp.contains(downloadLink)) {
+                    return fp.getDownloadLinks();
+                }
 
             }
         }
@@ -987,7 +1029,9 @@ public class JDController implements ControlListener, UIListener {
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
 
-            if (filePackage == nextDownloadLink.getFilePackage()) ret.add(nextDownloadLink);
+            if (filePackage == nextDownloadLink.getFilePackage()) {
+                ret.add(nextDownloadLink);
+            }
         }
         return ret;
     }
@@ -1006,7 +1050,9 @@ public class JDController implements ControlListener, UIListener {
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) i++;
+            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
+                i++;
+            }
         }
         return i;
     }
@@ -1019,7 +1065,9 @@ public class JDController implements ControlListener, UIListener {
         DownloadLink nextDownloadLink = null;
         while (iterator.hasNext()) {
             nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) i++;
+            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
+                i++;
+            }
         }
         return i;
     }
@@ -1068,7 +1116,9 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) ret++;
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        ret++;
+                    }
                 }
             }
         }
@@ -1080,8 +1130,10 @@ public class JDController implements ControlListener, UIListener {
      */
     public int getSpeedMeter() {
 
-        if (this.getWatchdog() == null || !getWatchdog().isAlive()) return 0;
-        return this.getWatchdog().getTotalSpeed();
+        if (getWatchdog() == null || !getWatchdog().isAlive()) {
+            return 0;
+        }
+        return getWatchdog().getTotalSpeed();
     }
 
     /**
@@ -1098,7 +1150,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public Vector<Vector<String>> getWaitingUpdates() {
-        return this.waitingUpdates;
+        return waitingUpdates;
 
     }
 
@@ -1117,7 +1169,9 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) return true;
+                    if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) {
+                        return true;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -1146,10 +1200,10 @@ public class JDController implements ControlListener, UIListener {
             return false;
         }
 
-        for (Iterator<FilePackage> packageIterator = packages.iterator(); packageIterator.hasNext();) {
+        for (FilePackage filePackage : packages) {
 
-            for (Iterator<DownloadLink> linkIterator = packageIterator.next().getDownloadLinks().iterator(); linkIterator.hasNext();) {
-                linkIterator.next().setProperty(PROPERTY_SELECTED, false);
+            for (DownloadLink downloadLink : filePackage.getDownloadLinks()) {
+                downloadLink.setProperty(PROPERTY_SELECTED, false);
             }
         }
         this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -1255,7 +1309,7 @@ public class JDController implements ControlListener, UIListener {
                     }
                     progress.increase(1);
                 }
-               progress.setStatusText(downloadLinks.size() + " links found");
+                progress.setStatusText(downloadLinks.size() + " links found");
                 if (downloadLinks.size() > 0) {
                     if (JDUtilities.getSubConfig("GUI").getBooleanProperty(Configuration.PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW, false)) {
                         String html = "<style>p { font-size:9px;margin:1px; padding:0px;}div {font-family:Geneva, Arial, Helvetica, sans-serif; width:400px;background-color:#ffffff; padding:2px;}h1 { vertical-align:top; text-align:left;font-size:10px; margin:0px; display:block;font-weight:bold; padding:0px;}</style><div> <div align='center'> <p><img src='http://jdownloader.org/img/%s.gif'> </p> </div> <h1>%s</h1><hr> <table width='100%%' border='0' cellspacing='5'> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> <tr> <td><p>%s</p></td> <td style='width:100%%'><p>%s</p></td> </tr> </table> </div>";
@@ -1294,7 +1348,7 @@ public class JDController implements ControlListener, UIListener {
             if (file.exists()) {
                 Object obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
 
-                if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || (((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage))) {
+                if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
                     Vector<FilePackage> packages = (Vector<FilePackage>) obj;
                     Iterator<FilePackage> iterator = packages.iterator();
                     DownloadLink localLink;
@@ -1308,7 +1362,7 @@ public class JDController implements ControlListener, UIListener {
                         while (it.hasNext()) {
 
                             localLink = it.next();
-                            if(!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)){
+                            if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                                 localLink.getLinkStatus().reset();
                             }
                             if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
@@ -1336,8 +1390,9 @@ public class JDController implements ControlListener, UIListener {
                                         pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
                                         if (pluginForContainer != null) {
 
-                                        } else
+                                        } else {
                                             localLink.setEnabled(false);
+                                        }
                                     }
                                 }
 
@@ -1379,9 +1434,15 @@ public class JDController implements ControlListener, UIListener {
      * @return
      */
     public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before, DownloadLink after) {
-        if (links.contains(before) || links.contains(after)) return false;
-        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) return false;
-        if (before == null & after == null) return false;
+        if (links.contains(before) || links.contains(after)) {
+            return false;
+        }
+        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) {
+            return false;
+        }
+        if (before == null & after == null) {
+            return false;
+        }
         DownloadLink link;
 
         Iterator<DownloadLink> iterator = links.iterator();
@@ -1394,7 +1455,9 @@ public class JDController implements ControlListener, UIListener {
                     fp = it.next();
                     if (fp.remove(link)) {
 
-                        if (fp.size() == 0) it.remove();
+                        if (fp.size() == 0) {
+                            it.remove();
+                        }
                         continue;
                     }
 
@@ -1420,25 +1483,35 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean movePackage(FilePackage fp, int index) {
-        if (index < 0) index = 0;
-        if (index > packages.size() - 1) index = packages.size() - 1;
+        if (index < 0) {
+            index = 0;
+        }
+        if (index > packages.size() - 1) {
+            index = packages.size() - 1;
+        }
         int i = packages.indexOf(fp);
         if (i == index) {
             return false;
         } else if (i > index) {
             index--;
-            this.removePackage(fp);
+            removePackage(fp);
         } else {
-            this.removePackage(fp);
+            removePackage(fp);
         }
-        this.addPackageAt(fp, index);
+        addPackageAt(fp, index);
         return true;
     }
 
     public boolean movePackages(Vector<FilePackage> fps, FilePackage before, FilePackage after) {
-        if (after != null && fps.contains(after)) return false;
-        if (before != null && fps.contains(before)) return false;
-        if (before == null && after == null) return false;
+        if (after != null && fps.contains(after)) {
+            return false;
+        }
+        if (before != null && fps.contains(before)) {
+            return false;
+        }
+        if (before == null && after == null) {
+            return false;
+        }
         synchronized (packages) {
             packages.removeAll(fps);
             int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
@@ -1456,8 +1529,6 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-  
-
     /**
      * Emtfernt einen Listener
      * 
@@ -1469,7 +1540,6 @@ public class JDController implements ControlListener, UIListener {
             controlListener.remove(listener);
         }
     }
-
 
     // /**
     // * Führt über die in der cnfig gegebenen daten einen reconnect durch.
@@ -1493,7 +1563,8 @@ public class JDController implements ControlListener, UIListener {
     // if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.
     // PARAM_DISABLE_RECONNECT, false)) {
     // //logger.finer(
-    // "Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate it"
+    // "Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate
+    // it"
     // );
     // if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * 60 * 10)) {
     // this.lastIPUpdate = System.currentTimeMillis();
@@ -1506,7 +1577,8 @@ public class JDController implements ControlListener, UIListener {
     // JDUtilities.getGUI().displayMiniWarning(JDLocale.L(
     // "gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"),
     // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
-    // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."
+    // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion
+    // wieder aktiviert werden."
     // ), 60000);
     //                
     // }
@@ -1588,7 +1660,9 @@ public class JDController implements ControlListener, UIListener {
             while (it.hasNext()) {
                 fp = it.next();
                 if (fp.remove(link)) {
-                    if (fp.size() == 0) packages.remove(fp);
+                    if (fp.size() == 0) {
+                        packages.remove(fp);
+                    }
                     return;
                 }
 
@@ -1600,39 +1674,45 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void removeDownloadLinks(Vector<DownloadLink> links) {
-        if (links == null || links.size() == 0) return;
+        if (links == null || links.size() == 0) {
+            return;
+        }
         Iterator<DownloadLink> iterator = links.iterator();
         while (iterator.hasNext()) {
 
-            this.removeDownloadLink(iterator.next());
+            removeDownloadLink(iterator.next());
         }
 
     }
 
     private String removeExtension(String a) {
         // logger.finer("file " + a);
-        if (a == null) return a;
+        if (a == null) {
+            return a;
+        }
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
         // logger.info("FOund . " + i);
         String ret;
-        if (i <= 1 || (a.length() - i) > 5) {
+        if (i <= 1 || a.length() - i > 5) {
             ret = a.toLowerCase().trim();
         } else {
             // logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        if (a.equals(ret)) return ret;
-        return (ret);
+        if (a.equals(ret)) {
+            return ret;
+        }
+        return ret;
 
     }
 
     public boolean removePackage(FilePackage fp2) {
-        for (Iterator<DownloadLink> it = fp2.getDownloadLinks().iterator(); it.hasNext();) {
-            it.next().setAborted(true);
+        for (DownloadLink downloadLink : fp2.getDownloadLinks()) {
+            downloadLink.setAborted(true);
         }
 
         synchronized (packages) {
@@ -1665,7 +1745,7 @@ public class JDController implements ControlListener, UIListener {
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                         nextDownloadLink.getLinkStatus().setStatusText("");
                         nextDownloadLink.getLinkStatus().reset();
-//                        nextDownloadLink.setEndOfWaittime(0);
+                        // nextDownloadLink.setEndOfWaittime(0);
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
                         al.add(nextDownloadLink);
                     }
@@ -1680,7 +1760,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void saveDLC(File file) {
 
-        String xml = JDUtilities.createContainerString(this.getDownloadLinks(), "DLC Parser");
+        String xml = JDUtilities.createContainerString(getDownloadLinks(), "DLC Parser");
         // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
@@ -1691,7 +1771,7 @@ public class JDController implements ControlListener, UIListener {
 
             {
 
-                if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+                if (getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
                     loadContainerFile(file);
                     return;
                 }
@@ -1700,7 +1780,7 @@ public class JDController implements ControlListener, UIListener {
         }
 
         logger.severe("Container creation failed");
-        this.getUiInterface().showMessageDialog("Container encryption failed");
+        getUiInterface().showMessageDialog("Container encryption failed");
     }
 
     public void saveDLC(File file, Vector<DownloadLink> links) {
@@ -1715,7 +1795,7 @@ public class JDController implements ControlListener, UIListener {
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {
 
-                if (this.getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
+                if (getUiInterface().showConfirmDialog(JDLocale.L("sys.dlc.success", "DLC encryption successfull. Run Testdecrypt now?"))) {
                     loadContainerFile(file);
                     return;
                 }
@@ -1724,7 +1804,7 @@ public class JDController implements ControlListener, UIListener {
         }
 
         logger.severe("Container creation failed");
-        this.getUiInterface().showMessageDialog("Container encryption failed");
+        getUiInterface().showMessageDialog("Container encryption failed");
     }
 
     /**
@@ -1734,17 +1814,16 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
-     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
-     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
-     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
-     * -1) { // Link gefunden der entfernt wurde
-     * logger.finer("Found link that hast been removed: " +
-     * oldLinks.elementAt(i)); // oldLinks.elementAt(i).setAborted(true);
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
+     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
+     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
+     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
+     * hast been removed: " + oldLinks.elementAt(i)); //
+     * oldLinks.elementAt(i).setAborted(true);
      * 
      * watchdog.abortDownloadLink(oldLinks.elementAt(i)); } }
-     * 
-     * }
+     *  }
      */
     /**
      * Speichert die Linksliste ab
@@ -1774,7 +1853,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void setLogFileWriter(BufferedWriter bufferedWriter) {
-        this.fileLogger = bufferedWriter;
+        fileLogger = bufferedWriter;
 
     }
 
@@ -1784,19 +1863,21 @@ public class JDController implements ControlListener, UIListener {
      * @param uiInterface
      */
     public void setUiInterface(UIInterface uiInterface) {
-        if (this.uiInterface != null) this.uiInterface.removeUIListener(this);
+        if (this.uiInterface != null) {
+            this.uiInterface.removeUIListener(this);
+        }
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
 
     }
 
     public void setUnrarModule(Unrar instance) {
-        this.unrarModule = instance;
+        unrarModule = instance;
 
     }
 
     public void setWaitingUpdates(Vector<Vector<String>> files) {
-        this.waitingUpdates = files;
+        waitingUpdates = files;
 
     }
 
@@ -1808,7 +1889,7 @@ public class JDController implements ControlListener, UIListener {
         if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
             setDownloadStatus(DOWNLOAD_RUNNING);
             logger.info("StartDownloads");
-            this.watchdog = new DownloadWatchDog(this);
+            watchdog = new DownloadWatchDog(this);
             watchdog.start();
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
             return true;
@@ -1838,7 +1919,7 @@ public class JDController implements ControlListener, UIListener {
     public void toggleStartStop() {
 
         if (!startDownloads()) {
-            this.stopDownloads();
+            stopDownloads();
         }
 
     }
@@ -1877,10 +1958,10 @@ public class JDController implements ControlListener, UIListener {
                 return;
             }
             fp.sort("asc");
-            if ((JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0) && (uiEvent.getSource() instanceof LinkGrabber)) {
-                this.addPackageAt(fp, 0);
+            if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(LinkGrabber.PROPERTY_POSITION, 1) == 0 && uiEvent.getSource() instanceof LinkGrabber) {
+                addPackageAt(fp, 0);
             } else {
-                this.addPackage(fp);
+                addPackage(fp);
             }
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 

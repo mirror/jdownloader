@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.plugins.HTTPConnection;
 
-
 public class HeadRequest extends Request {
 
     public HeadRequest(String url) {
@@ -28,22 +27,15 @@ public class HeadRequest extends Request {
 
     }
 
- 
-
-    
     @Override
     public void postRequest(HTTPConnection httpConnection) throws IOException {
-       
-        
+
     }
 
-    
     @Override
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("HEAD");
-        
+
     }
-
-
 
 }

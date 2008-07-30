@@ -39,7 +39,6 @@ public class StacheldrahtTo extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -71,7 +70,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
                 reqinfo.setConnection(httpConnection);
 
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink(reqinfo.getHtmlCode().trim()));
+                decryptedLinks.add(createDownloadlink(reqinfo.getHtmlCode().trim()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -80,44 +79,34 @@ public class StacheldrahtTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

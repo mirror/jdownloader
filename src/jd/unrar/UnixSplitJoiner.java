@@ -30,167 +30,143 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class UnixSplitJoiner extends JAxeJoiner
-{
+public class UnixSplitJoiner extends JAxeJoiner {
 
-	public UnixSplitJoiner (String sFile)
-	{
-		super (sFile);
-		sDestDir = new File (sFile).getParent();
-	}
+    public UnixSplitJoiner(String sFile) {
+        super(sFile);
+        sDestDir = new File(sFile).getParent();
+    }
 
-	public UnixSplitJoiner (String sFile, String sDir)
-	{
-		super (sFile, sDir);
-	}
+    public UnixSplitJoiner(String sFile, String sDir) {
+        super(sFile, sDir);
+    }
 
-	@Override
-    protected boolean checkNoOverwrite (File f)
-	{
-		File fTemp = new File (sJoinedFile);
+    @Override
+    protected boolean checkNoOverwrite(File f) {
+        File fTemp = new File(sJoinedFile);
 
-		return !fTemp.exists();
-	}
+        return !fTemp.exists();
+    }
 
-	@Override
-    protected void computeJobSize()
-	{
-		long lReturn = 0;
-		int i = 0;
-		File fTemp;
+    @Override
+    protected void computeJobSize() {
+        long lReturn = 0;
+        int i = 0;
+        File fTemp;
 
-		do
-		{
-			fTemp = new File (sJoinedFile + getSuffix (i));
-			lReturn += fTemp.length();
-			i++;
-		} while (fTemp.exists());
+        do {
+            fTemp = new File(sJoinedFile + getSuffix(i));
+            lReturn += fTemp.length();
+            i++;
+        } while (fTemp.exists());
 
-		lJobSize = lReturn;
-	}
+        lJobSize = lReturn;
+    }
 
-	@Override
-    protected void doCleanup()
-	{
-		new File (sJoinedFile).delete();
-	}
+    @Override
+    protected void doCleanup() {
+        new File(sJoinedFile).delete();
+    }
 
-	private String getSuffix (int n)
-	{
-		char[] ca = new char[2];
+    private String getSuffix(int n) {
+        char[] ca = new char[2];
 
-		ca[0] = (char) ('a' + (n / 26));
-		ca[1] = (char) ('a' + (n % 26));
+        ca[0] = (char) ('a' + n / 26);
+        ca[1] = (char) ('a' + n % 26);
 
-		return new String (ca);
-	}
+        return new String(ca);
+    }
 
-	@Override
-    public void run()
-	{
-		File fToJoin, fTemp = null;
-		InputStream is = null;
-		BufferedOutputStream bos;
-		int i = 1, nLength;
-		byte[] ba = new byte[BUFFER_SIZE];
+    @Override
+    public void run() {
+        File fToJoin, fTemp = null;
+        InputStream is = null;
+        BufferedOutputStream bos;
+        int i = 1, nLength;
+        byte[] ba = new byte[BUFFER_SIZE];
 
-		bStopped= false;
-		fToJoin = new File (sFileToJoin);	
+        bStopped = false;
+        fToJoin = new File(sFileToJoin);
 
-		if (!UnixSplitFileFilter.isSplitFile (sFileToJoin))
-		{
-			dispatchEvent (new JobErrorEvent (this, "File to join does not seem a file split using Unix split"));
-			return;
-		}
-		sJoinedFile = UnixSplitFileFilter.getJoinedFileName (sFileToJoin);
-		System.out.println ("Joined file: "+ sJoinedFile);
+        if (!UnixSplitFileFilter.isSplitFile(sFileToJoin)) {
+            dispatchEvent(new JobErrorEvent(this, "File to join does not seem a file split using Unix split"));
+            return;
+        }
+        sJoinedFile = UnixSplitFileFilter.getJoinedFileName(sFileToJoin);
+        System.out.println("Joined file: " + sJoinedFile);
 
-		if (!fToJoin.exists() || fToJoin.isDirectory())
-		{
-			dispatchEvent (new JobErrorEvent (this, "File to join does not exist or is a directory"));
-			return;
-		}
+        if (!fToJoin.exists() || fToJoin.isDirectory()) {
+            dispatchEvent(new JobErrorEvent(this, "File to join does not exist or is a directory"));
+            return;
+        }
 
-		if (!checkNoOverwrite (fToJoin))
-		{
-			dispatchEvent (new JobErrorEvent (this, "Error: destination file already exists!"));
-			return;
-		}
+        if (!checkNoOverwrite(fToJoin)) {
+            dispatchEvent(new JobErrorEvent(this, "Error: destination file already exists!"));
+            return;
+        }
 
-		try
-		{
-			bos = new BufferedOutputStream (new FileOutputStream (sJoinedFile));
-		} catch (FileNotFoundException fnfe)
-		{
-			dispatchEvent (new JobErrorEvent (this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
-			return;
-		}
+        try {
+            bos = new BufferedOutputStream(new FileOutputStream(sJoinedFile));
+        } catch (FileNotFoundException fnfe) {
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
+            return;
+        }
 
-		computeJobSize();
-		System.out.println ("Job size: " + lJobSize);
-		initProgress();
-		i = 0;
-		try
-		{
-			do
-			{
-				if (is == null)
-				{
-					if (i == 0)
-						fTemp = new File (sFileToJoin);
-					else
-						fTemp = new File (sJoinedFile + getSuffix (i));
+        computeJobSize();
+        System.out.println("Job size: " + lJobSize);
+        initProgress();
+        i = 0;
+        try {
+            do {
+                if (is == null) {
+                    if (i == 0) {
+                        fTemp = new File(sFileToJoin);
+                    } else {
+                        fTemp = new File(sJoinedFile + getSuffix(i));
+                    }
 
-					if (!fTemp.exists())
-						break;
-					else
-						is = new BufferedInputStream (new FileInputStream (fTemp));
-				}
+                    if (!fTemp.exists()) {
+                        break;
+                    } else {
+                        is = new BufferedInputStream(new FileInputStream(fTemp));
+                    }
+                }
 
-				if (!bStopped)
-				{
-					nLength = is.read (ba, 0, BUFFER_SIZE);
-					if (nLength > 0)
-					{
-						bos.write (ba, 0, nLength);
-						lCurrent += nLength;
-						dispatchProgress();
-					}
-					else
-					{
-						i++;
-						is.close();
-						is = null;
-					}
-				}
-			} while (!bStopped);
-		} catch (FileNotFoundException fnfe)
-		{
-			dispatchEvent (new JobErrorEvent (this, "Error while opening: " + fTemp.getName()));
-			return;
-		} catch (IOException ioe)
-		{
-			dispatchEvent (new JobErrorEvent (this, "I/O error with file " + fTemp.getName() + " (" + ioe.getMessage() + ")"));
-			return;
-		} finally
-		{
-			try
-			{
-				bos.close();
-				if (is != null)
-					is.close();
-			} catch (IOException ioe) {}
-		}
+                if (!bStopped) {
+                    nLength = is.read(ba, 0, BUFFER_SIZE);
+                    if (nLength > 0) {
+                        bos.write(ba, 0, nLength);
+                        lCurrent += nLength;
+                        dispatchProgress();
+                    } else {
+                        i++;
+                        is.close();
+                        is = null;
+                    }
+                }
+            } while (!bStopped);
+        } catch (FileNotFoundException fnfe) {
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + fTemp.getName()));
+            return;
+        } catch (IOException ioe) {
+            dispatchEvent(new JobErrorEvent(this, "I/O error with file " + fTemp.getName() + " (" + ioe.getMessage() + ")"));
+            return;
+        } finally {
+            try {
+                bos.close();
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException ioe) {
+            }
+        }
 
-		if (bStopped)
-		{
-			doCleanup();
-			dispatchEvent (new JobEndEvent (this, "Join stopped by user."));
-		}
-		else
-		{
-			dispatchProgress (lJobSize);
-			dispatchEvent (new JobEndEvent (this, "Join terminated."));
-		}
-	}
+        if (bStopped) {
+            doCleanup();
+            dispatchEvent(new JobEndEvent(this, "Join stopped by user."));
+        } else {
+            dispatchProgress(lJobSize);
+            dispatchEvent(new JobEndEvent(this, "Join terminated."));
+        }
+    }
 }

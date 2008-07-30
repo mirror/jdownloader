@@ -33,13 +33,13 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     final static String host = "up.picoasis.net";
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public UpPicoasisNet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,9 +47,11 @@ public class UpPicoasisNet extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
 
-            String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>",Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) return null;
-            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
+            String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link == null) {
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -57,44 +59,34 @@ public class UpPicoasisNet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

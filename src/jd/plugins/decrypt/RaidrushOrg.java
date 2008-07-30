@@ -33,13 +33,13 @@ public class RaidrushOrg extends PluginForDecrypt {
     static private final String host = "save.raidrush.ws";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1";
 
     public RaidrushOrg() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,7 +55,7 @@ public class RaidrushOrg extends PluginForDecrypt {
             fp.setPassword(pass);
 
             String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
-            this.progress.setRange(matches.length);
+            progress.setRange(matches.length);
             for (String[] match : matches) {
 
                 String page2 = br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
@@ -63,7 +63,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
                 link = JDUtilities.htmlDecode(link);
                 link = new Regex(link, "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
-                DownloadLink dl = this.createDownloadlink(link);
+                DownloadLink dl = createDownloadlink(link);
                 dl.setSourcePluginPasswords(passes);
                 dl.setFilePackage(fp);
                 decryptedLinks.add(dl);
@@ -78,41 +78,34 @@ public class RaidrushOrg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

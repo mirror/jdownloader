@@ -30,14 +30,15 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
     static private final String HOST = "qshare.com";
     // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", Pattern.CASE_INSENSITIVE);
-    static private final String PLUGIN_NAME = HOST;
 
     public QshareCom() {
         super();
@@ -46,13 +47,11 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -99,7 +98,7 @@ public class QshareCom extends PluginForHost {
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            this.sleep(20000, downloadLink);
+            sleep(20000, downloadLink);
             return;
         }
         downloadLink.setName(getFileNameFormHeader(con));
@@ -112,30 +111,22 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    
     public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return;
 
     }
 
-    
     @Override
     public String getAGBLink() {
-       
+
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
-
-    
-    
-        
-   
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
@@ -167,7 +158,6 @@ public class QshareCom extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         // if
@@ -181,7 +171,6 @@ public class QshareCom extends PluginForHost {
         // }
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
@@ -192,27 +181,26 @@ public class QshareCom extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
 
-            this.doPremium(downloadLink);
+            doPremium(downloadLink);
 
         } else {
 
-            this.doFree(downloadLink);
+            doFree(downloadLink);
 
         }
         return;
@@ -236,16 +224,13 @@ public class QshareCom extends PluginForHost {
     //
     // }
 
-    
     @Override
     public void reset() {
 
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
 
     }
 }

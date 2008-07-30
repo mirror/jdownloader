@@ -14,12 +14,11 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins.event;
 
 /**
  * An diesen Listener werden die PluginEvents verteilt
- *
+ * 
  * @author astaldo
  */
 public interface PluginListener {

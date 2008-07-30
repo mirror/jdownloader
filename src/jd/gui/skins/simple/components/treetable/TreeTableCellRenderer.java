@@ -35,9 +35,9 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
         FONT_COLOR = JDTheme.C("gui.color.downloadlist.font", "ff0000");
         FONT_COLOR_SELECTED = JDTheme.C("gui.color.downloadlist.font_selected", "ffffff");
-        this.lbl_link = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link"))), SwingConstants.LEFT);
-        this.lbl_fp_closed = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed"))), SwingConstants.LEFT);
-        this.lbl_fp_opened = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened"))), SwingConstants.LEFT);
+        lbl_link = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.link"))), SwingConstants.LEFT);
+        lbl_fp_closed = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_closed"))), SwingConstants.LEFT);
+        lbl_fp_opened = new JLabel("", new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.package_opened"))), SwingConstants.LEFT);
 
         lbl_link.setOpaque(false);
         lbl_fp_closed.setOpaque(false);

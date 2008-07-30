@@ -37,12 +37,11 @@ public class ftp2share extends PluginForDecrypt {
     private static final Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)", Pattern.CASE_INSENSITIVE);
     // private String version = "1.0.0.0";
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
-    
+
     public ftp2share() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -52,23 +51,27 @@ public class ftp2share extends PluginForDecrypt {
             RequestInfo requestInfo;
 
             if (cryptedLink.matches(patternSupported_Folder.pattern())) {
-                if (!cryptedLink.contains("?system")) cryptedLink = cryptedLink + "?system=*";
+                if (!cryptedLink.contains("?system")) {
+                    cryptedLink = cryptedLink + "?system=*";
+                }
                 url = new URL(cryptedLink);
                 requestInfo = HTTP.getRequest(url);
                 String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < links.length; i++) {
-                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(links[i][0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
-                    decryptedLinks.add(this.createDownloadlink(link));
+                for (String[] element : links) {
+                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
+                    decryptedLinks.add(createDownloadlink(link));
                 }
             } else if (cryptedLink.matches(patternSupported_File.pattern())) {
                 url = new URL(cryptedLink);
                 requestInfo = HTTP.getRequest(url);
                 Form[] forms = requestInfo.getForms();
-                if (forms.length > 1) requestInfo = forms[1].getRequestInfo();
+                if (forms.length > 1) {
+                    requestInfo = forms[1].getRequestInfo();
+                }
                 String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < links.length; i++) {
-                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(links[i][0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
-                    decryptedLinks.add(this.createDownloadlink(link));
+                for (String[] element : links) {
+                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
+                    decryptedLinks.add(createDownloadlink(link));
                 }
             }
         } catch (MalformedURLException e) {
@@ -81,44 +84,34 @@ public class ftp2share extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

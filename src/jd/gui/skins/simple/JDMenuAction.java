@@ -25,35 +25,37 @@ import jd.utils.JDUtilities;
 
 public class JDMenuAction extends AbstractAction {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private MenuItem menuItem;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    private MenuItem menuItem;
 
     public JDMenuAction(MenuItem mi) {
         super();
-        this.menuItem = mi;
-   
-        if(JDUtilities.getJavaVersion()>=1.6){
-        putValue(SELECTED_KEY, mi.isSelected());
+        menuItem = mi;
+
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            putValue(SELECTED_KEY, mi.isSelected());
         }
-        
+
         putValue(NAME, mi.getTitle());
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        if( menuItem.getActionListener()==null){
-            JDUtilities.getLogger().warning("no Actionlistener for "+menuItem.getTitle());
+        if (menuItem.getActionListener() == null) {
+            JDUtilities.getLogger().warning("no Actionlistener for " + menuItem.getTitle());
             return;
         }
         menuItem.getActionListener().actionPerformed(new ActionEvent(menuItem, menuItem.getActionID(), menuItem.getTitle()));
     }
-public int getActionID() {
-    return menuItem.getActionID();
-}
+
+    public int getActionID() {
+        return menuItem.getActionID();
+    }
+
     @Override
-    public boolean isEnabled(){
+    public boolean isEnabled() {
         return menuItem.isEnabled();
     }
 }

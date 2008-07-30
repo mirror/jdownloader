@@ -34,9 +34,9 @@ public class JDSimpleWebserverStaticFileRequestHandler {
      * @param parameters
      * @return a response
      */
-    public void handleRequest(String url,HashMap<String, String> requestParameter) {
+    public void handleRequest(String url, HashMap<String, String> requestParameter) {
         File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
-        
+
         HashMap<String, String> mimes = new HashMap<String, String>();
 
         mimes.put("html", "text/html");
@@ -54,7 +54,9 @@ public class JDSimpleWebserverStaticFileRequestHandler {
         if (indexOfDot >= 0) {
             String extension = JDUtilities.getFileExtension(fileToRead);
             mimeType = "text/plain";
-            if (mimes.containsKey(extension.toLowerCase())) mimeType = mimes.get(extension.toLowerCase());
+            if (mimes.containsKey(extension.toLowerCase())) {
+                mimeType = mimes.get(extension.toLowerCase());
+            }
         }
         if (mimeType != null) {
             response.setContentType(mimeType);
@@ -78,7 +80,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
                     out.write(nextByte);
                 }
                 out.close();
-                /*logger.info("size " + out.size());*/
+                /* logger.info("size " + out.size()); */
                 response.setBinaryContent(out.toByteArray());
             }
         } catch (Exception e) {

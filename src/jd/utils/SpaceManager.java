@@ -9,13 +9,15 @@ import jd.plugins.DownloadLink;
 public class SpaceManager {
 
     public static boolean checkDownloadLink(DownloadLink downloadLink) {
-        return checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadMax());
+        return SpaceManager.checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadMax());
     }
 
     public static boolean checkPath(File Path, long size) {
         if (size > 0) {
-            long space = getUsableSpace(Path);
-            if (space > 0 && (space - size) < 1) return false;
+            long space = SpaceManager.getUsableSpace(Path);
+            if (space > 0 && space - size < 1) {
+                return false;
+            }
         }
         return true;
     }
@@ -31,13 +33,13 @@ public class SpaceManager {
         try {
             return ((Long) reflectOnUsableSpace.invoke(f)).longValue();
         } catch (IllegalArgumentException e) {
-            
+
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            
+
             e.printStackTrace();
         } catch (InvocationTargetException e) {
-            
+
             e.printStackTrace();
         }
         return -1;

@@ -34,13 +34,13 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
     static private String host = "downloads.pes-arena.com";
 
     final static private Pattern patternSupported = Pattern.compile("http://downloads\\.pes-arena\\.com/\\?id=(\\d+)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public DownloadsPesArenacom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -52,9 +52,10 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
                 RequestInfo reqinfo = HTTP.getRequest(url);
                 String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\"").getFirstMatch());
                 if (link != null) {
-                    decryptedLinks.add(this.createDownloadlink(link));
-                } else
+                    decryptedLinks.add(createDownloadlink(link));
+                } else {
                     return null;
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -63,27 +64,21 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
@@ -94,9 +89,9 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

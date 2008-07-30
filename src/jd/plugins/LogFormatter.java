@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.PrintWriter;
@@ -25,24 +24,23 @@ import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
 
 /**
- * Mit dieser Klasse können die Logmeldungen anders dargestellt werden.
- * Der Code wurde hauptsächlich aus SimpleFormatter übernommen.
- * Lediglich die Format Methode wurde ein wenig umgestellt.
- *
+ * Mit dieser Klasse können die Logmeldungen anders dargestellt werden. Der Code
+ * wurde hauptsächlich aus SimpleFormatter übernommen. Lediglich die Format
+ * Methode wurde ein wenig umgestellt.
+ * 
  * @author astaldo
- *
+ * 
  */
-public class LogFormatter extends SimpleFormatter{
+public class LogFormatter extends SimpleFormatter {
 
     private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
     Date dat = new Date();
     private MessageFormat formatter;
-    // Line separator string.  This is the value of the line.separator
+    // Line separator string. This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
 
-    
     @Override
     public synchronized String format(LogRecord record) {
 
@@ -63,8 +61,7 @@ public class LogFormatter extends SimpleFormatter{
         sb.append(" [");
         if (record.getSourceClassName() != null) {
             sb.append(record.getSourceClassName());
-        }
-        else {
+        } else {
             sb.append(record.getLoggerName());
         }
         if (record.getSourceMethodName() != null) {
@@ -84,8 +81,8 @@ public class LogFormatter extends SimpleFormatter{
                 record.getThrown().printStackTrace(pw);
                 pw.close();
                 sb.append(sw.toString());
+            } catch (Exception ex) {
             }
-            catch (Exception ex) {}
         }
         return sb.toString();
     }

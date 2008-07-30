@@ -33,13 +33,13 @@ import jd.utils.JDUtilities;
 public class XinkIt extends PluginForDecrypt {
     final static String host = "xink.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public XinkIt() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -85,9 +85,9 @@ public class XinkIt extends PluginForDecrypt {
             if (do_continue == true) {
                 String ids[][] = new Regex(reqinfo.getHtmlCode(), "startDownload\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE).getMatches();
                 progress.setRange(ids.length);
-                for (int i = 0; i < ids.length; i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + ids[i][0]));
-                    decryptedLinks.add(this.createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
+                for (String[] element : ids) {
+                    reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + element[0]));
+                    decryptedLinks.add(createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
                     progress.increase(1);
                 }
             }
@@ -99,45 +99,35 @@ public class XinkIt extends PluginForDecrypt {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     /**
@@ -171,17 +161,23 @@ public class XinkIt extends PluginForDecrypt {
             String temp1 = "";
 
             int temp2 = a;
-            if (temp2 > ar.length())
+            if (temp2 > ar.length()) {
                 temp2 = ar.length();
-            else if (temp2 < 0) temp2 = 0;
+            } else if (temp2 < 0) {
+                temp2 = 0;
+            }
 
             int temp3 = a + 2;
-            if (temp3 > ar.length()) temp3 = ar.length();
+            if (temp3 > ar.length()) {
+                temp3 = ar.length();
+            }
 
-            int temp4 = (a + 2) + (ar.length() - a);
-            if (temp4 > ar.length())
+            int temp4 = a + 2 + ar.length() - a;
+            if (temp4 > ar.length()) {
                 temp4 = ar.length();
-            else if (temp4 < 0) temp4 = temp3;
+            } else if (temp4 < 0) {
+                temp4 = temp3;
+            }
 
             temp1 += ar.substring(0, temp2);
             temp1 += ar.substring(temp3, temp4);
@@ -195,14 +191,18 @@ public class XinkIt extends PluginForDecrypt {
             for (int i = 0; i < l011.length(); i = i + 2) {
 
                 int temp5 = a + 2;
-                if (temp5 > ar.length()) temp5 = ar.length();
+                if (temp5 > ar.length()) {
+                    temp5 = ar.length();
+                }
 
                 int temp6 = i + 2;
-                if (temp6 > l011.length()) temp6 = l011.length();
+                if (temp6 > l011.length()) {
+                    temp6 = l011.length();
+                }
 
                 if (ar.substring(a, temp5).equals(l011.substring(i, temp6))) {
 
-                    re += l010.substring((int) Math.floor(i / 2), ((int) Math.floor(i / 2)) + 1);
+                    re += l010.substring((int) Math.floor(i / 2), (int) Math.floor(i / 2) + 1);
 
                 }
 

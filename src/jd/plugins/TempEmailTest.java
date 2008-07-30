@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.IOException;
@@ -22,35 +21,36 @@ import java.net.MalformedURLException;
 
 public class TempEmailTest {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		TempEmail email = new TempEmail();
-		email.emailname="jdownloader";
-		try {
-			String[][] emails = email.getMailInfos();
-			for (int i = 0; i < emails.length; i++) {
-				for (int j = 0; j < emails[i].length; j++) {
-					System.out.println(emails[i][j]);
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        TempEmail email = new TempEmail();
+        email.emailname = "jdownloader";
+        try {
+            String[][] emails = email.getMailInfos();
+            for (int i = 0; i < emails.length; i++) {
+                for (int j = 0; j < emails[i].length; j++) {
+                    System.out.println(emails[i][j]);
 
-				}
-				System.out.println(email.getMail(i));
-			}
-			System.out.println(email.getFilteredMail(new MailFilter(){
-				@Override
+                }
+                System.out.println(email.getMail(i));
+            }
+            System.out.println(email.getFilteredMail(new MailFilter() {
+                @Override
                 public boolean fromAdress(String[] mailInfo) {
-					if(mailInfo[0].matches("dwd.*")) return true;
-					return false;
-				}}));
-		} catch (MalformedURLException e) {
-			
-			e.printStackTrace();
-		} catch (IOException e) {
-			
-			e.printStackTrace();
-		}
+                    if (mailInfo[0].matches("dwd.*")) { return true; }
+                    return false;
+                }
+            }));
+        } catch (MalformedURLException e) {
 
-	}
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+
+    }
 
 }

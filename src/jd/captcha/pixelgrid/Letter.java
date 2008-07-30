@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.pixelgrid;
 
 import java.util.Vector;
@@ -33,14 +32,14 @@ import jd.captcha.utils.UTILITIES;
 public class Letter extends PixelGrid {
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private int    angle;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    private int angle;
     /**
      * Gibt an wie oft dieser letter negativ aufgefallen ist
      */
-    private int    badDetections  = 0;
+    private int badDetections = 0;
     /*
      * der decoded Value wird heir abgelegt
      */
@@ -48,23 +47,22 @@ public class Letter extends PixelGrid {
 
     public LetterComperator detected = null;
 
-    private int    elementPixel   = 0;
+    private int elementPixel = 0;
 
     /**
      * Gibt an wie oft dieser letter positov aufgefallen ist
      */
-    private int    goodDetections = 0;
+    private int goodDetections = 0;
 
     /**
      * ID des letters in der Lettermap
      */
-    public int     id;
+    public int id;
 
     /**
      * Hash des sourcecaptchas (Fürs training wichtig)
      */
     private String sourcehash;
-
 
     /**
      * 
@@ -72,7 +70,6 @@ public class Letter extends PixelGrid {
     public Letter() {
         super(0, 0);
     }
-
 
     /**
      * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das
@@ -85,11 +82,11 @@ public class Letter extends PixelGrid {
      * @return Ausgerichteter Buchstabe
      */
     public Letter align(double objectContrast) {
-        PixelObject obj = this.toPixelObject(objectContrast);
+        PixelObject obj = toPixelObject(objectContrast);
 
         PixelObject aligned = obj.align();
         Letter newLetter = aligned.toLetter();
-        this.setGrid(newLetter.grid);
+        setGrid(newLetter.grid);
         return this;
 
     }
@@ -105,12 +102,12 @@ public class Letter extends PixelGrid {
      * @return Ausgerichteter Buchstabe
      */
     public Letter align(double objectContrast, int angleA, int angleB) {
-        PixelObject obj = this.toPixelObject(objectContrast);
+        PixelObject obj = toPixelObject(objectContrast);
 
         PixelObject aligned = obj.align(angleA, angleB);
         Letter newLetter = aligned.toLetter();
 
-        this.setGrid(newLetter.grid);
+        setGrid(newLetter.grid);
         return this;
 
     }
@@ -134,15 +131,16 @@ public class Letter extends PixelGrid {
         double bestValue = Double.MAX_VALUE;
         Letter res = null;
         Letter tmp;
-        // if(JAntiCaptcha.isLoggerActive())logger.info("JJ"+angleA+" - "+angleB);
+        // if(JAntiCaptcha.isLoggerActive())logger.info("JJ"+angleA+" -
+        // "+angleB);
         for (int angle = angleA; angle < angleB; angle += accuracy) {
 
             tmp = turn(angle < 0 ? 360 + angle : angle);
             // if(JAntiCaptcha.isLoggerActive())logger.info("..
             // "+((double)tmp.getWidth()/(double)tmp.getHeight()));
             // BasicWindow.showImage(tmp.getImage(1),(angle<0?360+angle:angle)+"_");
-            if (((double) tmp.getWidth() / (double) tmp.getHeight()) < bestValue) {
-                bestValue = ((double) tmp.getWidth() / (double) tmp.getHeight());
+            if ((double) tmp.getWidth() / (double) tmp.getHeight() < bestValue) {
+                bestValue = (double) tmp.getWidth() / (double) tmp.getHeight();
                 res = tmp;
             }
         }
@@ -152,7 +150,8 @@ public class Letter extends PixelGrid {
     }
 
     /**
-	 * Richtet sich an den Pixelzahlen der oberen und unteren Zeile und gibt unter umständen ein besseres Ergebnis aus
+     * Richtet sich an den Pixelzahlen der oberen und unteren Zeile und gibt
+     * unter umständen ein besseres Ergebnis aus
      * 
      * @param angleA
      * @param angleB
@@ -172,8 +171,8 @@ public class Letter extends PixelGrid {
 
             tmp = turn(angle < 0 ? 360 + angle : angle);
             int pix = tmp.getFirstAndLastLinePixels();
-            if (pix>bestPix) {
-            	bestPix = pix;
+            if (pix > bestPix) {
+                bestPix = pix;
                 res = tmp;
             }
         }
@@ -185,88 +184,98 @@ public class Letter extends PixelGrid {
     public void colorize(int color) {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-               if(grid[x][y]<40) grid[x][y]=color;
+                if (grid[x][y] < 40) {
+                    grid[x][y] = color;
+                }
             }
-            }
+        }
     }
 
     /**
-     * Füllt alle Pixel des Objects in dem Letter mit einer Farbe,.
-     * Ist color<0, so woird die farebd es Objects verwendet.
+     * Füllt alle Pixel des Objects in dem Letter mit einer Farbe,. Ist color<0,
+     * so woird die farebd es Objects verwendet.
      */
-        public void fillWithObject(PixelObject p, int color) {
-            for(int i=0; i<p.getSize();i++){
-                int[] point = p.elementAt(i);            
-                this.grid[point[0]][point[1]]=color<0?point[2]:color;
-            }
+    public void fillWithObject(PixelObject p, int color) {
+        for (int i = 0; i < p.getSize(); i++) {
+            int[] point = p.elementAt(i);
+            grid[point[0]][point[1]] = color < 0 ? point[2] : color;
         }
+    }
 
     private void followPixelObject(int x, int y, int[][] map, boolean[][] bmap) {
-if(bmap[x][y])return;
+        if (bmap[x][y]) { return; }
         bmap[x][y] = true;
         // links oben
         int posX = -1;
         int posY = -1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // links
         posX = -1;
         posY = 0;
         try {
-          if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // links unten
         posX = -1;
         posY = 1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // unten
         posX = 0;
         posY = 1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // rechtsunten
         posX = 1;
         posY = 1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // rechts
         posX = 1;
         posY = 0;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // rechts oben
         posX = 1;
         posY = -1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
         // oben
         posX = 0;
         posY = -1;
         try {
-            if (map[x + posX][y + posY] == 0) followPixelObject(x + posX, y + posY, map, bmap);
-        }
-        catch (Exception e) {
+            if (map[x + posX][y + posY] == 0) {
+                followPixelObject(x + posX, y + posY, map, bmap);
+            }
+        } catch (Exception e) {
         }
 
     }
@@ -277,7 +286,7 @@ if(bmap[x][y])return;
      * @return drehwinkel
      */
     public int getAngle() {
-        return this.angle;
+        return angle;
 
     }
 
@@ -302,41 +311,48 @@ if(bmap[x][y])return;
     public String getDecodedValue() {
         return decodedValue;
     }
+
     /**
      * @return the elementPixel
      */
     public int getElementPixel() {
-        if (elementPixel > 0) return elementPixel;
+        if (elementPixel > 0) { return elementPixel; }
         elementPixel = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (grid[x][y] == 0) elementPixel++;
+                if (grid[x][y] == 0) {
+                    elementPixel++;
+                }
             }
         }
         return elementPixel;
     }
-    private int getFirstAndLastLinePixels()
-    {
-    	int c=0;
+
+    private int getFirstAndLastLinePixels() {
+        int c = 0;
         int avg = getAverage();
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-            	if(isElement(getPixelValue(x, y), avg))
-            	c++;
+                if (isElement(getPixelValue(x, y), avg)) {
+                    c++;
+                }
             }
-            if(c>0)
-            	break;
+            if (c > 0) {
+                break;
+            }
         }
-        int c2=0;
-        for (int y = getHeight()-1; y > 0; y--) {
+        int c2 = 0;
+        for (int y = getHeight() - 1; y > 0; y--) {
             for (int x = 0; x < getWidth(); x++) {
-            	if(isElement(getPixelValue(x, y), avg))
-            	c2++;
+                if (isElement(getPixelValue(x, y), avg)) {
+                    c2++;
+                }
             }
-            if(c2>0)
-            	break;
+            if (c2 > 0) {
+                break;
+            }
         }
-    	return c+c2;
+        return c + c2;
     }
 
     /**
@@ -356,45 +372,59 @@ if(bmap[x][y])return;
 
     public Letter getLinedLetter() {
         Letter ret = new Letter();
-        ret.setOwner(this.owner);
+        ret.setOwner(owner);
         int count = 0;
-int firstChange=0;
+        int firstChange = 0;
         while (true) {
             count++;
             int changed = 0;
-            PixelObject po = this.toPixelObject(0.85);
+            PixelObject po = toPixelObject(0.85);
             Vector<int[]> border = po.getBorderVector(this);
-
 
             for (int i = 0; i < border.size(); i++) {
                 int ax = border.get(i)[0];
 
                 int ay = border.get(i)[1];
-                if(JAntiCaptcha.isLoggerActive())logger.info(ax + "/" + ay);
-                int[][] map = this.getLocalMap(grid, ax, ay);
-  
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.info(ax + "/" + ay);
+                }
+                int[][] map = getLocalMap(grid, ax, ay);
+
                 int a = getObjectsNum(map);
                 map[1][1] = 0xff000;
 
                 int b = getObjectsNum(map);
-                if(JAntiCaptcha.isLoggerActive())logger.info(a + " --->> " + b);
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.info(a + " --->> " + b);
+                }
                 if (a == b) {
                     changed++;
                     this.setPixelValue(ax, ay, 0xff0000);
-                }
-                else {
-              
-                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
-                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
-                  if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+                } else {
+
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
+                    }
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
+                    }
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+                    }
                     this.setPixelValue(ax, ay, 0);
                 }
 
             }
             BasicWindow.showImage(this.getImage(5));
-            if(JAntiCaptcha.isLoggerActive())logger.info("changed "+changed);
-            if(firstChange==0)firstChange=changed;
-            if ( changed*20<=firstChange) break;
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.info("changed " + changed);
+            }
+            if (firstChange == 0) {
+                firstChange = changed;
+            }
+            if (changed * 20 <= firstChange) {
+                break;
+            }
 
         }
 
@@ -411,54 +441,32 @@ int firstChange=0;
         return ret;
 
     }
-/*
-    private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
 
-        int radius = 1;
-        boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()];
-        badgrid[x][y] = true;
-        double dir = getBorderDir(x, y);
-
-        return null;
-
-    }
-
-    private double getBorderDir(int x, int y) {
-        int count = 0;
-        double angle = 0;
-        int[][] angleMap = new int[3][3];
-        angleMap[2][1] = 0;
-        angleMap[2][0] = 45;
-        angleMap[1][0] = 90;
-        angleMap[0][0] = 135;
-        angleMap[0][1] = 180;
-        angleMap[0][2] = 225;
-        angleMap[1][2] = 270;
-        angleMap[2][2] = 315;
-        angleMap[1][1] = -1;
-        for (int xx = -1; xx < 2; xx++) {
-            for (int yy = -1; yy < 2; yy++) {
-                try {
-
-                    // ((x + xx < 0 || x + xx > this.getWidth() - 1 || y + yy <
-                    // 0 || y + yy > this.getHeight() - 1) ||
-                    if ((grid[x + xx][y + yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) {
-
-                        // if(JAntiCaptcha.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]);
-                        angle = count * angle + angleMap[xx + 1][yy + 1];
-                        count++;
-                        angle /= count;
-
-                    }
-
-                }
-                catch (Exception e) {
-                }
-            }
-        }
-        return angle;
-    }
-*/
+    /*
+     * private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
+     * 
+     * int radius = 1; boolean[][] badgrid = new
+     * boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir =
+     * getBorderDir(x, y);
+     * 
+     * return null;
+     *  }
+     * 
+     * private double getBorderDir(int x, int y) { int count = 0; double angle = 0;
+     * int[][] angleMap = new int[3][3]; angleMap[2][1] = 0; angleMap[2][0] = 45;
+     * angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180;
+     * angleMap[0][2] = 225; angleMap[1][2] = 270; angleMap[2][2] = 315;
+     * angleMap[1][1] = -1; for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy <
+     * 2; yy++) { try {
+     *  // ((x + xx < 0 || x + xx > this.getWidth() - 1 || y + yy < // 0 || y + yy >
+     * this.getHeight() - 1) || if ((grid[x + xx][y + yy] > 0) && angleMap[xx +
+     * 1][yy + 1] >= 0) {
+     *  // if(JAntiCaptcha.isLoggerActive())logger.info(xx+","+yy+" -
+     * "+angleMap[xx+1][yy+1]); angle = count * angle + angleMap[xx + 1][yy + 1];
+     * count++; angle /= count;
+     *  }
+     *  } catch (Exception e) { } } } return angle; }
+     */
 
     public int[][] getLocalMap(int[][] grid, int x, int y) {
         int[][] map = new int[3][3];
@@ -467,8 +475,7 @@ int firstChange=0;
             for (int yy = -1; yy <= 1; yy++) {
                 try {
                     map[xx + 1][yy + 1] = grid[x + xx][y + yy];
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     map[xx + 1][yy + 1] = -1;
                 }
             }
@@ -479,12 +486,12 @@ int firstChange=0;
 
     public Letter getMassLetter() {
         Letter ret = new Letter();
-        ret.setOwner(this.owner);
+        ret.setOwner(owner);
 
-        int[][] newGrid = new int[this.getWidth()][this.getHeight()];
-        int[][] filterGrid = new int[this.getWidth()][this.getHeight()];
-        long[][] grd = new long[this.getWidth()][this.getHeight()];
-        PixelObject po = this.toPixelObject(0.85);
+        int[][] newGrid = new int[getWidth()][getHeight()];
+        int[][] filterGrid = new int[getWidth()][getHeight()];
+        long[][] grd = new long[getWidth()][getHeight()];
+        PixelObject po = toPixelObject(0.85);
         long max = 0;
         long min = Long.MAX_VALUE;
         for (int x = 0; x < getWidth(); x++) {
@@ -500,11 +507,11 @@ int firstChange=0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 filterGrid[x][y] = 0;
-                newGrid[x][y] = (int) (this.getMaxPixelValue() * ((double) (grd[x][y] - min) / (double) (max - min)));
+                newGrid[x][y] = (int) (this.getMaxPixelValue() * (double) (grd[x][y] - min) / (double) (max - min));
             }
         }
 
-       // long akt;
+        // long akt;
         int x = 0;
         int y = 0;
         int[][] map = new int[3][3];
@@ -530,14 +537,19 @@ int firstChange=0;
                         }
                     }
                 }
-                if (xMax < -1) xMax = 1;
-                if (yMax < -1) yMax = 1;
+                if (xMax < -1) {
+                    xMax = 1;
+                }
+                if (yMax < -1) {
+                    yMax = 1;
+                }
                 x += xMax;
                 y += yMax;
                 i--;
-                if (i == 0) break;
-            }
-            catch (Exception e) {
+                if (i == 0) {
+                    break;
+                }
+            } catch (Exception e) {
                 break;
             }
         }
@@ -555,17 +567,20 @@ int firstChange=0;
         for (int x = 0; x < 3; x++) {
             for (int y = 0; y < 3; y++) {
                 if (!bmap[x][y] && map[x][y] == 0) {
-                    this.followPixelObject(x, y, map, bmap);
+                    followPixelObject(x, y, map, bmap);
                     ret++;
                 }
 
             }
         }
 
-//        if(JAntiCaptcha.isLoggerActive())logger.info("elements: " + ret);
-//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
-//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
-//        if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+        // if(JAntiCaptcha.isLoggerActive())logger.info("elements: " + ret);
+        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][0] + "-" + map[1][0] +
+        // "-" + map[2][0]);
+        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][1] + "-" + map[1][1] +
+        // "-" + map[2][1]);
+        // if(JAntiCaptcha.isLoggerActive())logger.info(map[0][2] + "-" + map[1][2] +
+        // "-" + map[2][2]);
         return ret;
     }
 
@@ -580,7 +595,7 @@ int firstChange=0;
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                ret += (getPixelValue(x, y) / getMaxPixelValue()) + "";
+                ret += getPixelValue(x, y) / getMaxPixelValue() + "";
 
             }
 
@@ -589,7 +604,7 @@ int firstChange=0;
         ret = ret.substring(0, ret.length() - 1);
         return ret;
     }
-    
+
     /**
      * TODO: EINE saubere verkleinerung * gibt den Letter um den faktor faktor
      * verkleinert zurück. Es wird ein Kontrastvergleich vorgenommen
@@ -598,33 +613,33 @@ int firstChange=0;
      * @return Vereinfachter Buchstabe
      */
     public Letter getSimplified(double faktor) {
-        if (faktor == 1.0||faktor==0.0) return this;
-       
+        if (faktor == 1.0 || faktor == 0.0) { return this; }
+
         int newWidth = (int) Math.ceil(getWidth() / faktor);
         int newHeight = (int) Math.ceil(getHeight() / faktor);
         Letter ret = new Letter();
         ;
-        ret.setOwner(this.owner);
+        ret.setOwner(owner);
         int avg = getAverage();
-   
-        logger.info(newWidth+" - "+newHeight);
+
+        logger.info(newWidth + " - " + newHeight);
         int[][] newGrid = new int[newWidth][newHeight];
-        
+
         for (int x = 0; x < newWidth; x++) {
             for (int y = 0; y < newHeight; y++) {
-                setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
-                
+                PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue(), owner);
+
             }
-            }
+        }
         elementPixel = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
-                if(isElement(getPixelValue(x, y), avg)){
-                   int newX= (int)Math.floor(x/faktor);
-                   int newY=(int)Math.floor(y/faktor);
-                   setPixelValue(newX, newY, newGrid, 0, this.owner);
-                   
+                if (isElement(getPixelValue(x, y), avg)) {
+                    int newX = (int) Math.floor(x / faktor);
+                    int newY = (int) Math.floor(y / faktor);
+                    PixelGrid.setPixelValue(newX, newY, newGrid, 0, owner);
+
                 }
 
             }
@@ -635,48 +650,50 @@ int firstChange=0;
         ret.clean();
 
         return ret;
-//        if (faktor == 1.0) return this;
-//        int newWidth = (int) Math.ceil(getWidth() / faktor);
-//        int newHeight = (int) Math.ceil(getHeight() / faktor);
-//        Letter ret = new Letter();
-//        ;
-//        ret.setOwner(this.owner);
-//        int avg = getAverage();
-//        int value;
-//        int[][] newGrid = new int[newWidth][newHeight];
-//        elementPixel = 0;
-//        for (int x = 0; x < newWidth; x++) {
-//            for (int y = 0; y < newHeight; y++) {
-//
-//                value = 0;
-//                for (int gx = 0; gx < faktor; gx++) {
-//                    for (int gy = 0; gy < faktor; gy++) {
-//                        int newX = x * faktor + gx;
-//                        int newY = y * faktor + gy;
-//                        if (newX > getWidth() || newY > getHeight()) {
-//                            continue;
-//                        }
-//                        //                       
-//                        if (isElement(getPixelValue(newX, newY), avg)) {
-//                            value++;
-//                        }
-//                    }
-//
-//                }
-//
-//                // setPixelValue(x, y, newGrid, getPixelValue(x* faktor, y*
-//                // faktor), this.owner);
-//                setPixelValue(x, y, newGrid, ((value * 100) / (faktor * faktor)) > 50 ? 0 : getMaxPixelValue(), this.owner);
-//                if (newGrid[x][y] == 0) elementPixel++;
-//            }
-//        }
-//
-//        ret.setGrid(newGrid);
-//
-//        ret.clean();
-//
-//        return ret;
+        // if (faktor == 1.0) return this;
+        // int newWidth = (int) Math.ceil(getWidth() / faktor);
+        // int newHeight = (int) Math.ceil(getHeight() / faktor);
+        // Letter ret = new Letter();
+        // ;
+        // ret.setOwner(this.owner);
+        // int avg = getAverage();
+        // int value;
+        // int[][] newGrid = new int[newWidth][newHeight];
+        // elementPixel = 0;
+        // for (int x = 0; x < newWidth; x++) {
+        // for (int y = 0; y < newHeight; y++) {
+        //
+        // value = 0;
+        // for (int gx = 0; gx < faktor; gx++) {
+        // for (int gy = 0; gy < faktor; gy++) {
+        // int newX = x * faktor + gx;
+        // int newY = y * faktor + gy;
+        // if (newX > getWidth() || newY > getHeight()) {
+        // continue;
+        // }
+        // //
+        // if (isElement(getPixelValue(newX, newY), avg)) {
+        // value++;
+        // }
+        // }
+        //
+        // }
+        //
+        // // setPixelValue(x, y, newGrid, getPixelValue(x* faktor, y*
+        // // faktor), this.owner);
+        // setPixelValue(x, y, newGrid, ((value * 100) / (faktor * faktor)) > 50 ? 0 :
+        // getMaxPixelValue(), this.owner);
+        // if (newGrid[x][y] == 0) elementPixel++;
+        // }
+        // }
+        //
+        // ret.setGrid(newGrid);
+        //
+        // ret.clean();
+        //
+        // return ret;
     }
+
     /**
      * @return the sourcehash
      */
@@ -688,9 +705,11 @@ int firstChange=0;
      * Addiert eine Schlechte Erkennung
      */
     public void markBad() {
-        this.badDetections++;
+        badDetections++;
 
-        if(JAntiCaptcha.isLoggerActive())logger.warning("Bad detection : (" + this.toString() + ") ");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.warning("Bad detection : (" + toString() + ") ");
+        }
 
     }
 
@@ -698,8 +717,10 @@ int firstChange=0;
      * Addiert eine gute Erkennung zu dem letter
      */
     public void markGood() {
-        this.goodDetections++;
-        if(JAntiCaptcha.isLoggerActive())logger.warning("GOOD detection : (" + this.toString() + ") ");
+        goodDetections++;
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.warning("GOOD detection : (" + toString() + ") ");
+        }
     }
 
     /**
@@ -718,12 +739,14 @@ int firstChange=0;
             for (int y = 0; y < newHeight; y++) {
                 int v = grid[(int) Math.floor(x / faktor)][(int) Math.floor(y / faktor)];
                 newGrid[x][y] = v;
-                if (newGrid[x][y] == 0) elementPixel++;
+                if (newGrid[x][y] == 0) {
+                    elementPixel++;
+                }
 
             }
         }
-        this.setElementPixel(elementPixel);
-        this.setGrid(newGrid);
+        setElementPixel(elementPixel);
+        setGrid(newGrid);
 
     }
 
@@ -731,11 +754,14 @@ int firstChange=0;
      * Skaliert den Letter auf die höhe
      * 
      * @param newHeight
-     * @param d Grenzfaktor. darunter wird nicht skaliert
+     * @param d
+     *            Grenzfaktor. darunter wird nicht skaliert
      */
     public void resizetoHeight(int newHeight, double d) {
         double faktor = (double) newHeight / (double) getHeight();
-        if (Math.abs(faktor - 1) < d) resizetoHeight(newHeight);
+        if (Math.abs(faktor - 1) < d) {
+            resizetoHeight(newHeight);
+        }
 
     }
 
@@ -745,34 +771,40 @@ int firstChange=0;
     }
 
     /**
-     * @param badDetections the badDetections to set
+     * @param badDetections
+     *            the badDetections to set
      */
     public void setBadDetections(int badDetections) {
         this.badDetections = badDetections;
     }
 
     /**
-     * @param decodedValue the decodedValue to set
+     * @param decodedValue
+     *            the decodedValue to set
      */
     public void setDecodedValue(String decodedValue) {
         this.decodedValue = decodedValue;
     }
 
     /**
-     * @param elementPixel the elementPixel to set
+     * @param elementPixel
+     *            the elementPixel to set
      */
     public void setElementPixel(int elementPixel) {
         this.elementPixel = elementPixel;
     }
+
     /**
-     * @param goodDetections the goodDetections to set
+     * @param goodDetections
+     *            the goodDetections to set
      */
     public void setGoodDetections(int goodDetections) {
         this.goodDetections = goodDetections;
     }
 
     /**
-     * @param owner the owner to set
+     * @param owner
+     *            the owner to set
      */
     @Override
     public void setOwner(JAntiCaptcha owner) {
@@ -780,7 +812,8 @@ int firstChange=0;
     }
 
     /**
-     * @param sourcehash the sourcehash to set
+     * @param sourcehash
+     *            the sourcehash to set
      */
     public void setSourcehash(String sourcehash) {
         this.sourcehash = sourcehash;
@@ -789,7 +822,8 @@ int firstChange=0;
     /**
      * Setzt das grid aus einem TextString. PixelSeperator: * Zeilensperator: |
      * 
-     * @param content PixelString
+     * @param content
+     *            PixelString
      * @return true/false
      */
     public boolean setTextGrid(String content) {
@@ -802,21 +836,23 @@ int firstChange=0;
             width = line.length();
             if (grid == null) {
                 grid = new int[width][code.length];
-                if (width < 2 || code.length < 2) return false;
+                if (width < 2 || code.length < 2) { return false; }
 
             }
             for (int x = 0; x < width; x++) {
-                try{
-                grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
-                }catch(Exception e){
-                    
+                try {
+                    grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
+                } catch (Exception e) {
+
                     e.printStackTrace();
                     return false;
                 }
-                if (grid[x][y] == 0) elementPixel++;
+                if (grid[x][y] == 0) {
+                    elementPixel++;
+                }
             }
         }
-        this.setElementPixel(elementPixel);
+        setElementPixel(elementPixel);
         return true;
 
     }
@@ -826,7 +862,7 @@ int firstChange=0;
         object.setWhiteContrast(objectContrast);
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                if (getPixelValue(x, y) < (getMaxPixelValue() * objectContrast)) {
+                if (getPixelValue(x, y) < getMaxPixelValue() * objectContrast) {
                     object.add(x, y, getPixelValue(x, y));
                 }
             }
@@ -837,87 +873,90 @@ int firstChange=0;
 
     @Override
     public String toString() {
-        return this.getDecodedValue() + " [" + this.getSourcehash() + "][" + this.getGoodDetections() + "/" + this.getBadDetections() + "]";
+        return getDecodedValue() + " [" + getSourcehash() + "][" + getGoodDetections() + "/" + getBadDetections() + "]";
     }
 
-/**
- * Entfernt die Reihen 0-left und right-ende aus dem interne Grid
- * 
- * @param left
- * @param right
- * @return true bei Erfolg, sonst false
- */
-public boolean trim(int left, int right) {
-    int width = right - left;
-    int[][] tmp = new int[width][getHeight()];
-    setLocation(new int[]{left,0});
-    if (getWidth() < right) {
-        if(JAntiCaptcha.isLoggerActive())logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
-        return false;
-    }
-    for (int x = 0; x < width; x++) {
-
-        tmp[x] = grid[x + left];
-
-    }
-    grid = tmp;
-    return true;
-}
-
-
-/**
- * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das
- * drehen dauert länger als über PixelObject, leidet dafür deutlich weniger
- * unter Pixelfehlern
- * 
- * @param angle
- * @return new letter
- */
-public Letter turn(double angle) {
-
-    while (angle < 0)
-        angle += 360;
-    angle /= 180;
-    Letter l = createLetter();
-
-    int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
-    int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
-    // if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight()+" --> "+newWidth+"/"+newHeight
-    // +"("+angle+"/"+(angle*180)+"/"+Math.cos(sizeAngle *
-    // Math.PI)+"/"+Math.sin(sizeAngle * Math.PI));
-    int left = (newWidth - getWidth()) / 2;
-    int top = (newHeight - getHeight()) / 2;
-    int elementPixel = 0;
-    int[][] newGrid = new int[newWidth][newHeight];
-    for (int x = 0; x < newWidth; x++) {
-        for (int y = 0; y < newHeight; y++) {
-            int[] n = UTILITIES.turnCoordinates(x - left, y - top, getWidth() / 2, getHeight() / 2, -(angle * 180));
-            if (n[0] < 0 || n[0] >= getWidth() || n[1] < 0 || n[1] >= getHeight()) {
-                newGrid[x][y] = owner.getJas().getColorFaktor() - 1;
-                if (newGrid[x][y] == 0) elementPixel++;
-                continue;
+    /**
+     * Entfernt die Reihen 0-left und right-ende aus dem interne Grid
+     * 
+     * @param left
+     * @param right
+     * @return true bei Erfolg, sonst false
+     */
+    public boolean trim(int left, int right) {
+        int width = right - left;
+        int[][] tmp = new int[width][getHeight()];
+        setLocation(new int[] { left, 0 });
+        if (getWidth() < right) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
             }
+            return false;
+        }
+        for (int x = 0; x < width; x++) {
 
-            newGrid[x][y] = grid[n[0]][n[1]];
-            if (newGrid[x][y] == 0) elementPixel++;
+            tmp[x] = grid[x + left];
 
         }
+        grid = tmp;
+        return true;
     }
-    l.setGrid(newGrid);
-    l.setElementPixel(elementPixel);
-    l.clean();
-    l.setDecodedValue(this.getDecodedValue());
-    l.setAngle((int) (angle * 180.0));
-    l.setProperties(this.getProperties());
-    // BasicWindow.showImage(l.getImage(), sizeAngle+" angle "+angle+" -
-    // "+newWidth+"/"+newHeight+" - "+getWidth()+"/"+getHeight());
 
-    return l;
+    /**
+     * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das
+     * drehen dauert länger als über PixelObject, leidet dafür deutlich weniger
+     * unter Pixelfehlern
+     * 
+     * @param angle
+     * @return new letter
+     */
+    public Letter turn(double angle) {
 
-}
-    
+        while (angle < 0) {
+            angle += 360;
+        }
+        angle /= 180;
+        Letter l = createLetter();
 
+        int newWidth = (int) (Math.abs(Math.cos(angle * Math.PI) * getWidth()) + Math.abs(Math.sin(angle * Math.PI) * getHeight()));
+        int newHeight = (int) (Math.abs(Math.sin(angle * Math.PI) * getWidth()) + Math.abs(Math.cos(angle * Math.PI) * getHeight()));
+        // if(JAntiCaptcha.isLoggerActive())logger.info(getWidth()+"/"+getHeight()+"
+        // --> "+newWidth+"/"+newHeight
+        // +"("+angle+"/"+(angle*180)+"/"+Math.cos(sizeAngle *
+        // Math.PI)+"/"+Math.sin(sizeAngle * Math.PI));
+        int left = (newWidth - getWidth()) / 2;
+        int top = (newHeight - getHeight()) / 2;
+        int elementPixel = 0;
+        int[][] newGrid = new int[newWidth][newHeight];
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                int[] n = UTILITIES.turnCoordinates(x - left, y - top, getWidth() / 2, getHeight() / 2, -(angle * 180));
+                if (n[0] < 0 || n[0] >= getWidth() || n[1] < 0 || n[1] >= getHeight()) {
+                    newGrid[x][y] = owner.getJas().getColorFaktor() - 1;
+                    if (newGrid[x][y] == 0) {
+                        elementPixel++;
+                    }
+                    continue;
+                }
 
+                newGrid[x][y] = grid[n[0]][n[1]];
+                if (newGrid[x][y] == 0) {
+                    elementPixel++;
+                }
 
-  
+            }
+        }
+        l.setGrid(newGrid);
+        l.setElementPixel(elementPixel);
+        l.clean();
+        l.setDecodedValue(getDecodedValue());
+        l.setAngle((int) (angle * 180.0));
+        l.setProperties(getProperties());
+        // BasicWindow.showImage(l.getImage(), sizeAngle+" angle "+angle+" -
+        // "+newWidth+"/"+newHeight+" - "+getWidth()+"/"+getHeight());
+
+        return l;
+
+    }
+
 }

@@ -321,7 +321,9 @@ public class Configuration extends Property implements Serializable {
      * @return Versionsstring der Konfiguration
      */
     public String getConfigurationVersion() {
-        if (version == null) return "0.0.0";
+        if (version == null) {
+            return "0.0.0";
+        }
         return version;
     }
 
@@ -330,7 +332,7 @@ public class Configuration extends Property implements Serializable {
      */
     public void setDefaultValues() {
 
-        if (getProperty("maxSimultanDownloads") == null || ((Integer) getProperty("maxSimultanDownloads")) == 0) {
+        if (getProperty("maxSimultanDownloads") == null || (Integer) getProperty("maxSimultanDownloads") == 0) {
             setProperty("maxSimultanDownloads", 3);
         }
 
@@ -345,8 +347,9 @@ public class Configuration extends Property implements Serializable {
      * 
      * @return toString
      */
+    @Override
     public String toString() {
-        return "Configuration " + this.getProperties() + " Interaction " + this.interactions;
+        return "Configuration " + getProperties() + " Interaction " + interactions;
     }
 
     /**
@@ -357,8 +360,11 @@ public class Configuration extends Property implements Serializable {
      * @param defaultValue
      * @return Wert zu key oder defaultValue
      */
+    @Override
     public Object getProperty(String key, Object defaultValue) {
-        if (getProperty(key) == null) return defaultValue;
+        if (getProperty(key) == null) {
+            return defaultValue;
+        }
         return getProperty(key);
     }
 

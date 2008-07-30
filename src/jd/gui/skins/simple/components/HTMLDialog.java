@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
@@ -44,98 +43,98 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener  {
+public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = -7741748123426268439L;
+     * 
+     */
+    private static final long serialVersionUID = -7741748123426268439L;
 
-	public static boolean showDialog(JFrame frame, String title, String question){
-        HTMLDialog  tda= new HTMLDialog( frame,  title,  question);
+    public static boolean showDialog(JFrame frame, String title, String question) {
+        HTMLDialog tda = new HTMLDialog(frame, title, question);
         return tda.success;
-        
+
     }
 
-    private JButton     btnCancel;
+    private JButton btnCancel;
 
-    private JButton     btnOk;
+    private JButton btnOk;
 
-    private JTextPane   htmlArea;
+    private JTextPane htmlArea;
 
     /**
      * 
      */
 
-    protected Insets    insets = new Insets(0, 0, 0, 0);
+    protected Insets insets = new Insets(0, 0, 0, 0);
 
-   // private JLabel      lblText;
+    // private JLabel lblText;
 
-    protected Logger    logger = JDUtilities.getLogger();
+    protected Logger logger = JDUtilities.getLogger();
 
-   // private String text=null;
+    // private String text=null;
 
     private JScrollPane scrollPane;
 
-    private boolean success=false;
+    private boolean success = false;
+
     private HTMLDialog(JFrame frame, String title, String html) {
         super(frame);
-        
+
         setLayout(new BorderLayout());
-this.setName(title);
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
+        setName(title);
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
-        btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
+        btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
         setTitle(title);
         htmlArea = new JTextPane();
         scrollPane = new JScrollPane(htmlArea);
         htmlArea.setEditable(false);
-        htmlArea.setContentType("text/html"); 
+        htmlArea.setContentType("text/html");
         htmlArea.setText(html);
         htmlArea.requestFocusInWindow();
         htmlArea.addHyperlinkListener(this);
-       
-        this.add(scrollPane,BorderLayout.CENTER);
-        JPanel p= new JPanel();
+
+        this.add(scrollPane, BorderLayout.CENTER);
+        JPanel p = new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        this.add(p,BorderLayout.SOUTH);
-        
-       pack();
-        
-      
-        //setLocation(JDUtilities.getCenterOfComponent(null, this));
+        this.add(p, BorderLayout.SOUTH);
+
+        pack();
+
+        // setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-       // this.setLocationRelativeTo(null);
-        this.setVisible(true);
+        // this.setLocationRelativeTo(null);
+        setVisible(true);
         LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-         this.addWindowListener(list);
-       
-     
+        addComponentListener(list);
+        addWindowListener(list);
+
         SimpleGUI.restoreWindow(null, null, this);
-        this.setVisible(false);
+        setVisible(false);
         setModal(true);
-        this.setVisible(true);
-      
+        setVisible(true);
+
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOk) {
-            this.success=true;
+            success = true;
             dispose();
-        }else{
+        } else {
             dispose();
         }
     }
+
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-            
-            JLinkButton.openURL( e.getURL());
-            
-          }
-        
+
+            JLinkButton.openURL(e.getURL());
+
+        }
+
     }
 
 }

@@ -21,15 +21,12 @@
 
 package jd.unrar;
 
-public class JobEndEvent extends AxeEvent
-{
-	public JobEndEvent (Object o)
-	{
-		super (o);
-	}
+public class JobEndEvent extends AxeEvent {
+    public JobEndEvent(Object o) {
+        super(o);
+    }
 
-	public JobEndEvent (Object o, String s)
-	{
-		super (o, s);
-	}
+    public JobEndEvent(Object o, String s) {
+        super(o, s);
+    }
 }

@@ -82,9 +82,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h_info.put("info_var", i + ". " + next.getName());
                 h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
                 h_info.put("download_id", i - 1);/*
-                                                  * von 0 anfangen für js
-                                                  * skripte
-                                                  */
+                                                     * von 0 anfangen für js
+                                                     * skripte
+                                                     */
                 v_info.addElement(h_info);
             }
             t.setParam("all_infos", v_info);
@@ -132,16 +132,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             h.put("downloads", v2);
             v.addElement(h);
         }
-//      t.setParam("message_status", "show");
-//      t.setParam("message", "great work");
+        // t.setParam("message_status", "show");
+        // t.setParam("message", "great work");
         t.setParam("pakete", v);
     }
 
     private void add_password_list(Template t, HashMap<String, String> requestParameter) {
         String[] pws = JUnrar.returnPasswords();
         String pwlist = "";
-        for (int i = 0; i < pws.length; i++) {
-            pwlist = pwlist + System.getProperty("line.separator") + pws[i];
+        for (String element : pws) {
+            pwlist = pwlist + System.getProperty("line.separator") + element;
         }
         t.setParam("password_list", pwlist);
     }
@@ -229,9 +229,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
-                                                      * von 0 anfangen für js
-                                                      * skripte
-                                                      */
+                                                         * von 0 anfangen für js
+                                                         * skripte
+                                                         */
                     v_info.addElement(h_info);
                 }
 
@@ -242,11 +242,10 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     /*
-     * private void addEntryandPercent(String var, String value, double percent)
-     * { Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
+     * private void addEntryandPercent(String var, String value, double percent) {
+     * Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
      * h_info.put("info_var", var); h_info.put("info_value", value);
-     * h_info.put("info_percent", f.format(percent)); v_info.addElement(h_info);
-     * }
+     * h_info.put("info_percent", f.format(percent)); v_info.addElement(h_info); }
      */
     private void add_status_page(Template t, HashMap<String, String> requestParameter) {
         Vector<Object> v, v2 = new Vector<Object>();
@@ -273,7 +272,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (filePackage.getLinksInProgress() > 0) {
                 value = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
-            if (filePackage.getTotalDownloadSpeed() > 0) value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+            if (filePackage.getTotalDownloadSpeed() > 0) {
+                value = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+            }
 
             h.put("package_id", Package_ID.toString());
             h.put("download_hoster", value);
@@ -347,16 +348,15 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         } else {
             t.setParam("config_autoreconnect", "checked");
         }
-        
 
         if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
             t.setParam("config_startstopbutton", "stop");
         } else {
             t.setParam("config_startstopbutton", "start");
         }
-        
-//        t.setParam("message_status", "show");
-//        t.setParam("message", "great work");
+
+        // t.setParam("message_status", "show");
+        // t.setParam("message", "great work");
 
         t.setParam("pakete", v);
     }
@@ -375,22 +375,32 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
             t.setParam("page_refresh", JDWebinterface.page_refresh_interval);
-            if (url.startsWith("single_info.tmpl") == true) add_single_info(t, requestParameter);
-            if (url.startsWith("all_info.tmpl") == true) add_all_info(t, requestParameter);
-            if (url.startsWith("index.tmpl") == true) add_status_page(t, requestParameter);
-            if (url.startsWith("passwd.tmpl") == true) add_password_list(t, requestParameter);
-            if (url.startsWith("link_adder.tmpl") == true) add_linkadder_page(t, requestParameter);
+            if (url.startsWith("single_info.tmpl") == true) {
+                add_single_info(t, requestParameter);
+            }
+            if (url.startsWith("all_info.tmpl") == true) {
+                add_all_info(t, requestParameter);
+            }
+            if (url.startsWith("index.tmpl") == true) {
+                add_status_page(t, requestParameter);
+            }
+            if (url.startsWith("passwd.tmpl") == true) {
+                add_password_list(t, requestParameter);
+            }
+            if (url.startsWith("link_adder.tmpl") == true) {
+                add_linkadder_page(t, requestParameter);
+            }
 
             response.addContent(t.output());
             response.setOk();
         } catch (FileNotFoundException e) {
-            
+
             e.printStackTrace();
         } catch (IllegalStateException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
     }

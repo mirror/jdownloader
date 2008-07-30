@@ -33,13 +33,13 @@ import jd.utils.JDUtilities;
 public class Gamezam extends PluginForDecrypt {
     static private final String host = "Gamez.am";
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Gamezam() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -79,31 +79,31 @@ public class Gamezam extends PluginForDecrypt {
                 /* gamez.am hat böse üble probleme mit falschen links */
                 String direct_links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("<a href=\"(.*?)\" target=\"_blank\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 String extern_links[][] = new Regex(reqInfo.getHtmlCode(), Pattern.compile("window\\.open\\('extern\\.php\\?nr=(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < direct_links.length; i++) {
-                    DownloadLink link = this.createDownloadlink(direct_links[i][0]);
+                for (String[] element : direct_links) {
+                    DownloadLink link = createDownloadlink(element[0]);
                     link.addSourcePluginPassword(pw);
                     decryptedLinks.add(link);
-                    this.progress.increase(1);
+                    progress.increase(1);
                 }
-                this.progress.setRange(extern_links.length + direct_links.length);
-                for (int i = 0; i < extern_links.length; i++) {
+                progress.setRange(extern_links.length + direct_links.length);
+                for (String[] element : extern_links) {
                     for (int retry = 0; retry < 3; retry++) {
-                        RequestInfo ri_extern_link = HTTP.getRequest(new URL("http://www.gamez.am/extern.php?nr=" + extern_links[i][0]), cookie, "http://www.gamez.am/start.php?", false);
+                        RequestInfo ri_extern_link = HTTP.getRequest(new URL("http://www.gamez.am/extern.php?nr=" + element[0]), cookie, "http://www.gamez.am/start.php?", false);
                         if (ri_extern_link.getLocation() != null) {
-                            DownloadLink link = this.createDownloadlink(ri_extern_link.getLocation());
+                            DownloadLink link = createDownloadlink(ri_extern_link.getLocation());
                             link.addSourcePluginPassword(pw);
                             decryptedLinks.add(link);
-                            this.progress.increase(1);
+                            progress.increase(1);
                             break;
                         } else {
                             String follow_link = new Regex(ri_extern_link.getHtmlCode(), Pattern.compile("extern\\.php\\?aktion=unten&nr=(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                             ri_extern_link = HTTP.getRequest(new URL("http://www.gamez.am/extern.php?aktion=unten&nr=" + follow_link), cookie, "http://www.gamez.am/start.php?", false);
                             follow_link = new Regex(ri_extern_link.getHtmlCode(), Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                             if (follow_link != null) {
-                                DownloadLink link = this.createDownloadlink(follow_link);
+                                DownloadLink link = createDownloadlink(follow_link);
                                 link.addSourcePluginPassword(pw);
                                 decryptedLinks.add(link);
-                                this.progress.increase(1);
+                                progress.increase(1);
                                 break;
                             }
                         }
@@ -117,41 +117,34 @@ public class Gamezam extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-   
-
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

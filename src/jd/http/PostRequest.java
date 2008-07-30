@@ -28,9 +28,9 @@ public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
 
     public PostRequest(Form form) {
-      super(form.getAction());
-      
-      this.postData=form.vars;
+        super(form.getAction());
+
+        postData = form.vars;
     }
 
     public PostRequest(String url) {
@@ -41,8 +41,9 @@ public class PostRequest extends Request {
     public HashMap<String, String> getPostData() {
         return postData;
     }
+
     public String getPostDataString() {
-        if (postData.isEmpty()) return null;
+        if (postData.isEmpty()) { return null; }
 
         StringBuffer buffer = new StringBuffer();
 
@@ -73,22 +74,16 @@ public class PostRequest extends Request {
     @Override
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
-        
+
     }
 
-    
     public void setPostVariable(String key, String value) {
         postData.put(key, value);
 
     }
 
-    
-    public void setPostVariableString(String vars){
-        postData.putAll(parseQuery(vars));
+    public void setPostVariableString(String vars) {
+        postData.putAll(Request.parseQuery(vars));
     }
-
-  
-
-
 
 }

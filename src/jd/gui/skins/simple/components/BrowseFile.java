@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
@@ -35,22 +34,22 @@ public class BrowseFile extends JPanel implements ActionListener {
     /**
      * 
      */
-    private static final long serialVersionUID  = 1L;
+    private static final long serialVersionUID = 1L;
 
-    private String            approveButtonText = "OK";
+    private String approveButtonText = "OK";
 
-    private JButton           btnBrowse;
+    private JButton btnBrowse;
 
-    private File              currentPath;
+    private File currentPath;
 
-    private boolean           editable          = false;
+    private boolean editable = false;
 
-    private int               fileSelectionMode = JFileChooser.FILES_ONLY;
+    private int fileSelectionMode = JFileChooser.FILES_ONLY;
 
     @SuppressWarnings("unused")
-    private Logger            logger            = JDUtilities.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
-    private JTextField        txtInput;
+    private JTextField txtInput;
 
     public BrowseFile() {
         super();
@@ -69,11 +68,11 @@ public class BrowseFile extends JPanel implements ActionListener {
         if (e.getSource() == txtInput) {
             newPath = new File(txtInput.getText());
             setCurrentPath(newPath);
-            this.dispatchEvent(event);
-        }else if (e.getSource() == btnBrowse) {
+            dispatchEvent(event);
+        } else if (e.getSource() == btnBrowse) {
             newPath = getPath();
             setCurrentPath(newPath);
-            this.dispatchEvent(event);
+            dispatchEvent(event);
         }
 
     }
@@ -84,33 +83,34 @@ public class BrowseFile extends JPanel implements ActionListener {
     public String getApproveButtonText() {
         return approveButtonText;
     }
-    
+
     /**
      * @return the currentPath
      */
     public File getCurrentPath() {
         return currentPath;
     }
+
     /**
      * 
      * @return null or a File object pointing to a directory
      */
-    private File getDirectoryFromTxtInput(){
-    	File directory = null;
-    	String stringPath = txtInput.getText();
-    	
-    	if( null != stringPath){
-    		directory = new File(txtInput.getText());
-    		if( directory.exists()){
-    			if(directory.isFile()){
-    				directory = directory.getParentFile();
-    			}
-    		}else{
-    			directory = null;
-    		}
-    	}
-    	
-    	return directory;
+    private File getDirectoryFromTxtInput() {
+        File directory = null;
+        String stringPath = txtInput.getText();
+
+        if (null != stringPath) {
+            directory = new File(txtInput.getText());
+            if (directory.exists()) {
+                if (directory.isFile()) {
+                    directory = directory.getParentFile();
+                }
+            } else {
+                directory = null;
+            }
+        }
+
+        return directory;
     }
 
     public boolean getEditable() {
@@ -126,11 +126,11 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     private File getPath() {
         JDFileChooser fc = new JDFileChooser();
-        fc.setApproveButtonText(approveButtonText);      
+        fc.setApproveButtonText(approveButtonText);
         fc.setFileSelectionMode(fileSelectionMode);
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
         fc.showOpenDialog(this);
-        File ret = fc.getSelectedFile();   
+        File ret = fc.getSelectedFile();
         return ret;
     }
 
@@ -140,22 +140,27 @@ public class BrowseFile extends JPanel implements ActionListener {
 
     private void initGUI(int width) {
         int n = 5;
-        setLayout(new BorderLayout(n,n));
+        setLayout(new BorderLayout(n, n));
         txtInput = new JTextField(width);
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select","auswählen"));
+        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "auswählen"));
         btnBrowse.addActionListener(this);
-      
-//        JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new Insets(0, 0, 0, 0), GridBagConstraints.NONE, GridBagConstraints.EAST);
-        
+
+        // JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new
+        // Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL,
+        // GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new
+        // Insets(0, 0, 0, 0), GridBagConstraints.NONE,
+        // GridBagConstraints.EAST);
+
         add(txtInput, BorderLayout.CENTER);
         add(btnBrowse, BorderLayout.EAST);
     }
 
     /**
-     * @param approveButtonText the approveButtonText to set
+     * @param approveButtonText
+     *            the approveButtonText to set
      */
     public void setApproveButtonText(String approveButtonText) {
         this.approveButtonText = approveButtonText;
@@ -166,10 +171,13 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     /**
-     * @param currentPath the currentPath to set
+     * @param currentPath
+     *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) return;
+        if (currentPath == null) {
+            return;
+        }
         this.currentPath = currentPath;
 
         txtInput.setText(currentPath.getAbsolutePath());
@@ -182,21 +190,24 @@ public class BrowseFile extends JPanel implements ActionListener {
     }
 
     @Override
-    public void setEnabled(boolean value){
+    public void setEnabled(boolean value) {
         txtInput.setEnabled(value);
         btnBrowse.setEnabled(value);
-    
+
     }
 
     /**
-     * @param fileSelectionMode the fileSelectionMode to set
+     * @param fileSelectionMode
+     *            the fileSelectionMode to set
      */
     public void setFileSelectionMode(int fileSelectionMode) {
         this.fileSelectionMode = fileSelectionMode;
     }
 
     public void setText(String text) {
-        if (text == null) text = "";
+        if (text == null) {
+            text = "";
+        }
         setCurrentPath(new File(text));
     }
 

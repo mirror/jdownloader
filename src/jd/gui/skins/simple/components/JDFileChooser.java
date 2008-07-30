@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components;
 
 import java.io.File;
@@ -32,31 +31,35 @@ import jd.utils.JDUtilities;
  */
 public class JDFileChooser extends JFileChooser {
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 3315263822025280362L;
-	private String fcID;
+     * 
+     */
+    private static final long serialVersionUID = 3315263822025280362L;
+    private String fcID;
     private Logger logger;
 
     public JDFileChooser() {
         super();
         logger = JDUtilities.getLogger();
-   
-        this.setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(null));
+
+        setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(null));
 
     }
+
     /**
-     * Über die id kann eine ID für den filechooser ausgewählt werden . JD Fielchooser merkt sich für diese id den zuletzt verwendeten pfad
+     * Über die id kann eine ID für den filechooser ausgewählt werden . JD
+     * Fielchooser merkt sich für diese id den zuletzt verwendeten pfad
+     * 
      * @param id
      */
     public JDFileChooser(String id) {
         super();
-        this.fcID=id;
+        fcID = id;
         logger = JDUtilities.getLogger();
-   
-        this.setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(fcID));
+
+        setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(fcID));
 
     }
+
     // public int showOpenDialog(JFrame frame){
     // int ret= super.showOpenDialog(frame);
     //    
@@ -66,15 +69,14 @@ public class JDFileChooser extends JFileChooser {
     // }
     @Override
     public File getSelectedFile() {
-       
+
         File ret = super.getSelectedFile();
-        if (ret == null) return null;
+        if (ret == null) { return null; }
         if (ret.isDirectory()) {
-            JDUtilities.setCurrentWorkingDirectory(ret,fcID);
+            JDUtilities.setCurrentWorkingDirectory(ret, fcID);
             logger.info("Save working path in :" + ret);
-        }
-        else {
-            JDUtilities.setCurrentWorkingDirectory(ret.getParentFile(),fcID);
+        } else {
+            JDUtilities.setCurrentWorkingDirectory(ret.getParentFile(), fcID);
 
             logger.info("Save working path in :" + ret.getParentFile());
         }

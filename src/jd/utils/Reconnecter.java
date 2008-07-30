@@ -16,7 +16,6 @@ import jd.plugins.PluginForHost;
 
 public class Reconnecter {
 
-
     private static String CURRENT_IP = "";
     private static boolean IS_RECONNECTING = false;
     private static boolean LAST_RECONNECT_SUCCESS = false;
@@ -28,7 +27,7 @@ public class Reconnecter {
         lastIPUpdate = System.currentTimeMillis();
         String tmp = CURRENT_IP;
         CURRENT_IP = JDUtilities.getIPAddress();
-        if (CURRENT_IP != null &&tmp.length()>0&& !tmp.equals(CURRENT_IP)) {
+        if (CURRENT_IP != null && tmp.length() > 0 && !tmp.equals(CURRENT_IP)) {
             logger.info("Detected external IP Change.");
             return true;
         }
@@ -37,13 +36,13 @@ public class Reconnecter {
 
     public static boolean doReconnect() {
 
-        if (waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) return true;
+        if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) { return true; }
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
-        if (isGlobalDisabled()) {
+        if (Reconnecter.isGlobalDisabled()) {
 
-            if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60*10))) {
-                ipChangeSuccess = checkExternalIPChange();
+            if (System.currentTimeMillis() - lastIPUpdate > 1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
+                ipChangeSuccess = Reconnecter.checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
 
             }
@@ -55,7 +54,7 @@ public class Reconnecter {
         }
         if (!ipChangeSuccess) {
             if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
-                //logger.finer("Downloads are running. reconnect is disabled");
+                // logger.finer("Downloads are running. reconnect is disabled");
                 IS_RECONNECTING = false;
                 return false;
             }
@@ -80,7 +79,7 @@ public class Reconnecter {
             logger.info("Reconnect success: " + ipChangeSuccess);
         }
         if (ipChangeSuccess) {
-            resetAllLinks();
+            Reconnecter.resetAllLinks();
 
         }
         if (ipChangeSuccess) {
@@ -94,7 +93,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-        if (RECONNECT_REQUESTS > 0) { return doReconnect(); }
+        if (RECONNECT_REQUESTS > 0) { return Reconnecter.doReconnect(); }
         return false;
     }
 
@@ -115,33 +114,34 @@ public class Reconnecter {
     private static void resetAllLinks() {
         Vector<FilePackage> packages = JDUtilities.getController().getPackages();
         synchronized (packages) {
-          Iterator<FilePackage> iterator = packages.iterator();
-          FilePackage fp = null;
-          DownloadLink nextDownloadLink;
-          while (iterator.hasNext()) {
-              fp = iterator.next();
-              Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-              while (it2.hasNext()) {
-                  nextDownloadLink = it2.next();
-                  if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0) {
-                      nextDownloadLink.getLinkStatus().resetWaitTime();
-                      logger.finer("REset GLOBALS: " + (nextDownloadLink.getPlugin()));
-                      ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-                      nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0) {
+                        nextDownloadLink.getLinkStatus().resetWaitTime();
+                        logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
+                        ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
 
-                  }
-              }
-          }
-      }
-        
+                    }
+                }
+            }
+        }
+
     }
 
     public static boolean waitForNewIP(long i) {
-        requestReconnect();
-        if(i>0)
-        i += System.currentTimeMillis();
+        Reconnecter.requestReconnect();
+        if (i > 0) {
+            i += System.currentTimeMillis();
+        }
         boolean ret;
-        while (!(ret = doReconnectIfRequested()) &&( System.currentTimeMillis() < i||i<=0)) {
+        while (!(ret = Reconnecter.doReconnectIfRequested()) && (System.currentTimeMillis() < i || i <= 0)) {
 
             try {
                 Thread.sleep(300);
@@ -155,7 +155,7 @@ public class Reconnecter {
     }
 
     public static boolean waitForReconnect() {
-        requestReconnect();
+        Reconnecter.requestReconnect();
         return true;
     }
 

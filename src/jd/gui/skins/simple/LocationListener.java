@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.Component;
@@ -28,14 +27,14 @@ import jd.utils.JDUtilities;
 public class LocationListener implements ComponentListener, WindowListener {
 
     // private SubConfiguration guiConfig;
-   // private Logger    logger;
+    // private Logger logger;
 
     private Component src;
 
     public LocationListener() {
 
         // this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-  //      this.logger = JDUtilities.getLogger();
+        // this.logger = JDUtilities.getLogger();
     }
 
     public void componentHidden(ComponentEvent e) {
@@ -62,7 +61,7 @@ public class LocationListener implements ComponentListener, WindowListener {
 
     public void saveAll() {
         if (src != null) {
-            //JDUtilities.getLogger().info("Loc listener");
+            // JDUtilities.getLogger().info("Loc listener");
             SimpleGUI.saveLastLocation(src, null);
             SimpleGUI.saveLastDimension(src, null);
             JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();

@@ -27,13 +27,13 @@ import jd.plugins.PluginForDecrypt;
 public class FileUploadnet extends PluginForDecrypt {
     static private final String host = "File-Upload.net";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public FileUploadnet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -42,47 +42,41 @@ public class FileUploadnet extends PluginForDecrypt {
         String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
         if (link != null) {
             link.replaceAll(" ", "%20");
-            decryptedLinks.add(this.createDownloadlink(link));
+            decryptedLinks.add(createDownloadlink(link));
             return decryptedLinks;
-        } else
+        } else {
             return null;
+        }
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

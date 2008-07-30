@@ -100,7 +100,7 @@ public class Secured extends PluginForDecrypt {
             int ujhaqylw;
             for (int yalmhopr = 17; yalmhopr > 1; yalmhopr--) {
                 lahgrnvp ^= ldiwkqly[yalmhopr];
-                trenlpys ^= ((oqlaoymh[(lahgrnvp >>> 24) & 0xff] + oqmykrna[(lahgrnvp >>> 16) & 0xff]) ^ pqmyzkid[(lahgrnvp >>> 8) & 0xff]) + pldmjnde[lahgrnvp & 0xff];
+                trenlpys ^= (oqlaoymh[lahgrnvp >>> 24 & 0xff] + oqmykrna[lahgrnvp >>> 16 & 0xff] ^ pqmyzkid[lahgrnvp >>> 8 & 0xff]) + pldmjnde[lahgrnvp & 0xff];
                 ujhaqylw = lahgrnvp;
                 lahgrnvp = trenlpys;
                 trenlpys = ujhaqylw;
@@ -120,18 +120,19 @@ public class Secured extends PluginForDecrypt {
             int yploemju = -1;
             for (int i = 0; i < yoiumqpy.length(); i++) {
                 char yploamzu = yoiumqpy.charAt(i);
-                if ('A' <= yploamzu && yploamzu <= 'Z')
+                if ('A' <= yploamzu && yploamzu <= 'Z') {
                     xoliuzem = yoiumqpy.charAt(i) - 65;
-                else if ('a' <= yploamzu && yploamzu <= 'z')
+                } else if ('a' <= yploamzu && yploamzu <= 'z') {
                     xoliuzem = yoiumqpy.charAt(i) - 97 + 26;
-                else if ('0' <= yploamzu && yploamzu <= '9')
+                } else if ('0' <= yploamzu && yploamzu <= '9') {
                     xoliuzem = yoiumqpy.charAt(i) - 48 + 52;
-                else if (yploamzu == '+')
+                } else if (yploamzu == '+') {
                     xoliuzem = 62;
-                else if (yploamzu == '/')
+                } else if (yploamzu == '/') {
                     xoliuzem = 63;
-                else
+                } else {
                     continue;
+                }
                 yploemju++;
 
                 int lxkdmizj = 0;
@@ -140,15 +141,15 @@ public class Secured extends PluginForDecrypt {
                     lyomiujt = xoliuzem;
                     continue;
                 case 1:
-                    lxkdmizj = (lyomiujt << 2) | (xoliuzem >> 4);
+                    lxkdmizj = lyomiujt << 2 | xoliuzem >> 4;
                     lyomiujt = xoliuzem & 0x0F;
                     break;
                 case 2:
-                    lxkdmizj = (lyomiujt << 4) | (xoliuzem >> 2);
+                    lxkdmizj = lyomiujt << 4 | xoliuzem >> 2;
                     lyomiujt = xoliuzem & 0x03;
                     break;
                 case 3:
-                    lxkdmizj = (lyomiujt << 6) | (xoliuzem >> 0);
+                    lxkdmizj = lyomiujt << 6 | xoliuzem >> 0;
                     lyomiujt = xoliuzem & 0x00;
                     break;
                 }
@@ -162,7 +163,7 @@ public class Secured extends PluginForDecrypt {
             int dolizmvw = 0;
             for (int iumswkya = 0; iumswkya < 16; iumswkya++) {
                 oqlamykt ^= ldiwkqly[iumswkya];
-                yalkionj ^= ((oqlaoymh[(oqlamykt >>> 24) & 0xff] + oqmykrna[(oqlamykt >>> 16) & 0xff]) ^ pqmyzkid[(oqlamykt >>> 8) & 0xff]) + pldmjnde[oqlamykt & 0xff];
+                yalkionj ^= (oqlaoymh[oqlamykt >>> 24 & 0xff] + oqmykrna[oqlamykt >>> 16 & 0xff] ^ pqmyzkid[oqlamykt >>> 8 & 0xff]) + pldmjnde[oqlamykt & 0xff];
                 dolizmvw = oqlamykt;
                 oqlamykt = yalkionj;
                 yalkionj = dolizmvw;
@@ -217,14 +218,15 @@ public class Secured extends PluginForDecrypt {
             for (int yaqwsedr = 0, btzqwsay = 0; yaqwsedr < kaiumylq.length(); btzqwsay++) {
                 wlqoakmy = 0;
                 for (int lopiuztr = 0; lopiuztr < 4; lopiuztr++) {
-                    wlqoakmy = (wlqoakmy << 8) | kaiumylq.charAt(yaqwsedr % kaiumylq.length());
+                    wlqoakmy = wlqoakmy << 8 | kaiumylq.charAt(yaqwsedr % kaiumylq.length());
                     yaqwsedr++;
                 }
                 yaqpolft[btzqwsay] = wlqoakmy;
             }
             ldiwkqly = new int[18];
-            for (int btzqwsay = 0; btzqwsay < 18; btzqwsay++)
+            for (int btzqwsay = 0; btzqwsay < 18; btzqwsay++) {
                 ldiwkqly[btzqwsay] = olkemfjq[btzqwsay];
+            }
             int[] yalopiuq = new int[2];
             yalopiuq[0] = yalopiuq[1] = 0;
             for (int btzqwsay = 0; btzqwsay < 18; btzqwsay += 2) {
@@ -264,11 +266,13 @@ public class Secured extends PluginForDecrypt {
 
     static private final String HOST = "secured.in";
 
-//    static private final String PLUGIN_NAME = "secured.in";
+    // static private final String PLUGIN_NAME = "secured.in";
 
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "2.0";
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "2.0";
 
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String JS_URL = "http://secured.in/scripts/main_final.js";
 
@@ -282,12 +286,10 @@ public class Secured extends PluginForDecrypt {
 
     private String cryptedLink;
 
-    
     public Secured() {
         super();
     }
 
-    
     public String decryptId(String id) throws IOException {
 
         HashMap<String, String> request = new HashMap<String, String>();
@@ -307,7 +309,6 @@ public class Secured extends PluginForDecrypt {
         return new Cypher().cypher(info.getHtmlCode());
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -362,12 +363,13 @@ public class Secured extends PluginForDecrypt {
             }
             progress.setRange(ids.size());
             while (ids.size() > 0) {
-                String fileUrl = this.decryptId(ids.remove(0));
+                String fileUrl = decryptId(ids.remove(0));
                 if (fileUrl != null) {
                     fileUrl = fileUrl.trim();
-                } else
+                } else {
                     fileUrl = null;
-                decryptedLinks.add(this.createDownloadlink(fileUrl));
+                }
+                decryptedLinks.add(createDownloadlink(fileUrl));
                 progress.increase(1);
             }
         } catch (Exception e) {
@@ -377,35 +379,26 @@ public class Secured extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
-
-    
-    
-        
-    
 
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
@@ -413,6 +406,7 @@ public class Secured extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

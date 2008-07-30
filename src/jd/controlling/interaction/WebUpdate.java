@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.File;
@@ -38,16 +37,15 @@ public class WebUpdate extends Interaction implements Serializable {
     /**
      * serialVersionUID
      */
-    private static final String NAME             = JDLocale.L("interaction.webupdate.name","WebUpdate");
+    private static final String NAME = JDLocale.L("interaction.webupdate.name", "WebUpdate");
 
     /**
      * 
      */
-    private static final long   serialVersionUID = 5345996658356704386L;
+    private static final long serialVersionUID = 5345996658356704386L;
 
-    private WebUpdater          updater;
+    private WebUpdater updater;
 
-    
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting WebUpdate");
@@ -70,72 +68,70 @@ public class WebUpdate extends Interaction implements Serializable {
         return updater;
     }
 
-    
     @Override
-    public void initConfig() {}
+    public void initConfig() {
+    }
 
-    
     @Override
-    public void resetInteraction() {}
+    public void resetInteraction() {
+    }
 
-    
     /**
      * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
      */
     @Override
     public void run() {
-        ProgressController progress = new ProgressController("Webupdater",5);
+        ProgressController progress = new ProgressController("Webupdater", 5);
         Vector<Vector<String>> files = updater.getAvailableFiles();
         String[] jdus = JDUtilities.getResourceFile("packages").list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".jdu")) return true;
-               return false;
+                if (name.endsWith(".jdu")) { return true; }
+                return false;
 
             }
 
         });
-        
-        if((files==null||files.size()==0)&&jdus.length==0)return;
+
+        if ((files == null || files.size() == 0) && jdus.length == 0) { return; }
         int org;
-        progress.setRange(org=files.size());
-       progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck","Update Check"));
-        
-        if (files != null||jdus.length>0) {
-          
-            updater.filterAvailableUpdates(files,JDUtilities.getResourceFile("."));
-        
-       
-            progress.setStatus(org-files.size());
-            if (files.size() > 0||jdus.length>0) {
-                logger.info("New Updates Available! "+files);
-                logger.info("New Packages to install: "+jdus.length);
+        progress.setRange(org = files.size());
+        progress.setStatusText(JDLocale.L("interaction.webupdate.progress.updateCheck", "Update Check"));
+
+        if (files != null || jdus.length > 0) {
+
+            updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
+
+            progress.setStatus(org - files.size());
+            if (files.size() > 0 || jdus.length > 0) {
+                logger.info("New Updates Available! " + files);
+                logger.info("New Packages to install: " + jdus.length);
                 JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-  
-                
-             
+
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true)) {
-                   //Eine checkfile schreiben. Diese CheckFile wird vom webupdater gelöscht. Wird sie beim restart von JD wiedergefunden wird eine warnmeldung angezeigt, weild as darauf hindeutet dass der webupdater fehlerhaft funktioniert hat
-                    JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString()+"\r\n(Revision"+JDUtilities.getRevision()+")");
-                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart","/rt"+JDUtilities.getRunType()}, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                    // Eine checkfile schreiben. Diese CheckFile wird vom
+                    // webupdater gelöscht. Wird sie beim restart von JD
+                    // wiedergefunden wird eine warnmeldung angezeigt, weild as
+                    // darauf hindeutet dass der webupdater fehlerhaft
+                    // funktioniert hat
+                    JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                     System.exit(0);
-                }
-                else {
-                    if (JDUtilities.getController().getUiInterface().showConfirmDialog((jdus.length+files.size()) + " update(s) available. Start Webupdater now?")) {
-                        JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString()+"\r\n(Revision"+JDUtilities.getRevision()+")");
-                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart" ,"/rt"+JDUtilities.getRunType()}, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                } else {
+                    if (JDUtilities.getController().getUiInterface().showConfirmDialog(jdus.length + files.size() + " update(s) available. Start Webupdater now?")) {
+                        JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                         System.exit(0);
                     }
 
                 }
 
             }
-  
 
         }
-        
-        this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+
+        setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
         progress.finalize();
-logger.info(updater.getLogger().toString());
+        logger.info(updater.getLogger().toString());
         // updater.run();
         // if (updater.getUpdatedFiles() > 0) {
         // this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
@@ -145,9 +141,8 @@ logger.info(updater.getLogger().toString());
         // }
     }
 
-    
     @Override
     public String toString() {
-        return JDLocale.L("interaction.webupdate.toString","WebUpdate durchführen");
+        return JDLocale.L("interaction.webupdate.toString", "WebUpdate durchführen");
     }
 }

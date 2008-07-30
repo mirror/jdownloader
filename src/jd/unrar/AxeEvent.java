@@ -21,36 +21,29 @@ package jd.unrar;
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
 
+public class AxeEvent {
+    protected Object oSource;
+    protected String sMessage;
 
-public class AxeEvent
-{
-	protected Object oSource;
-	protected String sMessage;
+    public AxeEvent(Object o) {
+        oSource = o;
+        sMessage = "";
+    }
 
-	public AxeEvent (Object o)
-	{
-		oSource = o;
-		sMessage = "";
-	}
+    public AxeEvent(Object o, String s) {
+        oSource = o;
+        sMessage = s;
+    }
 
-	public AxeEvent (Object o, String s)
-	{
-		oSource = o;
-		sMessage = s;
-	}
+    public String getMessage() {
+        return sMessage;
+    }
 
-	public String getMessage()
-	{
-		return sMessage;
-	}
+    public Object getSource() {
+        return oSource;
+    }
 
-	public Object getSource()
-	{
-		return oSource;
-	}
-
-	public void setMessage (String s)
-	{
-		sMessage = s;
-	}
+    public void setMessage(String s) {
+        sMessage = s;
+    }
 }

@@ -31,6 +31,7 @@ import jd.plugins.RequestInfo;
 public class MovieloadTo extends PluginForDecrypt {
     final static String host = "movieload.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public MovieloadTo() {
@@ -38,7 +39,6 @@ public class MovieloadTo extends PluginForDecrypt {
         default_password.add("movieload.to");
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,10 +47,10 @@ public class MovieloadTo extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("; popup_dl\\((.*?)\\)\" ")).getMatches();
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
+            for (String[] element : links) {
                 progress.increase(1);
-                reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + links[i][0]));
-                decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+                reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + element[0]));
+                decryptedLinks.add(createDownloadlink(reqinfo.getLocation()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,41 +59,34 @@ public class MovieloadTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

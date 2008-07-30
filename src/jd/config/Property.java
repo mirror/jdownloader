@@ -161,7 +161,9 @@ public class Property implements Serializable {
      * @return Value zu key
      */
     public Object getProperty(String key) {
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         return properties.get(key);
     }
 
@@ -173,7 +175,9 @@ public class Property implements Serializable {
      * @return value
      */
     public Object getProperty(String key, Object def) {
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         if (getProperty(key) == null) {
             setProperty(key, def);
             return def;
@@ -217,7 +221,7 @@ public class Property implements Serializable {
     }
 
     public boolean hasProperty(String key) {
-        return this.properties.containsKey(key);
+        return properties.containsKey(key);
     }
 
     /**
@@ -237,18 +241,24 @@ public class Property implements Serializable {
      * @param value
      */
     @SuppressWarnings("unchecked")
-	public void setProperty(String key, Object value) {
-//        if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
-//            logger.info("II");
-//        }
+    public void setProperty(String key, Object value) {
+        // if(key==Configuration.PARAM_USE_GLOBAL_PREMIUM&&this==JDUtilities.getConfiguration()){
+        // logger.info("II");
+        // }
         saveCount++;
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         Object old = getProperty(key);
 
         properties.put(key, value);
 
-        if (logger == null) logger = JDUtilities.getLogger();
-        if (JDUtilities.getController() == null) return;
+        if (logger == null) {
+            logger = JDUtilities.getLogger();
+        }
+        if (JDUtilities.getController() == null) {
+            return;
+        }
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
@@ -263,7 +273,9 @@ public class Property implements Serializable {
 
                 }
             } else {
-                if (value != old) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                if (value != old) {
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));
+                }
 
             }
         } catch (Exception e) {

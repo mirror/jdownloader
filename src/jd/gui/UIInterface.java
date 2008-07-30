@@ -100,7 +100,7 @@ public interface UIInterface extends ControlListener {
      * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
     public void onJDInitComplete();
-    
+
     /**
      * Entfernt einen UIListener
      * 
@@ -108,7 +108,7 @@ public interface UIInterface extends ControlListener {
      *            UIListener, der entfernt werden soll
      */
     public void removeUIListener(UIListener listener);
-    
+
     /**
      * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
      * verwendet werden
@@ -172,6 +172,6 @@ public interface UIInterface extends ControlListener {
      *            default Wert
      * @return Der vom Benutzer eingegebene Text
      */
-    public String showUserInputDialog(String string,String def);
+    public String showUserInputDialog(String string, String def);
 
 }

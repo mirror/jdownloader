@@ -44,14 +44,14 @@ public class RelinkUs extends PluginForDecrypt {
 
     private static final String USE_RSDF = "USE_RSDF";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public RelinkUs() {
         super();
-        this.setConfigEelements();
+        setConfigEelements();
     }
 
-    
     private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
         ArrayList<String> container_link = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE), 1);
         if (container_link.size() == 1) {
@@ -61,11 +61,11 @@ public class RelinkUs extends PluginForDecrypt {
             container_con.setRequestProperty("Referer", cryptedLink);
             JDUtilities.download(container, container_con);
             JDUtilities.getController().loadContainerFile(container);
-        } else
+        } else {
             logger.severe("Please Update RelinkUs Plugin(Container Pattern)");
+        }
     }
 
-    
     private void add_relinkus_links(RequestInfo reqinfo, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
         progress.addToMax(links.size());
@@ -79,14 +79,11 @@ public class RelinkUs extends PluginForDecrypt {
                 link = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
             }
 
-            decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(link)));
+            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
             progress.increase(1);
         }
     }
 
-
-
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -119,19 +116,16 @@ public class RelinkUs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
@@ -149,10 +143,10 @@ public class RelinkUs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     private void setConfigEelements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));

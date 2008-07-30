@@ -40,7 +40,6 @@ public class Tinyurl extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -59,7 +58,7 @@ public class Tinyurl extends PluginForDecrypt {
             }
 
             // Link der Liste hinzufügen
-            decryptedLinks.add(this.createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getFirstMatch()));
+            decryptedLinks.add(createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getFirstMatch()));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -67,44 +66,34 @@ public class Tinyurl extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

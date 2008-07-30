@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.GridBagConstraints;
@@ -32,9 +31,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der Interactions verwendet
+ * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der
+ * Interactions verwendet
+ * 
  * @author JD-Team
- *
+ * 
  */
 public class ConfigurationSubPanel extends JPanel implements ActionListener {
 
@@ -43,37 +44,41 @@ public class ConfigurationSubPanel extends JPanel implements ActionListener {
      */
     private static final long serialVersionUID = 3815946152967454931L;
 
-    private JButton       btnCancel;
+    private JButton btnCancel;
 
-    private JButton       btnSave;
+    private JButton btnSave;
 
     @SuppressWarnings("unused")
     private Configuration configuration;
 
-    private ConfigPanel   panel;
+    private ConfigPanel panel;
 
     @SuppressWarnings("unused")
-    private UIInterface   uiinterface;
-/**
- * Erstellt einen Neuen Dialog
- * @param parent (Parent FEnster)
- * @param panel   (ConfigPanel (panel inkl. ok/close buttons etc)
- * @param jpanel  (panel des eigentlichen Konfigfenster)
- * @param uiinterface
- * @param configuration
- */
-    public ConfigurationSubPanel(ConfigPanel panel,JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
-      
+    private UIInterface uiinterface;
+
+    /**
+     * Erstellt einen Neuen Dialog
+     * 
+     * @param parent
+     *            (Parent FEnster)
+     * @param panel
+     *            (ConfigPanel (panel inkl. ok/close buttons etc)
+     * @param jpanel
+     *            (panel des eigentlichen Konfigfenster)
+     * @param uiinterface
+     * @param configuration
+     */
+    public ConfigurationSubPanel(ConfigPanel panel, JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
+
         this.uiinterface = uiinterface;
-   
-   
+
         setLayout(new GridBagLayout());
         this.configuration = configuration;
 
         this.panel = panel;
-        btnSave = new JButton(JDLocale.L("gui.config.subPanel.btn_ok","OK"));
+        btnSave = new JButton(JDLocale.L("gui.config.subPanel.btn_ok", "OK"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton(JDLocale.L("gui.config.subPanel.btn_cancel","Abbrechen"));
+        btnCancel = new JButton(JDLocale.L("gui.config.subPanel.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
         Insets insets = new Insets(5, 5, 5, 5);
@@ -81,15 +86,14 @@ public class ConfigurationSubPanel extends JPanel implements ActionListener {
         JDUtilities.addToGridBag(this, jpanel, 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
         JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
         JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-      
-       
-      
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-            if(panel!=null)panel.save();
+            if (panel != null) {
+                panel.save();
+            }
         }
         setVisible(false);
     }

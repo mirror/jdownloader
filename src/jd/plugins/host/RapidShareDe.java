@@ -42,8 +42,6 @@ import jd.utils.JDUtilities;
 public class RapidShareDe extends PluginForHost {
     private static final String HOST = "rapidshare.de";
 
-   
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     private File captchaFile;
@@ -55,7 +53,7 @@ public class RapidShareDe extends PluginForHost {
     private long waittime = 0;
 
     //
-    
+
     public RapidShareDe() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -67,13 +65,11 @@ public class RapidShareDe extends PluginForHost {
         setConfigElements();
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
@@ -118,7 +114,7 @@ public class RapidShareDe extends PluginForHost {
         RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
         req.setConnection(requestInfo.getConnection());
         form = Form.getForms(req)[0];
-        captchaFile = getLocalCaptchaFile(this, ".png");
+        captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
         logger.info("CaptchaAdress:" + captchaAdress);
         boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
@@ -162,12 +158,11 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
-    
     public void doPremium(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         String formatPass = "";
         for (int i = 0; i < pass.length(); i++) {
@@ -185,7 +180,7 @@ public class RapidShareDe extends PluginForHost {
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-         linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
@@ -239,7 +234,9 @@ public class RapidShareDe extends PluginForHost {
 
         downloadLink.setDownloadMax(length);
         String name = getFileNameFormHeader(urlConnection);
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
+            name = name.replaceFirst("\\.html$", "");
+        }
         downloadLink.setName(name);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
@@ -249,19 +246,12 @@ public class RapidShareDe extends PluginForHost {
 
     }
 
-    
     @Override
     public String getAGBLink() {
 
         return "http://rapidshare.de/de/faq.html";
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
@@ -271,7 +261,7 @@ public class RapidShareDe extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Form[] forms = Form.getForms(downloadLink.getDownloadURL());
-        if (forms.length < 2) return false;
+        if (forms.length < 2) { return false; }
         requestInfo = forms[1].getRequestInfo();
         try {
             String[][] regExp = new Regex(requestInfo.getHtmlCode(), "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
@@ -291,7 +281,7 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
@@ -308,45 +298,41 @@ public class RapidShareDe extends PluginForHost {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
 
-            this.doPremium(downloadLink);
+            doPremium(downloadLink);
 
         } else {
 
-            this.doFree(downloadLink);
+            doFree(downloadLink);
 
         }
         return;
     }
 
-    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));

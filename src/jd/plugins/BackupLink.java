@@ -14,79 +14,82 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
 
 public class BackupLink implements Serializable {
-  
 
     public static final int LINKTYPE_CONTAINER = 1;
-	public static final int LINKTYPE_NORMAL = 0;
+    public static final int LINKTYPE_NORMAL = 0;
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-  
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
     /**
      * Containername
      */
-    private String            container;
- 
+    private String container;
+
     /**
      * Dateiname des Containers
      */
-    private String            containerFile;
-    
+    private String containerFile;
 
     /**
      * Index dieses DownloadLinks innerhalb der Containerdatei
      */
-    private int               containerIndex=-1;
+    private int containerIndex = -1;
     private String containerType;
     private int linkType;
     /**
      * Von hier soll de Download stattfinden
      */
-    private String            urlDownload;
-  
-  
-    public BackupLink(File containerfile, int id,String containerType) {       
-        containerFile=containerfile.getAbsolutePath();
-        containerIndex=id;
-       this.containerType=containerType;
-        linkType=LINKTYPE_CONTAINER;
+    private String urlDownload;
 
-}
-    public BackupLink(String urlDownload) {       
-        linkType=LINKTYPE_NORMAL;
-            this.urlDownload = urlDownload;
-    
+    public BackupLink(File containerfile, int id, String containerType) {
+        containerFile = containerfile.getAbsolutePath();
+        containerIndex = id;
+        this.containerType = containerType;
+        linkType = LINKTYPE_CONTAINER;
+
     }
+
+    public BackupLink(String urlDownload) {
+        linkType = LINKTYPE_NORMAL;
+        this.urlDownload = urlDownload;
+
+    }
+
     public String getContainer() {
         return container;
     }
+
     public String getContainerFile() {
         return containerFile;
     }
+
     public int getContainerIndex() {
         return containerIndex;
     }
+
     public String getContainerType() {
         return containerType;
     }
+
     public int getLinkType() {
         return linkType;
     }
+
     public String getUrlDownload() {
         return urlDownload;
     }
-@Override
-public String toString(){
-    return " containerType :"+containerType+" linkType :"+linkType+" containerIndex :"+containerIndex+" container :"+container+" urlDownload :"+urlDownload;
-}
-   
+
+    @Override
+    public String toString() {
+        return " containerType :" + containerType + " linkType :" + linkType + " containerIndex :" + containerIndex + " container :" + container + " urlDownload :" + urlDownload;
+    }
+
 }

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -55,125 +54,119 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionListener {
-    private static String     GET              = "GET";
+    private static String GET = "GET";
 
-    private static String     POST             = "POST";
+    private static String POST = "POST";
 
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = -4338544183688967675L;
 
-    private JButton           btnImport;
+    private JButton btnImport;
 
-    private JComboBox         cboConnectType;
+    private JComboBox cboConnectType;
 
-    private JComboBox         cboDisconnectType;
+    private JComboBox cboDisconnectType;
 
-    private JComboBox         cboLoginType;
+    private JComboBox cboLoginType;
 
-    private Configuration     configuration;
+    private Configuration configuration;
 
-    private JLabel            lblConnect;
+    private JLabel lblConnect;
 
-    private JLabel            lblConnectPostParams;
+    private JLabel lblConnectPostParams;
 
-    private JLabel            lblConnectRequestProperties;
+    private JLabel lblConnectRequestProperties;
 
-    private JLabel            lblConnectType;
+    private JLabel lblConnectType;
 
+    private JLabel lblDisconnect;
 
+    private JLabel lblDisconnectPostParams;
 
-    private JLabel            lblDisconnect;
+    private JLabel lblDisconnectRequestProperties;
 
-    private JLabel            lblDisconnectPostParams;
+    private JLabel lblDisconnectTest;
 
-    private JLabel            lblDisconnectRequestProperties;
+    private JLabel lblDisconnectType;
 
-    private JLabel            lblDisconnectTest;
+    private JLabel lblImport;
 
-    private JLabel            lblDisconnectType;
+    private JLabel lblLogin;
 
-    private JLabel            lblImport;
+    private JLabel lblLoginPostParams;
 
-    private JLabel            lblLogin;
+    private JLabel lblLoginRequestProperties;
 
-    private JLabel            lblLoginPostParams;
+    private JLabel lblLoginType;
 
-    private JLabel            lblLoginRequestProperties;
+    private JLabel lblLogoff;
 
-    private JLabel            lblLoginType;
+    private JLabel lblPassword;
 
-    private JLabel            lblLogoff;
+    private JLabel lblRetries;
 
-    private JLabel            lblPassword;
+    private JLabel lblRouterIP;
 
-    private JLabel            lblRetries;
+    private JLabel lblRouterName;
 
-    private JLabel            lblRouterIP;
+    private JLabel lblRouterPort;
 
-    private JLabel            lblRouterName;
+    private JLabel lblUsername;
 
-    private JLabel            lblRouterPort;
+    private JLabel lblWaitForIPCheck;
 
-    private JLabel            lblUsername;
+    private JPanel pnlConnect;
 
-    private JLabel            lblWaitForIPCheck;
+    private JPanel pnlControl;
 
+    private JPanel pnlDisconnect;
 
+    private JPanel pnlIpCheck;
 
-    private JPanel            pnlConnect;
+    private JPanel pnlLogin;
 
-    private JPanel            pnlControl;
+    private JPanel pnlRouter;
 
-    private JPanel            pnlDisconnect;
-
-    private JPanel            pnlIpCheck;
-
-    private JPanel            pnlLogin;
-
-    private JPanel            pnlRouter;
-
-    private RouterData        routerData;
+    private RouterData routerData;
 
     // private JPanel panel;
-    private JTabbedPane       tabbedPane;
+    private JTabbedPane tabbedPane;
 
-    private JTextField        txtConnect;
+    private JTextField txtConnect;
 
-    private JTextField        txtConnectPostParams;
+    private JTextField txtConnectPostParams;
 
-    private JTextField        txtConnectRequestProperties;
+    private JTextField txtConnectRequestProperties;
 
-    private JTextField        txtDisconnect;
+    private JTextField txtDisconnect;
 
-    private JTextField        txtDisconnectPostParams;
+    private JTextField txtDisconnectPostParams;
 
-    private JTextField        txtDisconnectRequestProperties;
+    private JTextField txtDisconnectRequestProperties;
 
-    private JTextField        txtLogin;
+    private JTextField txtLogin;
 
-    private JTextField        txtLoginPostParams;
+    private JTextField txtLoginPostParams;
 
-    private JTextField        txtLoginRequestProperties;
+    private JTextField txtLoginRequestProperties;
 
-    private JTextField        txtLogoff;
+    private JTextField txtLogoff;
 
-    private JPasswordField    txtPassword;
+    private JPasswordField txtPassword;
 
-    private JTextField        txtRetries;
+    private JTextField txtRetries;
 
+    private JTextField txtRouterIP;
 
+    private JTextField txtRouterName;
 
-    private JTextField        txtRouterIP;
+    private JTextField txtRouterPort;
 
-    private JTextField        txtRouterName;
+    private JTextField txtUsername;
 
-    private JTextField        txtRouterPort;
-
-    private JTextField        txtUsername;
-
-    private JTextField        txtWaitForIPCheck;
+    private JTextField txtWaitForIPCheck;
 
     public SubPanelHTTPReconnect(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -184,10 +177,9 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnImport){
+        if (e.getSource() == btnImport) {
             importFromRoutersDat();
         }
- 
 
     }
 
@@ -199,8 +191,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
             lblLoginPostParams.setEnabled(false);
             txtLoginRequestProperties.setEnabled(false);
             txtLoginPostParams.setEnabled(false);
-        }
-        else {
+        } else {
             lblLoginPostParams.setEnabled(true);
             txtLoginRequestProperties.setEnabled(true);
             txtLoginPostParams.setEnabled(true);
@@ -210,8 +201,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
             lblDisconnectPostParams.setEnabled(false);
             txtDisconnectRequestProperties.setEnabled(false);
             txtDisconnectPostParams.setEnabled(false);
-        }
-        else {
+        } else {
             lblDisconnectPostParams.setEnabled(true);
             txtDisconnectRequestProperties.setEnabled(true);
             txtDisconnectPostParams.setEnabled(true);
@@ -221,8 +211,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
             lblConnectPostParams.setEnabled(false);
             txtConnectRequestProperties.setEnabled(false);
             txtConnectPostParams.setEnabled(false);
-        }
-        else {
+        } else {
             lblConnectPostParams.setEnabled(true);
             txtConnectRequestProperties.setEnabled(true);
             txtConnectPostParams.setEnabled(true);
@@ -230,9 +219,10 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         }
     }
 
+    @Override
     public String getName() {
 
-        return JDLocale.L("gui.config.httpreconnect.name","Router");
+        return JDLocale.L("gui.config.httpreconnect.name", "Router");
     }
 
     private void importFromRoutersDat() {
@@ -251,11 +241,9 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
                         if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) > 0) {
                             return 1;
-                        }
-                        else if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) < 0) {
+                        } else if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) < 0) {
                             return -1;
-                        }
-                        else {
+                        } else {
                             return 0;
                         }
                     }
@@ -263,7 +251,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
                 }
 
             });
-            Object selected = JOptionPane.showInputDialog(this, JDLocale.L("gui.config.httpreconnect.selectRouter","Bitte wähle deinen Router aus"), JDLocale.L("gui.config.httpreconnect.importRouter","Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, routerData.toArray(), null);
+            Object selected = JOptionPane.showInputDialog(this, JDLocale.L("gui.config.httpreconnect.selectRouter", "Bitte wähle deinen Router aus"), JDLocale.L("gui.config.httpreconnect.importRouter", "Router importieren"), JOptionPane.INFORMATION_MESSAGE, null, routerData.toArray(), null);
             if (selected != null) {
                 this.routerData = (RouterData) selected;
                 load();
@@ -274,9 +262,9 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
     @Override
     public void initPanel() {
 
-        this.setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
 
-        this.routerData = configuration.getRouterData();
+        routerData = configuration.getRouterData();
         tabbedPane = new JTabbedPane(SwingConstants.LEFT);
         pnlControl = new JPanel(new GridBagLayout());
         pnlRouter = new JPanel(new GridBagLayout());
@@ -286,30 +274,30 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         pnlIpCheck = new JPanel(new GridBagLayout());
         String types[] = new String[] { GET, POST };
 
-        lblImport = new JLabel(JDLocale.L("gui.config.httpreconnect.importRouterData","RouterDaten importieren"), SwingConstants.RIGHT);
-        lblDisconnectTest = new JLabel(JDLocale.L("gui.config.httpreconnect.testreconnect","Router reconnecten"), SwingConstants.RIGHT);
-        lblUsername = new JLabel(JDLocale.L("gui.config.httpreconnect.userName","Benutzername"), SwingConstants.RIGHT);
-        lblPassword = new JLabel(JDLocale.L("gui.config.httpreconnect.password","Password"), SwingConstants.RIGHT);
-        lblRouterIP = new JLabel(JDLocale.L("gui.config.httpreconnect.routerIp","Hostname/IP des Routers"), SwingConstants.RIGHT);
-        lblRouterPort = new JLabel(JDLocale.L("gui.config.httpreconnect.routerPort","Port des Routers"), SwingConstants.RIGHT);
-        lblRouterName = new JLabel(JDLocale.L("gui.config.httpreconnect.routerName","Name des Routers"), SwingConstants.RIGHT);
-        lblLogin = new JLabel(JDLocale.L("gui.config.httpreconnect.loginString","Anmeldestring"), SwingConstants.RIGHT);
-        lblLoginType = new JLabel(JDLocale.L("gui.config.httpreconnect.loginRequestType","Art der Anmeldung"), SwingConstants.RIGHT);
-        lblLoginRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.loginRequestProperties","RequestProperties fürs Login"), SwingConstants.RIGHT);
-       
-        lblLoginPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.loginPOSTParameter","POST Parameter fürs Login)"), SwingConstants.RIGHT);
-        lblLogoff = new JLabel(JDLocale.L("gui.config.httpreconnect.logoffString","Abmeldestring"), SwingConstants.RIGHT);
-        lblConnect = new JLabel(JDLocale.L("gui.config.httpreconnect.connection","Verbindungsaufbau"), SwingConstants.RIGHT);
-        lblDisconnect = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnect","Verbindungsabbruch"), SwingConstants.RIGHT);
-        lblDisconnectType = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectType","Art des Verbindungsabbruchs"), SwingConstants.RIGHT);
-        lblDisconnectRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectRequestProperties","RequestProperties für den Verbindungsabbruch"), SwingConstants.RIGHT);
-        lblDisconnectPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectPOSTParameter","POST Parameter für den Verbindungsabbruch"), SwingConstants.RIGHT);
+        lblImport = new JLabel(JDLocale.L("gui.config.httpreconnect.importRouterData", "RouterDaten importieren"), SwingConstants.RIGHT);
+        lblDisconnectTest = new JLabel(JDLocale.L("gui.config.httpreconnect.testreconnect", "Router reconnecten"), SwingConstants.RIGHT);
+        lblUsername = new JLabel(JDLocale.L("gui.config.httpreconnect.userName", "Benutzername"), SwingConstants.RIGHT);
+        lblPassword = new JLabel(JDLocale.L("gui.config.httpreconnect.password", "Password"), SwingConstants.RIGHT);
+        lblRouterIP = new JLabel(JDLocale.L("gui.config.httpreconnect.routerIp", "Hostname/IP des Routers"), SwingConstants.RIGHT);
+        lblRouterPort = new JLabel(JDLocale.L("gui.config.httpreconnect.routerPort", "Port des Routers"), SwingConstants.RIGHT);
+        lblRouterName = new JLabel(JDLocale.L("gui.config.httpreconnect.routerName", "Name des Routers"), SwingConstants.RIGHT);
+        lblLogin = new JLabel(JDLocale.L("gui.config.httpreconnect.loginString", "Anmeldestring"), SwingConstants.RIGHT);
+        lblLoginType = new JLabel(JDLocale.L("gui.config.httpreconnect.loginRequestType", "Art der Anmeldung"), SwingConstants.RIGHT);
+        lblLoginRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.loginRequestProperties", "RequestProperties fürs Login"), SwingConstants.RIGHT);
 
-        lblRetries = new JLabel(JDLocale.L("gui.config.httpreconnect.retries","Versuche (0=unendlich)"), SwingConstants.RIGHT);
-        lblConnectType = new JLabel(JDLocale.L("gui.config.httpreconnect.connectType","Art des Verbindungsaufbaus"), SwingConstants.RIGHT);
-        lblConnectRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.connectRequestProperties","RequestProperties für den Verbindungsaufbau"), SwingConstants.RIGHT);
-        lblConnectPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.connectPOSTParameter","POST Parameter für den Verbindungsaufbau"), JLabel.RIGHT);
-        lblWaitForIPCheck = new JLabel(JDLocale.L("gui.config.httpreconnect.waitTimeForIPCheck","Wartezeit bis zum ersten IP-Check [sek]"), JLabel.RIGHT);
+        lblLoginPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.loginPOSTParameter", "POST Parameter fürs Login)"), SwingConstants.RIGHT);
+        lblLogoff = new JLabel(JDLocale.L("gui.config.httpreconnect.logoffString", "Abmeldestring"), SwingConstants.RIGHT);
+        lblConnect = new JLabel(JDLocale.L("gui.config.httpreconnect.connection", "Verbindungsaufbau"), SwingConstants.RIGHT);
+        lblDisconnect = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnect", "Verbindungsabbruch"), SwingConstants.RIGHT);
+        lblDisconnectType = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectType", "Art des Verbindungsabbruchs"), SwingConstants.RIGHT);
+        lblDisconnectRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectRequestProperties", "RequestProperties für den Verbindungsabbruch"), SwingConstants.RIGHT);
+        lblDisconnectPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.disconnectPOSTParameter", "POST Parameter für den Verbindungsabbruch"), SwingConstants.RIGHT);
+
+        lblRetries = new JLabel(JDLocale.L("gui.config.httpreconnect.retries", "Versuche (0=unendlich)"), SwingConstants.RIGHT);
+        lblConnectType = new JLabel(JDLocale.L("gui.config.httpreconnect.connectType", "Art des Verbindungsaufbaus"), SwingConstants.RIGHT);
+        lblConnectRequestProperties = new JLabel(JDLocale.L("gui.config.httpreconnect.connectRequestProperties", "RequestProperties für den Verbindungsaufbau"), SwingConstants.RIGHT);
+        lblConnectPostParams = new JLabel(JDLocale.L("gui.config.httpreconnect.connectPOSTParameter", "POST Parameter für den Verbindungsaufbau"), SwingConstants.RIGHT);
+        lblWaitForIPCheck = new JLabel(JDLocale.L("gui.config.httpreconnect.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), SwingConstants.RIGHT);
 
         txtUsername = new JTextField(configuration.getRouterUsername());
         txtPassword = new JPasswordField(configuration.getRouterPassword());
@@ -321,7 +309,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         txtLoginRequestProperties = new JTextField(50);
         txtLoginPostParams = new JTextField(50);
         txtLogoff = new JTextField(50);
-      
+
         txtConnect = new JTextField(50);
 
         txtDisconnect = new JTextField(50);
@@ -336,17 +324,15 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         txtConnectPostParams = new JTextField(50);
 
         btnImport = new JButton("Router auswählen");
-       
 
-    
-        txtLoginRequestProperties.setToolTipText(JDLocale.L("gui.config.httpreconnect.loginrequestProperties.tooltip","<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>"));
-        txtDisconnectRequestProperties.setToolTipText(JDLocale.L("gui.config.httpreconnect.disconnectRequestPropertiesTooltip","<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>"));
+        txtLoginRequestProperties.setToolTipText(JDLocale.L("gui.config.httpreconnect.loginrequestProperties.tooltip", "<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>"));
+        txtDisconnectRequestProperties.setToolTipText(JDLocale.L("gui.config.httpreconnect.disconnectRequestPropertiesTooltip", "<HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>"));
 
         cboLoginType.addItemListener(this);
         cboDisconnectType.addItemListener(this);
         cboConnectType.addItemListener(this);
         btnImport.addActionListener(this);
-    
+
         Insets insets = new Insets(1, 5, 1, 5);
         int row = 0;
         tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_control"), pnlControl);
@@ -364,7 +350,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         JDUtilities.addToGridBag(pnlControl, lblDisconnectTest, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         row = 0;
         JDUtilities.addToGridBag(pnlControl, btnImport, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-      
+
         // Router Login
         row = 0;
         JDUtilities.addToGridBag(pnlLogin, lblUsername, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
@@ -419,11 +405,11 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
         // Ipcheck
         row = 0;
-      JDUtilities.addToGridBag(pnlIpCheck, lblRetries, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        JDUtilities.addToGridBag(pnlIpCheck, lblRetries, 0, row++, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(pnlIpCheck, lblWaitForIPCheck, 0, row++, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 
         row = 0;
-      JDUtilities.addToGridBag(pnlIpCheck, txtRetries, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(pnlIpCheck, txtRetries, 1, row++, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(pnlIpCheck, txtWaitForIPCheck, 1, row++, 1, 1, 1, 1, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
 
         add(tabbedPane, BorderLayout.CENTER);
@@ -449,45 +435,45 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         txtDisconnectPostParams.setText(routerData.getDisconnectPostParams());
         txtConnectPostParams.setText(routerData.getConnectPostParams());
 
-        this.txtWaitForIPCheck.setText(configuration.getWaitForIPCheck() + "");
-        this.txtRouterIP.setText(routerData.getRouterIP());
-        this.txtRouterPort.setText(routerData.getRouterPort() + "");
-        this.txtRetries.setText(configuration.getReconnectRetries() + "");
- 
+        txtWaitForIPCheck.setText(configuration.getWaitForIPCheck() + "");
+        txtRouterIP.setText(routerData.getRouterIP());
+        txtRouterPort.setText(routerData.getRouterPort() + "");
+        txtRetries.setText(configuration.getReconnectRetries() + "");
+
         if (routerData.getLoginType() == RouterData.TYPE_WEB_GET) {
 
             cboLoginType.setSelectedItem(GET);
-        }
-        else {
+        } else {
             cboLoginType.setSelectedItem(POST);
         }
         if (routerData.getDisconnectType() == RouterData.TYPE_WEB_GET) {
             cboDisconnectType.setSelectedItem(GET);
 
-        }
-        else {
+        } else {
             cboDisconnectType.setSelectedItem(POST);
         }
         if (routerData.getConnectType() == RouterData.TYPE_WEB_GET) {
             cboConnectType.setSelectedItem(GET);
 
-        }
-        else {
+        } else {
             cboConnectType.setSelectedItem(POST);
         }
 
-        if (routerData.getLoginRequestProperties() != null)
+        if (routerData.getLoginRequestProperties() != null) {
             txtLoginRequestProperties.setText(mergeHashMap(routerData.getLoginRequestProperties()));
-        else
+        } else {
             txtLoginRequestProperties.setText(null);
-        if (routerData.getDisconnectRequestProperties() != null)
+        }
+        if (routerData.getDisconnectRequestProperties() != null) {
             txtDisconnectRequestProperties.setText(mergeHashMap(routerData.getDisconnectRequestProperties()));
-        else
+        } else {
             txtDisconnectRequestProperties.setText(null);
-        if (routerData.getConnectRequestProperties() != null)
+        }
+        if (routerData.getConnectRequestProperties() != null) {
             txtConnectRequestProperties.setText(mergeHashMap(routerData.getConnectRequestProperties()));
-        else
+        } else {
             txtConnectRequestProperties.setText(null);
+        }
 
     }
 
@@ -495,7 +481,8 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
      * Gibt eine Hashmap als String zurück. Das Format ist so;
      * key1=value1;key2=value2;"key3;k"="value;value"...
      * 
-     * @param map Die Map, die ausgegeben werden soll
+     * @param map
+     *            Die Map, die ausgegeben werden soll
      * @return Ein String, der die Werte der HashMap darstellt
      */
     private String mergeHashMap(HashMap<String, String> map) {
@@ -507,12 +494,13 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
             buffer.append(key);
             buffer.append("==");
             buffer.append(map.get(key));
-            if (iterator.hasNext()) buffer.append(";;");
+            if (iterator.hasNext()) {
+                buffer.append(";;");
+            }
         }
         return buffer.toString();
     }
 
-    
     /**
      * Speichert alle Änderungen auf der Maske
      */
@@ -523,15 +511,13 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
         configuration.setRouterPassword(new String(txtPassword.getPassword()).trim());
         try {
             configuration.setReconnectRetries(Integer.parseInt(new String(txtRetries.getText()).trim()));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             logger.severe("Reconnect retries wrong");
         }
         ;
         try {
             configuration.setWaitForIPCheck(Integer.parseInt(new String(txtWaitForIPCheck.getText()).trim()));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             logger.severe("txtWaitForIPCheck wrong");
         }
         ;
@@ -548,37 +534,36 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
         try {
             routerData.setRouterPort(Integer.parseInt(txtRouterPort.getText()));
-        }
-        catch (NumberFormatException e) {
+        } catch (NumberFormatException e) {
             logger.severe("routerPort wrong");
         }
 
-        if (cboLoginType.getSelectedItem().equals(GET))
+        if (cboLoginType.getSelectedItem().equals(GET)) {
             routerData.setLoginType(RouterData.TYPE_WEB_GET);
-        else
+        } else {
             routerData.setLoginType(RouterData.TYPE_WEB_POST);
-        if (cboDisconnectType.getSelectedItem().equals(GET))
+        }
+        if (cboDisconnectType.getSelectedItem().equals(GET)) {
             routerData.setDisconnectType(RouterData.TYPE_WEB_GET);
-        else
+        } else {
             routerData.setDisconnectType(RouterData.TYPE_WEB_POST);
-     
+        }
+
         routerData.setLoginRequestProperties(splitString(txtLoginRequestProperties.getText().trim()));
         routerData.setDisconnectRequestProperties(splitString(txtDisconnectRequestProperties.getText().trim()));
         routerData.setConnectRequestProperties(splitString(txtConnectRequestProperties.getText().trim()));
     }
 
-    
     private HashMap<String, String> splitString(String properties) {
         HashMap<String, String> map = new HashMap<String, String>();
-        if (properties == null || properties.equals("")) return map;
+        if (properties == null || properties.equals("")) { return map; }
         String[] items = properties.split(";;");
         String[] keyValuePair;
-        for (int i = 0; i < items.length; i++) {
-            keyValuePair = items[i].split("==");
+        for (String element : items) {
+            keyValuePair = element.split("==");
             if (keyValuePair.length == 2) {
                 map.put(keyValuePair[0], keyValuePair[1]);
-            }
-            else {
+            } else {
                 logger.severe("something's wrong with the key/value pair." + keyValuePair[0]);
             }
         }

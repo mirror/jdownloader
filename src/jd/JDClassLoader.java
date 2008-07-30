@@ -61,7 +61,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private String rootDir;
 
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
-        if (rootDir == null) throw new IllegalArgumentException("Null root directory");
+        if (rootDir == null) {
+            throw new IllegalArgumentException("Null root directory");
+        }
         this.rootDir = rootDir;
         this.classLoaderParent = classLoaderParent;
         logger.fine("rootDir:" + rootDir);
@@ -118,39 +120,40 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 }
             }
         }
-    jars=jarFiles.toArray(new JarFile[]{});
+        jars = jarFiles.toArray(new JarFile[] {});
     }
 
-    
     @Override
     protected URL findResource(String name) {
 
         URL url;
         url = rootClassLoader.findResource(name);
-        if (url != null) return url;
+        if (url != null) {
+            return url;
+        }
 
         return super.findResource(name);
     }
 
-    
     public Vector<File> getJars() {
         Vector<File> ret = new Vector<File>();
-        ret.addAll(this.jarFile);
+        ret.addAll(jarFile);
         return ret;
     }
 
-    
     public URL getResource(byte[] key) {
-       
+
         if (jars != null) {
             // An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
-            for (int i = 0; i < jars.length; i++) {
+            for (JarFile element : jars) {
 
-                if (jars[i] != null && (entry = jars[i].getJarEntry(new String(key))) != null) try {
-                    System.out.println("getResource:" + entry.getName());
-                    return new URL(entry.getName());
-                } catch (MalformedURLException e) {
+                if (element != null && (entry = element.getJarEntry(new String(key))) != null) {
+                    try {
+                        System.out.println("getResource:" + entry.getName());
+                        return new URL(entry.getName());
+                    } catch (MalformedURLException e) {
+                    }
                 }
             }
         }
@@ -159,9 +162,13 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (url != null) { return url; }
         url = super.getResource(new String(key));
 
-        if (url != null) return url;
-        url = this.classLoaderParent.getResource(new String(key));
-        if (url != null) return url;
+        if (url != null) {
+            return url;
+        }
+        url = classLoaderParent.getResource(new String(key));
+        if (url != null) {
+            return url;
+        }
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
@@ -179,12 +186,14 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (jars != null) {
             // An dieser Stelle werden die JAR Dateien überprüft
             JarEntry entry;
-            for (int i = 0; i < jars.length; i++) {
+            for (JarFile element : jars) {
 
-                if (jars[i] != null && (entry = jars[i].getJarEntry(name)) != null) try {
-                    System.out.println("getResource:" + entry.getName());
-                    return new URL(entry.getName());
-                } catch (MalformedURLException e) {
+                if (element != null && (entry = element.getJarEntry(name)) != null) {
+                    try {
+                        System.out.println("getResource:" + entry.getName());
+                        return new URL(entry.getName());
+                    } catch (MalformedURLException e) {
+                    }
                 }
             }
         }
@@ -193,9 +202,13 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (url != null) { return url; }
         url = super.getResource(name);
 
-        if (url != null) return url;
-        url = this.classLoaderParent.getResource(name);
-        if (url != null) return url;
+        if (url != null) {
+            return url;
+        }
+        url = classLoaderParent.getResource(name);
+        if (url != null) {
+            return url;
+        }
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
@@ -218,23 +231,27 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
             urls.add(tmp);
         }
-        if (urls.size() > 0) return urls.elements();
+        if (urls.size() > 0) {
+            return urls.elements();
+        }
         if (jars != null) {
             JarEntry entry;
-            for (int i = 0; i < jars.length; i++) {
+            for (JarFile element : jars) {
                 // logger.info(jars[i]+" -tttt "+jars[i].entries());
-                if (jars[i] != null && (entry = jars[i].getJarEntry(name)) != null) try {
-                    // Das sollte nun hoffentlich eine Systemunabhängige
-                    // Implementierung sein.
+                if (element != null && (entry = element.getJarEntry(name)) != null) {
+                    try {
+                        // Das sollte nun hoffentlich eine Systemunabhängige
+                        // Implementierung sein.
 
-                    String url = new File(jars[i].getName().replace("\\", "/")).toURI().toURL() + "!/" + entry.getName();
-                    // // url=url.replace("file:/", "file://");
-                    // logger.finer(new URL("jar","",url)+"");
-                    // logger.finer("jar:file:/"+jars[i].getName().replace("\\",
-                    // "/")+"!/"+entry.getName());
-                    urls.add(new URL("jar", "", url));
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
+                        String url = new File(element.getName().replace("\\", "/")).toURI().toURL() + "!/" + entry.getName();
+                        // // url=url.replace("file:/", "file://");
+                        // logger.finer(new URL("jar","",url)+"");
+                        // logger.finer("jar:file:/"+jars[i].getName().replace("\\",
+                        // "/")+"!/"+entry.getName());
+                        urls.add(new URL("jar", "", url));
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -267,14 +284,16 @@ public class JDClassLoader extends java.lang.ClassLoader {
         }
         if (c == null) {
             JarEntry entry = null;
-            for (int i = 0; i < jars.length; i++) {
-                entry = jars[i].getJarEntry(name.replace('.', '/') + ".class");
+            for (JarFile element : jars) {
+                entry = element.getJarEntry(name.replace('.', '/') + ".class");
                 if (entry != null) {
                     try {
-                        byte data[] = loadClassData(jars[i], entry);
+                        byte data[] = loadClassData(element, entry);
 
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
-                        if (c == null) throw new ClassNotFoundException(name);
+                        if (c == null) {
+                            throw new ClassNotFoundException(name);
+                        }
                     } catch (ClassFormatError e) {
                         e.printStackTrace();
                     } catch (IOException e) {
@@ -283,7 +302,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 }
             }
         }
-        if (resolve) resolveClass(c);
+        if (resolve) {
+            resolveClass(c);
+        }
         return c;
     }
 

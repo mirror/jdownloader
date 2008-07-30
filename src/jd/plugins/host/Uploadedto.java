@@ -45,9 +45,11 @@ public class Uploadedto extends PluginForHost {
 
     private static final Pattern CAPTCHA_TEXTFLD = Pattern.compile("<input type=\"text\" id=\".*?\" name=\"(.*?)\" onkeyup=\"cap\\(\\)\\;\" size=3 />");
 
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.1";
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.1";
 
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String CODER = "JD-Team";
 
@@ -68,7 +70,6 @@ public class Uploadedto extends PluginForHost {
     static private final String HOST = "uploaded.to";
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
-    static private final String PLUGIN_NAME = HOST;
     static private final String TRAFFIC_EXCEEDED = "Ihr Premium-Traffic ist aufgebraucht";
 
     static private final String TRAFFIC_EXCEEDED_FREE = "Ihr Free-Traffic ist aufgebraucht";
@@ -92,7 +93,6 @@ public class Uploadedto extends PluginForHost {
         setConfigElements();
     }
 
-    
     /**
      * Korrigiert den Downloadlink in ein einheitliches Format
      * 
@@ -104,19 +104,18 @@ public class Uploadedto extends PluginForHost {
         link = link.replace("?id=", "file/");
         String[] parts = link.split("\\/");
         String newLink = "";
-        for (int t = 0; t < Math.min(parts.length, 5); t++)
+        for (int t = 0; t < Math.min(parts.length, 5); t++) {
             newLink += parts[t] + "/";
+        }
 
         parameter.setUrlDownload(newLink);
 
     }
 
-    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     private void doPremium(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
@@ -256,20 +255,13 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    
     public String getCoder() {
         return CODER;
     }
-
-    
-    
-        
-   
 
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -302,7 +294,7 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setName(fileName.trim() + "" + ext.trim());
                 if (fileSize != null) {
                     try {
-                        int length = (int) (Double.parseDouble(fileSize.trim().split(" ")[0]));
+                        int length = (int) Double.parseDouble(fileSize.trim().split(" ")[0]);
                         if (fileSize.toLowerCase().indexOf("mb") > 0) {
                             length *= 1024 * 1024;
                         } else if (fileSize.toLowerCase().indexOf("kb") > 0) {
@@ -330,16 +322,14 @@ public class Uploadedto extends PluginForHost {
         return HOST;
     }
 
-    
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
         }
     }
 
-    
     public String getPluginName() {
         return HOST;
     }
@@ -348,9 +338,9 @@ public class Uploadedto extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     public void handle(DownloadLink parameter) throws Exception {
@@ -374,7 +364,7 @@ public class Uploadedto extends PluginForHost {
 
         requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "lang=de", null, true);
         // /?view=error_traffic_exceeded_free
-        if (requestInfo.containsHTML(TRAFFIC_EXCEEDED_FREE) || requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
+        if (requestInfo.containsHTML(TRAFFIC_EXCEEDED_FREE) || requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
             int waitTime = 61 * 60 * 1000;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -416,12 +406,12 @@ public class Uploadedto extends PluginForHost {
         }
 
         // logger.info(requestInfo.getHtmlCode());
-        this.captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getMatch(1 - 1);
+        captchaAddress = "http://" + requestInfo.getConnection().getRequestProperty("host") + "/" + new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getMatch(1 - 1);
 
-        this.postTarget = new Regex(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD).getMatch(1 - 1);
+        postTarget = new Regex(requestInfo.getHtmlCode(), CAPTCHA_TEXTFLD).getMatch(1 - 1);
         String url = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL, 0);
         if (url == null) {
-            this.useCaptchaVersion = false;
+            useCaptchaVersion = false;
             // Captcha deaktiviert
             // 
 
@@ -429,7 +419,7 @@ public class Uploadedto extends PluginForHost {
             logger.finer("Use Captcha free Plugin: " + url);
             requestInfo = HTTP.postRequest(new URL(url), "lang=de", null, null, null, false);
             // /?view=error_traffic_exceeded_free
-            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
+            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
                 int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -439,7 +429,7 @@ public class Uploadedto extends PluginForHost {
                 return;
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {
-                this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
+                finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
                 return;
             }
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -449,7 +439,7 @@ public class Uploadedto extends PluginForHost {
             logger.finer("Use Captcha Plugin");
             requestInfo = HTTP.postRequest(new URL(url), "lang=de", null, null, null, false);
             // /?view=error_traffic_exceeded_free
-            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
+            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
                 int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -463,11 +453,11 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Unbekannter fehler.. retry in 20 sekunden");
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                this.sleep(20000, downloadLink);
+                sleep(20000, downloadLink);
                 return;
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {
-                this.finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
+                finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
                 return;
             }
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -496,12 +486,12 @@ public class Uploadedto extends PluginForHost {
         // case PluginStep.STEP_DOWNLOAD:
         if (useCaptchaVersion) {
             String code = this.getCaptchaCode(file);
-            this.finalURL = finalURL + code;
+            finalURL = finalURL + code;
             logger.info("dl " + finalURL);
             postParameter.put(postTarget, code);
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
             // /?view=error_traffic_exceeded_free
-            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || (requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0)) {
+            if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
                 int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -523,7 +513,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                this.sleep(20000, downloadLink);
+                sleep(20000, downloadLink);
                 return;
             }
             int length = requestInfo.getConnection().getContentLength();
@@ -534,7 +524,7 @@ public class Uploadedto extends PluginForHost {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                this.sleep(20000, downloadLink);
+                sleep(20000, downloadLink);
                 return;
             }
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
@@ -544,7 +534,7 @@ public class Uploadedto extends PluginForHost {
             dl.startDownload();
             return;
         } else {
-            this.finalURL = finalURL + "";
+            finalURL = finalURL + "";
             logger.info("dl " + finalURL);
 
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
@@ -554,7 +544,7 @@ public class Uploadedto extends PluginForHost {
                 logger.severe("Fehler 1 Errorpage wird angezeigt " + requestInfo.getConnection().getHeaderField("Location"));
 
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                this.sleep(20000, downloadLink);
+                sleep(20000, downloadLink);
                 return;
             }
             int length = requestInfo.getConnection().getContentLength();
@@ -586,7 +576,7 @@ public class Uploadedto extends PluginForHost {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                this.sleep(20000, downloadLink);
+                sleep(20000, downloadLink);
                 return;
             }
             downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
@@ -598,17 +588,14 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    
     public void reset() {
-        this.finalURL = null;
+        finalURL = null;
         cookie = null;
     }
 
-    
     public void resetPluginGlobals() {
     }
 
-    
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));

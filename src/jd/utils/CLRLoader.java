@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -34,6 +33,7 @@ public class CLRLoader {
 
     static Logger logger = JDUtilities.getLogger();
     private static Vector<String> MANUES;
+
     private static String[] createLiveHeader(String htmlCode, String string, String string2) {
         logger.info(htmlCode);
 
@@ -62,7 +62,9 @@ public class CLRLoader {
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
                 short type = node.getNodeType();
-                if (type != 1) continue;
+                if (type != 1) {
+                    continue;
+                }
                 logger.info(node.getNodeName() + "");
                 if (node.getNodeName().equalsIgnoreCase("router")) {
                     routerName = node.getAttributes().getNamedItem("name").getNodeValue().trim();
@@ -106,13 +108,13 @@ public class CLRLoader {
                     }
 
                     if (method.equalsIgnoreCase("post")) {
-                        inputAuth(hlh, basicauth);
+                        CLRLoader.inputAuth(hlh, basicauth);
                         hlh.append("\r\n");
                         hlh.append(post);
                     } else {
                         hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post + " HTTP/1.1" + "\r\n");
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
-                        inputAuth(hlh, basicauth);
+                        CLRLoader.inputAuth(hlh, basicauth);
 
                     }
 
@@ -129,9 +131,7 @@ public class CLRLoader {
             String man = null;
             String router = null;
 
-            for (Iterator<String> it = MANUES.iterator(); it.hasNext();) {
-                String next = it.next();
-
+            for (String next : MANUES) {
                 if (routerName.trim().toLowerCase().startsWith(next.toLowerCase())) {
                     man = next;
                     router = routerName.substring(man.length()).trim();
@@ -139,22 +139,22 @@ public class CLRLoader {
                 }
             }
             if (man == null) {
-                man = JOptionPane.showInputDialog(new JFrame(), routerName+" Hersteller", routerName.split("[ |-]")[0]);
+                man = JOptionPane.showInputDialog(new JFrame(), routerName + " Hersteller", routerName.split("[ |-]")[0]);
                 if (routerName.trim().toLowerCase().startsWith(man.toLowerCase())) {
                     router = routerName.substring(man.length()).trim();
                 } else {
-                    router = JOptionPane.showInputDialog(new JFrame(), routerName+" RouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouter", routerName);
+                    router = JOptionPane.showInputDialog(new JFrame(), routerName + " RouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouter", routerName);
                 }
-                
+
                 MANUES.add(man);
             }
-if(router.trim().length()==0){
-    router=routerName;
-}
+            if (router.trim().length() == 0) {
+                router = routerName;
+            }
             return new String[] { man, router, hlh.toString(), "(?s).*(" + man + ").*", "", "" };
 
         } catch (Exception e) {
-            
+
             e.printStackTrace();
             return null;
         }
@@ -186,32 +186,33 @@ if(router.trim().length()==0){
             logger.info("" + ri);
             ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
 
-            for (int i=matches.size()-1;i>=0;i--) {
+            for (int i = matches.size() - 1; i >= 0; i--) {
                 ArrayList<String> next = matches.get(i);
-                if (IDS.contains(next.get(0))) continue;
+                if (IDS.contains(next.get(0))) {
+                    continue;
+                }
                 ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
 
-                String[] ret = createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
+                String[] ret = CLRLoader.createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
                 if (ret != null) {
                     res.add(ret);
                     IDS.add(next.get(0));
                 }
             }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
-        
-        
-        saveTolist(res, new File("c:/clrList.xml"));
+
+        CLRLoader.saveTolist(res, new File("c:/clrList.xml"));
 
     }
 
     @SuppressWarnings("unchecked")
-	private static void saveTolist(Vector<String[]> list, File file) {
+    private static void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
             list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
             Collections.sort(list, new Comparator<Object>() {

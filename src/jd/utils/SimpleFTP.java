@@ -62,7 +62,7 @@ public class SimpleFTP {
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
         String response = readLine();
-        return (response.startsWith("200 "));
+        return response.startsWith("200 ");
     }
 
     /**
@@ -71,7 +71,7 @@ public class SimpleFTP {
     public synchronized boolean bin() throws IOException {
         sendLine("TYPE I");
         String response = readLine();
-        return (response.startsWith("200 "));
+        return response.startsWith("200 ");
     }
 
     /**
@@ -121,7 +121,7 @@ public class SimpleFTP {
     public synchronized boolean cwd(String dir) throws IOException {
         sendLine("CWD " + dir);
         String response = readLine();
-        return (response.startsWith("250 "));
+        return response.startsWith("250 ");
     }
 
     /**
@@ -159,20 +159,22 @@ public class SimpleFTP {
         }
         return line;
     }
+
     public boolean remove(String string) throws IOException {
-        sendLine("DELE "+string);
+        sendLine("DELE " + string);
         String response = readLine();
-        if(response.startsWith("250"))return true;
+        if (response.startsWith("250")) { return true; }
         return false;
 
     }
+
     public boolean rename(String from, String to) throws IOException {
-        sendLine("RNFR "+from);
+        sendLine("RNFR " + from);
         String response = readLine();
-        if(!response.startsWith("350"))return false;
-        sendLine("RNTO "+to);
+        if (!response.startsWith("350")) { return false; }
+        sendLine("RNTO " + to);
         response = readLine();
-        if(response.startsWith("250"))return true;
+        if (response.startsWith("250")) { return true; }
         return false;
 
     }
@@ -206,7 +208,7 @@ public class SimpleFTP {
 
         return stor(new FileInputStream(file), filename);
     }
-    
+
     /**
      * Sends a file to be stored on the FTP server. Returns true if the file
      * transfer was successful. The file is sent in passive mode to avoid NAT or
@@ -240,7 +242,7 @@ public class SimpleFTP {
         Socket dataSocket = new Socket(ip, port);
 
         response = readLine();
-        if (!response.startsWith("150 ")&&!response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
+        if (!response.startsWith("150 ") && !response.startsWith("125 ")) { throw new IOException("SimpleFTP was not allowed to send the file: " + response); }
 
         BufferedOutputStream output = new BufferedOutputStream(dataSocket.getOutputStream());
         byte[] buffer = new byte[4096];

@@ -1,4 +1,5 @@
 package jd.unrar;
+
 /*
  * Copyright (C) 2002 - 2005 Leonardo Ferracci
  *
@@ -20,8 +21,6 @@ package jd.unrar;
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
 
-
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -34,8 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
-public class JAxeJoiner extends AxeWriterWorker
-{
+public class JAxeJoiner extends AxeWriterWorker {
     protected final int BUFFER_SIZE = 1024;
     private boolean bZipped = false;
     protected final int CHUNK_UNIT = 1024;
@@ -43,36 +41,31 @@ public class JAxeJoiner extends AxeWriterWorker
     protected String sFileToJoin;
     protected String sJoinedFile;
 
-    public JAxeJoiner (String sFile)
-    {
+    public JAxeJoiner(String sFile) {
         sFileToJoin = sFile;
-        sDestDir = new File (sFile).getParent();
+        sDestDir = new File(sFile).getParent();
     }
 
-    public JAxeJoiner (String sFile, String sDir)
-    {
+    public JAxeJoiner(String sFile, String sDir) {
         sFileToJoin = sFile;
         sDestDir = sDir;
     }
 
     @Override
-    protected boolean checkNoOverwrite (File f)
-    {
-        File fTemp = new File (sJoinedFile);
+    protected boolean checkNoOverwrite(File f) {
+        File fTemp = new File(sJoinedFile);
 
         return !fTemp.exists();
     }
 
     @Override
-    protected void computeJobSize()
-    {
+    protected void computeJobSize() {
         long lReturn = 0;
         int i = 1;
         File fTemp;
 
-        do
-        {
-            fTemp = new File (i == 1 ? sFileToJoin : sJoinedFile + "." + formatWidth (i, 3) + (bZipped ? ".zip" : ""));
+        do {
+            fTemp = new File(i == 1 ? sFileToJoin : sJoinedFile + "." + formatWidth(i, 3) + (bZipped ? ".zip" : ""));
             lReturn += fTemp.length();
             i++;
         } while (fTemp.exists());
@@ -80,14 +73,12 @@ public class JAxeJoiner extends AxeWriterWorker
         lJobSize = lReturn;
     }
 
-    protected void doCleanup()
-    {
-        new File (sJoinedFile).delete();
+    protected void doCleanup() {
+        new File(sJoinedFile).delete();
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         File fToJoin, fTemp = null;
         InputStream is = null;
         ZipInputStream zis;
@@ -97,128 +88,108 @@ public class JAxeJoiner extends AxeWriterWorker
         int i = 1, nLength;
         byte[] ba = new byte[BUFFER_SIZE];
 
-        bStopped= false;
-        fToJoin = new File (sFileToJoin);   
+        bStopped = false;
+        fToJoin = new File(sFileToJoin);
 
-        if (!SplitFileFilter.isSplitFile (sFileToJoin) && !SplitFileFilter.isZippedSplitFile (sFileToJoin))
-        {
-            dispatchEvent (new JobErrorEvent (this, "File to join does not seem a split file"));
+        if (!SplitFileFilter.isSplitFile(sFileToJoin) && !SplitFileFilter.isZippedSplitFile(sFileToJoin)) {
+            dispatchEvent(new JobErrorEvent(this, "File to join does not seem a split file"));
             return;
         }
-        sJoinedFile = SplitFileFilter.getJoinedFileName (sFileToJoin);
+        sJoinedFile = SplitFileFilter.getJoinedFileName(sFileToJoin);
 
-        if (!fToJoin.exists() || fToJoin.isDirectory())
-        {
-            dispatchEvent (new JobErrorEvent (this, "File to join does not exist or is a directory"));
-            return;
-        }
-
-        if (!checkNoOverwrite (fToJoin))
-        {
-            dispatchEvent (new JobErrorEvent (this, "Error: destination file already exists!"));
+        if (!fToJoin.exists() || fToJoin.isDirectory()) {
+            dispatchEvent(new JobErrorEvent(this, "File to join does not exist or is a directory"));
             return;
         }
 
-        bZipped = SplitFileFilter.isZippedSplitFile (sFileToJoin);
+        if (!checkNoOverwrite(fToJoin)) {
+            dispatchEvent(new JobErrorEvent(this, "Error: destination file already exists!"));
+            return;
+        }
 
-        try
-        {
-            bos = new BufferedOutputStream (new FileOutputStream (sJoinedFile));
-        } catch (FileNotFoundException fnfe)
-        {
-            dispatchEvent (new JobErrorEvent (this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
+        bZipped = SplitFileFilter.isZippedSplitFile(sFileToJoin);
+
+        try {
+            bos = new BufferedOutputStream(new FileOutputStream(sJoinedFile));
+        } catch (FileNotFoundException fnfe) {
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + sJoinedFile + " (" + fnfe.getMessage() + ")"));
             return;
         }
 
         computeJobSize();
         initProgress();
         i = 1;
-        try
-        {
-            do
-            {
-                if (is == null)
-                {
-                    if (i == 1)
-                        fTemp = new File (sFileToJoin);
-                    else
-                        fTemp = new File (sJoinedFile + "." + formatWidth (i, 3) + (bZipped ? ".zip" : ""));
+        try {
+            do {
+                if (is == null) {
+                    if (i == 1) {
+                        fTemp = new File(sFileToJoin);
+                    } else {
+                        fTemp = new File(sJoinedFile + "." + formatWidth(i, 3) + (bZipped ? ".zip" : ""));
+                    }
 
-                    if (!fTemp.exists())
+                    if (!fTemp.exists()) {
                         break;
-                    else
-                        if (!bZipped)
-                            is = new BufferedInputStream (new FileInputStream (fTemp));
-                        else
-                        {
-                            cis = new CountingInputStream  (new FileInputStream (fTemp));
-                            cis.setTotal (fTemp.length());
-                            zis = new ZipInputStream (cis);
+                    } else if (!bZipped) {
+                        is = new BufferedInputStream(new FileInputStream(fTemp));
+                    } else {
+                        cis = new CountingInputStream(new FileInputStream(fTemp));
+                        cis.setTotal(fTemp.length());
+                        zis = new ZipInputStream(cis);
 
-                            do
-                            {
-                                ze = zis.getNextEntry();
-                            } while ((ze != null) && !ze.getName().endsWith ("." + formatWidth (i, 3)));
+                        do {
+                            ze = zis.getNextEntry();
+                        } while (ze != null && !ze.getName().endsWith("." + formatWidth(i, 3)));
 
-                            if (ze != null)
-                                is = zis;
-                            else
-                                throw (new ZipException ("Unable to find split entry in zip file"));
+                        if (ze != null) {
+                            is = zis;
+                        } else {
+                            throw new ZipException("Unable to find split entry in zip file");
                         }
+                    }
                 }
 
-                if (!bStopped)
-                {
-                    nLength = is.read (ba, 0, BUFFER_SIZE);
-                    if (nLength > 0)
-                    {
-                        bos.write (ba, 0, nLength);
-                        lCurrent += (bZipped ? cis.getLastReadAndReset() : nLength);
+                if (!bStopped) {
+                    nLength = is.read(ba, 0, BUFFER_SIZE);
+                    if (nLength > 0) {
+                        bos.write(ba, 0, nLength);
+                        lCurrent += bZipped ? cis.getLastReadAndReset() : nLength;
                         dispatchProgress();
-                    }
-                    else
-                    {
+                    } else {
                         i++;
                         is.close();
                         is = null;
-                        if (bZipped)
-                        {
-                            dispatchIncrementalProgress (cis.getDiff());
+                        if (bZipped) {
+                            dispatchIncrementalProgress(cis.getDiff());
                         }
                     }
                 }
             } while (!bStopped);
-        } catch (FileNotFoundException fnfe)
-        {
-            dispatchEvent (new JobErrorEvent (this, "Error while opening: " + fTemp.getName()));
+        } catch (FileNotFoundException fnfe) {
+            dispatchEvent(new JobErrorEvent(this, "Error while opening: " + fTemp.getName()));
             return;
-        } catch (ZipException zex)
-        {
-            dispatchEvent (new JobErrorEvent (this, "Zip error with file " + fTemp.getName() + " (" + zex.getMessage() + ")"));
+        } catch (ZipException zex) {
+            dispatchEvent(new JobErrorEvent(this, "Zip error with file " + fTemp.getName() + " (" + zex.getMessage() + ")"));
             return;
-        } catch (IOException ioe)
-        {
-            dispatchEvent (new JobErrorEvent (this, "I/O error with file " + fTemp.getName() + " (" + ioe.getMessage() + ")"));
+        } catch (IOException ioe) {
+            dispatchEvent(new JobErrorEvent(this, "I/O error with file " + fTemp.getName() + " (" + ioe.getMessage() + ")"));
             return;
-        } finally
-        {
-            try
-            {
+        } finally {
+            try {
                 bos.close();
-                if (is != null)
+                if (is != null) {
                     is.close();
-            } catch (IOException ioe) {}
+                }
+            } catch (IOException ioe) {
+            }
         }
 
-        if (bStopped)
-        {
+        if (bStopped) {
             doCleanup();
-            dispatchEvent (new JobEndEvent (this, "Join stopped by user."));
-        }
-        else
-        {
-            dispatchProgress (lJobSize);
-            dispatchEvent (new JobEndEvent (this, "Join terminated."));
+            dispatchEvent(new JobEndEvent(this, "Join stopped by user."));
+        } else {
+            dispatchProgress(lJobSize);
+            dispatchEvent(new JobEndEvent(this, "Join terminated."));
         }
     }
 }

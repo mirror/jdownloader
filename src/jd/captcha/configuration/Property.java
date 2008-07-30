@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.configuration;
 
 import java.io.Serializable;
@@ -37,28 +36,29 @@ public class Property implements Serializable {
     /**
      * 
      */
-    private static final long       serialVersionUID = -6093927038856757256L;
+    private static final long serialVersionUID = -6093927038856757256L;
 
-    protected transient Logger        logger=JDUtilities.getLogger();
+    protected transient Logger logger = JDUtilities.getLogger();
 
-    private HashMap<String, Object> properties       = new HashMap<String, Object>();
+    private HashMap<String, Object> properties = new HashMap<String, Object>();
 
-    private long                    saveCount        = 0;
+    private long saveCount = 0;
 
     /**
      * 
      */
     public Property() {
-       
+
     }
 
     public Property(Object obj) {
         this();
-        setProperty(null,obj);
+        setProperty(null, obj);
     }
-    public Property(String value,Object obj) {
+
+    public Property(String value, Object obj) {
         this();
-        setProperty(value,obj);
+        setProperty(value, obj);
     }
 
     /**
@@ -81,15 +81,13 @@ public class Property implements Serializable {
                 r = r + "";
                 if (((String) r).equals("false")) {
                     r = false;
-                }
-                else {
+                } else {
                     r = ((String) r).length() > 0;
                 }
             }
             ret = (Boolean) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return false;
         }
     }
@@ -114,8 +112,7 @@ public class Property implements Serializable {
             }
             ret = (Double) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -125,7 +122,8 @@ public class Property implements Serializable {
      * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem
      * passendem Integer umzuformen
      * 
-     * @param key Schlüssel des Wertes
+     * @param key
+     *            Schlüssel des Wertes
      * @return Der Wert
      */
     public int getIntegerProperty(String key) {
@@ -142,8 +140,7 @@ public class Property implements Serializable {
             }
             ret = (Integer) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -163,7 +160,9 @@ public class Property implements Serializable {
      * @return Value zu key
      */
     public Object getProperty(String key) {
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         return properties.get(key);
     }
 
@@ -175,7 +174,9 @@ public class Property implements Serializable {
      * @return value
      */
     public Object getProperty(String key, Object def) {
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         if (getProperty(key) == null) {
             setProperty(key, def);
             return def;
@@ -212,8 +213,7 @@ public class Property implements Serializable {
             }
             ret = (String) r;
             return ret;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return def;
         }
 
@@ -237,11 +237,15 @@ public class Property implements Serializable {
      */
     public void setProperty(String key, Object value) {
         saveCount++;
-        if (properties == null) properties = new HashMap<String, Object>();
+        if (properties == null) {
+            properties = new HashMap<String, Object>();
+        }
         properties.put(key, value);
-        if (logger == null) logger = JDUtilities.getLogger();
+        if (logger == null) {
+            logger = JDUtilities.getLogger();
+        }
 
-//        logger.finer("Config property: " + key + " = " + value+" - "+this);
+        // logger.finer("Config property: " + key + " = " + value+" - "+this);
 
     }
 

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.BorderLayout;
@@ -52,26 +51,26 @@ public class TabProgress extends JPanel implements ActionListener {
         /**
          * serialVersionUID
          */
-        private static final long serialVersionUID      = 8135707376690458846L;
+        private static final long serialVersionUID = 8135707376690458846L;
 
         /**
          * Bezeichnung der Spalte für die Fortschrittsanzeige
          */
-        private String            labelColumnProgress   = JDLocale.L("gui.tab.plugin_activity.column_progress");
+        private String labelColumnProgress = JDLocale.L("gui.tab.plugin_activity.column_progress");
 
         /**
          * Bezeichnung der Spalte für den Pluginnamen
          */
-        private String            labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
+        private String labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
             switch (columnIndex) {
 
-                case 0:
-                    return String.class;
-                case 1:
-                    return JProgressBar.class;
+            case 0:
+                return String.class;
+            case 1:
+                return JProgressBar.class;
             }
             return String.class;
         }
@@ -83,11 +82,11 @@ public class TabProgress extends JPanel implements ActionListener {
         @Override
         public String getColumnName(int column) {
             switch (column) {
-                case 0:
-                    return labelColumnStatusText;
+            case 0:
+                return labelColumnStatusText;
 
-                case 1:
-                    return labelColumnProgress;
+            case 1:
+                return labelColumnProgress;
             }
             return super.getColumnName(column);
         }
@@ -99,15 +98,15 @@ public class TabProgress extends JPanel implements ActionListener {
 
         public Object getValueAt(int rowIndex, int columnIndex) {
 
-            if (controllers.size() <= rowIndex) return null;
+            if (controllers.size() <= rowIndex) { return null; }
             ProgressController p = controllers.get(rowIndex);
-            if (bars.size() <= rowIndex) return null;
+            if (bars.size() <= rowIndex) { return null; }
             JProgressBar b = bars.get(rowIndex);
             switch (columnIndex) {
-                case 0:
-                    return p.getID()+": "+p.getStatusText();
-                case 1:
-                    return b;
+            case 0:
+                return p.getID() + ": " + p.getStatusText();
+            case 1:
+                return b;
 
             }
             return null;
@@ -134,9 +133,9 @@ public class TabProgress extends JPanel implements ActionListener {
     /**
      * serialVersionUID
      */
-    private static final long          serialVersionUID = -8537543161116653345L;
+    private static final long serialVersionUID = -8537543161116653345L;
 
-    private Vector<JProgressBar>       bars;
+    private Vector<JProgressBar> bars;
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
@@ -144,24 +143,21 @@ public class TabProgress extends JPanel implements ActionListener {
 
     private Vector<ProgressController> controllers;
 
-    //private Logger                     logger           = JDUtilities.getLogger();
+    // private Logger logger = JDUtilities.getLogger();
 
     private Timer flickerTimer;
 
-  
-    
     /**
      * Die Tabelle für die Pluginaktivitäten
      */
-    private JTable                     table;
-
+    private JTable table;
 
     public TabProgress() {
         controllers = new Vector<ProgressController>();
         bars = new Vector<JProgressBar>();
         setLayout(new BorderLayout());
         table = new JTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
+        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         InternalTableModel internalTableModel;
         table.setModel(internalTableModel = new InternalTableModel());
         table.getColumn(table.getColumnName(1)).setCellRenderer(new ProgressBarRenderer());
@@ -169,17 +165,17 @@ public class TabProgress extends JPanel implements ActionListener {
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
-                case 0:
-                    column.setPreferredWidth(600);
-                    break;
+            case 0:
+                column.setPreferredWidth(600);
+                break;
 
-                case 1:
-                    column.setPreferredWidth(230);
-                    break;
+            case 1:
+                column.setPreferredWidth(230);
+                break;
 
             }
         }
-        this.setVisible(false);
+        setVisible(false);
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setPreferredSize(new Dimension(800, 100));
 
@@ -187,8 +183,8 @@ public class TabProgress extends JPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        this.setVisible(false);
-        
+        setVisible(false);
+
     }
 
     public synchronized void addController(ProgressController source) {
@@ -198,7 +194,7 @@ public class TabProgress extends JPanel implements ActionListener {
         progressBar.setValue(source.getValue());
         progressBar.setStringPainted(true);
         bars.add(0, progressBar);
-        this.controllers.add(0, source);
+        controllers.add(0, source);
         updateController(source);
 
     }
@@ -231,11 +227,11 @@ public class TabProgress extends JPanel implements ActionListener {
         if (controllers.size() > 0) {
             if (source.isFinished()) {
 
-            }
-            else {
-                this.setVisible(true);
-                if(flickerTimer!=null &&flickerTimer.isRunning())
-                flickerTimer.stop();
+            } else {
+                setVisible(true);
+                if (flickerTimer != null && flickerTimer.isRunning()) {
+                    flickerTimer.stop();
+                }
                 if (controllers.indexOf(source) < bars.size()) {
                     bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
                     bars.get(controllers.indexOf(source)).setValue(source.getValue());
@@ -243,12 +239,11 @@ public class TabProgress extends JPanel implements ActionListener {
 
             }
 
-        }
-        else {
-            this.flickerTimer= new Timer(3000,this);
+        } else {
+            flickerTimer = new Timer(3000, this);
             flickerTimer.setRepeats(false);
             flickerTimer.start();
-            
+
         }
 
         table.tableChanged(new TableModelEvent(table.getModel()));

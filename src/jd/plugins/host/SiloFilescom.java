@@ -20,9 +20,11 @@ public class SiloFilescom extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?", Pattern.CASE_INSENSITIVE);
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
 
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -33,25 +35,21 @@ public class SiloFilescom extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://silofiles.com/regeln.html";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -77,39 +75,30 @@ public class SiloFilescom extends PluginForHost {
         return false;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -126,7 +115,7 @@ public class SiloFilescom extends PluginForHost {
         /* Downloadlimit */
         if (requestInfo.containsHTML("<span>Maximale Parallele")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            this.sleep(120000, downloadLink);
+            sleep(120000, downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
@@ -153,15 +142,13 @@ public class SiloFilescom extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
+
     }
 
 }

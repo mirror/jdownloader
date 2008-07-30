@@ -22,12 +22,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
+
 /**
- * Bitte Regexp Klasse verwenden 
+ * Bitte Regexp Klasse verwenden
+ * 
  * @author dwd
- *
+ * 
  */
-public  class SimpleMatches {
+public class SimpleMatches {
 
     /**
      * Regexp.count() verwenden
@@ -40,7 +42,8 @@ public  class SimpleMatches {
      *            Das Pattern, daß im Text gefunden werden soll
      * @return Anzahl der Treffer
      */
-    public @Deprecated  static int countOccurences(String data, Pattern pattern) {
+    public @Deprecated
+    static int countOccurences(String data, Pattern pattern) {
         int position = 0;
         int occurences = 0;
         if (pattern != null) {
@@ -65,7 +68,8 @@ public  class SimpleMatches {
      *            Ein RegEx Pattern
      * @return Treffer
      */
-    public @Deprecated static ArrayList<ArrayList<String>> getAllSimpleMatches(Object source, Pattern pattern) {
+    public @Deprecated
+    static ArrayList<ArrayList<String>> getAllSimpleMatches(Object source, Pattern pattern) {
         ArrayList<ArrayList<String>> ret = new ArrayList<ArrayList<String>>();
         ArrayList<String> entry;
         String tmp;
@@ -88,11 +92,14 @@ public  class SimpleMatches {
      * @param id
      * @return
      */
-    public @Deprecated static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
+    public @Deprecated
+    static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
 
         ArrayList<String> ret = new ArrayList<String>();
         for (Matcher r = pattern.matcher(source.toString()); r.find();) {
-            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+            if (id <= r.groupCount()) {
+                ret.add(r.group(id).trim());
+            }
         }
         return ret;
     }
@@ -110,7 +117,8 @@ public  class SimpleMatches {
      *            verwendet.
      * @return Treffer
      */
-    public @Deprecated static ArrayList<ArrayList<String>> getAllSimpleMatches (Object source, String pattern) {
+    public @Deprecated
+    static ArrayList<ArrayList<String>> getAllSimpleMatches(Object source, String pattern) {
         return SimpleMatches.getAllSimpleMatches(source.toString(), Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL));
     }
 
@@ -125,16 +133,21 @@ public  class SimpleMatches {
      * @param id
      * @return Matchlist
      */
-    public @Deprecated static ArrayList<String> getAllSimpleMatches(Object source, String pattern, int id) {
+    public @Deprecated
+    static ArrayList<String> getAllSimpleMatches(Object source, String pattern, int id) {
         pattern = SimpleMatches.getPattern(pattern);
         ArrayList<String> ret = new ArrayList<String>();
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source.toString()); r.find();) {
-            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+            if (id <= r.groupCount()) {
+                ret.add(r.group(id).trim());
+            }
         }
         return ret;
     }
+
     /**
-     * Die Regex ist default Pattern.DOTALL also einfach startPattern(.*?)lastPattern
+     * Die Regex ist default Pattern.DOTALL also einfach
+     * startPattern(.*?)lastPattern
      * 
      * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
      * Zeilenumbrueche werden dabei auch unterstuetzt
@@ -149,10 +162,13 @@ public  class SimpleMatches {
      * @return der Text zwischen den gefundenen stellen oder, falls nichts
      *         gefunden wurde, der vollständige Text
      */
-    public @Deprecated static String getBetween(String data, String startPattern, String lastPattern) {
+    public @Deprecated
+    static String getBetween(String data, String startPattern, String lastPattern) {
         Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
-        if (match.find()) return match.group(1);
+        if (match.find()) {
+            return match.group(1);
+        }
         return data;
     }
 
@@ -171,9 +187,12 @@ public  class SimpleMatches {
      *            vollständige Treffer.
      * @return Der Treffer
      */
-    public @Deprecated  static String getFirstMatch(String data, Pattern pattern, int group) {
+    public @Deprecated
+    static String getFirstMatch(String data, Pattern pattern, int group) {
         String hit = null;
-        if (data == null) return null;
+        if (data == null) {
+            return null;
+        }
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find() && group <= matcher.groupCount()) {
@@ -195,7 +214,8 @@ public  class SimpleMatches {
      *            Das Muster, nach dem gesucht werden soll
      * @return Alle Treffer in dem Text
      */
-    public @Deprecated  static Vector<String> getMatches(String data, Pattern pattern) {
+    public @Deprecated
+    static Vector<String> getMatches(String data, Pattern pattern) {
         Vector<String> hits = null;
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -220,7 +240,8 @@ public  class SimpleMatches {
      * @param str
      * @return REgEx Pattern
      */
-    public @Deprecated static String getPattern(String str) {
+    public @Deprecated
+    static String getPattern(String str) {
         String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
         String ret = "";
         int i;
@@ -249,7 +270,8 @@ public  class SimpleMatches {
      * @param id
      * @return String Match
      */
-    public @Deprecated static String getSimpleMatch(Object source, String pattern, int id) {
+    public @Deprecated
+    static String getSimpleMatch(Object source, String pattern, int id) {
 
         String[] res = SimpleMatches.getSimpleMatches(source.toString(), pattern);
         if (res != null && res.length > id) { return res[id]; }
@@ -268,8 +290,9 @@ public  class SimpleMatches {
      * @param y
      * @return treffer an der stelle x/y im 2d treffer array
      */
-    public @Deprecated static String getSimpleMatch(String source, String pattern, int x, int y) {
-        ArrayList<ArrayList<String>> ret = getAllSimpleMatches(source, pattern);
+    public @Deprecated
+    static String getSimpleMatch(String source, String pattern, int x, int y) {
+        ArrayList<ArrayList<String>> ret = SimpleMatches.getAllSimpleMatches(source, pattern);
         if (ret.get(x) != null && ret.get(x).get(y) != null) { return ret.get(x).get(y); }
         return null;
     }
@@ -286,10 +309,13 @@ public  class SimpleMatches {
      *            verwendet.
      * @return Alle TReffer
      */
-    public @Deprecated  static String[] getSimpleMatches(Object source, String pattern) {
+    public @Deprecated
+    static String[] getSimpleMatches(Object source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if (source == null || pattern == null) return null;
-        Matcher rr = Pattern.compile(getPattern(pattern), Pattern.DOTALL).matcher(source.toString());
+        if (source == null || pattern == null) {
+            return null;
+        }
+        Matcher rr = Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL).matcher(source.toString());
         if (!rr.find()) {
             // Keine treffer
         }
@@ -311,7 +337,8 @@ public  class SimpleMatches {
      * @param pattern
      * @return StringArray mit den Matches
      */
-    public @Deprecated  static String[] getUniqueMatches(String data, Pattern pattern) {
+    public @Deprecated
+    static String[] getUniqueMatches(String data, Pattern pattern) {
         ArrayList<String> set = new ArrayList<String>();
         Matcher m = pattern.matcher(data);
         while (m.find()) {
@@ -321,8 +348,5 @@ public  class SimpleMatches {
         }
         return set.toArray(new String[set.size()]);
     }
-
-    
-    
 
 }

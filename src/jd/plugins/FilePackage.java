@@ -90,7 +90,9 @@ public class FilePackage extends Property implements Serializable {
 
     public void add(DownloadLink link) {
 
-        if (!downloadLinks.contains(link)) downloadLinks.add(link);
+        if (!downloadLinks.contains(link)) {
+            downloadLinks.add(link);
+        }
         link.setFilePackage(this);
     }
 
@@ -131,7 +133,7 @@ public class FilePackage extends Property implements Serializable {
      *         abgegeben hat
      */
     public String getComment() {
-        return comment==null?"":comment;
+        return comment == null ? "" : comment;
     }
 
     /**
@@ -140,7 +142,7 @@ public class FilePackage extends Property implements Serializable {
      *         festgelegt hta
      */
     public String getDownloadDirectory() {
-        return downloadDirectory==null?JDUtilities.getConfiguration().getDefaultDownloadDirectory():downloadDirectory;
+        return downloadDirectory == null ? JDUtilities.getConfiguration().getDefaultDownloadDirectory() : downloadDirectory;
     }
 
     /**
@@ -149,7 +151,9 @@ public class FilePackage extends Property implements Serializable {
      *         wird nur der Directory-NAME zurückgegeben, nicht der ganze Pfad
      */
     public String getDownloadDirectoryName() {
-        if (!hasDownloadDirectory()) return ".";
+        if (!hasDownloadDirectory()) {
+            return ".";
+        }
         return new File(downloadDirectory).getName();
     }
 
@@ -164,8 +168,12 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getETA() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-        if ((totalDownloadSpeed / 1024) == 0) return -1;
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
+        if (totalDownloadSpeed / 1024 == 0) {
+            return -1;
+        }
         return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
 
     }
@@ -180,7 +188,9 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getLinksFailed() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
         return linksFailed;
     }
@@ -191,7 +201,9 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getLinksFinished() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
         return linksFinished;
     }
@@ -202,13 +214,17 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getLinksInProgress() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
         return linksInProgress;
     }
 
     public String getName() {
-        if (name == null) return "";
+        if (name == null) {
+            return "";
+        }
         return name;
     }
 
@@ -218,7 +234,7 @@ public class FilePackage extends Property implements Serializable {
      *         angegeben hat
      */
     public String getPassword() {
-        return password==null?"":password;
+        return password == null ? "" : password;
     }
 
     /**
@@ -231,9 +247,11 @@ public class FilePackage extends Property implements Serializable {
      * Gibt den Fortschritt des pakets in prozent zurück
      */
     public double getPercent() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
-        return (100.0 * totalBytesLoaded) / Math.max(1, Math.max(totalBytesLoaded, totalEstimatedPackageSize));
+        return 100.0 * totalBytesLoaded / Math.max(1, Math.max(totalBytesLoaded, totalEstimatedPackageSize));
     }
 
     /**
@@ -243,8 +261,8 @@ public class FilePackage extends Property implements Serializable {
      * werden
      */
     public int getRemainingLinks() {
-        this.updateCollectives();
-        return this.size() - linksFinished;
+        updateCollectives();
+        return size() - linksFinished;
 
     }
 
@@ -256,7 +274,9 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
                 next = it.next();
-                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) return next;
+                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) {
+                    return next;
+                }
             }
         }
         return null;
@@ -268,7 +288,9 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getTotalDownloadSpeed() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
         return totalDownloadSpeed;
     }
@@ -279,7 +301,9 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getTotalEstimatedPackageSize() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
 
         return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
     }
@@ -290,7 +314,9 @@ public class FilePackage extends Property implements Serializable {
      * @return
      */
     public int getTotalKBLoaded() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateCollectives();
+        }
         return totalBytesLoaded;
     }
 
@@ -325,13 +351,15 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public DownloadLink lastElement() {
-       
+
         return downloadLinks.lastElement();
     }
 
     public boolean remove(DownloadLink link) {
         boolean ret = downloadLinks.remove(link);
-        if (ret) link.setFilePackage(null);
+        if (ret) {
+            link.setFilePackage(null);
+        }
         return ret;
     }
 
@@ -346,7 +374,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setDownloadDirectory(String subFolder) {
-        this.downloadDirectory = subFolder;
+        downloadDirectory = subFolder;
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
@@ -368,9 +396,9 @@ public class FilePackage extends Property implements Serializable {
 
     public void sort(final String string) {
         if (string == null) {
-            this.lastSort = !this.lastSort;
+            lastSort = !lastSort;
         } else {
-            this.lastSort = string.equalsIgnoreCase("ASC");
+            lastSort = string.equalsIgnoreCase("ASC");
         }
         synchronized (downloadLinks) {
 
@@ -401,14 +429,14 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void updateCollectives() {
-        this.updateTime = System.currentTimeMillis();
+        updateTime = System.currentTimeMillis();
 
-        this.totalEstimatedPackageSize = 0;
-        this.totalDownloadSpeed = 0;
-        this.linksFinished = 0;
-        this.linksInProgress = 0;
-        this.linksFailed = 0;
-        this.totalBytesLoaded = 0;
+        totalEstimatedPackageSize = 0;
+        totalDownloadSpeed = 0;
+        linksFinished = 0;
+        linksInProgress = 0;
+        linksFailed = 0;
+        totalBytesLoaded = 0;
         long avg = 0;
         DownloadLink next;
         int i = 0;
@@ -419,7 +447,9 @@ public class FilePackage extends Property implements Serializable {
 
                 if (next.getDownloadMax() > 0) {
 
-                    if(next.isEnabled())totalEstimatedPackageSize += next.getDownloadMax() / 1024;
+                    if (next.isEnabled()) {
+                        totalEstimatedPackageSize += next.getDownloadMax() / 1024;
+                    }
 
                     avg = (i * avg + next.getDownloadMax() / 1024) / (i + 1);
                     // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
@@ -427,24 +457,30 @@ public class FilePackage extends Property implements Serializable {
                     i++;
                 } else {
                     if (it.hasNext()) {
-                        if(next.isEnabled())totalEstimatedPackageSize += avg;
+                        if (next.isEnabled()) {
+                            totalEstimatedPackageSize += avg;
+                        }
 
                         // logger.info(i+"+avg "+avg+" kb
                         // =+"+totalEstimatedPackageSize);
 
                     } else {
-                        if(next.isEnabled())totalEstimatedPackageSize += avg / (2);
-                        // logger.info(i+"+avg "+(avg/2)+" kb
-                        // =+"+totalEstimatedPackageSize);
+                        if (next.isEnabled()) {
+                            totalEstimatedPackageSize += avg / 2;
+                            // logger.info(i+"+avg "+(avg/2)+" kb
+                            // =+"+totalEstimatedPackageSize);
+                        }
                     }
 
                 }
 
                 totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
-                if(next.isEnabled())totalBytesLoaded += next.getDownloadCurrent() / 1024;
+                if (next.isEnabled()) {
+                    totalBytesLoaded += next.getDownloadCurrent() / 1024;
+                }
                 linksInProgress += next.getLinkStatus().isPluginActive() ? 1 : 0;
                 linksFinished += next.getLinkStatus().hasStatus(LinkStatus.FINISHED) ? 1 : 0;
-                if (!next.getLinkStatus().hasStatus(LinkStatus.FINISHED|LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS|LinkStatus.FINISHED ) ) {
+                if (!next.getLinkStatus().hasStatus(LinkStatus.FINISHED | LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS | LinkStatus.FINISHED)) {
                     linksFailed++;
                 }
             }
@@ -452,7 +488,5 @@ public class FilePackage extends Property implements Serializable {
         }
 
     }
-
-
 
 }

@@ -33,7 +33,9 @@ public class HTMLParser {
      * @return
      */
     public static Vector<String> findPasswords(String data) {
-        if (data == null) return new Vector<String>();
+        if (data == null) {
+            return new Vector<String>();
+        }
         Vector<String> ret = new Vector<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
@@ -41,25 +43,33 @@ public class HTMLParser {
         Matcher matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) ret.add(pass);
+            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+                ret.add(pass);
+            }
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s][\\s]*?([[^\\:\"'\\s]][^\"'\\s]*)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 4 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) ret.add(pass);
+            if (pass.length() > 4 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+                ret.add(pass);
+            }
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?[\"']([^\"']+)[\"']?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) ret.add(pass);
+            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+                ret.add(pass);
+            }
         }
         pattern = Pattern.compile("(pw|passwort|password|pass)[\\s]?\\:[\\s]*?([^\"'\\s]+)[\\s]?", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(data);
         while (matcher.find()) {
             String pass = matcher.group(2);
-            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) ret.add(pass);
+            if (pass.length() > 2 && !pass.matches(".*(rar|zip|jpg|gif|png|html|php|avi|mpg)$") && !ret.contains(pass)) {
+                ret.add(pass);
+            }
         }
 
         return ret;
@@ -82,7 +92,7 @@ public class HTMLParser {
      *         Parameter des Formulars enthält
      */
     public static String getFormInputHidden(String data) {
-        return Plugin.joinMap(getInputHiddenFields(data), "=", "&");
+        return Plugin.joinMap(HTMLParser.getInputHiddenFields(data), "=", "&");
     }
 
     /**
@@ -107,7 +117,9 @@ public class HTMLParser {
      */
     public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
         String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch();
-        if (pat == null) return null;
+        if (pat == null) {
+            return null;
+        }
         return HTMLParser.getFormInputHidden(pat);
     }
 
@@ -118,10 +130,10 @@ public class HTMLParser {
      * @return STringliste
      */
     public static String getHttpLinkList(String data) {
-        String[] links = getHttpLinks(data, null);
+        String[] links = HTMLParser.getHttpLinks(data, null);
         String ret = "";
-        for (int i = 0; i < links.length; i++) {
-            ret += "\"" + links[i] + "\"\r\n";
+        for (String element : links) {
+            ret += "\"" + element + "\"\r\n";
         }
         return ret;
     }
@@ -140,7 +152,7 @@ public class HTMLParser {
         String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
         String protocolPattern = "(";
         for (int i = 0; i < protocols.length; i++) {
-            protocolPattern += protocols[i] + ((i + 1 == protocols.length) ? ")" : "|");
+            protocolPattern += protocols[i] + (i + 1 == protocols.length ? ")" : "|");
         }
 
         url = url == null ? "" : url;
@@ -150,8 +162,8 @@ public class HTMLParser {
         String host = "";
         LinkedList<String> set = new LinkedList<String>();
         Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), };
-        for (int i = 0; i < basePattern.length; i++) {
-            m = basePattern[i].matcher(data);
+        for (Pattern element : basePattern) {
+            m = element.matcher(data);
             if (m.find()) {
                 url = JDUtilities.htmlDecode(m.group(1));
                 break;
@@ -160,28 +172,31 @@ public class HTMLParser {
         if (url != null) {
             url = url.replace("http://", "");
             int dot = url.lastIndexOf('/');
-            if (dot != -1)
+            if (dot != -1) {
                 basename = url.substring(0, dot + 1);
-            else
+            } else {
                 basename = "http://" + url + "/";
+            }
             dot = url.indexOf('/');
-            if (dot != -1)
+            if (dot != -1) {
                 host = "http://" + url.substring(0, dot);
-            else
+            } else {
                 host = "http://" + url;
+            }
             url = "http://" + url;
-        } else
+        } else {
             url = "";
+        }
 
         Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile("(?s)<[ ]?a[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)\\[link\\](.*?)\\[/link\\]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)\\[url\\](.*?)\\[/url\\]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?a[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?a[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?form[^>]*?action=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?form[^>]*?action='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?form[^>]*?action=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), };
-        for (int i = 0; i < linkAndFormPattern.length; i++) {
-            m = linkAndFormPattern[i].matcher(data);
+        for (Pattern element : linkAndFormPattern) {
+            m = element.matcher(data);
             while (m.find()) {
                 link = JDUtilities.htmlDecode(m.group(1));
                 link = link.replaceAll(protocols[0] + "://", "http://");
-                if ((link.length() > 6) && (link.substring(0, 7).equals("http://")))
+                if (link.length() > 6 && link.substring(0, 7).equals("http://")) {
                     ;
-                else if (link.length() > 0) {
+                } else if (link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
                         link = "http://" + link;
                     }
@@ -255,12 +270,13 @@ public class HTMLParser {
                 iscompl = true;
                 key = matcher4.group(1);
             }
-            if (matcher3.find() && iscompl)
+            if (matcher3.find() && iscompl) {
                 value = matcher3.group(1);
-            else if (matcher5.find() && iscompl)
+            } else if (matcher5.find() && iscompl) {
                 value = matcher5.group(1);
-            else
+            } else {
                 iscompl = false;
+            }
             ret.put(key, value);
         }
         return ret;

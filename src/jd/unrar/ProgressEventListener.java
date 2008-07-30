@@ -21,7 +21,6 @@
 
 package jd.unrar;
 
-public interface ProgressEventListener
-{
-	public void handleEvent (ProgressEvent pe);
+public interface ProgressEventListener {
+    public void handleEvent(ProgressEvent pe);
 }

@@ -41,7 +41,7 @@ public class HTTPConnection {
     private HashMap<String, List<String>> requestProperties = null;
 
     public HTTPConnection(URLConnection openConnection) {
-        this.connection = (HttpURLConnection) openConnection;
+        connection = (HttpURLConnection) openConnection;
         requestProperties = new HashMap<String, List<String>>();
 
         connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -84,7 +84,7 @@ public class HTTPConnection {
     public InputStream getInputStream() throws IOException {
         if (connection.getResponseCode() != 404) {
             return connection.getInputStream();
-        } else {            
+        } else {
             return connection.getErrorStream();
         }
     }
@@ -120,9 +120,11 @@ public class HTTPConnection {
 
     public void post(byte[] parameter) throws IOException {
         BufferedOutputStream wr = new BufferedOutputStream(connection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
+        if (parameter != null) {
+            wr.write(parameter);
+        }
 
-        this.postData = "binary";
+        postData = "binary";
         wr.flush();
         wr.close();
 
@@ -130,9 +132,11 @@ public class HTTPConnection {
 
     public void post(String parameter) throws IOException {
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
+        if (parameter != null) {
+            wr.write(parameter);
+        }
 
-        this.postData = parameter;
+        postData = parameter;
         wr.flush();
         wr.close();
 
@@ -141,8 +145,10 @@ public class HTTPConnection {
     public void postGzip(String parameter) throws IOException {
 
         OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
-        this.postData = parameter;
+        if (parameter != null) {
+            wr.write(parameter);
+        }
+        postData = parameter;
         wr.flush();
         wr.close();
 

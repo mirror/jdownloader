@@ -21,73 +21,77 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.parser.Regex;
 
 public class CheckJava {
-    public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener  {
+    public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener {
         private static final long serialVersionUID = -7741748123426268439L;
-        private JButton     btnCancel;
-        private JButton     btnOk;
-        private JTextPane   htmlArea;
-        protected Insets    insets = new Insets(0, 0, 0, 0);
-        protected Logger    logger = JDUtilities.getLogger();
+        private JButton btnCancel;
+        private JButton btnOk;
+        private JTextPane htmlArea;
+        protected Insets insets = new Insets(0, 0, 0, 0);
+        protected Logger logger = JDUtilities.getLogger();
         private JScrollPane scrollPane;
-        private boolean success=false;
+        private boolean success = false;
+
         private HTMLDialog(JFrame frame, String title, String html) {
             super(frame);
             setLayout(new BorderLayout());
-            this.setName(title);
-            btnCancel = new JButton(JDLocale.L("gui.btn_cancel","Cancel"));
+            setName(title);
+            btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
             btnCancel.addActionListener(this);
-            btnOk = new JButton(JDLocale.L("gui.btn_ok","OK"));
+            btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
             btnOk.addActionListener(this);
             setTitle(title);
             htmlArea = new JTextPane();
             scrollPane = new JScrollPane(htmlArea);
             htmlArea.setEditable(false);
-            htmlArea.setContentType("text/html"); 
+            htmlArea.setContentType("text/html");
             htmlArea.setText(html);
             htmlArea.requestFocusInWindow();
             htmlArea.addHyperlinkListener(this);
-           
-            this.add(scrollPane,BorderLayout.CENTER);
-            JPanel p= new JPanel();
+
+            this.add(scrollPane, BorderLayout.CENTER);
+            JPanel p = new JPanel();
             p.add(btnOk);
             p.add(btnCancel);
-            this.add(p,BorderLayout.SOUTH);
-            
+            this.add(p, BorderLayout.SOUTH);
+
             pack();
             getRootPane().setDefaultButton(btnOk);
             setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-            this.setVisible(true);
+            setVisible(true);
             LocationListener list = new LocationListener();
-            this.addComponentListener(list);
-             this.addWindowListener(list);
-            this.setVisible(false);
+            addComponentListener(list);
+            addWindowListener(list);
+            setVisible(false);
             setModal(true);
-            this.setVisible(true);
+            setVisible(true);
         }
 
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == btnOk) {
-                this.success=true;
+                success = true;
                 dispose();
-            }else{
+            } else {
                 dispose();
             }
         }
+
         public void hyperlinkUpdate(HyperlinkEvent e) {
-            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
-                JLinkButton.openURL( e.getURL());
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                JLinkButton.openURL(e.getURL());
+            }
         }
     }
+
     public boolean check() {
         String runtimeName = System.getProperty("java.runtime.name").toLowerCase();
         String runtimeVersion = System.getProperty("java.runtime.version").toLowerCase();
-        
-        if(new Regex(runtimeVersion,"1\\.5").count() < 0 || new Regex(runtimeVersion,"1\\.6").count() < 0 || new Regex(runtimeName,"IcedTea").count() > 0) {
+
+        if (new Regex(runtimeVersion, "1\\.5").count() < 0 || new Regex(runtimeVersion, "1\\.6").count() < 0 || new Regex(runtimeName, "IcedTea").count() > 0) {
             String html = String.format(JDLocale.L("gui.javacheck.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>"), runtimeName, runtimeVersion);
             HTMLDialog tda = new HTMLDialog(null, JDLocale.L("gui.javacheck.title", "Wrong Java Version"), html);
             return tda.success;
         }
-        
+
         return true;
     }
 }

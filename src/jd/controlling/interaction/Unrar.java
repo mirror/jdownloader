@@ -41,15 +41,16 @@ class mergeFile extends File {
         // TODO Auto-generated constructor stub
     }
 
-    
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof File) {
             File file = (File) obj;
-            if (!file.getParentFile().equals(getParentFile())) return false;
+            if (!file.getParentFile().equals(getParentFile())) {
+                return false;
+            }
             String oName = file.getName(), name = getName();
-            String matcher = (name.matches(".*\\.\\a.$") ? (name.replaceFirst("\\.a.$", "")) : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")));
-            String oMatcher = (oName.matches(".*\\.\\a.$") ? (oName.replaceFirst("\\.a.$", "")) : (oName.replaceFirst("\\.[\\d]+($|\\..*)", "")));
+            String matcher = name.matches(".*\\.\\a.$") ? name.replaceFirst("\\.a.$", "") : name.replaceFirst("\\.[\\d]+($|\\..*)", "");
+            String oMatcher = oName.matches(".*\\.\\a.$") ? oName.replaceFirst("\\.a.$", "") : oName.replaceFirst("\\.[\\d]+($|\\..*)", "");
             return matcher.equalsIgnoreCase(oMatcher);
 
         }
@@ -102,7 +103,6 @@ public class Unrar extends Interaction implements Serializable {
         super();
     }
 
-    
     @Override
     public boolean doInteraction(Object arg) {
         lastFinishedDownload = (DownloadLink) arg;
@@ -116,23 +116,28 @@ public class Unrar extends Interaction implements Serializable {
         return NAME;
     }
 
-    
     private JUnrar getUnrar() {
         JUnrar unrar;
 
         if (lastFinishedDownload != null) {
             logger.info("LastFinishedFile:" + lastFinishedDownload);
             String password = lastFinishedDownload.getSourcePluginPassword();
-            if (password != null && password.matches("[\\s]*")) password = null;
+            if (password != null && password.matches("[\\s]*")) {
+                password = null;
+            }
             if (password == null) {
                 password = lastFinishedDownload.getFilePackage().getPassword();
-                if (password != null && password.matches("[\\s]*")) password = null;
+                if (password != null && password.matches("[\\s]*")) {
+                    password = null;
+                }
 
             }
             unrar = new JUnrar(new File(lastFinishedDownload.getFileOutput()), password);
             unrar.useToextractlist = true;
             Vector<DownloadLink> links = lastFinishedDownload.getFilePackage().getDownloadLinks();
-            if (!links.contains(lastFinishedDownload)) links.add(lastFinishedDownload);
+            if (!links.contains(lastFinishedDownload)) {
+                links.add(lastFinishedDownload);
+            }
             for (int i = 0; i < links.size(); i++) {
                 unrar.link += links.get(i).getDownloadURL() + "\r\n";
             }
@@ -144,7 +149,9 @@ public class Unrar extends Interaction implements Serializable {
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, false)) {
             String efolder = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER, null);
-            if (efolder != null) unrar.extractFolder = new File(efolder);
+            if (efolder != null) {
+                unrar.extractFolder = new File(efolder);
+            }
         }
 
         unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
@@ -154,7 +161,6 @@ public class Unrar extends Interaction implements Serializable {
         return unrar;
     }
 
-    
     @Override
     public boolean getWaitForTermination() {
         return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
@@ -165,18 +171,20 @@ public class Unrar extends Interaction implements Serializable {
 
     }
 
-    
     @Override
     public void resetInteraction() {
     }
 
-    
     @Override
     public void run() {
         int c = 0;
-        if (IS_RUNNING) logger.warning("Process is in queue, there is already an unrar process running");
+        if (IS_RUNNING) {
+            logger.warning("Process is in queue, there is already an unrar process running");
+        }
         while (IS_RUNNING) {
-            if (c++ == 1200) IS_RUNNING = false;
+            if (c++ == 1200) {
+                IS_RUNNING = false;
+            }
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -225,9 +233,13 @@ public class Unrar extends Interaction implements Serializable {
         while (iter.hasNext()) {
             File file = iter.next();
             mergeFile mergeFile = new mergeFile(file.getAbsolutePath());
-            if (!mergeFiles.contains(mergeFile)) mergeFiles.add(mergeFile);
+            if (!mergeFiles.contains(mergeFile)) {
+                mergeFiles.add(mergeFile);
+            }
             if (JDUtilities.getController().isContainerFile(file)) {
-                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) JDUtilities.getController().loadContainerFile(file);
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
+                    JDUtilities.getController().loadContainerFile(file);
+                }
             }
         }
         Boolean DELETE_MERGEDFILES = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_DELETE_MERGEDFILES, true);
@@ -240,11 +252,10 @@ public class Unrar extends Interaction implements Serializable {
             }
         }
         IS_RUNNING = false;
-        this.setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
+        setCallCode(Interaction.INTERACTION_CALL_SUCCESS);
         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
     }
 
-    
     @Override
     public String toString() {
         return JDLocale.L("interaction.unrar.name");

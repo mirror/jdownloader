@@ -65,7 +65,7 @@ public class Rapidshare extends PluginForHost {
     private static final int ACTION_INFO_PREMIUM_1 = 4;
 
     private static final int ACTION_INFO_PREMIUM_2 = 5;
-private static final int ACTION_INFO_PREMIUM_3 = 6;
+    private static final int ACTION_INFO_PREMIUM_3 = 6;
     private static final int ACTION_TOGGLE_PREMIUM_1 = 1;
 
     private static final int ACTION_TOGGLE_PREMIUM_2 = 2;
@@ -82,9 +82,10 @@ private static final int ACTION_INFO_PREMIUM_3 = 6;
 
     private static final int ACTION_TOGGLE_PREMIUM_3 = 3;
 
-static private final String host = "rapidshare.com";
+    static private final String host = "rapidshare.com";
     private static long LAST_FILE_CHECK = 0;
-    //    private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
+    // private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG =
+    // Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Please wait until the download is completed)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
@@ -101,7 +102,9 @@ static private final String host = "rapidshare.com";
 
     // private static final Pattern PATTERN_MATCHER_HAPPY_HOUR =
     // Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
-//    private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
+    // private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME =
+    // Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten
+    // warten.", Pattern.CASE_INSENSITIVE);
     // <form name="dl"
     // action="http://rs363cg.rapidshare.com/files/119944363/814136/NG_-_001_-_TaN.part2.rar"
     // method="post">
@@ -110,7 +113,8 @@ static private final String host = "rapidshare.com";
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
     // private static final Pattern PATTERN_MATCHER_ACCOUNT_EXPIRED=
     // Pattern.compile("(Dieses Konto ist am)");
-//    private static final Pattern PATTERN_MATCHER_BOT = Pattern.compile("(Too many wrong codes)");
+    // private static final Pattern PATTERN_MATCHER_BOT = Pattern.compile("(Too
+    // many wrong codes)");
 
     private static final Pattern PATTERN_MATCHER_DOWNLOAD_ERRORPAGE = Pattern.compile("(RapidShare)", Pattern.CASE_INSENSITIVE);
     // private static final Pattern PATTERN_FIND_ERROR_CODES =
@@ -203,7 +207,7 @@ static private final String host = "rapidshare.com";
     // private static final int ERROR_ID_ACCOUNTEXPIRED = 4;
 
     public static void correctURL(DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(getCorrectedURL(downloadLink.getDownloadURL()));
+        downloadLink.setUrlDownload(Rapidshare.getCorrectedURL(downloadLink.getDownloadURL()));
     }
 
     /**
@@ -222,17 +226,14 @@ static private final String host = "rapidshare.com";
     // private static final Pattern PATTERN_FIND_CAPTCHA_ID =
     // Pattern.compile("<table><tr><td><img id\\=\"(.*?)\" src\\=\"\">");
 
-    private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
+    private final String ACCEPT_LANGUAGE = "en-gb, en;q=0.8";
 
     // private static boolean FORCE_FREE_USER = true;
 
-    
     private String[] serverList2;
 
-    
     // private String version = "1.4";
 
-    
     public Rapidshare() {
         super();
 
@@ -254,10 +255,9 @@ static private final String host = "rapidshare.com";
 
         serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
-        this.setConfigElements();
+        setConfigElements();
     }
 
-    
     public void actionPerformed(ActionEvent e) {
         MenuItem mi = (MenuItem) e.getSource();
 
@@ -352,7 +352,6 @@ static private final String host = "rapidshare.com";
         return;
     }
 
-    
     /**
      * Wartet 5 minuten und startet den Downlaod anschließend neu.
      * 
@@ -408,12 +407,6 @@ static private final String host = "rapidshare.com";
         return true;
     }
 
-    
-    
-       
-   
-
-    
     /**
      * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
      * kann das über diese Funktion gemacht werden. Beir s.com istd as derzeitd
@@ -421,7 +414,7 @@ static private final String host = "rapidshare.com";
      */
     public boolean[] checkLinks(DownloadLink[] urls) {
         try {
-            if (urls == null) return null;
+            if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
             int c = 0;
             while (true) {
@@ -429,13 +422,15 @@ static private final String host = "rapidshare.com";
                 int i = 0;
                 for (i = c; i < urls.length; i++) {
 
-                    if (!this.canHandle(urls[i].getDownloadURL())) return null;
+                    if (!canHandle(urls[i].getDownloadURL())) { return null; }
 
                     if (urls[i].getDownloadURL().contains("://ssl.") || !urls[i].getDownloadURL().startsWith("http://rapidshare.com")) {
                         urls[i].setUrlDownload("http://rapidshare.com" + urls[i].getDownloadURL().substring(urls[i].getDownloadURL().indexOf("rapidshare.com") + 14));
 
                     }
-                    if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) break;
+                    if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
+                        break;
+                    }
                     post += urls[i].getDownloadURL() + "%0a";
 
                 }
@@ -446,7 +441,7 @@ static private final String host = "rapidshare.com";
                 String page = r.load();
 
                 String[] lines = Regex.getLines(page);
-                if (lines.length != i - c) return null;
+                if (lines.length != i - c) { return null; }
 
                 for (String line : lines) {
 
@@ -456,7 +451,7 @@ static private final String host = "rapidshare.com";
                      * download
                      */
                     ret[c] = true;
-                    if (erg.length < 6 || (!erg[2].equals("1") && !erg[2].equals("3"))) {
+                    if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) {
                         ret[c] = false;
                     } else {
                         urls[c].setDownloadMax(Integer.parseInt(erg[4]));
@@ -517,9 +512,9 @@ static private final String host = "rapidshare.com";
         // menuList.add(hh);
         menuList.add(premium);
         // account1
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
 
-        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_1);
             m.setSelected(false);
 
@@ -538,9 +533,9 @@ static private final String host = "rapidshare.com";
         premium.addMenuItem(account);
 
         // Account 2
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
 
-        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_2);
             m.setSelected(false);
 
@@ -558,9 +553,9 @@ static private final String host = "rapidshare.com";
         account.addMenuItem(m);
         premium.addMenuItem(account);
         // Account 3
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") + this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
+        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
 
-        if (!this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_3);
             m.setSelected(false);
 
@@ -615,7 +610,7 @@ static private final String host = "rapidshare.com";
 
                 String page = req.read();
                 String error;
-                if ((error = this.findError(page)) != null) {
+                if ((error = findError(page)) != null) {
                     new File(downloadLink.getFileOutput()).delete();
 
                     logger.warning(error);
@@ -631,7 +626,7 @@ static private final String host = "rapidshare.com";
 
                     linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
-                    this.reportUnknownError(page, 6);
+                    reportUnknownError(page, 6);
 
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     return;
@@ -643,7 +638,9 @@ static private final String host = "rapidshare.com";
 
             downloadLink.setDownloadMax(length);
             String name = getFileNameFormHeader(urlConnection);
-            if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+            if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
+                name = name.replaceFirst("\\.html$", "");
+            }
             downloadLink.setName(name);
             dl = new RAFDownload(this, downloadLink, urlConnection);
 
@@ -685,16 +682,16 @@ static private final String host = "rapidshare.com";
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
-        Browser br= new Browser();
+        Browser br = new Browser();
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
-      
+
         if (!checkDestFile(downloadLink)) { return; }
         String link = downloadLink.getDownloadURL();
 
         // RS URL wird aufgerufen
-//        req = new GetRequest(link);
-//        req.load();
+        // req = new GetRequest(link);
+        // req.load();
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download");
@@ -720,12 +717,12 @@ static private final String host = "rapidshare.com";
         }
 
         // Post um freedownload auszuwählen
-      Form[] forms = br.getForms();
-    
-      br.submitForm(forms[0]);
-//        PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
-//        pReq.setPostVariable("dl.start", "free");
-//        pReq.load();
+        Form[] forms = br.getForms();
+
+        br.submitForm(forms[0]);
+        // PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
+        // pReq.setPostVariable("dl.start", "free");
+        // pReq.load();
         String error = null;
 
         if ((error = findError(br + "")) != null) {
@@ -736,18 +733,20 @@ static private final String host = "rapidshare.com";
         }
 
         // Wartezeit (Downloadlimit) wird gesucht
-//        String strWaitTime = new Regex(br, PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
-//        int waitTime;
-//        if (strWaitTime != null) {
-//            waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
-//            logger.info("DownloadLimit reached. Wait " + JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
-//            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-//         
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            linkStatus.setValue(waitTime);
-//
-//            return;
-//        }
+        // String strWaitTime = new Regex(br,
+        // PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
+        // int waitTime;
+        // if (strWaitTime != null) {
+        // waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
+        // logger.info("DownloadLimit reached. Wait " +
+        // JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
+        // linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+        //         
+        // // step.setStatus(PluginStep.STATUS_ERROR);
+        // linkStatus.setValue(waitTime);
+        //
+        // return;
+        // }
 
         // Fehlersuche
         if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
@@ -758,7 +757,7 @@ static private final String host = "rapidshare.com";
         } else if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
 
-           // waitTime = 120 * 1000;
+            // waitTime = 120 * 1000;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
             // setDownloadLimitTime(waitTime);
@@ -776,9 +775,11 @@ static private final String host = "rapidshare.com";
         }
         // Ticketwartezeit wird gesucht
         String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getFirstMatch();
-        if (ticketTime != null && ticketTime.equals("0")) ticketTime = null;
+        if (ticketTime != null && ticketTime.equals("0")) {
+            ticketTime = null;
+        }
 
-        String ticketCode = br+"";
+        String ticketCode = br + "";
 
         String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getFirstMatch();
 
@@ -793,7 +794,9 @@ static private final String host = "rapidshare.com";
 
         // Convert the result to a string and print it.
         String code = Context.toString(result);
-        if (tt != null) ticketCode = code;
+        if (tt != null) {
+            ticketCode = code;
+        }
         Context.exit();
 
         // captchaadresse wird gesucht
@@ -831,8 +834,8 @@ static private final String host = "rapidshare.com";
             pendingTime = Long.parseLong(ticketTime);
 
             if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
-                logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100));
-                pendingTime = (pendingTime + (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime) / 100);
+                logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100));
+                pendingTime = pendingTime + getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100;
 
             }
             pendingTime *= 1000;
@@ -870,18 +873,20 @@ static private final String host = "rapidshare.com";
 
         // Falls Serverauswahl fehlerhaft war
         if (linkStatus.isFailed()) { return; }
-//       pReq = new PostRequest(postTarget);
-//        pReq.setPostVariable("mirror", "on");
-//        // if (captchaCode == null) captchaCode = "";
-//        // pReq.setPostVariable("accesscode", captchaCode);
-//        pReq.setPostVariable("x", (int) (Math.random() * 40) + "");
-//        pReq.setPostVariable("y", (int) (Math.random() * 40) + "");
-//        pReq.connect();
+        // pReq = new PostRequest(postTarget);
+        // pReq.setPostVariable("mirror", "on");
+        // // if (captchaCode == null) captchaCode = "";
+        // // pReq.setPostVariable("accesscode", captchaCode);
+        // pReq.setPostVariable("x", (int) (Math.random() * 40) + "");
+        // pReq.setPostVariable("y", (int) (Math.random() * 40) + "");
+        // pReq.connect();
 
-        HTTPConnection urlConnection =  br.openPostConnection(postTarget, "mirror=on&x="+(Math.random() * 40)+"&y="+(Math.random() * 40));
-        
+        HTTPConnection urlConnection = br.openPostConnection(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
+
         String name = getFileNameFormHeader(urlConnection);
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
+            name = name.replaceFirst("\\.html$", "");
+        }
         downloadLink.setName(name);
         int length = urlConnection.getContentLength();
         downloadLink.setDownloadMax(length);
@@ -895,41 +900,44 @@ static private final String host = "rapidshare.com";
             if (new File(downloadLink.getFileOutput()).length() < 8000) {
                 String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
                 error = findError(page + "");
-//                if (new Regex(page, PATTERN_MATCHER_CAPTCHA_WRONG).matches()) {
-//
-//                    new File(downloadLink.getFileOutput()).delete();
-//
-//                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-//
-//                    // if (hashFound) {
-//
-//                    // new
-//                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code="
-//                    // + captchaCode + "&hash=" +
-//                    // JDUtilities.getLocalHash(captchaFile)).load();
-//
-//                    // }
-//                    // JDUtilities.appendInfoToFilename(this, captchaFile,
-//                    // captchaCode, false);
-//                    // if (ces != null) ces.sendCaptchaWrong();
-//                    // step.setStatus(PluginStep.STATUS_ERROR);
-//                    return;
-//                }
-//                if (new Regex(page, PATTERN_MATCHER_BOT).matches()) {
-//                    new File(downloadLink.getFileOutput()).delete();
-//
-//                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-//                    linkStatus.setValue(Math.max((int)getBotWaittime(), 60000));
-//                    logger.info("Error detected. Bot detected");
-//
-//                    // step.setStatus(PluginStep.STATUS_ERROR);
-//
-//                    // new
-//                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash="
-//                    // + JDUtilities.getLocalHash(captchaFile)).load();
-//
-//                    return;
-//                }
+                // if (new Regex(page, PATTERN_MATCHER_CAPTCHA_WRONG).matches())
+                // {
+                //
+                // new File(downloadLink.getFileOutput()).delete();
+                //
+                // linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                //
+                // // if (hashFound) {
+                //
+                // // new
+                // //
+                // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code="
+                // // + captchaCode + "&hash=" +
+                // // JDUtilities.getLocalHash(captchaFile)).load();
+                //
+                // // }
+                // // JDUtilities.appendInfoToFilename(this, captchaFile,
+                // // captchaCode, false);
+                // // if (ces != null) ces.sendCaptchaWrong();
+                // // step.setStatus(PluginStep.STATUS_ERROR);
+                // return;
+                // }
+                // if (new Regex(page, PATTERN_MATCHER_BOT).matches()) {
+                // new File(downloadLink.getFileOutput()).delete();
+                //
+                // linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                // linkStatus.setValue(Math.max((int)getBotWaittime(), 60000));
+                // logger.info("Error detected. Bot detected");
+                //
+                // // step.setStatus(PluginStep.STATUS_ERROR);
+                //
+                // // new
+                // //
+                // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash="
+                // // + JDUtilities.getLocalHash(captchaFile)).load();
+                //
+                // return;
+                // }
                 if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
 
                     linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -1082,27 +1090,26 @@ static private final String host = "rapidshare.com";
         // }
         // if (step == this.steps.firstElement()) this.downloadType =
         // PREMIUM;
-        
-        Browser br= new Browser();
+        Browser br = new Browser();
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
-        this.setMaxConnections(35);
+        setMaxConnections(35);
 
         String user = null;
         String pass = null;
-      
-        if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-          
-            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER);
-            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS);
-        } else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
-            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
-            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
-           
-        } else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
-            pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
-           
+
+        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+
+            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER);
+            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS);
+        } else if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
+            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
+
+        } else if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
+            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
+
         } else {
             doFree(downloadLink);
             return;
@@ -1230,16 +1237,16 @@ static private final String host = "rapidshare.com";
         // JDUtilities.Base64Encode(user + ":" +
         // pass));
         HTTPConnection urlConnection;
-       // GetRequest req = new GetRequest(link);
+        // GetRequest req = new GetRequest(link);
         br.getHeaders().put("Authorization", "Basic " + JDUtilities.Base64Encode(user + ":" + pass));
-      br.setFollowRedirects(true);        
-      
-        urlConnection =   br.openGetConnection(link);
-        if (urlConnection.getHeaderField("content-disposition") == null || (Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength)) {
+        br.setFollowRedirects(true);
+
+        urlConnection = br.openGetConnection(link);
+        if (urlConnection.getHeaderField("content-disposition") == null || Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength) {
 
             String page = br.getRequest().read();
             String error;
-            if ((error = this.findError(page)) != null) {
+            if ((error = findError(page)) != null) {
                 new File(downloadLink.getFileOutput()).delete();
 
                 logger.warning(error);
@@ -1269,7 +1276,7 @@ static private final String host = "rapidshare.com";
 
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
-                this.reportUnknownError(page, 6);
+                reportUnknownError(page, 6);
 
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 return;
@@ -1281,7 +1288,9 @@ static private final String host = "rapidshare.com";
 
         downloadLink.setDownloadMax(length);
         String name = getFileNameFormHeader(urlConnection);
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
+            name = name.replaceFirst("\\.html$", "");
+        }
         downloadLink.setName(name);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
@@ -1298,7 +1307,7 @@ static private final String host = "rapidshare.com";
                     linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                     String error = findError(page);
                     logger.severe(error);
-                    this.reportUnknownError(page, 5);
+                    reportUnknownError(page, 5);
 
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     return;
@@ -1317,14 +1326,20 @@ static private final String host = "rapidshare.com";
         String error = null;
         error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getFirstMatch();
 
-        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
-        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
-        if (error == null || error.length() == 0) error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getFirstMatch();
+        if (error == null || error.length() == 0) {
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
+        }
+        if (error == null || error.length() == 0) {
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
+        }
+        if (error == null || error.length() == 0) {
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getFirstMatch();
+        }
 
         error = JDUtilities.htmlDecode(error);
         String[] er = Regex.getLines(error);
 
-        if (er == null || er.length == 0) return null;
+        if (er == null || er.length == 0) { return null; }
         error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]), er[0]);
         if (error.equals(er[0])) {
             logger.warning("NO TRANSLATIONKEY FOUND FOR: " + er[0] + "(" + JDUtilities.getMD5(er[0]) + ")");
@@ -1360,8 +1375,8 @@ static private final String host = "rapidshare.com";
 
         String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getFirstMatch();
 
-        String server1 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
-        String server2 = this.getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
+        String server1 = getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
+        String server2 = getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
 
@@ -1375,15 +1390,15 @@ static private final String host = "rapidshare.com";
             logger.finer("Use Random #2 server " + server2Abb);
         }
         // String endServerAbb = "";
-        boolean telekom = this.getProperties().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
-        boolean preselected = this.getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
+        boolean telekom = getProperties().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
+        boolean preselected = getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
         // actionString = getSimpleMatch(ticketCode, dataPatternAction,
         // 0);
 
         if (postTarget == null) {
             logger.severe("postTarget not found:");
-            this.reportUnknownError(ticketCode, 4);
+            reportUnknownError(ticketCode, 4);
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return null;
@@ -1432,13 +1447,13 @@ static private final String host = "rapidshare.com";
 
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        if ((System.currentTimeMillis() - LAST_FILE_CHECK) < 250) {
+        if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
             } catch (InterruptedException e) {
             }
         }
-        correctURL(downloadLink);
+        Rapidshare.correctURL(downloadLink);
         LAST_FILE_CHECK = System.currentTimeMillis();
         RequestInfo requestInfo;
         try {
@@ -1449,7 +1464,7 @@ static private final String host = "rapidshare.com";
             /*
              * 1: Normal online -1: date nicht gefunden 3: Drect download
              */
-            if (erg.length < 6 || (!erg[2].equals("1") && !erg[2].equals("3"))) return false;
+            if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) { return false; }
 
             downloadLink.setName(erg[5]);
             downloadLink.setDownloadMax(Integer.parseInt(erg[4]));
@@ -1569,7 +1584,7 @@ static private final String host = "rapidshare.com";
         // false) && FORCE_FREE_USER) { return 1; }
         int ret = 0;
 
-        if ((((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM))) || ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2))) || ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3)))) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true))) {
+        if ((getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3)) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             ret = getMaxConnections() / getChunksPerFile();
         } else {
             ret = 1;
@@ -1602,7 +1617,7 @@ static private final String host = "rapidshare.com";
         Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, String> next = it.next();
-            if (next.getValue().equalsIgnoreCase(id)) return next.getKey();
+            if (next.getValue().equalsIgnoreCase(id)) { return next.getKey(); }
         }
         return null;
     }
@@ -1662,12 +1677,11 @@ static private final String host = "rapidshare.com";
      * Integer.toString(letter, 16); } return ret; } catch
      * (UnsupportedEncodingException e) { e.printStackTrace(); } return str; }
      */
-    
+
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     private String getURL(String[] serverstrings, String selected, String postTarget) {
         if (!serverMap.containsKey(selected.trim())) {
             logger.severe("Unknown Servername: " + selected);
@@ -1687,27 +1701,26 @@ static private final String host = "rapidshare.com";
     }
 
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // RequestInfo requestInfo;
 
-        correctURL(downloadLink);
+        Rapidshare.correctURL(downloadLink);
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && ((this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)))) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false))) {
 
-            this.doPremium(downloadLink);
+            doPremium(downloadLink);
         } else {
-            this.doFree(downloadLink);
+            doFree(downloadLink);
         }
 
         return;
     }
 
-    
     public void init() {
         // currentStep = null;
     }
@@ -1742,10 +1755,12 @@ static private final String host = "rapidshare.com";
         ConfigEntry conditionEntry;
         Vector<String> m1 = new Vector<String>();
         Vector<String> m2 = new Vector<String>();
-        for (int i = 0; i < serverList1.length; i++)
-            m1.add(getServerName(serverList1[i]));
-        for (int i = 0; i < serverList2.length; i++)
-            m2.add(getServerName(serverList2[i]));
+        for (String element : serverList1) {
+            m1.add(getServerName(element));
+        }
+        for (String element : serverList2) {
+            m2.add(getServerName(element));
+        }
         m1.add("zufällig");
         m2.add("zufällig");
         ConfigEntry cfg;
@@ -1819,7 +1834,6 @@ static private final String host = "rapidshare.com";
 
     }
 
-    
     /**
      * Zeigt premiuminfos zum Account i
      * 
@@ -1849,8 +1863,9 @@ static private final String host = "rapidshare.com";
 
                     return result;
 
-                } else
+                } else {
                     return null;
+                }
 
             }
 
@@ -1933,7 +1948,7 @@ static private final String host = "rapidshare.com";
                         // "Accountinfo for %s"), user), html);
 
                         String title = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title"), user);
-                        String def = (title == null) ? "Accountinfo for " + user : title;
+                        String def = title == null ? "Accountinfo for " + user : title;
                         int n = 10;
                         JPanel panel = new JPanel(new BorderLayout(n, n));
                         panel.setBorder(new EmptyBorder(n, n, n, n));

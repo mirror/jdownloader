@@ -14,57 +14,50 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.update;
-
-
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
-
-
-
-
 public class SubConfiguration extends Property implements Serializable {
 
-
-
     private static final long serialVersionUID = 7803718581558607222L;
-	/**
-	 * 
-	 */
-    private static HashMap<String,SubConfiguration> subConfigs=new HashMap<String,SubConfiguration>();
-	public static SubConfiguration getSubConfig(String name){
-        if(subConfigs.containsKey(name))return subConfigs.get(name);
-        
+    /**
+     * 
+     */
+    private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+
+    public static SubConfiguration getSubConfig(String name) {
+        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
+
         SubConfiguration cfg = new SubConfiguration(name);
         subConfigs.put(name, cfg);
         return cfg;
-        
-    
+
     }
 
-    //private transient Logger        logger;
+    // private transient Logger logger;
     private String name;
+
     /**
      * 
      */
     @SuppressWarnings("unchecked")
-	public SubConfiguration(String name) {
-       // logger = JDUtilities.getLogger();
-        this.name=name;
+    public SubConfiguration(String name) {
+        // logger = JDUtilities.getLogger();
+        this.name = name;
         File file;
-        Object props = utils.loadObject(file=new File("config/"+name+".cfg"));
-       System.out.println("Config file: "+file.getAbsolutePath());
-       file.getParentFile().mkdirs();
-        if(props!=null){
-            this.setProperties((HashMap<String, Object>)props);
+        Object props = utils.loadObject(file = new File("config/" + name + ".cfg"));
+        System.out.println("Config file: " + file.getAbsolutePath());
+        file.getParentFile().mkdirs();
+        if (props != null) {
+            setProperties((HashMap<String, Object>) props);
         }
     }
-    public void save(){
-        utils.saveObject(this.getProperties(),  new File("config/"+name+".cfg"));
+
+    public void save() {
+        utils.saveObject(getProperties(), new File("config/" + name + ".cfg"));
     }
 
 }

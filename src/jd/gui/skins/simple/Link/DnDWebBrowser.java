@@ -51,9 +51,9 @@ public class DnDWebBrowser extends JDialog {
 
     private class DropTargetHandler implements DropTargetListener {
         public void dragEnter(DropTargetDragEvent event) {
-            if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
+            if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 event.acceptDrag(DnDConstants.ACTION_COPY);
-            else {
+            } else {
                 event.rejectDrag();
             }
         }
@@ -64,7 +64,7 @@ public class DnDWebBrowser extends JDialog {
         public void dragOver(DropTargetDragEvent event) {
         }
 
-        @SuppressWarnings({ "unchecked", "deprecation" })
+        @SuppressWarnings( { "unchecked", "deprecation" })
         public void drop(DropTargetDropEvent event) {
             Transferable transferable = event.getTransferable();
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
@@ -126,7 +126,7 @@ public class DnDWebBrowser extends JDialog {
             browserPane.setPage(url);
             toolBar.urlTextField.setText(url.toString());
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
     }
@@ -157,7 +157,9 @@ class WebBrowserPane extends JEditorPane {
 
     public URL back() {
         historyIndex--;
-        if (historyIndex < 0) historyIndex = 0;
+        if (historyIndex < 0) {
+            historyIndex = 0;
+        }
         URL url = history.get(historyIndex);
         displayPage(url);
 
@@ -174,7 +176,9 @@ class WebBrowserPane extends JEditorPane {
 
     public URL forward() {
         historyIndex++;
-        if (historyIndex >= history.size()) historyIndex = history.size() - 1;
+        if (historyIndex >= history.size()) {
+            historyIndex = history.size() - 1;
+        }
 
         URL url = history.get(historyIndex);
         displayPage(url);

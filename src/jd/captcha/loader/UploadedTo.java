@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.loader;
 
 import java.io.File;
@@ -44,13 +43,13 @@ public class UploadedTo {
         main.go();
     }
 
-    private int         counter = 0;
+    private int counter = 0;
 
-    private String      hoster;
+    private String hoster;
 
-    private long        initTime;
+    private long initTime;
 
-    private Logger      logger  = JDUtilities.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
     private RequestInfo ri;
 
@@ -80,15 +79,13 @@ public class UploadedTo {
             String captchaURL = "http://uploaded.to/" + ri.getRegexp("<img name=\"img_captcha\" src=\"(.*?)\"");
             JDUtilities.download(new File(file, getCaptchaName()), captchaURL);
 
-            logger.info(captchaURL+" - "+new File(file, getCaptchaName()));
-        }
-        catch (MalformedURLException e) {
-            
-             e.printStackTrace();
-        }
-        catch (IOException e) {
-            
-             e.printStackTrace();
+            logger.info(captchaURL + " - " + new File(file, getCaptchaName()));
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
         }
     }
 

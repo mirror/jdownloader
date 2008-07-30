@@ -121,7 +121,6 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         }
     }
 
-    
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
@@ -140,7 +139,6 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         return JDLocale.L("gui.config.reconnect.name", "Reconnect");
     }
 
-    
     @Override
     public void initPanel() {
         String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
@@ -160,31 +158,44 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         btn.addActionListener(this);
 
         // panel.add(new JSeparator());
-        if (reconnectType != null) box.setSelectedItem(reconnectType);
+        if (reconnectType != null) {
+            box.setSelectedItem(reconnectType);
+        }
         add(panel, BorderLayout.NORTH);
 
-        this.setReconnectType();
+        setReconnectType();
     }
 
-    
     @Override
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
     }
 
     @Override
     public void save() {
-        this.saveConfigEntries();
-        if (lh != null) lh.save();
-        if (lh != null) lh.saveConfigEntries();
-        if (er != null) er.save();
-        if (er != null) er.saveConfigEntries();
+        saveConfigEntries();
+        if (lh != null) {
+            lh.save();
+        }
+        if (lh != null) {
+            lh.saveConfigEntries();
+        }
+        if (er != null) {
+            er.save();
+        }
+        if (er != null) {
+            er.saveConfigEntries();
+        }
     }
 
     private void setReconnectType() {
 
-        if (lh != null) panel.remove(lh);
-        if (er != null) panel.remove(er);
+        if (lh != null) {
+            panel.remove(lh);
+        }
+        if (er != null) {
+            panel.remove(er);
+        }
         lh = null;
         er = null;
         if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"))) {
@@ -205,6 +216,6 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
-        this.validate();
+        validate();
     }
 }

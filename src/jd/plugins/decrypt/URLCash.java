@@ -32,66 +32,58 @@ public class URLCash extends PluginForDecrypt {
 
     static private String host = "urlcash.net";
     private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public URLCash() {
-        super();        
+        super();
     }
 
-    
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {        
+    public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">",Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link==null) return null;
-            decryptedLinks.add(this.createDownloadlink(link));           
+            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            if (link == null) {
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(link));
         } catch (IOException e) {
             e.printStackTrace();
         }
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

@@ -39,7 +39,8 @@ import jd.utils.JDUtilities;
 // http://www.xup.in/dl,43227676/YourFilesBiz.java/
 
 public class MeinUpload extends PluginForHost {
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
     // 
     private static final String CODER = "jD-Team";
@@ -56,13 +57,11 @@ public class MeinUpload extends PluginForHost {
         setConfigElements();
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -90,7 +89,6 @@ public class MeinUpload extends PluginForHost {
         dl.startDownload();
     }
 
-    
     private void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
@@ -168,41 +166,34 @@ public class MeinUpload extends PluginForHost {
 
     }
 
-    
     @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         try {
             String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (id == null) return false;
+            if (id == null) { return false;
             // http://meinupload.com/infos.api?get_id=3794082988
+            }
 
             String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
 
             String status = new Regex(page, "<status>([\\d]*?)</status>").getFirstMatch();
             String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getFirstMatch();
             String name = new Regex(page, "<name>(.*?)</name>").getFirstMatch();
-            if (status == null || !status.equals("1")) return false;
+            if (status == null || !status.equals("1")) { return false; }
 
-            if (filesize == null || name == null) return false;
+            if (filesize == null || name == null) { return false; }
 
             downloadLink.setDownloadMax(Integer.parseInt(filesize));
             downloadLink.setName(name);
@@ -219,38 +210,34 @@ public class MeinUpload extends PluginForHost {
 
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 2;
         }
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PATTERN_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override

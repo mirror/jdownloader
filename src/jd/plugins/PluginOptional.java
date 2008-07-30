@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.File;
@@ -26,40 +25,55 @@ import jd.event.ControlListener;
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 0;
-    
-    public static int VERSION_ID=0;
-    public static int getVersionID(){
+
+    public static int VERSION_ID = 0;
+
+    public static int getVersionID() {
         return VERSION_ID;
     }
-  
-     public void controlEvent(ControlEvent event) {
-        
-        //Deaktiviert das PLugin beim beenden
+
+    public void controlEvent(ControlEvent event) {
+
+        // Deaktiviert das PLugin beim beenden
         if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
             try {
-                this.onExit();
-            } catch (Exception e) {                
+                onExit();
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-            
+
         }
-        
+
     }
-     @Override
-    public boolean doBotCheck(File file) { return false; }
-     @Override
-    public String getHost()            { return null; }
-    
+
     @Override
-    public String getLinkName()        { return null; }
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    @Override
+    public String getHost() {
+        return null;
+    }
+
+    @Override
+    public String getLinkName() {
+        return null;
+    }
+
     @Override
     public String getPluginName() {
         return "Unnamend Optional Plugin";
     }
 
     public abstract String getRequirements();
+
     @Override
-    public Pattern getSupportedLinks() { return null; }
+    public Pattern getSupportedLinks() {
+        return null;
+    }
+
     public abstract boolean initAddon();
+
     public abstract void onExit();
 }

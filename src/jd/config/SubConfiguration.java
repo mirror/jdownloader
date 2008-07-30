@@ -34,12 +34,12 @@ public class SubConfiguration extends Property implements Serializable {
         Object props = JDUtilities.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
         file.getParentFile().mkdirs();
         if (props != null) {
-            this.setProperties((HashMap<String, Object>) props);
+            setProperties((HashMap<String, Object>) props);
         }
     }
 
     public void save() {
-        JDUtilities.saveObject(null, this.getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
+        JDUtilities.saveObject(null, getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
     }
 
 }

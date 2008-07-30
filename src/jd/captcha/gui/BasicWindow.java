@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.gui;
 
 import java.awt.Color;
@@ -43,12 +42,12 @@ public class BasicWindow extends JFrame {
     /**
      * Aktuelle X Position der Autopositionierung
      */
-    private static int        screenPosX       = 0;
+    private static int screenPosX = 0;
 
     /**
      * Aktuelle Y Position der Autopositionierung
      */
-    private static int        screenPosY       = 0;
+    private static int screenPosY = 0;
 
     /**
      * 
@@ -62,18 +61,18 @@ public class BasicWindow extends JFrame {
      * @return neues Fenster
      */
     public static BasicWindow getWindow(String title, int width, int height) {
-//        new JFrame().getToolkit().getScreenSize();
+        // new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
 
         w.setSize(width, height);
 
         w.setLocation(screenPosX, screenPosY);
-//        screenPosY += height + 30;
-//        if (screenPosY >= screenSize.height) {
-//            screenPosX += width + 40;
-//            screenPosY = 0;
-//        }
+        // screenPosY += height + 30;
+        // if (screenPosY >= screenSize.height) {
+        // screenPosX += width + 40;
+        // screenPosY = 0;
+        // }
 
         w.setLayout(new GridBagLayout());
         w.setVisible(true);
@@ -95,18 +94,18 @@ public class BasicWindow extends JFrame {
      */
 
     public static BasicWindow showImage(File file, String title) {
-//        new JFrame().getToolkit().getScreenSize();
+        // new JFrame().getToolkit().getScreenSize();
         Image img = UTILITIES.loadImage(file);
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
 
         w.setSize(ic.getImageWidth() + 10, ic.getImageHeight() + 20);
         w.setLocation(screenPosX, screenPosY);
-     //   screenPosY += ic.getImageHeight() + 40;
-//        if (screenPosY >= screenSize.height) {
-//            screenPosX += ic.getImageWidth() + 160;
-//            screenPosY = 0;
-//        }
+        // screenPosY += ic.getImageHeight() + 40;
+        // if (screenPosY >= screenSize.height) {
+        // screenPosX += ic.getImageWidth() + 160;
+        // screenPosY = 0;
+        // }
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -127,7 +126,7 @@ public class BasicWindow extends JFrame {
      */
     public static BasicWindow showImage(Image img) {
 
-        return showImage(img, img.toString());
+        return BasicWindow.showImage(img, img.toString());
     }
 
     /**
@@ -140,7 +139,7 @@ public class BasicWindow extends JFrame {
      * @return Neues Fenster
      */
     public static BasicWindow showImage(Image img, int width, int height) {
-//        new JFrame().getToolkit().getScreenSize();
+        // new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
@@ -148,11 +147,11 @@ public class BasicWindow extends JFrame {
         w.setSize(width, height);
 
         w.setLocation(screenPosX, screenPosY);
-//        screenPosY += height + 30;
-//        if (screenPosY >= screenSize.height) {
-//            screenPosX += width + 40;
-//            screenPosY = 0;
-//        }
+        // screenPosY += height + 30;
+        // if (screenPosY >= screenSize.height) {
+        // screenPosX += width + 40;
+        // screenPosY = 0;
+        // }
 
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -174,7 +173,7 @@ public class BasicWindow extends JFrame {
      * @return BasicWindow das neue fenster
      */
     public static BasicWindow showImage(Image img, String title) {
-//        new JFrame().getToolkit().getScreenSize();
+        // new JFrame().getToolkit().getScreenSize();
 
         BasicWindow w = new BasicWindow();
         ImageComponent ic = new ImageComponent(img);
@@ -183,11 +182,11 @@ public class BasicWindow extends JFrame {
         w.repack();
         w.pack();
         w.setLocation(screenPosX, screenPosY);
-       // screenPosY += w.getSize().width + 30;
-//        if (screenPosY >= screenSize.height) {
-//            screenPosX += w.getSize().height + 160;
-//            screenPosY = 0;
-//        }
+        // screenPosY += w.getSize().width + 30;
+        // if (screenPosY >= screenSize.height) {
+        // screenPosX += w.getSize().height + 160;
+        // screenPosY = 0;
+        // }
         w.setTitle(title);
         w.setLayout(new GridBagLayout());
         w.add(ic, UTILITIES.getGBC(0, 0, 1, 1));
@@ -203,12 +202,12 @@ public class BasicWindow extends JFrame {
     /**
      * Gibt an ob beim Schließen des fensters das programm beendet werden sol
      */
-    public boolean            exitSystem       = false;
+    public boolean exitSystem = false;
 
     /**
      * Owner. Owner der GUI
      */
-    public Object             owner;
+    public Object owner;
 
     /**
      * Erstellt ein einfaches neues GUI Fenster
@@ -278,38 +277,41 @@ public class BasicWindow extends JFrame {
         setLocationByScreenPercent(50, 50);
         setBackground(Color.LIGHT_GRAY);
     }
-@Override
-public void pack() {
-    try{
-    super.pack();
-    Dimension screenSize = getToolkit().getScreenSize();
-    
-    int newWidth = (int) Math.min(Math.max(this.getSize().width,300), screenSize.getWidth());
-    int newHeight = (int) Math.min(Math.max(this.getSize().height,300), screenSize.getHeight());
-    this.setSize(newWidth, newHeight);
-    }catch(Exception e){
-        
+
+    @Override
+    public void pack() {
+        try {
+            super.pack();
+            Dimension screenSize = getToolkit().getScreenSize();
+
+            int newWidth = (int) Math.min(Math.max(this.getSize().width, 300), screenSize.getWidth());
+            int newHeight = (int) Math.min(Math.max(this.getSize().height, 300), screenSize.getHeight());
+            this.setSize(newWidth, newHeight);
+        } catch (Exception e) {
+
+        }
     }
-}
+
     /**
      * Skaliert alle Komponenten und das fenster neu
      */
     public void refreshUI() {
-        this.pack();
-        this.repack();
+        pack();
+        repack();
     }
+
     /**
      * packt das fenster neu
      */
     public void repack() {
-        final BasicWindow _this=this;
+        final BasicWindow _this = this;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 SwingUtilities.updateComponentTreeUI(_this);
 
             }
         });
-       
+
     }
 
     /**
@@ -320,33 +322,35 @@ public void pack() {
      */
     public void resizeWindow(int percent) {
         Dimension screenSize = getToolkit().getScreenSize();
-        setSize((screenSize.width * percent) / 100, (screenSize.height * percent) / 100);
+        setSize(screenSize.width * percent / 100, screenSize.height * percent / 100);
     }
 
     /**
-     * Fügt relative Threadsafe  an x,y die Kompoente cmp ein
+     * Fügt relative Threadsafe an x,y die Kompoente cmp ein
+     * 
      * @param x
      * @param y
      * @param cmp
      */
-        public void setComponent(final int x, final int y, final Component cmp) {
-            if(cmp==null)return;
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    add(cmp, getGBC(x, y, 1, 1));
-    
-                }
-            });
-        }
+    public void setComponent(final int x, final int y, final Component cmp) {
+        if (cmp == null) { return; }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                add(cmp, getGBC(x, y, 1, 1));
+
+            }
+        });
+    }
 
     /**
-     * Fügt relative Threadsafe  an x,y das Bild img ein
+     * Fügt relative Threadsafe an x,y das Bild img ein
+     * 
      * @param x
      * @param y
-     * @param img 
+     * @param img
      */
     public void setImage(final int x, final int y, final Image img) {
-if(img==null)return;
+        if (img == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 add(new ImageComponent(img), getGBC(x, y, 1, 1));
@@ -366,17 +370,18 @@ if(img==null)return;
     public void setLocationByScreenPercent(int width, int height) {
         Dimension screenSize = getToolkit().getScreenSize();
 
-        setLocation(((screenSize.width - getSize().width) * width) / 100, ((screenSize.height - getSize().height) * height) / 100);
+        setLocation((screenSize.width - getSize().width) * width / 100, (screenSize.height - getSize().height) * height / 100);
     }
 
     /**
-     * Fügt relative Threadsafe  an x,y den text cmp ein
+     * Fügt relative Threadsafe an x,y den text cmp ein
+     * 
      * @param x
      * @param y
      * @param cmp
      */
     public void setText(final int x, final int y, final Object cmp) {
-        if(cmp==null)return;
+        if (cmp == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 

@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -44,239 +43,234 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
-		ActionListener, MouseListener {
+public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionListener, MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
-		private static final long serialVersionUID = 1155282457354673850L;
+        private static final long serialVersionUID = 1155282457354673850L;
 
-		@Override
+        @Override
         public Class<?> getColumnClass(int columnIndex) {
-			return String.class;
-		}
+            return String.class;
+        }
 
-		public int getColumnCount() {
-			return 3;
-		}
+        public int getColumnCount() {
+            return 3;
+        }
 
-		@Override
+        @Override
         public String getColumnName(int column) {
-			switch (column) {
-			case 0:
-				return JDLocale.L("gui.config.plugin.container.column_host",
-						"Host");
-			case 1:
-				return JDLocale.L("gui.config.plugin.container.column_version",
-						"Version");
-			case 2:
-				return JDLocale.L("gui.config.plugin.container.column_author",
-						"Ersteller");
+            switch (column) {
+            case 0:
+                return JDLocale.L("gui.config.plugin.container.column_host", "Host");
+            case 1:
+                return JDLocale.L("gui.config.plugin.container.column_version", "Version");
+            case 2:
+                return JDLocale.L("gui.config.plugin.container.column_author", "Ersteller");
 
-			}
-			return super.getColumnName(column);
-		}
+            }
+            return super.getColumnName(column);
+        }
 
-		public int getRowCount() {
-			return pluginsForDecrypt.size();
-		}
+        public int getRowCount() {
+            return pluginsForDecrypt.size();
+        }
 
-		public Object getValueAt(int rowIndex, int columnIndex) {
+        public Object getValueAt(int rowIndex, int columnIndex) {
 
-			switch (columnIndex) {
-			case 0:
-				return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
-			case 1:
-				return pluginsForDecrypt.elementAt(rowIndex).getVersion();
-			case 2:
-				return pluginsForDecrypt.elementAt(rowIndex).getCoder();
+            switch (columnIndex) {
+            case 0:
+                return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
+            case 1:
+                return pluginsForDecrypt.elementAt(rowIndex).getVersion();
+            case 2:
+                return pluginsForDecrypt.elementAt(rowIndex).getCoder();
 
-			}
-			return null;
-		}
-	}
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5308908915544580923L;
-	private JButton btnEdit;
-	private Configuration configuration;
-	private Vector<PluginForDecrypt> pluginsForDecrypt;
+            }
+            return null;
+        }
+    }
 
-	private JTable table;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -5308908915544580923L;
+    private JButton btnEdit;
+    private Configuration configuration;
+    private Vector<PluginForDecrypt> pluginsForDecrypt;
 
-	// private PluginForDecrypt currentPlugin;
-	@SuppressWarnings("unchecked")
-	public ConfigPanelPluginForDecrypt(Configuration configuration,
-			UIInterface uiinterface) {
+    private JTable table;
 
-		super(uiinterface);
-		this.configuration = configuration;
-		this.pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
-		Collections.sort(this.pluginsForDecrypt);
-		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
-		Vector<PluginForDecrypt> pltmp = new Vector<PluginForDecrypt>();
-		Vector<PluginForDecrypt> pltmp2 = new Vector<PluginForDecrypt>();
-		while (iter.hasNext()) {
-			PluginForDecrypt pluginForDecrypt = iter.next();
-			if (pluginForDecrypt.getConfig().getEntries().size() != 0) {
-				pltmp.add(pluginForDecrypt);
-			}
-			else
-			{
-				pltmp2.add(pluginForDecrypt);
-			}
+    // private PluginForDecrypt currentPlugin;
+    @SuppressWarnings("unchecked")
+    public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
 
-		}
-		pltmp.addAll(pltmp2);
-		pluginsForDecrypt=pltmp;
-		initPanel();
-		load();
-	}
+        super(uiinterface);
+        this.configuration = configuration;
+        pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
+        Collections.sort(pluginsForDecrypt);
+        Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
+        Vector<PluginForDecrypt> pltmp = new Vector<PluginForDecrypt>();
+        Vector<PluginForDecrypt> pltmp2 = new Vector<PluginForDecrypt>();
+        while (iter.hasNext()) {
+            PluginForDecrypt pluginForDecrypt = iter.next();
+            if (pluginForDecrypt.getConfig().getEntries().size() != 0) {
+                pltmp.add(pluginForDecrypt);
+            } else {
+                pltmp2.add(pluginForDecrypt);
+            }
 
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == btnEdit) {
-			editEntry();
-		}
-	}
+        }
+        pltmp.addAll(pltmp2);
+        pluginsForDecrypt = pltmp;
+        initPanel();
+        load();
+    }
 
-	
-	private void editEntry() {
-		PluginForDecrypt plugin = getSelectedPlugin();
-		if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-			openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface,
-					plugin));
-		}
-	}
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnEdit) {
+            editEntry();
+        }
+    }
 
+    private void editEntry() {
+        PluginForDecrypt plugin = getSelectedPlugin();
+        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+        }
+    }
 
-	@Override
+    @Override
     public String getName() {
-		return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
-	}
+        return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
+    }
 
-	
-	private int getSelectedInteractionIndex() {
-		return table.getSelectedRow();
-	}
+    private int getSelectedInteractionIndex() {
+        return table.getSelectedRow();
+    }
 
-	private PluginForDecrypt getSelectedPlugin() {
-		int index = getSelectedInteractionIndex();
-		if (index < 0)
-			return null;
-		return this.pluginsForDecrypt.elementAt(index);
-	}
+    private PluginForDecrypt getSelectedPlugin() {
+        int index = getSelectedInteractionIndex();
+        if (index < 0) { return null; }
+        return pluginsForDecrypt.elementAt(index);
+    }
 
-	@Override
+    @Override
     public void initPanel() {
-		setLayout(new BorderLayout());
-		table = new JTable(); // new InternalTable();
-		InternalTableModel internalTableModel = new InternalTableModel();
-		table.setModel(new InternalTableModel());
-		this.setPreferredSize(new Dimension(550, 350));
+        setLayout(new BorderLayout());
+        table = new JTable(); // new InternalTable();
+        InternalTableModel internalTableModel = new InternalTableModel();
+        table.setModel(new InternalTableModel());
+        setPreferredSize(new Dimension(550, 350));
 
-		TableColumn column = null;
-		for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-			column = table.getColumnModel().getColumn(c);
-			switch (c) {
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch (c) {
 
-			case 0:
-				column.setPreferredWidth(200);
-				break;
-			case 1:
-				column.setPreferredWidth(60);
-				column.setMinWidth(60);
-				break;
-			case 2:
-				column.setPreferredWidth(290);
-				break;
+            case 0:
+                column.setPreferredWidth(200);
+                break;
+            case 1:
+                column.setPreferredWidth(60);
+                column.setMinWidth(60);
+                break;
+            case 2:
+                column.setPreferredWidth(290);
+                break;
 
-			}
-		}
+            }
+        }
 
-		// add(scrollPane);
-		// list = new JList();
-		table.addMouseListener(this);
-		JScrollPane scrollpane = new JScrollPane(table);
-		scrollpane.setPreferredSize(new Dimension(400, 200));
+        // add(scrollPane);
+        // list = new JList();
+        table.addMouseListener(this);
+        JScrollPane scrollpane = new JScrollPane(table);
+        scrollpane.setPreferredSize(new Dimension(400, 200));
 
-		btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
-		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
-	          public void valueChanged(ListSelectionEvent e) {
-	                if (pluginsForDecrypt.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) btnEdit.setEnabled(true);
-	                else btnEdit.setEnabled(false);
-	          }
-		});
-		btnEdit.addActionListener(this);
-//		JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
-//				GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-		JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                if (pluginsForDecrypt.get(((DefaultListSelectionModel) e.getSource()).getMinSelectionIndex()).getConfig().getEntries().size() != 0) {
+                    btnEdit.setEnabled(true);
+                } else {
+                    btnEdit.setEnabled(false);
+                }
+            }
+        });
+        btnEdit.addActionListener(this);
+        // JDUtilities.addToGridBag(panel, scrollpane, 0, 0, 3, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-//		JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
-//				GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, btnEdit, 0, 1, 1, 1, 0, 1, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-	    JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
 
-		// JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
-		// GridBagConstraints.BOTH, GridBagConstraints.WEST);
-		add(panel, BorderLayout.CENTER);
-	}
+        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        add(panel, BorderLayout.CENTER);
+    }
 
-	/**
-	 * Lädt alle Informationen
-	 */
-	@Override
+    /**
+     * Lädt alle Informationen
+     */
+    @Override
     public void load() {
 
-	}
+    }
 
-	public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() > 1) {
-			editEntry();
-		}
-	}
+    public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() > 1) {
+            editEntry();
+        }
+    }
 
-	public void mouseEntered(MouseEvent e)  { }
+    public void mouseEntered(MouseEvent e) {
+    }
 
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
+    public void mouseExited(MouseEvent e) {
+    }
+
+    public void mousePressed(MouseEvent e) {
+    }
+
+    public void mouseReleased(MouseEvent e) {
+    }
+
     private void openPopupPanel(ConfigPanel config) {
-		JPanel panel = new JPanel(new BorderLayout());
+        JPanel panel = new JPanel(new BorderLayout());
 
-		// InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-		PluginForDecrypt plugin = this.getSelectedPlugin();
-		// currentPlugin = plugin;
-		if (plugin == null)
-			return;
+        PluginForDecrypt plugin = getSelectedPlugin();
+        // currentPlugin = plugin;
+        if (plugin == null) { return; }
 
-		JPanel topPanel = new JPanel();
-		panel.add(topPanel, BorderLayout.NORTH);
-		panel.add(config, BorderLayout.CENTER);
-		ConfigurationPopup pop = new ConfigurationPopup(JDUtilities
-				.getParentFrame(this), config, panel, uiinterface,
-				configuration);
-		pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-		pop.setVisible(true);
-	}
+        JPanel topPanel = new JPanel();
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(config, BorderLayout.CENTER);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setVisible(true);
+    }
 
-	/**
-	 * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
-	 * noch keinen properties laoder.
-	 */
-	@Override
+    /**
+     * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
+     * noch keinen properties laoder.
+     */
+    @Override
     public void save() {
-		// Interaction[] tmp= new Interaction[interactions.size()];
-		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
-		while (iter.hasNext()) {
-			PluginForDecrypt plg = iter.next();
-			if (plg.getProperties() != null)
-				configuration.setProperty(
-						"PluginConfig_" + plg.getPluginName(), plg
-								.getProperties());
-		}
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
+        while (iter.hasNext()) {
+            PluginForDecrypt plg = iter.next();
+            if (plg.getProperties() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            }
+        }
 
-	}
+    }
 }

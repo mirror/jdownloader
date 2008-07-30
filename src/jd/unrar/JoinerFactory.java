@@ -25,27 +25,22 @@ import java.io.File;
 
 import jd.utils.JDUtilities;
 
-public class JoinerFactory
-{
-	public static JAxeJoiner getJoiner (File FileName)
-	{
-		return getJoiner (FileName, FileName.getParentFile());
-	}
+public class JoinerFactory {
+    public static JAxeJoiner getJoiner(File FileName) {
+        return JoinerFactory.getJoiner(FileName, FileName.getParentFile());
+    }
 
-	public static JAxeJoiner getJoiner (File FileName, File DestDir)
-	{
-	    
-	    if(DestDir==null) return getJoiner(FileName);
-	    String sFileName = FileName.getAbsolutePath();
-	    String sDestDir = DestDir.getAbsolutePath();
-		if (SplitFileFilter.isSplitFile (sFileName) || SplitFileFilter.isZippedSplitFile (sFileName))
-			return new JAxeJoiner (sFileName, sDestDir);
-		if (UnixSplitFileFilter.isSplitFile (sFileName))
-		{
-			JDUtilities.getLogger().info("Unix split found");
-			return new UnixSplitJoiner (sFileName, sDestDir);
-		}
+    public static JAxeJoiner getJoiner(File FileName, File DestDir) {
 
-		return null;
-	}
+        if (DestDir == null) { return JoinerFactory.getJoiner(FileName); }
+        String sFileName = FileName.getAbsolutePath();
+        String sDestDir = DestDir.getAbsolutePath();
+        if (SplitFileFilter.isSplitFile(sFileName) || SplitFileFilter.isZippedSplitFile(sFileName)) { return new JAxeJoiner(sFileName, sDestDir); }
+        if (UnixSplitFileFilter.isSplitFile(sFileName)) {
+            JDUtilities.getLogger().info("Unix split found");
+            return new UnixSplitJoiner(sFileName, sDestDir);
+        }
+
+        return null;
+    }
 }

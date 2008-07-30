@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.BufferedReader;
@@ -97,26 +96,30 @@ public class HTTP {
      */
     public static RequestInfo getRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null) httpConnection.setRequestProperty("Referer", referrer);
-    
+        if (referrer != null) {
+            httpConnection.setRequestProperty("Referer", referrer);
+        }
+
         // httpConnection.setRequestProperty("Referer", "http://" +
         // link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
         // TODO User-Agent als Option ins menu
         // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
         // lassen
         // so ist das Programm nicht so auffallig
         httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        RequestInfo requestInfo = readFromURL(httpConnection);
+        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
-       
+
         // logger.finer("getRequest " + link + ": " +
         // (System.currentTimeMillis() - timer) + " ms");
         return requestInfo;
@@ -134,22 +137,23 @@ public class HTTP {
      * @throws IOException
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
-        return getRequestWithoutHtmlCode(link, cookie, referrer, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
-    
+        return HTTP.getRequestWithoutHtmlCode(link, cookie, referrer, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
+
     }
 
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("get: "+link);
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null)
+        if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
-        else
+        } else {
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
+        }
         if (cookie != null) {
             httpConnection.setRequestProperty("Cookie", cookie);
         }
@@ -166,7 +170,7 @@ public class HTTP {
             responseCode = httpConnection.getResponseCode();
         } catch (IOException e) {
         }
-    
+
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
         // logger.finer("getReuqest wo " + link + ": " +
@@ -187,34 +191,35 @@ public class HTTP {
      */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null)
+        if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
-        else
+        } else {
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
+        }
         if (cookie != null) {
             httpConnection.setRequestProperty("Cookie", cookie);
         }
-    
+
         httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-    
+
         if (requestProperties != null) {
             Set<String> keys = requestProperties.keySet();
             Iterator<String> iterator = keys.iterator();
             String key;
             while (iterator.hasNext()) {
                 key = iterator.next();
-    
+
                 httpConnection.setRequestProperty(key, requestProperties.get(key));
             }
         }
-    
+
         httpConnection.connect();
         String location = httpConnection.getHeaderField("Location");
         String setcookie = HTTP.getCookieString(httpConnection);
@@ -223,7 +228,7 @@ public class HTTP {
             responseCode = httpConnection.getResponseCode();
         } catch (IOException e) {
         }
-    
+
         RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
         ri.setConnection(httpConnection);
         // logger.finer("getRequest wo2 " + link + ": " +
@@ -233,21 +238,25 @@ public class HTTP {
 
     public static RequestInfo headRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
         // logger.finer("get: "+link+"(cookie: "+cookie+")");
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
         httpConnection.setRequestMethod("HEAD");
         httpConnection.setInstanceFollowRedirects(redirect);
         // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null) httpConnection.setRequestProperty("Referer", referrer);
-    
+        if (referrer != null) {
+            httpConnection.setRequestProperty("Referer", referrer);
+        }
+
         // httpConnection.setRequestProperty("Referer", "http://" +
         // link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
         httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        RequestInfo requestInfo = readFromURL(httpConnection);
+        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
         requestInfo.setConnection(httpConnection);
         // logger.finer("headRequest " + link + ": " +
         // (System.currentTimeMillis() - timer) + " ms");
@@ -265,7 +274,7 @@ public class HTTP {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL link, String parameter) throws IOException {
-        return postRequest(link, null, null, null, parameter, false);
+        return HTTP.postRequest(link, null, null, null, parameter, false);
     }
 
     /**
@@ -288,23 +297,26 @@ public class HTTP {
      * @throws IOException
      */
     public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
-        return postRequest(string, cookie, referrer, requestProperties, parameter, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
-    
+        return HTTP.postRequest(string, cookie, referrer, requestProperties, parameter, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
+
     }
 
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
         httpConnection.setReadTimeout(readTimeout);
         httpConnection.setConnectTimeout(requestTimeout);
         httpConnection.setInstanceFollowRedirects(redirect);
-        if (referrer != null)
+        if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
-        else
+        } else {
             httpConnection.setRequestProperty("Referer", "http://" + url.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        }
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
@@ -318,16 +330,16 @@ public class HTTP {
             }
         }
         if (parameter != null) {
-            //parameter = parameter.trim();
+            // parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
         }
         httpConnection.setDoOutput(true);
         httpConnection.connect();
-    
+
         httpConnection.post(parameter);
-    
-        RequestInfo requestInfo = readFromURL(httpConnection);
-    
+
+        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
+
         requestInfo.setConnection(httpConnection);
         // logger.finer("postRequest " + url + ": " +
         // (System.currentTimeMillis() - timer) + " ms");
@@ -353,25 +365,30 @@ public class HTTP {
      */
     public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
         // logger.finer("post: "+link);
-//        long timer = System.currentTimeMillis();
+        // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
         httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
         httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
-        if (referrer != null)
+        if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
-        else
+        } else {
             httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        if (cookie != null) httpConnection.setRequestProperty("Cookie", cookie);
+        }
+        if (cookie != null) {
+            httpConnection.setRequestProperty("Cookie", cookie);
+        }
         // TODO das gleiche wie bei getRequest
         httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         httpConnection.setDoOutput(true);
         if (parameter != null) {
-            if (parameter == null) parameter = "";
+            if (parameter == null) {
+                parameter = "";
+            }
             parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
-            
+
             httpConnection.connect();
             OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
             wr.write(parameter);
@@ -430,6 +447,5 @@ public class HTTP {
     public static void setReadTimeout(int value) {
         JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, value);
     }
-    
 
 }

@@ -149,7 +149,9 @@ public abstract class Plugin implements ActionListener {
      *         ist
      */
     public static File getLocalCaptchaFile(Plugin plugin, String extension) {
-        if (extension == null) extension = ".jpg";
+        if (extension == null) {
+            extension = ".jpg";
+        }
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
         // File dest = JDUtilities.getResourceFile("captchas/" +
@@ -174,10 +176,11 @@ public abstract class Plugin implements ActionListener {
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (first)
+            if (first) {
                 first = false;
-            else
+            } else {
                 buffer.append(delMap);
+            }
             buffer.append(entry.getKey());
             buffer.append(delPair);
             buffer.append(entry.getValue());
@@ -206,7 +209,9 @@ public abstract class Plugin implements ActionListener {
                 BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
                 String hostname = link.getHost().toLowerCase();
                 String hostname2 = hostname + ".*";
-                if (hostname.matches(".*?\\..*?\\..*?")) hostname = hostname.replaceFirst(".*?\\.", ".");
+                if (hostname.matches(".*?\\..*?\\..*?")) {
+                    hostname = hostname.replaceFirst(".*?\\.", ".");
+                }
                 hostname = "\\.?" + hostname + ".*";
                 String path = link.getPath();
                 while ((thisLine = myInput.readLine()) != null) {
@@ -216,13 +221,16 @@ public abstract class Plugin implements ActionListener {
                             String path2 = matcher.group(2);
                             if (!path2.matches("[\\s]*")) {
                                 path2 = "/?" + path2 + ".*";
-                                if (path.matches(path2)) inp.put(matcher.group(4), matcher.group(5));
-                            } else
+                                if (path.matches(path2)) {
+                                    inp.put(matcher.group(4), matcher.group(5));
+                                }
+                            } else {
                                 inp.put(matcher.group(4), matcher.group(5));
+                            }
                         }
                     }
                 }
-                return joinMap(inp, "=", "; ");
+                return Plugin.joinMap(inp, "=", "; ");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -253,11 +261,11 @@ public abstract class Plugin implements ActionListener {
 
     protected Plugin() {
 
-        this.initTime = System.currentTimeMillis();
+        initTime = System.currentTimeMillis();
         // steps = new Vector<PluginStep>();
         config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
-        if (this.getPluginName() == null) {
+        if (getPluginName() == null) {
             logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
         }
 
@@ -277,7 +285,9 @@ public abstract class Plugin implements ActionListener {
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
-        if (data == null) return false;
+        if (data == null) {
+            return false;
+        }
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -287,8 +297,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void clean() {
-        this.lastCaptcha = null;
-        this.requestInfo = null;
+        lastCaptcha = null;
+        requestInfo = null;
         System.gc();
         System.runFinalization();
 
@@ -371,7 +381,7 @@ public abstract class Plugin implements ActionListener {
         try {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), null, null, true);
         } catch (Exception e) {
-         
+
             e.printStackTrace();
             return null;
         }
@@ -518,10 +528,12 @@ public abstract class Plugin implements ActionListener {
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
         String ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
-        while (ret.startsWith("\"") || ret.startsWith("'"))
+        while (ret.startsWith("\"") || ret.startsWith("'")) {
             ret = ret.substring(1);
-        while (ret.endsWith("\"") || ret.endsWith("'") || ret.endsWith(";"))
+        }
+        while (ret.endsWith("\"") || ret.endsWith("'") || ret.endsWith(";")) {
             ret = ret.substring(0, ret.length() - 1);
+        }
         try {
             ret = URLDecoder.decode(ret, "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -551,7 +563,7 @@ public abstract class Plugin implements ActionListener {
     public abstract String getHost();
 
     public String getInitID() {
-        return this.initTime + "<ID";
+        return initTime + "<ID";
     }
 
     public Captcha getLastCaptcha() {
@@ -596,7 +608,7 @@ public abstract class Plugin implements ActionListener {
     public abstract String getLinkName();
 
     protected File getLocalCaptchaFile(Plugin plugin) {
-        return getLocalCaptchaFile(plugin, ".jpg");
+        return Plugin.getLocalCaptchaFile(plugin, ".jpg");
     }
 
     /**
@@ -623,16 +635,16 @@ public abstract class Plugin implements ActionListener {
      */
     public SubConfiguration getProperties() {
 
-        if (!JDUtilities.getResourceFile("config/" + this.getPluginName() + ".cfg").exists()) {
-            SubConfiguration cfg = JDUtilities.getSubConfig(this.getPluginName());
-            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName()) != null) {
-                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + this.getPluginName())).getProperties());
+        if (!JDUtilities.getResourceFile("config/" + getPluginName() + ".cfg").exists()) {
+            SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
+            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
+                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
                 cfg.save();
                 return cfg;
             }
-            return JDUtilities.getSubConfig(this.getPluginName());
+            return JDUtilities.getSubConfig(getPluginName());
         } else {
-            return JDUtilities.getSubConfig(this.getPluginName());
+            return JDUtilities.getSubConfig(getPluginName());
         }
 
     }
@@ -644,8 +656,10 @@ public abstract class Plugin implements ActionListener {
      * @return Statustext
      */
     public String getStatusText() {
-        if (this.statusText == null) this.statusText = "";
-        return this.statusText;
+        if (statusText == null) {
+            statusText = "";
+        }
+        return statusText;
     }
 
     /**
@@ -696,7 +710,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     public void setLastCaptcha(Captcha captcha) {
-        this.lastCaptcha = captcha;
+        lastCaptcha = captcha;
 
     }
 

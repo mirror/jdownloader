@@ -57,16 +57,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // public static final int STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
     // 24;
 
-
-
     public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
 
     /**
      * Statustext der von der GUI abgefragt werden kann
      */
     // private transient boolean aborted = false;
-//    private transient String statusText = "";
-
+    // private transient String statusText = "";
     private transient Boolean available = null;
 
     private int[] chunksProgress = null;
@@ -102,10 +99,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private String downloadPath = null;
 
-//    /**
-//     * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
-//     */
-//    private transient boolean inProgress = false;
+    // /**
+    // * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
+    // */
+    // private transient boolean inProgress = false;
 
     /**
      * serialVersionUID
@@ -129,22 +126,22 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private File latestCaptchaFile = null;
 
-//    /**
-//     * Status des DownloadLinks
-//     */
-//    private int status = LinkStatus.TODO;
+    // /**
+    // * Status des DownloadLinks
+    // */
+    // private int status = LinkStatus.TODO;
 
-//    /**
-//     * Timestamp bis zu dem die Wartezeit läuft
-//     */
-//    private transient long mustWaitTil = 0;
-//
-//    /**
-//     * Ursprüngliche Wartezeit
-//     */
-//    private transient long waittime = 0;
+    // /**
+    // * Timestamp bis zu dem die Wartezeit läuft
+    // */
+    // private transient long mustWaitTil = 0;
+    //
+    // /**
+    // * Ursprüngliche Wartezeit
+    // */
+    // private transient long waittime = 0;
 
-    private boolean limited = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
+    private boolean limited = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
 
     private LinkStatus linkStatus;
 
@@ -187,8 +184,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String staticFileName;
 
-   
-
     private transient String tempUrlDownload;
 
     /**
@@ -212,24 +207,27 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
-        this.setName(name);
+        setName(name);
         sourcePluginPasswords = new Vector<String>();
-  
+
         downloadMax = 0;
         this.host = host;
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter();
-        if (urlDownload != null)
+        if (urlDownload != null) {
             this.urlDownload = urlDownload.trim();
-        else
+        } else {
             this.urlDownload = null;
-        if (name == null && urlDownload != null) this.name = this.extractFileNameFromURL();
+        }
+        if (name == null && urlDownload != null) {
+            this.name = extractFileNameFromURL();
+        }
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
 
-        if (this.sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
-            this.sourcePluginPasswords.add(sourcePluginPassword);
+        if (sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
+            sourcePluginPasswords.add(sourcePluginPassword);
         }
 
         return this;
@@ -237,7 +235,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
-            this.addSourcePluginPassword(sourcePluginPasswords.get(i));
+            addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
 
     }
@@ -255,12 +253,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     //
     // }
     public void addSpeedValue(int speed) {
-        this.getSpeedMeter().addSpeedValue(speed);
+        getSpeedMeter().addSpeedValue(speed);
     }
 
     public int compareTo(DownloadLink o) {
 
-        return this.getDownloadURL().compareTo(o.getDownloadURL());
+        return getDownloadURL().compareTo(o.getDownloadURL());
         // return
         // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
@@ -273,8 +271,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Datename des Downloads.
      */
     public String extractFileNameFromURL() {
-        int index = Math.max(this.getDownloadURL().lastIndexOf("/"), this.getDownloadURL().lastIndexOf("\\"));
-        return this.getDownloadURL().substring(index + 1);
+        int index = Math.max(getDownloadURL().lastIndexOf("/"), getDownloadURL().lastIndexOf("\\"));
+        return getDownloadURL().substring(index + 1);
     }
 
     /**
@@ -312,24 +310,24 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return downloadInstance;
     }
 
-////    /**
-////     * Liefert den Status dieses Downloads zurück
-////     * 
-////     * @return Status des Downloads
-////     */
-//    public int getStatus() {
-//        return status;
-//    }
+    // // /**
+    // // * Liefert den Status dieses Downloads zurück
+    // // *
+    // // * @return Status des Downloads
+    // // */
+    // public int getStatus() {
+    // return status;
+    // }
 
-//    /**
-//     * Zeigt, ob dieser Download grad in Bearbeitung ist
-//     * 
-//     * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
-//     *         hinzugezählt
-//     */
-//    public boolean isPluginActive() {
-//        return inProgress;
-//    }
+    // /**
+    // * Zeigt, ob dieser Download grad in Bearbeitung ist
+    // *
+    // * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
+    // * hinzugezählt
+    // */
+    // public boolean isPluginActive() {
+    // return inProgress;
+    // }
 
     public SingleDownloadController getDownloadLinkController() {
         return downloadLinkController;
@@ -351,7 +349,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Downloadgeschwindigkeit in bytes/sekunde
      */
     public int getDownloadSpeed() {
-        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return -1;
+        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) { return -1; }
         return getSpeedMeter().getSpeed();
     }
 
@@ -363,7 +361,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getDownloadURL() {
 
         if (linkType == LINKTYPE_CONTAINER) {
-            if (this.tempUrlDownload != null) return this.tempUrlDownload;
+            if (tempUrlDownload != null) { return tempUrlDownload; }
             String ret;
             if (pluginForContainer != null) {
                 ret = pluginForContainer.extractDownloadURL(this);
@@ -378,37 +376,37 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
 
         }
-        return this.urlDownload;
+        return urlDownload;
     }
 
-//    /**
-//     * Kennzeichnet den Download als in Bearbeitung oder nicht Im gegensatz zu
-//     * link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in
-//     * bearbeitung ist. über getStatus kann nur abgerufen werden ob der download
-//     * gerade läuft
-//     * 
-//     * @param inProgress
-//     *            wahr, wenn die Datei als in Bearbeitung gekennzeichnet werden
-//     *            soll
-//     */
-//    public void setInProgress(boolean inProgress) {
-//        this.inProgress = inProgress;
-//    }
+    // /**
+    // * Kennzeichnet den Download als in Bearbeitung oder nicht Im gegensatz zu
+    // * link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in
+    // * bearbeitung ist. über getStatus kann nur abgerufen werden ob der download
+    // * gerade läuft
+    // *
+    // * @param inProgress
+    // * wahr, wenn die Datei als in Bearbeitung gekennzeichnet werden
+    // * soll
+    // */
+    // public void setInProgress(boolean inProgress) {
+    // this.inProgress = inProgress;
+    // }
 
-//    /**
-//     * Setzt den Status des Downloads
-//     * 
-//     * @param status
-//     *            Der neue Status des Downloads
-//     */
-//    public void setStatus(int status) {
-//        this.status = status;
-//        if (status != LinkStatus.DOWNLOAD_IN_PROGRESS) {
-//            speedMeter = null;
-//
-//        }
-//
-//    }
+    // /**
+    // * Setzt den Status des Downloads
+    // *
+    // * @param status
+    // * Der neue Status des Downloads
+    // */
+    // public void setStatus(int status) {
+    // this.status = status;
+    // if (status != LinkStatus.DOWNLOAD_IN_PROGRESS) {
+    // speedMeter = null;
+    //
+    // }
+    //
+    // }
 
     /**
      * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
@@ -475,7 +473,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return FilePackage
      */
     public FilePackage getFilePackage() {
-        if (filePackage == null) setFilePackage(JDUtilities.getController().getDefaultFilePackage());
+        if (filePackage == null) {
+            setFilePackage(JDUtilities.getController().getDefaultFilePackage());
+        }
         return filePackage;
     }
 
@@ -498,20 +498,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return latestCaptchaFile;
     }
 
-//    /**
-//     * Setzt den Statustext der in der GUI angezeigt werden kann
-//     * 
-//     * @param text
-//     */
-//    public void setStatusText(String text) {
-//
-//        statusText = text;
-//    }
-
- 
+    // /**
+    // * Setzt den Statustext der in der GUI angezeigt werden kann
+    // *
+    // * @param text
+    // */
+    // public void setStatusText(String text) {
+    //
+    // statusText = text;
+    // }
 
     public LinkStatus getLinkStatus() {
-       if(this.linkStatus==null)linkStatus= new LinkStatus(this);
+        if (linkStatus == null) {
+            linkStatus = new LinkStatus(this);
+        }
         return linkStatus;
     }
 
@@ -519,46 +519,46 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return linkType;
     }
 
-//    /**
-//     * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
-//     * 
-//     * @param l
-//     */
-//    public void setEndOfWaittime(long l) {
-//        this.mustWaitTil = l;
-//        waittime = l - System.currentTimeMillis();
-//        if (waittime <= 0) {
-//            ((PluginForHost) this.getPlugin()).resetPlugin();
-//        }
-//
-//    }
-//
-//    /**
-//     * Gibt die wartezeit des Downloads zurück
-//     * 
-//     * @return Totale Wartezeit
-//     */
-//    public int getWaitTime() {
-//        return (int) waittime;
-//    }
+    // /**
+    // * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
+    // *
+    // * @param l
+    // */
+    // public void setEndOfWaittime(long l) {
+    // this.mustWaitTil = l;
+    // waittime = l - System.currentTimeMillis();
+    // if (waittime <= 0) {
+    // ((PluginForHost) this.getPlugin()).resetPlugin();
+    // }
+    //
+    // }
+    //
+    // /**
+    // * Gibt die wartezeit des Downloads zurück
+    // *
+    // * @return Totale Wartezeit
+    // */
+    // public int getWaitTime() {
+    // return (int) waittime;
+    // }
 
-//    /**
-//     * Gibt die Verbleibende Wartezeit zurück
-//     * 
-//     * @return verbleibende wartezeit
-//     */
-//    public long getRemainingWaittime() {
-//        return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
-//    }
+    // /**
+    // * Gibt die Verbleibende Wartezeit zurück
+    // *
+    // * @return verbleibende wartezeit
+    // */
+    // public long getRemainingWaittime() {
+    // return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
+    // }
 
-//    /**
-//     * Gibt zurück ob dieser download gerade auf einen reconnect wartet
-//     * 
-//     * @return true/False
-//     */
-//    public boolean isWaitingForReconnect() {
-//        return getRemainingWaittime() > 0;
-//    }
+    // /**
+    // * Gibt zurück ob dieser download gerade auf einen reconnect wartet
+    // *
+    // * @return true/False
+    // */
+    // public boolean isWaitingForReconnect() {
+    // return getRemainingWaittime() > 0;
+    // }
 
     public int getMaximalspeed() {
         // return 5000000/40;
@@ -587,8 +587,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getName() {
 
-        if (this.getStaticFileName() == null) return name == null ? UNKNOWN_FILE_NAME : name;
-        return this.getStaticFileName();
+        if (getStaticFileName() == null) { return name == null ? UNKNOWN_FILE_NAME : name; }
+        return getStaticFileName();
 
     }
 
@@ -596,7 +596,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         // if(partID<0){
         // this.setName(this.extractFileNameFromURL());
         // }
-        return this.partID;
+        return partID;
 
     }
 
@@ -613,14 +613,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return pluginForContainer;
     }
 
- 
     public String getSourcePluginComment() {
         return sourcePluginComment;
     }
 
     public String getSourcePluginPassword() {
-        if (sourcePluginPasswords.size() == 0) return null;
-        if (sourcePluginPasswords.size() == 1) return sourcePluginPasswords.get(0);
+        if (sourcePluginPasswords.size() == 0) { return null; }
+        if (sourcePluginPasswords.size() == 1) { return sourcePluginPasswords.get(0); }
         String ret = "{";
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             if (sourcePluginPasswords.get(i).trim().length() > 0) {
@@ -664,7 +663,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true falls der download abgebrochen wurde
      */
     public boolean isAborted() {
-        if (this.getDownloadLinkController() == null) { return false;
+        if (getDownloadLinkController() == null) { return false;
 
         }
         return getDownloadLinkController().isAborted();
@@ -690,7 +689,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return true/false
      */
     public boolean isAvailable() {
-        if (this.available != null) { return available; }
+        if (available != null) { return available; }
         available = ((PluginForHost) getPlugin()).getFileInformation(this);
         return available;
     }
@@ -722,23 +721,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void reset() {
         if (getLinkStatus().isPluginActive()) {
-            this.setAborted(true);
+            setAborted(true);
             while (getLinkStatus().isPluginActive()) {
                 try {
                     Thread.sleep(200);
                 } catch (InterruptedException e) {
-                    
+
                     e.printStackTrace();
                 }
             }
         }
         downloadMax = 0;
-       
-        this.chunksProgress = null;
-        this.downloadLinkController = null;
+
+        chunksProgress = null;
+        downloadLinkController = null;
         downloadCurrent = 0;
-       
-        this.linkStatus= new LinkStatus(this);
+
+        linkStatus = new LinkStatus(this);
 
     }
 
@@ -752,9 +751,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             // logger.severe("cannot unabort a link. use reset()");
             return;
         }
-        if (this.getDownloadLinkController() == null) {
+        if (getDownloadLinkController() == null) {
             logger.severe("TRied to abort download even it has no downlaodController");
-            this.linkStatus.setInProgress(false);
+            linkStatus.setInProgress(false);
             return;
 
         }
@@ -773,7 +772,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param is
      */
     public void setChunksProgress(int[] is) {
-        this.chunksProgress = is;
+        chunksProgress = is;
 
     }
 
@@ -793,11 +792,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Anzahl der heruntergeladenen Bytes
      */
     public void setDownloadCurrent(long downloadedCurrent) {
-        this.downloadCurrent = downloadedCurrent;
+        downloadCurrent = downloadedCurrent;
     }
 
     public void setDownloadInstance(DownloadInterface downloadInterface) {
-        this.downloadInstance = downloadInterface;
+        downloadInstance = downloadInterface;
 
     }
 
@@ -836,12 +835,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setEnabled(boolean isEnabled) {
         if (!isEnabled) {
-            this.setAborted(true);
+            setAborted(true);
         } else {
-            this.setAborted(false);
+            setAborted(false);
         }
         if (isEnabled == true) {
-            this.setAborted(false);
+            setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
                 return;
@@ -862,17 +861,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setFilePackage(FilePackage filePackage) {
 
         if (filePackage == this.filePackage && filePackage != null) {
-            if (!filePackage.contains(this)) filePackage.add(this);
+            if (!filePackage.contains(this)) {
+                filePackage.add(this);
+            }
             return;
         }
-        if (this.filePackage != null) this.filePackage.remove(this);
+        if (this.filePackage != null) {
+            this.filePackage.remove(this);
+        }
         this.filePackage = filePackage;
         if (filePackage == null && this.filePackage != null) {
-            this.setDownloadPath(this.filePackage.getDownloadDirectory());
+            setDownloadPath(this.filePackage.getDownloadDirectory());
         } else {
-            this.setDownloadPath(null);
+            setDownloadPath(null);
         }
-        if (filePackage != null && !filePackage.contains(this)) filePackage.add(this);
+        if (filePackage != null && !filePackage.contains(this)) {
+            filePackage.add(this);
+        }
     }
 
     /**
@@ -881,7 +886,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param dest
      */
     public void setLatestCaptchaFile(File dest) {
-        this.latestCaptchaFile = dest;
+        latestCaptchaFile = dest;
 
     }
 
@@ -890,16 +895,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setLinkType(int linktypeContainer) {
-        if (linktypeContainer == linkType) return;
+        if (linktypeContainer == linkType) { return; }
         if (linkType == LINKTYPE_CONTAINER) {
             logger.severe("You are not allowd to Change the Linktype of " + this);
             return;
         }
-        if (linktypeContainer == LINKTYPE_CONTAINER && this.urlDownload != null) {
+        if (linktypeContainer == LINKTYPE_CONTAINER && urlDownload != null) {
             logger.severe("This link already has a value for urlDownload");
             urlDownload = null;
         }
-        this.linkType = linktypeContainer;
+        linkType = linktypeContainer;
 
     }
 
@@ -922,7 +927,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         maximalspeed = Math.max(20, maximalspeed);
         // logger.info(this+ " LINKSPEED: "+maximalspeed);
         int diff = this.maximalspeed - maximalspeed;
-        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed;
+        if (diff > 500 || diff < 500) {
+            this.maximalspeed = maximalspeed;
+        }
     }
 
     public void setMirror(boolean isMirror) {
@@ -952,7 +959,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword) {
-        this.sourcePluginPasswords = sourcePluginPassword;
+        sourcePluginPasswords = sourcePluginPassword;
         return this;
     }
 
@@ -971,12 +978,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         updatePartID();
     }
 
-
-
-
-
-
-
     /**
      * Setzt die URL, von der heruntergeladen werden soll
      * 
@@ -984,9 +985,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Die URL von der heruntergeladen werden soll
      */
     public void setUrlDownload(String urlDownload) {
-        if (urlDownload != null) urlDownload = urlDownload.trim();
-        if (this.linkType == LINKTYPE_CONTAINER) {
-            this.tempUrlDownload = urlDownload;
+        if (urlDownload != null) {
+            urlDownload = urlDownload.trim();
+        }
+        if (linkType == LINKTYPE_CONTAINER) {
+            tempUrlDownload = urlDownload;
             this.urlDownload = null;
             return;
         }
@@ -1006,21 +1009,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     @Override
     public String toString() {
-        return this.getName() + "-> " + this.getFileOutput() + "(" + this.getHost() + ")";
+        return getName() + "-> " + getFileOutput() + "(" + getHost() + ")";
     }
 
     private void updatePartID() {
-        String name = this.getName();
+        String name = getName();
         String ext;
         int index;
-        this.partID = -1;
+        partID = -1;
         while (name.length() > 0) {
             index = name.lastIndexOf(".");
-            if (index <= 0) index = name.length() - 1;
+            if (index <= 0) {
+                index = name.length() - 1;
+            }
             ext = name.substring(index + 1);
             name = name.substring(0, index);
             try {
-                this.partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+                partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
                 break;
             } catch (Exception e) {
             }

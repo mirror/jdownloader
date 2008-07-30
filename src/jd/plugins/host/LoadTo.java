@@ -40,7 +40,8 @@ public class LoadTo extends PluginForHost {
 
     private static final String DOWNLOAD_LINK = "<form action=\"°\" method=\"post\" name=\"";
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
 
     /*
      * Suchmasken (z.B. Fehler)
@@ -49,7 +50,8 @@ public class LoadTo extends PluginForHost {
 
     private static final String HOST = "load.to";
 
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     // www.load.to/?d=f8tM7YMcq5
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?load\\.to/\\?d\\=.{10}", Pattern.CASE_INSENSITIVE);
 
@@ -76,26 +78,22 @@ public class LoadTo extends PluginForHost {
      */
     // muss aufgrund eines Bugs in DistributeData true zurÃ¼ckgeben, auch wenn
     // die Zwischenablage nicht vom Plugin verarbeitet wird
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
-       
+
         return "http://www.load.to/terms.php";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -129,39 +127,30 @@ public class LoadTo extends PluginForHost {
         return false;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 3; // max 1. Download
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -196,17 +185,17 @@ public class LoadTo extends PluginForHost {
         downloadLink.setName(fileName);
         // downloadLink auslesen
 
-        this.downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+        downloadURL = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
         // case PluginStep.STEP_PENDING:
 
         // immer 5 Sekunden vor dem Download warten!
-        this.sleep(10, downloadLink);
+        sleep(10, downloadLink);
 
         // case PluginStep.STEP_WAIT_TIME:
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
-        urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
+        urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
         int length = urlConnection.getContentLength();
         if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
             logger.warning("Filesize Check fehler. Neustart");
@@ -224,17 +213,14 @@ public class LoadTo extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
-        this.downloadURL = "";
+        downloadURL = "";
         urlConnection = null;
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
 
     }
 

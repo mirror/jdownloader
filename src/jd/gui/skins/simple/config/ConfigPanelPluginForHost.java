@@ -130,7 +130,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             if ((Boolean) value) {
                 String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost());
 
-                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
+                    pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                }
             } else {
                 pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
             }
@@ -145,7 +147,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         public void actionPerformed(ActionEvent e) {
 
-            this.stop = true;
+            stop = true;
             table.tableChanged(new TableModelEvent(table.getModel()));
             // this.stopCellEditing();
 
@@ -165,9 +167,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-           
 
-            this.btn = (JLinkButton) value;
+            btn = (JLinkButton) value;
             btn.addActionListener(this);
             return (JLinkButton) value;
         }
@@ -217,12 +218,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JTable table;
 
-    
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
 
-        this.pluginsForHost = JDUtilities.getPluginsForHost();
+        pluginsForHost = JDUtilities.getPluginsForHost();
 
         initPanel();
 
@@ -239,20 +239,18 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    
     public void dragEnter(DropTargetDragEvent e) {
         int[] draggedRows = table.getSelectedRows();
-        this.draggedPlugin = pluginsForHost.get(draggedRows[0]);
+        draggedPlugin = pluginsForHost.get(draggedRows[0]);
 
     }
 
     public void dragExit(DropTargetEvent dte) {
-       
 
     }
 
     public void dragOver(DropTargetDragEvent e) {
-       
+
         int id = table.rowAtPoint(e.getLocation());
 
         // table.setSelectionModel(newModel)
@@ -279,9 +277,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dropActionChanged(DropTargetDragEvent dtde) {
-       
 
     }
+
     // private class CheckBoxRenderer implements TableCellRenderer {
     // public Component getTableCellRendererComponent(JTable table, Object
     // value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -322,8 +320,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private PluginForHost getSelectedPlugin() {
         int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return this.pluginsForHost.elementAt(index);
+        if (index < 0) { return null; }
+        return pluginsForHost.elementAt(index);
     }
 
     @Override
@@ -337,7 +335,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         new DropTarget(table, this);
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
-        this.setPreferredSize(new Dimension(650, 350));
+        setPreferredSize(new Dimension(650, 350));
         // table.getColumn(table.getColumnName(0)).setCellRenderer(new
         // MarkRenderer());
         // table.getColumn(table.getColumnName(1)).setCellRenderer(new
@@ -380,7 +378,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 break;
 
             }
-            //logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer
+            // logger.info(table.getColumn(table.getColumnName(4)).getCellRenderer
             // () + "");
         }
 
@@ -403,7 +401,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         JLabel disclaimerLabel = new JLabel("<html><body align=\"justify\" color=\"red\"><b>" + JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"));
         // JDUtilities.addToGridBag(panel, (new
         // JTextArea(JDLocale.L("gui.config.plugin.host.desc",
-        // "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"
+        // "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die
+        // Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB
+        // aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit
+        // diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins
+        // bestimmt die Prioritäten der automatischen
+        // Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!"
         // ))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
         // GridBagConstraints.REMAINDER, 1, 1, 0, insets,
         // GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -484,9 +487,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-        PluginForHost plugin = this.getSelectedPlugin();
+        PluginForHost plugin = getSelectedPlugin();
         // currentPlugin = plugin;
-        if (plugin == null) return;
+        if (plugin == null) { return; }
 
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
@@ -508,7 +511,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
             plg = pluginsForHost.elementAt(i);
             priority.add(plg.getHost());
-            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getProperties() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            }
 
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);

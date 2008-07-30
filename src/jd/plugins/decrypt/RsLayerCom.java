@@ -37,13 +37,13 @@ public class RsLayerCom extends PluginForDecrypt {
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/.+\\.html", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.3";
 
     public RsLayerCom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -53,7 +53,7 @@ public class RsLayerCom extends PluginForDecrypt {
                 String link = new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
                 link = JDUtilities.htmlDecode(link);
                 progress.setRange(1);
-                decryptedLinks.add(this.createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
             } else if (parameter.indexOf("/directory-") != -1) {
                 Form[] forms = Form.getForms(reqinfo);
@@ -62,7 +62,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     String captchaFileName = new Regex(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
                     if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://" + host + "/" + captchaFileName;
-                    File captchaFile = getLocalCaptchaFile(this, ".png");
+                    File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                     boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaUrl), reqinfo.getCookie(), null, true).getConnection());
                     if (!fileDownloaded) {
                         logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
@@ -87,11 +87,11 @@ public class RsLayerCom extends PluginForDecrypt {
                 String layerLinks[][] = new Regex(reqinfo.getHtmlCode(), linkPattern).getMatches();
                 progress.setRange(layerLinks.length);
 
-                for (int i = 0; i < layerLinks.length; i++) {
-                    String layerLink = "http://rs-layer.com/link-" + layerLinks[i][0] + ".html";
+                for (String[] element : layerLinks) {
+                    String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
                     RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
                     String link = new Regex(request2.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                    decryptedLinks.add(this.createDownloadlink(link));
+                    decryptedLinks.add(createDownloadlink(link));
                     progress.increase(1);
                 }
             }
@@ -103,42 +103,35 @@ public class RsLayerCom extends PluginForDecrypt {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
 }

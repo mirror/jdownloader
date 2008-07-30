@@ -28,11 +28,11 @@ public class TreeTablePaneUI extends BasicTableUI {
     class OpaqueRenderPane extends CellRendererPane {
 
         /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
+         * 
+         */
+        private static final long serialVersionUID = 1L;
 
-		@Override
+        @Override
         public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
             if (c instanceof JComponent) {
                 JComponent vComponent = (JComponent) c;
@@ -78,7 +78,6 @@ public class TreeTablePaneUI extends BasicTableUI {
 
         /* Ist für Nimbus LAF auskommentiert */
         // super.installDefaults();
-
         EVEN_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_a", "EDF3FE");
 
         ODD_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_b", "FFFFFF");
@@ -182,20 +181,20 @@ public class TreeTablePaneUI extends BasicTableUI {
                     g.setColor(Color.BLACK);
                     g.drawLine(x, y, w, y);
                 } else if (path != null && path.getLastPathComponent() instanceof DownloadLink) {
-                    dLink = ((DownloadLink) path.getLastPathComponent());
+                    dLink = (DownloadLink) path.getLastPathComponent();
 
                     if (!dLink.isEnabled()) {
-                        color = (COLOR_DISABLED);
+                        color = COLOR_DISABLED;
                     } else if (dLink.getLinkStatus().getRemainingWaittime() > 0) {
-                        color = (COLOR_WAIT);
+                        color = COLOR_WAIT;
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                        color = (COLOR_DONE);
+                        color = COLOR_DONE;
                     } else if (dLink.getLinkStatus().isFailed()) {
-                        color = (COLOR_ERROR);
+                        color = COLOR_ERROR;
                     }
 
                     else if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
-                        color = (COLOR_ERROR);
+                        color = COLOR_ERROR;
                     }
 
                 }
@@ -236,7 +235,7 @@ public class TreeTablePaneUI extends BasicTableUI {
         for (int i = 0; i < vModel.getColumnCount(); i++) {
             TableColumn vColumn = vModel.getColumn(i);
             x += vColumn.getWidth();
-            if ((x >= clip.x) && (x <= clip.x + clip.width)) {
+            if (x >= clip.x && x <= clip.x + clip.width) {
                 g.drawLine(x - 1, clip.y, x - 1, clip.y + clip.height);
             }
         }

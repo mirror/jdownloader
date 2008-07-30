@@ -42,29 +42,25 @@ public class JACTest {
         String hoster = "einzellinks.Serienjunkies.org";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
-        
-  
-//        jac.setShowDebugGui(true);
-//     LetterComperator.CREATEINTERSECTIONLETTER = true;
+
+        // jac.setShowDebugGui(true);
+        // LetterComperator.CREATEINTERSECTIONLETTER = true;
         //
-       //jac.exportDB();
+        // jac.exportDB();
         // UTILITIES.getLogger().info("has method:
         // "+JAntiCaptcha.hasMethod(methodsPath, hoster));
 
         //
 
-    // jac.importDB();
+        // jac.importDB();
 
-      
-
- 
-    jac.displayLibrary();
+        jac.displayLibrary();
 
         // jac.getJas().set("preScanFilter", 0);
         // jac.trainCaptcha(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
-        
+
         jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "22.07.2008_20.33.39.121_BQV_GOOD" + ".gif"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new

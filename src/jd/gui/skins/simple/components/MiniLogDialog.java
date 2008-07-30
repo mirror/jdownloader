@@ -24,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
@@ -47,7 +46,8 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     public static void main(String args[]) {
 
-        //MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message", Thread.currentThread(), true, true);
+        // MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message",
+        // Thread.currentThread(), true, true);
         // String tmp[] = new String[args.length - 1];
         // for(int i = 1; i < args.length; i++)
         // tmp[i - 1] = args[i];
@@ -63,40 +63,40 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     private JLabel lblMessage;
 
-    //private Thread thread;
+    // private Thread thread;
 
     private JProgressBar progress;
 
     private JScrollPane scrollPane;
 
-//    private static int REL = GridBagConstraints.RELATIVE;
+    // private static int REL = GridBagConstraints.RELATIVE;
 
-//    private static int REM = GridBagConstraints.REMAINDER;
+    // private static int REM = GridBagConstraints.REMAINDER;
 
     public MiniLogDialog(String message) {
         super();
-      
+
         setLayout(new GridBagLayout());
-        this.setVisible(true);
-        //this.thread = ob;
-        this.setTitle(message);
-        this.setAlwaysOnTop(true);
+        setVisible(true);
+        // this.thread = ob;
+        setTitle(message);
+        setAlwaysOnTop(true);
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         lblMessage = new JLabel(message);
         htmlArea = new JTextArea();
-     scrollPane = new JScrollPane(htmlArea);
+        scrollPane = new JScrollPane(htmlArea);
         htmlArea.setEditable(false);
         htmlArea.setLineWrap(false);
-        //htmlArea.setContentType("text/html");
+        // htmlArea.setContentType("text/html");
         htmlArea.setText("");
-       // htmlArea.requestFocusInWindow();
+        // htmlArea.requestFocusInWindow();
 
-this.setPreferredSize(new Dimension(400,300));
+        setPreferredSize(new Dimension(400, 300));
         progress = new JProgressBar();
 
-        //this.setAlwaysOnTop(true);
-        this.setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
+        // this.setAlwaysOnTop(true);
+        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
         btnOK.addActionListener(this);
         btnNOTOK.addActionListener(this);
         getRootPane().setDefaultButton(btnOK);
@@ -106,7 +106,8 @@ this.setPreferredSize(new Dimension(400,300));
         JDUtilities.addToGridBag(this, scrollPane, 0, 2, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
 
         JDUtilities.addToGridBag(this, btnOK, 3, 3, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-       // if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, 3, 3, 1, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, 3, 3, 1, 1, ok ?
+        // 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         try {
             SimpleGUI.restoreWindow(null, null, this);
         } catch (Exception e) {
@@ -128,7 +129,6 @@ this.setPreferredSize(new Dimension(400,300));
         }
     }
 
-  
     public JButton getBtnNOTOK() {
         return btnNOTOK;
     }
@@ -162,7 +162,7 @@ this.setPreferredSize(new Dimension(400,300));
     }
 
     public String getText() {
-        return this.htmlArea.getText();
+        return htmlArea.getText();
     }
 
     public int getValue() {
@@ -175,14 +175,12 @@ this.setPreferredSize(new Dimension(400,300));
     }
 
     public void setMessage(String txt) {
-        this.lblMessage.setText(txt);
+        lblMessage.setText(txt);
     }
 
     public void setMinimum(int value) {
         progress.setMinimum(value);
     }
-
- 
 
     public void setString(String txt) {
 
@@ -194,10 +192,8 @@ this.setPreferredSize(new Dimension(400,300));
         progress.setStringPainted(v);
     }
 
- 
-
     public void setText(String text) {
-        this.htmlArea.setText(text);
+        htmlArea.setText(text);
     }
 
     public void setValue(int value) {

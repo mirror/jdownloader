@@ -63,18 +63,17 @@ public class ConfigPanelDownload extends ConfigPanel {
 
     public void initPanel() {
         setupContainer();
-        this.setLayout(new GridBagLayout());
+        setLayout(new GridBagLayout());
 
-        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Download"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(container, "Download"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
     }
 
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
 
     }
 
-    
     public void save() {
         logger.info("save");
         cep.save();
@@ -82,9 +81,8 @@ public class ConfigPanelDownload extends ConfigPanel {
         config.save();
     }
 
-    
     public void setupContainer() {
-        this.container = new ConfigContainer(this);
+        container = new ConfigContainer(this);
         config = JDUtilities.getSubConfig("DOWNLOAD");
         ConfigContainer network = new ConfigContainer(this, JDLocale.L("gui.config.download.network.tab", "Internet & Netzwerkverbindung"));
         ConfigContainer download = new ConfigContainer(this, JDLocale.L("gui.config.download.download.tab", "Downloadsteuerung"));

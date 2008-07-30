@@ -27,60 +27,52 @@ import jd.plugins.PluginForDecrypt;
 public class AdrefIn extends PluginForDecrypt {
     final static String host = "adref.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?adref\\.in/\\?.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "2.0.0.0";
 
     public AdrefIn() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = parameter.replaceFirst("http://[\\w\\.]*?adref\\.in/\\?", "");        
-        if (!parameter.matches("^http://")) parameter = "http://" + parameter;
-        decryptedLinks.add(this.createDownloadlink(parameter));
+        parameter = parameter.replaceFirst("http://[\\w\\.]*?adref\\.in/\\?", "");
+        if (!parameter.matches("^http://")) {
+            parameter = "http://" + parameter;
+        }
+        decryptedLinks.add(createDownloadlink(parameter));
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

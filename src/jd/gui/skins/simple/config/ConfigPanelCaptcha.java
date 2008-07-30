@@ -123,7 +123,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         super(uiinterface);
         this.configuration = configuration;
         methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
-        //logger.info(methods.length + "");
+        // logger.info(methods.length + "");
 
         initPanel();
 
@@ -132,7 +132,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
     }
 
     @SuppressWarnings("unchecked")
-	public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         logger.info(e.getActionCommand());
         if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))) {
             JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
@@ -160,48 +160,43 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"))) {
             CESClient ces = new CESClient();
             ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-           String nick=JOptionPane.showInputDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askUser","Wer soll die Nachricht erhalten?"));
-           String message=TextAreaDialog.showDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), "");
-            
-           
-           
-           if(nick==null || message==null ||nick.trim().length()==0 ||message.trim().length()==0 ||!ces.sendMessage(nick, message)){
-               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.error","Fehler! Nachricht nicht verschickt."));
-           }else{
-               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success","Nachricht an %s verschickt"),nick));
-           }
+            String nick = JOptionPane.showInputDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askUser", "Wer soll die Nachricht erhalten?"));
+            String message = TextAreaDialog.showDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage", "Nachricht eingeben"), JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage", "Nachricht eingeben"), "");
+
+            if (nick == null || message == null || nick.trim().length() == 0 || message.trim().length() == 0 || !ces.sendMessage(nick, message)) {
+                JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.error", "Fehler! Nachricht nicht verschickt."));
+            } else {
+                JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success", "Nachricht an %s verschickt"), nick));
+            }
         } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"))) {
 
-               
-            
-            
             try {
                 save();
                 JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
             } catch (MalformedURLException e1) {
-                
+
                 e1.printStackTrace();
             }
-        }else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {
-            Object oldMessages =  JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
+        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {
+            Object oldMessages = JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
             HashMap<Integer, ArrayList<String>> savedMessages = null;
             if (oldMessages != null) {
                 savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
-            }else{
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages","C.E.S. Keine Nachrichten für dich!"));  
-            return;
+            } else {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages", "C.E.S. Keine Nachrichten für dich!"));
+                return;
             }
-            String html="<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
-           
+            String html = "<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
+
             ArrayList<String> message;
-            int i=0;
-            for(Iterator<Entry<Integer, ArrayList<String>>> it = savedMessages.entrySet().iterator();it.hasNext();){
+            int i = 0;
+            for (Iterator<Entry<Integer, ArrayList<String>>> it = savedMessages.entrySet().iterator(); it.hasNext();) {
                 Entry<Integer, ArrayList<String>> next = it.next();
-                message=next.getValue();
-                html+="<br"+String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle","<div><p>%s Nachricht von %s<hr>%s</p></div>"),JDUtilities.htmlDecode(message.get(0)),JDUtilities.htmlDecode(message.get(1)),JDUtilities.htmlDecode(message.get(2)));
-            i++;
+                message = next.getValue();
+                html += "<br" + String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle", "<div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)), JDUtilities.htmlDecode(message.get(1)), JDUtilities.htmlDecode(message.get(2)));
+                i++;
             }
-            String title= String.format(JDLocale.L("captcha.ces.message.titleoverview","C.E.S. %s Nachrichten"),i+"");
+            String title = String.format(JDLocale.L("captcha.ces.message.titleoverview", "C.E.S. %s Nachrichten"), i + "");
             JDUtilities.getGUI().showHTMLDialog(title, html);
         } else {
             JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-s" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
@@ -217,9 +212,9 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     public void initPanel() {
         setupContainer();
-        this.setLayout(new GridBagLayout());
+        setLayout(new GridBagLayout());
 
-        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Captcha"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(container, "Captcha"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
         table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
@@ -227,7 +222,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         table.setModel(internalTableModel);
         table.setEditingRow(0);
         table.addMouseListener(this);
-        this.setPreferredSize(new Dimension(700, 350));
+        setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -258,18 +253,17 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     }
 
-    
     /**
      * Lädt alle Informationen
      */
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
     }
 
     /*
      * private int getSelectedIndex() { return table.getSelectedRow(); }
      */
-    
+
     public void mouseClicked(MouseEvent e) {
 
         configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
@@ -282,22 +276,18 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
      */
 
     public void mouseEntered(MouseEvent e) {
-       
 
     }
 
     public void mouseExited(MouseEvent e) {
-       
 
     }
 
     public void mousePressed(MouseEvent e) {
-       
 
     }
 
     public void mouseReleased(MouseEvent e) {
-       
 
     }
 
@@ -314,12 +304,12 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         // plg.getProperties());
         // }
         cep.save();
-        this.saveConfigEntries();
+        saveConfigEntries();
 
     }
 
     public void setupContainer() {
-        this.container = new ConfigContainer(this);
+        container = new ConfigContainer(this);
 
         ConfigContainer jac = new ConfigContainer(this, JDLocale.L("gui.config.captcha.JAC.tab", "jAntiCaptcha"));
         ConfigContainer ces = new ConfigContainer(this, JDLocale.L("gui.config.captcha.CES.tab", "Captcha Exchange Service"));
@@ -352,10 +342,10 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         jac.addEntry(ce);
 
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten")));
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"));
         jac.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_show", "Testbild auswerten")));
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_show", "Testbild auswerten"));
         jac.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         // CES
@@ -382,27 +372,25 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), CESClient.DO_WARNING, JDLocale.L("gui.config.captcha.useCESPenaltyWarning", "Durch frühzeitige Rückfrage Punktstrafen vermeiden"));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
- 
+
         ce.setDefaultValue(true);
         ces.addEntry(ce);
-        
-        
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren")));
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"));
         ces.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken")));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen")));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        
-        ce = (new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden")));
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"));
         ces.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"));
+        ces.addEntry(ce);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"));
+        ces.addEntry(ce);
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
 
     }
 

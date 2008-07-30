@@ -37,8 +37,10 @@ import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {
 
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.5";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.5";
+    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
     // static private final Pattern GETID =
     // Pattern.compile("http://[\\w\\.]*?filer.net/file([\\d]+)/.*?",
@@ -64,12 +66,6 @@ public class Filer extends PluginForHost {
     // static private final String WRONG_CAPTCHACODE = "<img
     // src=\"/captcha.png\"";
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
-    static private final String PLUGIN_NAME = HOST;
-
-    // private String cookie;
-    // private String dlink = null;
-    // private String url;
-    // private int waitTime = 500;
 
     public Filer() {
         super();
@@ -78,13 +74,11 @@ public class Filer extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
@@ -96,12 +90,14 @@ public class Filer extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         int tries = 0;
         while (tries < maxCaptchaTries) {
-            File captchaFile = getLocalCaptchaFile(this, ".png");
+            File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
             JDUtilities.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
             code = Plugin.getCaptchaCode(captchaFile, this);
             page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
             tries++;
-            if (!page.contains("captcha.png")) break;
+            if (!page.contains("captcha.png")) {
+                break;
+            }
         }
         if (page.contains("captcha.png")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -186,12 +182,11 @@ public class Filer extends PluginForHost {
 
     }
 
-    
     public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         String page = null;
         Browser br = new Browser();
@@ -221,23 +216,16 @@ public class Filer extends PluginForHost {
 
     }
 
-    
     @Override
     public String getAGBLink() {
-       
+
         return "http://www.filer.net/faq";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
-
-    
-    
-        
-    
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
@@ -253,16 +241,16 @@ public class Filer extends PluginForHost {
 
                 Browser br = new Browser();
                 br.getPage(downloadLink.getDownloadURL());
-                captchaFile = getLocalCaptchaFile(this, ".png");
+                captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 JDUtilities.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
                 code = Plugin.getCaptchaCode(captchaFile, this);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
-                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) return false;
+                if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
                 downloadLink.setDownloadMax(bytes);
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
-                if (forms.length < 2) return true;
+                if (forms.length < 2) { return true; }
                 br.submitForm(forms[1]);
                 downloadLink.setName(getFileNameFormURL(new URL(br.getRedirectLocation())));
                 return true;
@@ -285,17 +273,15 @@ public class Filer extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
         }
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
@@ -306,30 +292,29 @@ public class Filer extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             try {
-                this.doPremium(downloadLink);
+                doPremium(downloadLink);
             } catch (Exception e) {
 
                 e.printStackTrace();
             }
         } else {
             try {
-                this.doFree(downloadLink);
+                doFree(downloadLink);
             } catch (Exception e) {
 
                 e.printStackTrace();
@@ -343,14 +328,11 @@ public class Filer extends PluginForHost {
 
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
 
     }
 
-    
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));

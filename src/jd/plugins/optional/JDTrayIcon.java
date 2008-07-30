@@ -67,7 +67,9 @@ public class JDTrayIcon extends PluginOptional {
                 interrupt();
             }
 
-            if (popupMenu.isVisible()) return;
+            if (popupMenu.isVisible()) {
+                return;
+            }
 
             String displaytext = "";
             int speed = 0;
@@ -79,10 +81,11 @@ public class JDTrayIcon extends PluginOptional {
                 displaytext = "<html><center><b>jDownloader</b></center><br><br>";
                 downloads = JDUtilities.getController().getRunningDownloadNum();
 
-                if (downloads == 0)
+                if (downloads == 0) {
                     displaytext += JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>";
-                else
+                } else {
                     displaytext += "<i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i> " + downloads + "<br>";
+                }
 
                 speed = JDUtilities.getController().getSpeedMeter() / 1000;
 
@@ -102,9 +105,11 @@ public class JDTrayIcon extends PluginOptional {
             hideTooltip();
         }
     }
-    public static int getAddonInterfaceVersion(){
+
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
+
     private JCheckBoxMenuItem clipboard;
     private JMenuItem configuration;
     private int counter = 0;
@@ -127,14 +132,8 @@ public class JDTrayIcon extends PluginOptional {
     private TrayIcon trayIcon;
     private JWindow trayParent;
 
-    
     private JMenuItem update;
 
-    
-    
-     
-
-    
     public void actionPerformed(ActionEvent e) {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
         if (e.getSource() == showhide) {
@@ -157,48 +156,50 @@ public class JDTrayIcon extends PluginOptional {
         } else if (e.getSource() == configuration) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
         } else if (e.getSource() == reconnect) {
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,  JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
 
             JDUtilities.saveConfig();
         } else if (e.getSource() == speed1) {
-            int speed = this.getProperties().getIntegerProperty("SPEED1", 100);
+            int speed = getProperties().getIntegerProperty("SPEED1", 100);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed2) {
-            int speed = this.getProperties().getIntegerProperty("SPEED2", 200);
+            int speed = getProperties().getIntegerProperty("SPEED2", 200);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed3) {
-            int speed = this.getProperties().getIntegerProperty("SPEED3", 300);
+            int speed = getProperties().getIntegerProperty("SPEED3", 300);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed4) {
-            int speed = this.getProperties().getIntegerProperty("SPEED4", 400);
+            int speed = getProperties().getIntegerProperty("SPEED4", 400);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed5) {
-            int speed = this.getProperties().getIntegerProperty("SPEED5", 500);
+            int speed = getProperties().getIntegerProperty("SPEED5", 500);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         }
     }
 
-    
     /**
      * Compute the proper position for a popup
      */
     private Point computeDisplayPoint(int x, int y, Dimension dim) {
-        if (x - dim.width > 0) x -= dim.width;
-        if (y - dim.height > 0) y -= dim.height;
+        if (x - dim.width > 0) {
+            x -= dim.width;
+        }
+        if (y - dim.height > 0) {
+            y -= dim.height;
+        }
         return new Point(x, y);
     }
 
-    
     private JMenuItem createMenuItem(String name) {
         JMenuItem menuItem = new JMenuItem(name);
         menuItem.setIcon(null);
@@ -224,7 +225,8 @@ public class JDTrayIcon extends PluginOptional {
     }
 
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     private void hideTooltip() {
@@ -274,27 +276,27 @@ public class JDTrayIcon extends PluginOptional {
         speeds = new JMenu(JDLocale.L("plugins.optional.trayIcon.setspeeds", "Speeds"));
         popupMenu.add(speeds);
 
-        speed1 = new JMenuItem(this.getProperties().getStringProperty("SPEED1", "100") + " kb/s");
+        speed1 = new JMenuItem(getProperties().getStringProperty("SPEED1", "100") + " kb/s");
         speed1.addActionListener(this);
         speed1.setIcon(null);
         speeds.add(speed1);
 
-        speed2 = new JMenuItem(this.getProperties().getStringProperty("SPEED2", "200") + " kb/s");
+        speed2 = new JMenuItem(getProperties().getStringProperty("SPEED2", "200") + " kb/s");
         speed2.addActionListener(this);
         speed2.setIcon(null);
         speeds.add(speed2);
 
-        speed3 = new JMenuItem(this.getProperties().getStringProperty("SPEED3", "300") + " kb/s");
+        speed3 = new JMenuItem(getProperties().getStringProperty("SPEED3", "300") + " kb/s");
         speed3.addActionListener(this);
         speed3.setIcon(null);
         speeds.add(speed3);
 
-        speed4 = new JMenuItem(this.getProperties().getStringProperty("SPEED4", "400") + " kb/s");
+        speed4 = new JMenuItem(getProperties().getStringProperty("SPEED4", "400") + " kb/s");
         speed4.addActionListener(this);
         speed4.setIcon(null);
         speeds.add(speed4);
 
-        speed5 = new JMenuItem(this.getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+        speed5 = new JMenuItem(getProperties().getStringProperty("SPEED5", "500") + " kb/s");
         speed5.addActionListener(this);
         speed5.setIcon(null);
         speeds.add(speed5);
@@ -348,11 +350,12 @@ public class JDTrayIcon extends PluginOptional {
     }
 
     public void onExit() {
-        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+        if (trayIcon != null) {
+            SystemTray.getSystemTray().remove(trayIcon);
+        }
 
     }
 
-    
     private void setTrayPopUp(JPopupMenu trayMenu) {
         popupMenu = trayMenu;
 
@@ -371,7 +374,7 @@ public class JDTrayIcon extends PluginOptional {
         popupMenu.setVisible(false);
 
         trayIcon.addMouseListener(new MouseAdapter() {
-            
+
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
 
@@ -418,11 +421,11 @@ public class JDTrayIcon extends PluginOptional {
         clipboard.setSelected(ClipboardHandler.getClipboard().isEnabled());
         reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
 
-        speed1.setText(this.getProperties().getStringProperty("SPEED1", "100") + " kb/s");
-        speed2.setText(this.getProperties().getStringProperty("SPEED2", "200") + " kb/s");
-        speed3.setText(this.getProperties().getStringProperty("SPEED3", "300") + " kb/s");
-        speed4.setText(this.getProperties().getStringProperty("SPEED4", "400") + " kb/s");
-        speed5.setText(this.getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+        speed1.setText(getProperties().getStringProperty("SPEED1", "100") + " kb/s");
+        speed2.setText(getProperties().getStringProperty("SPEED2", "200") + " kb/s");
+        speed3.setText(getProperties().getStringProperty("SPEED3", "300") + " kb/s");
+        speed4.setText(getProperties().getStringProperty("SPEED4", "400") + " kb/s");
+        speed5.setText(getProperties().getStringProperty("SPEED5", "500") + " kb/s");
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -432,7 +435,6 @@ public class JDTrayIcon extends PluginOptional {
         });
     }
 
-    
     private void showTooltip(final Point p) {
         toolparent.setVisible(true);
         toolparent.toFront();
@@ -462,7 +464,6 @@ public class JDTrayIcon extends PluginOptional {
         });
     }
 
-    
     private void toggleshowhide() {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
         if (showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"))) {

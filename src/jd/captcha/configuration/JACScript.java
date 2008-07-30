@@ -108,9 +108,9 @@ public class JACScript {
             init();
             this.owner = owner;
             this.method = method;
-            this.scriptFile = "script.jas";
-            this.parseScriptFile();
-            this.executeParameterCommands();
+            scriptFile = "script.jas";
+            parseScriptFile();
+            executeParameterCommands();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -121,19 +121,25 @@ public class JACScript {
      * @param letter
      */
     @SuppressWarnings("unchecked")
-	public void executeLetterPrepareCommands(Letter letter) {
+    public void executeLetterPrepareCommands(Letter letter) {
 
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Letter Prepare scripts");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.fine("Execute Script.jas Letter Prepare scripts");
+        }
 
         String[] params;
         try {
-            for (int i = 0; i < this.letterCommands.size(); i++) {
+            for (int i = 0; i < letterCommands.size(); i++) {
                 String[] cmd = letterCommands.elementAt(i);
-                if (JAntiCaptcha.isLoggerActive()) logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+                }
 
                 if (cmd[0].equals("parameter")) {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas(letter)");
-                    // captchaPrepareCommands
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.severe("Syntax Error in " + method + "/+script.jas(letter)");
+                        // captchaPrepareCommands
+                    }
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {
                     if (cmd[1].equalsIgnoreCase("normalize")) {
@@ -145,10 +151,11 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
                         letter.toBlackAndWhite();
                         continue;
-                    
-                        
+
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
@@ -185,7 +192,9 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
                         String[] ref = params[0].trim().split("\\.");
                         if (ref.length != 2) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            if (JAntiCaptcha.isLoggerActive()) {
+                                logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            }
                             continue;
                         }
                         String cl = ref[0];
@@ -201,18 +210,20 @@ public class JACScript {
                             method.invoke(instance, arguments);
 
                         } catch (Exception e) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            if (JAntiCaptcha.isLoggerActive()) {
+                                logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            }
                             e.printStackTrace();
                         }
 
-                     
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
                     } else {
-                        
-                        
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
                     if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
@@ -235,11 +246,15 @@ public class JACScript {
 
                     } else if (cmd[1].equalsIgnoreCase("betterAlign")) {
                         Letter tmp = letter.betterAlign(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));
-                        if (tmp != null && tmp.grid != null) letter.grid = tmp.grid;
+                        if (tmp != null && tmp.grid != null) {
+                            letter.grid = tmp.grid;
+                        }
                         continue;
 
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
                     if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
@@ -261,7 +276,9 @@ public class JACScript {
                         continue;
 
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
@@ -274,7 +291,9 @@ public class JACScript {
 
             }
         } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Syntax Error in " + method + "/script.jas");
+            }
             e.printStackTrace();
 
         }
@@ -286,10 +305,14 @@ public class JACScript {
      */
     private void executeParameterCommands() {
         if (jacCommands == null || jacCommands.size() == 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.warning("KEINE JAC COMMANDS");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.warning("KEINE JAC COMMANDS");
+            }
             return;
         }
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Parameter scripts");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.fine("Execute Script.jas Parameter scripts");
+        }
         try {
             for (int i = 0; i < jacCommands.size(); i++) {
                 String[] cmd = jacCommands.elementAt(i);
@@ -304,21 +327,27 @@ public class JACScript {
                         for (int ii = 0; ii < gaps.length; ii++) {
                             newGaps[ii] = Integer.parseInt(gaps[ii]);
                         }
-                        this.setGaps(newGaps);
+                        setGaps(newGaps);
                     } else if (cmd[1].equalsIgnoreCase("colortype")) {
-                        this.setColorType(cmd[2]);
+                        setColorType(cmd[2]);
 
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.info(cmd[1] + " - " + cmd[2]);
-                        this.set(cmd[1].toLowerCase(), this.toType(cmd[2], cmd[1]));
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.info(cmd[1] + " - " + cmd[2]);
+                        }
+                        set(cmd[1].toLowerCase(), toType(cmd[2], cmd[1]));
                     }
 
                 } else {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas (" + cmd[0] + ")");
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.severe("Syntax Error in " + method + "/+script.jas (" + cmd[0] + ")");
+                    }
                 }
             }
         } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Syntax Error in " + method + "/+script.jas");
+            }
             e.printStackTrace();
         }
 
@@ -336,17 +365,23 @@ public class JACScript {
             return;
         }
 
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Prepare scripts");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.fine("Execute Script.jas Prepare scripts");
+        }
         captcha.setPrepared(true);
         String[] params;
         try {
-            for (int i = 0; i < this.captchaPrepareCommands.size(); i++) {
+            for (int i = 0; i < captchaPrepareCommands.size(); i++) {
                 String[] cmd = captchaPrepareCommands.elementAt(i);
-                if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+                }
 
                 if (cmd[0].equals("parameter")) {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
-                    // captchaPrepareCommands
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.severe("Syntax Error in " + method + "/+script.jas");
+                        // captchaPrepareCommands
+                    }
 
                 } else if (cmd[0].equals("function") && cmd[2] == null) {
 
@@ -364,7 +399,9 @@ public class JACScript {
                         captcha.clean();
                         continue;
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
 
@@ -395,7 +432,9 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
                         String[] ref = params[0].trim().split("\\.");
                         if (ref.length != 2) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            if (JAntiCaptcha.isLoggerActive()) {
+                                logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            }
                             continue;
                         }
                         String cl = ref[0];
@@ -411,7 +450,9 @@ public class JACScript {
                             method.invoke(instance, arguments);
 
                         } catch (Exception e) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            if (JAntiCaptcha.isLoggerActive()) {
+                                logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            }
                             e.printStackTrace();
                         }
 
@@ -420,7 +461,9 @@ public class JACScript {
                         captcha.saveImageasJpg(new File(params[0].trim()));
                         continue;
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
@@ -438,7 +481,9 @@ public class JACScript {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
                         continue;
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
@@ -460,7 +505,9 @@ public class JACScript {
                         continue;
 
                     } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                        }
                     }
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
@@ -480,11 +527,13 @@ public class JACScript {
 
                 } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
 
-                } 
+                }
 
             }
         } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
+            }
             e.printStackTrace();
 
         }
@@ -509,7 +558,9 @@ public class JACScript {
 
         Object ret = get(key);
         if (!(ret instanceof Boolean)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein boolean Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein boolean Parameter für " + key);
+            }
             return false;
         }
         return (Boolean) ret;
@@ -554,7 +605,9 @@ public class JACScript {
     public double getDouble(String key) {
         Object ret = get(key);
         if (!(ret instanceof Double)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein double Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein double Parameter für " + key);
+            }
             return 0;
         }
         return (Double) ret;
@@ -567,7 +620,9 @@ public class JACScript {
     public float getFloat(String key) {
         Object ret = get(key);
         if (!(ret instanceof Float)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein float Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein float Parameter für " + key);
+            }
             return 0;
         }
         return (Float) ret;
@@ -588,7 +643,9 @@ public class JACScript {
 
         Object ret = get(key);
         if (!(ret instanceof Integer)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Integer Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein Integer Parameter für " + key);
+            }
             return 0;
         }
         return (Integer) ret;
@@ -608,7 +665,9 @@ public class JACScript {
     public long getLong(String key) {
         Object ret = get(key);
         if (!(ret instanceof Integer)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Long Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein Long Parameter für " + key);
+            }
             return 0;
         }
         return (Long) ret;
@@ -622,7 +681,9 @@ public class JACScript {
 
         Object ret = get(key);
         if (!(ret instanceof String)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein String Parameter für " + key);
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Kein String Parameter für " + key);
+            }
             return null;
         }
         return (String) ret;
@@ -698,9 +759,9 @@ public class JACScript {
         set("useSpecialGetLetters", "");
         set("useLetterFilter", "");
         set("useLettercomparatorFilter", "");
-        set("preValueFilter","");
-        set("postValueFilter","");
-        set("comparatorExtension","");
+        set("preValueFilter", "");
+        set("postValueFilter", "");
+        set("comparatorExtension", "");
 
         set("LetterSearchLimitFalsePercent", 100);
         /**
@@ -837,12 +898,13 @@ public class JACScript {
          * werden (true) oder alle (False)
          */
         set("trainOnlyUnknown", true);
-        
+
         /**
-         * Gibt an ob bei der objekterenntung pixeln gefolg twerden die quer liegen.
+         * Gibt an ob bei der objekterenntung pixeln gefolg twerden die quer
+         * liegen.
          */
-        set("followXLines",true);
-        set("turnDB",false);
+        set("followXLines", true);
+        set("turnDB", false);
 
         /**
          * Parameter: Scan-Parameter. Gibt an um wieviele Pixel sich Letter und
@@ -864,9 +926,9 @@ public class JACScript {
          * erkennung so können zusammenhängende Buchstaben miterkannt werden
          */
         set("directLetterDetection", false);
-        
-        set("prescandivider",4.0);
-        set("divider",6.0);
+
+        set("prescandivider", 4.0);
+        set("divider", 6.0);
         /**
          * Parameter: Scan-Parameter. Gibt an um wieviele Pixel Letter und
          * Vergleichsletter gegeneinander verschoben werden um die beste
@@ -926,7 +988,9 @@ public class JACScript {
             ret[0] = "function";
             ret[1] = matches[0].trim();
             ret[2] = matches[1].replaceAll("\\\"", "").trim();
-            if (ret[2].length() == 0) ret[2] = null;
+            if (ret[2].length() == 0) {
+                ret[2] = null;
+            }
         } else if ((matches = UTILITIES.getMatches(cmd, "#°()#")) != null) {
             ret[0] = "function";
             ret[1] = matches[0].trim();
@@ -939,21 +1003,31 @@ public class JACScript {
      * Diese Methode liest das script.jas ein. und parsed es
      */
     private void parseScriptFile() throws IOException {
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("parsing Script.jas");
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.fine("parsing Script.jas");
+        }
 
         File f;
-        String script = JDUtilities.getLocalFile(f = JDUtilities.getResourceFile("jd/captcha/methods/" + this.method + "/" + this.scriptFile));
+        String script = JDUtilities.getLocalFile(f = JDUtilities.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
 
         logger.info("JAC GET: " + f);
         if (script == null || script.length() == 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Keine Script.jas vorhanden  ");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Keine Script.jas vorhanden  ");
+            }
             return;
 
         }
         String[] lines = script.split("\r\n");
-        if (lines.length == 1) lines = script.split("\n\r");
-        if (lines.length == 1) lines = script.split("\n");
-        if (lines.length == 1) lines = script.split("\r");
+        if (lines.length == 1) {
+            lines = script.split("\n\r");
+        }
+        if (lines.length == 1) {
+            lines = script.split("\n");
+        }
+        if (lines.length == 1) {
+            lines = script.split("\r");
+        }
         Vector<String[]> localCaptchaPrepareCommands = new Vector<String[]>();
         Vector<String[]> localJacCommands = new Vector<String[]>();
         Vector<String[]> localLetterCommands = new Vector<String[]>();
@@ -968,7 +1042,9 @@ public class JACScript {
                 continue;
             }
             if (!lines[i].substring(lines[i].length() - 1).equals(";")) {
-                if (JAntiCaptcha.isLoggerActive()) logger.severe(method + "/script.jas: Syntax error (; missing?) near line " + i + ": " + lines[i]);
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.severe(method + "/script.jas: Syntax error (; missing?) near line " + i + ": " + lines[i]);
+                }
                 return;
             }
             lines[i] = lines[i].substring(0, lines[i].length() - 1);
@@ -979,7 +1055,9 @@ public class JACScript {
             } else if ((startAt = lines[i].indexOf("param.")) == 0) {
                 pcmd = parseCommand(lines[i].substring(startAt + 6));
                 if (!pcmd[0].equals("parameter")) {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe(method + "/script.jas: Syntax (parameter1)  error near line " + i + ": " + lines[i]);
+                    if (JAntiCaptcha.isLoggerActive()) {
+                        logger.severe(method + "/script.jas: Syntax (parameter1)  error near line " + i + ": " + lines[i]);
+                    }
                 }
 
                 localJacCommands.add(pcmd);
@@ -989,12 +1067,14 @@ public class JACScript {
                 localLetterCommands.add(pcmd);
 
             } else {
-                if (JAntiCaptcha.isLoggerActive()) logger.severe(method + "/script.jas: Syntax error near line " + i + ": " + lines[i]);
+                if (JAntiCaptcha.isLoggerActive()) {
+                    logger.severe(method + "/script.jas: Syntax error near line " + i + ": " + lines[i]);
+                }
             }
         }
-        this.captchaPrepareCommands = localCaptchaPrepareCommands;
-        this.jacCommands = localJacCommands;
-        this.letterCommands = localLetterCommands;
+        captchaPrepareCommands = localCaptchaPrepareCommands;
+        jacCommands = localJacCommands;
+        letterCommands = localLetterCommands;
 
     }
 
@@ -1073,7 +1153,9 @@ public class JACScript {
      *            the gaps to set
      */
     public void setGaps(int[] gaps) {
-        if (JAntiCaptcha.isLoggerActive()) logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
+        }
 
         this.gaps = gaps;
     }
@@ -1093,9 +1175,13 @@ public class JACScript {
         if (current instanceof Double) { return Double.parseDouble(arg); }
         if (current instanceof Boolean) { return arg.equalsIgnoreCase("true"); }
         if (current == null) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
+            }
         } else {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe(current + "Typ " + current.getClass() + " wird nicht unterstützt");
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe(current + "Typ " + current.getClass() + " wird nicht unterstützt");
+            }
         }
         return null;
     }

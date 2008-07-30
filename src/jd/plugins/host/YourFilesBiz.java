@@ -47,8 +47,10 @@ public class YourFilesBiz extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
 
     private static final String PLUGIN_NAME = HOST;
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     private String downloadURL = "";
     private HTTPConnection urlConnection;
 
@@ -62,25 +64,21 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://yourfiles.biz/rules.php";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -123,12 +121,13 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    
     private int getFileSize(String source) {
 
         int size = 0;
         String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
-        if (sizeString == null) sizeString = "";
+        if (sizeString == null) {
+            sizeString = "";
+        }
 
         if (sizeString.contains("MB")) {
             sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
@@ -145,30 +144,21 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
@@ -176,10 +166,10 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -213,13 +203,13 @@ public class YourFilesBiz extends PluginForHost {
         }
 
         // downloadLink auslesen
-        this.downloadURL = "http://" + JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+        downloadURL = "http://" + JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
         // case PluginStep.STEP_WAIT_TIME:
 
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
-        urlConnection = new HTTPConnection(new URL(this.downloadURL).openConnection());
+        urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
         int length = urlConnection.getContentLength();
 
         // if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
@@ -240,11 +230,10 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
 
-        this.downloadURL = "";
+        downloadURL = "";
         urlConnection = null;
 
     }

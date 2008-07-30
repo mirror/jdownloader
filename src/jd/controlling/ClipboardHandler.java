@@ -34,7 +34,9 @@ public class ClipboardHandler extends Thread {
     private static ClipboardHandler INSTANCE = null;
 
     public static ClipboardHandler getClipboard() {
-        if (INSTANCE == null) new ClipboardHandler();
+        if (INSTANCE == null) {
+            new ClipboardHandler();
+        }
         return INSTANCE;
 
     }
@@ -63,7 +65,7 @@ public class ClipboardHandler extends Thread {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
-        this.start();
+        start();
     }
 
     /**
@@ -82,10 +84,10 @@ public class ClipboardHandler extends Thread {
         while (enabled) {
             try {
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
-                for (int i = 0; i < flavors.length; i++) {
+                for (DataFlavor element : flavors) {
 
-                    if (flavors[i].isFlavorJavaFileListType()) {
-                        List list = (List) clipboard.getData(flavors[i]);
+                    if (element.isFlavorJavaFileListType()) {
+                        List list = (List) clipboard.getData(element);
 
                         boolean ch = oldList == null || list.size() != oldList.size();
                         if (!ch) {
@@ -107,12 +109,14 @@ public class ClipboardHandler extends Thread {
                         break;
 
                     }
-                    if (flavors[i].isFlavorTextType() && flavors[i].getRepresentationClass() == String.class && flavors[i].getHumanPresentableName().equals("Unicode String")) {
-                        String data = (String) clipboard.getData(flavors[i]);
+                    if (element.isFlavorTextType() && element.getRepresentationClass() == String.class && element.getHumanPresentableName().equals("Unicode String")) {
+                        String data = (String) clipboard.getData(element);
 
                         data = data.trim();
-                        
-                        if(olddata==null)  olddata = data;
+
+                        if (olddata == null) {
+                            olddata = data;
+                        }
                         if (!data.equals(olddata)) {
                             olddata = data;
 
@@ -145,7 +149,7 @@ public class ClipboardHandler extends Thread {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    
+
                     e.printStackTrace();
                 }
             }
@@ -158,7 +162,9 @@ public class ClipboardHandler extends Thread {
         });
         saveConfig.start();
 
-        if (enabled && !this.isAlive()) new ClipboardHandler();
+        if (enabled && !isAlive()) {
+            new ClipboardHandler();
+        }
     }
 
     public void toggleActivation() {

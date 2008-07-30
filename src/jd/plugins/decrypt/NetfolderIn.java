@@ -34,7 +34,7 @@ public class NetfolderIn extends PluginForDecrypt {
     static private String host = "netfolder.in";
     static private final Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?", Pattern.CASE_INSENSITIVE);
-    
+
     static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
     // private String version = "1.0.0.0";
@@ -43,7 +43,6 @@ public class NetfolderIn extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -54,7 +53,7 @@ public class NetfolderIn extends PluginForDecrypt {
 
             if (cryptedLink.matches(patternSupported_2.pattern())) {
                 /* weiterleitung */
-                decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+                decryptedLinks.add(createDownloadlink(reqinfo.getLocation()));
             } else if (cryptedLink.matches(patternSupported_1.pattern())) {
                 /* richtiger folder */
                 String password = "";
@@ -73,7 +72,7 @@ public class NetfolderIn extends PluginForDecrypt {
                 progress.setRange(links.size());
                 // Link der Liste hinzufügen
                 for (int i = 0; i < links.size(); i++) {
-                    decryptedLinks.add(this.createDownloadlink("http://netload.in/" + links.get(i).get(0)));
+                    decryptedLinks.add(createDownloadlink("http://netload.in/" + links.get(i).get(0)));
                     progress.increase(1);
                 }
             }
@@ -84,41 +83,34 @@ public class NetfolderIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

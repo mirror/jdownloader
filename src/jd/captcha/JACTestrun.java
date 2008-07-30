@@ -1,4 +1,3 @@
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -15,10 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha;
-
-
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -28,8 +24,8 @@ import jd.utils.JDUtilities;
 
 /**
  * Jac Training
- *
-
+ * 
+ * 
  * 
  * @author JD-Team
  */
@@ -37,22 +33,24 @@ public class JACTestrun {
     /**
      * @param args
      */
-    public static void main(String args[]){
-  
+    public static void main(String args[]) {
+
         JACTestrun main = new JACTestrun();
         main.go();
     }
+
     @SuppressWarnings("unused")
     private Logger logger = UTILITIES.getLogger();
-    private void go(){
+
+    private void go() {
 
         @SuppressWarnings("unused")
-        String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});
+        String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
         JAntiCaptcha.testMethod(new File("C:\\Users\\coalado\\.jd_home\\jd\\captcha\\methods\\share-online.biz/"));
 
-//       File[] methods= JAntiCaptcha.getMethods(methodsPath);
-//      logger.info("Found "+methods.length+" Methods");
-//       JAntiCaptcha.testMethods(methods);
+        // File[] methods= JAntiCaptcha.getMethods(methodsPath);
+        // logger.info("Found "+methods.length+" Methods");
+        // JAntiCaptcha.testMethods(methods);
 
     }
 }

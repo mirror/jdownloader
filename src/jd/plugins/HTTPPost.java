@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import java.io.BufferedOutputStream;
@@ -43,32 +42,32 @@ public class HTTPPost {
     /**
      * Deliminator für post parameter
      */
-    private String               boundary         = "-----------------------------333227e09c";
+    private String boundary = "-----------------------------333227e09c";
     /**
      * Gibt an ob eine Veribindung aufgebaut ist.
      */
-    private boolean              connected        = false;
+    private boolean connected = false;
     /**
      * Interne Connection
      */
-    private HTTPConnection    connection;
+    private HTTPConnection connection;
     /**
      * Redirects automatisch folgen
      */
-    private boolean              followRedirects;
+    private boolean followRedirects;
     /**
      * Name der verwendeten Inputfrom (html)
      */
-    private String               form             = "file_1";
+    private String form = "file_1";
     /**
      * Host
      */
-    private String               ip;
+    private String ip;
     /**
      * logger
      */
-    private Logger               logger           = JDUtilities.getLogger();
-    private OutputStream         output;
+    private Logger logger = JDUtilities.getLogger();
+    private OutputStream output;
 
     /**
      * Bytewriter wird zum versenden von bytes (upload) benötigt
@@ -78,45 +77,44 @@ public class HTTPPost {
     /**
      * StreamWroter wird zum versenden von text verwendet
      */
-    private OutputStreamWriter   outputwriter;
+    private OutputStreamWriter outputwriter;
     /**
      * Path (Pfad zur datei)
      */
-    private String               path;
+    private String path;
     /**
      * POrt
      */
-    private int                  port             = 80;
+    private int port = 80;
     /**
      * Query STring
      */
-    private String               query;
-    private int                  readTimeout      = 10000;
+    private String query;
+    private int readTimeout = 10000;
     /**
      * Vollständige Request URL
      */
 
-    private int                  requestTimeout   = 10000;
+    private int requestTimeout = 10000;
     /**
      * Gibt an ob ein Uploadvorgang durchgeführt wird
      */
-    private boolean              upload           = false;
-    private URL                  url;
+    private boolean upload = false;
+    private URL url;
 
     public HTTPPost(String urlString, boolean followRedirects) {
-   
-       URL u;
-       try {
-           logger.info(urlString);
-        u = new URL(urlString);
 
-        this.ip = u.getHost();
-        this.port = u.getPort();
-        this.path = u.getPath();
-        this.query = u.getQuery();
-        this.followRedirects = followRedirects;
+        URL u;
+        try {
+            logger.info(urlString);
+            u = new URL(urlString);
 
-       
+            ip = u.getHost();
+            port = u.getPort();
+            path = u.getPath();
+            query = u.getQuery();
+            this.followRedirects = followRedirects;
+
             boolean follow = HttpURLConnection.getFollowRedirects();
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = u;
@@ -128,13 +126,13 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(follow);
 
         } catch (MalformedURLException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
-    
+
     /**
      * @param ip
      * @param port
@@ -143,8 +141,9 @@ public class HTTPPost {
      * @param followRedirects
      */
     public HTTPPost(String ip, int port, String path, String query, boolean followRedirects) {
-        if (port <= 0)
+        if (port <= 0) {
             port = 80;
+        }
         this.ip = ip;
         this.port = port;
         this.path = path;
@@ -163,9 +162,9 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(follow);
 
         } catch (MalformedURLException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -193,13 +192,15 @@ public class HTTPPost {
         try {
             addBoundary();
             addToRequest("--\r\n");
-            if (outputByteWriter != null)
+            if (outputByteWriter != null) {
                 outputByteWriter.close();
+            }
             outputwriter.close();
-            if (output != null)
+            if (output != null) {
                 output.close();
+            }
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -208,13 +209,13 @@ public class HTTPPost {
      */
     public void connect() {
         try {
-            connection.setDoOutput(true);           
-            outputwriter = new OutputStreamWriter(output=connection.getOutputStream());
+            connection.setDoOutput(true);
+            outputwriter = new OutputStreamWriter(output = connection.getOutputStream());
 
         } catch (MalformedURLException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -223,7 +224,7 @@ public class HTTPPost {
      */
     public void doUpload() {
         setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary.substring(2));
-        this.upload = true;
+        upload = true;
     }
 
     /**
@@ -259,10 +260,10 @@ public class HTTPPost {
         try {
             ret = connection.getInputStream();
         } catch (IOException e) {
-            logger.severe(this.url + " : 500 Internal Server Error");
-            //  e.printStackTrace();
+            logger.severe(url + " : 500 Internal Server Error");
+            // e.printStackTrace();
         }
-        this.connected = true;
+        connected = true;
         return ret;
     }
 
@@ -311,12 +312,12 @@ public class HTTPPost {
         String htmlCode = read();
         String location = connection.getHeaderField("Location");
         String cookie = connection.getHeaderField("Set-Cookie");
-        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
         try {
             responseCode = connection.getResponseCode();
+        } catch (IOException e) {
         }
-        catch (IOException e) { }
-        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(),responseCode);
+        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(), responseCode);
     }
 
     /**
@@ -373,8 +374,7 @@ public class HTTPPost {
         InputStream input;
 
         input = getInputStream();
-        if (!isConnected())
-            return null;
+        if (!isConnected()) { return null; }
         Scanner r = new Scanner(input).useDelimiter("\\Z");
         String ret = "";
         while (r.hasNext()) {
@@ -383,7 +383,7 @@ public class HTTPPost {
         try {
             input.close();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         return ret;
 
@@ -399,8 +399,7 @@ public class HTTPPost {
 
         try {
             input = new GZIPInputStream(getInputStream());
-            if (!isConnected())
-                return null;
+            if (!isConnected()) { return null; }
             Scanner r = new Scanner(input).useDelimiter("\\Z");
             String ret = "";
             while (r.hasNext()) {
@@ -410,7 +409,7 @@ public class HTTPPost {
             input.close();
             return ret;
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
             return "";
         }
 
@@ -442,7 +441,7 @@ public class HTTPPost {
             outputwriter.flush();
         } catch (Exception e) {
 
-             e.printStackTrace();
+            e.printStackTrace();
         }
     }
 
@@ -456,8 +455,8 @@ public class HTTPPost {
         try {
             addBoundary();
             File f = new File(path);
-           // MimetypesFileTypeMap ft = new MimetypesFileTypeMap();
-            //String ct = ft.getContentType(f);
+            // MimetypesFileTypeMap ft = new MimetypesFileTypeMap();
+            // String ct = ft.getContentType(f);
 
             addToRequest("\r\nContent-Disposition: form-data; name=\"" + form + "\"; filename=\"" + fileName + "\"");
             addToRequest("\r\nContent-Type: image/jpeg\r\n\r\n");
@@ -466,8 +465,9 @@ public class HTTPPost {
             InputStream in;
 
             in = new FileInputStream(f);
-            if (outputByteWriter != null)
+            if (outputByteWriter != null) {
                 outputByteWriter.close();
+            }
             outputByteWriter = new BufferedOutputStream(output);
             int n;
             while ((n = in.read(b)) > -1) {
@@ -478,9 +478,9 @@ public class HTTPPost {
             outputwriter.flush();
             write("\r\n");
         } catch (FileNotFoundException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -553,7 +553,7 @@ public class HTTPPost {
             outputwriter.flush();
 
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
     }
 

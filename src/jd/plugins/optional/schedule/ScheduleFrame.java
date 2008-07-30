@@ -20,146 +20,144 @@ import jd.config.Configuration;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ScheduleFrame extends JPanel implements ActionListener{
-    
+public class ScheduleFrame extends JPanel implements ActionListener {
+
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	Timer c = new Timer(1000,this); 
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+    Timer c = new Timer(1000, this);
     SpinnerDateModel date_model = new SpinnerDateModel();
     String dateFormat = "HH:mm:ss | dd.MM.yy";
     JLabel label;
-    JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,2),1,10,1));
-    JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED),0,50000,50));
+    JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 10, 1));
+    JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED), 0, 50000, 50));
     JCheckBox premium = new JCheckBox();
-    
+
     JCheckBox reconnect = new JCheckBox();
-    JSpinner repeat = new JSpinner(new SpinnerNumberModel(0,0,24,1));
-    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start","Start"));
-    
-    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running"," Not Running!"));
+    JSpinner repeat = new JSpinner(new SpinnerNumberModel(0, 0, 24, 1));
+    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start", "Start"));
+
+    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running", " Not Running!"));
     JCheckBox stop_start = new JCheckBox();
-    //Objekte werden erzeugt
-    Timer t = new Timer(10000,this);        
-    JSpinner time = new JSpinner(date_model);    
-    
+    // Objekte werden erzeugt
+    Timer t = new Timer(10000, this);
+    JSpinner time = new JSpinner(date_model);
+
     boolean visible = false;
-    
-    //Konstruktor des Fensters und Aussehen
+
+    // Konstruktor des Fensters und Aussehen
     public ScheduleFrame(String title) {
-        
-        
-        this.start.setBorderPainted(false);
-        this.start.setFocusPainted(false);
-        this.maxdls.setBorder(BorderFactory.createEmptyBorder());
-        this.maxspeed.setBorder(BorderFactory.createEmptyBorder());
-        this.time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
-        this.time.setEditor(new JSpinner.DateEditor(time,dateFormat));
-        this.time.setBorder(BorderFactory.createEmptyBorder());
-        this.repeat.setBorder(BorderFactory.createEmptyBorder());
-        this.repeat.setToolTipText("Enter h | 0 = disable");
-        this.premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
-        this.reconnect.setSelected(!(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT)));
-        
-        setLayout(new GridLayout(9,2));  
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxdl"," max. Downloads")));
-        this.add(this.maxdls);
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed"," max. DownloadSpeed")));
-        this.add(this.maxspeed);
-        
+
+        start.setBorderPainted(false);
+        start.setFocusPainted(false);
+        maxdls.setBorder(BorderFactory.createEmptyBorder());
+        maxspeed.setBorder(BorderFactory.createEmptyBorder());
+        time.setToolTipText("Select your time. Format: HH:mm:ss | dd.MM.yy");
+        time.setEditor(new JSpinner.DateEditor(time, dateFormat));
+        time.setBorder(BorderFactory.createEmptyBorder());
+        repeat.setBorder(BorderFactory.createEmptyBorder());
+        repeat.setToolTipText("Enter h | 0 = disable");
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM));
+        reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT));
+
+        setLayout(new GridLayout(9, 2));
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxdl", " max. Downloads")));
+        this.add(maxdls);
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.maxspeed", " max. DownloadSpeed")));
+        this.add(maxspeed);
+
         this.add(new JLabel("Premium"));
-        this.add(this.premium);
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect"," Reconnect ?")));
-        this.add(this.reconnect);
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.start_stop"," Start/Stop DL ?")));
-        this.add(this.stop_start);
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.time"," Select Time:")));      
-        this.add(this.time);
-        
-        this.add(new JLabel(JDLocale.L("addons.schedule.menu.redo"," Redo in h:")));      
-        this.add(this.repeat);
-        
-        this.label = new JLabel(title);
-        this.add(this.label);
-        this.add(this.start);
-        
-        this.add(this.status);
-        
-        this.start.addActionListener(this);
-        this.t.setRepeats(false);        
+        this.add(premium);
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.reconnect", " Reconnect ?")));
+        this.add(reconnect);
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.start_stop", " Start/Stop DL ?")));
+        this.add(stop_start);
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.time", " Select Time:")));
+        this.add(time);
+
+        this.add(new JLabel(JDLocale.L("addons.schedule.menu.redo", " Redo in h:")));
+        this.add(repeat);
+
+        label = new JLabel(title);
+        this.add(label);
+        this.add(start);
+
+        this.add(status);
+
+        start.addActionListener(this);
+        t.setRepeats(false);
     }
-    
-    //ActionPerformed e 
-    public void actionPerformed(ActionEvent e) {     
+
+    // ActionPerformed e
+    public void actionPerformed(ActionEvent e) {
         int var = (int) parsetime();
-        
-            if (var > 0 && e.getSource() == start) {
-                if (t.isRunning() == false || c.isRunning() == false){
-                    this.start.setText(JDLocale.L("addons.schedule.menu.stop","Stop"));               
-                    this.t.setInitialDelay(var);
-                    this.t.start();
-                    this.c.start();
-                    this.status.setText("Started!");
-                    this.time.setEnabled(false);
-                }
-                else {
-                    this.start.setText(JDLocale.L("addons.schedule.menu.start","Start"));
-                    this.t.stop();
-                    this.c.stop();
-                    this.status.setText(JDLocale.L("addons.schedule.menu.abort"," Aborted!"));
-                    this.time.setEnabled(true);
-                }
+
+        if (var > 0 && e.getSource() == start) {
+            if (t.isRunning() == false || c.isRunning() == false) {
+                start.setText(JDLocale.L("addons.schedule.menu.stop", "Stop"));
+                t.setInitialDelay(var);
+                t.start();
+                c.start();
+                status.setText("Started!");
+                time.setEnabled(false);
+            } else {
+                start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
+                t.stop();
+                c.stop();
+                status.setText(JDLocale.L("addons.schedule.menu.abort", " Aborted!"));
+                time.setEnabled(true);
             }
-            else{this.status.setText(JDLocale.L("addons.schedule.menu.p_time"," Select positive time!"));}
-            
-            if (e.getSource() == t) {
-                
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
-                JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !(reconnect.isSelected()));
-                JDUtilities.getSubConfig("DOWNLOAD").save();
-                JDUtilities.saveConfig();
-                if (this.stop_start.isSelected() == true){
-                    JDUtilities.getController().toggleStartStop();           
-                }
-                if((Integer) this.repeat.getValue() > 0){
-                    int r = (Integer) this.repeat.getValue();
-                    Date new_time = date_model.getDate();
-                    long var2 = new_time.getTime();
-                    var2 = var2 + r * 3600000;
-                    new_time.setTime(var2);
-                    this.date_model.setValue(new_time);
-                    var = (int) parsetime(); 
-                    this.t.setInitialDelay(var);
-                    this.t.start();
-                }
-                else{
-                    this.start.setText(JDLocale.L("addons.schedule.menu.start","Start"));
-                    this.c.stop();
-                    this.status.setText(JDLocale.L("addons.schedule.menu.finished"," Finished!"));
-                    this.time.setEnabled(true);
-                }
-            }       
-            if (e.getSource() == c){
-                String remainString = JDUtilities.formatSeconds(var/1000);
-                String remain = JDLocale.L("addons.schedule.menu.remain","Remaining:") + " " + remainString;
-                this.status.setText(remain);
-            }  
-        
+        } else {
+            status.setText(JDLocale.L("addons.schedule.menu.p_time", " Select positive time!"));
+        }
+
+        if (e.getSource() == t) {
+
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, maxspeed.getValue());
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls.getValue());
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, !reconnect.isSelected());
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            JDUtilities.saveConfig();
+            if (stop_start.isSelected() == true) {
+                JDUtilities.getController().toggleStartStop();
+            }
+            if ((Integer) repeat.getValue() > 0) {
+                int r = (Integer) repeat.getValue();
+                Date new_time = date_model.getDate();
+                long var2 = new_time.getTime();
+                var2 = var2 + r * 3600000;
+                new_time.setTime(var2);
+                date_model.setValue(new_time);
+                var = (int) parsetime();
+                t.setInitialDelay(var);
+                t.start();
+            } else {
+                start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
+                c.stop();
+                status.setText(JDLocale.L("addons.schedule.menu.finished", " Finished!"));
+                time.setEnabled(true);
+            }
+        }
+        if (e.getSource() == c) {
+            String remainString = JDUtilities.formatSeconds(var / 1000);
+            String remain = JDLocale.L("addons.schedule.menu.remain", "Remaining:") + " " + remainString;
+            status.setText(remain);
+        }
+
     }
-    
-    //Berechnen der TimerZeit
-    public double parsetime () {
+
+    // Berechnen der TimerZeit
+    public double parsetime() {
         Calendar cal = Calendar.getInstance();
         Date start_time = cal.getTime();
-        Date end_time = this.date_model.getDate();
+        Date end_time = date_model.getDate();
         return end_time.getTime() - start_time.getTime();
     }
 }

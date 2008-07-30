@@ -43,14 +43,14 @@ public class JDLocale {
 
     private static HashMap<String, String> defaultData = new HashMap<String, String>();
 
-    private static final String DEFAULTLANGUAGE = isGerman() ? "german" : "english";
+    private static final String DEFAULTLANGUAGE = JDLocale.isGerman() ? "german" : "english";
 
     private static String LANGUAGES_DIR = "jd/languages/";
 
     /*
      * private static Vector<String[]> send = new Vector<String[]>(); private
-     * static Vector<String> sent = new Vector<String>(); private static Thread
-     * sender;
+     * static Vector<String> sent = new Vector<String>(); private static
+     * Thread sender;
      */
     private static String lID;
 
@@ -66,11 +66,13 @@ public class JDLocale {
 
     public static Vector<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
-        if (!dir.exists()) return null;
+        if (!dir.exists()) {
+            return null;
+        }
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
         Vector<String> ret = new Vector<String>();
-        for (int i = 0; i < files.length; i++) {
-            ret.add(files[i].getName().split("\\.")[0]);
+        for (File element : files) {
+            ret.add(element.getName().split("\\.")[0]);
         }
         return ret;
     }
@@ -78,11 +80,13 @@ public class JDLocale {
     public static String getLocaleString(String key, String def) {
         if (data == null || localeFile == null) {
             // logger.severe("Use setLocale() first!");
-            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, isGerman() ? "german" : "english"));
+            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, JDLocale.isGerman() ? "german" : "english"));
 
         }
 
-        if (def == null) def = key;
+        if (def == null) {
+            def = key;
+        }
         if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
         logger.info("Key not found: " + key);
         if (defaultData.containsKey(key)) {
@@ -91,8 +95,8 @@ public class JDLocale {
         data.put(key, JDUtilities.UTF8Encode(def));
         missingData.put(key, JDUtilities.UTF8Encode(def));
 
-        saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
-        saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
+        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
+        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
         return def;
 
     }
@@ -102,11 +106,11 @@ public class JDLocale {
     }
 
     public static String L(String key) {
-        return getLocaleString(key, null);
+        return JDLocale.getLocaleString(key, null);
     }
 
     public static String L(String key, String def) {
-        return getLocaleString(key, def);
+        return JDLocale.getLocaleString(key, def);
     }
 
     public static void main(String[] argv) {
@@ -119,7 +123,9 @@ public class JDLocale {
                 if (pathname.isDirectory()) {
                     pathname.listFiles(this);
                 }
-                if (pathname.getAbsolutePath().endsWith(".java")) javas.add(pathname);
+                if (pathname.getAbsolutePath().endsWith(".java")) {
+                    javas.add(pathname);
+                }
 
                 return true;
             }
@@ -129,29 +135,34 @@ public class JDLocale {
         StringBuffer sb = new StringBuffer();
         HashMap<String, String> map = new HashMap<String, String>();
 
-        for (Iterator<File> it = javas.iterator(); it.hasNext();) {
-            File java = it.next();
+        for (File java : javas) {
             String c = JDUtilities.getLocalFile(java);
             logger.info(java.getAbsolutePath());
             ArrayList<ArrayList<String>> res = SimpleMatches.getAllSimpleMatches(c, "JDLocale.L(°,°)");
             logger.info("Found " + res.size() + " entries");
-            for (Iterator<ArrayList<String>> it2 = res.iterator(); it2.hasNext();) {
-                ArrayList<String> entry = it2.next();
+            for (ArrayList<String> entry : res) {
                 if (!map.containsKey(entry.get(0))) {
                     String key = entry.get(0).trim();
                     String value = entry.get(1).trim();
-                    if (key.contains(";")) continue;
-                    while (key.startsWith("\""))
+                    if (key.contains(";")) {
+                        continue;
+                    }
+                    while (key.startsWith("\"")) {
                         key = key.substring(1);
-                    while (value.startsWith("\""))
+                    }
+                    while (value.startsWith("\"")) {
                         value = value.substring(1);
-                    while (key.endsWith(")"))
+                    }
+                    while (key.endsWith(")")) {
                         key = key.substring(0, key.length() - 1);
-                    while (key.endsWith("\""))
+                    }
+                    while (key.endsWith("\"")) {
                         key = key.substring(0, key.length() - 1);
+                    }
 
-                    while (value.endsWith("\""))
+                    while (value.endsWith("\"")) {
                         value = value.substring(0, value.length() - 1);
+                    }
                     value.replaceAll("\r\n", "\\r\\n");
                     value.replaceAll("\n\r", "\\r\\n");
                     value.replaceAll("//", "");
@@ -174,11 +185,13 @@ public class JDLocale {
         String str = JDUtilities.getLocalFile(file);
         String[] lines = Regex.getLines(str);
         boolean dupes = false;
-        for (int i = 0; i < lines.length; i++) {
-            int split = lines[i].indexOf("=");
-            if (split <= 0 || lines[i].startsWith("#")) continue;
-            String key = lines[i].substring(0, split).trim();
-            String value = lines[i].substring(split + 1).trim() + ((lines[i].endsWith(" ")) ? " " : "");
+        for (String element : lines) {
+            int split = element.indexOf("=");
+            if (split <= 0 || element.startsWith("#")) {
+                continue;
+            }
+            String key = element.substring(0, split).trim();
+            String value = element.substring(split + 1).trim() + (element.endsWith(" ") ? " " : "");
             if (dat.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
                 dat.put(key, value);
@@ -190,7 +203,7 @@ public class JDLocale {
         }
         if (dupes) {
             logger.warning("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
-            saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
+            JDLocale.saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
 
         }
         return dat;
@@ -198,11 +211,19 @@ public class JDLocale {
 
     private static void saveData(File lc, HashMap<String, String> dat) {
 
-        if (lc == null) lc = localeFile;
-        if (dat == null) dat = data;
-        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
+        if (lc == null) {
+            lc = localeFile;
+        }
+        if (dat == null) {
+            dat = data;
+        }
+        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) {
+            return;
+        }
         Iterator<Entry<String, String>> iterator;
-        if (dat == null) return;
+        if (dat == null) {
+            return;
+        }
         iterator = dat.entrySet().iterator();
         // stellt die Wartezeiten zurück
         Entry<String, String> i;
@@ -213,8 +234,9 @@ public class JDLocale {
             ret.add(i.getKey() + " = " + i.getValue().replace("\r", "\\r").replace("\n", "\\n"));
         }
         Collections.sort(ret);
-        for (int x = 0; x < ret.size(); x++)
+        for (int x = 0; x < ret.size(); x++) {
             str += ret.get(x) + System.getProperty("line.separator");
+        }
         JDUtilities.writeLocalFile(lc, str);
 
     }
@@ -229,15 +251,15 @@ public class JDLocale {
             return;
         }
 
-        data = parseLanguageFile(file);
+        data = JDLocale.parseLanguageFile(file);
 
         if (defaultFile.exists()) {
-            defaultData = parseLanguageFile(defaultFile);
+            defaultData = JDLocale.parseLanguageFile(defaultFile);
         } else {
             logger.warning("Could not load The default languagefile: " + defaultFile);
 
         }
-        missingData = parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
+        missingData = JDLocale.parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
     }
 
@@ -264,7 +286,7 @@ public class JDLocale {
 
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (Exception e) {
-            
+
             e.printStackTrace();
             return msg;
         }
@@ -283,7 +305,7 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
@@ -306,7 +328,7 @@ public class JDLocale {
 
             return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (IOException e) {
-            
+
             e.printStackTrace();
             return null;
         }
@@ -325,7 +347,7 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
@@ -343,17 +365,16 @@ public class JDLocale {
         int i = 0;
 
         HashMap<String, String> ret = new HashMap<String, String>();
-        HashMap<String, String> data = parseLanguageFile(file);
-        for (Iterator<Entry<String, String>> it = data.entrySet().iterator(); it.hasNext();) {
-            Entry<String, String> next = it.next();
+        HashMap<String, String> data = JDLocale.parseLanguageFile(file);
+        for (Entry<String, String> next : data.entrySet()) {
             i++;
-            ret.put(next.getKey(), (translate(afrom, ato, next.getValue())));
+            ret.put(next.getKey(), JDLocale.translate(afrom, ato, next.getValue()));
 
             logger.info(i + " : " + next.getKey() + " = " + ret.get(next.getKey()));
             // saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" +
             // to + ".lng"), ret);
         }
-        saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
+        JDLocale.saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
 
     }
 

@@ -16,15 +16,17 @@ public class MenuItem extends Property {
     public static final int TOGGLE = 2;
     private int actionID;
     private ActionListener actionListener;
-    private boolean enabled=true;
+    private boolean enabled = true;
     private int id = NORMAL;
     private ArrayList<MenuItem> items;
     private Plugin plugin;
     private boolean selected;
     private String title;
+
     public MenuItem(int id) {
         this(id, null, -1);
     }
+
     public MenuItem(int id, String title, int actionID) {
         this.id = id;
         this.actionID = actionID;
@@ -39,19 +41,23 @@ public class MenuItem extends Property {
         if (id != CONTAINER) {
             logger.severe("I am not a Container MenuItem!!");
         }
-        if (this.items == null) this.items = new ArrayList<MenuItem>();
+        if (items == null) {
+            items = new ArrayList<MenuItem>();
+        }
         items.add(m);
 
     }
 
     public MenuItem get(int i) {
-        if (items == null) return null;
+        if (items == null) {
+            return null;
+        }
         return items.get(i);
     }
 
     public int getActionID() {
 
-        return this.actionID;
+        return actionID;
     }
 
     public ActionListener getActionListener() {
@@ -69,7 +75,9 @@ public class MenuItem extends Property {
 
     public int getSize() {
 
-        if (items == null) return 0;
+        if (items == null) {
+            return 0;
+        }
         return items.size();
     }
 
@@ -78,7 +86,7 @@ public class MenuItem extends Property {
     }
 
     public boolean isEnabled() {
-      
+
         return enabled;
     }
 
@@ -98,7 +106,7 @@ public class MenuItem extends Property {
     }
 
     public MenuItem setItems(ArrayList<MenuItem> createMenuitems) {
-        this.items = createMenuitems;
+        items = createMenuitems;
         return this;
 
     }

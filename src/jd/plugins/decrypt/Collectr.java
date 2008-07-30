@@ -35,13 +35,13 @@ public class Collectr extends PluginForDecrypt {
 
     static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.2.0.0";
 
     public Collectr() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,9 +54,10 @@ public class Collectr extends PluginForDecrypt {
             }
             String link = new Regex(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
             if (link != null) {
-                decryptedLinks.add(this.createDownloadlink(link));
-            } else
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
                 return null;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -64,41 +65,34 @@ public class Collectr extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

@@ -14,27 +14,25 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.unrar;
 
 import java.io.File;
 
 public class testUnzip {
-	public static void main(String[] argv) {
-	    
-		UnZip u = new UnZip(new File("D:/jd_theme_tango.jdu"), new File("d:/extract/"));
-		File[] files;
+    public static void main(String[] argv) {
+
+        UnZip u = new UnZip(new File("D:/jd_theme_tango.jdu"), new File("d:/extract/"));
+        File[] files;
         try {
             files = u.extract();
-     
-		for (int i = 0; i < files.length; i++) {
-			System.out.println(files[i].getAbsolutePath());
-		}
-		
-        }
-        catch (Exception e) {
-            
+
+            for (File element : files) {
+                System.out.println(element.getAbsolutePath());
+            }
+
+        } catch (Exception e) {
+
             e.printStackTrace();
         }
-        }
+    }
 }

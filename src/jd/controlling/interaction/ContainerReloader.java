@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.File;
@@ -42,25 +41,27 @@ public class ContainerReloader extends Interaction implements Serializable {
     private static final String NAME = "ContainerLoader";
 
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long serialVersionUID = -9071890385850062424L;
 
-    private Vector<String>    lastAllFiles;
+    private Vector<String> lastAllFiles;
 
     public ContainerReloader() {
         // Verwende die unrar routinen um alle files im ausgabeordner zu suchen
-        
+
         getNewFiles();
     }
+
     @Override
     public boolean doInteraction(Object arg) {
-       Vector<String> newFiles = getNewFiles();
-        for( int i=0; i<newFiles.size();i++){
+        Vector<String> newFiles = getNewFiles();
+        for (int i = 0; i < newFiles.size(); i++) {
             JDUtilities.getController().loadContainerFile(new File(newFiles.get(i)));
         }
         return true;
     }
+
     @Override
     public String getInteractionName() {
         return NAME;
@@ -68,26 +69,28 @@ public class ContainerReloader extends Interaction implements Serializable {
 
     private Vector<String> getNewFiles() {
         JUnrar unrar = new JUnrar(false);
-        if(lastAllFiles==null)lastAllFiles= new Vector<String>();
-        Vector<DownloadLink> finishedLinks ;
-        if(JDUtilities.getController()==null){
-            finishedLinks=new    Vector<DownloadLink>();
-        }else{
-       finishedLinks = JDUtilities.getController().getFinishedLinks();
+        if (lastAllFiles == null) {
+            lastAllFiles = new Vector<String>();
+        }
+        Vector<DownloadLink> finishedLinks;
+        if (JDUtilities.getController() == null) {
+            finishedLinks = new Vector<DownloadLink>();
+        } else {
+            finishedLinks = JDUtilities.getController().getFinishedLinks();
         }
         LinkedList<String> folders = new LinkedList<String>();
         Iterator<DownloadLink> iter = finishedLinks.iterator();
         while (iter.hasNext()) {
-        	DownloadLink element = iter.next();
-			  File folder = new File(element.getFileOutput()).getParentFile();
-	           
-	            if (folder.exists()) {
-	                if (folders.indexOf(folder.getAbsolutePath()) == -1) {                
-	                    folders.add(folder.getAbsolutePath());
-	                }
-	            }
-			
-		}
+            DownloadLink element = iter.next();
+            File folder = new File(element.getFileOutput()).getParentFile();
+
+            if (folder.exists()) {
+                if (folders.indexOf(folder.getAbsolutePath()) == -1) {
+                    folders.add(folder.getAbsolutePath());
+                }
+            }
+
+        }
         folders.add(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         unrar.setFolders(folders);
         Vector<String> newFiles = new Vector<String>();
@@ -96,7 +99,7 @@ public class ContainerReloader extends Interaction implements Serializable {
         for (Map.Entry<File, String> entry : files.entrySet()) {
 
             allFiles.add(entry.getKey().getAbsolutePath());
-            if (this.lastAllFiles.indexOf(entry.getKey().getAbsolutePath()) == -1) {
+            if (lastAllFiles.indexOf(entry.getKey().getAbsolutePath()) == -1) {
                 newFiles.add(entry.getKey().getAbsolutePath());
                 logger.info("New file:" + entry.getKey().getAbsolutePath());
             }
@@ -108,30 +111,29 @@ public class ContainerReloader extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-       // ConfigEntry cfg;
+        // ConfigEntry cfg;
         // int type, Property propertyInstance, String propertyName, Object[]
-		// list, String label
+        // list, String label
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        
+
     }
 
     @Override
-    public void  initInteraction(){
+    public void initInteraction() {
         getNewFiles();
     }
 
-    
     @Override
-    public void resetInteraction() {}
+    public void resetInteraction() {
+    }
 
-    
     /**
-	 * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-	 */
+     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
+     */
     @Override
-    public void run() {}
+    public void run() {
+    }
 
-    
     @Override
     public String toString() {
         return "ContainerLoader: Lädt geladene Container";

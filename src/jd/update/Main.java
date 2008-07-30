@@ -37,6 +37,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -88,7 +89,7 @@ public class Main {
         if (comp == null) {
 
         return; }
-        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
+        Main.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
     /**
@@ -133,7 +134,9 @@ public class Main {
         cons.weighty = weightY;
         cons.fill = fill;
         cons.anchor = anchor;
-        if (insets != null) cons.insets = insets;
+        if (insets != null) {
+            cons.insets = insets;
+        }
         cons.ipadx = iPadX;
         cons.ipady = iPadY;
         cont.add(comp, cons);
@@ -157,26 +160,26 @@ public class Main {
         if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_PROXY", false)) {
             System.setProperty("http.proxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_HOST", ""));
             System.setProperty("http.proxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("PROXY_PORT", 8080)).toString());
-            log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
+            Main.log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
         } else {
             System.setProperty("http.proxyHost", "");
-            log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
+            Main.log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
         }
         /* Socks-Proxy einstellen */
         if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_SOCKS", false)) {
             System.setProperty("socksProxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("SOCKS_HOST", ""));
             System.setProperty("socksProxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("SOCKS_PORT", 1080)).toString());
-            log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
+            Main.log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
         } else {
             System.setProperty("socksProxyHost", "");
-            log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
+            Main.log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
         }
 
         if (paf != null) {
-            for (int i = 0; i < info.length; i++) {
-                if (info[i].getName().equals(paf)) {
+            for (LookAndFeelInfo element : info) {
+                if (element.getName().equals(paf)) {
                     try {
-                        UIManager.setLookAndFeel(info[i].getClassName());
+                        UIManager.setLookAndFeel(element.getClassName());
                         plafisSet = true;
                         break;
                     } catch (UnsupportedLookAndFeelException e) {
@@ -231,14 +234,14 @@ public class Main {
         JScrollPane scrollPane = new JScrollPane(logWindow);
         logWindow.setEditable(true);
 
-        addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        addToGridBag(frame, new JLabel("List files: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        addToGridBag(frame, progresslist, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
-        addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
-        log(log, "Starting...");
+        Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        Main.addToGridBag(frame, new JLabel("List files: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        Main.addToGridBag(frame, progresslist, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
+        Main.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
+        Main.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
+        Main.log(log, "Starting...");
         logWindow.setText(log.toString());
-        addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
+        Main.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -258,11 +261,19 @@ public class Main {
 
             if (args[i].trim().equalsIgnoreCase("/all")) {
             }
-            if (args[i].trim().equalsIgnoreCase("/restart")) restart = true;
-            if (args[i].trim().equalsIgnoreCase("/rt0")) runtype = 0;
-            if (args[i].trim().equalsIgnoreCase("/rt1")) runtype = 1;
-            if (args[i].trim().equalsIgnoreCase("/rt2")) runtype = 2;
-            log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
+            if (args[i].trim().equalsIgnoreCase("/restart")) {
+                restart = true;
+            }
+            if (args[i].trim().equalsIgnoreCase("/rt0")) {
+                runtype = 0;
+            }
+            if (args[i].trim().equalsIgnoreCase("/rt1")) {
+                runtype = 1;
+            }
+            if (args[i].trim().equalsIgnoreCase("/rt2")) {
+                runtype = 2;
+            }
+            Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
             logWindow.setText(log.toString());
         }
         new Thread() {
@@ -280,7 +291,7 @@ public class Main {
         updater.setLogger(log);
         updater.setListProgress(progresslist);
         updater.setDownloadProgress(progressload);
-        trace("Start Webupdate");
+        Main.trace("Start Webupdate");
 
         Vector<Vector<String>> files = updater.getAvailableFiles();
 
@@ -294,21 +305,23 @@ public class Main {
         }
         String[] jdus = new File("packages").list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".jdu")) return true;
+                if (name.endsWith(".jdu")) { return true; }
                 return false;
 
             }
 
         });
-        if(jdus==null)jdus= new String[0];
-        log(log, "JD Packages to install: " + jdus.length + System.getProperty("line.separator"));
+        if (jdus == null) {
+            jdus = new String[0];
+        }
+        Main.log(log, "JD Packages to install: " + jdus.length + System.getProperty("line.separator"));
         ArrayList<File> readmes = new ArrayList<File>();
         ArrayList<File> failed = new ArrayList<File>();
         ArrayList<File> successfull = new ArrayList<File>();
         for (String jdu : jdus) {
             File zip = new File(new File("packages"), jdu);
 
-            log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
+            Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
 
             UnZip u = new UnZip(zip, new File("."));
             File[] efiles;
@@ -316,10 +329,10 @@ public class Main {
                 efiles = u.extract();
                 if (files != null) {
 
-                    for (int i = 0; i < efiles.length; i++) {
-                        log(log, "       extracted: " + efiles[i] + System.getProperty("line.separator"));
-                        if (efiles[i].getAbsolutePath().endsWith("readme.html")) {
-                            readmes.add(efiles[i].getAbsoluteFile());
+                    for (File element : efiles) {
+                        Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
+                        if (element.getAbsolutePath().endsWith("readme.html")) {
+                            readmes.add(element.getAbsoluteFile());
                         }
                     }
                     String comment = SubConfiguration.getSubConfig("PACKAGEMANAGER").getStringProperty("COMMENT_" + zip.getAbsolutePath());
@@ -330,11 +343,11 @@ public class Main {
 
                         SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
                         SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
-                        log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
+                        Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
                         successfull.add(zip.getAbsoluteFile());
 
                     } else {
-                        log(log, "Installation failed: " + zip + System.getProperty("line.separator"));
+                        Main.log(log, "Installation failed: " + zip + System.getProperty("line.separator"));
                         failed.add(zip.getAbsoluteFile());
                     }
                     zip.delete();
@@ -342,7 +355,7 @@ public class Main {
 
                 }
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
                 zip.delete();
                 zip.deleteOnExit();
@@ -353,18 +366,18 @@ public class Main {
         SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_FAILED", failed);
         SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_SUCCESSFULL", successfull);
         SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
-        trace(updater.getLogger().toString());
-        trace("End Webupdate");
+        Main.trace(updater.getLogger().toString());
+        Main.trace("End Webupdate");
         logWindow.setText(log.toString());
-        trace(new File("updateLog.txt").getAbsoluteFile());
+        Main.trace(new File("updateLog.txt").getAbsoluteFile());
 
         if (restart) {
             if (new File("webcheck.tmp").exists()) {
                 new File("webcheck.tmp").delete();
             }
-            log(log, "Local: " + new File("").getAbsolutePath());
+            Main.log(log, "Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
-                log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
+                Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
                 // if(SubConfiguration.getSubConfig("OS").getStringProperty(
                 // "RESTART_COMMAND", null)!=null
                 // &&SubConfiguration.getSubConfig
@@ -381,20 +394,20 @@ public class Main {
                 // null), 0);
                 //                      
                 // }else{
-                runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
                 // }
             } else if (runtype == 1 && new File("jd/Main.class").exists()) {
-                log(log, "java Main.class in " + new File("jd/").getAbsolutePath());
-                runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
+                Main.log(log, "java Main.class in " + new File("jd/").getAbsolutePath());
+                Main.runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
             } else {
-                log(log, "Start jDownloader.jnlp in " + new File("").getAbsolutePath());
-                runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
+                Main.log(log, "Start jDownloader.jnlp in " + new File("").getAbsolutePath());
+                Main.runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
 
             }
 
         }
         logWindow.setText(log.toString());
-        writeLocalFile(new File("updateLog.txt"), log.toString());
+        Main.writeLocalFile(new File("updateLog.txt"), log.toString());
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {
@@ -414,16 +427,18 @@ public class Main {
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
 
-        if (parameter == null) parameter = new String[] {};
+        if (parameter == null) {
+            parameter = new String[] {};
+        }
         String[] params = new String[parameter.length + 1];
         params[0] = command;
         System.arraycopy(parameter, 0, params, 1, parameter.length);
         Vector<String> tmp = new Vector<String>();
         String par = "";
-        for (int i = 0; i < params.length; i++) {
-            if (params[i] != null && params[i].trim().length() > 0) {
-                par += params[i] + " ";
-                tmp.add(params[i].trim());
+        for (String element : params) {
+            if (element != null && element.trim().length() > 0) {
+                par += element + " ";
+                tmp.add(element.trim());
             }
         }
 
@@ -434,13 +449,13 @@ public class Main {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
             } else {
-                trace("Working drectory " + runIn + " does not exist!");
+                Main.trace("Working drectory " + runIn + " does not exist!");
             }
         }
         Process process;
 
         try {
-            trace("Start " + par + " in " + runIn + " wait " + waitForReturn);
+            Main.trace("Start " + par + " in " + runIn + " wait " + waitForReturn);
             process = pb.start();
             if (waitForReturn > 0) {
                 long t = System.currentTimeMillis();
@@ -450,21 +465,22 @@ public class Main {
                         break;
                     } catch (Exception e) {
                         if (System.currentTimeMillis() - t > waitForReturn * 1000) {
-                            trace(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
+                            Main.trace(command + ": Prozess ist nach " + waitForReturn + " Sekunden nicht beendet worden. Breche ab.");
                             process.destroy();
                         }
                     }
                 }
                 Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
                 String ret = "";
-                while (s.hasNext())
+                while (s.hasNext()) {
                     ret += s.next();
+                }
                 return ret;
             }
             return null;
         } catch (Exception e) {
             e.printStackTrace();
-            trace("Error executing " + command + ": " + e.getLocalizedMessage());
+            Main.trace("Error executing " + command + ": " + e.getLocalizedMessage());
             return null;
         }
     }

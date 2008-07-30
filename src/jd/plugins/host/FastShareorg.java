@@ -21,13 +21,13 @@ import jd.utils.JDUtilities;
 public class FastShareorg extends PluginForHost {
 
     private static final String HOST = "fastshare.org";
-   
+
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fastshare\\.org/download/(.*)", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String url;
 
     //
-    
+
     public FastShareorg() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
@@ -35,25 +35,21 @@ public class FastShareorg extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.fastshare.org/discl.php";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -71,22 +67,16 @@ public class FastShareorg extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -102,19 +92,17 @@ public class FastShareorg extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -138,7 +126,7 @@ public class FastShareorg extends PluginForHost {
         // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 10seks */
         // step.setParameter(10000l);
-        this.sleep(10000, downloadLink);
+        sleep(10000, downloadLink);
 
         // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
@@ -161,12 +149,10 @@ public class FastShareorg extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

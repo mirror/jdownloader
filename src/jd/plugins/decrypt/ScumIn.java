@@ -44,7 +44,6 @@ public class ScumIn extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -75,9 +74,9 @@ public class ScumIn extends PluginForDecrypt {
 
             String links[][] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\"", Pattern.CASE_INSENSITIVE).getMatches();
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
+            for (String[] element : links) {
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                decryptedLinks.add(createDownloadlink(element[0]));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -86,40 +85,34 @@ public class ScumIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

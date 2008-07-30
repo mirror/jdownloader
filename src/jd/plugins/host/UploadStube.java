@@ -30,36 +30,32 @@ import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
     private static final String HOST = "uploadstube.de";
-   
+
     static private final Pattern patternSupported = Pattern.compile("http://.*?uploadstube\\.de/download.php\\?file=.*", Pattern.CASE_INSENSITIVE);
 
     //
-    
+
     public UploadStube() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
 
         return "http://www.uploadstube.de/regeln.php";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -89,12 +85,6 @@ public class UploadStube extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -110,19 +100,17 @@ public class UploadStube extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -151,13 +139,11 @@ public class UploadStube extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub

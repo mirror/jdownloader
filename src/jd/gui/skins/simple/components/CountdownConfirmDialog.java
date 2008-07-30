@@ -43,10 +43,10 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
     public final static int STYLE_CANCEL = 1 << 2;
 
@@ -57,7 +57,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public final static int STYLE_STOP_COUNTDOWN = 1 << 3;
 
     public static void main(String[] args) {
-       showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
+        CountdownConfirmDialog.showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
 
     }
 
@@ -66,6 +66,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         return d.result;
     }
+
     private JButton btnBAD;
     private JButton btnCnTh;
     /**
@@ -78,8 +79,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public boolean result = false;
     private JScrollPane scrollPane;
 
-    public CountdownConfirmDialog(Frame owner, String msg, int countdown)
-    {
+    public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
 
@@ -89,14 +89,16 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         setLayout(new GridBagLayout());
 
-        this.countdownThread = new Thread() {
+        countdownThread = new Thread() {
 
             @Override
             public void run() {
                 int c = countdown;
 
                 while (--c >= 0) {
-                    if (countdownThread == null) return;
+                    if (countdownThread == null) {
+                        return;
+                    }
                     setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
 
                     try {
@@ -104,7 +106,9 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
                     } catch (InterruptedException e) {
                     }
-                    if (!isVisible()) return;
+                    if (!isVisible()) {
+                        return;
+                    }
 
                 }
                 result = defaultResult;
@@ -113,7 +117,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             }
 
         };
-        this.countdownThread.start();
+        countdownThread.start();
         if ((style & STYLE_MSGLABLE) != 0) {
             htmlArea = new JLabel(msg);
         } else {
@@ -123,7 +127,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             ((JTextPane) htmlArea).setText(msg);
             ((JTextPane) htmlArea).requestFocusInWindow();
             ((JTextPane) htmlArea).addHyperlinkListener(this);
-            
+
         }
         scrollPane = new JScrollPane(htmlArea);
         JDUtilities.addToGridBag(this, scrollPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
@@ -159,7 +163,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             countdownThread = null;
 
         } else if (e.getSource() == btnOK) {
-            this.result = true;
+            result = true;
             setVisible(false);
             dispose();
         } else if (e.getSource() == btnBAD) {
@@ -167,16 +171,18 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             dispose();
         }
 
-        if (countdownThread != null && countdownThread.isAlive()) this.countdownThread.interrupt();
+        if (countdownThread != null && countdownThread.isAlive()) {
+            countdownThread.interrupt();
+        }
         countdownThread = null;
     }
-    
+
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-            
-            JLinkButton.openURL( e.getURL());
-            
-          }
-        
+
+            JLinkButton.openURL(e.getURL());
+
+        }
+
     }
 }

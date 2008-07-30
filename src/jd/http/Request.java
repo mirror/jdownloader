@@ -40,35 +40,42 @@ import jd.utils.JDUtilities;
 
 public abstract class Request {
     public static int MAX_REDIRECTS = 30;
+
     /**
      * Gibt eine Hashmap mit allen key:value pairs im query zurück
-     * @param query kann ein reines query ein (&key=value) oder eine url mit query
+     * 
+     * @param query
+     *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
      */
-        public static HashMap<String, String> parseQuery(String query) {
-            HashMap<String, String> ret = new HashMap<String, String>();
-            if (query.toLowerCase().trim().startsWith("http")) {
-                try {
-                    query = new URL(query).getQuery();
-                } catch (MalformedURLException e) {               
-                    e.printStackTrace();
-                    return ret;
-                }
-            }
-    
-            if (query == null) return ret;
+    public static HashMap<String, String> parseQuery(String query) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        if (query.toLowerCase().trim().startsWith("http")) {
             try {
-                StringTokenizer st = new StringTokenizer(query, "&=");
-                while (st.hasMoreTokens())
-                    ret.put(st.nextToken().trim(), st.nextToken().trim());
-    
-            } catch (NoSuchElementException e) {
-                // ignore
+                query = new URL(query).getQuery();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                return ret;
             }
-    
-            return ret;
-    
         }
+
+        if (query == null) {
+            return ret;
+        }
+        try {
+            StringTokenizer st = new StringTokenizer(query, "&=");
+            while (st.hasMoreTokens()) {
+                ret.put(st.nextToken().trim(), st.nextToken().trim());
+            }
+
+        } catch (NoSuchElementException e) {
+            // ignore
+        }
+
+        return ret;
+
+    }
+
     private int connectTimeout;
     private HashMap<String, String> cookies = null;
     private int followCounter = 0;
@@ -102,15 +109,20 @@ public abstract class Request {
 
     private void collectCookiesFromConnection() {
         Collection<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
-        if (cookieHeaders == null) return;
-        if (this.cookies == null) cookies = new HashMap<String, String>();
+        if (cookieHeaders == null) {
+            return;
+        }
+        if (cookies == null) {
+            cookies = new HashMap<String, String>();
+        }
         ;
 
         for (String header : cookieHeaders) {
             try {
                 StringTokenizer st = new StringTokenizer(header, ";=");
-                while (st.hasMoreTokens())
+                while (st.hasMoreTokens()) {
                     cookies.put(st.nextToken().trim(), st.nextToken().trim());
+                }
             } catch (NoSuchElementException e) {
                 // ignore
             }
@@ -119,26 +131,28 @@ public abstract class Request {
     }
 
     public Request connect() throws IOException {
-        this.requested = true;
-        this.openConnection();
-        postRequest(this.httpConnection);
+        requested = true;
+        openConnection();
+        postRequest(httpConnection);
 
         collectCookiesFromConnection();
-        while (this.followRedirects && httpConnection.getHeaderField("Location") != null) {
-            this.followCounter++;
+        while (followRedirects && httpConnection.getHeaderField("Location") != null) {
+            followCounter++;
             if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
 
             }
             url = new URL(httpConnection.getHeaderField("Location"));
             openConnection();
-            postRequest(this.httpConnection);
+            postRequest(httpConnection);
         }
         return this;
     }
 
     public boolean containsHTML(String html) {
-        if (htmlCode == null) return false;
-        return this.htmlCode.contains(html);
+        if (htmlCode == null) {
+            return false;
+        }
+        return htmlCode.contains(html);
     }
 
     /*
@@ -152,13 +166,15 @@ public abstract class Request {
      * cookies.put(st.nextToken().trim(), st.nextToken().trim()); }
      */
     public String followRedirect() throws IOException {
-        if (getLocation() == null) return null;
+        if (getLocation() == null) {
+            return null;
+        }
         try {
-            this.url = new URL(getLocation());
+            url = new URL(getLocation());
 
-            return this.load();
+            return load();
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         }
         return null;
@@ -169,19 +185,25 @@ public abstract class Request {
     }
 
     public long getContentLength() {
-      
-        if (this.httpConnection == null) return -1;
+
+        if (httpConnection == null) {
+            return -1;
+        }
         return httpConnection.getContentLength();
     }
 
     public HashMap<String, String> getCookies() {
-        if (cookies == null) cookies = new HashMap<String, String>();
+        if (cookies == null) {
+            cookies = new HashMap<String, String>();
+        }
         return cookies;
     }
 
     public String getCookieString() {
         {
-            if (!hasCookies()) return null;
+            if (!hasCookies()) {
+                return null;
+            }
 
             StringBuffer buffer = new StringBuffer();
             boolean first = true;
@@ -217,7 +239,9 @@ public abstract class Request {
     }
 
     public String getLocation() {
-        if (httpConnection == null) return null;
+        if (httpConnection == null) {
+            return null;
+        }
         return httpConnection.getHeaderField("Location");
     }
 
@@ -232,7 +256,7 @@ public abstract class Request {
     public RequestInfo getRequestInfo() throws IOException {
         RequestInfo requestInfo;
 
-        requestInfo = new RequestInfo(htmlCode, httpConnection.getHeaderField("Location"), this.getCookieString(), httpConnection.getHeaderFields(), httpConnection.getResponseCode());
+        requestInfo = new RequestInfo(htmlCode, httpConnection.getHeaderField("Location"), getCookieString(), httpConnection.getHeaderFields(), httpConnection.getResponseCode());
         requestInfo.setRequest(this);
         requestInfo.setConnection(httpConnection);
         return requestInfo;
@@ -244,12 +268,16 @@ public abstract class Request {
     }
 
     public String getResponseHeader(String key) {
-        if (httpConnection == null) return null;
+        if (httpConnection == null) {
+            return null;
+        }
         return httpConnection.getHeaderField(key);
     }
 
     public Map<String, List<String>> getResponseHeaders() {
-        if (httpConnection == null) return null;
+        if (httpConnection == null) {
+            return null;
+        }
         return httpConnection.getHeaderFields();
     }
 
@@ -259,7 +287,7 @@ public abstract class Request {
 
     private boolean hasCookies() {
 
-        return this.cookies != null && !this.cookies.isEmpty();
+        return cookies != null && !cookies.isEmpty();
     }
 
     private void initDefaultHeader() {
@@ -267,9 +295,10 @@ public abstract class Request {
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
     }
-public boolean isFollowRedirects() {
-    return followRedirects;
-}
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
 
     public boolean isRequested() {
         return requested;
@@ -292,12 +321,12 @@ public boolean isFollowRedirects() {
         try {
             long tima = System.currentTimeMillis();
             httpConnection = new HTTPConnection(url.openConnection());
-            this.requestTime = System.currentTimeMillis() - tima;
-            httpConnection.setReadTimeout(this.readTimeout);
-            httpConnection.setConnectTimeout(this.connectTimeout);
+            requestTime = System.currentTimeMillis() - tima;
+            httpConnection.setReadTimeout(readTimeout);
+            httpConnection.setConnectTimeout(connectTimeout);
 
             httpConnection.setInstanceFollowRedirects(false);
-            if (this.headers != null) {
+            if (headers != null) {
                 Set<String> keys = headers.keySet();
                 Iterator<String> iterator = keys.iterator();
                 String key;
@@ -308,9 +337,11 @@ public boolean isFollowRedirects() {
                 }
             }
             preRequest(httpConnection);
-            if (hasCookies()) httpConnection.setRequestProperty("Cookie", this.getCookieString());
+            if (hasCookies()) {
+                httpConnection.setRequestProperty("Cookie", getCookieString());
+            }
         } catch (IOException e) {
-            this.requestTime = -1;
+            requestTime = -1;
             e.printStackTrace();
         }
 
@@ -323,7 +354,7 @@ public boolean isFollowRedirects() {
     public String read() throws IOException {
         long tima = System.currentTimeMillis();
         BufferedReader rd;
-        if (this.httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+        if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
 
             rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
 
@@ -336,7 +367,7 @@ public boolean isFollowRedirects() {
             htmlCode.append(line + "\r\n");
         }
         rd.close();
-        this.readTime = System.currentTimeMillis() - tima;
+        readTime = System.currentTimeMillis() - tima;
         this.htmlCode = htmlCode.toString();
         return htmlCode.toString();
     }
@@ -356,8 +387,8 @@ public boolean isFollowRedirects() {
     }
 
     public void setProxy(String ip, String port) {
-        this.proxyip = ip;
-        this.proxyport = port;
+        proxyip = ip;
+        proxyport = port;
         try {
             url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
         } catch (Exception e) {
@@ -372,7 +403,9 @@ public boolean isFollowRedirects() {
 
     @Override
     public String toString() {
-        if (!requested) return "Request not sent yet";
+        if (!requested) {
+            return "Request not sent yet";
+        }
         if (htmlCode == null || htmlCode.length() == 0) {
             if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
             return "No htmlCode read";

@@ -34,8 +34,6 @@ public class SafeTo extends PluginForDecrypt {
 
     private static final String FILE_ID = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
 
-
-
     /*
      * Suchmasken
      */
@@ -49,7 +47,6 @@ public class SafeTo extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -70,7 +67,9 @@ public class SafeTo extends PluginForDecrypt {
             reqinfo = HTTP.getRequest(new URL(frameURL));
 
             boolean password = false;
-            if (reqinfo.getHtmlCode().contains(PASSWORD)) password = true;
+            if (reqinfo.getHtmlCode().contains(PASSWORD)) {
+                password = true;
+            }
 
             // Solange, bis Passwort richtig eingegeben wurde (also Links
             // gefunden)
@@ -92,7 +91,7 @@ public class SafeTo extends PluginForDecrypt {
             for (int i = 0; i < fileIDs.size(); i++) {
                 reqinfo = HTTP.getRequest(new URL("http://85.17.45.96/~safe/futsch.php?i=" + fileIDs.get(i).get(0)));
                 String newLink = reqinfo.getLocation();
-                decryptedLinks.add(this.createDownloadlink(newLink));
+                decryptedLinks.add(createDownloadlink(newLink));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -102,45 +101,35 @@ public class SafeTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-      String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
 }

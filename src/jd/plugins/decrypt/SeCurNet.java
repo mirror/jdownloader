@@ -35,13 +35,13 @@ public class SeCurNet extends PluginForDecrypt {
     private String LINK_OUT_PATTERN = "href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"";
     private String LINK_OUT_TEMPLATE = "http://se-cur.net/out.php?d=";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public SeCurNet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -50,11 +50,11 @@ public class SeCurNet extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.getRequest(url);
             String layerLinks[][] = new Regex(requestInfo.getHtmlCode(), LINK_OUT_PATTERN, Pattern.CASE_INSENSITIVE).getMatches();
             progress.setRange(layerLinks.length);
-            for (int i = 0; i < layerLinks.length; i++) {
-                requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + layerLinks[i][0]));
+            for (String[] element : layerLinks) {
+                requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + element[0]));
                 String link = new Regex(requestInfo.getHtmlCode(), FRAME, Pattern.CASE_INSENSITIVE).getFirstMatch();
                 link = JDUtilities.htmlDecode(link);
-                decryptedLinks.add(this.createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -65,41 +65,34 @@ public class SeCurNet extends PluginForDecrypt {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

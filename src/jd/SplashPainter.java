@@ -19,31 +19,26 @@ import javax.swing.JLabel;
  * <p>
  * Company: Nice Dezigns
  * </p>
- *
+ * 
  * @author Jens Hohl
  * @date 05.08.2006
  * @time 03:36:39
  */
-public class SplashPainter
-        extends JLabel
-{
-        /**
+public class SplashPainter extends JLabel {
+    /**
      * 
      */
     private static final long serialVersionUID = 1L;
-        private Image image;
-       
-        @Override
-        public void paintComponent(Graphics g)
-        {
-                super.paintComponents(g);
-                g.drawImage(image,0,0,this);
-        }
-       
-        
-        public void setImage(Image image)
-        {
-                this.image = image;
-                setPreferredSize(new Dimension(image.getWidth(null),image.getHeight(null)));
-        }
-} 
+    private Image image;
+
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponents(g);
+        g.drawImage(image, 0, 0, this);
+    }
+
+    public void setImage(Image image) {
+        this.image = image;
+        setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
+    }
+}

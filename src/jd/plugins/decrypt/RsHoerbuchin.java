@@ -38,13 +38,13 @@ public class RsHoerbuchin extends PluginForDecrypt {
     private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[\\w]{6}.html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_DE.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_DE.flags() | patternLink_UP.flags());
+
     // private String version = "1.0.0.2";
 
     public RsHoerbuchin() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -54,15 +54,16 @@ public class RsHoerbuchin extends PluginForDecrypt {
             if (parameter.matches(patternLink_RS.pattern())) {
                 HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                 String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
-                decryptedLinks.add(this.createDownloadlink(newURL));
+                decryptedLinks.add(createDownloadlink(newURL));
             } else if (parameter.matches(patternLink_DE.pattern())) {
                 HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
                 String newURL = "http://rapidshare.de" + JDUtilities.htmlDecode(fields.get("uri"));
-                decryptedLinks.add(this.createDownloadlink(newURL));
+                decryptedLinks.add(createDownloadlink(newURL));
             } else if (parameter.matches(patternLink_UP.pattern())) {
                 String links[][] = new Regex(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (int i = 0; i < links.length; i++)
-                    decryptedLinks.add(this.createDownloadlink(links[i][0]));
+                for (String[] element : links) {
+                    decryptedLinks.add(createDownloadlink(element[0]));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,41 +72,34 @@ public class RsHoerbuchin extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
- 
-
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

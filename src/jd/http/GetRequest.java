@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.plugins.HTTPConnection;
 
-
 public class GetRequest extends Request {
 
     public GetRequest(String url) {
@@ -28,21 +27,15 @@ public class GetRequest extends Request {
 
     }
 
-    
     @Override
-    public void postRequest(HTTPConnection httpConnection)throws IOException {
+    public void postRequest(HTTPConnection httpConnection) throws IOException {
 
     }
 
-    
     @Override
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("GET");
-        
+
     }
-
- 
-
-
 
 }

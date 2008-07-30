@@ -41,7 +41,6 @@ public class MyRef extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -51,7 +50,7 @@ public class MyRef extends PluginForDecrypt {
             String downloadid = new Regex(url.getFile(), "\\?([\\d].*)").getFirstMatch();
             url = new URL("http://myref.de/go_counter.php?id=" + downloadid);
             RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
-            decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+            decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -62,41 +61,34 @@ public class MyRef extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

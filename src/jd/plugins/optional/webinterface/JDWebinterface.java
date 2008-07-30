@@ -17,7 +17,6 @@
 //          -packages/links moven
 //          -stable template system
 
-
 package jd.plugins.optional.webinterface;
 
 import java.awt.event.ActionEvent;
@@ -46,11 +45,11 @@ public class JDWebinterface extends PluginOptional {
     static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
 
     static final String PROPERTY_USER = "PARAM_USER";
-    public static int getAddonInterfaceVersion(){
+
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
 
-    
     public JDWebinterface() {
         instance = this;
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
@@ -78,25 +77,17 @@ public class JDWebinterface extends PluginOptional {
         cfg.setDefaultValue("JD");
     }
 
-    
-    
-   
-
-    
     @Override
     public void actionPerformed(ActionEvent e) {
-       
 
     }
 
-    
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-       
+
         return null;
     }
 
-    
     @Override
     public String getCoder() {
         return "jiaz";
@@ -107,13 +98,11 @@ public class JDWebinterface extends PluginOptional {
         return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
     }
 
-    
     @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    
     @Override
     public String getVersion() {
         return "0.0.2.0";
@@ -124,8 +113,9 @@ public class JDWebinterface extends PluginOptional {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
         if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
             page_refresh_interval = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
-        } else
+        } else {
             page_refresh_interval = 0;
+        }
 
         @SuppressWarnings("unused")
         JDSimpleWebserver server = new JDSimpleWebserver();
@@ -134,10 +124,8 @@ public class JDWebinterface extends PluginOptional {
 
     }
 
-    
     @Override
     public void onExit() {
-       
 
     }
 }

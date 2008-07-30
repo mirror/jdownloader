@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling;
 
 import jd.event.ControlEvent;
@@ -30,60 +29,66 @@ import jd.utils.JDUtilities;
  */
 public class ProgressController {
 
-
-
-    private static int idCounter=0;
-    private int    currentValue;
+    private static int idCounter = 0;
+    private int currentValue;
     private boolean finished;
 
     private int id;
 
-    private int    max;
+    private int max;
 
     private Object source;
     private String statusText;
 
     public ProgressController(String name) {
-       this(name,100);
+        this(name, 100);
     }
 
     public ProgressController(String name, int max) {
-     this.id=idCounter++;
+        id = idCounter++;
         this.max = max;
-        this.statusText="init "+name;
+        statusText = "init " + name;
         currentValue = 0;
-        finished=false;
+        finished = false;
         fireChanges();
     }
+
     public void addToMax(int length) {
-      this.setRange(max+length);
-    
+        setRange(max + length);
+
     }
+
     public void decrease(int i) {
-        setStatus(currentValue-1);
-        
+        setStatus(currentValue - 1);
+
     }
+
     @Override
-    public void finalize(){
-        //JDUtilities.getLogger().info("FINALIZE "+this.toString()+this.getLinkStatus().getStatusText());
-        this.finished=true;
-        this.currentValue=this.max;
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, this.source));
-        
+    public void finalize() {
+        // JDUtilities.getLogger().info("FINALIZE
+        // "+this.toString()+this.getLinkStatus().getStatusText());
+        finished = true;
+        currentValue = max;
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+
     }
- public void fireChanges(){
-   // JDUtilities.getLogger().info("FIRE "+this);
-    if(!this.isFinished())
-    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, this.source));
-}
+
+    public void fireChanges() {
+        // JDUtilities.getLogger().info("FIRE "+this);
+        if (!isFinished()) {
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+        }
+    }
+
     public int getID() {
-       return id;
+        return id;
     }
 
     public int getMax() {
-       return this.max;
-      
+        return max;
+
     }
+
     public double getPercent() {
         int range = max;
         int current = currentValue;
@@ -91,52 +96,60 @@ public class ProgressController {
 
     }
 
-    public Object getSource(){
+    public Object getSource() {
         return source;
     }
+
     public String getStatusText() {
         return statusText;
     }
 
     public int getValue() {
-      return this.currentValue;
+        return currentValue;
     }
+
     public void increase(int i) {
-       // JDUtilities.getLogger().info(this.toString());
-        setStatus(currentValue+i);
-        
+        // JDUtilities.getLogger().info(this.toString());
+        setStatus(currentValue + i);
+
     }
-    public boolean isFinished(){
+
+    public boolean isFinished() {
         return finished;
     }
-    public void setRange(int max){
-        
+
+    public void setRange(int max) {
+
         this.max = max;
-       // JDUtilities.getLogger().info(this.toString());
+        // JDUtilities.getLogger().info(this.toString());
         setStatus(currentValue);
     }
 
-    public void setSource(Object src){
-        this.source=src;
+    public void setSource(Object src) {
+        source = src;
         fireChanges();
     }
 
     public void setStatus(int value) {
-        if (value < 0) value = 0;
-        if (value > max) value = max;
-        this.currentValue = value;
-       // JDUtilities.getLogger().info(this.toString());
+        if (value < 0) {
+            value = 0;
+        }
+        if (value > max) {
+            value = max;
+        }
+        currentValue = value;
+        // JDUtilities.getLogger().info(this.toString());
         fireChanges();
     }
 
     public void setStatusText(String statusText) {
         this.statusText = statusText;
-       // JDUtilities.getLogger().info(this.toString());
+        // JDUtilities.getLogger().info(this.toString());
         fireChanges();
     }
 
     @Override
-    public String toString(){
-         return "ProgressController "+id;
-     }
+    public String toString() {
+        return "ProgressController " + id;
+    }
 }

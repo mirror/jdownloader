@@ -34,13 +34,13 @@ public class XupInFolder extends PluginForDecrypt {
     private String LINK_PATTERN = "href=\"(http://www\\.xup\\.in/dl,[0-9]*/.*?/)\"";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public XupInFolder() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,7 +49,7 @@ public class XupInFolder extends PluginForDecrypt {
             String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
             progress.setRange(links.length);
             for (String[] link : links) {
-                decryptedLinks.add(this.createDownloadlink(link[0]));
+                decryptedLinks.add(createDownloadlink(link[0]));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -59,44 +59,34 @@ public class XupInFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

@@ -201,7 +201,6 @@ public class JDUtilities {
      * Loggername
      */
 
-
     private static Vector<PluginForContainer> pluginsForContainer = null;
 
     private static Vector<PluginForDecrypt> pluginsForDecrypt;
@@ -273,7 +272,7 @@ public class JDUtilities {
             logger.severe("Componente ==null");
             return;
         }
-        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
+        JDUtilities.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
     /**
@@ -320,7 +319,9 @@ public class JDUtilities {
         cons.fill = fill;
 
         cons.anchor = anchor;
-        if (insets != null) cons.insets = insets;
+        if (insets != null) {
+            cons.insets = insets;
+        }
         cons.ipadx = iPadX;
         cons.ipady = iPadY;
         cont.add(comp, cons);
@@ -338,12 +339,15 @@ public class JDUtilities {
      */
     public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
         String dest = file.getAbsolutePath();
-        if (captchaCode == null) captchaCode = "null";
+        if (captchaCode == null) {
+            captchaCode = "null";
+        }
         String isGoodText;
-        if (isGood)
+        if (isGood) {
             isGoodText = "_GOOD";
-        else
+        } else {
             isGoodText = "_BAD";
+        }
         int idx = dest.lastIndexOf('.');
         dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
         final File file2 = new File(dest);
@@ -376,10 +380,10 @@ public class JDUtilities {
     }
 
     public static String Base64Decode(String base64) {
-        if (base64 == null) return null;
+        if (base64 == null) { return null; }
         try {
             byte[] plain = new BASE64Decoder().decodeBuffer(base64);
-            if (JDUtilities.filterString(new String(plain)).length() < (plain.length / 1.5)) { return base64; }
+            if (JDUtilities.filterString(new String(plain)).length() < plain.length / 1.5) { return base64; }
             return new String(plain);
         } catch (IOException e) {
             return base64;
@@ -388,7 +392,7 @@ public class JDUtilities {
 
     public static String Base64Encode(String plain) {
 
-        if (plain == null) return null;
+        if (plain == null) { return null; }
         String base64 = new BASE64Encoder().encode(plain.getBytes());
         base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
 
@@ -409,7 +413,7 @@ public class JDUtilities {
         }
         String message = e.getLocalizedMessage();
 
-        return (message != null) ? (ret.trim() + ": " + message) : ret.trim();
+        return message != null ? ret.trim() + ": " + message : ret.trim();
 
     }
 
@@ -439,14 +443,18 @@ public class JDUtilities {
         } catch (FileNotFoundException e1) {
 
             e1.printStackTrace();
-            if (inChannel != null) try {
-                inChannel.close();
+            if (inChannel != null) {
+                try {
+                    inChannel.close();
 
-                if (outChannel != null) outChannel.close();
-            } catch (IOException e) {
+                    if (outChannel != null) {
+                        outChannel.close();
+                    }
+                } catch (IOException e) {
 
-                e.printStackTrace();
-                return false;
+                    e.printStackTrace();
+                    return false;
+                }
             }
             return false;
         } catch (IOException e) {
@@ -454,9 +462,13 @@ public class JDUtilities {
             e.printStackTrace();
         }
         try {
-            if (inChannel != null) inChannel.close();
+            if (inChannel != null) {
+                inChannel.close();
+            }
 
-            if (outChannel != null) outChannel.close();
+            if (outChannel != null) {
+                outChannel.close();
+            }
         } catch (IOException e) {
 
             e.printStackTrace();
@@ -541,7 +553,7 @@ public class JDUtilities {
             URL url = new URL(urlString);
             HTTPConnection con = new HTTPConnection(url.openConnection());
             con.setInstanceFollowRedirects(true);
-            return download(file, con);
+            return JDUtilities.download(file, con);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         } catch (MalformedURLException e) {
@@ -555,7 +567,7 @@ public class JDUtilities {
     public static boolean downloadBinary(String filepath, String fileurl) {
 
         try {
-            fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
+            fileurl = JDUtilities.urlEncode(fileurl.replaceAll("\\\\", "/"));
             File file = new File(filepath);
             if (file.isFile()) {
                 if (!file.delete()) {
@@ -629,15 +641,20 @@ public class JDUtilities {
      */
     public static String fillInteger(int i, int num, String fill) {
         String ret = "" + i;
-        while (ret.length() < num)
+        while (ret.length() < num) {
             ret = fill + ret;
+        }
         return ret;
     }
 
-    public static String fillString(String binaryString, String pre, String post,int length) {
-        while(binaryString.length()<length){
-            if(binaryString.length()<length)binaryString=pre+binaryString;
-            if(binaryString.length()<length)binaryString=binaryString+post;
+    public static String fillString(String binaryString, String pre, String post, int length) {
+        while (binaryString.length() < length) {
+            if (binaryString.length() < length) {
+                binaryString = pre + binaryString;
+            }
+            if (binaryString.length() < length) {
+                binaryString = binaryString + post;
+            }
         }
         return binaryString;
     }
@@ -651,7 +668,7 @@ public class JDUtilities {
      */
     public static int filterInt(String src) {
         try {
-            return Integer.parseInt(filterString(src, "1234567890"));
+            return Integer.parseInt(JDUtilities.filterString(src, "1234567890"));
         } catch (NumberFormatException e) {
             return 0;
         }
@@ -665,7 +682,7 @@ public class JDUtilities {
      */
     public static String filterString(String str) {
         String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890<>='\"/";
-        return filterString(str, allowed);
+        return JDUtilities.filterString(str, allowed);
     }
 
     /**
@@ -676,7 +693,7 @@ public class JDUtilities {
      * @return
      */
     public static String filterString(String str, String filter) {
-        if (str == null || filter == null) return "";
+        if (str == null || filter == null) { return ""; }
 
         byte[] org = str.getBytes();
         byte[] mask = filter.getBytes();
@@ -685,8 +702,8 @@ public class JDUtilities {
         int i;
         for (i = 0; i < org.length; i++) {
             byte letter = org[i];
-            for (int t = 0; t < mask.length; t++) {
-                if (letter == mask[t]) {
+            for (byte element : mask) {
+                if (letter == element) {
                     ret[count] = letter;
                     count++;
                     break;
@@ -711,10 +728,10 @@ public class JDUtilities {
 
         DecimalFormat c = new DecimalFormat("0.00");
         ;
-        if (value >= (1024 * 1024)) {
+        if (value >= 1024 * 1024) {
 
         return c.format(value / (1024 * 1024.0)) + " GB"; }
-        if (value >= (1024)) {
+        if (value >= 1024) {
 
         return c.format(value / 1024.0) + " MB"; }
         return value + " KB";
@@ -733,8 +750,8 @@ public class JDUtilities {
         eta -= hours * 60 * 60;
         int minutes = eta / 60;
         int seconds = eta - minutes * 60;
-        if (hours == 0) { return fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0"); }
-        return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0");
+        if (hours == 0) { return JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0"); }
+        return JDUtilities.fillInteger(hours, 2, "0") + ":" + JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0");
     }
 
     /**
@@ -760,9 +777,9 @@ public class JDUtilities {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
 
-        logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host));
-        if (forceJAC || (JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false))) {
-            if (!JAntiCaptcha.hasMethod(getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
+        logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
+        if (forceJAC || JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true) && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false)) {
+            if (!JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host) || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + host, true)) { return null; }
 
             JFrame jf = new JFrame();
             Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
@@ -774,7 +791,7 @@ public class JDUtilities {
                 return null;
             }
             mediaTracker.removeImage(captchaImage);
-            JAntiCaptcha jac = new JAntiCaptcha(getJACMethodsDirectory(), host);
+            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(captcha);
             logger.info("Code: " + captchaCode);
@@ -791,14 +808,14 @@ public class JDUtilities {
             if (lcs == null) {
                 vp = 100.0;
             } else {
-                for (int i = 0; i < lcs.length; i++) {
+                for (LetterComperator element : lcs) {
                     // window.setImage(i, 0, lcs[i].getB().getImage(3));
                     // window.setImage(i, 1, lcs[i].getA().getImage(3));
-                    if (lcs[i] == null) {
+                    if (element == null) {
                         vp = 100.0;
                         break;
                     }
-                    vp = Math.max(vp, lcs[i].getValityPercent());
+                    vp = Math.max(vp, element.getValityPercent());
                     // window.setText(i, 2, lcs[i].getValityPercent());
                     // window.setText(i, 3, lcs[i].getDecodedValue());
                     // window.setText(i, 4, lcs[i].getB().getPixelString());
@@ -809,19 +826,19 @@ public class JDUtilities {
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 System.out.println(code);
-                code = getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
+                code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
                 System.out.println(code);
             } else {
-                return captchaCode; 
+                return captchaCode;
             }
 
-            if (code != null && code.equals(captchaCode)) return captchaCode;
+            if (code != null && code.equals(captchaCode)) { return captchaCode; }
 
             return code;
         }
 
         else {
-            return getController().getCaptchaCodeFromUser(plugin, file, null);
+            return JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
         }
     }
 
@@ -908,7 +925,9 @@ public class JDUtilities {
      * @return
      */
     public static File getCurrentWorkingDirectory(String id) {
-        if (id == null) id = "";
+        if (id == null) {
+            id = "";
+        }
         String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
         String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
 
@@ -920,7 +939,7 @@ public class JDUtilities {
             dlDirectory = new File(dlDir);
         }
 
-        if (lastDir == null) return dlDirectory;
+        if (lastDir == null) { return dlDirectory; }
         return new File(lastDir);
 
     }
@@ -946,15 +965,17 @@ public class JDUtilities {
             second = a;
         }
         for (int i = 0; i < first.length(); i++) {
-            if (first.charAt(i) == second.charAt(i))
+            if (first.charAt(i) == second.charAt(i)) {
                 index = i;
-            else
+            } else {
                 break;
+            }
         }
-        if (index > 0)
+        if (index > 0) {
             return first.substring(0, index + 1);
-        else
+        } else {
             return "";
+        }
     }
 
     /***************************************************************************
@@ -964,7 +985,7 @@ public class JDUtilities {
      * @return
      */
     public static String getFileExtension(File ret) {
-        if (ret == null) return null;
+        if (ret == null) { return null; }
         String str = ret.getAbsolutePath();
 
         int i3 = str.lastIndexOf(".");
@@ -1009,14 +1030,14 @@ public class JDUtilities {
         // Falls das nicht geklappt hat wird die klasse im homedir gesucht
         if (newClass == null) {
             try {
-                String url = urlEncode(new File((getJDHomeDirectoryFromEnvironment().getAbsolutePath())).toURI().toURL().toString());
+                String url = JDUtilities.urlEncode(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()).toURI().toURL().toString());
                 URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
                 newClass = Class.forName(classPath, true, cl);
             } catch (ClassNotFoundException e) {
 
                 e.printStackTrace();
             } catch (MalformedURLException e) {
-                
+
                 e.printStackTrace();
             }
         }
@@ -1076,13 +1097,13 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress() {
-        if (getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
         }
 
-        String site = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-        String patt = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
+        String site = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+        String patt = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
         try {
             logger.finer("IP Check via " + site);
@@ -1162,7 +1183,7 @@ public class JDUtilities {
      */
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
-            File homeDir = getJDHomeDirectoryFromEnvironment();
+            File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
             // Url Encode des pfads für den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
@@ -1189,16 +1210,18 @@ public class JDUtilities {
 
             // logger.info(" App dir: "+currentDir+" -
             // "+System.getProperty("java.class.path"));
-            if (currentDir.isFile()) currentDir = currentDir.getParentFile();
+            if (currentDir.isFile()) {
+                currentDir = currentDir.getParentFile();
+            }
 
         } catch (URISyntaxException e) {
-            
+
             e.printStackTrace();
         }
 
         // logger.info("RunDir: " + currentDir);
 
-        switch (getRunType()) {
+        switch (JDUtilities.getRunType()) {
         case RUNTYPE_LOCAL_JARED:
             envDir = currentDir.getAbsolutePath();
             // logger.info("JD_HOME from current Path :" + envDir);
@@ -1233,7 +1256,7 @@ public class JDUtilities {
             ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
 
         }
-        if (getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) { return "[BETA!] " + ret; }
+        if (JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) { return "[BETA!] " + ret; }
         return ret;
     }
 
@@ -1258,11 +1281,11 @@ public class JDUtilities {
         String[] data = JD_REVISION.split(" ");
         if (data.length > 3) {
             String[] date = data[3].split("-");
-            if (date.length != 3) return null;
+            if (date.length != 3) { return null; }
             return date[2] + "." + date[1] + "." + date[0];
         }
         return null;
-    } 
+    }
 
     /**
      * parsed den JD_REVISION String auf
@@ -1287,7 +1310,7 @@ public class JDUtilities {
      * @return File Content als String
      */
     public static String getLocalFile(File file) {
-        if (!file.exists()) return "";
+        if (!file.exists()) { return ""; }
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));
@@ -1317,7 +1340,7 @@ public class JDUtilities {
      */
     public static String getLocalHash(File f) {
         try {
-            if (!f.exists()) return null;
+            if (!f.exists()) { return null; }
             MessageDigest md;
             md = MessageDigest.getInstance("md5");
             byte[] b = new byte[1024];
@@ -1327,9 +1350,11 @@ public class JDUtilities {
             }
             byte[] digest = md.digest();
             String ret = "";
-            for (int i = 0; i < digest.length; i++) {
-                String tmp = Integer.toHexString(digest[i] & 0xFF);
-                if (tmp.length() < 2) tmp = "0" + tmp;
+            for (byte element : digest) {
+                String tmp = Integer.toHexString(element & 0xFF);
+                if (tmp.length() < 2) {
+                    tmp = "0" + tmp;
+                }
                 ret += tmp;
             }
             in.close();
@@ -1373,7 +1398,9 @@ public class JDUtilities {
                     // ":");
                     // System.out.println("<" + logRecord.getMessage() + ">");
                     // System.out.println("\n");
-                    if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
+                    if (JDUtilities.getController() != null) {
+                        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
+                    }
                 }
             });
 
@@ -1383,16 +1410,15 @@ public class JDUtilities {
             OutputStream os = new OutputStream() {
                 private StringBuffer buffer = new StringBuffer();
 
-                
                 public void write(int b) throws IOException {
                     // err.write(b);
-                    if ((b == 13 || b == 10)) {
+                    if (b == 13 || b == 10) {
                         if (buffer.length() > 0) {
                             JDUtilities.getLogger().severe(buffer.toString());
                             if (buffer.indexOf("OutOfMemoryError") >= 0) {
                                 logger.finer("Restart");
                                 boolean res;
-                                res = getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
+                                res = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
 
                                 if (res) {
 
@@ -1424,7 +1450,7 @@ public class JDUtilities {
      * @return MD% hash von arg
      */
     public static String getMD5(String arg) {
-        if (arg == null) return arg;
+        if (arg == null) { return arg; }
         try {
             MessageDigest md = MessageDigest.getInstance("md5");
             byte[] digest = md.digest(arg.getBytes());
@@ -1432,7 +1458,7 @@ public class JDUtilities {
             String tmp;
             for (byte d : digest) {
                 tmp = Integer.toHexString(d & 0xFF);
-                ret += (tmp.length() < 2) ? "0" + tmp : tmp;
+                ret += tmp.length() < 2 ? "0" + tmp : tmp;
             }
             return ret;
         } catch (NoSuchAlgorithmException e) {
@@ -1450,13 +1476,15 @@ public class JDUtilities {
      *         keins gefunden wird
      */
     public static Frame getParentFrame(Component comp) {
-        if (comp == null) return null;
-        while (comp != null && !(comp instanceof Frame))
+        if (comp == null) { return null; }
+        while (comp != null && !(comp instanceof Frame)) {
             comp = comp.getParent();
-        if (comp instanceof Frame)
+        }
+        if (comp instanceof Frame) {
             return (Frame) comp;
-        else
+        } else {
             return null;
+        }
     }
 
     public static String getPercent(long downloadCurrent, long downloadMax) {
@@ -1475,13 +1503,15 @@ public class JDUtilities {
      * @return Ein passendes Plugin oder null
      */
     public static PluginForContainer getPluginForContainer(String container, String containerPath) {
-        if (containerPath != null && containerPlugins.containsKey(containerPath)) return containerPlugins.get(containerPath);
+        if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
         PluginForContainer ret = null;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             if (pluginsForContainer.get(i).getHost().equals(container)) {
                 try {
                     ret = pluginsForContainer.get(i).getClass().newInstance();
-                    if (containerPath != null) containerPlugins.put(containerPath, ret);
+                    if (containerPath != null) {
+                        containerPlugins.put(containerPath, ret);
+                    }
                     return ret;
                 } catch (InstantiationException e) {
                     e.printStackTrace();
@@ -1502,7 +1532,7 @@ public class JDUtilities {
      */
     public static PluginForHost getPluginForHost(String host) {
         for (int i = 0; i < pluginsForHost.size(); i++) {
-            if (pluginsForHost.get(i).getHost().equals(host)) return pluginsForHost.get(i);
+            if (pluginsForHost.get(i).getHost().equals(host)) { return pluginsForHost.get(i); }
         }
         return null;
     }
@@ -1536,7 +1566,9 @@ public class JDUtilities {
         // return pluginsForHost;
 
         Vector<PluginForHost> plgs = new Vector<PluginForHost>();
-        if (pluginsForHost != null) plgs.addAll(pluginsForHost);
+        if (pluginsForHost != null) {
+            plgs.addAll(pluginsForHost);
+        }
         Vector<PluginForHost> pfh = new Vector<PluginForHost>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
@@ -1570,7 +1602,7 @@ public class JDUtilities {
      */
     public static char getResourceChar(String key) {
         char result = 0;
-        String s = getResourceString(key);
+        String s = JDUtilities.getResourceString(key);
         if (s != null && s.length() > 0) {
             result = s.charAt(0);
         }
@@ -1654,12 +1686,12 @@ public class JDUtilities {
      * @return File zu arg
      */
     public static File getResourceFile(String resource) {
-        JDClassLoader cl = getJDClassLoader();
+        JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
             logger.severe("Classloader ==null: ");
             return null;
         }
-        URL clURL = getJDClassLoader().getResource(resource);
+        URL clURL = JDUtilities.getJDClassLoader().getResource(resource);
 
         if (clURL != null) {
             try {
@@ -1738,7 +1770,7 @@ public class JDUtilities {
             // logger.info("Dev.: Local splitted");
             return RUNTYPE_LOCAL;
         } catch (Exception e) {
-            
+
             e.printStackTrace();
         }
         return 0;
@@ -1750,11 +1782,11 @@ public class JDUtilities {
     }
 
     public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
-        return getscaledImageIcon(icon.getImage(), width, height);
+        return JDUtilities.getscaledImageIcon(icon.getImage(), width, height);
     }
 
     public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
-        return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
+        return JDUtilities.getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
     /**
@@ -1771,7 +1803,7 @@ public class JDUtilities {
     }
 
     public static SubConfiguration getSubConfig(String name) {
-        if (subConfigs.containsKey(name)) return subConfigs.get(name);
+        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
 
         SubConfiguration cfg = new SubConfiguration(name);
         subConfigs.put(name, cfg);
@@ -1800,13 +1832,13 @@ public class JDUtilities {
         // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
-        if (str == null) return null;
+        if (str == null) { return null; }
         String pattern = "\\&\\#x([a-f0-9A-F]+)\\;?";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?","\\"+ c );
+                if (c == '$' || c == '\\') {
+                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", "\\" + c);
                 } else {
                     str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", c + "");
                 }
@@ -1817,8 +1849,8 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 10);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\"+ c );
+                if (c == '$' || c == '\\') {
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\" + c);
                 } else {
                     str = str.replaceFirst("\\&\\#(\\d+)\\;?", c + "");
                 }
@@ -1829,8 +1861,8 @@ public class JDUtilities {
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
                 char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}","\\"+ c );
+                if (c == '$' || c == '\\') {
+                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", "\\" + c);
                 } else {
                     str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
                 }
@@ -1919,7 +1951,9 @@ public class JDUtilities {
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
-            if (currentDirectory != null) fileChooserLoad.setCurrentDirectory(currentDirectory);
+            if (currentDirectory != null) {
+                fileChooserLoad.setCurrentDirectory(currentDirectory);
+            }
             if (fileChooserLoad.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 fileInput = fileChooserLoad.getSelectedFile();
                 currentDirectory = fileChooserLoad.getCurrentDirectory();
@@ -1928,7 +1962,7 @@ public class JDUtilities {
         if (fileInput != null) {
             // String hash = getLocalHash(fileInput);
             try {
-                waitOnObject(fileInput);
+                JDUtilities.waitOnObject(fileInput);
                 saveReadObject.add(fileInput);
             } catch (Exception e) {
                 // TODO: handle exception
@@ -1976,7 +2010,7 @@ public class JDUtilities {
     }
 
     public static void logException(Error e) {
-        getLogger().log(Level.SEVERE, "Error", e);
+        JDUtilities.getLogger().log(Level.SEVERE, "Error", e);
         e.printStackTrace();
 
     }
@@ -1987,7 +2021,7 @@ public class JDUtilities {
      * @param e
      */
     public static void logException(Exception e) {
-        getLogger().log(Level.SEVERE, "Exception", e);
+        JDUtilities.getLogger().log(Level.SEVERE, "Exception", e);
         e.printStackTrace();
     }
 
@@ -2009,8 +2043,8 @@ public class JDUtilities {
     public static boolean removeDirectoryOrFile(File dir) {
         if (dir.isDirectory()) {
             String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                boolean success = removeDirectoryOrFile(new File(dir, children[i]));
+            for (String element : children) {
+                boolean success = JDUtilities.removeDirectoryOrFile(new File(dir, element));
                 if (!success) { return false; }
             }
         }
@@ -2049,7 +2083,7 @@ public class JDUtilities {
      * @return Neuer String mit ersetzen Platzhaltern
      */
     public static String replacePlaceHolder(String command) {
-        if (controller == null) return command;
+        if (controller == null) { return command; }
         command = command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
         command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
         return command;
@@ -2122,7 +2156,9 @@ public class JDUtilities {
             JFileChooser fileChooserSave = new JFileChooser();
             fileChooserSave.setFileFilter(fileFilter);
             fileChooserSave.setSelectedFile(fileFilter.getFile());
-            if (currentDirectory != null) fileChooserSave.setCurrentDirectory(currentDirectory);
+            if (currentDirectory != null) {
+                fileChooserSave.setCurrentDirectory(currentDirectory);
+            }
             if (fileChooserSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 fileOutput = fileChooserSave.getSelectedFile();
                 currentDirectory = fileChooserSave.getCurrentDirectory();
@@ -2135,13 +2171,15 @@ public class JDUtilities {
 
             }
             try {
-                waitOnObject(fileOutput);
+                JDUtilities.waitOnObject(fileOutput);
                 saveReadObject.add(fileOutput);
             } catch (Exception e) {
                 // TODO: handle exception
             }
             // hashPre = getLocalHash(fileOutput);
-            if (fileOutput.exists()) fileOutput.delete();
+            if (fileOutput.exists()) {
+                fileOutput.delete();
+            }
             try {
                 FileOutputStream fos = new FileOutputStream(fileOutput);
                 BufferedOutputStream buff = new BufferedOutputStream(fos);
@@ -2161,7 +2199,7 @@ public class JDUtilities {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            String hashPost = getLocalHash(fileOutput);
+            String hashPost = JDUtilities.getLocalHash(fileOutput);
             // if (fileOutput.exists()) {
             // logger.info(fileOutput.delete()+"");
             // }
@@ -2248,7 +2286,9 @@ public class JDUtilities {
      * @param f
      */
     public static void setCurrentWorkingDirectory(File f, String id) {
-        if (id == null) id = "";
+        if (id == null) {
+            id = "";
+        }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
     }
 
@@ -2260,7 +2300,9 @@ public class JDUtilities {
     public static void setHomeDirectory(String homeDirectory) {
         JDUtilities.homeDirectory = homeDirectory;
         homeDirectoryFile = new File(homeDirectory);
-        if (!homeDirectoryFile.exists()) homeDirectoryFile.mkdirs();
+        if (!homeDirectoryFile.exists()) {
+            homeDirectoryFile.mkdirs();
+        }
     }
 
     public static void setLocale(Locale locale) {
@@ -2304,7 +2346,7 @@ public class JDUtilities {
      * @param key
      */
     public static void sortHashVectorOn(Vector<HashMap<String, String>> packageData, final String key) {
-        if (packageData.size() == 0 || !packageData.get(0).containsKey(key)) return;
+        if (packageData.size() == 0 || !packageData.get(0).containsKey(key)) { return; }
         Collections.sort(packageData, new Comparator<HashMap<String, String>>() {
             public int compare(HashMap<String, String> a, HashMap<String, String> b) {
                 return a.get(key).compareTo(b.get(key));
@@ -2315,9 +2357,9 @@ public class JDUtilities {
 
     public static String sprintf(String pattern, String[] inset) {
 
-        for (int i = 0; i < inset.length; i++) {
+        for (String element : inset) {
             int ind = pattern.indexOf("%s");
-            pattern = pattern.substring(0, ind) + inset[i] + pattern.substring(ind + 2);
+            pattern = pattern.substring(0, ind) + element + pattern.substring(ind + 2);
 
         }
 
@@ -2357,7 +2399,7 @@ public class JDUtilities {
      * @return str als UTF8Decodiert
      */
     public static String UTF8Decode(String str) {
-        if (str == null) return null;
+        if (str == null) { return null; }
         try {
             return new String(str.getBytes(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -2388,7 +2430,7 @@ public class JDUtilities {
      * @return
      */
     public static boolean validateIP(String ip) {
-        return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
+        return Pattern.compile(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
     }
 
     public static String validatePath(String fileOutput0) {
@@ -2407,11 +2449,11 @@ public class JDUtilities {
     public static void waitOnObject(File file) {
         int c = 0;
         while (saveReadObject.contains(file)) {
-            if (c++ > 1000) return;
+            if (c++ > 1000) { return; }
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
-                
+
                 e.printStackTrace();
             }
         }
@@ -2429,7 +2471,7 @@ public class JDUtilities {
             Class webStartHelper = Class.forName("jd.JDWebStartHelper");
             Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
             String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
-            setHomeDirectory(homeDir);
+            JDUtilities.setHomeDirectory(homeDir);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -2470,7 +2512,7 @@ public class JDUtilities {
             return true;
         } catch (Exception e) {
             // e.printStackTrace();
-            return false; 
+            return false;
         }
     }
 

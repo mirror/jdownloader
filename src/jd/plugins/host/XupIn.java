@@ -37,7 +37,8 @@ import jd.utils.JDUtilities;
 
 public class XupIn extends PluginForHost {
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "jD-Team";
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
@@ -70,25 +71,21 @@ public class XupIn extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -99,7 +96,9 @@ public class XupIn extends PluginForHost {
 
             if (requestInfo.containsHTML(NOT_FOUND)) {
 
-                if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+                if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) {
+                    downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+                }
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return false;
 
@@ -133,42 +132,32 @@ public class XupIn extends PluginForHost {
 
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PATTERN_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -192,7 +181,9 @@ public class XupIn extends PluginForHost {
 
         if (requestInfo.containsHTML(NOT_FOUND)) {
 
-            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) {
+                downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+            }
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
@@ -257,8 +248,8 @@ public class XupIn extends PluginForHost {
             // this.sleep(nul,downloadLink);
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-                                                                    // ImageIO
-                                                                    // Error");
+            // ImageIO
+            // Error");
             return;
 
         }
@@ -301,7 +292,6 @@ public class XupIn extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
 

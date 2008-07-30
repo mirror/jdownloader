@@ -34,7 +34,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
 
-
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     public static final String CODER = "JD-Team";
@@ -64,13 +63,10 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
 
-    
     public JDInfoFileWriter() {
         initConfig();
     }
 
- 
-    
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
@@ -78,22 +74,22 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) return;
+            if (!(event.getSource() instanceof PluginForHost)) {
+                return;
+            }
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
-                this.write(lastDownloadFinished);
+                write(lastDownloadFinished);
             }
         }
 
     }
 
-    
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
@@ -104,19 +100,17 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         return NAME;
     }
 
-    
     @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
@@ -129,7 +123,10 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         for (int i = 0; i < Replacer.KEYS.length; i++) {
             keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
         }
-       // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "INFOFILEWRITER_ENABLED", JDLocale.L("plugins.optional.infoFileWriter.disable", "Infofilewriter aktivieren")).setDefaultValue(false));
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // subConfig, "INFOFILEWRITER_ENABLED",
+        // JDLocale.L("plugins.optional.infoFileWriter.disable", "Infofilewriter
+        // aktivieren")).setDefaultValue(false));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", keys, JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 
@@ -141,12 +138,14 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     @Override
     public void onExit() {
-     JDUtilities.getController().removeControlListener(this);
+        JDUtilities.getController().removeControlListener(this);
     }
 
     protected boolean write(Object arg) {
 
-       // if (!JDUtilities.getConfiguration().getBooleanProperty("INFOFILEWRITER_ENABLED", false)) { return false; }
+        // if
+        // (!JDUtilities.getConfiguration().getBooleanProperty("INFOFILEWRITER_ENABLED",
+        // false)) { return false; }
 
         String content = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
         String filename = subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);

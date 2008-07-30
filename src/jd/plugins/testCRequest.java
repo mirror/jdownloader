@@ -14,24 +14,23 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.plugins;
 
 import jd.parser.Form;
 
 public class testCRequest {
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		CRequest request = new CRequest().getRequest("http://www.google.de");
-		Form form = request.getForm();
-		form.put("q", "jDownloader");
-		form.remove("btnI");
-		RequestInfo requestInfo = form.getRequestInfo();
-		System.out.println("Cookie Ohne CRequest:"+requestInfo.getCookie());
-		System.out.println("Cookie mit CRequest:"+request.setRequestInfo(requestInfo).getCookie());
-	}
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
+        CRequest request = new CRequest().getRequest("http://www.google.de");
+        Form form = request.getForm();
+        form.put("q", "jDownloader");
+        form.remove("btnI");
+        RequestInfo requestInfo = form.getRequestInfo();
+        System.out.println("Cookie Ohne CRequest:" + requestInfo.getCookie());
+        System.out.println("Cookie mit CRequest:" + request.setRequestInfo(requestInfo).getCookie());
+    }
 
 }

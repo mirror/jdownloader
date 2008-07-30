@@ -64,7 +64,7 @@ public class PixelGrid extends Property {
             for (int y = 0; y < l.getHeight(); y++) {
                 if (l.grid[x][y] > limit && tmp[x][y] != 1) {
                     PixelObject p = new PixelObject(l);
-                    recFill(p, l, x, y, tmp, 0);
+                    PixelGrid.recFill(p, l, x, y, tmp, 0);
                     if (p.isBordered() && p.getSize() < 60) {
                         l.fillWithObject(p, 0);
                     }
@@ -111,7 +111,7 @@ public class PixelGrid extends Property {
             rightLines++;
         }
         // JDUtilities.getLogger().info("right "+rightLines);
-        if (leftLines >= width || (width - rightLines) > width) { return new int[] { 0, 0 }; }
+        if (leftLines >= width || width - rightLines > width) { return new int[] { 0, 0 }; }
         ;
 
         line: for (int y = 0; y < height; y++) {
@@ -140,13 +140,15 @@ public class PixelGrid extends Property {
         }
         // JDUtilities.getLogger().info("top "+topLines);
         // JDUtilities.getLogger().info("bottom "+bottomLines);
-        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[] { 0, 0 }; }
+        if (width - leftLines - rightLines < 0 || height - topLines - bottomLines < 0) { return new int[] { 0, 0 }; }
         return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
 
     }
 
     public static int[][] getGridCopy(int[][] grid) {
-        if (grid.length == 0) return null;
+        if (grid.length == 0) {
+            return null;
+        }
         int[][] ret = new int[grid.length][grid[0].length];
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
@@ -158,9 +160,12 @@ public class PixelGrid extends Property {
     }
 
     public static int getGridHeight(int[][] grid) {
-        if (grid.length == 0) return 0;
+        if (grid.length == 0) {
+            return 0;
+        }
         return grid[0].length;
     }
+
     public static int getGridWidth(int[][] grid) {
         return grid.length;
     }
@@ -181,8 +186,12 @@ public class PixelGrid extends Property {
      * @return Pixelwert bei x,y
      */
     public static int getPixelValue(int x, int y, int[][] grid, JAntiCaptcha owner) {
-        if (x < 0 || x >= grid.length) return -1;
-        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
+        if (x < 0 || x >= grid.length) {
+            return -1;
+        }
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) {
+            return -1;
+        }
         return grid[x][y];
 
     }
@@ -196,7 +205,7 @@ public class PixelGrid extends Property {
      */
     public static int getValityPercent(int value, JAntiCaptcha owner) {
         if (value < 0) { return 100; }
-        return (int) ((100.0 * value) / getMaxPixelValue(owner));
+        return (int) (100.0 * value / PixelGrid.getMaxPixelValue(owner));
     }
 
     private static void recFill(PixelObject p, Letter l, int x, int y, int[][] tmp, int i) {
@@ -208,13 +217,13 @@ public class PixelGrid extends Property {
             p.add(x, y, 0xff0000);
             tmp[x][y] = 1;
 
-            recFill(p, l, x - 1, y, tmp, i);
+            PixelGrid.recFill(p, l, x - 1, y, tmp, i);
             // getObject(x - 1, y - 1, tmpGrid, object);
-            recFill(p, l, x, y - 1, tmp, i);
+            PixelGrid.recFill(p, l, x, y - 1, tmp, i);
             // getObject(x + 1, y - 1, tmpGrid, object);
-            recFill(p, l, x + 1, y, tmp, i);
+            PixelGrid.recFill(p, l, x + 1, y, tmp, i);
             // getObject(x + 1, y + 1, tmpGrid, object);
-            recFill(p, l, x, y + 1, tmp, i);
+            PixelGrid.recFill(p, l, x, y + 1, tmp, i);
             // getObject(x - 1, y + 1, tmpGrid, object);
 
         }
@@ -347,13 +356,13 @@ public class PixelGrid extends Property {
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-                setPixelValue(x, y, newGrid, getAverage(x, y, faktor, faktor), owner);
+                PixelGrid.setPixelValue(x, y, newGrid, getAverage(x, y, faktor, faktor), owner);
 
                 // getAverage(x, y, faktor, faktor)
             }
         }
 
-        this.grid = newGrid;
+        grid = newGrid;
 
     }
 
@@ -380,7 +389,9 @@ public class PixelGrid extends Property {
                     break;
                 }
             }
-            if (!rowIsClear) break;
+            if (!rowIsClear) {
+                break;
+            }
             leftLines++;
         }
 
@@ -393,13 +404,17 @@ public class PixelGrid extends Property {
                     break;
                 }
             }
-            if (!rowIsClear) break;
+            if (!rowIsClear) {
+                break;
+            }
 
             rightLines++;
         }
 
-        if (leftLines >= getWidth() || (getWidth() - rightLines) > getWidth()) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left1");
+        if (leftLines >= getWidth() || getWidth() - rightLines > getWidth()) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("cleaning failed. nothing left1");
+            }
 
             grid = new int[0][0];
             return false;
@@ -413,7 +428,9 @@ public class PixelGrid extends Property {
                     break;
                 }
             }
-            if (!lineIsClear) break;
+            if (!lineIsClear) {
+                break;
+            }
             topLines++;
         }
 
@@ -425,12 +442,16 @@ public class PixelGrid extends Property {
                     break;
                 }
             }
-            if (!lineIsClear) break;
+            if (!lineIsClear) {
+                break;
+            }
             bottomLines++;
         }
 
-        if ((getWidth() - leftLines - rightLines) < 0 || (getHeight() - topLines - bottomLines) < 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left");
+        if (getWidth() - leftLines - rightLines < 0 || getHeight() - topLines - bottomLines < 0) {
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("cleaning failed. nothing left");
+            }
             grid = new int[0][0];
             return false;
         }
@@ -539,7 +560,7 @@ public class PixelGrid extends Property {
             }
         }
 
-        this.grid = newGrid;
+        grid = newGrid;
 
     }
 
@@ -556,12 +577,12 @@ public class PixelGrid extends Property {
 
             for (int x = 0; x < getWidth(); x++) {
 
-                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
+                tmp[x][y] = x + shift < getWidth() && x + shift >= 0 ? grid[x + shift][y] : 0xFF;
             }
 
         }
 
-        this.setGrid(tmp);
+        setGrid(tmp);
 
     }
 
@@ -585,12 +606,12 @@ public class PixelGrid extends Property {
 
             for (int y = 0; y < getHeight(); y++) {
 
-                tmp[x][y] = (y + shift < getHeight() && y + shift >= 0) ? grid[x][y + shift] : 0xFF;
+                tmp[x][y] = y + shift < getHeight() && y + shift >= 0 ? grid[x][y + shift] : 0xFF;
             }
 
         }
 
-        this.setGrid(tmp);
+        setGrid(tmp);
 
     }
 
@@ -616,7 +637,9 @@ public class PixelGrid extends Property {
 
             }
         }
-        if (i == 0) return 0;
+        if (i == 0) {
+            return 0;
+        }
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
@@ -643,8 +666,12 @@ public class PixelGrid extends Property {
         int i = 0;
         int halfW = width / 2;
         int halfH = height / 2;
-        if (width == 1 && px == 0) width = 2;
-        if (height == 1 && py == 0) height = 2;
+        if (width == 1 && px == 0) {
+            width = 2;
+        }
+        if (height == 1 && py == 0) {
+            height = 2;
+        }
 
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
@@ -684,8 +711,12 @@ public class PixelGrid extends Property {
         int i = 0;
         int halfW = width / 2;
         int halfH = height / 2;
-        if (width == 1 && px == 0) width = 2;
-        if (height == 1 && py == 0) height = 2;
+        if (width == 1 && px == 0) {
+            width = 2;
+        }
+        if (height == 1 && py == 0) {
+            height = 2;
+        }
 
         for (int x = Math.max(0, px - halfW); x < Math.min(px + width - halfW, getWidth()); x++) {
             for (int y = Math.max(0, py - halfH); y < Math.min(py + height - halfH, getHeight()); y++) {
@@ -812,10 +843,11 @@ public class PixelGrid extends Property {
             public int compare(Object[] o1, Object[] o2) {
                 Letter letter1 = ((PixelObject) o1[1]).toLetter();
                 Letter letter2 = ((PixelObject) o2[1]).toLetter();
-                if (letter1.getElementPixel() > letter2.getElementPixel())
+                if (letter1.getElementPixel() > letter2.getElementPixel()) {
                     return 1;
-                else
+                } else {
                     return 0;
+                }
             }
         });
 
@@ -843,10 +875,10 @@ public class PixelGrid extends Property {
                     PixelObject obj = (PixelObject) it[1];
                     Integer[] key2 = (Integer[]) it[0];
                     if (key2 != integers) {
-                        dif = (key2[1] - integers[1]);
-                        dif2 = (Math.abs((double) ((key2[1] + obj.getWidth()) - (integers[1] + object.getWidth()))));
+                        dif = key2[1] - integers[1];
+                        dif2 = Math.abs((double) (key2[1] + obj.getWidth() - (integers[1] + object.getWidth())));
 
-                        if (dif == 0 || dif2 == 0 || (dif < 0 && (dif + obj.getWidth()) > 0)) {
+                        if (dif == 0 || dif2 == 0 || dif < 0 && dif + obj.getWidth() > 0) {
                             map.get(key2).add(object);
                             map.remove(integers);
                             iter.remove();
@@ -889,7 +921,7 @@ public class PixelGrid extends Property {
         Collections.sort(ar, new Comparator<Integer[]>() {
 
             public int compare(Integer[] o1, Integer[] o2) {
-               
+
                 return o1[1].compareTo(o2[1]);
             }
         });
@@ -911,7 +943,9 @@ public class PixelGrid extends Property {
 
     public Image getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Dimensionen falsch: " + getDim());
+            }
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -952,7 +986,9 @@ public class PixelGrid extends Property {
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0) return 0;
+        if (grid.length == 0) {
+            return 0;
+        }
         return grid[0].length;
     }
 
@@ -963,7 +999,9 @@ public class PixelGrid extends Property {
      */
     public Image getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
+            if (JAntiCaptcha.isLoggerActive()) {
+                logger.severe("Dimensionen falsch: " + getDim());
+            }
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -987,7 +1025,7 @@ public class PixelGrid extends Property {
      * @return Neues Bild
      */
     public Image getImage(int faktor) {
-        if ((getWidth() * faktor) <= 0 || (getHeight() * faktor) <= 0) {
+        if (getWidth() * faktor <= 0 || getHeight() * faktor <= 0) {
             // if(JAntiCaptcha.isLoggerActive())logger.severe("Bild zu Klein.
             // Fehler!!. Buhcstbaen nicht richtig erkannt?");
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
@@ -1019,7 +1057,7 @@ public class PixelGrid extends Property {
      * @return Pixelwert je nach Farbbereich
      */
     public int getMaxPixelValue() {
-        return getMaxPixelValue(owner);
+        return PixelGrid.getMaxPixelValue(owner);
     }
 
     /**
@@ -1029,7 +1067,7 @@ public class PixelGrid extends Property {
      * @return maxpixelvalue
      */
     public int getMaxPixelValue(double faktor) {
-        return (int) (getMaxPixelValue(owner) * faktor);
+        return (int) (PixelGrid.getMaxPixelValue(owner) * faktor);
     }
 
     /**
@@ -1044,7 +1082,9 @@ public class PixelGrid extends Property {
      */
     private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
 
-        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) return;
+        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) {
+            return;
+        }
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
         // UTILITIES.trace(x+"/"+y);
         try {
@@ -1054,15 +1094,23 @@ public class PixelGrid extends Property {
                 tmpGrid[x][y] = -1;
 
                 // Achtung!! Algos funktionieren nur auf sw basis richtig
-                //grid[x][y] = 254;
+                // grid[x][y] = 254;
                 getObject(x - 1, y, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) {
+                    getObject(x - 1, y - 1, tmpGrid, object);
+                }
                 getObject(x, y - 1, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) {
+                    getObject(x + 1, y - 1, tmpGrid, object);
+                }
                 getObject(x + 1, y, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y + 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) {
+                    getObject(x + 1, y + 1, tmpGrid, object);
+                }
                 getObject(x, y + 1, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y + 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) {
+                    getObject(x - 1, y + 1, tmpGrid, object);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -1088,16 +1136,24 @@ public class PixelGrid extends Property {
         PixelObject object;
         boolean showdebug = false;
         ScrollPaneWindow w = null;
-        if (showdebug) w = new ScrollPaneWindow(this.owner);
-        if (showdebug) w.setTitle("getObjects2");
-        if (showdebug) w.setImage(0, 0, this.getImage());
+        if (showdebug) {
+            w = new ScrollPaneWindow(owner);
+        }
+        if (showdebug) {
+            w.setTitle("getObjects2");
+        }
+        if (showdebug) {
+            w.setImage(0, 0, this.getImage());
+        }
         int line = 1;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
-               
-                if (tmpGrid[x][y] < 0) continue;
 
-                if (getPixelValue(x, y) <= (objectContrast * getMaxPixelValue())) {
+                if (tmpGrid[x][y] < 0) {
+                    continue;
+                }
+
+                if (getPixelValue(x, y) <= objectContrast * getMaxPixelValue()) {
 
                     // Füge 2 Objekte zusammen die scheinbar zusammen gehören
 
@@ -1115,9 +1171,11 @@ public class PixelGrid extends Property {
                                 break;
                             }
                         }
-                        if (JAntiCaptcha.isLoggerActive()) logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
+                        if (JAntiCaptcha.isLoggerActive()) {
+                            logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
+                        }
 
-                    }else {
+                    } else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
                         // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
@@ -1125,11 +1183,13 @@ public class PixelGrid extends Property {
                         object.setWhiteContrast(objectContrast);
                     }
                     if (showdebug) {
-                        if (object.getArea() > 20) w.setImage(0, line, getImage());
+                        if (object.getArea() > 20) {
+                            w.setImage(0, line, getImage());
+                        }
                     }
-                    int tmp=object.getSize();
+                    int tmp = object.getSize();
                     getObject(x, y, tmpGrid, object);
-                    if(tmp==object.getSize()){
+                    if (tmp == object.getSize()) {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
                         // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
@@ -1140,12 +1200,24 @@ public class PixelGrid extends Property {
                     // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
                     if (object.getArea() > 20) {
-                        if (showdebug) w.setImage(1, line, getImage());
-                        if (showdebug) w.setText(2, line, "Size: " + object.getSize());
-                        if (showdebug) w.setText(3, line, "AVG: " + object.getAverage());
-                        if (showdebug) w.setText(4, line, "Area: " + object.getArea());
-                        if (showdebug) w.setImage(5, line, object.toLetter().getImage());
-                        if (showdebug) w.setText(6, line, object.toLetter().getDim());
+                        if (showdebug) {
+                            w.setImage(1, line, getImage());
+                        }
+                        if (showdebug) {
+                            w.setText(2, line, "Size: " + object.getSize());
+                        }
+                        if (showdebug) {
+                            w.setText(3, line, "AVG: " + object.getAverage());
+                        }
+                        if (showdebug) {
+                            w.setText(4, line, "Area: " + object.getArea());
+                        }
+                        if (showdebug) {
+                            w.setImage(5, line, object.toLetter().getImage());
+                        }
+                        if (showdebug) {
+                            w.setText(6, line, object.toLetter().getDim());
+                        }
                     }
                     line++;
                     lastObject = object;
@@ -1171,15 +1243,16 @@ public class PixelGrid extends Property {
 
                     }
 
-                }else{
-                    
-                  // logger.finer("fdsf");
+                } else {
 
-                    
+                    // logger.finer("fdsf");
+
                 }
             }
         }
-        if (showdebug) w.refreshUI();
+        if (showdebug) {
+            w.refreshUI();
+        }
         return ret;
 
     }
@@ -1267,7 +1340,7 @@ public class PixelGrid extends Property {
      * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
      */
     public boolean isElement(int value, int avg) {
-        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
+        return value < avg * owner.getJas().getDouble("RelativeContrast");
     }
 
     /**
@@ -1305,13 +1378,19 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 akt = getPixelValue(x, y);
-                if (akt < min && akt > cutMin) min = akt;
-                if (akt > max && akt < cutMax) max = akt;
+                if (akt < min && akt > cutMin) {
+                    min = akt;
+                }
+                if (akt > max && akt < cutMax) {
+                    max = akt;
+                }
             }
         }
 
         Double faktor = (double) (max - min) / (double) getMaxPixelValue();
-        if (JAntiCaptcha.isLoggerActive()) logger.fine(min + " <> " + max + " : " + faktor);
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.fine(min + " <> " + max + " : " + faktor);
+        }
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 akt = getPixelValue(x, y);
@@ -1342,7 +1421,9 @@ public class PixelGrid extends Property {
      * Gibt ein ACSI bild des Captchas aus
      */
     public void printGrid() {
-        if (JAntiCaptcha.isLoggerActive()) logger.info("\r\n" + getString());
+        if (JAntiCaptcha.isLoggerActive()) {
+            logger.info("\r\n" + getString());
+        }
     }
 
     /**
@@ -1373,11 +1454,11 @@ public class PixelGrid extends Property {
                     newGrid[0][0] = grid[0][0];
                 } else {
                     int localAVG = getAverageWithoutPoint(x, y, faktor, faktor);
-                    if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= (contrast * getMaxPixelValue())) {
+                    if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= contrast * getMaxPixelValue()) {
 
-                        setPixelValue(x, y, newGrid, (localAVG), this.owner);
+                        PixelGrid.setPixelValue(x, y, newGrid, localAVG, owner);
                     } else {
-                        setPixelValue(x, y, newGrid, getPixelValue(x, y), this.owner);
+                        PixelGrid.setPixelValue(x, y, newGrid, getPixelValue(x, y), owner);
                     }
                 }
             }
@@ -1415,7 +1496,7 @@ public class PixelGrid extends Property {
                 } else {
 
                     if (!isElement(getPixelValue(x, y), (int) (avg * contrast))) {
-                        setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor), this.owner);
+                        PixelGrid.setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor), owner);
                     }
                 }
             }
@@ -1446,28 +1527,31 @@ public class PixelGrid extends Property {
                         int c = 0;
                         int i = 0;
                         while (c <= pixels && y + i < getHeight()) {
-                            if (isElement(getPixelValue(x, y + i), avg) || isElement(getPixelValue(x + 1, y + i), avg) || isElement(getPixelValue(x - 1, y + i), avg) || isElement(getPixelValue(x + 1, y + i - 1), avg) || isElement(getPixelValue(x - 1, y + i - 1), avg))
+                            if (isElement(getPixelValue(x, y + i), avg) || isElement(getPixelValue(x + 1, y + i), avg) || isElement(getPixelValue(x - 1, y + i), avg) || isElement(getPixelValue(x + 1, y + i - 1), avg) || isElement(getPixelValue(x - 1, y + i - 1), avg)) {
                                 c++;
-
-                            else
+                            } else {
                                 break;
+                            }
                             i++;
                         }
                         i = 0;
                         while (c <= pixels && y - i > 0) {
-                            if (isElement(getPixelValue(x, y - i), avg) || isElement(getPixelValue(x + 1, y - i), avg) || isElement(getPixelValue(x - 1, y - i), avg) || isElement(getPixelValue(x + 1, y - i - 1), avg) || isElement(getPixelValue(x - 1, y - i - 1), avg))
+                            if (isElement(getPixelValue(x, y - i), avg) || isElement(getPixelValue(x + 1, y - i), avg) || isElement(getPixelValue(x - 1, y - i), avg) || isElement(getPixelValue(x + 1, y - i - 1), avg) || isElement(getPixelValue(x - 1, y - i - 1), avg)) {
                                 c++;
-                            else
+                            } else {
                                 break;
+                            }
                             i++;
                         }
-                        if (c <= pixels)
-                            setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
-                        else
+                        if (c <= pixels) {
+                            PixelGrid.setPixelValue(x, y, newGrid, getMaxPixelValue(), owner);
+                        } else {
                             newGrid[x][y] = grid[x][y];
+                        }
 
-                    } else
+                    } else {
                         newGrid[x][y] = grid[x][y];
+                    }
                 }
             }
         }
@@ -1498,7 +1582,7 @@ public class PixelGrid extends Property {
         owner.getJas().set("minimumObjectArea", tmp);
         for (int i = 1; i < ret.size(); i++) {
 
-            this.removeObjectFromGrid(ret.elementAt(i));
+            removeObjectFromGrid(ret.elementAt(i));
 
         }
     }
@@ -1516,7 +1600,9 @@ public class PixelGrid extends Property {
         owner.getJas().set("minimumObjectArea", tmp);
 
         for (int i = 1; i < ret.size(); i++) {
-            if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
+            if (ret.elementAt(i).getSize() < maxSize) {
+                removeObjectFromGrid(ret.elementAt(i));
+            }
 
         }
     }
@@ -1554,7 +1640,7 @@ public class PixelGrid extends Property {
                     for (int gy = 0; gy < faktor; gy++) {
                         int newX = x * faktor + gx;
                         int newY = y * faktor + gy;
-                        setPixelValue(newX, newY, newGrid, localAVG, owner);
+                        PixelGrid.setPixelValue(newX, newY, newGrid, localAVG, owner);
 
                     }
                 }
@@ -1562,7 +1648,7 @@ public class PixelGrid extends Property {
             }
         }
 
-        this.grid = newGrid;
+        grid = newGrid;
 
     }
 
@@ -1609,8 +1695,8 @@ public class PixelGrid extends Property {
     }
 
     public void setGridCopy(int[][] grid, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
-        int newWidth = getGridWidth(grid) - (leftPadding + rightPadding);
-        int newHeight = getGridHeight(grid) - (topPadding + bottomPadding);
+        int newWidth = PixelGrid.getGridWidth(grid) - (leftPadding + rightPadding);
+        int newHeight = PixelGrid.getGridHeight(grid) - (topPadding + bottomPadding);
 
         int[][] newGrid = new int[newWidth][newHeight];
         location[0] = 0;
@@ -1626,11 +1712,11 @@ public class PixelGrid extends Property {
     }
 
     public void setLocation(int[] loc) {
-        this.location = loc;
+        location = loc;
     }
 
     public void setOrgGrid(int[][] grid) {
-        this.tmpGrid = grid;
+        tmpGrid = grid;
 
     }
 

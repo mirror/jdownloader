@@ -58,8 +58,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     private class InternalTable extends JTable {
 
         /**
-		 * 
-		 */
+         * 
+         */
         private static final long serialVersionUID = 1L;
 
     }
@@ -67,8 +67,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     private class InternalTableModel extends AbstractTableModel {
 
         /**
-		 * 
-		 */
+         * 
+         */
         private static final long serialVersionUID = 1L;
 
         @Override
@@ -172,7 +172,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
         public void actionPerformed(ActionEvent e) {
 
-            this.stop = true;
+            stop = true;
             table.tableChanged(new TableModelEvent(table.getModel()));
 
         }
@@ -192,7 +192,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
 
-            this.btn = (JLinkButton) value;
+            btn = (JLinkButton) value;
             btn.addActionListener(this);
             return (JLinkButton) value;
         }
@@ -226,8 +226,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     }
 
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long serialVersionUID = 1L;
 
     /**
@@ -239,10 +239,8 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     private Vector<HashMap<String, String>> packageData = new Vector<HashMap<String, String>>();
 
-    
     private InternalTable table;
 
-    
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         // this.configuration = configuration;
@@ -255,7 +253,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     // //Nested Classes
 
     public void actionPerformed(ActionEvent e) {
-        for (int i = 0; i < this.packageData.size(); i++) {
+        for (int i = 0; i < packageData.size(); i++) {
 
             config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
         }
@@ -307,7 +305,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     @Override
     public void initPanel() {
-        this.setPreferredSize(new Dimension(650, 350));
+        setPreferredSize(new Dimension(650, 350));
         config = JDUtilities.getSubConfig("PACKAGEMANAGER");
         packageData = new PackageManager().getPackageData();
 
@@ -398,39 +396,34 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     @Override
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
 
     }
 
     public void mouseClicked(MouseEvent e) {
-       
 
     }
 
     public void mouseEntered(MouseEvent e) {
-       
 
     }
 
     public void mouseExited(MouseEvent e) {
-       
 
     }
 
     public void mousePressed(MouseEvent e) {
-       
 
     }
 
     public void mouseReleased(MouseEvent e) {
-       
 
     }
 
     @Override
     public void save() {
         // logger.info("save");
-        this.saveConfigEntries();
+        saveConfigEntries();
         config.save();
         new PackageManager().interact(this);
     }

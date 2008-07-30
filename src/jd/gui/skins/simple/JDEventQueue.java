@@ -25,22 +25,20 @@ import jd.utils.JDTheme;
 public class JDEventQueue extends EventQueue {
     abstract class MenuAbstractAction extends AbstractAction {
         /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		JTextComponent c;
-       
+         * 
+         */
+        private static final long serialVersionUID = 1L;
+        JTextComponent c;
 
-        public MenuAbstractAction(JTextComponent c, String text,ImageIcon icon, String acc) {
+        public MenuAbstractAction(JTextComponent c, String text, ImageIcon icon, String acc) {
             super(text);
             this.c = c;
-            if(icon!=null)putValue(Action.SMALL_ICON, icon);  
-           
-         
-                putValue(Action.ACCELERATOR_KEY,KeyStroke.getKeyStroke(acc));
-       
-          
-            
+            if (icon != null) {
+                putValue(Action.SMALL_ICON, icon);
+            }
+
+            putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acc));
+
         }
 
         @Override
@@ -52,31 +50,31 @@ public class JDEventQueue extends EventQueue {
     @Override
     protected void dispatchEvent(AWTEvent ev) {
         super.dispatchEvent(ev);
-        if (!(ev instanceof MouseEvent)) return;
+        if (!(ev instanceof MouseEvent)) { return; }
         MouseEvent e = (MouseEvent) ev;
-        if (!e.isPopupTrigger()) return;
+        if (!e.isPopupTrigger()) { return; }
         Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());
-        if (!(c instanceof JTextComponent)) return;
-        if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) return;
+        if (!(c instanceof JTextComponent)) { return; }
+        if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
         JTextComponent t = (JTextComponent) c;
         JPopupMenu menu = new JPopupMenu();
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"),JDTheme.II("gui.icons.cut",16,16),JDLocale.L("gui.textcomponent.context.cut.acc","ctrl X")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-			public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 c.cut();
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy","Kopieren"),JDTheme.II("gui.icons.copy",16,16),JDLocale.L("gui.textcomponent.context.copy.acc","ctrl C")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.copy", "Kopieren"), JDTheme.II("gui.icons.copy", 16, 16), JDLocale.L("gui.textcomponent.context.copy.acc", "ctrl C")) {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-			public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 c.copy();
             }
 
@@ -85,13 +83,13 @@ public class JDEventQueue extends EventQueue {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste","Einfügen"),JDTheme.II("gui.icons.paste",16,16),JDLocale.L("gui.textcomponent.context.paste.acc","ctrl V")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.paste", "Einfügen"), JDTheme.II("gui.icons.paste", 16, 16), JDLocale.L("gui.textcomponent.context.paste.acc", "ctrl V")) {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-			public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 c.paste();
             }
 
@@ -100,28 +98,29 @@ public class JDEventQueue extends EventQueue {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
                     return contents.isDataFlavorSupported(DataFlavor.stringFlavor);
-                } else
+                } else {
                     return false;
+                }
             }
         });
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete","Löschen"),JDTheme.II("gui.icons.delete",16,16),JDLocale.L("gui.textcomponent.context.delete.acc","DELETE")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.delete", "Löschen"), JDTheme.II("gui.icons.delete", 16, 16), JDLocale.L("gui.textcomponent.context.delete.acc", "DELETE")) {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-			public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 c.replaceSelection(null);
             }
         });
         menu.addSeparator();
-        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall","Alles auswählen"),JDTheme.II("gui.icons.select_all",16,16),JDLocale.L("gui.textcomponent.context.selectall.acc","ctrl A")) {
+        menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
+             * 
+             */
+            private static final long serialVersionUID = 1L;
 
-			public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {
                 c.selectAll();
             }
 

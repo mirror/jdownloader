@@ -21,15 +21,12 @@
 
 package jd.unrar;
 
-public class JobErrorEvent extends AxeEvent
-{
-	public JobErrorEvent (Object o)
-	{
-		super (o);
-	}
+public class JobErrorEvent extends AxeEvent {
+    public JobErrorEvent(Object o) {
+        super(o);
+    }
 
-	public JobErrorEvent (Object o, String s)
-	{
-		super (o, s);
-	}
+    public JobErrorEvent(Object o, String s) {
+        super(o, s);
+    }
 }

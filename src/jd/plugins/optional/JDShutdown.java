@@ -38,11 +38,11 @@ public class JDShutdown extends PluginOptional {
     private static final int count = 60;
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
+
     public static int getAddonInterfaceVersion() {
         return 0;
     }
 
-    
     @Override
     public void actionPerformed(ActionEvent e) {
         SubConfiguration cfg = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
@@ -59,15 +59,12 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-  
-
-    
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
         if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
-                if (((InteractionTrigger) event.getSource()) == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
+                if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
                     JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").setProperty(PROPERTY_ENABLED, false);
                     shutDown();
                 }
@@ -75,7 +72,6 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
@@ -90,7 +86,6 @@ public class JDShutdown extends PluginOptional {
         return menu;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
@@ -101,19 +96,17 @@ public class JDShutdown extends PluginOptional {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 
-    
     @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public boolean initAddon() {
 
@@ -132,12 +125,12 @@ public class JDShutdown extends PluginOptional {
         CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
         if (shutDownMessage.result) {
             String OS = System.getProperty("os.name").toLowerCase();
-            if ((OS.indexOf("windows xp") > -1) || (OS.indexOf("windows vista") > -1)) {
+            if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1) {
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {
                 }
-            } else if (OS.indexOf("windows 2000") > -1 || (OS.indexOf("nt") > -1)) {
+            } else if (OS.indexOf("windows 2000") > -1 || OS.indexOf("nt") > -1) {
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {

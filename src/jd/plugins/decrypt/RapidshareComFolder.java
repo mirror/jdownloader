@@ -36,13 +36,13 @@ public class RapidshareComFolder extends PluginForDecrypt {
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String para = "";
     private String password = "";
+
     // private String version = "1.0.0.0";
 
     public RapidshareComFolder() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         try {
@@ -73,51 +73,43 @@ public class RapidshareComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     private void getLinks(String source) {
         RequestInfo reqhelp;
         String links[][] = new Regex(source, "<div style=\"text-align:right;\">(.*?)</div>", Pattern.CASE_INSENSITIVE).getMatches();
-        for (int i = 0; i < links.length; i++) {
-            if (new Regex(links[i][0], "javascript:folderoeffnen").count() > 0) {
+        for (String[] element : links) {
+            if (new Regex(element[0], "javascript:folderoeffnen").count() > 0) {
                 try {
-                    reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + new Regex(links[i][0], Pattern.compile("', '(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch(), false);
+                    reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + new Regex(element[0], Pattern.compile("', '(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch(), false);
                     getLinks(reqhelp.getHtmlCode());
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             } else {
-                decryptedLinks.add(this.createDownloadlink(new Regex(links[i][0], Pattern.compile("href=\"(.*?)\" ", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                decryptedLinks.add(createDownloadlink(new Regex(element[0], Pattern.compile("href=\"(.*?)\" ", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
             }
         }
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
@@ -125,6 +117,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

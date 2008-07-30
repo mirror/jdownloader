@@ -39,8 +39,7 @@ public class ShareBaseDe extends PluginForHost {
     private static final String CODER = "JD-Team";
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
-    
-    
+
     /*
      * Suchmasken
      */
@@ -51,8 +50,10 @@ public class ShareBaseDe extends PluginForHost {
     private static final String HOST = "sharebase.de";
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
     private static final String PLUGIN_NAME = HOST;
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     private static final String SIM_DL = "Das gleichzeitige Downloaden";
     private static final String WAIT = "Du musst noch °:°:° warten!";
     private String cookies = "";
@@ -68,26 +69,22 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
-       
+
         return "http://sharebase.de/pp.html";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -123,7 +120,7 @@ public class ShareBaseDe extends PluginForHost {
                 return true;
             }
 
-            if (sim_dl || dl_limit) return true;
+            if (sim_dl || dl_limit) { return true; }
 
         } catch (MalformedURLException e) {
         } catch (IOException e) {
@@ -134,39 +131,30 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -231,11 +219,11 @@ public class ShareBaseDe extends PluginForHost {
         fileName = fileName.trim();
 
         // SessionId auslesen
-        this.cookies = requestInfo.getCookie().split("; ")[0];
+        cookies = requestInfo.getCookie().split("; ")[0];
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        requestInfo = HTTP.postRequest(downloadUrl, this.cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
+        requestInfo = HTTP.postRequest(downloadUrl, cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
         finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
 
         if (finishURL == null) {
@@ -248,7 +236,7 @@ public class ShareBaseDe extends PluginForHost {
         HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
         int length = urlConnection.getContentLength();
         downloadLink.setDownloadMax(length);
-        String filename = URLDecoder.decode(this.getFileNameFormHeader(urlConnection), "UTF-8");
+        String filename = URLDecoder.decode(getFileNameFormHeader(urlConnection), "UTF-8");
         downloadLink.setName(filename);
 
         // Download starten
@@ -258,16 +246,13 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
-        this.cookies = "";
+        cookies = "";
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
 
     }
 

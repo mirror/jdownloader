@@ -24,105 +24,89 @@ package jd.unrar;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class CountingInputStream extends InputStream
-{
-	private int iLastRead = 0;
-	private InputStream is;
-	private long lRead = 0;
-	private long lTotal = -1;
+public class CountingInputStream extends InputStream {
+    private int iLastRead = 0;
+    private InputStream is;
+    private long lRead = 0;
+    private long lTotal = -1;
 
-	public CountingInputStream (InputStream input)
-	{
-		is = input;
-	}
+    public CountingInputStream(InputStream input) {
+        is = input;
+    }
 
-	@Override
-    public int available() throws IOException
-	{
-		return is.available();
-	}
+    @Override
+    public int available() throws IOException {
+        return is.available();
+    }
 
-	@Override
-    public void close() throws IOException
-	{
-		is.close();
-	}
+    @Override
+    public void close() throws IOException {
+        is.close();
+    }
 
-	public long getDiff()
-	{
-		return lTotal - lRead;
-	}
+    public long getDiff() {
+        return lTotal - lRead;
+    }
 
-	public int getLastRead()
-	{
-		return iLastRead;
-	}
+    public int getLastRead() {
+        return iLastRead;
+    }
 
-	public int getLastReadAndReset()
-	{
-		int i = iLastRead;
+    public int getLastReadAndReset() {
+        int i = iLastRead;
 
-		iLastRead = 0;
-		return i;
-	}
+        iLastRead = 0;
+        return i;
+    }
 
-	public long getRead()
-	{
-		return lRead;
-	}
+    public long getRead() {
+        return lRead;
+    }
 
-	@Override
-    public void mark (int i)
-	{
-		is.mark (i);
-	}
+    @Override
+    public void mark(int i) {
+        is.mark(i);
+    }
 
-	@Override
-    public boolean markSupported()
-	{
-		return is.markSupported();
-	}
+    @Override
+    public boolean markSupported() {
+        return is.markSupported();
+    }
 
-	@Override
-    public int read() throws IOException
-	{
-		lRead++;
-		iLastRead = 1;
-		return is.read();
-	}
+    @Override
+    public int read() throws IOException {
+        lRead++;
+        iLastRead = 1;
+        return is.read();
+    }
 
-	@Override
-    public int read (byte[] ba) throws IOException
-	{
-		iLastRead = is.read (ba);
+    @Override
+    public int read(byte[] ba) throws IOException {
+        iLastRead = is.read(ba);
 
-		lRead += iLastRead;
-		return iLastRead;
-	}
+        lRead += iLastRead;
+        return iLastRead;
+    }
 
-	@Override
-    public int read (byte[] ba, int off, int len) throws IOException
-	{
-		iLastRead = is.read (ba, off, len);
+    @Override
+    public int read(byte[] ba, int off, int len) throws IOException {
+        iLastRead = is.read(ba, off, len);
 
-		lRead += iLastRead;
-		return iLastRead;
-	}
+        lRead += iLastRead;
+        return iLastRead;
+    }
 
-	@Override
-    public void reset() throws IOException
-	{
-		is.reset();
-	}
+    @Override
+    public void reset() throws IOException {
+        is.reset();
+    }
 
-	public void setTotal (long l)
-	{
-		lTotal = l;
-	}
+    public void setTotal(long l) {
+        lTotal = l;
+    }
 
-	@Override
-    public long skip (long l) throws IOException
-	{
-		return is.skip (l);
-	}
+    @Override
+    public long skip(long l) throws IOException {
+        return is.skip(l);
+    }
 }

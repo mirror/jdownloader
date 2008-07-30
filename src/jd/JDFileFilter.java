@@ -15,11 +15,6 @@ package jd;
 //
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
-
-
-
 import java.io.File;
 import java.io.FileFilter;
 
@@ -33,33 +28,36 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Sollen Verzeichnisse akzeptiert werden?
      */
-    private boolean  acceptDirectories = true;
+    private boolean acceptDirectories = true;
 
     /**
      * Extension der Datei (mit Punkt)
      */
-    private String[] extension         = null;
-    private String extensions=null;
+    private String[] extension = null;
+    private String extensions = null;
 
     /**
      * Name der Datei ohne Extension
      */
-    private String   name              = null;
+    private String name = null;
 
     /**
      * Erstellt einen neuen JDFileFilter
      * 
-     * @param name Name der Datei ohne Extension
-     * @param extension Extension der Datei (mit Punkt)
-     * @param acceptDirectories Sollen Verzeichnisse akzeptiert werden?
+     * @param name
+     *            Name der Datei ohne Extension
+     * @param extension
+     *            Extension der Datei (mit Punkt)
+     * @param acceptDirectories
+     *            Sollen Verzeichnisse akzeptiert werden?
      */
     public JDFileFilter(String name, String extension, boolean acceptDirectories) {
         this.name = name;
-        if(extension!=null){
-            
-        this.extension = extension.split("\\|");
+        if (extension != null) {
 
-        extensions=extension;
+            this.extension = extension.split("\\|");
+
+            extensions = extension;
         }
         this.acceptDirectories = acceptDirectories;
     }
@@ -71,15 +69,21 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
      */
     @Override
     public boolean accept(File f) {
-        if (f.isDirectory()) return acceptDirectories;
+        if (f.isDirectory()) {
+            return acceptDirectories;
+        }
         if (extension != null) {
-            for (int i = 0; i < extension.length; i++) {
-                 if (f.getName().toLowerCase().endsWith(extension[i].toLowerCase())) return true;
+            for (String element : extension) {
+                if (f.getName().toLowerCase().endsWith(element.toLowerCase())) {
+                    return true;
+                }
             }
             return false;
         }
         if (name != null) {
-            if (!f.getName().startsWith(name)) return false;
+            if (!f.getName().startsWith(name)) {
+                return false;
+            }
         }
         return true;
     }
@@ -92,7 +96,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Gibt die Filefilter beschreibung zurück
      */
-    
+
     @Override
     public String getDescription() {
         return "Containerfiles";
@@ -106,14 +110,16 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
      */
     public File getFile() {
         StringBuffer filename = new StringBuffer();
-        if (name != null)
+        if (name != null) {
             filename.append(name);
-        else
+        } else {
             filename.append("*");
-        if (extension != null)
+        }
+        if (extension != null) {
             filename.append(extensions);
-        else
+        } else {
             filename.append(".*");
+        }
         return new File(filename.toString());
     }
 }

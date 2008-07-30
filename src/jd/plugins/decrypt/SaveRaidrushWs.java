@@ -35,13 +35,13 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.1.0";
 
     public SaveRaidrushWs() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -53,7 +53,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
                 ArrayList<String> help = links.get(i);
                 reqinfo = HTTP.getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink("http://" + reqinfo.getHtmlCode().trim()));
+                decryptedLinks.add(createDownloadlink("http://" + reqinfo.getHtmlCode().trim()));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -62,41 +62,34 @@ public class SaveRaidrushWs extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

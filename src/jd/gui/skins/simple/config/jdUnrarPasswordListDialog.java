@@ -97,8 +97,8 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
         pwField.setEditable(true);
         JUnrar unrar = new JUnrar(false);
         String[] pws = unrar.returnPasswords();
-        for (int i = 0; i < pws.length; i++) {
-            pwField.append(pws[i] + System.getProperty("line.separator"));
+        for (String element : pws) {
+            pwField.append(element + System.getProperty("line.separator"));
         }
         pwField.setCaretPosition(0);
         getContentPane().add(pwScrollPane, BorderLayout.CENTER);
@@ -122,8 +122,7 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     @SuppressWarnings("static-access")
     public void actionPerformed(ActionEvent e) {

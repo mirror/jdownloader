@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -38,17 +37,19 @@ import jd.utils.JDUtilities;
 public class RapidsafeDe extends PluginForDecrypt {
     final static String host = "rapidsafe.de";
     private Pattern patternSupported = Pattern.compile("http://.+rapidsafe\\.de", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1";
 
     public RapidsafeDe() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (!parameter.endsWith("/")) parameter += "/";
+        if (!parameter.endsWith("/")) {
+            parameter += "/";
+        }
         try {
             HTTP.setReadTimeout(120000);
             HTTP.setConnectTimeout(120000);
@@ -71,8 +72,9 @@ public class RapidsafeDe extends PluginForDecrypt {
                 ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites.get(i).get(1), false);
                 ArrayList<ArrayList<String>> helpflash = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
 
-                for (int j = 0; j < helpflash.size(); j++)
+                for (int j = 0; j < helpflash.size(); j++) {
                     flash.add(helpflash.get(j));
+                }
             }
 
             progress.setRange(flash.size());
@@ -129,13 +131,13 @@ public class RapidsafeDe extends PluginForDecrypt {
                 // Umwandlen der Hexwerte
                 long[] modifier = new long[search2.size()];
                 int count = 0;
-                for (Iterator<ArrayList<String>> it = search2.iterator(); it.hasNext();) {
-                    modifier[count++] = Long.parseLong(spin(it.next().get(0)), 16);
+                for (ArrayList<String> arrayList : search2) {
+                    modifier[count++] = Long.parseLong(spin(arrayList.get(0)), 16);
                 }
 
                 String postdata = "";
                 for (long zahl : modifier) {
-                    postdata += String.valueOf((char) (zahl ^ (ax3 ^ ax2 + 2 + 9 ^ ccax4 + 12) ^ 2 ^ 41 - 12 ^ 112 ^ ax1 ^ ax5 ^ 41 ^ ax6 ^ ax7));
+                    postdata += String.valueOf((char) (zahl ^ ax3 ^ ax2 + 2 + 9 ^ ccax4 + 12 ^ 2 ^ 41 - 12 ^ 112 ^ ax1 ^ ax5 ^ 41 ^ ax6 ^ ax7));
                 }
 
                 postdata = SimpleMatches.getSimpleMatch(postdata, "RapidSafePSC('°'", 0);
@@ -164,11 +166,11 @@ public class RapidsafeDe extends PluginForDecrypt {
                 String[][] help = new Regex(content1, "\\(([\\d]+).([\\d]+).([\\d]+)\\)").getMatches();
 
                 content = "";
-                for (int i = 0; i < help.length; i++) {
-                    content += String.valueOf((char) (Integer.parseInt(help[i][0]) ^ Integer.parseInt(help[i][1]) ^ Integer.parseInt(help[i][2])));
+                for (String[] element : help) {
+                    content += String.valueOf((char) (Integer.parseInt(element[0]) ^ Integer.parseInt(element[1]) ^ Integer.parseInt(element[2])));
                 }
                 progress.increase(1);
-                decryptedLinks.add(this.createDownloadlink(SimpleMatches.getSimpleMatch(content, "action=\"°\" id", 0)));
+                decryptedLinks.add(createDownloadlink(SimpleMatches.getSimpleMatch(content, "action=\"°\" id", 0)));
             }
 
         } catch (IOException e) {
@@ -178,33 +180,26 @@ public class RapidsafeDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
@@ -212,14 +207,15 @@ public class RapidsafeDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     private String spin(String string) {
         String ret = "";
-        for (int i = string.length(); i >= 2; i -= 2)
+        for (int i = string.length(); i >= 2; i -= 2) {
             ret += string.substring(i - 2, i);
+        }
         return ret;
     }
 }

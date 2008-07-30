@@ -34,13 +34,13 @@ public class Myupcc extends PluginForDecrypt {
     static private final String host = "myup.cc";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public Myupcc() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -49,7 +49,9 @@ public class Myupcc extends PluginForDecrypt {
             URL url = new URL(cryptedLink);
             RequestInfo requestInfo = HTTP.getRequest(url);
             String link = requestInfo.getRegexp("<a href=\\\"(.*?)\\\" target").getFirstMatch();
-            if (link != null) decryptedLinks.add(this.createDownloadlink(link));
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link));
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -60,41 +62,34 @@ public class Myupcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

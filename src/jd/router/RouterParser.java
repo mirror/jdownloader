@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.router;
 
 import java.io.EOFException;
@@ -37,25 +36,26 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class RouterParser {
-    private static Logger logger         = JDUtilities.getLogger();
-    int                   positionInFile = 0;
+    private static Logger logger = JDUtilities.getLogger();
+    int positionInFile = 0;
 
     private byte readBuffer[] = new byte[8];
+
     private String getPlainURL(String string) {
         int index;
         if (string.startsWith("POST")) {
             string = string.substring("POST".length());
-        
-           if((index=string.indexOf("?"))>0){        
-            
-               string=string.substring(0,index);
-           }
+
+            if ((index = string.indexOf("?")) > 0) {
+
+                string = string.substring(0, index);
+            }
         } else if (string.startsWith("<POST>")) {
             string = string.substring("<POST>".length());
-         
-            if((index=string.indexOf("?"))>0){               
-               
-                string=string.substring(0,index);
+
+            if ((index = string.indexOf("?")) > 0) {
+
+                string = string.substring(0, index);
             }
         } else if (string.startsWith("GET")) {
             string = string.substring("GET".length());
@@ -63,21 +63,21 @@ public class RouterParser {
             string = string.substring("<GET>".length());
         }
         return string;
-        
+
     }
+
     private String getPostParams(String string) {
         int index;
-        if (!string.startsWith("POST")&&!string.startsWith("<POST>"))return null;
-        if((index=string.indexOf("?"))>0){               
-            return string.substring(index+1);         
-        }
+        if (!string.startsWith("POST") && !string.startsWith("<POST>")) { return null; }
+        if ((index = string.indexOf("?")) > 0) { return string.substring(index + 1); }
         return null;
-        
+
     }
+
     private int getRequestType(String string) {
-        if (string.startsWith("POST")||string.startsWith("<POST>"))return RouterData.TYPE_WEB_POST;
+        if (string.startsWith("POST") || string.startsWith("<POST>")) { return RouterData.TYPE_WEB_POST; }
         return RouterData.TYPE_WEB_GET;
-        
+
     }
 
     /**
@@ -101,9 +101,9 @@ public class RouterParser {
             logger.info(count + " router data loaded");
             return routerData;
         } catch (FileNotFoundException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         } catch (IOException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         return null;
     }
@@ -125,19 +125,19 @@ public class RouterParser {
         String disconnectString;
         String connectString;
         String login;
-       
+
         routerPort = readInt(is);
         readByte(is);
-        login=readNextString(is);
-       
+        login = readNextString(is);
+
         readLong(is); // es muss ein long übersprungen werden
         routerData.setRouterName(readNextString(is)); // routername wird
-                                                        // gespeichert
+        // gespeichert
 
         readNextString(is);// url zum routerhersteller wird übersprungen
         readNextString(is);// kommentar vom ersteller wird übersprungen
-        
-        connectString=readNextString(is);      
+
+        connectString = readNextString(is);
         disconnectString = readNextString(is);
         routerData.setIpAddressSite(readNextString(is));
         routerData.setIpAddressOffline(readNextString(is));
@@ -185,25 +185,25 @@ public class RouterParser {
         ipAddressPre = Pattern.quote(ipAddressPre);
         ipAddressPost = Pattern.quote(ipAddressPost);
         routerData.setIpAddressRegEx(ipAddressPre + "([0-9.]*)" + ipAddressPost);
-        //Zerlege Disconnecturl
+        // Zerlege Disconnecturl
         routerData.setDisconnectType(getRequestType(disconnectString));
         routerData.setDisconnectPostParams(getPostParams(disconnectString));
         routerData.setDisconnect(getPlainURL(disconnectString));
-        //Zerlege ConnectURL
+        // Zerlege ConnectURL
         routerData.setConnectType(getRequestType(connectString));
         routerData.setConnectPostParams(getPostParams(connectString));
         routerData.setConnect(getPlainURL(connectString));
-        //Zerlege LoginURL
+        // Zerlege LoginURL
         routerData.setLoginType(getRequestType(login));
         routerData.setLoginPostParams(getPostParams(login));
         routerData.setLogin(getPlainURL(login));
-   
+
         return routerData;
     }
 
     /**
-     * Mit dieser Methode wird eine routerdata.xml in einzelne RouterData Objekte
-     * zerteilt
+     * Mit dieser Methode wird eine routerdata.xml in einzelne RouterData
+     * Objekte zerteilt
      * 
      * @param file
      *            Die XML Datei, die importiert werden soll
@@ -211,8 +211,8 @@ public class RouterParser {
      */
     @SuppressWarnings("unchecked")
     public Vector<RouterData> parseXMLFile(File file) {
-     
-        Vector<RouterData> routerData = (Vector<RouterData>)JDUtilities.loadObject(new JFrame(), file, true);
+
+        Vector<RouterData> routerData = (Vector<RouterData>) JDUtilities.loadObject(new JFrame(), file, true);
         return routerData;
     }
 
@@ -227,9 +227,8 @@ public class RouterParser {
     public byte readByte(InputStream is) throws IOException {
         int ch = is.read();
         positionInFile++;
-        if (ch < 0)
-            throw new EOFException();
-        return (byte) (ch);
+        if (ch < 0) { throw new EOFException(); }
+        return (byte) ch;
     }
 
     /**
@@ -249,9 +248,8 @@ public class RouterParser {
         positionInFile++;
         int ch4 = is.read();
         positionInFile++;
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
-        return ((ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0));
+        if ((ch1 | ch2 | ch3 | ch4) < 0) { throw new EOFException(); }
+        return (ch4 << 24) + (ch3 << 16) + (ch2 << 8) + (ch1 << 0);
     }
 
     /**
@@ -265,7 +263,7 @@ public class RouterParser {
     public final long readLong(InputStream is) throws IOException {
         is.read(readBuffer, 0, 8);
         positionInFile += 8;
-        return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48) + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32) + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
+        return ((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48) + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32) + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0);
     }
 
     /**
@@ -299,19 +297,19 @@ public class RouterParser {
         positionInFile++;
         int ch2 = is.read();
         positionInFile++;
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
+        if ((ch1 | ch2) < 0) { throw new EOFException(); }
         return (short) ((ch2 << 8) + (ch1 << 0));
     }
 
     /**
      * konvertiert die routers.dat in eine xml Datei
+     * 
      * @param dat
      * @param xml
      */
-    public void routerDatToXML(File dat, File xml){
-        RouterParser parser = new RouterParser();       
-       JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
-        
+    public void routerDatToXML(File dat, File xml) {
+        RouterParser parser = new RouterParser();
+        JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
+
     }
 }

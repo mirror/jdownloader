@@ -62,42 +62,38 @@ public class DownloadInfo extends JFrame {
      * @param dlink
      */
     public DownloadInfo(JFrame frame, DownloadLink dlink) {
-        super(JDLocale.L("gui.linkinformation.title","Link Information: ")+dlink.getName());
+        super(JDLocale.L("gui.linkinformation.title", "Link Information: ") + dlink.getName());
         downloadLink = dlink;
-        //setModal(true);
-        setLayout(new BorderLayout(2,2));
-        this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
-        this.setResizable(false);
-        this.setAlwaysOnTop(true);
-       
+        // setModal(true);
+        setLayout(new BorderLayout(2, 2));
+        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
+        setResizable(false);
+        setAlwaysOnTop(true);
+
         // this.getContentPane().setBackground(Color.WHITE);
         // this.getContentPane().setForeground(Color.WHITE);
 
-       
-        
         new Thread() {
             @Override
             public void run() {
-                do  {
-                    
-                    
+                do {
+
                     try {
                         Thread.sleep(1500);
                     } catch (InterruptedException e) {
-                        
+
                         e.printStackTrace();
                     }
                     initDialog();
                     validate();
-                }while((isVisible()));
+                } while (isVisible());
                 initDialog();
             }
         }.start();
         initDialog();
         pack();
-        setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
+        setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - getHeight() / 2));
         setVisible(true);
-        
 
     }
 
@@ -134,10 +130,12 @@ public class DownloadInfo extends JFrame {
     private void initDialog() {
         panel = new JPanel(new GridBagLayout());
         int n = 10;
-        panel.setBorder(new EmptyBorder(n,n,n,n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
         panel.setBackground(Color.WHITE);
         panel.setForeground(Color.WHITE);
-        if (sp != null) this.remove(sp);
+        if (sp != null) {
+            this.remove(sp);
+        }
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
         addEntry(null, (String) null);
@@ -200,9 +198,9 @@ public class DownloadInfo extends JFrame {
                 JProgressBar p;
                 Chunk next = it.next();
                 addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
-                p.setValue(next.getBytesLoaded() * 100 / Math.max(1,next.getChunkSize()));
+                p.setValue(next.getBytesLoaded() * 100 / Math.max(1, next.getChunkSize()));
                 p.setStringPainted(true);
-                p.setString(JDUtilities.formatKbReadable((int)next.getBytesPerSecond()/1024)+"/s "+ JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
+                p.setString(JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
             }
 
         }

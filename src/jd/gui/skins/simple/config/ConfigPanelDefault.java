@@ -44,22 +44,20 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
      */
     private static final long serialVersionUID = -7983057329558110899L;
 
-    private ConfigContainer   container        = null;
-
-   
+    private ConfigContainer container = null;
 
     /**
      * serialVersionUID
      */
-    private Logger            logger           = JDUtilities.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
-    private Vector<ConfigPanelDefault> subPanels=null;
+    private Vector<ConfigPanelDefault> subPanels = null;
 
-    private JTabbedPane tabbedPane=null;
+    private JTabbedPane tabbedPane = null;
 
     public ConfigPanelDefault(UIInterface uiinterface, ConfigContainer container) {
         super(uiinterface);
-      
+
         this.container = container;
         container.setActionListener(this);
         initPanel();
@@ -67,21 +65,18 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
         load();
     }
 
-
-
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == ConfigContainer.ACTION_REQUEST_SAVE) {
-          this.save();
-      }
+            save();
+        }
     }
 
-    private void addTabbedPanel(String title,ConfigPanelDefault configPanelPlugin) {
-        this.subPanels.add(configPanelPlugin);
-        tabbedPane.add(title,configPanelPlugin );
-        
+    private void addTabbedPanel(String title, ConfigPanelDefault configPanelPlugin) {
+        subPanels.add(configPanelPlugin);
+        tabbedPane.add(title, configPanelPlugin);
+
     }
 
-    
     @Override
     public String getName() {
 
@@ -98,13 +93,14 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
 
                 GUIConfigEntry ce = null;
                 ce = new GUIConfigEntry(entry);
-                if (ce != null) addGUIConfigEntry(ce);
+                if (ce != null) {
+                    addGUIConfigEntry(ce);
+                }
 
             }
             add(panel, BorderLayout.PAGE_START);
-        }
-        else {
-            this.subPanels= new Vector<ConfigPanelDefault>();
+        } else {
+            subPanels = new Vector<ConfigPanelDefault>();
             tabbedPane = new JTabbedPane();
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -117,15 +113,15 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
             for (int i = 0; i < entries.size(); i++) {
                 if (entries.elementAt(i).getContainer() == null) {
                     general.addEntry(entries.elementAt(i));
-                }
-                else {
+                } else {
                     container.add(entries.elementAt(i).getContainer());
                 }
             }
-            if(general.getEntries().size()==0)container.remove(0);
+            if (general.getEntries().size() == 0) {
+                container.remove(0);
+            }
             for (int i = 0; i < container.size(); i++) {
-                this.addTabbedPanel(container.get(i).getTitle(),new ConfigPanelDefault(uiinterface,container.get(i)));
-               
+                addTabbedPanel(container.get(i).getTitle(), new ConfigPanelDefault(uiinterface, container.get(i)));
 
             }
             add(tabbedPane, BorderLayout.CENTER);
@@ -133,136 +129,133 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
 
     }
 
-    
     @Override
     public void load() {
         loadConfigEntries();
 
     }
 
-    
     @Override
     public void save() {
-        if(subPanels!=null){
-            for( int i=0;i<subPanels.size();i++){
-                logger.info("Saved tab "+i);
-              
+        if (subPanels != null) {
+            for (int i = 0; i < subPanels.size(); i++) {
+                logger.info("Saved tab " + i);
+
                 subPanels.get(i).save();
-               
-                
+
             }
-            
+
         }
-        if(container!=null){
-            logger.info("Save "+container.getTitle());
-        }else{
-            logger.info("Save normal panel"+this);
+        if (container != null) {
+            logger.info("Save " + container.getTitle());
+        } else {
+            logger.info("Save normal panel" + this);
         }
-        this.saveConfigEntries();
-        
+        saveConfigEntries();
+
     }
-    
-    
-    
-    
-//
-//    /**
-//     * 
-//     */
-//    private static final long serialVersionUID = -6647985066225177059L;
-//
-//    /**
-//     * serialVersionUID
-//     */
-//    @SuppressWarnings("unused")
-//    private Logger logger = JDUtilities.getLogger();
-//    private ConfigContainer   container        = null;
-//
-//    private JTabbedPane tabbedPane=null;
-//
-//    private Vector<ConfigPanelPlugin> subPanels=null;
-//    protected Interaction interaction;
-//
-//    public ConfigPanelDefault(UIInterface uiinterface, Interaction interaction) {
-//        super(uiinterface);
-//        this.interaction = interaction;
-//        initPanel();
-//        interaction.getConfig().setActionListener(this);
-//
-//        load();
-//    }
-//
-//    public void save() {
-//        this.saveConfigEntries();
-//    }
-//
-//    public void actionPerformed(ActionEvent e) {
-//        if (e.getID() == ConfigContainer.ACTION_REQUEST_SAVE) {
-//            this.save();
-//        }
-//    }
-//
-//    
-//    public void initPanel() {
-//
-//        ConfigContainer container = interaction.getConfig();
-//
-//     
-//        if (container.getContainerNum() == 0) {
-//            Vector<ConfigEntry> entries = container.getEntries();
-//            ConfigEntry entry;
-//            for (int i = 0; i < entries.size(); i++) {
-//                entry = entries.elementAt(i);
-//
-//                GUIConfigEntry ce = null;
-//                ce = new GUIConfigEntry(entry);
-//                if (ce != null) addGUIConfigEntry(ce);
-//
-//            }
-//            add(panel, BorderLayout.PAGE_START);
-//        }
-//        else {
-//            this.subPanels= new Vector<ConfigPanelPlugin>();
-//            tabbedPane = new JTabbedPane();
-//            tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-//            tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-//            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-//            Vector<ConfigEntry> entries = plugin.getConfig().getEntries();
-//
-//            Vector<ConfigContainer> container = new Vector<ConfigContainer>();
-//            ConfigContainer general = new ConfigContainer(this);
-//            container.add(general);
-//            for (int i = 0; i < entries.size(); i++) {
-//                if (entries.elementAt(i).getContainer() == null) {
-//                    general.addEntry(entries.elementAt(i));
-//                }
-//                else {
-//                    container.add(entries.elementAt(i).getContainer());
-//                }
-//            }
-//            if(general.getEntries().size()==0)container.remove(0);
-//            for (int i = 0; i < container.size(); i++) {
-//                this.addTabbedPanel(container.get(i).getTitle(),new ConfigPanelPlugin(uiinterface, plugin, container.get(i)));
-//               
-//
-//            }
-//            add(tabbedPane, BorderLayout.CENTER);
-//        }
-//        
-//        
-//
-//    }
-//
-//    
-//    public String getName() {
-//        if (interaction == null) { return JDLocale.L("gui.config.interaction.noAction", "no Action"); }
-//        return JDLocale.L("gui.config.interaction.getName", "Interaction Konfiguration: ") + interaction.getInteractionName();
-//    }
-//
-//    
-//    public void load() {
-//        loadConfigEntries();
-//
-//    }
+
+    //
+    // /**
+    // *
+    // */
+    // private static final long serialVersionUID = -6647985066225177059L;
+    //
+    // /**
+    // * serialVersionUID
+    // */
+    // @SuppressWarnings("unused")
+    // private Logger logger = JDUtilities.getLogger();
+    // private ConfigContainer container = null;
+    //
+    // private JTabbedPane tabbedPane=null;
+    //
+    // private Vector<ConfigPanelPlugin> subPanels=null;
+    // protected Interaction interaction;
+    //
+    // public ConfigPanelDefault(UIInterface uiinterface, Interaction interaction) {
+    // super(uiinterface);
+    // this.interaction = interaction;
+    // initPanel();
+    // interaction.getConfig().setActionListener(this);
+    //
+    // load();
+    // }
+    //
+    // public void save() {
+    // this.saveConfigEntries();
+    // }
+    //
+    // public void actionPerformed(ActionEvent e) {
+    // if (e.getID() == ConfigContainer.ACTION_REQUEST_SAVE) {
+    // this.save();
+    // }
+    // }
+    //
+    //    
+    // public void initPanel() {
+    //
+    // ConfigContainer container = interaction.getConfig();
+    //
+    //     
+    // if (container.getContainerNum() == 0) {
+    // Vector<ConfigEntry> entries = container.getEntries();
+    // ConfigEntry entry;
+    // for (int i = 0; i < entries.size(); i++) {
+    // entry = entries.elementAt(i);
+    //
+    // GUIConfigEntry ce = null;
+    // ce = new GUIConfigEntry(entry);
+    // if (ce != null) addGUIConfigEntry(ce);
+    //
+    // }
+    // add(panel, BorderLayout.PAGE_START);
+    // }
+    // else {
+    // this.subPanels= new Vector<ConfigPanelPlugin>();
+    // tabbedPane = new JTabbedPane();
+    // tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+    // tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+    // tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+    // Vector<ConfigEntry> entries = plugin.getConfig().getEntries();
+    //
+    // Vector<ConfigContainer> container = new Vector<ConfigContainer>();
+    // ConfigContainer general = new ConfigContainer(this);
+    // container.add(general);
+    // for (int i = 0; i < entries.size(); i++) {
+    // if (entries.elementAt(i).getContainer() == null) {
+    // general.addEntry(entries.elementAt(i));
+    // }
+    // else {
+    // container.add(entries.elementAt(i).getContainer());
+    // }
+    // }
+    // if(general.getEntries().size()==0)container.remove(0);
+    // for (int i = 0; i < container.size(); i++) {
+    // this.addTabbedPanel(container.get(i).getTitle(),new
+    // ConfigPanelPlugin(uiinterface, plugin, container.get(i)));
+    //               
+    //
+    // }
+    // add(tabbedPane, BorderLayout.CENTER);
+    // }
+    //        
+    //        
+    //
+    // }
+    //
+    //    
+    // public String getName() {
+    // if (interaction == null) { return
+    // JDLocale.L("gui.config.interaction.noAction", "no Action"); }
+    // return JDLocale.L("gui.config.interaction.getName", "Interaction
+    // Konfiguration: ") + interaction.getInteractionName();
+    // }
+    //
+    //    
+    // public void load() {
+    // loadConfigEntries();
+    //
+    // }
 
 }

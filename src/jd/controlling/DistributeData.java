@@ -93,7 +93,9 @@ public class DistributeData extends ControlBroadcaster {
         } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
-        if (fromClipboard) this.clipboard = true;
+        if (fromClipboard) {
+            clipboard = true;
+        }
     }
 
     public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
@@ -116,7 +118,9 @@ public class DistributeData extends ControlBroadcaster {
      * @return
      */
     private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
-        if (decryptedLinks.size() == 0) return false;
+        if (decryptedLinks.size() == 0) {
+            return false;
+        }
         boolean hasDecryptedLinks = false;
 
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
@@ -173,7 +177,8 @@ public class DistributeData extends ControlBroadcaster {
      * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
      * Vector zurück
      * 
-     * @param (optional) searchpw (true,false))
+     * @param (optional)
+     *            searchpw (true,false))
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {
@@ -183,7 +188,9 @@ public class DistributeData extends ControlBroadcaster {
     public Vector<DownloadLink> findLinks(boolean searchpw) {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
+        if (JDUtilities.getPluginsForHost() == null) {
+            return new Vector<DownloadLink>();
+        }
         Vector<String> foundpassword = new Vector<String>();
         if (searchpw == true) {
             foundpassword = HTMLParser.findPasswords(data);
@@ -244,7 +251,7 @@ public class DistributeData extends ControlBroadcaster {
                 if (foundpassword.size() > 0) {
                     Iterator<DownloadLink> iter = dl.iterator();
                     while (iter.hasNext()) {
-                        (iter.next()).addSourcePluginPasswords(foundpassword);
+                        iter.next().addSourcePluginPasswords(foundpassword);
                     }
                 }
                 links.addAll(dl);
@@ -262,7 +269,9 @@ public class DistributeData extends ControlBroadcaster {
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (JDUtilities.getPluginsForDecrypt() == null) return decryptedLinks;
+        if (JDUtilities.getPluginsForDecrypt() == null) {
+            return decryptedLinks;
+        }
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             PluginForDecrypt pDecrypt = iteratorDecrypt.next();
@@ -294,14 +303,14 @@ public class DistributeData extends ControlBroadcaster {
      * Bringt alle links in data in eine einheitliche Form
      */
     private void reformDataString() {
-        if (this.data != null) {
-            String Temp = HTMLParser.getHttpLinkList(this.data);
+        if (data != null) {
+            String Temp = HTMLParser.getHttpLinkList(data);
 
             try {
                 if (Temp == "") {
-                    this.data = URLDecoder.decode(this.data, "UTF-8");
+                    data = URLDecoder.decode(data, "UTF-8");
                 } else {
-                    this.data = URLDecoder.decode(Temp, "UTF-8");
+                    data = URLDecoder.decode(Temp, "UTF-8");
                 }
             } catch (Exception e) {
                 logger.warning("text not url decodeable");
@@ -319,7 +328,9 @@ public class DistributeData extends ControlBroadcaster {
             logger.info("No supported links found -> search for links in source code of all urls");
             String[] urls = HTMLParser.getHttpLinks(data, null);
 
-            if (urls.length > 0) this.data = "";
+            if (urls.length > 0) {
+                data = "";
+            }
 
             for (String url : urls) {
 

@@ -34,13 +34,13 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
     static private final String host = "redirect.wayaround.org";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public RedirectWayaroundorg() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -49,9 +49,10 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
             URL url = new URL(cryptedLink);
             RequestInfo requestInfo = HTTP.getRequest(url);
             if (requestInfo.getLocation() != null) {
-                decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
-            } else
+                decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
+            } else {
                 return null;
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -62,41 +63,34 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

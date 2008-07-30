@@ -43,7 +43,9 @@ public class PackageCreater {
 
         String[] packages = srcDir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".svn")) return false;
+                if (name.endsWith(".svn")) {
+                    return false;
+                }
                 if (new File(dir, name).isDirectory()) {
                     return true;
                 } else {
@@ -53,7 +55,7 @@ public class PackageCreater {
             }
 
         });
-//        ArrayList<File> upload = new ArrayList<File>();
+        // ArrayList<File> upload = new ArrayList<File>();
 
         StringBuffer sb = new StringBuffer();
         sb.append("<packages>");
@@ -63,7 +65,9 @@ public class PackageCreater {
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                    if (name.endsWith(".svn")) return false;
+                    if (name.endsWith(".svn")) {
+                        return false;
+                    }
                     return true;
 
                 }
@@ -71,9 +75,9 @@ public class PackageCreater {
             });
             int i = 1;
             String filename = null;
-            String[] dat= p.split("__");
-            String name=dat[1];
-            String id=dat[0];
+            String[] dat = p.split("__");
+            String name = dat[1];
+            String id = dat[0];
             do {
                 filename = name + "_" + df.format(dt) + "_v" + i + ".jdu";
                 i++;
@@ -83,31 +87,29 @@ public class PackageCreater {
             zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-               String url;
-               if(pw!=null){ System.out.println(url=Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
-                sb.append("<package>");
-                sb.append("<category>"+JOptionPane.showInputDialog(frame, "Kategorie für: " + name)+"</category>");
-                sb.append("<name>"+JOptionPane.showInputDialog(frame, "Name für: " + name)+"</name>");
-                sb.append("<version>"+JOptionPane.showInputDialog(frame, "Version für: " + name)+"</version>");
-                sb.append("<url>"+url+"</url>");
-                sb.append("<filename>"+name+".jdu</filename>");
-                sb.append("<infourl>http://wiki.jdownloader.org/index.php?title="+name+"</infourl>");
-                sb.append("<preselected>false</preselected>");
-                sb.append("<id>"+id+"</id>");
-                sb.append("</package>");
-               }
+                String url;
+                if (pw != null) {
+                    System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
+                    sb.append("<package>");
+                    sb.append("<category>" + JOptionPane.showInputDialog(frame, "Kategorie für: " + name) + "</category>");
+                    sb.append("<name>" + JOptionPane.showInputDialog(frame, "Name für: " + name) + "</name>");
+                    sb.append("<version>" + JOptionPane.showInputDialog(frame, "Version für: " + name) + "</version>");
+                    sb.append("<url>" + url + "</url>");
+                    sb.append("<filename>" + name + ".jdu</filename>");
+                    sb.append("<infourl>http://wiki.jdownloader.org/index.php?title=" + name + "</infourl>");
+                    sb.append("<preselected>false</preselected>");
+                    sb.append("<id>" + id + "</id>");
+                    sb.append("</package>");
+                }
 
             } catch (Exception e) {
-                
+
                 e.printStackTrace();
             }
         }
         sb.append("</packages>");
-        
-        System.out.println(sb+"");
-       
-     
-            
-        
+
+        System.out.println(sb + "");
+
     }
 }

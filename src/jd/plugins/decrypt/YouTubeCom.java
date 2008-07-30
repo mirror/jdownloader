@@ -67,24 +67,14 @@ public class YouTubeCom extends PluginForDecrypt {
 
     private JButton btnOK;
 
-    
     private JCheckBox checkyConvert;
 
-    
     private JComboBox methods;
 
-    
-    
-        
-   
-
-    
     private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
     // private String version = "1.0.0.0";
 
-    
     private boolean yConvertChecked = false;
 
     public YouTubeCom() {
@@ -110,7 +100,9 @@ public class YouTubeCom extends PluginForDecrypt {
             String t = "";
 
             String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
-            if (match == null) return null;
+            if (match == null) {
+                return null;
+            }
             String[] lineSub = match.split(",|:");
 
             for (int i = 0; i < lineSub.length; i++) {
@@ -130,8 +122,12 @@ public class YouTubeCom extends PluginForDecrypt {
             boolean hasMp4 = false;
             boolean has3gp = false;
 
-            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) hasMp4 = true;
-            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) has3gp = true;
+            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
+                hasMp4 = true;
+            }
+            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) {
+                has3gp = true;
+            }
 
             int convertId = getYoutubeConvertTo(hasMp4, has3gp);
             if (convertId != -1) {
@@ -144,7 +140,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
                 link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
 
-                decryptedLinks.add(this.createDownloadlink(link));
+                decryptedLinks.add(createDownloadlink(link));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -152,6 +148,7 @@ public class YouTubeCom extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -179,19 +176,20 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
         yConvertDialog(hasMp4, has3gp);
         return useyConvert[0];
 
     }
 
-    
     private void yConvertDialog(final boolean hasMp4, final boolean has3gp) {
-        if (yConvertChecked || useyConvert[1] == saveyConvert) return;
+        if (yConvertChecked || useyConvert[1] == saveyConvert) {
+            return;
+        }
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
             /**
@@ -216,10 +214,9 @@ public class YouTubeCom extends PluginForDecrypt {
                         this.var = var;
                     }
 
-                    
                     @Override
                     public String toString() {
-                       
+
                         return name;
                     }
                 }
@@ -228,12 +225,10 @@ public class YouTubeCom extends PluginForDecrypt {
                 addWindowListener(new WindowListener() {
 
                     public void windowActivated(WindowEvent e) {
-                       
 
                     }
 
                     public void windowClosed(WindowEvent e) {
-                       
 
                     }
 
@@ -245,37 +240,41 @@ public class YouTubeCom extends PluginForDecrypt {
                     }
 
                     public void windowDeactivated(WindowEvent e) {
-                       
 
                     }
 
                     public void windowDeiconified(WindowEvent e) {
-                       
 
                     }
 
                     public void windowIconified(WindowEvent e) {
-                       
 
                     }
 
                     public void windowOpened(WindowEvent e) {
-                       
 
                     }
                 });
 
                 int n = 3;
-                if (hasMp4) n++;
-                if (has3gp) n++;
+                if (hasMp4) {
+                    n++;
+                }
+                if (has3gp) {
+                    n++;
+                }
 
                 meth[] meths = new meth[n];
                 n = 0;
                 meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
                 meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
                 meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
-                if (hasMp4) meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
-                if (has3gp) meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
+                if (hasMp4) {
+                    meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
+                }
+                if (has3gp) {
+                    meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
+                }
 
                 methods = new JComboBox(meths);
                 checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);

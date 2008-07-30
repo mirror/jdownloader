@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.captcha.gui;
 
 import java.awt.BorderLayout;
@@ -35,7 +34,6 @@ import javax.swing.SwingUtilities;
 @SuppressWarnings("serial")
 public class ScrollPaneWindow extends BasicWindow {
 
- 
     private JPanel panel;
     public JScrollPane scrollPane;
 
@@ -45,7 +43,7 @@ public class ScrollPaneWindow extends BasicWindow {
     public ScrollPaneWindow(Object owner) {
         super(owner);
         panel = new JPanel();
-        this.setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
         panel.setLayout(new GridBagLayout());
         scrollPane = new JScrollPane(panel);
         this.add(scrollPane, BorderLayout.CENTER);
@@ -57,31 +55,35 @@ public class ScrollPaneWindow extends BasicWindow {
         repack();
 
     }
+
     /**
-     * Fügt relative Threadsafe  an x,y die Kompoente cmp ein
+     * Fügt relative Threadsafe an x,y die Kompoente cmp ein
+     * 
      * @param x
      * @param y
      * @param cmp
      */
     @Override
     public void setComponent(final int x, final int y, final Component cmp) {
-        if(cmp==null)return;
+        if (cmp == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 panel.add(cmp, getGBC(x, y, 1, 1));
-               
+
             }
         });
     }
+
     /**
-     * Fügt relative Threadsafe  an x,y das Bild img ein
+     * Fügt relative Threadsafe an x,y das Bild img ein
+     * 
      * @param x
      * @param y
-     * @param img 
+     * @param img
      */
     @Override
     public void setImage(final int x, final int y, final Image img) {
-        if(img==null)return;
+        if (img == null) { return; }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 panel.add(new ImageComponent(img), getGBC(x, y, 1, 1));
@@ -89,23 +91,26 @@ public class ScrollPaneWindow extends BasicWindow {
             }
         });
     }
+
     /**
-     * Fügt relative Threadsafe  an x,y den text cmp ein
+     * Fügt relative Threadsafe an x,y den text cmp ein
+     * 
      * @param x
      * @param y
      * @param cmp
      */
     @Override
     public void setText(final int x, final int y, final Object cmp) {
-        if(cmp==null)return;
+        if (cmp == null) { return;
         // final ScrollPaneWindow _this=this;
+        }
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JTextField tf = new JTextField();
                 tf.setText(cmp.toString());
                 panel.add(tf, getGBC(x, y, 1, 1));
-              ;
+                ;
             }
         });
 

@@ -36,8 +36,6 @@ import jd.utils.JDUtilities;
 public class BadOngo extends PluginForHost {
     private static final String HOST = "badongo.com";
 
-   
-
     private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)/[\\d]{4,10}", Pattern.CASE_INSENSITIVE);
 
     private File captchaFile;
@@ -51,7 +49,7 @@ public class BadOngo extends PluginForHost {
     private long rsrnd = 0;
 
     //
-    
+
     public BadOngo() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -59,26 +57,22 @@ public class BadOngo extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
 
         return "http://www.badongo.com/toc";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -112,12 +106,6 @@ public class BadOngo extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -133,19 +121,17 @@ public class BadOngo extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
@@ -153,7 +139,9 @@ public class BadOngo extends PluginForHost {
 
         // switch (step.getStep()) {
         // //case PluginStep.STEP_WAIT_TIME:
-        if (!downloadLink.isAvailabilityChecked()) getFileInformation(downloadLink);
+        if (!downloadLink.isAvailabilityChecked()) {
+            getFileInformation(downloadLink);
+        }
         if (!downloadLink.isAvailable()) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("konnte den Download nicht finden");
@@ -180,15 +168,15 @@ public class BadOngo extends PluginForHost {
             requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/en/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/en/vid") + "?rs=refreshImage&rst=&rsrnd=" + rsrnd + "&rsargs[]=0"), cookie, requestInfo.getConnection().getURL().toString(), true);
             form = requestInfo.getForm();
             form.action = form.action.replaceAll("\\\\\"", "");
-            captchaFile = getLocalCaptchaFile(this, ".jpg");
+            captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
             String captchaAdress = "http://www.badongo.com" + requestInfo.getRegexp("<img src=\\\\\"(.*?)\\\\\" />").getFirstMatch();
             logger.info("CaptchaAdress:" + captchaAdress);
             boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                 logger.severe("Captcha not found");
                 linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-                                                                        // ImageIO
-                                                                        // Error");
+                // ImageIO
+                // Error");
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 downloadLink.saveObjects.addFirst(downloadLink.getDownloadURL());
                 return;
@@ -245,13 +233,13 @@ public class BadOngo extends PluginForHost {
                 // TODO: handle exception
             }
 
-            if (form != null)
+            if (form != null) {
                 break;
-            else {
+            } else {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    
+
                     e.printStackTrace();
                 }
             }
@@ -268,7 +256,9 @@ public class BadOngo extends PluginForHost {
         logger.info(form.toString());
         HTTPConnection urlConnection = form.getConnection();
         int c = 1;
-        if (downloadLink.saveObjects.size() > 0) downloadLink.setName(downloadLink.getName().replaceFirst("\\.[\\d]+$", "") + "." + c++);
+        if (downloadLink.saveObjects.size() > 0) {
+            downloadLink.setName(downloadLink.getName().replaceFirst("\\.[\\d]+$", "") + "." + c++);
+        }
         File fileOutput = new File(downloadLink.getFileOutput());
 
         while (fileOutput.exists()) {
@@ -298,13 +288,11 @@ public class BadOngo extends PluginForHost {
 
     }
 
-    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub

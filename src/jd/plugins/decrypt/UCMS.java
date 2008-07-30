@@ -41,13 +41,13 @@ public class UCMS extends PluginForDecrypt {
             + "|(http://[\\w\\.]*?saugking\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?leetpornz\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?freefiles4u\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?dark-load\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?crimeland\\.de/\\?id=.+)" + "|(http://[\\w\\.]*?get-warez\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?meinsound\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?projekt-tempel-news\\.de.vu/\\?id=.+)" + "|(http://[\\w\\.]*?datensau\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?musik\\.am(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?spreaded\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?relfreaks\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?babevidz\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serien24\\.com(/\\?id=.+|/download/.+/.+\\.html))"
             + "|(http://[\\w\\.]*?porn-freaks\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-4-free\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-reactor\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?porn-traffic\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?chili-warez\\.net(/\\?id=.+|/.+/.+\\.html))" + "|(http://[\\w\\.]*?game-freaks\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?isos\\.at(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?your-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?mov-world\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xtreme-warez\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?sceneload\\.to(/\\?id=.+|/download/.+/.+\\.html))"
             + "|(http://[\\w\\.]*?oxygen-warez\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?epicspeedload\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?serienfreaks\\.to(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serienfreaks\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?warez-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?ddl-scene\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/\\?id=.+)", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public UCMS() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -59,16 +59,20 @@ public class UCMS extends PluginForDecrypt {
             String capTxt = "";
             String host = url.getHost();
 
-            if (!host.startsWith("http")) host = "http://" + host;
+            if (!host.startsWith("http")) {
+                host = "http://" + host;
+            }
 
             String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (pass != null) {
-                if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) this.default_password.add(pass);
+                if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) {
+                    default_password.add(pass);
+                }
             }
             String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-            for (int i = 0; i < forms.length; i++) {
+            for (String[] element : forms) {
                 for (int retry = 0; retry < 5; retry++) {
-                    Matcher matcher = PAT_CAPTCHA.matcher(forms[i][2]);
+                    Matcher matcher = PAT_CAPTCHA.matcher(element[2]);
 
                     if (matcher.find()) {
                         if (captchaFile != null && capTxt != null) {
@@ -76,29 +80,29 @@ public class UCMS extends PluginForDecrypt {
                         }
 
                         logger.finest("Captcha Protected");
-                        String captchaAdress = host + new Regex(forms[i][2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                         captchaFile = getLocalCaptchaFile(this);
                         JDUtilities.download(captchaFile, captchaAdress);
                         capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
-                        String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
-                        if (forms[i][0].startsWith("http")) {
-                            reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp + "&code=" + capTxt);
+                        String posthelp = HTMLParser.getFormInputHidden(element[2]);
+                        if (element[0].startsWith("http")) {
+                            reqinfo = HTTP.postRequest(new URL(element[0]), posthelp + "&code=" + capTxt);
                         } else {
-                            reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp + "&code=" + capTxt);
+                            reqinfo = HTTP.postRequest(new URL(host + element[0]), posthelp + "&code=" + capTxt);
                         }
                     } else {
                         if (captchaFile != null && capTxt != null) {
                             JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
                         }
 
-                        Matcher matcher_no = PAT_NO_CAPTCHA.matcher(forms[i][2]);
+                        Matcher matcher_no = PAT_NO_CAPTCHA.matcher(element[2]);
                         if (matcher_no.find()) {
                             logger.finest("Not Captcha protected");
-                            String posthelp = HTMLParser.getFormInputHidden(forms[i][2]);
-                            if (forms[i][0].startsWith("http")) {
-                                reqinfo = HTTP.postRequest(new URL(forms[i][0]), posthelp);
+                            String posthelp = HTMLParser.getFormInputHidden(element[2]);
+                            if (element[0].startsWith("http")) {
+                                reqinfo = HTTP.postRequest(new URL(element[0]), posthelp);
                             } else {
-                                reqinfo = HTTP.postRequest(new URL(host + forms[i][0]), posthelp);
+                                reqinfo = HTTP.postRequest(new URL(host + element[0]), posthelp);
                             }
                             break;
                         }
@@ -109,7 +113,9 @@ public class UCMS extends PluginForDecrypt {
                     } else {
                         break;
                     }
-                    if (reqinfo.getConnection().getURL().toString().equals(host + forms[i][0])) break;
+                    if (reqinfo.getConnection().getURL().toString().equals(host + element[0])) {
+                        break;
+                    }
                 }
                 String links[][] = null;
                 if (reqinfo.containsHTML("unescape")) {
@@ -118,8 +124,8 @@ public class UCMS extends PluginForDecrypt {
                 } else {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
-                for (int j = 0; j < links.length; j++) {
-                    decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(links[j][0])));
+                for (String[] element2 : links) {
+                    decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(element2[0])));
                 }
             }
         } catch (IOException e) {
@@ -129,44 +135,34 @@ public class UCMS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

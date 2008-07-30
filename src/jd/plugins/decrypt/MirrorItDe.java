@@ -33,13 +33,13 @@ public class MirrorItDe extends PluginForDecrypt {
 
     final static String host = "mirrorit.de";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.1.2";
 
     public MirrorItDe() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -48,10 +48,10 @@ public class MirrorItDe extends PluginForDecrypt {
             String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
 
-            for (int i = 0; i < links.length; i++) {
-                reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(links[i][0], "UTF-8") + "&num=" + links[i][1]));
+            for (String[] element : links) {
+                reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(element[0], "UTF-8") + "&num=" + element[1]));
                 reqInfo = HTTP.getRequest(new URL(reqInfo.getLocation()));
-                decryptedLinks.add(this.createDownloadlink(reqInfo.getLocation()));
+                decryptedLinks.add(createDownloadlink(reqInfo.getLocation()));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -61,41 +61,34 @@ public class MirrorItDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

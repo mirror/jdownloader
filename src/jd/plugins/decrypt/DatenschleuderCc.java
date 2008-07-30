@@ -32,13 +32,13 @@ public class DatenschleuderCc extends PluginForDecrypt {
 
     final static String host = "datenschleuder.cc";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0";
 
     public DatenschleuderCc() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,8 +46,8 @@ public class DatenschleuderCc extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
             String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + links[i]));
+            for (String element : links) {
+                reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + element));
                 String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 if (link != null) {
                     progress.increase(1);
@@ -61,41 +61,34 @@ public class DatenschleuderCc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

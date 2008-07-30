@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.components;
 
 import java.awt.Component;
@@ -42,24 +41,24 @@ import javax.swing.text.PlainDocument;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class TextArea extends JScrollPane implements MouseListener,ClipboardOwner {
+public class TextArea extends JScrollPane implements MouseListener, ClipboardOwner {
 
     private class InternalPopup extends JPopupMenu implements ActionListener {
 
         /**
-		 * 
-		 */
-		private static final long serialVersionUID = 7718129427883204876L;
+         * 
+         */
+        private static final long serialVersionUID = 7718129427883204876L;
 
-		private JMenuItem  copy;
+        private JMenuItem copy;
 
-        private JMenuItem  delete;
+        private JMenuItem delete;
 
-        private JMenuItem  paste;
+        private JMenuItem paste;
 
         private JPopupMenu popup;
 
-      //  private int[]      indeces;
+        // private int[] indeces;
 
         public InternalPopup(Component parent, int x, int y) {
             popup = new JPopupMenu();
@@ -86,60 +85,55 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
 
             if (e.getSource() == copy) {
                 Clipboard clip = getToolkit().getSystemClipboard();
-                
-              
-                 
-                   StringSelection cont = new StringSelection(txt.getSelectedText());
-                   clip.setContents(cont, _this);
+
+                StringSelection cont = new StringSelection(txt.getSelectedText());
+                clip.setContents(cont, _this);
             }
 
             if (e.getSource() == paste) {
                 Clipboard clip = getToolkit().getSystemClipboard();
-          
-                   Transferable cont = clip.getContents(_this);
-                   if (cont != null) {                    
-                      try {
-                         String s = (String) cont.getTransferData( DataFlavor.stringFlavor);
-                         String str= txt.getText();
-                         String a=str.substring(0,txt.getSelectionStart());
-                         String b = str.substring(txt.getSelectionEnd());
-                         txt.setText(a+s+b);
-                      } catch (Exception e2) {
-                         
-                      }
-                   }
-                }     
-         
-    
-         
+
+                Transferable cont = clip.getContents(_this);
+                if (cont != null) {
+                    try {
+                        String s = (String) cont.getTransferData(DataFlavor.stringFlavor);
+                        String str = txt.getText();
+                        String a = str.substring(0, txt.getSelectionStart());
+                        String b = str.substring(txt.getSelectionEnd());
+                        txt.setText(a + s + b);
+                    } catch (Exception e2) {
+
+                    }
+                }
+            }
+
             if (e.getSource() == delete) {
-                String str= txt.getText();
-                String a=str.substring(0,txt.getSelectionStart());
+                String str = txt.getText();
+                String a = str.substring(0, txt.getSelectionStart());
                 String b = str.substring(txt.getSelectionEnd());
-                txt.setText(a+b);
+                txt.setText(a + b);
             }
 
         }
     }
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3642394448923083114L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -3642394448923083114L;
 
     private static JTextArea txt;
-    protected  TextArea _this;
-    protected Logger logger=JDUtilities.getLogger();
+    protected TextArea _this;
+    protected Logger logger = JDUtilities.getLogger();
 
-    private int              maxHeight;
+    private int maxHeight;
 
-    private int              minHeight;
+    private int minHeight;
 
     public TextArea() {
         super(txt = new JTextArea());
         init();
-        _this=this;
-
+        _this = this;
 
     }
 
@@ -157,9 +151,9 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
 
     private void init() {
         txt.addMouseListener(this);
-        this.maxHeight = 200;
-        this.minHeight = 35;
-    
+        maxHeight = 200;
+        minHeight = 35;
+
         PlainDocument doc = (PlainDocument) txt.getDocument();
         doc.addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
@@ -167,7 +161,7 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
             }
 
             public void insertUpdate(DocumentEvent e) {
-           
+
                 onChanged();
             }
 
@@ -179,30 +173,25 @@ public class TextArea extends JScrollPane implements MouseListener,ClipboardOwne
     }
 
     public void lostOwnership(Clipboard clipboard, Transferable contents) {
-       
-        
+
     }
 
     public void mouseClicked(MouseEvent e) {
-   
 
     }
 
     public void mouseEntered(MouseEvent e) {
-   
 
     }
 
-
     public void mouseExited(MouseEvent e) {
-   
 
     }
 
     public void mousePressed(MouseEvent e) {
-logger.info("PRESSED");
+        logger.info("PRESSED");
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-           // Point point = e.getPoint();
+            // Point point = e.getPoint();
             int x = e.getX();
             int y = e.getY();
             new InternalPopup(this, x, y);
@@ -211,46 +200,42 @@ logger.info("PRESSED");
     }
 
     public void mouseReleased(MouseEvent e) {
-   
 
     }
 
     private void onChanged() {
-        int height=this.getHeight();
+        int height = getHeight();
         int lines = txt.getLineCount();
-       // if (lines < minHeight) lines = minHeight;
-       // if (lines > maxHeight) lines = maxHeight;
-        txt.setPreferredSize(new Dimension(-1,1));
-       
-     txt.setRows(lines);
-   
-       // logger.info("Set size: "+lines+" - "+txt.getHeight());
-        
-        if(txt.getHeight()<maxHeight && txt.getHeight()>minHeight){     
-   
-            this.setPreferredSize(new Dimension(-1,txt.getHeight()));
+        // if (lines < minHeight) lines = minHeight;
+        // if (lines > maxHeight) lines = maxHeight;
+        txt.setPreferredSize(new Dimension(-1, 1));
+
+        txt.setRows(lines);
+
+        // logger.info("Set size: "+lines+" - "+txt.getHeight());
+
+        if (txt.getHeight() < maxHeight && txt.getHeight() > minHeight) {
+
+            setPreferredSize(new Dimension(-1, txt.getHeight()));
         }
-      
-        
-       
-     
-        this.firePropertyChange("HEIGHT", height, this.getHeight()+1);
+
+        this.firePropertyChange("HEIGHT", height, getHeight() + 1);
 
     }
 
     public void setMaxHeight(int maxLines) {
-        this.maxHeight = maxLines;
+        maxHeight = maxLines;
         onChanged();
     }
 
     public void setMinHeight(int minLines) {
-        this.minHeight = minLines;
+        minHeight = minLines;
         onChanged();
     }
 
     @SuppressWarnings("static-access")
-	public void setText(String text) {
-        this.txt.setText(text);
+    public void setText(String text) {
+        txt.setText(text);
         onChanged();
     }
 }

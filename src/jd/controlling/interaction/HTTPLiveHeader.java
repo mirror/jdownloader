@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.File;
@@ -65,7 +64,6 @@ import sun.misc.BASE64Encoder;
  */
 public class HTTPLiveHeader extends Interaction {
 
-
     private class InternalAuthenticator extends Authenticator {
         private String username, password;
 
@@ -79,17 +77,18 @@ public class HTTPLiveHeader extends Interaction {
         }
     }
 
-	/**
+    /**
      * serialVersionUID
      */
-    private static final String      NAME        = JDLocale.L("interaction.liveHeader.name","HTTP Live Header");
+    private static final String NAME = JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
 
-   // private static final String      SEPARATOR   = System.getProperty("line.separator");
+    // private static final String SEPARATOR =
+    // System.getProperty("line.separator");
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 5388179522151088255L;
+     * 
+     */
+    private static final long serialVersionUID = 5388179522151088255L;
 
     /**
      * Gibt das Attribut zu key in childNode zurück
@@ -113,26 +112,29 @@ public class HTTPLiveHeader extends Interaction {
         try {
 
             RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
-//            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+            // ArrayList<ArrayList<String>> cats =
+            // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
+            // href=?cat_select=°>");
             String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getMatches(1);
-            for (int i = 0; i < cats.length; i++) {
-                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats[i]));
-//                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+            for (String element : cats) {
+                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
+                // ArrayList<ArrayList<String>> router =
+                // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
+                // class=\"link\" href=?cat_select=°&show=°>°</a>");
                 String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
-                for (int t = 0; t < router.length; t++) {
-                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router[t][0] + "&show=" + router[t][1];
+                for (String[] element2 : router) {
+                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + element2[0] + "&show=" + element2[1];
                     requestInfo = HTTP.getRequest(new URL(endURL));
                     // s logger.info(requestInfo.getHtmlCode() + "");
 
                     String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getFirstMatch();
-                    
-                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router[t][2]));
+
+                    String script = HTTPLiveHeader.getScriptFromCURL(code, JDUtilities.htmlDecode(element2[2]));
                     if (script == null) {
 
-                        cScript = new String[] { router[t][0], router[t][2], code };
-                    }
-                    else {
-                        cScript = new String[] { router[t][0], router[t][2], script };
+                        cScript = new String[] { element2[0], element2[2], code };
+                    } else {
+                        cScript = new String[] { element2[0], element2[2], script };
                     }
                     db.add(cScript);
 
@@ -140,17 +142,15 @@ public class HTTPLiveHeader extends Interaction {
 
             }
 
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
         for (int i = db.size() - 1; i >= 0; i--) {
             if (ch.containsKey(db.get(i)[0] + db.get(i)[1] + db.get(i)[2])) {
                 db.remove(i);
-            }
-            else {
+            } else {
 
                 ch.put(db.get(i)[0] + db.get(i)[1] + db.get(i)[2], true);
             }
@@ -161,7 +161,7 @@ public class HTTPLiveHeader extends Interaction {
 
     public static String[] getParameter(String code) {
         logger.info("st " + code);
-        //boolean qOpen = false;
+        // boolean qOpen = false;
         Vector<String> ret = new Vector<String>();
         int c = 0;
         int last = 0;
@@ -171,31 +171,40 @@ public class HTTPLiveHeader extends Interaction {
             int l = code.indexOf(" ", c);
             int s = l;
 
-            if (s == -1) s = code.length();
+            if (s == -1) {
+                s = code.length();
+            }
             String param = " " + code.substring(last, s).trim() + " ";
             // logger.info(param);
             if ((param.split("\"").length + 1) % 2 != 0) {
                 // logger.info("ERROR " + param.split("\"").length);
                 c = s + 1;
-                if (s == code.length()) break;
+                if (s == code.length()) {
+                    break;
+                }
                 continue;
             }
             param = param.trim();
-            if (param.startsWith("\"")) param = param.substring(1, param.length());
-            if (param.endsWith("\"")) param = param.substring(0, param.length() - 1);
+            if (param.startsWith("\"")) {
+                param = param.substring(1, param.length());
+            }
+            if (param.endsWith("\"")) {
+                param = param.substring(0, param.length() - 1);
+            }
             ret.add(param);
             if (url < 0) {
                 try {
                     new URL(param);
                     url = ret.size();
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
 
                 }
             }
             c = s + 1;
             last = c;
-            if (s == code.length()) break;
+            if (s == code.length()) {
+                break;
+            }
 
         }
         logger.info("" + ret);
@@ -209,59 +218,56 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     public static String getScriptFromCURL(String code, String name) {
-        String SEPARATOR="\r\n";
+        String SEPARATOR = "\r\n";
         String ret = "[[[HSRC]]]" + SEPARATOR + "";
         try {
             ret += "    [[[STEP]]]" + SEPARATOR + "";
-            ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
+            ret += "        [[[DEFINE routername=\"" + name + "\"/]]]" + SEPARATOR + "";
             ret += "    [[[/STEP]]]" + SEPARATOR;
             String[] lines = Regex.getLines(code);
-            for (int i = 0; i < lines.length; i++) {
-                if (lines[i].trim().toLowerCase().startsWith("curl")) {
+            for (String element : lines) {
+                if (element.trim().toLowerCase().startsWith("curl")) {
                     try {
-                        String[] params = getParameter(lines[i]);
-                        if (params.length < 2) continue;
+                        String[] params = HTTPLiveHeader.getParameter(element);
+                        if (params.length < 2) {
+                            continue;
+                        }
                         String url = params[1];
-                        logger.info(lines[i] + " : " + url);
-//                        String host = new URL(url).getHost();
+                        logger.info(element + " : " + url);
+                        // String host = new URL(url).getHost();
                         String path = new URL(url).getFile();
 
                         // String[] login=new URL(url).getUserInfo().split(":");
 
                         ret += "    [[[STEP]]]" + SEPARATOR + "";
                         ret += "        [[[REQUEST]]]" + SEPARATOR + "";
-                        if (lines[i].indexOf("-d ") >= 0) {
+                        if (element.indexOf("-d ") >= 0) {
                             ret += "            POST " + path + " HTTP/1.1" + SEPARATOR + "";
                             ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
 
-                        }
-                        else {
+                        } else {
                             ret += "            GET " + path + " HTTP/1.1" + SEPARATOR + "";
                             ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
                         }
                         for (int t = 2; t < params.length; t++) {
                             if (params[t].equalsIgnoreCase("-H")) {
                                 t++;
-                                ret += "            "+params[t] + SEPARATOR;
-                            }
-                            else if (params[t].equalsIgnoreCase("-d")) {
+                                ret += "            " + params[t] + SEPARATOR;
+                            } else if (params[t].equalsIgnoreCase("-d")) {
                                 t++;
-                                ret += SEPARATOR +  "            "+params[t];
-                            }
-                            else if (params[t].equalsIgnoreCase("-u")) {
+                                ret += SEPARATOR + "            " + params[t];
+                            } else if (params[t].equalsIgnoreCase("-u")) {
                                 t++;
-                                ret +=  "            "+"Authorization: Basic %%%basicauth%%%" + SEPARATOR;
+                                ret += "            " + "Authorization: Basic %%%basicauth%%%" + SEPARATOR;
                             }
 
                             else if (params[t].equalsIgnoreCase("-b")) {
                                 t++;
-                                ret +=  "            "+"Cookie: %%%Set-Cookie%%%" + SEPARATOR;
-                            }
-                            else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
+                                ret += "            " + "Cookie: %%%Set-Cookie%%%" + SEPARATOR;
+                            } else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
                                 t++;
-                                ret +=  "            "+"Referer: " + params[t] + SEPARATOR;
-                            }
-                            else {
+                                ret += "            " + "Referer: " + params[t] + SEPARATOR;
+                            } else {
                                 logger.info("Unknown flag: " + params[t] + " - ");
                             }
 
@@ -269,16 +275,14 @@ public class HTTPLiveHeader extends Interaction {
                         ret += SEPARATOR + "        [[[/REQUEST]]]" + SEPARATOR;
                         ret += "    [[[/STEP]]]" + SEPARATOR;
 
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                         return null;
                     }
                 }
 
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
 
@@ -314,21 +318,19 @@ public class HTTPLiveHeader extends Interaction {
         return source.split("\r\n|\r|\n");
     }
 
-    
-    private HashMap<String, String>  headerProperties;
+    private HashMap<String, String> headerProperties;
 
     /**
      * Maximal 10 versuche
      */
-   // private static final int         MAX_RETRIES = 10;
-
+    // private static final int MAX_RETRIES = 10;
     private int
 
-                                     retries     = 0;
-    private HashMap<String, String>  variables;
+    retries = 0;
+    private HashMap<String, String> variables;
 
     public boolean doInteraction(Object arg) {
-   
+
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
@@ -340,9 +342,11 @@ public class HTTPLiveHeader extends Interaction {
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
         retries++;
         logger.info("Starting  #" + retries);
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title","HTTPLiveHeader Reconnect"),10);
-       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry","HTTPLiveHeader #" + retries));
-        if (user != null || pass != null) Authenticator.setDefault(new InternalAuthenticator(user, pass));
+        ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title", "HTTPLiveHeader Reconnect"), 10);
+        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #" + retries));
+        if (user != null || pass != null) {
+            Authenticator.setDefault(new InternalAuthenticator(user, pass));
+        }
 
         if (script == null) {
             progress.finalize();
@@ -351,7 +355,7 @@ public class HTTPLiveHeader extends Interaction {
         String preIp = JDUtilities.getIPAddress();
 
         logger.finer("IP befor: " + preIp);
-       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip","(IP)HTTPLiveHeader :") + preIp);
+        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip", "(IP)HTTPLiveHeader :") + preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -370,7 +374,7 @@ public class HTTPLiveHeader extends Interaction {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         try {
-            xmlScript = parseXmlString(script, false);
+            xmlScript = HTTPLiveHeader.parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
                 progress.finalize();
@@ -380,10 +384,10 @@ public class HTTPLiveHeader extends Interaction {
             NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
-               progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step","(STEP)HTTPLiveHeader :") + step);
+                progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.3_step", "(STEP)HTTPLiveHeader :") + step);
                 progress.increase(1);
                 Node current = steps.item(step);
-               // short type = current.getNodeType();
+                // short type = current.getNodeType();
 
                 if (current.getNodeType() == 3) {
                     // logger.finer("Skipped: " + current.getNodeName());
@@ -396,9 +400,9 @@ public class HTTPLiveHeader extends Interaction {
                 NodeList toDos = current.getChildNodes();
                 for (int toDoStep = 0; toDoStep < toDos.getLength(); toDoStep++) {
                     Node toDo = toDos.item(toDoStep);
-                  
-                       progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step","(%s)HTTPLiveHeader"), toDo.getNodeName()));
-                
+
+                    progress.setStatusText(String.format(JDLocale.L("interaction.liveHeader.progress.4_step", "(%s)HTTPLiveHeader"), toDo.getNodeName()));
+
                     if (toDo.getNodeName().equalsIgnoreCase("DEFINE")) {
 
                         NamedNodeMap attributes = toDo.getAttributes();
@@ -411,8 +415,8 @@ public class HTTPLiveHeader extends Interaction {
                                 String req;
                                 if (value.startsWith(params[0])) {
                                     req = "";
-                                    logger.finer("Variables: " + this.variables);
-                                    logger.finer("Headerproperties: " + this.headerProperties);
+                                    logger.finer("Variables: " + variables);
+                                    logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 0; i <= tmp.length; i++) {
                                         logger.finer("Replace variable: ********(" + params[i - 1] + ")");
 
@@ -421,13 +425,14 @@ public class HTTPLiveHeader extends Interaction {
                                             req += tmp[i];
                                         }
                                     }
-                                }
-                                else {
+                                } else {
                                     req = tmp[0];
-                                    logger.finer("Variables: " + this.variables);
-                                    logger.finer("Headerproperties: " + this.headerProperties);
+                                    logger.finer("Variables: " + variables);
+                                    logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 1; i <= tmp.length; i++) {
-                                        if (i > params.length) continue;
+                                        if (i > params.length) {
+                                            continue;
+                                        }
                                         logger.finer("Replace variable: *********(" + params[i - 1] + ")");
 
                                         req += getModifiedVariable(params[i - 1]);
@@ -476,9 +481,7 @@ public class HTTPLiveHeader extends Interaction {
                         NamedNodeMap attributes = toDo.getAttributes();
                         Node item = attributes.getNamedItem("seconds");
                         logger.finer("Wait " + item.getNodeValue() + " seconds");
-                        if (item == null) {
-                            return parseError("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
-                        }
+                        if (item == null) { return parseError("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>"); }
                         int seconds = JDUtilities.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
 
@@ -487,23 +490,21 @@ public class HTTPLiveHeader extends Interaction {
 
             }
 
-        }
-        catch (SAXException e) {
+        } catch (SAXException e) {
             progress.finalize();
-            return this.parseError(e.getMessage());
+            return parseError(e.getMessage());
         }
 
         catch (ParserConfigurationException e) {
 
             e.printStackTrace();
             progress.finalize();
-            return this.parseError(e.getMessage());
-        }
-        catch (Exception e) {
+            return parseError(e.getMessage());
+        } catch (Exception e) {
 
             e.printStackTrace();
             progress.finalize();
-            return this.parseError(e.getCause() + " : " + e.getMessage());
+            return parseError(e.getCause() + " : " + e.getMessage());
         }
 
         int waittime = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, 0);
@@ -511,48 +512,44 @@ public class HTTPLiveHeader extends Interaction {
         int waitForIp = configuration.getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
         logger.finer("Wait " + waittime + " seconds ...");
         progress.increase(1);
-       progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.5_wait","(WAIT)HTTPLiveHeader "));
+        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.5_wait", "(WAIT)HTTPLiveHeader "));
         try {
             Thread.sleep(waittime * 1000);
-        }
-        catch (InterruptedException e) {
+        } catch (InterruptedException e) {
         }
 
         String afterIP = JDUtilities.getIPAddress();
-        if(!JDUtilities.validateIP(afterIP)){
-            logger.warning("IP "+afterIP+" was filtered by mask: "+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK,"\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
-            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short","Die IP %s wurde als nicht erlaubt identifiziert"),afterIP), null, 20);
-            afterIP="offline";
+        if (!JDUtilities.validateIP(afterIP)) {
+            logger.warning("IP " + afterIP + " was filtered by mask: " + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b"));
+            JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
+            afterIP = "offline";
         }
         logger.finer("Ip after: " + afterIP);
         progress.increase(1);
         String pattern;
-       
-            pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-           progress.setStatusText(String.format(pattern,  preIp ,afterIP));
-       
 
+        pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck", "(IPCHECK)HTTPLiveHeader %s / %s");
+        progress.setStatusText(String.format(pattern, preIp, afterIP));
 
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
-        while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline")||afterIP == null || afterIP.equals(preIp))) {
+        while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline") || afterIP == null || afterIP.equals(preIp))) {
             try {
                 Thread.sleep(5 * 1000);
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
             try {
-                pattern=JDLocale.L("interaction.liveHeader.progress.5_ipcheck","(IPCHECK)HTTPLiveHeader %s / %s");
-               progress.setStatusText(String.format(pattern,  preIp ,afterIP));
+                pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck", "(IPCHECK)HTTPLiveHeader %s / %s");
+                progress.setStatusText(String.format(pattern, preIp, afterIP));
             } catch (Exception e) {
                 // TODO: handle exception
             }
- 
+
             logger.finer("Ip Check: " + afterIP);
         }
-        if (!afterIP.equals(preIp)&&!afterIP.equalsIgnoreCase("offline")) {
+        if (!afterIP.equals(preIp) && !afterIP.equalsIgnoreCase("offline")) {
             progress.finalize();
-            logger.info("Rec succ: "+afterIP);
+            logger.info("Rec succ: " + afterIP);
             return true;
         }
         if (retries <= maxretries) {
@@ -560,7 +557,7 @@ public class HTTPLiveHeader extends Interaction {
             return doInteraction(arg);
         }
         progress.finalize();
-        logger.info("Rec fail: "+afterIP);
+        logger.info("Rec fail: " + afterIP);
         return false;
     }
 
@@ -570,17 +567,18 @@ public class HTTPLiveHeader extends Interaction {
         String post = "";
         String host = null;
         RequestInfo requestInfo;
-      
+
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-//        ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request, "%%%°%%%", 1);
+        // ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request,
+        // "%%%°%%%", 1);
         String[] params = new Regex(request, "%%%(.*?)%%%").getMatches(1);
         if (params.length > 0) {
             String req;
             if (request.startsWith(params[0])) {
                 req = "";
-                logger.finer("Variables: " + this.variables);
-                logger.finer("Headerproperties: " + this.headerProperties);
+                logger.finer("Variables: " + variables);
+                logger.finer("Headerproperties: " + headerProperties);
                 for (int i = 0; i <= tmp.length; i++) {
                     logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
 
@@ -589,13 +587,14 @@ public class HTTPLiveHeader extends Interaction {
                         req += tmp[i];
                     }
                 }
-            }
-            else {
+            } else {
                 req = tmp[0];
-                logger.finer("Variables: " + this.variables);
-                logger.finer("Headerproperties: " + this.headerProperties);
+                logger.finer("Variables: " + variables);
+                logger.finer("Headerproperties: " + headerProperties);
                 for (int i = 1; i <= tmp.length; i++) {
-                    if (i > params.length) continue;
+                    if (i > params.length) {
+                        continue;
+                    }
                     logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
 
                     req += getModifiedVariable(params[i - 1]);
@@ -607,7 +606,7 @@ public class HTTPLiveHeader extends Interaction {
 
             request = req;
         }
-        String[] requestLines = splitLines(request);
+        String[] requestLines = HTTPLiveHeader.splitLines(request);
         if (requestLines.length == 0) {
             logger.severe("Parse Fehler:" + request);
             return null;
@@ -645,7 +644,9 @@ public class HTTPLiveHeader extends Interaction {
             }
             requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
 
-            if (p[0].trim().equalsIgnoreCase("HOST")) host = requestLines[li].substring(p[0].length() + 1).trim();
+            if (p[0].trim().equalsIgnoreCase("HOST")) {
+                host = requestLines[li].substring(p[0].length() + 1).trim();
+            }
         }
 
         if (host == null) {
@@ -671,8 +672,7 @@ public class HTTPLiveHeader extends Interaction {
                 requestInfo = HTTP.readFromURL(httpConnection);
                 requestInfo.setConnection(httpConnection);
 
-            }
-            else {
+            } else {
                 post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
                 HTTPConnection httpConnection = new HTTPConnection(new URL("http://" + host + path).openConnection());
@@ -693,7 +693,9 @@ public class HTTPLiveHeader extends Interaction {
                 httpConnection.setDoOutput(true);
                 httpConnection.connect();
                 OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-                if (post != null) wr.write(post);
+                if (post != null) {
+                    wr.write(post);
+                }
                 wr.flush();
                 requestInfo = HTTP.readFromURL(httpConnection);
                 wr.close();
@@ -704,13 +706,12 @@ public class HTTPLiveHeader extends Interaction {
             logger.finer("Answer: ");
             for (Map.Entry<String, List<String>> me : set) {
                 if (me.getValue() != null && me.getValue().size() > 0) {
-                    this.headerProperties.put(me.getKey(), me.getValue().get(0));
+                    headerProperties.put(me.getKey(), me.getValue().get(0));
                     logger.finer(me.getKey() + " : " + me.getValue().get(0));
                 }
             }
 
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
 
             logger.severe("IO Error: " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -726,12 +727,13 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     @SuppressWarnings("unchecked")
-	public Vector<String[]> getLHScripts() {
-        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
+    public Vector<String[]> getLHScripts() {
+        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
         Vector<String[]> ret = new Vector<String[]>();
-        for (int i = 0; i < list.length; i++) {
-            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"))
-            ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), list[i], true));
+        for (File element : list) {
+            if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
+                ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), element, true));
+            }
         }
 
         return ret;
@@ -739,13 +741,13 @@ public class HTTPLiveHeader extends Interaction {
 
     private String getModifiedVariable(String key) {
 
-        if (key.indexOf(":::") == -1 && headerProperties.containsKey(key)) return headerProperties.get(key);
-        if (key.indexOf(":::") == -1) return variables.get(key);
+        if (key.indexOf(":::") == -1 && headerProperties.containsKey(key)) { return headerProperties.get(key); }
+        if (key.indexOf(":::") == -1) { return variables.get(key); }
         String ret = variables.get(key.substring(key.lastIndexOf(":::") + 3));
         if (headerProperties.containsKey(key.substring(key.lastIndexOf(":::") + 3))) {
             ret = headerProperties.get(key.substring(key.lastIndexOf(":::") + 3));
         }
-        if (ret == null) return "";
+        if (ret == null) { return ""; }
         int id;
         String fnc;
         while ((id = key.indexOf(":::")) >= 0) {
@@ -754,29 +756,23 @@ public class HTTPLiveHeader extends Interaction {
 
             if (fnc.equalsIgnoreCase("URLENCODE")) {
                 ret = JDUtilities.urlEncode(ret);
-            }
-            else if (fnc.equalsIgnoreCase("URLDECODE")) {
+            } else if (fnc.equalsIgnoreCase("URLDECODE")) {
                 ret = JDUtilities.htmlDecode(ret);
-            }
-            else if (fnc.equalsIgnoreCase("UTF8DECODE")) {
+            } else if (fnc.equalsIgnoreCase("UTF8DECODE")) {
                 ret = JDUtilities.UTF8Decode(ret);
-            }
-            else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
+            } else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
                 ret = JDUtilities.UTF8Encode(ret);
-            }
-            else if (fnc.equalsIgnoreCase("MD5")) {
+            } else if (fnc.equalsIgnoreCase("MD5")) {
                 ret = JDUtilities.getMD5(ret);
-            }
-            else if (fnc.equalsIgnoreCase("BASE64")) {
+            } else if (fnc.equalsIgnoreCase("BASE64")) {
                 ret = new BASE64Encoder().encode(ret.getBytes());
             }
         }
         return ret;
     }
 
-    
     private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
-        if (requestInfo == null) return;
+        if (requestInfo == null) { return; }
 
         // patStr="<title>(.*?)</title>";
         Pattern pattern = Pattern.compile(patStr);
@@ -789,39 +785,30 @@ public class HTTPLiveHeader extends Interaction {
                 variables.put(keys[i], matcher.group(i + 1));
                 logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
             }
-        }
-        else {
+        } else {
             logger.severe("Regular Expression without matches: " + patStr);
         }
 
     }
 
-    
     public void initConfig() {
-
-
 
     }
 
     private boolean parseError(String string) {
-        this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+        setCallCode(Interaction.INTERACTION_CALL_ERROR);
         logger.severe(string);
         return false;
     }
 
-
-
-    
     public void resetInteraction() {
         retries = 0;
     }
 
-    
     public void run() {
-    // Nichts zu tun. Interaction braucht keinen Thread
+        // Nichts zu tun. Interaction braucht keinen Thread
     }
 
-    
     public String toString() {
         return NAME;
     }

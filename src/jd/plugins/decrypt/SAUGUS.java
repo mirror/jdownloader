@@ -27,15 +27,12 @@ import jd.utils.HTMLEntities;
 
 public class SAUGUS extends PluginForDecrypt {
     final static String host = "saug.us";
-    private static String VERSION = "1.0.0.0";
-
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
 
     public SAUGUS() {
         super();
     }
 
-    
     public String deca1(String input) {
         final String keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
         String output = "";
@@ -55,9 +52,9 @@ public class SAUGUS extends PluginForDecrypt {
 
             get4 = (char) keyStr.indexOf(input.charAt(i++));
 
-            type1 = (char) ((get1 << 2) | (get2 >> 4));
-            type2 = (char) (((get2 & 15) << 4) | (get3 >> 2));
-            type3 = (char) (((get3 & 3) << 6) | get4);
+            type1 = (char) (get1 << 2 | get2 >> 4);
+            type2 = (char) ((get2 & 15) << 4 | get3 >> 2);
+            type3 = (char) ((get3 & 3) << 6 | get4);
 
             output = output + type1;
 
@@ -72,7 +69,6 @@ public class SAUGUS extends PluginForDecrypt {
         return output;
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -83,8 +79,7 @@ public class SAUGUS extends PluginForDecrypt {
             String[] crypt = new Regex(request.getHtmlCode(), "document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
             progress.setRange(crypt.length);
 
-            for (int i = 0; i < crypt.length; i++) {
-                String string = crypt[i];
+            for (String string : crypt) {
                 string = deca1(string);
 
                 string = new Regex(string, "\\(deca.*?\\(\'(.*?)\'").getFirstMatch();
@@ -95,10 +90,11 @@ public class SAUGUS extends PluginForDecrypt {
 
                 string = hst + HTMLEntities.unhtmlentities(new Regex(string, "javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
                 string = HTMLEntities.unhtmlentities(new Regex(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
-                if (!string.toLowerCase().matches("http\\:\\/\\/.*"))
+                if (!string.toLowerCase().matches("http\\:\\/\\/.*")) {
                     decryptedLinks.add(createDownloadlink(request.getRequest(hst + string).getForm().action));
-                else
+                } else {
                     decryptedLinks.add(createDownloadlink(string));
+                }
                 progress.increase(1);
             }
         } catch (Exception e) {
@@ -108,21 +104,16 @@ public class SAUGUS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-  
-
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
@@ -133,15 +124,14 @@ public class SAUGUS extends PluginForDecrypt {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

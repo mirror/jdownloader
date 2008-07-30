@@ -34,13 +34,13 @@ public class NewzFindCom extends PluginForDecrypt {
 
     final static String host = "newzfind.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "0.1.0";
 
     public NewzFindCom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -57,8 +57,8 @@ public class NewzFindCom extends PluginForDecrypt {
 
             progress.setRange(links.length);
 
-            for (int i = 0; i < links.length; i++) {
-                decryptedLinks.add(this.createDownloadlink(links[i][0]));
+            for (String[] element : links) {
+                decryptedLinks.add(createDownloadlink(element[0]));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -68,42 +68,35 @@ public class NewzFindCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
 }

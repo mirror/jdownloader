@@ -73,35 +73,46 @@ public class Serienjunkies extends PluginForDecrypt {
 
     public Serienjunkies() {
         super();
-        this.setConfigElements();
+        setConfigElements();
         default_password.add("serienjunkies.dl.am");
         default_password.add("serienjunkies.org");
 
     }
 
-    
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         data = data.replaceAll("http://vote.serienjunkies.org/?", "");
         if (data.contains("serienjunkies.org") && (data.contains("/?cat=") || data.contains("/?p="))) {
-            cat = (getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing);
+            cat = getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing;
         }
-        boolean rscom = (Boolean) this.getProperties().getProperty("USE_RAPIDSHARE_V2", true);
-        boolean rsde = (Boolean) this.getProperties().getProperty("USE_RAPIDSHAREDE_V2", true);
-        boolean net = (Boolean) this.getProperties().getProperty("USE_NETLOAD_V2", true);
-        boolean uploaded = (Boolean) this.getProperties().getProperty("USE_UPLOADED_V2", true);
-        boolean simpleupload = (Boolean) this.getProperties().getProperty("USE_SIMLEUPLOAD_V2", true);
-        boolean filefactory = (Boolean) this.getProperties().getProperty("USE_FILEFACTORY_V2", true);
+        boolean rscom = (Boolean) getProperties().getProperty("USE_RAPIDSHARE_V2", true);
+        boolean rsde = (Boolean) getProperties().getProperty("USE_RAPIDSHAREDE_V2", true);
+        boolean net = (Boolean) getProperties().getProperty("USE_NETLOAD_V2", true);
+        boolean uploaded = (Boolean) getProperties().getProperty("USE_UPLOADED_V2", true);
+        boolean simpleupload = (Boolean) getProperties().getProperty("USE_SIMLEUPLOAD_V2", true);
+        boolean filefactory = (Boolean) getProperties().getProperty("USE_FILEFACTORY_V2", true);
         next = false;
         String hosterStr = "";
         if (rscom || rsde || net || uploaded) {
             hosterStr += "(";
-            if (rscom) hosterStr += isNext() + "rc[\\_\\-]";
-            if (rsde) hosterStr += isNext() + "rs[\\_\\-]";
-            if (net) hosterStr += isNext() + "nl[\\_\\-]";
-            if (uploaded) hosterStr += isNext() + "ut[\\_\\-]";
-            if (simpleupload) hosterStr += isNext() + "su[\\_\\-]";
-            if (filefactory) hosterStr += isNext() + "ff[\\_\\-]";
+            if (rscom) {
+                hosterStr += isNext() + "rc[\\_\\-]";
+            }
+            if (rsde) {
+                hosterStr += isNext() + "rs[\\_\\-]";
+            }
+            if (net) {
+                hosterStr += isNext() + "nl[\\_\\-]";
+            }
+            if (uploaded) {
+                hosterStr += isNext() + "ut[\\_\\-]";
+            }
+            if (simpleupload) {
+                hosterStr += isNext() + "su[\\_\\-]";
+            }
+            if (filefactory) {
+                hosterStr += isNext() + "ff[\\_\\-]";
+            }
             if (cat) {
                 hosterStr += isNext() + "cat\\=[\\d]+";
                 hosterStr += isNext() + "p\\=[\\d]+";
@@ -118,27 +129,22 @@ public class Serienjunkies extends PluginForDecrypt {
 
             String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
             Pattern pat = Pattern.compile("http://[\\w\\.]{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*", Pattern.CASE_INSENSITIVE);
-            for (int i = 0; i < links.length; i++) {
-                Matcher m = pat.matcher(links[i]);
+            for (String element : links) {
+                Matcher m = pat.matcher(element);
 
-                if (!m.matches()) return true;
+                if (!m.matches()) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    
     public boolean collectCaptchas() {
-       
+
         return false;
     }
 
-    
-    
-        
-    
-
-    
     private DownloadLink createdl(String parameter, String[] info) {
         int size = 100;
         String name = null, linkName = null, title = null;
@@ -150,7 +156,7 @@ public class Serienjunkies extends PluginForDecrypt {
             mirrors = getMirrors(parameter, info[2]);
         }
         try {
-            linkName = (((title.length() > 10) ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
+            linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
             // TODO: handle exception
         }
@@ -159,7 +165,7 @@ public class Serienjunkies extends PluginForDecrypt {
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
         String hostname = getHostname(parameter);
-        DownloadLink dlink = new DownloadLink(this, name, this.getHost(), "http://sjdownload.org/" + hostname + "/" + linkName, true);
+        DownloadLink dlink = new DownloadLink(this, name, getHost(), "http://sjdownload.org/" + hostname + "/" + linkName, true);
         dlink.setProperty("link", parameter);
         dlink.setProperty("mirrors", mirrors);
         if (name != null) {
@@ -197,13 +203,17 @@ public class Serienjunkies extends PluginForDecrypt {
                         break;
                     }
                 }
-                if (name == null) return decryptedLinks;
+                if (name == null) {
+                    return decryptedLinks;
+                }
                 request.getRequest(parameter);
                 name += " ";
                 String[] bet = null;
                 while (bet == null) {
                     name = name.substring(0, name.length() - 1);
-                    if (name.length() == 0) return decryptedLinks;
+                    if (name.length() == 0) {
+                        return decryptedLinks;
+                    }
                     try {
                         bet = request.getRegexp("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
                     } catch (Exception e) {
@@ -213,8 +223,8 @@ public class Serienjunkies extends PluginForDecrypt {
                 }
                 lastHtmlCode = request.getHtmlCode();
                 String[] links = HTMLParser.getHttpLinks(bet[1], request.urlToString());
-                for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink(links[i]));
+                for (String element : links) {
+                    decryptedLinks.add(createDownloadlink(element));
                 }
                 return decryptedLinks;
             } else if (catst == sCatGrabb) {
@@ -236,21 +246,21 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                 }
                 String[] titles = htmlcode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
-                for (int g = 0; g < titles.length; g++) {
+                for (String element : titles) {
 
-                    String title = new Regex(titles[g], "([^><]*?)</a>").getFirstMatch();
-                    String[] sp = titles[g].split("(?is)<strong>Größe:</strong>[\\s]*");
-                    for (int d = 0; d < sp.length; d++) {
-                        String size = new Regex(sp[d], "[\\d]+").getFirstMatch();
-                        String[][] links = new Regex(sp[d], "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
-                        for (int i = 0; i < links.length; i++) {
-                            String[] links2 = HTMLParser.getHttpLinks(links[i][1], parameter);
-                            for (int j = 0; j < links2.length; j++) {
-                                if (canHandle(links2[j])) {
-                                    if (this.getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-                                        decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(links2[j]));
+                    String title = new Regex(element, "([^><]*?)</a>").getFirstMatch();
+                    String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
+                    for (String element2 : sp) {
+                        String size = new Regex(element2, "[\\d]+").getFirstMatch();
+                        String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
+                        for (String[] element3 : links) {
+                            String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
+                            for (String element4 : links2) {
+                                if (canHandle(element4)) {
+                                    if (getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+                                        decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(element4));
                                     } else {
-                                        decryptedLinks.add(createdl(links2[j], new String[] { size, links[i][0], links[i][1], title }));
+                                        decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
                                     }
 
                                 }
@@ -265,7 +275,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (this.getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+        if (getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
             // step.setParameter((new
             // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
         } else {
@@ -288,60 +298,60 @@ public class Serienjunkies extends PluginForDecrypt {
         return false;
     }
 
-    
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     public String[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
         Vector<String> ret = new Vector<String>();
         scatChecked = true;
-        for (int i = 0; i < links.length; i++) {
-            if (canHandle(links[i])) ret.add(links[i]);
+        for (String element : links) {
+            if (canHandle(element)) {
+                ret.add(element);
+            }
         }
         return ret.toArray(new String[ret.size()]);
     }
 
-    
     public String getHost() {
         return host;
     }
 
-    
     private String getHostname(String link) {
-        if (link.matches(".*rc[\\_\\-].*"))
+        if (link.matches(".*rc[\\_\\-].*")) {
             return "RapidshareCom";
-        else if (link.matches(".*rs[\\_\\-].*"))
+        } else if (link.matches(".*rs[\\_\\-].*")) {
             return "RapidshareDe";
-        else if (link.matches(".*nl[\\_\\-].*"))
+        } else if (link.matches(".*nl[\\_\\-].*")) {
             return "NetloadIn";
-        else if (link.matches(".*ut[\\_\\-].*"))
+        } else if (link.matches(".*ut[\\_\\-].*")) {
             return "UploadedTo";
-        else if (link.matches(".*su[\\_\\-].*"))
+        } else if (link.matches(".*su[\\_\\-].*")) {
             return "SimpleUploadNet";
-        else if (link.matches(".*ff[\\_\\-].*"))
+        } else if (link.matches(".*ff[\\_\\-].*")) {
             return "FileFactoryCom";
-        else
+        } else {
             return "RapidshareCom";
+        }
     }
 
-    
     private String[] getLinkName(String link) {
         String[] titles = lastHtmlCode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
-        for (int d = 0; d < titles.length; d++) {
+        for (String element : titles) {
 
-            String title = new Regex(titles[d], "([^><]*?)</a>").getFirstMatch();
-            String[] sp = titles[d].split("(?is)<strong>Größe:</strong>[\\s]*");
-            for (int j = 0; j < sp.length; j++) {
-                String size = new Regex(sp[j], "[\\d]+").getFirstMatch();
-                String[][] links = new Regex(sp[j].replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
+            String title = new Regex(element, "([^><]*?)</a>").getFirstMatch();
+            String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
+            for (String element2 : sp) {
+                String size = new Regex(element2, "[\\d]+").getFirstMatch();
+                String[][] links = new Regex(element2.replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
 
-                for (int i = 0; i < links.length; i++) {
+                for (String[] element3 : links) {
                     try {
 
-                        if (links[i][1].contains(link)) return new String[] { size, links[i][0], links[i][1], title };
+                        if (element3[1].contains(link)) {
+                            return new String[] { size, element3[0], element3[1], title };
+                        }
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
@@ -353,7 +363,6 @@ public class Serienjunkies extends PluginForDecrypt {
         return null;
     }
 
-    
     private String[] getMirrors(String link, String htmlcode) {
         String[] sp = htmlcode.split("<strong>.*?</strong>");
         ArrayList<String> ret = new ArrayList<String>();
@@ -372,11 +381,13 @@ public class Serienjunkies extends PluginForDecrypt {
                 break;
             }
         }
-        if (c == -1) return null;
-        for (int i = 0; i < sp.length; i++) {
+        if (c == -1) {
+            return null;
+        }
+        for (String element : sp) {
             String mirror = null;
             try {
-                mirror = HTMLParser.getHttpLinks(sp[i], link)[c];
+                mirror = HTMLParser.getHttpLinks(element, link)[c];
             } catch (Exception e) {
                 // TODO: handle exception
             }
@@ -387,12 +398,10 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret.toArray(new String[ret.size()]);
     }
 
-    
     public String getPluginName() {
         return host;
     }
 
-    
     private int getSerienJunkiesCat(boolean isP) {
 
         sCatDialog(isP);
@@ -400,26 +409,29 @@ public class Serienjunkies extends PluginForDecrypt {
 
     }
 
-    
     public Pattern getSupportedLinks() {
         return null;
     }
 
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     private String isNext() {
-        if (next)
+        if (next) {
             return "|";
-        else
+        } else {
             next = true;
+        }
         return "";
 
     }
 
     private void sCatDialog(final boolean isP) {
-        if (scatChecked || useScat[1] == saveScat) return;
+        if (scatChecked || useScat[1] == saveScat) {
+            return;
+        }
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
             /**
@@ -444,9 +456,8 @@ public class Serienjunkies extends PluginForDecrypt {
                         this.var = var;
                     }
 
-                    
                     public String toString() {
-                       
+
                         return name;
                     }
                 }
@@ -454,12 +465,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 addWindowListener(new WindowListener() {
 
                     public void windowActivated(WindowEvent e) {
-                       
 
                     }
 
                     public void windowClosed(WindowEvent e) {
-                       
 
                     }
 
@@ -470,22 +479,18 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
 
                     public void windowDeactivated(WindowEvent e) {
-                       
 
                     }
 
                     public void windowDeiconified(WindowEvent e) {
-                       
 
                     }
 
                     public void windowIconified(WindowEvent e) {
-                       
 
                     }
 
                     public void windowOpened(WindowEvent e) {
-                       
 
                     }
                 });
@@ -545,7 +550,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public boolean useUserinputIfCaptchaUnknown() {
-       
+
         return false;
     }
 }

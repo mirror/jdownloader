@@ -111,7 +111,7 @@ public class ConfigContainer implements Serializable {
 
     public ConfigContainer(Object instance) {
         this.instance = instance;
-        this.title = JDLocale.L("config.container.defaultname", "Allgemein");
+        title = JDLocale.L("config.container.defaultname", "Allgemein");
         propertyInstance = JDUtilities.getConfiguration();
     }
 
@@ -128,9 +128,11 @@ public class ConfigContainer implements Serializable {
      *            Der Eintrag, der hinzugefügt werden soll
      */
     public void addEntry(ConfigEntry entry) {
-        if (entry.getContainer() != null) this.containers++;
+        if (entry.getContainer() != null) {
+            containers++;
+        }
         if (entry.getPropertyInstance() == null) {
-            entry.setPropertyInstance(this.propertyInstance);
+            entry.setPropertyInstance(propertyInstance);
         }
         content.add(entry);
     }
@@ -156,7 +158,9 @@ public class ConfigContainer implements Serializable {
      * @return ConfigEntry
      */
     public ConfigEntry getEntryAt(int i) {
-        if (content.size() <= i) return null;
+        if (content.size() <= i) {
+            return null;
+        }
         return content.elementAt(i);
     }
 
@@ -177,13 +181,15 @@ public class ConfigContainer implements Serializable {
     }
 
     public void requestSave() {
-        if (actionListener == null) return;
+        if (actionListener == null) {
+            return;
+        }
         actionListener.actionPerformed(new ActionEvent(this, ACTION_REQUEST_SAVE, "save"));
 
     }
 
     public void setActionListener(ActionListener listener) {
-        this.actionListener = listener;
+        actionListener = listener;
 
     }
 
@@ -193,7 +199,7 @@ public class ConfigContainer implements Serializable {
      * propertyinstanz bei den ConfigEntries null ist
      */
     public void setPropertyInstance(Property propertInstance) {
-        this.propertyInstance = propertInstance;
+        propertyInstance = propertInstance;
     }
 
     public void setTitle(String title) {

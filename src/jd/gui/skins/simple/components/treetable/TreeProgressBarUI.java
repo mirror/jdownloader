@@ -59,13 +59,13 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * requested rate.
      */
     private class Animator implements ActionListener {
-        private long  lastCall;         // the last time actionPerformed was
+        private long lastCall; // the last time actionPerformed was
 
-        private int   MINIMUM_DELAY = 5;
+        private int MINIMUM_DELAY = 5;
 
-//        private int   interval;         // the fixed repaint interval
+        // private int interval; // the fixed repaint interval
 
-        private long  previousDelay;    // used to tune the repaint interval
+        private long previousDelay; // used to tune the repaint interval
 
         // called
 
@@ -108,8 +108,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
 
             if (timer == null) {
                 timer = new Timer(interval, this);
-            }
-            else {
+            } else {
                 timer.setDelay(interval);
             }
 
@@ -151,8 +150,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
                 if (progressBar.isIndeterminate()) {
                     if (progressBar.isDisplayable()) {
                         startAnimationTimer();
-                    }
-                    else {
+                    } else {
                         stopAnimationTimer();
                     }
                 }
@@ -165,8 +163,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
             if ("indeterminate" == prop) {
                 if (progressBar.isIndeterminate()) {
                     initIndeterminateValues();
-                }
-                else {
+                } else {
                     // clean up
                     cleanUpIndeterminateValues();
                 }
@@ -182,9 +179,8 @@ public class TreeProgressBarUI extends ProgressBarUI {
             int oldPercent = getCachedPercent();
 
             if (newRange > 0) {
-                newPercent = (int) ((100 * (long) model.getValue()) / newRange);
-            }
-            else {
+                newPercent = (int) (100 * (long) model.getValue() / newRange);
+            } else {
                 newPercent = 0;
             }
 
@@ -196,7 +192,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
     }
 
     // performance stuff
-    private static boolean   ADJUSTTIMER    = true;                   // makes
+    private static boolean ADJUSTTIMER = true; // makes
 
     public static ComponentUI createUI(JComponent x) {
         return new TreeProgressBarUI();
@@ -209,9 +205,9 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * variable by invoking incrementAnimationIndex() every repaintInterval
      * milliseconds.
      */
-    private int              animationIndex = 0;
+    private int animationIndex = 0;
 
-    private Animator         animator;
+    private Animator animator;
 
     /**
      * Used to hold the location and size of the bouncing box (returned by
@@ -219,15 +215,15 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * 
      * @since 1.5
      */
-    protected Rectangle      boxRect;
+    protected Rectangle boxRect;
 
-    private int              cachedPercent;
+    private int cachedPercent;
 
     // 1|numFrames-1
     // ...
     // numFrames/2
 
-    private int              cellLength, cellSpacing;
+    private int cellLength, cellSpacing;
 
     protected ChangeListener changeListener;
 
@@ -236,7 +232,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
 
     // cache
     /** The component's painting area, not including the border. */
-    private Rectangle        componentInnards;                        // the
+    private Rectangle componentInnards; // the
 
     // a BIG
     // difference;
@@ -250,18 +246,18 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * indeterminate mode) using the "ProgressBar.cycleTime" key in the defaults
      * table.
      */
-    private int              cycleTime;                               // must
+    private int cycleTime; // must
 
     /** For bouncing-box animation, the change in position per frame. */
-    private double           delta          = 0.0;
+    private double delta = 0.0;
 
-    private Handler          handler;
+    private Handler handler;
 
     // current
     // painting
     // area
 
-    private int              maxPosition    = 0;                      // maximum
+    private int maxPosition = 0; // maximum
 
     // to
     // see
@@ -277,7 +273,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * displayed next. This rectangle's values are set in the setAnimationIndex
      * method.
      */
-    private Rectangle        nextPaintRect;
+    private Rectangle nextPaintRect;
 
     /**
      * The number of frames per cycle. Under the default implementation, this
@@ -285,7 +281,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * for the default painting algorithm. This value is set in the
      * initIndeterminateValues method.
      */
-    private int              numFrames;                               // 0
+    private int numFrames; // 0
 
     // X
     // (horiz)
@@ -293,9 +289,9 @@ public class TreeProgressBarUI extends ProgressBarUI {
     // box
     // location
 
-    private Rectangle        oldComponentInnards;                     // used
+    private Rectangle oldComponentInnards; // used
 
-    protected JProgressBar   progressBar;
+    protected JProgressBar progressBar;
 
     /**
      * Interval (in ms) between repaints of the indeterminate progress bar. The
@@ -303,12 +299,12 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * indeterminate mode) using the "ProgressBar.repaintInterval" key in the
      * defaults table.
      */
-    private int              repaintInterval;
+    private int repaintInterval;
 
     // The "selectionForeground" is the color of the text when it is painted
     // over a filled area of the progress bar. The "selectionBackground"
     // is for the text over the unfilled progress bar area.
-    private Color            selectionForeground, selectionBackground;
+    private Color selectionForeground, selectionBackground;
 
     /** Invoked by PropertyChangeHandler. */
     private void cleanUpIndeterminateValues() {
@@ -339,11 +335,10 @@ public class TreeProgressBarUI extends ProgressBarUI {
         int amountFull = 0;
         BoundedRangeModel model = progressBar.getModel();
 
-        if ((model.getMaximum() - model.getMinimum()) != 0) {
+        if (model.getMaximum() - model.getMinimum() != 0) {
             if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
                 amountFull = (int) Math.round(width * progressBar.getPercentComplete());
-            }
-            else {
+            } else {
                 amountFull = (int) Math.round(height * progressBar.getPercentComplete());
             }
         }
@@ -362,8 +357,10 @@ public class TreeProgressBarUI extends ProgressBarUI {
     /**
      * Returns the baseline.
      * 
-     * @throws NullPointerException {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws NullPointerException
+     *             {@inheritDoc}
+     * @throws IllegalArgumentException
+     *             {@inheritDoc}
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */
@@ -384,16 +381,15 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * Returns an enum indicating how the baseline of the component changes as
      * the size changes.
      * 
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException
+     *             {@inheritDoc}
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */
     @Override
     public Component.BaselineResizeBehavior getBaselineResizeBehavior(JComponent c) {
         super.getBaselineResizeBehavior(c);
-        if (progressBar.isStringPainted() && progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
-            return Component.BaselineResizeBehavior.CENTER_OFFSET;
-        }
+        if (progressBar.isStringPainted() && progressBar.getOrientation() == SwingConstants.HORIZONTAL) { return Component.BaselineResizeBehavior.CENTER_OFFSET; }
         return Component.BaselineResizeBehavior.OTHER;
     }
 
@@ -408,7 +404,9 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * bouncing box, without having to reimplement
      * <code>paintIndeterminate</code>.
      * 
-     * @param r the Rectangle instance to be modified; may be <code>null</code>
+     * @param r
+     *            the Rectangle instance to be modified; may be
+     *            <code>null</code>
      * @return <code>null</code> if no box should be drawn; otherwise, returns
      *         the passed-in rectangle (if non-null) or a new rectangle
      * 
@@ -425,27 +423,20 @@ public class TreeProgressBarUI extends ProgressBarUI {
 
         r = getGenericBox(r);
 
-        if (r == null) {
-            return null;
-        }
-        if (middleFrame <= 0) {
-            return null;
-        }
+        if (r == null) { return null; }
+        if (middleFrame <= 0) { return null; }
 
         // assert currentFrame >= 0 && currentFrame < numFrames
         if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
             if (currentFrame < middleFrame) {
                 r.x = componentInnards.x + (int) Math.round(delta * currentFrame);
-            }
-            else {
+            } else {
                 r.x = maxPosition - (int) Math.round(delta * (currentFrame - middleFrame));
             }
-        }
-        else { // VERTICAL indeterminate progress bar
+        } else { // VERTICAL indeterminate progress bar
             if (currentFrame < middleFrame) {
                 r.y = componentInnards.y + (int) Math.round(delta * currentFrame);
-            }
-            else {
+            } else {
                 r.y = maxPosition - (int) Math.round(delta * (currentFrame - middleFrame));
             }
         }
@@ -464,12 +455,14 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * 
      * </blockquote>
      * 
-     * @param availableLength the amount of space available for the bouncing box
-     *            to move in; for a horizontal progress bar, for example, this
-     *            should be the inside width of the progress bar (the component
-     *            width minus borders)
-     * @param otherDimension for a horizontal progress bar, this should be the
-     *            inside height of the progress bar; this value might be used to
+     * @param availableLength
+     *            the amount of space available for the bouncing box to move in;
+     *            for a horizontal progress bar, for example, this should be the
+     *            inside width of the progress bar (the component width minus
+     *            borders)
+     * @param otherDimension
+     *            for a horizontal progress bar, this should be the inside
+     *            height of the progress bar; this value might be used to
      *            constrain or determine the return value
      * 
      * @return the size of the box dimension being determined; must be no larger
@@ -508,8 +501,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
     protected int getCellLength() {
         if (progressBar.isStringPainted()) {
             return 1;
-        }
-        else {
+        } else {
             return cellLength;
         }
     }
@@ -526,8 +518,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
     protected int getCellSpacing() {
         if (progressBar.isStringPainted()) {
             return 0;
-        }
-        else {
+        } else {
             return cellSpacing;
         }
     }
@@ -557,20 +548,17 @@ public class TreeProgressBarUI extends ProgressBarUI {
             r.width = getBoxLength(componentInnards.width, componentInnards.height);
             if (r.width < 0) {
                 r = null;
-            }
-            else {
+            } else {
                 r.height = componentInnards.height;
                 r.y = componentInnards.y;
             }
             // end of HORIZONTAL
 
-        }
-        else { // VERTICAL progress bar
+        } else { // VERTICAL progress bar
             r.height = getBoxLength(componentInnards.height, componentInnards.width);
             if (r.height < 0) {
                 r = null;
-            }
-            else {
+            } else {
                 r.width = componentInnards.width;
                 r.x = componentInnards.x;
             }
@@ -591,8 +579,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
         Dimension pref = getPreferredSize(progressBar);
         if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
             pref.width = Short.MAX_VALUE;
-        }
-        else {
+        } else {
             pref.height = Short.MAX_VALUE;
         }
         return pref;
@@ -607,8 +594,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
         Dimension pref = getPreferredSize(progressBar);
         if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
             pref.width = 10;
-        }
-        else {
+        } else {
             pref.height = 10;
         }
         return pref;
@@ -656,8 +642,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
                     size.height = stringHeight;
                 }
             }
-        }
-        else {
+        } else {
             size = new Dimension(getPreferredInnerVertical());
             // Ensure that the progress string will fit.
             if (progressBar.isStringPainted()) {
@@ -721,10 +706,9 @@ public class TreeProgressBarUI extends ProgressBarUI {
         int stringWidth = SwingUtilities2.stringWidth(progressBar, fontSizer, progressString);
 
         if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
-            return new Point(x + Math.round(width / 2 - stringWidth / 2), y + ((height + fontSizer.getAscent() - fontSizer.getLeading() - fontSizer.getDescent()) / 2));
-        }
-        else { // VERTICAL
-            return new Point(x + ((width - fontSizer.getAscent() + fontSizer.getLeading() + fontSizer.getDescent()) / 2), y + Math.round(height / 2 - stringWidth / 2));
+            return new Point(x + Math.round(width / 2 - stringWidth / 2), y + (height + fontSizer.getAscent() - fontSizer.getLeading() - fontSizer.getDescent()) / 2);
+        } else { // VERTICAL
+            return new Point(x + (width - fontSizer.getAscent() + fontSizer.getLeading() + fontSizer.getDescent()) / 2, y + Math.round(height / 2 - stringWidth / 2));
         }
     }
 
@@ -747,8 +731,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
 
         if (newValue < numFrames) {
             setAnimationIndex(newValue);
-        }
-        else {
+        } else {
             setAnimationIndex(0);
         }
     }
@@ -778,10 +761,8 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * @return the cycle time, in milliseconds
      */
     /*
-    private int getCycleTime() {
-        return cycleTime;
-    }
-*/
+     * private int getCycleTime() { return cycleTime; }
+     */
     private int initCycleTime() {
         cycleTime = DefaultLookup.getInt(progressBar, this, "ProgressBar.cycleTime", 3000);
         return cycleTime;
@@ -800,10 +781,9 @@ public class TreeProgressBarUI extends ProgressBarUI {
         // Make sure cycleTime is reasonable.
         if (repaintInterval > cycleTime) {
             cycleTime = repaintInterval * 20;
-        }
-        else {
+        } else {
             // Force cycleTime to be a even multiple of repaintInterval.
-            int factor = (int) Math.ceil((cycleTime) / ((double) repaintInterval * 2));
+            int factor = (int) Math.ceil(cycleTime / ((double) repaintInterval * 2));
             cycleTime = repaintInterval * factor * 2;
         }
     }
@@ -877,8 +857,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
     public void paint(Graphics g, JComponent c) {
         if (progressBar.isIndeterminate()) {
             paintIndeterminate(g, c);
-        }
-        else {
+        } else {
             paintDeterminate(g, c);
         }
     }
@@ -895,17 +874,13 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * @since 1.4
      */
     protected void paintDeterminate(Graphics g, JComponent c) {
-        if (!(g instanceof Graphics2D)) {
-            return;
-        }
+        if (!(g instanceof Graphics2D)) { return; }
 
         Insets b = progressBar.getInsets(); // area for border
         int barRectWidth = progressBar.getWidth() - (b.right + b.left);
         int barRectHeight = progressBar.getHeight() - (b.top + b.bottom);
 
-        if (barRectWidth <= 0 || barRectHeight <= 0) {
-            return;
-        }
+        if (barRectWidth <= 0 || barRectHeight <= 0) { return; }
 
         int cellLength = getCellLength();
         int cellSpacing = getCellSpacing();
@@ -920,14 +895,13 @@ public class TreeProgressBarUI extends ProgressBarUI {
             if (cellSpacing == 0 && amountFull > 0) {
                 // draw one big Rect because there is no space between cells
                 g2.setStroke(new BasicStroke(barRectHeight, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-            }
-            else {
+            } else {
                 // draw each individual cell
                 g2.setStroke(new BasicStroke(barRectHeight, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0.f, new float[] { cellLength, cellSpacing }, 0.f));
             }
 
             // if (BasicGraphicsUtils.isLeftToRight(c)) {
-            g2.drawLine(b.left, (barRectHeight / 2) + b.top, amountFull + b.left, (barRectHeight / 2) + b.top);
+            g2.drawLine(b.left, barRectHeight / 2 + b.top, amountFull + b.left, barRectHeight / 2 + b.top);
             // } else {
             // g2.drawLine((barRectWidth + b.left),
             // (barRectHeight/2) + b.top,
@@ -935,14 +909,12 @@ public class TreeProgressBarUI extends ProgressBarUI {
             // (barRectHeight/2) + b.top);
             // }
 
-        }
-        else { // VERTICAL
+        } else { // VERTICAL
             // draw the cells
             if (cellSpacing == 0 && amountFull > 0) {
                 // draw one big Rect because there is no space between cells
                 g2.setStroke(new BasicStroke(barRectWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL));
-            }
-            else {
+            } else {
                 // draw each individual cell
                 g2.setStroke(new BasicStroke(barRectWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0f, new float[] { cellLength, cellSpacing }, 0f));
             }
@@ -966,17 +938,13 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * @since 1.4
      */
     protected void paintIndeterminate(Graphics g, JComponent c) {
-        if (!(g instanceof Graphics2D)) {
-            return;
-        }
+        if (!(g instanceof Graphics2D)) { return; }
 
         Insets b = progressBar.getInsets(); // area for border
         int barRectWidth = progressBar.getWidth() - (b.right + b.left);
         int barRectHeight = progressBar.getHeight() - (b.top + b.bottom);
 
-        if (barRectWidth <= 0 || barRectHeight <= 0) {
-            return;
-        }
+        if (barRectWidth <= 0 || barRectHeight <= 0) { return; }
 
         Graphics2D g2 = (Graphics2D) g;
 
@@ -991,8 +959,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
         if (progressBar.isStringPainted()) {
             if (progressBar.getOrientation() == SwingConstants.HORIZONTAL) {
                 paintString(g2, b.left, b.top, barRectWidth, barRectHeight, boxRect.x, boxRect.width, b);
-            }
-            else {
+            } else {
                 paintString(g2, b.left, b.top, barRectWidth, barRectHeight, boxRect.y, boxRect.height, b);
             }
         }
@@ -1004,8 +971,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
             if (progressBar.isIndeterminate()) {
                 boxRect = getBox(boxRect);
                 paintString(g, x, y, width, height, boxRect.x, boxRect.width, b);
-            }
-            else {
+            } else {
                 paintString(g, x, y, width, height, x, amountFull, b);
             }
             // }
@@ -1013,13 +979,11 @@ public class TreeProgressBarUI extends ProgressBarUI {
             // paintString(g, x, y, width, height, x + width - amountFull,
             // amountFull, b);
             // }
-        }
-        else {
+        } else {
             if (progressBar.isIndeterminate()) {
                 boxRect = getBox(boxRect);
                 paintString(g, x, y, width, height, boxRect.y, boxRect.height, b);
-            }
-            else {
+            } else {
                 paintString(g, x, y, width, height, y + height - amountFull, amountFull, b);
             }
         }
@@ -1028,21 +992,27 @@ public class TreeProgressBarUI extends ProgressBarUI {
     /**
      * Paints the progress string.
      * 
-     * @param g Graphics used for drawing.
-     * @param x x location of bounding box
-     * @param y y location of bounding box
-     * @param width width of bounding box
-     * @param height height of bounding box
-     * @param fillStart start location, in x or y depending on orientation, of
-     *            the filled portion of the progress bar.
-     * @param amountFull size of the fill region, either width or height
-     *            depending upon orientation.
-     * @param b Insets of the progress bar.
+     * @param g
+     *            Graphics used for drawing.
+     * @param x
+     *            x location of bounding box
+     * @param y
+     *            y location of bounding box
+     * @param width
+     *            width of bounding box
+     * @param height
+     *            height of bounding box
+     * @param fillStart
+     *            start location, in x or y depending on orientation, of the
+     *            filled portion of the progress bar.
+     * @param amountFull
+     *            size of the fill region, either width or height depending upon
+     *            orientation.
+     * @param b
+     *            Insets of the progress bar.
      */
     private void paintString(Graphics g, int x, int y, int width, int height, int fillStart, int amountFull, Insets b) {
-        if (!(g instanceof Graphics2D)) {
-            return;
-        }
+        if (!(g instanceof Graphics2D)) { return; }
 
         Graphics2D g2 = (Graphics2D) g;
         String progressString = progressBar.getString();
@@ -1056,8 +1026,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
             g2.setColor(getSelectionForeground());
             g2.clipRect(fillStart, y, amountFull, height);
             SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
-        }
-        else { // VERTICAL
+        } else { // VERTICAL
             g2.setColor(getSelectionBackground());
             AffineTransform rotate = AffineTransform.getRotateInstance(Math.PI / 2);
             g2.setFont(progressBar.getFont().deriveFont(rotate));
@@ -1076,8 +1045,8 @@ public class TreeProgressBarUI extends ProgressBarUI {
      * the default painting code might need to override this method to change
      * the way that the <code>repaint</code> method is invoked.
      * 
-     * @param newValue the new animation index; no checking is performed on its
-     *            value
+     * @param newValue
+     *            the new animation index; no checking is performed on its value
      * @see #incrementAnimationIndex
      * 
      * @since 1.4
@@ -1105,15 +1074,13 @@ public class TreeProgressBarUI extends ProgressBarUI {
                     nextPaintRect.add(boxRect);
                 }
             }
-        }
-        else { // animationIndex == newValue
+        } else { // animationIndex == newValue
             return;
         }
 
         if (nextPaintRect != null) {
             progressBar.repaint(nextPaintRect);
-        }
-        else {
+        } else {
             progressBar.repaint();
         }
     }
@@ -1123,11 +1090,11 @@ public class TreeProgressBarUI extends ProgressBarUI {
     }
 
     protected void setCellLength(int cellLen) {
-        this.cellLength = cellLen;
+        cellLength = cellLen;
     }
 
     protected void setCellSpacing(int cellSpace) {
-        this.cellSpacing = cellSpace;
+        cellSpacing = cellSpace;
     }
 
     public void setSelectionBackground(Color selectionBackground) {
@@ -1139,9 +1106,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
     }
 
     private boolean sizeChanged() {
-        if ((oldComponentInnards == null) || (componentInnards == null)) {
-            return true;
-        }
+        if (oldComponentInnards == null || componentInnards == null) { return true; }
 
         oldComponentInnards.setRect(componentInnards);
         componentInnards = SwingUtilities.calculateInnerArea(progressBar, componentInnards);
@@ -1226,8 +1191,7 @@ public class TreeProgressBarUI extends ProgressBarUI {
             length = getBoxLength(componentInnards.width, componentInnards.height);
             maxPosition = componentInnards.x + componentInnards.width - length;
 
-        }
-        else { // VERTICAL progress bar
+        } else { // VERTICAL progress bar
             length = getBoxLength(componentInnards.height, componentInnards.width);
             maxPosition = componentInnards.y + componentInnards.height - length;
         }

@@ -41,31 +41,26 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                 checkFolder();
                 try {
                     Thread.sleep(getWaittime());
-                } catch (InterruptedException e) {}
+                } catch (InterruptedException e) {
+                }
             }
             running = false;
         };
     }
-    
-    public static int getAddonInterfaceVersion(){
+
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
-    private ArrayList<String> added =  (ArrayList<String>) subConfig.getProperty("ADDED");
-    private check i;
-    
-    private boolean running = true;
-   
 
-    
+    private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
+    private ArrayList<String> added = (ArrayList<String>) subConfig.getProperty("ADDED");
+    private check i;
+
+    private boolean running = true;
+
     private boolean threadend = true;
 
-    
-    
- 
-
-    
-    public JDFolderWatch() {        
+    public JDFolderWatch() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Ordner:")));
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
@@ -73,7 +68,6 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         cfg.setDefaultValue("5");
     }
 
-    
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals("Check")) {
@@ -98,7 +92,6 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         }
     }
 
-    
     private synchronized void checkFolder() {
         logger.info("Folderwatch: Checking folder");
         boolean dabei = false;
@@ -106,10 +99,10 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         if (folder.isDirectory()) {
             String[] help = folder.list();
 
-            for (int i = 0; i < help.length; i++) {
-                if (help[i].toLowerCase().endsWith(".dlc") || help[i].toLowerCase().endsWith(".ccf") || help[i].toLowerCase().endsWith(".rsdf")) {
+            for (String element : help) {
+                if (element.toLowerCase().endsWith(".dlc") || element.toLowerCase().endsWith(".ccf") || element.toLowerCase().endsWith(".rsdf")) {
                     dabei = false;
-                    File container = new File(folder, help[i]);
+                    File container = new File(folder, element);
                     try {
                         for (int j = 0; j < added.size(); j++) {
                             if (container.getAbsolutePath().equals(added.get(j))) {
@@ -124,8 +117,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
                             subConfig.save();
                             Thread.sleep(5000);
                         }
-                    }
-                    catch(Exception e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -142,19 +134,16 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    
     @Override
     public String getCoder() {
         return "jD-Team";
     }
 
-    
     @Override
     public String getPluginName() {
         return JDLocale.L("plugins.optional.folderwatch.name", "FolderWatch");
     }
 
-    
     @Override
     public String getRequirements() {
         return "JRE 1.5+";
@@ -162,7 +151,8 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     private int getWaittime() {
@@ -173,12 +163,12 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
             logger.info("FolderWatch OK");
-            if(added == null) {
+            if (added == null) {
                 added = new ArrayList<String>();
                 subConfig.setProperty("ADDED", added);
                 subConfig.save();
             }
-            
+
             i = new check();
             i.start();
             return true;
@@ -188,10 +178,8 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         }
     }
 
-    
     @Override
     public void onExit() {
-       
 
     }
 }

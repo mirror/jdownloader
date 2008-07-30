@@ -38,7 +38,8 @@ public class FilesTo extends PluginForHost {
 
     static private final String AGB_LINK = "http://www.files.to/content/aup";
     static private final String CAPTCHA_WRONG = "Der eingegebene code ist falsch";
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.2";
+    // static private final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.2";
     static private final String CODER = "JD-Team";
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
 
@@ -63,25 +64,21 @@ public class FilesTo extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -122,17 +119,11 @@ public class FilesTo extends PluginForHost {
 
     }
 
-    
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
-
-    
-    
-        
-   
 
     private int getFileSize(String source) {
 
@@ -143,20 +134,18 @@ public class FilesTo extends PluginForHost {
             size = Integer.parseInt(source) * 1024;
         } else if (source.contains("MB")) {
             source = new Regex(source, "(.*?) MB").getFirstMatch();
-            size = (Integer.parseInt(source) * 1024 * 1024);
+            size = Integer.parseInt(source) * 1024 * 1024;
         }
 
         return size;
 
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return 1;
@@ -167,19 +156,17 @@ public class FilesTo extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -224,7 +211,7 @@ public class FilesTo extends PluginForHost {
             logger.severe("Unknown error.. retry in 20 sekunden");
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            this.sleep(20000, downloadLink);
+            sleep(20000, downloadLink);
             return;
 
         }
@@ -257,7 +244,7 @@ public class FilesTo extends PluginForHost {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            this.sleep(20000, downloadLink);
+            sleep(20000, downloadLink);
             return;
 
         } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
@@ -285,11 +272,10 @@ public class FilesTo extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
-        this.finalURL = null;
-        this.urlConnection = null;
+        finalURL = null;
+        urlConnection = null;
     }
 
     @Override

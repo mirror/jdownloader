@@ -98,9 +98,11 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         setModal(true);
         addWindowListener(new WindowListener() {
 
-            public void windowActivated(WindowEvent e) { }
+            public void windowActivated(WindowEvent e) {
+            }
 
-            public void windowClosed(WindowEvent e) {  }
+            public void windowClosed(WindowEvent e) {
+            }
 
             public void windowClosing(WindowEvent e) {
                 // workaround für den scheiss compiz fehler
@@ -112,13 +114,17 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
             }
 
-            public void windowDeactivated(WindowEvent e) {}
+            public void windowDeactivated(WindowEvent e) {
+            }
 
-            public void windowDeiconified(WindowEvent e) {}
+            public void windowDeiconified(WindowEvent e) {
+            }
 
-            public void windowIconified(WindowEvent e) { }
+            public void windowIconified(WindowEvent e) {
+            }
 
-            public void windowOpened(WindowEvent e) { }
+            public void windowOpened(WindowEvent e) {
+            }
         });
         setLayout(new GridBagLayout());
         ImageIcon imageIcon = null;
@@ -129,7 +135,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         if (plugin != null && plugin.getCaptchaDetectionID() != Plugin.CAPTCHA_USER_INPUT && !configuration.getBooleanProperty(Configuration.PARAM_CAPTCHA_JAC_DISABLE, false) && JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), plugin.getHost())) {
             setTitle(JDLocale.L("gui.captchaWindow.title", "jAntiCaptcha aktiv!"));
             final String host = plugin.getHost();
-            this.jacThread = new Thread("JAC") {
+            jacThread = new Thread("JAC") {
                 @Override
                 public void run() {
 
@@ -139,7 +145,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                     } catch (InterruptedException e) {
                     }
                     if (textField.getText().length() == 0 || code.toLowerCase().startsWith(textField.getText().toLowerCase())) {
-                        
+
                         // int wait =
                         // configuration.getIntegerProperty(Configuration.PARAM_CAPTCHA_INPUT_SHOWTIME,
                         // 10);
@@ -170,41 +176,48 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
                 }
             };
-            this.jacThread.start();
+            jacThread.start();
 
         } else {
-          
-            this.countdownThread = new Thread() {
+
+            countdownThread = new Thread() {
 
                 @Override
                 public void run() {
                     int c = countdown * 1000;
-                    while(!CaptchaDialog.this.isActive()){
+                    while (!CaptchaDialog.this.isActive()) {
                         try {
                             Thread.sleep(200);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                     }
-                  
+
                     long t = System.currentTimeMillis();
                     while (c >= 0) {
-                        if (!isVisible()) return;
+                        if (!isVisible()) {
+                            return;
+                        }
                         t = System.currentTimeMillis();
                         setTitle("Countdown " + JDUtilities.formatSeconds(c / 1000));
-                        if (c < 3000) JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+                        if (c < 3000) {
+                            JDSounds.P("sound.captcha.onCaptchaInputEmergency");
+                        }
                         long dif = System.currentTimeMillis() - t;
                         c -= dif;
 
                         try {
-                            if (dif < 1000){ Thread.sleep(1000 - dif);
-                            c -= (1000 - dif);
+                            if (dif < 1000) {
+                                Thread.sleep(1000 - dif);
+                                c -= 1000 - dif;
                             }
                         } catch (InterruptedException e) {
                         }
-                       
-                        if (!isVisible()) return;
+
+                        if (!isVisible()) {
+                            return;
+                        }
 
                     }
                     captchaText = textField.getText();
@@ -213,14 +226,16 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                 }
 
             };
-            this.countdownThread.start();
-           
+            countdownThread.start();
+
         }
 
         JLabel label = new JLabel(imageIcon);
 
         textField = new JTextField(10);
-        if (def != null) code = def;
+        if (def != null) {
+            code = def;
+        }
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "CANCEL"));
         textField.setText(code);
@@ -250,12 +265,16 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                 JPanel p3 = new JPanel();
                 p3.add(new JLabel("Uncertainty: "));
                 LetterComperator[] lcs = plugin.getLastCaptcha().getLetterComperators();
-                for (int i = 0; i < lcs.length; i++) {
-                    Letter a = lcs[i].getA();
-                    Letter b = lcs[i].getB();
-                    if (a != null) p.add(new JLabel(new ImageIcon(a.getImage(2))));
-                    if (b != null) p2.add(new JLabel(new ImageIcon(b.getImage(2))));
-                    p3.add(new JLabel("" + Math.round(lcs[i].getValityPercent())));
+                for (LetterComperator element : lcs) {
+                    Letter a = element.getA();
+                    Letter b = element.getB();
+                    if (a != null) {
+                        p.add(new JLabel(new ImageIcon(a.getImage(2))));
+                    }
+                    if (b != null) {
+                        p2.add(new JLabel(new ImageIcon(b.getImage(2))));
+                    }
+                    p3.add(new JLabel("" + Math.round(element.getValityPercent())));
                 }
 
                 JDUtilities.addToGridBag(this, p2, 0, 3, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
@@ -271,18 +290,22 @@ public class CaptchaDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
             captchaText = textField.getText();
-//            setVisible(false);
-            this.dispose();
-//            System.out.println();
+            // setVisible(false);
+            dispose();
+            // System.out.println();
         }
         if (e.getSource() == btnBAD) {
             captchaText = null;
-//            setVisible(false);
-            this.dispose();
+            // setVisible(false);
+            dispose();
         }
 
-        if (countdownThread != null && countdownThread.isAlive()) this.countdownThread.interrupt();
-        if (jacThread != null && jacThread.isAlive()) this.jacThread.interrupt();
+        if (countdownThread != null && countdownThread.isAlive()) {
+            countdownThread.interrupt();
+        }
+        if (jacThread != null && jacThread.isAlive()) {
+            jacThread.interrupt();
+        }
     }
 
     /**

@@ -40,18 +40,18 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
      */
     private static final long serialVersionUID = -7983057329558110899L;
 
-    private ConfigContainer   container        = null;
+    private ConfigContainer container = null;
 
     /**
      * serialVersionUID
      */
-    private Logger            logger           = JDUtilities.getLogger();
+    private Logger logger = JDUtilities.getLogger();
 
-    private Plugin            plugin;
+    private Plugin plugin;
 
-    private Vector<ConfigPanelPlugin> subPanels=null;
+    private Vector<ConfigPanelPlugin> subPanels = null;
 
-    private JTabbedPane tabbedPane=null;
+    private JTabbedPane tabbedPane = null;
 
     public ConfigPanelPlugin(Configuration configuration, UIInterface uiinterface, Plugin plugin) {
         super(uiinterface);
@@ -75,13 +75,12 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
 
     }
 
-    private void addTabbedPanel(String title,ConfigPanelPlugin configPanelPlugin) {
-        this.subPanels.add(configPanelPlugin);
-        tabbedPane.add(title,configPanelPlugin );
-        
+    private void addTabbedPanel(String title, ConfigPanelPlugin configPanelPlugin) {
+        subPanels.add(configPanelPlugin);
+        tabbedPane.add(title, configPanelPlugin);
+
     }
 
-    
     @Override
     public String getName() {
 
@@ -98,13 +97,14 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
 
                 GUIConfigEntry ce = null;
                 ce = new GUIConfigEntry(entry);
-                if (ce != null) addGUIConfigEntry(ce);
+                if (ce != null) {
+                    addGUIConfigEntry(ce);
+                }
 
             }
             add(panel, BorderLayout.PAGE_START);
-        }
-        else {
-            this.subPanels= new Vector<ConfigPanelPlugin>();
+        } else {
+            subPanels = new Vector<ConfigPanelPlugin>();
             tabbedPane = new JTabbedPane();
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
@@ -117,15 +117,15 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
             for (int i = 0; i < entries.size(); i++) {
                 if (entries.elementAt(i).getContainer() == null) {
                     general.addEntry(entries.elementAt(i));
-                }
-                else {
+                } else {
                     container.add(entries.elementAt(i).getContainer());
                 }
             }
-            if(general.getEntries().size()==0)container.remove(0);
+            if (general.getEntries().size() == 0) {
+                container.remove(0);
+            }
             for (int i = 0; i < container.size(); i++) {
-                this.addTabbedPanel(container.get(i).getTitle(),new ConfigPanelPlugin(uiinterface, plugin, container.get(i)));
-               
+                addTabbedPanel(container.get(i).getTitle(), new ConfigPanelPlugin(uiinterface, plugin, container.get(i)));
 
             }
             add(tabbedPane, BorderLayout.CENTER);
@@ -133,33 +133,30 @@ public class ConfigPanelPlugin extends ConfigPanel implements ActionListener {
 
     }
 
-    
     @Override
     public void load() {
         loadConfigEntries();
 
     }
 
-    
     @Override
     public void save() {
-        if(subPanels!=null){
-            for( int i=0;i<subPanels.size();i++){
-                logger.info("Saved tab "+i);
-              
+        if (subPanels != null) {
+            for (int i = 0; i < subPanels.size(); i++) {
+                logger.info("Saved tab " + i);
+
                 subPanels.get(i).save();
-               
-                
+
             }
-            
+
         }
-        if(container!=null){
-            logger.info("Save "+container.getTitle());
-        }else{
-            logger.info("Save normal panel"+this);
+        if (container != null) {
+            logger.info("Save " + container.getTitle());
+        } else {
+            logger.info("Save normal panel" + this);
         }
-        this.saveConfigEntries();
-        
+        saveConfigEntries();
+
     }
 
 }

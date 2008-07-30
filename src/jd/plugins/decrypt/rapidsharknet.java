@@ -37,13 +37,13 @@ public class rapidsharknet extends PluginForDecrypt {
 
     private static final Pattern patternLink_safephp = Pattern.compile("http://[\\w\\.]*?rapidshark\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_direct.pattern() + "|" + patternLink_safephp.pattern(), Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public rapidsharknet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -55,12 +55,12 @@ public class rapidsharknet extends PluginForDecrypt {
             if (cryptedLink.matches(patternLink_direct.pattern())) {
                 String downloadid = url.getFile().substring(1);
                 /* weiterleiten zur safephp Seite */
-                decryptedLinks.add(this.createDownloadlink("http://rapidshark.net/safe.php?id=" + downloadid));
+                decryptedLinks.add(createDownloadlink("http://rapidshark.net/safe.php?id=" + downloadid));
             } else if (cryptedLink.matches(patternLink_safephp.pattern())) {
                 String downloadid = url.getFile().substring(13);
                 requestInfo = HTTP.getRequest(url, null, "http://rapidshark.net/" + downloadid, false);
                 downloadid = new Regex(requestInfo, "src=\"(.*)\"></iframe>").getFirstMatch();
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(downloadid)));
+                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(downloadid)));
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -72,44 +72,34 @@ public class rapidsharknet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

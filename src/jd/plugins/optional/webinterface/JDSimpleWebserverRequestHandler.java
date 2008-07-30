@@ -69,11 +69,12 @@ public class JDSimpleWebserverRequestHandler {
                         }
                     }
                 }
-//                if (link.isAvailable() || ((PluginForHost) link.getPlugin()).isListOffline()) {
+                // if (link.isAvailable() || ((PluginForHost)
+                // link.getPlugin()).isListOffline()) {
 
-                    attachLinkTopackage(link);
+                attachLinkTopackage(link);
 
-//                }
+                // }
             }
         }
     }
@@ -109,11 +110,15 @@ public class JDSimpleWebserverRequestHandler {
 
         int c = 0;
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) c++;
+            if (a.charAt(i) == b.charAt(i)) {
+                c++;
+            }
         }
 
-        if (Math.min(a.length(), b.length()) == 0) return 0;
-        return (c * 100) / (b.length());
+        if (Math.min(a.length(), b.length()) == 0) {
+            return 0;
+        }
+        return c * 100 / b.length();
     }
 
     private String getSimString(String a, String b) {
@@ -177,8 +182,9 @@ public class JDSimpleWebserverRequestHandler {
                         requestParameter.put(key + "_" + keycounter.toString(), value);
                     }
 
-                } else
+                } else {
                     requestParameter.put(key, value);
+                }
             }
         }
         String url = path.replaceAll("\\.\\.", "");
@@ -188,21 +194,26 @@ public class JDSimpleWebserverRequestHandler {
             if (requestParameter.get("do").compareToIgnoreCase("submit") == 0) {
                 if (requestParameter.containsKey("speed")) {
                     int setspeed = JDUtilities.filterInt(requestParameter.get("speed"));
-                    if (setspeed < 0) setspeed = 0;
+                    if (setspeed < 0) {
+                        setspeed = 0;
+                    }
                     JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, setspeed);
                 }
 
                 if (requestParameter.containsKey("maxdls")) {
                     int maxdls = JDUtilities.filterInt(requestParameter.get("maxdls"));
-                    if (maxdls < 1) maxdls = 1;
+                    if (maxdls < 1) {
+                        maxdls = 1;
+                    }
                     JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, maxdls);
                 }
 
                 if (!requestParameter.containsKey("selected_dowhat_link_adder")) {
                     if (requestParameter.containsKey("autoreconnect")) {
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
-                    } else
+                    } else {
                         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                    }
                 }
                 if (requestParameter.containsKey("package_single_add_counter")) {
                     synchronized (JDWebinterface.Link_Adder_Packages) {
@@ -248,7 +259,9 @@ public class JDSimpleWebserverRequestHandler {
                                 }
                                 for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                     link = it.next();
-                                    if (link.isAvailabilityChecked() == true && link.isAvailable() == false) link.getFilePackage().remove(link);
+                                    if (link.isAvailabilityChecked() == true && link.isAvailable() == false) {
+                                        link.getFilePackage().remove(link);
+                                    }
                                 }
                             } else if (dowhat.compareToIgnoreCase("add") == 0) {
                                 /* link adden */
@@ -299,7 +312,9 @@ public class JDSimpleWebserverRequestHandler {
                              * entstehen, falls mittendrin was gelöscht wird
                              */
                             for (index = JDWebinterface.Link_Adder_Packages.size() - 1; index >= 0; index--) {
-                                if (JDWebinterface.Link_Adder_Packages.get(index).size() == 0) JDWebinterface.Link_Adder_Packages.remove(index);
+                                if (JDWebinterface.Link_Adder_Packages.get(index).size() == 0) {
+                                    JDWebinterface.Link_Adder_Packages.remove(index);
+                                }
                             }
                         }
 
@@ -390,7 +405,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                         boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
@@ -419,7 +434,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                         JDUtilities.getController().exit();
@@ -445,7 +460,7 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                         JDUtilities.restartJD();
@@ -455,7 +470,7 @@ public class JDSimpleWebserverRequestHandler {
                 JDRestart jdrs = new JDRestart();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
-                if (requestParameter.containsKey("addlinks")) {                    
+                if (requestParameter.containsKey("addlinks")) {
                     String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
                     Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
                     addLinkstoWaitingList(waitingLinkList);
@@ -499,11 +514,11 @@ public class JDSimpleWebserverRequestHandler {
         } else {
             if (url.endsWith(".tmpl")) {
                 JDSimpleWebserverTemplateFileRequestHandler filerequest;
-                filerequest = new JDSimpleWebserverTemplateFileRequestHandler(this.response);
+                filerequest = new JDSimpleWebserverTemplateFileRequestHandler(response);
                 filerequest.handleRequest(url, requestParameter);
             } else {
                 JDSimpleWebserverStaticFileRequestHandler filerequest;
-                filerequest = new JDSimpleWebserverStaticFileRequestHandler(this.response);
+                filerequest = new JDSimpleWebserverStaticFileRequestHandler(response);
                 filerequest.handleRequest(url, requestParameter);
             }
 
@@ -537,20 +552,24 @@ public class JDSimpleWebserverRequestHandler {
     }
 
     private String removeExtension(String a) {
-        if (a == null) return a;
+        if (a == null) {
+            return a;
+        }
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
         int i = a.lastIndexOf(".");
         String ret;
-        if (i <= 1 || (a.length() - i) > 5) {
+        if (i <= 1 || a.length() - i > 5) {
             ret = a.toLowerCase().trim();
         } else {
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        if (a.equals(ret)) return ret;
-        return (ret);
+        if (a.equals(ret)) {
+            return ret;
+        }
+        return ret;
 
     }
 }

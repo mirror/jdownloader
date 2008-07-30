@@ -20,16 +20,19 @@ import jd.utils.JDUtilities;
 
 public class JDLowSpeed extends PluginOptional {
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
-    
+
     private static final String PROPERTY_MAXSPEED = "PROPERTY_MAXSPEED";
     private static final String PROPERTY_MINSPEED = "PROPERTY_MINSPEED";
     private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";
-    public static int getAddonInterfaceVersion(){
+
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
+
     private boolean isRunning = false;
     private Thread pluginThread = null;
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
+
     // private String version = "0.1";
 
     public JDLowSpeed() {
@@ -42,7 +45,6 @@ public class JDLowSpeed extends PluginOptional {
         cfg.setDefaultValue("40");
     }
 
-    
     @Override
     public void actionPerformed(ActionEvent e) {
         MenuItem mi = (MenuItem) e.getSource();
@@ -60,7 +62,6 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
@@ -76,7 +77,6 @@ public class JDLowSpeed extends PluginOptional {
 
     }
 
-    
     private void controllDownload(final DownloadLink downloadLink, final ArrayList<DownloadLink> other, final int minspeed, final int maxspeed) {
         if (downloadLink.getSpeedMeter().getSpeed() < minspeed) {
             new Thread(new Runnable() {
@@ -86,25 +86,29 @@ public class JDLowSpeed extends PluginOptional {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
                         long size = downloadLink.getDownloadMax();
-                        if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) return;
+                        if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) {
+                            return;
+                        }
                         if (size != 0) {
-                            try{
-                            if (((size - downloadLink.getDownloadCurrent()) / speed) < (size / maxspeed)) { return; }
-                            }catch(Exception e){
+                            try {
+                                if ((size - downloadLink.getDownloadCurrent()) / speed < size / maxspeed) { return; }
+                            } catch (Exception e) {
                                 return;
                             }
                             Iterator<DownloadLink> iter = other.iterator();
                             long othersSpeed = 0;
                             while (iter.hasNext()) {
                                 DownloadLink downloadLink2 = iter.next();
-                                if (downloadLink2.getLinkStatus().isPluginActive() || downloadLink2.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
+                                if (downloadLink2.getLinkStatus().isPluginActive() || downloadLink2.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                                    othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
+                                }
                             }
-                            if (othersSpeed != 0 && ((size - downloadLink.getDownloadCurrent()) / speed) < (size / ((maxspeed * 5 / 4) - othersSpeed))) { return; }
+                            if (othersSpeed != 0 && (size - downloadLink.getDownloadCurrent()) / speed < size / (maxspeed * 5 / 4 - othersSpeed)) { return; }
                         }
                     }
                     logger.info("reset download: " + downloadLink.getName());
@@ -118,7 +122,6 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
@@ -152,8 +155,9 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getVersion() {
-       
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -163,7 +167,6 @@ public class JDLowSpeed extends PluginOptional {
         return true;
     }
 
-    
     private void initPlugin() {
         if (!isRunning) {
             logger.info("start");
@@ -173,7 +176,9 @@ public class JDLowSpeed extends PluginOptional {
                 public void run() {
                     while (isRunning) {
                         int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-                        if (maxspeed == 0) maxspeed = subConfig.getIntegerProperty(PROPERTY_MAXSPEED, 350);
+                        if (maxspeed == 0) {
+                            maxspeed = subConfig.getIntegerProperty(PROPERTY_MAXSPEED, 350);
+                        }
                         maxspeed = maxspeed * 4 / 5;
                         maxspeed *= 1024;
                         Boolean rsOnly = subConfig.getBooleanProperty(PROPERTY_RAPIDSHAREONLY, true);
@@ -200,7 +205,9 @@ public class JDLowSpeed extends PluginOptional {
                                 Iterator<DownloadLink> it = dls.iterator();
                                 while (it.hasNext()) {
                                     DownloadLink downloadLink2 = it.next();
-                                    if (!downloadLink2.equals(downloadLink)) other.add(downloadLink);
+                                    if (!downloadLink2.equals(downloadLink)) {
+                                        other.add(downloadLink);
+                                    }
                                 }
 
                                 controllDownload(downloadLink, other, minspeed, maxspeed);
@@ -209,7 +216,7 @@ public class JDLowSpeed extends PluginOptional {
                         try {
                             Thread.sleep(20000);
                         } catch (InterruptedException e) {
-                            
+
                             e.printStackTrace();
                         }
                     }
@@ -220,15 +227,11 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-  
-    
     @Override
     public void onExit() {
-       
 
     }
 
-    
     private void stopPlugin() {
         logger.info("stop");
         isRunning = false;

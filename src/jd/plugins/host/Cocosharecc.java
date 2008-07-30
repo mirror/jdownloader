@@ -24,9 +24,11 @@ public class Cocosharecc extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // private static final String new Regex("$Revision$","\\$Revision:
+    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
 
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -37,25 +39,21 @@ public class Cocosharecc extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "http://www.cocoshare.cc/imprint";
     }
 
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -72,49 +70,40 @@ public class Cocosharecc extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
         return false;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
-    
     @Override
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override
@@ -132,7 +121,7 @@ public class Cocosharecc extends PluginForHost {
         /* Warten */
         String waittime = requestInfo.getRegexp("var num_timeout = (\\d+);").getFirstMatch();
         if (waittime != null) {
-            this.sleep(new Integer(waittime.trim()) * 1000, downloadLink);
+            sleep(new Integer(waittime.trim()) * 1000, downloadLink);
         }
 
         /* DownloadLink holen */
@@ -173,14 +162,12 @@ public class Cocosharecc extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
-       
+
     }
 }

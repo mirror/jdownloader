@@ -33,13 +33,13 @@ public class FilehostIt extends PluginForDecrypt {
 
     final static String host = "filehost.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filehost\\.it/(multi|live)link/checklinks\\.php\\?links=[\\d]+", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public FilehostIt() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -49,7 +49,7 @@ public class FilehostIt extends PluginForDecrypt {
             ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
             progress.setRange(links.size());
             for (int i = 0; i < links.size(); i++) {
-                decryptedLinks.add(this.createDownloadlink(links.get(i).get(0)));
+                decryptedLinks.add(createDownloadlink(links.get(i).get(0)));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -59,41 +59,34 @@ public class FilehostIt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

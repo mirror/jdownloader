@@ -42,7 +42,6 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -54,9 +53,10 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.postRequest(url, null, cryptedLink, null, "id=" + downloadid, false);
             String downloadlink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (downloadlink != null) {
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.htmlDecode(downloadlink)));
-            } else
+                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(downloadlink)));
+            } else {
                 return null;
+            }
         } catch (MalformedURLException e) {
             e.printStackTrace();
             return null;
@@ -67,41 +67,34 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

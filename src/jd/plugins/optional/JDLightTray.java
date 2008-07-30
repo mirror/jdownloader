@@ -37,34 +37,29 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener {
-    public static int getAddonInterfaceVersion(){
+    public static int getAddonInterfaceVersion() {
         return 0;
     }
+
     private TrayIconPopup popup;
 
     private TrayIcon trayIcon;
 
-    
     @Override
     public void actionPerformed(ActionEvent e) {
 
     }
 
-  
-
-    
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    
     @Override
     public String getCoder() {
         return "jD-Team";
     }
 
-    
     @Override
     public String getPluginName() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
@@ -77,28 +72,27 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
-            try{
+            try {
                 JDUtilities.getController().addControlListener(this);
                 logger.info("Systemtray OK");
                 initGUI();
-            }catch(Exception e){
+            } catch (Exception e) {
                 return false;
             }
-          return true;
+            return true;
         } else {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
-        return false;
+            return false;
         }
     }
 
-    
     private void initGUI() {
 
         trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
@@ -115,19 +109,14 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-       
 
     }
 
     public void mouseEntered(MouseEvent e) {
-       
 
     }
 
-
-
     public void mouseExited(MouseEvent e) {
-       
 
     }
 
@@ -141,30 +130,30 @@ public class JDLightTray extends PluginOptional implements MouseListener {
                     popup.dispose();
                     popup = null;
                 } else if (SwingUtilities.isRightMouseButton(e)) {
-                	
-                	int x = e.getPoint().x;
-                	int y = e.getPoint().y;
-                	
-                	Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                	int limitX = (int) screenSize.getWidth() / 2;
-                	int limitY = (int) screenSize.getHeight() / 2;
-                	
+
+                    int x = e.getPoint().x;
+                    int y = e.getPoint().y;
+
+                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                    int limitX = (int) screenSize.getWidth() / 2;
+                    int limitY = (int) screenSize.getHeight() / 2;
+
                     popup = new TrayIconPopup(this);
-                    
-                    if ( x <= limitX && y <= limitY ) {
-                    	// top left
-                    	popup.setLocation(x, y);
-                    } else if ( x <= limitX && y >= limitY ) {
-                    	// bottom left
-                    	popup.setLocation(x, y-popup.getHeight());
-                    } else if ( x >= limitX && y <= limitY ) {
-                    	// top right
-                    	popup.setLocation(x-popup.getWidth(), y);
-                    } else if ( x >= limitX && y >= limitY ) {
-                    	// bottom right
-                    	popup.setLocation(x-popup.getWidth(), y-popup.getHeight());
+
+                    if (x <= limitX && y <= limitY) {
+                        // top left
+                        popup.setLocation(x, y);
+                    } else if (x <= limitX && y >= limitY) {
+                        // bottom left
+                        popup.setLocation(x, y - popup.getHeight());
+                    } else if (x >= limitX && y <= limitY) {
+                        // top right
+                        popup.setLocation(x - popup.getWidth(), y);
+                    } else if (x >= limitX && y >= limitY) {
+                        // bottom right
+                        popup.setLocation(x - popup.getWidth(), y - popup.getHeight());
                     }
-                    
+
                 }
             }
 
@@ -173,15 +162,15 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     }
 
     public void mouseReleased(MouseEvent e) {
-      
 
     }
 
-    
     @Override
     public void onExit() {
-        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
-        
+        if (trayIcon != null) {
+            SystemTray.getSystemTray().remove(trayIcon);
+        }
+
     }
 
 }

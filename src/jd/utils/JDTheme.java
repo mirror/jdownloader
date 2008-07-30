@@ -50,16 +50,18 @@ public class JDTheme {
      * @return
      */
     public static Color C(String key, String def) {
-        return new Color(Integer.parseInt(V(key, def), 16));
+        return new Color(Integer.parseInt(JDTheme.V(key, def), 16));
     }
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) return null;
+        if (!dir.exists()) {
+            return null;
+        }
         File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
         Vector<String> ret = new Vector<String>();
-        for (int i = 0; i < files.length; i++) {
-            ret.add(files[i].getName().split("\\.")[0]);
+        for (File element : files) {
+            ret.add(element.getName().split("\\.")[0]);
         }
         return ret;
     }
@@ -69,21 +71,25 @@ public class JDTheme {
             logger.severe("Use setTheme() first!");
             return key;
         }
- 
-        if (data.containsKey(key)) return JDUtilities.UTF8Decode(data.get(key));
+
+        if (data.containsKey(key)) {
+            return JDUtilities.UTF8Decode(data.get(key));
+        }
         logger.info("Key not found: " + key + " (" + def + ")");
 
-     
         if (defaultData.containsKey(key)) {
             def = JDUtilities.UTF8Decode(defaultData.get(key));
             logger.finer("Use default Value: " + def);
         }
-        if (def == null) def = key;
+        if (def == null) {
+            def = key;
+        }
         data.put(key, def);
 
         return def;
 
     }
+
     /**
      * Gibt ein Image zum key zurück
      * 
@@ -91,19 +97,21 @@ public class JDTheme {
      * @return
      */
     public static Image I(String key) {
-        return JDUtilities.getImage(V(key));
+        return JDUtilities.getImage(JDTheme.V(key));
     }
-    
+
     /**
      * Gibt ein skaliertes Image zurück
+     * 
      * @param key
      * @param width
      * @param height
      * @return
      */
-    public static Image I(String key,int width,int height) {
-        return JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
+    public static Image I(String key, int width, int height) {
+        return JDUtilities.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
     }
+
     /**
      * Gibt ein icon zum key zurück
      * 
@@ -111,17 +119,19 @@ public class JDTheme {
      * @return
      */
     public static ImageIcon II(String key) {
-        return new ImageIcon(JDUtilities.getImage(V(key)));
+        return new ImageIcon(JDUtilities.getImage(JDTheme.V(key)));
     }
+
     /**
      * Gibt ein skaliertes ImageIcon zurück
+     * 
      * @param key
      * @param width
      * @param height
      * @return
      */
-    public static ImageIcon II(String key,int width,int height) {
-        return new ImageIcon(JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    public static ImageIcon II(String key, int width, int height) {
+        return new ImageIcon(JDUtilities.getImage(JDTheme.V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
     }
 
     /*
@@ -144,11 +154,13 @@ public class JDTheme {
         data = new HashMap<String, String>();
         String str = JDUtilities.getLocalFile(file);
         String[] lines = Regex.getLines(str);
-        for (int i = 0; i < lines.length; i++) {
-            int split = lines[i].indexOf("=");
-            if (split <= 0 || lines[i].startsWith("#")) continue;
-            String key = lines[i].substring(0, split).trim();
-            String value = lines[i].substring(split + 1).trim();
+        for (String element : lines) {
+            int split = element.indexOf("=");
+            if (split <= 0 || element.startsWith("#")) {
+                continue;
+            }
+            String key = element.substring(0, split).trim();
+            String value = element.substring(split + 1).trim();
             if (data.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
             } else {
@@ -170,11 +182,13 @@ public class JDTheme {
             data = new HashMap<String, String>();
             str = JDUtilities.getLocalFile(file);
             lines = Regex.getLines(str);
-            for (int i = 0; i < lines.length; i++) {
-                int split = lines[i].indexOf("=");
-                if (split <= 0 || lines[i].startsWith("#")) continue;
-                String key = lines[i].substring(0, split).trim();
-                String value = lines[i].substring(split + 1).trim();
+            for (String element : lines) {
+                int split = element.indexOf("=");
+                if (split <= 0 || element.startsWith("#")) {
+                    continue;
+                }
+                String key = element.substring(0, split).trim();
+                String value = element.substring(split + 1).trim();
                 if (data.containsKey(key)) {
                     logger.severe("Dupe found: " + key);
                 } else {
@@ -194,7 +208,7 @@ public class JDTheme {
      * @return
      */
     public static String V(String key) {
-        return getThemeValue(key, null);
+        return JDTheme.getThemeValue(key, null);
     }
 
     /**
@@ -204,7 +218,7 @@ public class JDTheme {
      * @return
      */
     public static String V(String key, String def) {
-        return getThemeValue(key, def);
+        return JDTheme.getThemeValue(key, def);
     }
 
 }

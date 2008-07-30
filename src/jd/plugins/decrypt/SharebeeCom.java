@@ -40,7 +40,6 @@ public class SharebeeCom extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -51,8 +50,8 @@ public class SharebeeCom extends PluginForDecrypt {
             String[] g = new Regex(reqInfo.getHtmlCode(), Pattern.compile("u=(.*?)\'\\);return false;\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(g.length);
 
-            for (int i = 0; i < g.length; i++) {
-                decryptedLinks.add(this.createDownloadlink(g[i]));
+            for (String element : g) {
+                decryptedLinks.add(createDownloadlink(element));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -62,44 +61,34 @@ public class SharebeeCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-   
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

@@ -16,10 +16,6 @@ package jd;
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
-
-
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -55,32 +51,32 @@ public class Installer extends JDialog implements ActionListener, WindowListener
      */
     private static final long serialVersionUID = 8764525546298642601L;
 
-    //private Logger            logger           = JDUtilities.getLogger();
+    // private Logger logger = JDUtilities.getLogger();
 
-    private  boolean    aborted          = false;
+    private boolean aborted = false;
 
-    private JButton           btnOK;
+    private JButton btnOK;
 
-    private BrowseFile        homeDir, downloadDir;
+    private BrowseFile homeDir, downloadDir;
 
-    protected Insets          insets           = new Insets(0, 0, 0, 0);
+    protected Insets insets = new Insets(0, 0, 0, 0);
 
-    private JPanel            panel;
+    private JPanel panel;
 
     /**
      * 
      */
     public Installer() {
-        
+
         super();
-        
-        File downloadPath=JDUtilities.getJDHomeDirectoryFromEnvironment();
-        File installPath=downloadPath;
+
+        File downloadPath = JDUtilities.getJDHomeDirectoryFromEnvironment();
+        File installPath = downloadPath;
         setModal(true);
         setLayout(new BorderLayout());
 
-        this.setTitle(JDLocale.L("installer.title","JDownloader Installation"));
-        this.setAlwaysOnTop(true);
+        setTitle(JDLocale.L("installer.title", "JDownloader Installation"));
+        setAlwaysOnTop(true);
 
         setLocation(20, 20);
         panel = new JPanel(new GridBagLayout());
@@ -95,32 +91,38 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         downloadDir.setEditable(true);
         downloadDir.setText(downloadPath.getAbsolutePath());
         addWindowListener(this);
-        //JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.installDir","Install Directory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        //JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.downloadDir","Downloaddirectory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, new
+        // JLabel(JDLocale.L("installer.installDir","Install Directory")),
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
+        // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.downloadDir", "Downloaddirectory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, downloadDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        btnOK = new JButton(JDLocale.L("gui.btn_continue","Continue..."));
+        btnOK = new JButton(JDLocale.L("gui.btn_continue", "Continue..."));
         btnOK.addActionListener(this);
         JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         this.add(panel, BorderLayout.CENTER);
-        this.pack();
+        pack();
 
-        this.setVisible(true);
+        setVisible(true);
     }
 
     public void actionPerformed(ActionEvent e) {
-  this.setVisible(false);
+        setVisible(false);
 
     }
 
     public String getDownloadDir() {
         new File(downloadDir.getText()).mkdirs();
         if (!new File(downloadDir.getText()).exists() || !new File(downloadDir.getText()).canWrite()) {
-            this.aborted=true;
-            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nDownload Directory is not valid: ") + homeDir.getText());
+            aborted = true;
+            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid", "Installation aborted!\r\nDownload Directory is not valid: ") + homeDir.getText());
             homeDir.setText("");
             downloadDir.setText("");
-            this.dispose();
+            dispose();
             System.exit(1);
             return null;
         }
@@ -129,43 +131,48 @@ public class Installer extends JDialog implements ActionListener, WindowListener
     }
 
     public String getHomeDir() {
-      
+
         new File(homeDir.getText()).mkdirs();
         if (!new File(homeDir.getText()).exists() || !new File(homeDir.getText()).canRead()) {
-            this.aborted=true;
-            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nInstallation Directory is not valid: ") + homeDir.getText());
+            aborted = true;
+            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid", "Installation aborted!\r\nInstallation Directory is not valid: ") + homeDir.getText());
             homeDir.setText("");
             downloadDir.setText("");
-            this.dispose();
+            dispose();
             System.exit(1);
             return null;
         }
         return homeDir.getText();
     }
 
-    public  boolean isAborted() {
+    public boolean isAborted() {
         return aborted;
     }
 
-    public void windowActivated(WindowEvent e) {}
-
-    public void windowClosed(WindowEvent e) {}
-
-    public void windowClosing(WindowEvent e) {
-        this.aborted=true;
-        JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted","Installation aborted!"));
-        homeDir.setText("");
-        downloadDir.setText("");
-  
-        
+    public void windowActivated(WindowEvent e) {
     }
 
-    public void windowDeactivated(WindowEvent e) {}
+    public void windowClosed(WindowEvent e) {
+    }
 
-    public void windowDeiconified(WindowEvent e) {}
+    public void windowClosing(WindowEvent e) {
+        aborted = true;
+        JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted", "Installation aborted!"));
+        homeDir.setText("");
+        downloadDir.setText("");
 
-    public void windowIconified(WindowEvent e) {}
+    }
 
-    public void windowOpened(WindowEvent e) {}
+    public void windowDeactivated(WindowEvent e) {
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+    }
+
+    public void windowIconified(WindowEvent e) {
+    }
+
+    public void windowOpened(WindowEvent e) {
+    }
 
 }

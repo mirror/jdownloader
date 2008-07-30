@@ -34,7 +34,7 @@ public class CodedTo extends PluginForDecrypt {
      * Suchmasken
      */
     private static final String FILES = "<a target=\"_blank\" href=\"down.php?id=(.*?)\">";
-   
+
     private static final String host = "coded.to";
 
     private static final String LINK = "<iframe src=\"(.*?)\" height=\"100%\" width=\"100%\"";
@@ -45,7 +45,6 @@ public class CodedTo extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -72,11 +71,11 @@ public class CodedTo extends PluginForDecrypt {
             if (do_continue == true) {
                 // Anzahl Links
                 progress.setRange(files.length);
-                for (int i = 0; i < files.length; i++) {
-                    reqinfo = HTTP.getRequest(new URL("http://www.coded.to/down.php?id=" + files[i][0]));
+                for (String[] element : files) {
+                    reqinfo = HTTP.getRequest(new URL("http://www.coded.to/down.php?id=" + element[0]));
                     String html = JDUtilities.htmlDecode(reqinfo.getHtmlCode());
                     String newLink = new Regex(html, Pattern.compile(LINK, Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    decryptedLinks.add(this.createDownloadlink(newLink));
+                    decryptedLinks.add(createDownloadlink(newLink));
                     progress.increase(1);
                 }
             }
@@ -87,41 +86,34 @@ public class CodedTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

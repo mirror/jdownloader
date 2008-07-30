@@ -28,15 +28,12 @@ import jd.utils.JDUtilities;
 
 public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
-    private static String VERSION = "1.0.0.0";
-
     private Pattern patternSupported = Pattern.compile("http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
 
     public ShareProtect() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -45,8 +42,8 @@ public class ShareProtect extends PluginForDecrypt {
             request.getRequest(parameter);
             String[] matches = request.getRegexp("unescape\\(\\'(.*?)'\\)").getMatches(1);
             StringBuffer htmlc = new StringBuffer();
-            for (int i = 0; i < matches.length; i++) {
-                htmlc.append(JDUtilities.htmlDecode(matches[i]) + "\n");
+            for (String element : matches) {
+                htmlc.append(JDUtilities.htmlDecode(element) + "\n");
             }
             requestInfo = request.getRequestInfo();
             requestInfo.setHtmlCode(htmlc.toString());
@@ -54,15 +51,15 @@ public class ShareProtect extends PluginForDecrypt {
             String[] links = request.getRegexp("<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
             progress.setRange(links.length);
             htmlc = new StringBuffer();
-            for (int i = 0; i < links.length; i++) {
-                request.getRequest("http://" + request.getHost() + "/" + links[i]);
+            for (String element : links) {
+                request.getRequest("http://" + request.getHost() + "/" + element);
                 htmlc.append(JDUtilities.htmlDecode(request.getRegexp("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
                 progress.increase(1);
             }
             requestInfo.setHtmlCode(htmlc.toString());
             Form[] forms = requestInfo.getForms();
-            for (int i = 0; i < forms.length; i++) {
-                decryptedLinks.add(createDownloadlink(forms[i].action));
+            for (Form element : forms) {
+                decryptedLinks.add(createDownloadlink(element.action));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,44 +68,34 @@ public class ShareProtect extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

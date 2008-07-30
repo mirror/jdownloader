@@ -77,8 +77,10 @@ public class GetRouterInfo {
     public String username = null;
 
     public GetRouterInfo(ProgressDialog progress) {
-        this.progressBar = progress;
-        if (progressBar != null) progressBar.setMaximum(100);
+        progressBar = progress;
+        if (progressBar != null) {
+            progressBar.setMaximum(100);
+        }
     }
 
     private boolean checkport80(String host) {
@@ -95,7 +97,7 @@ public class GetRouterInfo {
     }
 
     public String getAdress() {
-        if (adress != null) return adress;
+        if (adress != null) { return adress; }
         setProgressText("try to find the router ip");
         // String[] hosts = new String[]{"192.168.2.1", "192.168.1.1",
         // "192.168.0.1", "fritz.box"};
@@ -116,10 +118,10 @@ public class GetRouterInfo {
                             }
                         }
                     } catch (UnknownHostException e) {
-                        
+
                         e.printStackTrace();
                     } catch (IOException e) {
-                        
+
                         e.printStackTrace();
                     }
                 }
@@ -127,10 +129,18 @@ public class GetRouterInfo {
             }
         }
         Vector<String> hosts = new Vector<String>();
-        if (!hosts.contains("192.168.2.1")) hosts.add("192.168.2.1");
-        if (!hosts.contains("192.168.1.1")) hosts.add("192.168.1.1");
-        if (!hosts.contains("192.168.0.1")) hosts.add("192.168.0.1");
-        if (!hosts.contains("fritz.box")) hosts.add("fritz.box");
+        if (!hosts.contains("192.168.2.1")) {
+            hosts.add("192.168.2.1");
+        }
+        if (!hosts.contains("192.168.1.1")) {
+            hosts.add("192.168.1.1");
+        }
+        if (!hosts.contains("192.168.0.1")) {
+            hosts.add("192.168.0.1");
+        }
+        if (!hosts.contains("fritz.box")) {
+            hosts.add("fritz.box");
+        }
 
         String ip = null;
         String localHost;
@@ -138,11 +148,11 @@ public class GetRouterInfo {
             localHost = InetAddress.getLocalHost().getHostName();
             for (InetAddress ia : InetAddress.getAllByName(localHost)) {
 
-                if (validateIP(ia.getHostAddress() + "")) {
+                if (GetRouterInfo.validateIP(ia.getHostAddress() + "")) {
                     ip = ia.getHostAddress();
 
                     if (ip != null) {
-                        String host = ip.substring(0,ip.lastIndexOf("."))+".";
+                        String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
                         for (int i = 0; i < 255; i++) {
                             String lhost = host + i;
                             if (!lhost.equals(ip) && !hosts.contains(lhost)) {
@@ -181,7 +191,7 @@ public class GetRouterInfo {
 
     public String[] getRouterData(String ip) {
         setProgressText("Get Routerdata");
-        adress=ip;
+        adress = ip;
         if (getRouterDatas() == null) { return null; }
         int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
         int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
@@ -218,13 +228,13 @@ public class GetRouterInfo {
         setProgress(100);
         return null;
     }
- 
+
     public Vector<String[]> getRouterDatas() {
-        if (routerDatas != null) return routerDatas;
-        
-        if (getAdress() == null) return null;
+        if (routerDatas != null) { return routerDatas; }
+
+        if (getAdress() == null) { return null; }
         try {
-            //progress.setStatusText("Load possible RouterDatas");
+            // progress.setStatusText("Load possible RouterDatas");
             Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
 
             RequestInfo request = HTTP.getRequest(new URL("http://" + adress));
@@ -233,21 +243,21 @@ public class GetRouterInfo {
             Vector<String[]> retRouterData = new Vector<String[]>();
             for (int i = 0; i < routerData.size(); i++) {
                 String[] dat = routerData.get(i);
-                try{
-                if (html.contains(dat[0].toLowerCase())||html.contains(dat[1].toLowerCase())||html.matches(dat[3])) {
-                    retRouterData.add(dat);
-                }
-                }catch(Exception e){
-                  //  e.printStackTrace();
+                try {
+                    if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase()) || html.matches(dat[3])) {
+                        retRouterData.add(dat);
+                    }
+                } catch (Exception e) {
+                    // e.printStackTrace();
                 }
             }
             routerDatas = retRouterData;
             return retRouterData;
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         } catch (IOException e) {
-            
+
             e.printStackTrace();
         }
         return null;
@@ -255,19 +265,21 @@ public class GetRouterInfo {
     }
 
     private boolean isEmpty(String arg) {
-        if (arg == null || arg.matches("[\\s]*")) return true;
+        if (arg == null || arg.matches("[\\s]*")) { return true; }
         return false;
 
     }
 
     public void setLoginPass(String text) {
-        this.loginPass=text;
-        
+        loginPass = text;
+
     }
+
     public void setLoginUser(String text) {
-        this.loginUser=text;
-        
+        loginUser = text;
+
     }
+
     private void setProgress(int val) {
 
         if (progressBar != null) {
@@ -277,11 +289,12 @@ public class GetRouterInfo {
             logger.info(val + "%");
         }
     }
+
     private void setProgressText(String text) {
 
         if (progressBar != null) {
             progressBar.setString(text);
-            this.progressBar.setStringPainted(true);
+            progressBar.setStringPainted(true);
         } else {
             logger.info(text);
         }

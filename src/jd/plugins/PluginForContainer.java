@@ -65,8 +65,12 @@ public abstract class PluginForContainer extends Plugin {
     @Override
     public synchronized boolean canHandle(String data) {
 
-        if (data == null) return false;
-        if (this.getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) return true;
+        if (data == null) {
+            return false;
+        }
+        if (getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) {
+            return true;
+        }
 
         return false;
     }
@@ -97,11 +101,11 @@ public abstract class PluginForContainer extends Plugin {
         // Vector<String>(this.downloadLinksURL);
         progress.addToMax(downloadLinksURL.size());
         // logger.info("PRE: "+downloadLinksURL);
-        for (Iterator<String> it1 = downloadLinksURL.iterator(); it1.hasNext();) {
+        for (String string : downloadLinksURL) {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt", "Decrypt link %s"), "" + i));
 
-            DistributeData distributeData = new DistributeData(it1.next());
+            DistributeData distributeData = new DistributeData(string);
             Vector<DownloadLink> links = distributeData.findLinks();
 
             DownloadLink srcLink = containedLinks.get(i);
@@ -125,7 +129,9 @@ public abstract class PluginForContainer extends Plugin {
 
                 next.getSourcePluginPasswords().addAll(srcLink.getSourcePluginPasswords());
                 String comment = "";
-                if (srcLink.getSourcePluginComment() != null) comment += srcLink.getSourcePluginComment();
+                if (srcLink.getSourcePluginComment() != null) {
+                    comment += srcLink.getSourcePluginComment();
+                }
                 if (next.getSourcePluginComment() != null) {
                     if (comment.length() == 0) {
                         comment += "->" + next.getSourcePluginComment();
@@ -163,7 +169,9 @@ public abstract class PluginForContainer extends Plugin {
             return;
         }
         File f = new File(file);
-        if (md5 == null) md5 = JDUtilities.getLocalHash(f);
+        if (md5 == null) {
+            md5 = JDUtilities.getLocalHash(f);
+        }
 
         String extension = JDUtilities.getFileExtension(f);
         if (f.exists()) {
@@ -178,7 +186,7 @@ public abstract class PluginForContainer extends Plugin {
 
             }
 
-            this.containerStatus = callDecryption(res);
+            containerStatus = callDecryption(res);
 
         }
         return;
@@ -197,10 +205,15 @@ public abstract class PluginForContainer extends Plugin {
 
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
-        if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
-        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
+        if (downloadLinksURL == null) {
+            initContainer(downloadLink.getContainerFile());
+        }
+        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) {
+            return null;
+        }
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
+
     /**
      * Findet anhand des Hostnamens ein passendes Plugiln
      * 
@@ -217,6 +230,7 @@ public abstract class PluginForContainer extends Plugin {
         }
         return null;
     }
+
     /**
      * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks
      * zurück.
@@ -231,12 +245,12 @@ public abstract class PluginForContainer extends Plugin {
     }
 
     public Vector<String> getExtensions() {
-        return this.EXTENSIONS;
+        return EXTENSIONS;
     }
 
     @Override
     public String getLinkName() {
-       return null;
+        return null;
     }
 
     /**
@@ -247,7 +261,9 @@ public abstract class PluginForContainer extends Plugin {
      * @return
      */
     public PluginForContainer getPlugin(String containerFile) {
-        if (PLUGINS.containsKey(containerFile)) return PLUGINS.get(containerFile);
+        if (PLUGINS.containsKey(containerFile)) {
+            return PLUGINS.get(containerFile);
+        }
         try {
             PluginForContainer newPlugin = this.getClass().newInstance();
             PLUGINS.put(containerFile, newPlugin);
@@ -264,7 +280,9 @@ public abstract class PluginForContainer extends Plugin {
     }
 
     public synchronized void initContainer(String filename) {
-        if (filename == null) return;
+        if (filename == null) {
+            return;
+        }
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
             containedLinks = CONTAINER.get(filename);
@@ -284,7 +302,9 @@ public abstract class PluginForContainer extends Plugin {
         if (containedLinks == null || containedLinks.size() == 0) {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
-            if (progress != null) progress.finalize();
+            if (progress != null) {
+                progress.finalize();
+            }
             progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
 

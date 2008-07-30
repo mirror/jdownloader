@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple;
 
 import java.awt.Frame;
@@ -38,59 +37,67 @@ public class ProgressDialog extends JDialog implements ActionListener {
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
 
-	private static int    REL    = GridBagConstraints.RELATIVE;
+    private static int REL = GridBagConstraints.RELATIVE;
 
-    private static int    REM    = GridBagConstraints.REMAINDER;
+    private static int REM = GridBagConstraints.REMAINDER;
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = -1749561448228487759L;
+     * 
+     */
+    private static final long serialVersionUID = -1749561448228487759L;
 
-    private JButton       btnNOTOK;
+    private JButton btnNOTOK;
 
-    private JButton       btnOK;
+    private JButton btnOK;
 
-    private JLabel        lblMessage;
+    private JLabel lblMessage;
 
-    private JProgressBar  progress;
+    private JProgressBar progress;
 
-    private Thread        thread;
+    private Thread thread;
 
     public ProgressDialog(Frame owner, String message, Thread ob, boolean ok, boolean cancel) {
         super(owner);
         setModal(true);
         setLayout(new GridBagLayout());
 
-        this.thread = ob;
+        thread = ob;
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         lblMessage = new JLabel(message);
         progress = new JProgressBar();
-        this.setAlwaysOnTop(true);
-this.setTitle(JDLocale.L("gui.dialogs.progress.title","Fortschritt...bitte warten"));
+        setAlwaysOnTop(true);
+        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
         btnOK.addActionListener(this);
         btnNOTOK.addActionListener(this);
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         JDUtilities.addToGridBag(this, lblMessage, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        if (ok) JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        if (ok) {
+            JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        }
+        if (cancel) {
+            JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        }
         setLocation(SimpleGUI.getLastLocation(owner, "DIALOGS", this));
-       
+
         pack();
-        
+
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
-            if (this.thread != null && thread.isAlive()) thread.interrupt();
+            if (thread != null && thread.isAlive()) {
+                thread.interrupt();
+            }
             setVisible(false);
             dispose();
         }
         if (e.getSource() == btnNOTOK) {
-            if (this.thread != null && thread.isAlive()) thread.interrupt();
+            if (thread != null && thread.isAlive()) {
+                thread.interrupt();
+            }
             setVisible(false);
             dispose();
         }
@@ -122,7 +129,7 @@ this.setTitle(JDLocale.L("gui.dialogs.progress.title","Fortschritt...bitte warte
     }
 
     public void setMessage(String txt) {
-        this.lblMessage.setText(txt);
+        lblMessage.setText(txt);
     }
 
     public void setMinimum(int value) {
@@ -140,8 +147,8 @@ this.setTitle(JDLocale.L("gui.dialogs.progress.title","Fortschritt...bitte warte
     }
 
     public void setThread(Thread th) {
-       this.thread=th;
-        
+        thread = th;
+
     }
 
     public void setValue(int value) {

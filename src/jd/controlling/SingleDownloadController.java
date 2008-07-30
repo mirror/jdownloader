@@ -74,12 +74,12 @@ public class SingleDownloadController extends Thread {
      */
     public SingleDownloadController(JDController controller, DownloadLink dlink) {
         super("JD-StartDownloads");
-        this.downloadLink = dlink;
-        this.linkStatus = downloadLink.getLinkStatus();
+        downloadLink = dlink;
+        linkStatus = downloadLink.getLinkStatus();
         this.controller = controller;
-        this.setPriority(Thread.MIN_PRIORITY);
+        setPriority(Thread.MIN_PRIORITY);
 
-        this.downloadLink.setDownloadLinkController(this);
+        downloadLink.setDownloadLinkController(this);
     }
 
     /**
@@ -90,8 +90,8 @@ public class SingleDownloadController extends Thread {
         // aborted = true;
 
         // if (currentPlugin != null) currentPlugin.abort();
-        this.aborted = true;
-        this.interrupt();
+        aborted = true;
+        interrupt();
         // System.out.println("IS interrupted?: "+this+" -
         // "+Thread.currentThread().isInterrupted()+" - "+isInterrupted());
 
@@ -113,7 +113,7 @@ public class SingleDownloadController extends Thread {
     }
 
     public DownloadLink getDownloadLink() {
-        return this.downloadLink;
+        return downloadLink;
     }
 
     private void handlePlugin() {
@@ -129,7 +129,8 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
-            //linkStatus.setStatusText(JDLocale.L("controller.status.active", "aktiv"));
+            // linkStatus.setStatusText(JDLocale.L("controller.status.active",
+            // "aktiv"));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
@@ -146,7 +147,7 @@ public class SingleDownloadController extends Thread {
                 }
             }
 
-            if (this.isAborted()) {
+            if (isAborted()) {
 
                 logger.warning("Thread aborted");
                 linkStatus.setStatus(LinkStatus.TODO);
@@ -156,41 +157,41 @@ public class SingleDownloadController extends Thread {
             switch (linkStatus.getLatestStatus()) {
 
             case LinkStatus.ERROR_IP_BLOCKED:
-                this.onErrorWaittime(downloadLink, currentPlugin);
+                onErrorWaittime(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                this.onErrorTemporarilyUnavailable(downloadLink, currentPlugin);
+                onErrorTemporarilyUnavailable(downloadLink, currentPlugin);
                 break;
 
             case LinkStatus.ERROR_AGB_NOT_SIGNED:
-                this.onErrorAGBNotSigned(downloadLink, currentPlugin);
+                onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_FILE_NOT_FOUND:
-                this.onErrorFileNotFound(downloadLink, currentPlugin);
+                onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
-                
+
             case LinkStatus.ERROR_FATAL:
-                this.onErrorFatal(downloadLink, currentPlugin);
-                break;   
+                onErrorFatal(downloadLink, currentPlugin);
+                break;
             case LinkStatus.ERROR_CAPTCHA:
-                this.onErrorCaptcha(downloadLink, currentPlugin);
+                onErrorCaptcha(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_PREMIUM:
-                this.onErrorPremium(downloadLink, currentPlugin);
+                onErrorPremium(downloadLink, currentPlugin);
                 break;
-     
+
             case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-                this.onErrorIncomplete(downloadLink, currentPlugin);
+                onErrorIncomplete(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_ALREADYEXISTS:
-                this.onErrorFileExists(downloadLink, currentPlugin);
+                onErrorFileExists(downloadLink, currentPlugin);
                 break;
 
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
-                this.onErrorChunkloadFailed(downloadLink, currentPlugin);
+                onErrorChunkloadFailed(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_NO_CONNECTION:
-                this.onErrorNoConnection(downloadLink, currentPlugin);
+                onErrorNoConnection(downloadLink, currentPlugin);
                 break;
             }
 
@@ -231,12 +232,16 @@ public class SingleDownloadController extends Thread {
         }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
-        Interaction.handleInteraction((Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED), downloadLink);
+        Interaction.handleInteraction(Interaction.INTERACTION_SINGLE_DOWNLOAD_FINISHED, downloadLink);
         if (JDUtilities.getController().isContainerFile(new File(downloadLink.getFileOutput()))) {
-            Interaction.handleInteraction((Interaction.INTERACTION_CONTAINER_DOWNLOAD), downloadLink);
-            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) controller.loadContainerFile(new File(downloadLink.getFileOutput()));
+            Interaction.handleInteraction(Interaction.INTERACTION_CONTAINER_DOWNLOAD, downloadLink);
+            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
+                controller.loadContainerFile(new File(downloadLink.getFileOutput()));
+            }
         }
-        if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) controller.getUnrarModule().interact(downloadLink);
+        if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) {
+            controller.getUnrarModule().interact(downloadLink);
+        }
 
     }
 
@@ -273,56 +278,6 @@ public class SingleDownloadController extends Thread {
     }
 
     /**
-     * Diese Funktion wird aufgerufen sobald ein Download wegen einer
-     * Botdetection abgebrochen wird
-     * 
-     * @param downloadLink
-     * @param plugin2
-     * @param step
-     */
-    private void onErrorBotdetection(DownloadLink downloadLink, PluginForHost plugin) {
-        // // Bot erkannt. Interaction!
-        // logger.severe("Error occurred: Bot detected");
-        // downloadLink.setEndOfWaittime(0);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botDetected",
-        // "Bot erkannt/Reconnect"));
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        // if (plugin.getBotWaittime() <= 0) {
-        // Reconnecter.requestReconnect();
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // downloadLink.setEndOfWaittime(System.currentTimeMillis() + 2 * 60 *
-        // 1000);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWaitReconnect",
-        // "Bot. Warte auf Reconnect"));
-        // } else if (plugin.getBotWaittime() > 0) {
-        //
-        // long wait = plugin.getBotWaittime();
-        //
-        // while (wait > 0 && !isInterrupted()) {
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.botWait",
-        // "Botwait ") + JDUtilities.formatSeconds((int) wait / 1000));
-        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
-        // downloadLink);
-        // try {
-        // Thread.sleep(1000);
-        // } catch (InterruptedException e) {
-        // return;
-        // }
-        // wait -= 1000;
-        //
-        // }
-        // linkStatus.addStatus(LinkStatus.TODO);
-        //
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        //
-        // }
-        //
-        // logger.severe("Bot detected");
-    }
-
-    /**
      * Diese Funktion wird aufgerufen wenn ein Download wegen eines
      * captchafehlersabgebrochen wird
      * 
@@ -356,9 +311,9 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
-        
-        logger.severe("\r\nFatal Download error occured: "+downloadLink.getLinkStatus());
-       
+
+        logger.severe("\r\nFatal Download error occured: " + downloadLink.getLinkStatus());
+
         downloadLink.requestGuiUpdate();
     }
 
@@ -391,17 +346,6 @@ public class SingleDownloadController extends Thread {
         //
         // }
         //
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-
-    }
-
-    private void onErrorFileInProgress(DownloadLink downloadLink2, PluginForHost plugin) {
-        // downloadLink.setEnabled(false);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.fileinprogress",
-        // "Datei wird schon geladen"));
-        //
-        // linkStatus.addStatus(LinkStatus.TODO);
         // fireControlEvent(new ControlEvent(this,
         // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
@@ -559,19 +503,6 @@ public class SingleDownloadController extends Thread {
         // onErrorRetry(downloadLink2, plugin, step);
     }
 
-    private void onErrorPluginSpecific(DownloadLink downloadLink2, PluginForHost plugin) {
-        // String message = (String) step.getParameter();
-        // logger.severe("Error occurred: " + message);
-        // //this.sleep(nul,downloadLink);
-        // if (message != null)
-        // downloadLink.getLinkStatus().setStatusText(message);
-        // // linkStatus.addStatus(LinkStatus.TODO);
-        // // downloadLink.setEnabled(false);
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-
-    }
-
     /**
      * Fehlerfunktion für einen UNbekannten premiumfehler.
      * Plugin-premium-support wird deaktiviert und link wird erneut versucht
@@ -592,51 +523,6 @@ public class SingleDownloadController extends Thread {
         // plugin.getProperties().setProperty(str, false);
         // downloadLink.getLinkStatus().setStatusText(str);
         // }
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // downloadLink.setEndOfWaittime(0);
-    }
-
-    /**
-     * Diese Funktion wird aufgerufen wenn der Download abgebrochen wurde und
-     * wiederholt werden soll
-     * 
-     * @param downloadLink
-     * @param plugin2
-     * @param step
-     */
-    private void onErrorRetry(DownloadLink downloadLink, PluginForHost plugin) {
-        // if (plugin.getRetryCount() >= plugin.getMaxRetries()) {
-        // onErrorUnknown(downloadLink, plugin, step);
-        // return;
-        // }
-        // logger.info("Retry " + plugin.getRetryCount());
-        //
-        // downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("controller.status.retryonerror",
-        // "Neuer Versuch(%s/%s) in 3 Sekunden"), (1 + plugin.getRetryCount()) +
-        // "", plugin.getMaxRetries()));
-        // downloadLink.requestGuiUpdate();
-        // JDUtilities.sleep(3000);
-        // plugin.setRetryCount(plugin.getRetryCount() + 1);
-        //
-        // // if (step != null && step.getParameter() != null) {
-        // // try {
-        // // logger.info("step.getParameter() " + step.getParameter());
-        // // long milliSeconds = (Long) step.getParameter();
-        // //
-        // downloadLink.getLinkStatus().setStatusText(JDUtilities.sprintf(JDLocale.L("controller.status.wait",
-        // // "Warten: %s sek."), new String[] { JDUtilities.formatSeconds((int)
-        // // (milliSeconds / 1000)) }));
-        // // fireControlEvent(new ControlEvent(this,
-        // // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, null));
-        // // try {
-        // // Thread.sleep(milliSeconds);
-        // // } catch (InterruptedException e) {
-        // // }
-        // // } catch (Exception e2) {
-        // //
-        // // }
-        // // }
-        //
         // linkStatus.addStatus(LinkStatus.TODO);
         // downloadLink.setEndOfWaittime(0);
     }
@@ -665,25 +551,6 @@ public class SingleDownloadController extends Thread {
         // downloadLink.setEnabled(false);
         // fireControlEvent(new ControlEvent(this,
         // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-    }
-
-    /**
-     * Diese Funktion wird aufgerufen wenn ein Download durch einen unbekannten
-     * fehler abgebrochen wurde
-     * 
-     * @param downloadLink
-     * @param plugin
-     * @param step
-     */
-    private void onErrorUnknown(DownloadLink downloadLink, PluginForHost plugin) {
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.unknownError",
-        // "Unbekannter Fehler"));
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        // logger.severe("Error occurred while downloading file");
-        //
-        // Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED,
-        // this);
     }
 
     /**
@@ -743,7 +610,7 @@ public class SingleDownloadController extends Thread {
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
         linkStatus.setInProgress(true);
         plugin.resetPlugin();
-        this.handlePlugin();
+        handlePlugin();
 
         linkStatus.setInProgress(false);
 

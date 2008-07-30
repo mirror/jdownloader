@@ -42,7 +42,6 @@ public class UploadJockeycom extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -53,8 +52,8 @@ public class UploadJockeycom extends PluginForDecrypt {
             url = new URL(cryptedLink);
             requestInfo = HTTP.getRequest(url, null, url.toString(), false);
             String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"http\\:\\/\\/www\\.uploadjockey\\.com\\/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            for (int i = 0; i < links.length; i++) {
-                decryptedLinks.add(this.createDownloadlink(JDUtilities.Base64Decode(links[i][0])));
+            for (String[] element : links) {
+                decryptedLinks.add(createDownloadlink(JDUtilities.Base64Decode(element[0])));
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -66,44 +65,34 @@ public class UploadJockeycom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return CODER;
     }
 
-    
     @Override
     public String getHost() {
         return HOST;
     }
 
-    
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

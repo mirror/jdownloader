@@ -126,6 +126,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         }
 
     }
+
     private class AddFeedDialog extends JDialog implements ActionListener {
 
         private static final long serialVersionUID = 1L;
@@ -204,6 +205,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         }
 
     }
+
     private static final String PROPERTY_ABOS = "PROPERTY_ABOS";
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
     private static final String PROPERTY_FEEDS = "PROPERTY_FEEDS";
@@ -211,6 +213,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     public static int getAddonInterfaceVersion() {
         return 0;
     }
+
     private JList aboList;
     private Vector<String[]> abos = new Vector<String[]>();
     private JButton btnAddAbo;
@@ -236,14 +239,11 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     private JList subscribedList;
 
-    
     // private String version = "0.1.0";
 
-    
     public Newsfeeds() {
     }
 
-    
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
@@ -368,7 +368,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-    
     public ArrayList<MenuItem> createMenuitems() {
 
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
@@ -385,14 +384,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-  
-
-    
     public String getCoder() {
         return "jD-Team";
     }
 
-    
     private Vector<String[]> getEntries(final String url, final String filter) {
 
         Vector<String[]> vector = new Vector<String[]>();
@@ -434,7 +429,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                     temp[0] = JDUtilities.htmlDecode(title);
                     temp[1] = JDUtilities.htmlDecode(link);
 
-                    if (temp[0].toLowerCase().contains(filter.toLowerCase())) vector.add(temp);
+                    if (temp[0].toLowerCase().contains(filter.toLowerCase())) {
+                        vector.add(temp);
+                    }
 
                 }
 
@@ -450,7 +447,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
     }
@@ -464,7 +460,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     public boolean initAddon() {
@@ -490,7 +487,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else {
             JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             abos = (Vector<String[]>) f;
-            if (abos == null) abos = new Vector<String[]>();
+            if (abos == null) {
+                abos = new Vector<String[]>();
+            }
 
         }
 
@@ -514,11 +513,15 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         } else {
             JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             feeds = (Vector<String[]>) f;
-            if (feeds == null) feeds = new Vector<String[]>();
+            if (feeds == null) {
+                feeds = new Vector<String[]>();
+            }
 
         }
         setFeedList();
-        if (feeds.size() > 0) feedList.setSelectedIndex(0);
+        if (feeds.size() > 0) {
+            feedList.setSelectedIndex(0);
+        }
 
     }
 
@@ -764,7 +767,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         loadAbos();
         setAboList();
-        if (abos.size() > 0) aboList.setSelectedIndex(0);
+        if (abos.size() > 0) {
+            aboList.setSelectedIndex(0);
+        }
 
         frame.add(main);
         frame.setResizable(true);
@@ -886,14 +891,20 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 Regex regex = requestInfo.getRegexp("Pages \\(([0-9]+)\\):");
                 String pagesString = regex.getFirstMatch(1);
                 int pages = 1;
-                if (pagesString != null) pages = Integer.parseInt(pagesString);
+                if (pagesString != null) {
+                    pages = Integer.parseInt(pagesString);
+                }
 
                 boolean found = false;
 
                 for (int i = 1; i <= pages; i++) {
 
-                    if (found) break;
-                    if (pages > 1) requestInfo = HTTP.getRequest(new URL(parameter[1] + "&paged=" + i));
+                    if (found) {
+                        break;
+                    }
+                    if (pages > 1) {
+                        requestInfo = HTTP.getRequest(new URL(parameter[1] + "&paged=" + i));
+                    }
 
                     regex = requestInfo.getRegexp("<p><strong>(.*?)</strong>(.*?)</p>");
                     String[][] matches2 = regex.getMatches();
@@ -903,7 +914,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                         String id1 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(match2[0])).getFirstMatch(0);
                         String id2 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(parameter[0])).getFirstMatch(0);
 
-                        if (parameter[0].contains(match2[0]) || (id1 != null && id2 != null && id1.equals(id2))) {
+                        if (parameter[0].contains(match2[0]) || id1 != null && id2 != null && id1.equals(id2)) {
 
                             found = true;
 
@@ -921,7 +932,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                 }
 
-                if (!found) JDUtilities.getGUI().showMessageDialog("Download \"" + parameter[0] + "\" konnte nicht gefunden werden.");
+                if (!found) {
+                    JDUtilities.getGUI().showMessageDialog("Download \"" + parameter[0] + "\" konnte nicht gefunden werden.");
+                }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();

@@ -39,7 +39,6 @@ public class Linkshield extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,9 +46,10 @@ public class Linkshield extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
             String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=(?!blank)(.*?)>")).getFirstMatch();
             if (link != null) {
-                decryptedLinks.add(this.createDownloadlink(link));
-            } else
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
                 return null;
+            }
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -57,41 +57,34 @@ public class Linkshield extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

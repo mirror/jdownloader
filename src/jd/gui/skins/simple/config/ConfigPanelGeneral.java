@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -40,27 +39,27 @@ public class ConfigPanelGeneral extends ConfigPanel {
     private BrowseFile brsHomeDir;
     private Configuration configuration;
     private JLabel lblHomeDir;
+
     public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();
         load();
     }
+
     @Override
     public String getName() {
         return JDLocale.L("gui.config.general.name", "Allgemein");
     }
-    
+
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
-   
-        
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[]{Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF}, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING));
+
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration, Configuration.PARAM_LOGGER_LEVEL, new Level[] { Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.OFF }, JDLocale.L("gui.config.general.loggerLevel", "Level für's Logging")).setDefaultValue(Level.WARNING));
         addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration,    Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.LOGGER_FILELOG, JDLocale.L("gui.config.general.filelogger", "Erstelle Logdatei im ./logs/ Ordner")).setDefaultValue(false));
         addGUIConfigEntry(ce);
-       
 
         // if(JDUtilities.getJavaVersion()>=1.6d){
         // ce = new GUIConfigEntry(new
@@ -76,14 +75,6 @@ public class ConfigPanelGeneral extends ConfigPanel {
         // }
         // addGUIConfigEntry(ce);
 
-      
-
-        
-
-
-     
-
-
         if (JDUtilities.getHomeDirectory() != null) {
             brsHomeDir = new BrowseFile();
             brsHomeDir.setText(JDUtilities.getHomeDirectory());
@@ -93,15 +84,15 @@ public class ConfigPanelGeneral extends ConfigPanel {
         }
         add(panel, BorderLayout.NORTH);
     }
-    
+
     @Override
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
     }
-    
+
     @Override
     public void save() {
-        this.saveConfigEntries();
+        saveConfigEntries();
 
         JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
         if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {

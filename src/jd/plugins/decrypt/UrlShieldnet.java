@@ -44,13 +44,13 @@ public class UrlShieldnet extends PluginForDecrypt {
     private String captchaCode;
     private File captchaFile;
     private String passCode = null;
+
     // private String version = "1.0.0.0";
 
     public UrlShieldnet() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -105,7 +105,7 @@ public class UrlShieldnet extends PluginForDecrypt {
 
                 for (int retry = 1; retry < 5; retry++) {
                     if (reqinfo.getLocation() != null) {
-                        decryptedLinks.add(this.createDownloadlink(reqinfo.getLocation()));
+                        decryptedLinks.add(createDownloadlink(reqinfo.getLocation()));
                         break;
                     }
                     reqinfo = HTTP.getRequest(url);
@@ -137,44 +137,34 @@ public class UrlShieldnet extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

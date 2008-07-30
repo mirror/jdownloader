@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.Link;
 
 import java.awt.GridLayout;
@@ -26,22 +25,22 @@ import javax.swing.JFrame;
 
 public class test extends JButton {
 
-  /**
+    /**
      * 
      */
     private static final long serialVersionUID = -3572661017084847518L;
 
-public static void main(String[] a) {
-    JFrame f = new JFrame();
-    f.getContentPane().setLayout(new GridLayout(0,2));
-    f.getContentPane().add(new JLinkButton("http://rapidshare.com/de/faq.html"));
-    try {
-        f.getContentPane().add(new JLinkButton("AGB", new URL("http://rapidshare.com/de/faq.html")));
-    } catch (MalformedURLException e) {
-        
-        e.printStackTrace();
+    public static void main(String[] a) {
+        JFrame f = new JFrame();
+        f.getContentPane().setLayout(new GridLayout(0, 2));
+        f.getContentPane().add(new JLinkButton("http://rapidshare.com/de/faq.html"));
+        try {
+            f.getContentPane().add(new JLinkButton("AGB", new URL("http://rapidshare.com/de/faq.html")));
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+        }
+        f.setSize(600, 200);
+        f.setVisible(true);
     }
-    f.setSize(600, 200);
-    f.setVisible(true);
-  }
 }

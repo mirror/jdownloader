@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
@@ -34,17 +33,18 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+
 /**
  * Konfigurationspanel f�r Unrar
- *
+ * 
  * @author DwD
- *
+ * 
  */
 
 public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     /**
-     *
+     * 
      */
     private static final long serialVersionUID = -1543456288909278519L;
     private Configuration configuration;
@@ -52,16 +52,17 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
      * Instanz zum speichern der parameter
      */
     private Unrar unrar;
-    public   ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
+
+    public ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.unrar = Unrar.getInstance();
+        unrar = Unrar.getInstance();
         initPanel();
         this.configuration = configuration;
         load();
     }
 
     public void actionPerformed(ActionEvent e) {
-        new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
+        new jdUnrarPasswordListDialog(((SimpleGUI) uiinterface).getFrame()).setVisible(true);
     }
 
     @Override
@@ -70,7 +71,6 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         return JDLocale.L("modules.unrar.name");
     }
 
-    
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
@@ -78,13 +78,15 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         String unrarcmd = JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if (unrarcmd == null) {
             unrarcmd = new JUnrar(false).getUnrarCommand();
-            if (unrarcmd == null)
+            if (unrarcmd == null) {
                 configuration.setProperty("GUNRARCOMMAND", "NOT FOUND");
-            else
+            } else {
                 configuration.setProperty("GUNRARCOMMAND", unrarcmd);
+            }
             JDUtilities.saveConfig();
-        } else if (unrarcmd.matches("NOT FOUND"))
+        } else if (unrarcmd.matches("NOT FOUND")) {
             unrarcmd = null;
+        }
 
         // ce = new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_COMBOBOX, configuration,
@@ -92,20 +94,20 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         // Unrar.ENABLED_TYPE_ALWAYS,Unrar.ENABLED_TYPE_LINKGRABBER,Unrar.ENABLED_TYPE_NEVER
         // },"Unrar
         // aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp","http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal#Module")));
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp", "http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal#Module")));
         addGUIConfigEntry(ce);
-        if(unrarcmd==null)
-        {
+        if (unrarcmd == null) {
 
             try {
-            	JLinkButton bb;
-            	if(System.getProperty("os.name").toLowerCase().indexOf("mac") > -1)
-            		bb = new JLinkButton(JDLocale.L("gui.config.unrar.download.osx", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/download.htm"));
-            	else
-            		bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
+                JLinkButton bb;
+                if (System.getProperty("os.name").toLowerCase().indexOf("mac") > -1) {
+                    bb = new JLinkButton(JDLocale.L("gui.config.unrar.download.osx", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/download.htm"));
+                } else {
+                    bb = new JLinkButton(JDLocale.L("gui.config.unrar.download", "Bitte laden sie Unrar/RaR 3.7 oder hoeher herunter"), new URL("http://www.rarlab.com/rar_add.htm"));
+                }
                 JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
             } catch (MalformedURLException e) {
-                
+
                 e.printStackTrace();
             }
 
@@ -135,16 +137,15 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     }
 
-    
     @Override
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
     }
 
     @Override
     public void save() {
 
-        this.saveConfigEntries();
+        saveConfigEntries();
 
         configuration.setProperty(Configuration.PARAM_UNRAR_INSTANCE, unrar);
 

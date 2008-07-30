@@ -30,37 +30,33 @@ import jd.plugins.download.RAFDownload;
 
 public class RamZal extends PluginForHost {
     private static final String HOST = "ramzal.com";
-   
+
     // http://ramzal.com//upload_files/1280838337_wallpaper-1280x1024-007.jpg
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ramzal\\.com//?upload_files/.*", Pattern.CASE_INSENSITIVE);
 
     //
-    
+
     public RamZal() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    
     @Override
     public String getAGBLink() {
 
         return "http://ramzal.com/";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -76,12 +72,6 @@ public class RamZal extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getHost() {
         return HOST;
@@ -97,19 +87,17 @@ public class RamZal extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
@@ -152,13 +140,11 @@ public class RamZal extends PluginForHost {
         // return;
     }
 
-    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    
     @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub

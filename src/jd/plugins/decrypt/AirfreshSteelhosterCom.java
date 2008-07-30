@@ -31,13 +31,13 @@ import jd.plugins.RequestInfo;
 public class AirfreshSteelhosterCom extends PluginForDecrypt {
     final static String host = "airfresh.steelhoster.com";
     static private final Pattern patternSupported = Pattern.compile("http://airfresh\\.steelhoster\\.com/\\?\\d{4}", Pattern.CASE_INSENSITIVE);
+
     // private String version = "1.0.0.0";
 
     public AirfreshSteelhosterCom() {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -46,9 +46,9 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             String[] links = reqinfo.getRegexp("a href=\"(.*?)\" target=\"").getMatches(1);
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                reqinfo = HTTP.getRequest(new URL("http://airfresh.steelhoster.com/" + links[i]));
-                decryptedLinks.add(this.createDownloadlink(reqinfo.getFirstMatch("src=\"(.*?)\"").trim()));
+            for (String element : links) {
+                reqinfo = HTTP.getRequest(new URL("http://airfresh.steelhoster.com/" + element));
+                decryptedLinks.add(createDownloadlink(reqinfo.getFirstMatch("src=\"(.*?)\"").trim()));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -58,44 +58,34 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
-    
-        
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

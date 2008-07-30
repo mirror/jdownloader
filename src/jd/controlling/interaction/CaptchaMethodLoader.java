@@ -14,7 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 package jd.controlling.interaction;
 
 import java.io.File;
@@ -28,22 +27,23 @@ import jd.utils.JDUtilities;
 
 public class CaptchaMethodLoader extends Interaction implements Serializable {
 
-    private static final String NAME              = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
+    private static final String NAME = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
 
-	public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
+    public static String PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
 
     /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
-    public CaptchaMethodLoader() {}
+    public CaptchaMethodLoader() {
+    }
 
-    
     @Override
     public boolean doInteraction(Object arg) {
-       if(true) return false;
-       // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false))return false;
+        if (true) { return false; }
+        // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
+        // false))return false;
         String method = (String) arg;
         WebUpdater updater = new WebUpdater(null);
 
@@ -64,7 +64,7 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
         }
         logger.info("New method files: " + files);
         if (files.size() == 0) {
-            //logger.info(updater.getLogger() + "");
+            // logger.info(updater.getLogger() + "");
             return false;
         }
 
@@ -80,16 +80,13 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
                     logger.info("Webupdater: direktfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
                     JDUtilities.downloadBinary(tmp[0], tmp[1]);
-                }
-                else {
+                } else {
                     logger.info("Webupdater: file: " + updater.getOnlinePath() + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
                     JDUtilities.downloadBinary(akt, updater.getOnlinePath() + "/" + files.elementAt(i).elementAt(0));
                 }
                 logger.info("Webupdater: ready");
             }
         }
-
-     
 
         return true;
     }
@@ -104,18 +101,17 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
 
     }
 
-    
     @Override
-    public void resetInteraction() {}
+    public void resetInteraction() {
+    }
 
-    
     /**
      * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
      */
     @Override
-    public void run() {}
+    public void run() {
+    }
 
-    
     @Override
     public String toString() {
         return NAME;

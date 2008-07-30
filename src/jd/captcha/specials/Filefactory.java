@@ -38,29 +38,7 @@ import jd.utils.JDUtilities;
  */
 public class Filefactory {
 
-    private static final double FILLEDMAX = 0.9;
-
-    private static final double FILLEDMIN = 0.2;
-
     private static Logger logger = JDUtilities.getLogger();
-
-    private static final int MAXAREA = 1200;
-
-    // private static final int LETTERNUM = 4;
-
-    private static final int MAXHEIGHT = 30;
-
-    private static final int MAXWIDTH = 40;
-
-    private static final double MAXWIDTHTOHEIGHT = 2;
-
-    private static final int MINAREA = 200;
-
-    private static final int MINHEIGHT = 15;
-
-    private static final int MINWIDTH = 8;
-
-    private static final double MINWIDTHTOHEIGHT = 0.2;
 
     private static final double OBJECTCOLORCONTRAST = 0.01;
 
@@ -69,17 +47,16 @@ public class Filefactory {
     public static Letter[] getLetters(Captcha captcha) {
         ArrayList<PixelObject> os = new ArrayList<PixelObject>();
         for (int y = 0; y < captcha.getHeight(); y++) {
-        for (int x = 0; x < captcha.getWidth(); x++) {
-           
+            for (int x = 0; x < captcha.getWidth(); x++) {
+
                 int color = captcha.getPixelValue(x, y);
 
                 double bestvalue = 100.0;
                 PixelObject bo = null;
                 for (PixelObject akt : os) {
                     double d;
-                   
-                    
-                    if (akt.getDistanceTo(x,y) < 10 && (d = UTILITIES.getColorDifference(akt.elementAt(0)[2], color)) < bestvalue) {
+
+                    if (akt.getDistanceTo(x, y) < 10 && (d = UTILITIES.getColorDifference(akt.elementAt(0)[2], color)) < bestvalue) {
                         bestvalue = d;
                         bo = akt;
                     }
@@ -97,16 +74,19 @@ public class Filefactory {
 
             }
         }
-Collections.sort(os);
+        Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
-            if (true && (akt.getArea() > 1800 || akt.getArea() < 200 || (akt.getArea() > 600 && ((double)akt.getArea() / (double)akt.getSize()) < 1.2) || (akt.getArea() / akt.getSize()) > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
+            if (true && (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
                 it.remove();
-                //BasicWindow.showImage(akt.toLetter().getImage(5),"fil "+akt.getArea()+" -"+((double)akt.getArea() / (double)akt.getSize())+" - "+akt.getHeight()+" - "+akt.getWidth());
-                
+                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
+                // "+akt.getArea()+" -"+((double)akt.getArea() /
+                // (double)akt.getSize())+" - "+akt.getHeight()+" -
+                // "+akt.getWidth());
+
             } else {
-                
-            }    
+
+            }
 
         }
 
@@ -114,23 +94,26 @@ Collections.sort(os);
 
         ArrayList<Letter> ret = new ArrayList<Letter>();
         int i = 0;
-        for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
-            Letter let = it.next().toLetter();
-          
+        for (PixelObject pixelObject : os) {
+            Letter let = pixelObject.toLetter();
+
             let.blurIt(2);
             let.toBlackAndWhite(1.16);
             let.removeSmallObjects(OBJECTDETECTIONCONTRAST, OBJECTCOLORCONTRAST, 10);
             let.clean();
-            let=let.align(-20, 20);
-          
+            let = let.align(-20, 20);
+
             i++;
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
-           
-            if (akt.getArea() > 1800 || akt.getArea() < 200 || (akt.getArea() > 600 &&  ((double)akt.getArea() / (double)akt.getSize()) < 1.2) || (akt.getArea() / akt.getSize()) > 8 || akt.getHeight() < 15 || akt.getWidth() < 5) {
-                //BasicWindow.showImage(akt.toLetter().getImage(5),"fil "+akt.getArea()+" -"+((double)akt.getArea() / (double)akt.getSize())+" - "+akt.getHeight()+" - "+akt.getWidth());
+
+            if (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 8 || akt.getHeight() < 15 || akt.getWidth() < 5) {
+                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
+                // "+akt.getArea()+" -"+((double)akt.getArea() /
+                // (double)akt.getSize())+" - "+akt.getHeight()+" -
+                // "+akt.getWidth());
             } else {
                 ret.add(let);
-                
+
             }
         }
 
@@ -155,8 +138,8 @@ Collections.sort(os);
         // l.getSimplified(captcha.owner.getJas().getDouble("simplifyFaktor"));
         //
         // }
-       // ret=ret.subList(0,4).toArray(a);
-        return ret.toArray(new Letter[]{});
+        // ret=ret.subList(0,4).toArray(a);
+        return ret.toArray(new Letter[] {});
 
     }
 
@@ -165,7 +148,6 @@ Collections.sort(os);
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
         Vector<Letter> ret = new Vector<Letter>();
 
-        Vector<PixelObject> sp;
         ArrayList<Letter> r = new ArrayList<Letter>();
         int iii = 0;
         for (Letter l : org) {
@@ -174,34 +156,34 @@ Collections.sort(os);
             r.add(l);
         }
         mtd.waitFor(null);
-        int id=0;
+        int id = 0;
         for (Iterator<Letter> it = r.iterator(); it.hasNext();) {
             Letter akt = it.next();
-           
-            if(akt.detected.getDecodedValue().equals("1")){
+
+            if (akt.detected.getDecodedValue().equals("1")) {
                 it.remove();
-            }else{
-                akt.id=id++; 
+            } else {
+                akt.id = id++;
             }
         }
         Collections.sort(r, new Comparator<Letter>() {
             public int compare(Letter o1, Letter o2) {
-                if(o1.detected.getValityPercent()>o2.detected.getValityPercent())return 1;
-                if(o1.detected.getValityPercent()<o2.detected.getValityPercent())return -1;
+                if (o1.detected.getValityPercent() > o2.detected.getValityPercent()) { return 1; }
+                if (o1.detected.getValityPercent() < o2.detected.getValityPercent()) { return -1; }
                 return 0;
             }
         });
-        List<Letter> list = r.subList(0,4);
-        
+        List<Letter> list = r.subList(0, 4);
+
         Collections.sort(list, new Comparator<Letter>() {
             public int compare(Letter o1, Letter o2) {
-                if(o1.id>o2.id)return 1;
-                if(o1.id<o2.id)return -1;
+                if (o1.id > o2.id) { return 1; }
+                if (o1.id < o2.id) { return -1; }
                 return 0;
             }
         });
-        
-        return r.subList(0,4).toArray(new Letter[]{});
+
+        return r.subList(0, 4).toArray(new Letter[] {});
     }
 
 }

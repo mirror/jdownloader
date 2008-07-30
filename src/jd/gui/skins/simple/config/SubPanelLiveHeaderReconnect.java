@@ -92,7 +92,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         super(uiinterface);
         // this.configuration = configuration;
         initPanel();
-        this.lh = (HTTPLiveHeader) interaction;
+        lh = (HTTPLiveHeader) interaction;
         load();
 
     }
@@ -210,7 +210,9 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                         return;
                     }
                     searchField.setForeground(Color.black);
-                    if (searchField.getText().equals(text)) searchField.setText("");
+                    if (searchField.getText().equals(text)) {
+                        searchField.setText("");
+                    }
                 }
             });
 
@@ -226,8 +228,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                 public void actionPerformed(ActionEvent e) {
                     searchField.setForeground(Color.lightGray);
                     searchField.setText(text);
-                    for (int i = 0; i < d.length; i++) {
-                        defaultListModel.addElement(d[i]);
+                    for (String element : d) {
+                        defaultListModel.addElement(element);
                     }
                 }
             });
@@ -240,8 +242,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             JLabel example = new JLabel("Example: 3Com ADSL");
             example.setForeground(Color.gray);
             p.add(example, BorderLayout.SOUTH);
-            for (int i = 0; i < d.length; i++) {
-                defaultListModel.addElement(d[i]);
+            for (String element : d) {
+                defaultListModel.addElement(element);
             }
             // list.setPreferredSize(new Dimension(400, 500));
             JScrollPane scrollPane = new JScrollPane(list);
@@ -261,8 +263,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             dialog.setLocationRelativeTo(null);
             dialog.setVisible(true);
             int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.
-                                                               // showConfirmDialog
-                                                               // (this,
+            // showConfirmDialog
+            // (this,
             // panel,
             // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
             // "Router
@@ -278,13 +280,17 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                 }
                 routerScript.setData(data[2]);
                 String username = (String) user.getText();
-                if (username == null || username.matches("[\\s]*")) user.setData(data[4]);
+                if (username == null || username.matches("[\\s]*")) {
+                    user.setData(data[4]);
+                }
                 String pw = (String) pass.getText();
-                if (pw == null || pw.matches("[\\s]*")) pass.setData(data[5]);
+                if (pw == null || pw.matches("[\\s]*")) {
+                    pass.setData(data[5]);
+                }
 
             }
         }
-        if (e.getSource() == this.btnAutoConfig) {
+        if (e.getSource() == btnAutoConfig) {
 
             if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen. Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"))) {
                 Thread th;
@@ -298,9 +304,13 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                         routerInfo.setLoginPass((String) pass.getText());
                         routerInfo.setLoginUser((String) user.getText());
                         String username = (String) user.getText();
-                        if (username != null && !username.matches("[\\s]*")) routerInfo.username = username;
+                        if (username != null && !username.matches("[\\s]*")) {
+                            routerInfo.username = username;
+                        }
                         String pw = (String) pass.getText();
-                        if (pw != null && !pw.matches("[\\s]*")) routerInfo.password = pw;
+                        if (pw != null && !pw.matches("[\\s]*")) {
+                            routerInfo.password = pw;
+                        }
                         String[] data;
                         if (GetRouterInfo.validateIP(ip.getText() + "")) {
                             data = routerInfo.getRouterData(ip.getText() + "");
@@ -314,8 +324,12 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                             return;
                         }
                         routerScript.setData(data[2]);
-                        if (username == null || username.matches("[\\s]*")) user.setData(data[4]);
-                        if (pw == null || pw.matches("[\\s]*")) pass.setData(data[5]);
+                        if (username == null || username.matches("[\\s]*")) {
+                            user.setData(data[4]);
+                        }
+                        if (pw == null || pw.matches("[\\s]*")) {
+                            pass.setData(data[5]);
+                        }
 
                         user.setData(data[4]);
                         progress.setVisible(false);
@@ -333,7 +347,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     }
 
-    
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
@@ -347,13 +360,11 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     }
 
-    
     @Override
     public String getName() {
         return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
     }
 
-    
     @Override
     public void initPanel() {
         GUIConfigEntry ce;
@@ -395,12 +406,12 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     @Override
     public void load() {
-        this.loadConfigEntries();
+        loadConfigEntries();
     }
 
     @Override
     public void save() {
-        this.saveConfigEntries();
+        saveConfigEntries();
 
     }
 

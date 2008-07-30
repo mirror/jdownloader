@@ -77,7 +77,6 @@ public class FileFactory extends PluginForHost {
     // private String version = "1.5.6";
     private int wait;
 
-    
     public FileFactory() {
 
         super();
@@ -89,13 +88,11 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     public void doFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
@@ -241,7 +238,7 @@ public class FileFactory extends PluginForHost {
 
         int length = urlConnection.getContentLength();
         downloadLink.setDownloadMax(length);
-        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+        downloadLink.setName(getFileNameFormHeader(urlConnection));
 
         if (requestInfo.getConnection().getHeaderField("Location") != null) {
             requestInfo = HTTP.getRequest(new URL(requestInfo.getConnection().getHeaderField("Location")));
@@ -268,7 +265,6 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    
     // by eXecuTe
     public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -335,7 +331,7 @@ public class FileFactory extends PluginForHost {
         HTTPConnection urlConnection = requestInfo.getConnection();
         int length = urlConnection.getContentLength();
         downloadLink.setDownloadMax(length);
-        downloadLink.setName(this.getFileNameFormHeader(urlConnection));
+        downloadLink.setName(getFileNameFormHeader(urlConnection));
 
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(true);
@@ -343,22 +339,17 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
     }
 
-    
+    @Override
     public String getAGBLink() {
         return "http://www.filefactory.com/info/terms.php";
     }
 
-    
-    
-       
-    
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -400,9 +391,15 @@ public class FileFactory extends PluginForHost {
                 // FILESIZE).getFirstMatch(1).replaceAll(",", ""));
                 String unit = new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(2);
 
-                if (unit.equals("B")) length = (int) Math.round(fileSize);
-                if (unit.equals("KB")) length = (int) Math.round(fileSize * 1024);
-                if (unit.equals("MB")) length = (int) Math.round(fileSize * 1024 * 1024);
+                if (unit.equals("B")) {
+                    length = (int) Math.round(fileSize);
+                }
+                if (unit.equals("KB")) {
+                    length = (int) Math.round(fileSize * 1024);
+                }
+                if (unit.equals("MB")) {
+                    length = (int) Math.round(fileSize * 1024 * 1024);
+                }
 
                 downloadLink.setName(fileName);
                 downloadLink.setDownloadMax(length);
@@ -418,7 +415,7 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    
+    @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
@@ -429,21 +426,20 @@ public class FileFactory extends PluginForHost {
         return host;
     }
 
+    @Override
     public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
         }
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
@@ -451,7 +447,8 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     // codierung ist nicht standardkonform
@@ -472,7 +469,7 @@ public class FileFactory extends PluginForHost {
      * 
      * return ret; }
      */
-    
+
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -482,11 +479,11 @@ public class FileFactory extends PluginForHost {
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 
-            this.doPremium(downloadLink);
+            doPremium(downloadLink);
 
         } else {
 
-            this.doFree(downloadLink);
+            doFree(downloadLink);
 
         }
 
@@ -497,7 +494,7 @@ public class FileFactory extends PluginForHost {
         // currentStep = null;
     }
 
-    
+    @Override
     public void reset() {
 
         captchaAddress = null;
@@ -512,7 +509,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    
+    @Override
     public void resetPluginGlobals() {
 
         captchaAddress = null;
@@ -523,7 +520,6 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    
     private void setConfigElements() {
 
         ConfigEntry cfg;

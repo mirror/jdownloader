@@ -19,13 +19,13 @@ import jd.utils.JDUtilities;
 public class Przeslijnet extends PluginForHost {
 
     private static final String HOST = "przeslij.net";
-   
+
     static private final Pattern patternSupported = Pattern.compile("http://www2\\.przeslij\\.net/download.php\\?file=(.*)", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String url;
 
     //
-    
+
     public Przeslijnet() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
@@ -33,25 +33,21 @@ public class Przeslijnet extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    
     @Override
     public String getAGBLink() {
         return "hhttp://www2.przeslij.net/#";
     }
 
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -80,12 +76,6 @@ public class Przeslijnet extends PluginForHost {
         return false;
     }
 
-    
-    
-        
-   
-
-
     @Override
     public String getHost() {
         return HOST;
@@ -101,19 +91,17 @@ public class Przeslijnet extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
-    
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -130,7 +118,7 @@ public class Przeslijnet extends PluginForHost {
 
         // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 15seks */
-        this.sleep(15000, downloadLink);
+        sleep(15000, downloadLink);
 
         // case PluginStep.STEP_DOWNLOAD:
         /* Link holen */
@@ -152,12 +140,10 @@ public class Przeslijnet extends PluginForHost {
         dl.startDownload();
     }
 
-    
     @Override
     public void reset() {
     }
 
-    
     @Override
     public void resetPluginGlobals() {
     }

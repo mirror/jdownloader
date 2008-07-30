@@ -8,51 +8,49 @@ import com.jgoodies.forms.builder.DefaultFormBuilder;
 import com.jgoodies.forms.layout.FormLayout;
 
 public class DefaultFooter extends JPanel {
-	
-	public static JPanel buildWizardBar(JButton[] leftAlignedButtons,
-			JButton back, JButton next, JButton overlayedFinish,
-			JButton[] rightAlignedButtons) {
-		
 
-		ButtonBarBuilder builder = new ButtonBarBuilder();
-		
-		if (leftAlignedButtons != null) {
-			builder.addGriddedButtons(leftAlignedButtons);
-			builder.addRelatedGap();
-		}
-		builder.addGlue();
-		if (back!=null) builder.addGridded(back);
-		if (next!=null) builder.addGridded(next);
+    public static JPanel buildWizardBar(JButton[] leftAlignedButtons, JButton back, JButton next, JButton overlayedFinish, JButton[] rightAlignedButtons) {
 
-		// Optionally overlay the finish and next button.
-		if (next == null && overlayedFinish != null) {
-			System.out.println("overlayedFinish: " + overlayedFinish);
-//			builder.nextColumn(-1);
-//			builder.add(overlayedFinish);
-//			builder.nextColumn();
-			builder.addGridded(overlayedFinish);
-		}
+        ButtonBarBuilder builder = new ButtonBarBuilder();
 
-		if (rightAlignedButtons != null) {
-			builder.addRelatedGap();
-			builder.addGriddedButtons(rightAlignedButtons);
-		}
-		return builder.getPanel();
-	}
-	
-	
+        if (leftAlignedButtons != null) {
+            builder.addGriddedButtons(leftAlignedButtons);
+            builder.addRelatedGap();
+        }
+        builder.addGlue();
+        if (back != null) {
+            builder.addGridded(back);
+        }
+        if (next != null) {
+            builder.addGridded(next);
+        }
 
-	public static JPanel createFooter(JButton[] leftAlignedButtons,
-			JButton back, JButton next, JButton overlayedFinish,
-			JButton... rightAlignedButtons) {
-		
+        // Optionally overlay the finish and next button.
+        if (next == null && overlayedFinish != null) {
+            System.out.println("overlayedFinish: " + overlayedFinish);
+            // builder.nextColumn(-1);
+            // builder.add(overlayedFinish);
+            // builder.nextColumn();
+            builder.addGridded(overlayedFinish);
+        }
+
+        if (rightAlignedButtons != null) {
+            builder.addRelatedGap();
+            builder.addGriddedButtons(rightAlignedButtons);
+        }
+        return builder.getPanel();
+    }
+
+    public static JPanel createFooter(JButton[] leftAlignedButtons, JButton back, JButton next, JButton overlayedFinish, JButton... rightAlignedButtons) {
+
         FormLayout layout = new FormLayout("p:g", "");
-		DefaultFormBuilder builder = new DefaultFormBuilder(layout); //, new FormDebugPanel());
-		builder.setDefaultDialogBorder();
-		builder.appendSeparator();
-		builder.append(buildWizardBar(leftAlignedButtons, back, next, overlayedFinish, rightAlignedButtons));
-		
-		return builder.getPanel();
-	}
+        DefaultFormBuilder builder = new DefaultFormBuilder(layout); // , new
+        // FormDebugPanel());
+        builder.setDefaultDialogBorder();
+        builder.appendSeparator();
+        builder.append(DefaultFooter.buildWizardBar(leftAlignedButtons, back, next, overlayedFinish, rightAlignedButtons));
+
+        return builder.getPanel();
+    }
 
 }

@@ -12,64 +12,61 @@ import jd.gui.skins.simple.config.ConfigPanelDownload;
 import jd.utils.JDUtilities;
 import jd.wizardry7.view.DefaultWizardPage;
 
-
 public class DownloadFolder extends DefaultWizardPage {
-	
-	private static final DownloadFolder INSTANCE = new DownloadFolder();
-	
-	public static DownloadFolder getInstance() {
-		return INSTANCE;
-	}
-	
-	private ConfigEntriesPanel cpanel;
-	
-	private DownloadFolder() {
-		super();
-	}
-	
-	@Override
-    protected Component createBody() {
-		initComponents();
 
-		int n = 10;
-        JPanel panel = new JPanel(new BorderLayout(n ,n));
-        panel.setBorder(new EmptyBorder(n,n,n,n));
-        
+    private static final DownloadFolder INSTANCE = new DownloadFolder();
+
+    public static DownloadFolder getInstance() {
+        return INSTANCE;
+    }
+
+    private ConfigEntriesPanel cpanel;
+
+    private DownloadFolder() {
+        super();
+    }
+
+    @Override
+    protected Component createBody() {
+        initComponents();
+
+        int n = 10;
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
+
         // Geht nicht
         panel.add(cpanel);
         // Geht auch nicht
         panel.add(new ConfigPanelDownload(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
-        
-		return panel;
-	}
-	
-	@Override
+
+        return panel;
+    }
+
+    @Override
     public void enterWizardPageAfterForward() {
-	}
-	
-	
-	// Validation ##########################################################
+    }
 
-	@Override
+    // Validation ##########################################################
+
+    @Override
     public String forwardValidation() {
-		if (true) {
-			return "";
-		}
-		else return "Before you are allowed to continue you have to read and agree to our AGBs";
-	}
-	
-	
-	@Override
+        if (true) {
+            return "";
+        } else {
+            return "Before you are allowed to continue you have to read and agree to our AGBs";
+        }
+    }
+
+    @Override
     protected void initComponents() {
-//	    ConfigContainer configContainer = new ConfigContainer(this, "Titel");
-//        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-//        configContainer.addEntry(ce);
-//
-//        cpanel = new ConfigEntriesPanel(configContainer, "Select where files downloaded with JDownloader should be stored.");
-	}
+        // ConfigContainer configContainer = new ConfigContainer(this, "Titel");
+        // ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER,
+        // JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY,
+        // JDLocale.L("gui.config.general.downloadDirectory",
+        // "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        // configContainer.addEntry(ce);
+        //
+        // cpanel = new ConfigEntriesPanel(configContainer, "Select where files
+        // downloaded with JDownloader should be stored.");
+    }
 }
-
-
-
-
-

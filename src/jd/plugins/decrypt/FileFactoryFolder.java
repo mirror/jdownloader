@@ -39,7 +39,6 @@ public class FileFactoryFolder extends PluginForDecrypt {
         super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -47,8 +46,8 @@ public class FileFactoryFolder extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             String ids[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www.filefactory.com/file/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(ids.length);
-            for (int i = 0; i < ids.length; i++) {
-                decryptedLinks.add(this.createDownloadlink("http://www.filefactory.com/file/" + ids[i][0]));
+            for (String[] element : ids) {
+                decryptedLinks.add(createDownloadlink("http://www.filefactory.com/file/" + element[0]));
                 progress.increase(1);
             }
         } catch (IOException e) {
@@ -58,41 +57,34 @@ public class FileFactoryFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

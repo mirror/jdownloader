@@ -60,7 +60,7 @@ public class Divxvid extends PluginForDecrypt {
     /*
      * Diese wichtigen Infos sollte man sich unbedingt durchlesen
      */
-    
+
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = parameter;
@@ -90,7 +90,7 @@ public class Divxvid extends PluginForDecrypt {
                 requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(SimpleMatches.getFirstMatch(HTTP.getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
                 if (requestInfo != null) {
                     progress.increase(1);
-                    decryptedLinks.add(this.createDownloadlink(requestInfo.getLocation()));
+                    decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
                 }
             }
             progress.finalize();
@@ -104,41 +104,34 @@ public class Divxvid extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
- 
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

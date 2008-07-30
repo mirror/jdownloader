@@ -35,73 +35,67 @@ public class NixPopOrg extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    //static private String version = "1.0.1";
+    // static private String version = "1.0.1";
 
     public NixPopOrg() {
-        super();        
+        super();
     }
 
-    
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-       ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            try {
-                URL url = new URL(parameter);
-                RequestInfo reqinfo = HTTP.getRequest(url);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        try {
+            URL url = new URL(parameter);
+            RequestInfo reqinfo = HTTP.getRequest(url);
 
-                String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
+            String links[] = SimpleMatches.getBetween(reqinfo.getHtmlCode(), "copy&paste</legend>", "</fieldset>").trim().split("<br />");
 
-                progress.setRange(links.length);
-                String pw=new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><strong>Passwort</strong>:(.*?)<",Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                if (pw !=null ) this.default_password.add(pw.trim());
+            progress.setRange(links.length);
+            String pw = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><strong>Passwort</strong>:(.*?)<", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (pw != null) {
+                default_password.add(pw.trim());
+            }
 
-                // Link der Liste hinzufügen
-                for (int i = 0; i < links.length; i++) {
-                    decryptedLinks.add(this.createDownloadlink(links[i].trim()));
-                    progress.increase(1);
-                }                
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }        
+            // Link der Liste hinzufügen
+            for (String element : links) {
+                decryptedLinks.add(createDownloadlink(element.trim()));
+                progress.increase(1);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
         return decryptedLinks;
     }
 
-    
     @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-  
-
-    
     @Override
     public String getCoder() {
         return "JD-Team";
     }
 
-    
     @Override
     public String getHost() {
         return host;
     }
 
-    
     @Override
     public String getPluginName() {
         return host;
     }
 
-    
     @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
     @Override
     public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 }

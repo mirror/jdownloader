@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
@@ -124,6 +123,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private JTextPane textArea;
     private JTextField textField;
     private JLabel top;
+
     public JDChat() {
         COMMANDS.add("/msg ");
         COMMANDS.add("/topic ");
@@ -597,10 +597,11 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    
     public void actionPerformed(ActionEvent e) {
         if (frame == null || !frame.isVisible() || conn == null || !conn.isConnected()) {
-            if (conn != null) conn.close();
+            if (conn != null) {
+                conn.close();
+            }
             setEnabled(true);
 
         } else {
@@ -608,23 +609,18 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
- 
-
-    
     public void addToText(final User user, String style, String msg) {
-        
-        
-        SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
-        String dest = conf.getStringProperty(PARAM_NATIVELANGUAGE,map.get(System.getProperty("user.country")));
-        if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLAT,false) && dest != null&&!msg.contains("<")) {
 
-            for (Iterator<String> it = map.keySet().iterator(); it.hasNext();) {
-                String next = it.next();
+        SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
+        String dest = conf.getStringProperty(PARAM_NATIVELANGUAGE, map.get(System.getProperty("user.country")));
+        if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLAT, false) && dest != null && !msg.contains("<")) {
+
+            for (String next : map.keySet()) {
                 if (map.get(next).equals(dest)) {
                     String tmp = JDLocale.translate(next, msg);
-                    if(!tmp.equalsIgnoreCase(msg)){
-                        tmp+="("+msg+")";
-                        msg=tmp;
+                    if (!tmp.equalsIgnoreCase(msg)) {
+                        tmp += "(" + msg + ")";
+                        msg = tmp;
                     }
                     break;
                 }
@@ -632,27 +628,26 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
         }
-        final String msg2=msg;
-        
-        
+        final String msg2 = msg;
+
         Date dt = new Date();
 
         SimpleDateFormat df = new SimpleDateFormat("HH:mm:ss");
-        this.sb.append("<!---->");
-        this.sb.append("<li>");
+        sb.append("<!---->");
+        sb.append("<li>");
         if (user != null) {
-            this.sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (style == JDChat.STYLE_PM ? ">> " : ": ") + "</span>");
+            sb.append("<span style='" + user.getStyle() + (getUser(conn.getNick()) == user ? ";font-weight:bold" : "") + "'>[" + df.format(dt) + "] " + user.getNickLink("pmnick") + (style == JDChat.STYLE_PM ? ">> " : ": ") + "</span>");
         } else {
-            this.sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
+            sb.append("<span class='time'>[" + df.format(dt) + "] </span>");
 
         }
         if (conn != null && msg.contains(conn.getNick())) {
             style = STYLE_HIGHLIGHT;
         }
         if (style != null) {
-            this.sb.append("<span class='" + style + "'>" + msg + "</span>");
+            sb.append("<span class='" + style + "'>" + msg + "</span>");
         } else {
-            this.sb.append("<span>" + msg + "</span>");
+            sb.append("<span>" + msg + "</span>");
         }
 
         if (sb.length() > TEXT_BUFFER) {
@@ -684,7 +679,6 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-    
     public void addUser(String name) {
         User user;
         if ((user = getUser(name)) == null) {
@@ -695,7 +689,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         updateNamesPanel();
     }
 
-    
     public void addUsers(String[] split) {
         User user;
         for (String name : split) {
@@ -717,7 +710,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                 if (frame.isActive() && !nickaway) {
                     initIRC();
                 } else {
-                    this.addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
+                    addToText(null, STYLE_ERROR, "You got disconnected because of a reconnect. <a href='intern:reconnect|reconnect'><b>[RECONNECT NOW]</b></a>");
 
                 }
 
@@ -725,7 +718,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             if (e.getSource() == Interaction.INTERACTION_BEFORE_RECONNECT) {
                 // sendMessage(CHANNEL, "/me is reconnecting...");
                 if (conn != null && conn.isConnected()) {
-                    this.addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
+                    addToText(null, STYLE_SYSTEM_MESSAGE, "closing connection due to requested reconnect.");
                     conn.doPart(CHANNEL, "reconnecting...");
                     conn.close();
                     conn = null;
@@ -748,7 +741,6 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
         return menu;
     }
-
 
     protected void doAction(String type, String name) {
         if (type.equals("reconnect") && name.equals("reconnect")) {
@@ -773,7 +765,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public String getNick() {
-       
+
         return conn.getNick();
     }
 
@@ -782,10 +774,11 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     String getNickname() {
-       
 
         String loc = System.getProperty("user.country");
-        if (loc == null) loc = JDLocale.getLocale().substring(0, 3);
+        if (loc == null) {
+            loc = JDLocale.getLocale().substring(0, 3);
+        }
         String def = "JD-[" + loc + "]_" + ("" + System.currentTimeMillis()).substring(6);
         nick = JDUtilities.getSubConfig("JDCHAT").getStringProperty(NICK);
         if (nick == null) {
@@ -815,9 +808,10 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public User getUser(String name) {
-        for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
-            User next = it.next();
-            if (next.isUser(name)) return next;
+        for (User next : NAMES) {
+            if (next.isUser(name)) {
+                return next;
+            }
 
         }
         return null;
@@ -828,15 +822,13 @@ public class JDChat extends PluginOptional implements ControlListener {
         return "0.1";
     }
 
-    
     public boolean initAddon() {
-        this.NAMES = new ArrayList<User>();
-        this.sb = new StringBuffer();
+        NAMES = new ArrayList<User>();
+        sb = new StringBuffer();
         initConfigEntries();
         return true;
     }
 
-    
     private void initConfigEntries() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("JDCHAT");
 
@@ -845,7 +837,6 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PERFORM, JDLocale.L("plugins.optional.jdchat.performonstart", "Perform commands after connection estabilished")));
 
-        
         ConfigContainer lngse = new ConfigContainer(this, JDLocale.L("plugins.optional.jdchat.locale", "Language settings"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, lngse));
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLAT, JDLocale.L("plugins.optional.jdchat.doautotranslate", "Translate Chat")));
@@ -853,35 +844,36 @@ public class JDChat extends PluginOptional implements ControlListener {
         ConfigEntry conditionEntry = cfg;
 
         map = new HashMap<String, String>();
-        map.put("ar",JDLocale.L("locale.lngs.arabic","Arabic"));
-        map.put("bg",JDLocale.L("locale.lngs.bulgarian","Bulgarian"));
-        map.put("zh-CN",JDLocale.L("locale.lngs.chinese_simplified_","Chinese (Simplified)"));
-        map.put("zh-TW",JDLocale.L("locale.lngs.chinese_traditional_","Chinese (Traditional)"));
-        map.put("hr",JDLocale.L("locale.lngs.croatian","Croatian"));
-        map.put("cs",JDLocale.L("locale.lngs.czech","Czech"));
-        map.put("da",JDLocale.L("locale.lngs.danish","Danish"));
-        map.put("nl",JDLocale.L("locale.lngs.dutch","Dutch"));
-        map.put("en",JDLocale.L("locale.lngs.english","English"));
-        map.put("fi",JDLocale.L("locale.lngs.finnish","Finnish"));
-        map.put("fr",JDLocale.L("locale.lngs.french","French"));
-        map.put("de",JDLocale.L("locale.lngs.german","German"));
-        map.put("el",JDLocale.L("locale.lngs.greek","Greek"));
-        map.put("hi",JDLocale.L("locale.lngs.hindi","Hindi"));
-        map.put("it",JDLocale.L("locale.lngs.italian","Italian"));
-        map.put("ja",JDLocale.L("locale.lngs.japanese","Japanese"));
-        map.put("ko",JDLocale.L("locale.lngs.korean","Korean"));
-        map.put("no",JDLocale.L("locale.lngs.norwegian","Norwegian"));
-        map.put("pl",JDLocale.L("locale.lngs.polish","Polish"));
-        map.put("pt",JDLocale.L("locale.lngs.portuguese","Portuguese"));
-        map.put("ro",JDLocale.L("locale.lngs.romanian","Romanian"));
-        map.put("ru",JDLocale.L("locale.lngs.russian","Russian"));
-        map.put("es",JDLocale.L("locale.lngs.spanish","Spanish"));
-        map.put("sv",JDLocale.L("locale.lngs.swedish","Swedish"));
+        map.put("ar", JDLocale.L("locale.lngs.arabic", "Arabic"));
+        map.put("bg", JDLocale.L("locale.lngs.bulgarian", "Bulgarian"));
+        map.put("zh-CN", JDLocale.L("locale.lngs.chinese_simplified_", "Chinese (Simplified)"));
+        map.put("zh-TW", JDLocale.L("locale.lngs.chinese_traditional_", "Chinese (Traditional)"));
+        map.put("hr", JDLocale.L("locale.lngs.croatian", "Croatian"));
+        map.put("cs", JDLocale.L("locale.lngs.czech", "Czech"));
+        map.put("da", JDLocale.L("locale.lngs.danish", "Danish"));
+        map.put("nl", JDLocale.L("locale.lngs.dutch", "Dutch"));
+        map.put("en", JDLocale.L("locale.lngs.english", "English"));
+        map.put("fi", JDLocale.L("locale.lngs.finnish", "Finnish"));
+        map.put("fr", JDLocale.L("locale.lngs.french", "French"));
+        map.put("de", JDLocale.L("locale.lngs.german", "German"));
+        map.put("el", JDLocale.L("locale.lngs.greek", "Greek"));
+        map.put("hi", JDLocale.L("locale.lngs.hindi", "Hindi"));
+        map.put("it", JDLocale.L("locale.lngs.italian", "Italian"));
+        map.put("ja", JDLocale.L("locale.lngs.japanese", "Japanese"));
+        map.put("ko", JDLocale.L("locale.lngs.korean", "Korean"));
+        map.put("no", JDLocale.L("locale.lngs.norwegian", "Norwegian"));
+        map.put("pl", JDLocale.L("locale.lngs.polish", "Polish"));
+        map.put("pt", JDLocale.L("locale.lngs.portuguese", "Portuguese"));
+        map.put("ro", JDLocale.L("locale.lngs.romanian", "Romanian"));
+        map.put("ru", JDLocale.L("locale.lngs.russian", "Russian"));
+        map.put("es", JDLocale.L("locale.lngs.spanish", "Spanish"));
+        map.put("sv", JDLocale.L("locale.lngs.swedish", "Swedish"));
 
         ArrayList<String> ar = new ArrayList<String>();
 
-        for (Iterator<String> it = map.keySet().iterator(); it.hasNext();)
-            ar.add(map.get(it.next()));
+        for (String string : map.keySet()) {
+            ar.add(map.get(string));
+        }
 
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.native", "to: ")));
 
@@ -900,9 +892,9 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     @SuppressWarnings("unchecked")
-	private void initGUI() {
+    private void initGUI() {
 
-        this.frame = new JFrame();
+        frame = new JFrame();
         frame.setTitle(JDLocale.L("plugins.optional.jdChat.gui.title", "JD Chat"));
         frame.setIconImage(JDTheme.I("gui.images.config.network_local"));
         frame.setPreferredSize(new Dimension(1000, 600));
@@ -941,7 +933,9 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
             public void windowClosing(WindowEvent e) {
-                if (conn != null || conn.isConnected()) conn.close();
+                if (conn != null || conn.isConnected()) {
+                    conn.close();
+                }
 
             }
 
@@ -975,14 +969,15 @@ public class JDChat extends PluginOptional implements ControlListener {
             private String last = null;
 
             public void keyPressed(KeyEvent e) {
-               
 
             }
 
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
-                    if (textField.getText().length() == 0) return;
+                    if (textField.getText().length() == 0) {
+                        return;
+                    }
 
                     sendMessage(CHANNEL, textField.getText());
 
@@ -1006,24 +1001,26 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                     ArrayList<String> strings = new ArrayList<String>();
                     strings.addAll(COMMANDS);
-                    for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
-                        User user = it.next();
+                    for (User user : NAMES) {
                         strings.add(user.name);
 
                     }
 
-                    for (Iterator<String> it = strings.iterator(); it.hasNext();) {
-                        String user = it.next();
+                    for (String user : strings) {
                         if (user.length() >= txt.length() && user.toLowerCase().startsWith(txt.toLowerCase())) {
                             users.add(user);
                             // return;
 
                         }
                     }
-                    if (users.size() == 0) return;
+                    if (users.size() == 0) {
+                        return;
+                    }
 
                     counter++;
-                    if (this.counter > users.size() - 1) counter = 0;
+                    if (counter > users.size() - 1) {
+                        counter = 0;
+                    }
                     String user = users.get(counter);
                     this.last = org;
                     textField.setText((textField.getText().substring(0, last) + " " + user).trim());
@@ -1045,7 +1042,6 @@ public class JDChat extends PluginOptional implements ControlListener {
             }
 
             public void keyTyped(KeyEvent e) {
-               
 
             }
 
@@ -1060,7 +1056,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         frame.add(new JScrollPane(right), BorderLayout.EAST);
         frame.add(scrollPane, BorderLayout.CENTER);
         frame.add(textField, BorderLayout.SOUTH);
-        this.lastAction = System.currentTimeMillis();
+        lastAction = System.currentTimeMillis();
         MouseMotionListener ml = new MouseMotionListener() {
 
             public void mouseDragged(MouseEvent e) {
@@ -1074,16 +1070,15 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         };
         frame.addMouseMotionListener(ml);
-        this.textArea.addMouseMotionListener(ml);
-        this.textField.addMouseMotionListener(ml);
-        this.right.addMouseMotionListener(ml);
+        textArea.addMouseMotionListener(ml);
+        textField.addMouseMotionListener(ml);
+        right.addMouseMotionListener(ml);
         frame.pack();
         SimpleGUI.restoreWindow(new JFrame(), null, frame);
         frame.setVisible(true);
         startAwayObserver();
     }
 
-    
     private void initIRC() {
         for (int i = 0; i < 20; i++) {
             SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
@@ -1108,13 +1103,13 @@ public class JDChat extends PluginOptional implements ControlListener {
                 // conn.doPrivmsg("#jdDev", "JDChat Addon 0.1");
                 break;
             } catch (IOException e) {
-                
+
                 addToText(null, STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
                 e.printStackTrace();
                 try {
                     Thread.sleep(15000);
                 } catch (InterruptedException e1) {
-                    
+
                     e1.printStackTrace();
                 }
                 initIRC();
@@ -1124,7 +1119,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public boolean isLoggedIn() {
-       
+
         return loggedIn;
     }
 
@@ -1145,19 +1140,19 @@ public class JDChat extends PluginOptional implements ControlListener {
 
             if (op == '+') {
                 getUser(arg).rank = User.RANK_OP;
-                this.updateNamesPanel();
+                updateNamesPanel();
             } else {
                 getUser(arg).rank = User.RANK_DEFAULT;
-                this.updateNamesPanel();
+                updateNamesPanel();
             }
             break;
         case 'v':
             if (op == '+') {
                 getUser(arg).rank = User.RANK_VOICE;
-                this.updateNamesPanel();
+                updateNamesPanel();
             } else {
                 getUser(arg).rank = User.RANK_DEFAULT;
-                this.updateNamesPanel();
+                updateNamesPanel();
             }
             break;
         }
@@ -1166,27 +1161,30 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void perform() {
         String[] perform = Regex.getLines(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
-        if (perform == null) return;
-        for (String cmd : perform)
-            if (cmd.trim().length() > 0) this.sendMessage(CHANNEL, cmd);
+        if (perform == null) {
+            return;
+        }
+        for (String cmd : perform) {
+            if (cmd.trim().length() > 0) {
+                sendMessage(CHANNEL, cmd);
+            }
+        }
     }
 
     private String prepareToSend(String trim) {
-       
 
         SubConfiguration conf = JDUtilities.getSubConfig("JDCHAT");
-        String dest = conf.getStringProperty(PARAM_DESLANGUAGE,map.get(System.getProperty("user.country")));
-        if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLATSELF,false) && dest != null) {
+        String dest = conf.getStringProperty(PARAM_DESLANGUAGE, map.get(System.getProperty("user.country")));
+        if (conf.getBooleanProperty(PARAM_DOAUTOTRANSLATSELF, false) && dest != null) {
 
-            for (Iterator<String> it = map.keySet().iterator(); it.hasNext();) {
-                String next = it.next();
+            for (String next : map.keySet()) {
                 if (map.get(next).equals(dest)) {
                     trim = JDLocale.translate(next, trim);
-                    
+
                     String tmp = JDLocale.translate(next, trim);
-                    if(!tmp.equalsIgnoreCase(trim)){
-                        tmp+="("+trim+")";
-                        trim=tmp;
+                    if (!tmp.equalsIgnoreCase(trim)) {
+                        tmp += "(" + trim + ")";
+                        trim = tmp;
                     }
                     break;
                 }
@@ -1202,7 +1200,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
-	public void removeUser(String name) {
+    public void removeUser(String name) {
         User user;
         if ((user = getUser(name)) != null) {
             NAMES.remove(user);
@@ -1231,7 +1229,9 @@ public class JDChat extends PluginOptional implements ControlListener {
     public void resetNamesList() {
 
         NAMES = new ArrayList<User>();
-        if (getUser(conn.getNick().trim()) == null) NAMES.add(new User(conn.getNick().trim()));
+        if (getUser(conn.getNick().trim()) == null) {
+            NAMES.add(new User(conn.getNick().trim()));
+        }
     }
 
     protected void sendMessage(String channel2, String text) {
@@ -1239,43 +1239,51 @@ public class JDChat extends PluginOptional implements ControlListener {
         setNickAway(false);
         if (text.startsWith("/")) {
             int end = text.indexOf(" ");
-            if (end < 0) end = text.length();
+            if (end < 0) {
+                end = text.length();
+            }
             String cmd = text.substring(1, end);
             String rest = text.substring(end).trim();
             if (Regex.matches(cmd, CMD_PM)) {
                 textField.setText("");
                 end = rest.indexOf(" ");
-                if (end < 0) end = rest.length();
+                if (end < 0) {
+                    end = rest.length();
+                }
 
                 conn.doPrivmsg(rest.substring(0, end).trim(), prepareToSend(rest.substring(end).trim()));
                 lastCommand = "/msg " + rest.substring(0, end).trim() + " ";
-                this.addToText(null, STYLE_PM, "MSG>" + rest.substring(0, end).trim() + ":" + Utils.prepareMsg(rest.substring(end).trim()));
+                addToText(null, STYLE_PM, "MSG>" + rest.substring(0, end).trim() + ":" + Utils.prepareMsg(rest.substring(end).trim()));
             } else if (Regex.matches(cmd, CMD_SLAP)) {
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + " slaps " + rest + " with the whole Javadocs" + new String(new byte[] { 1 }));
-                this.addToText(null, STYLE_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
+                addToText(null, STYLE_ACTION, conn.getNick() + " slaps " + rest + " with the whole Javadocs");
 
                 lastCommand = "/slap ";
             } else if (Regex.matches(cmd, CMD_ACTION)) {
                 lastCommand = "/me ";
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(rest.trim()) + new String(new byte[] { 1 }));
-                this.addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
+                addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(rest.trim()));
 
             } else if (Regex.matches(cmd, CMD_VERSION)) {
 
                 String msg = " is using " + JDUtilities.getJDTitle() + " with Java " + JDUtilities.getJavaVersion() + " on a " + System.getProperty("os.name") + " system";
                 conn.doPrivmsg(channel2, new String(new byte[] { 1 }) + "ACTION " + prepareToSend(msg) + new String(new byte[] { 1 }));
-                this.addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
+                addToText(null, STYLE_ACTION, conn.getNick() + " " + Utils.prepareMsg(msg));
             } else if (Regex.matches(cmd, CMD_MODE)) {
                 end = rest.indexOf(" ");
-                if (end < 0) end = rest.length();
+                if (end < 0) {
+                    end = rest.length();
+                }
                 lastCommand = "/mode ";
                 conn.doMode(CHANNEL, rest.trim());
             } else if (Regex.matches(cmd, CMD_TRANSLATE)) {
                 end = rest.indexOf(" ");
-                if (end < 0) end = rest.length();
+                if (end < 0) {
+                    end = rest.length();
+                }
                 String[] tofrom = rest.substring(0, end).trim().split("to");
                 if (tofrom == null || tofrom.length != 2) {
-                    this.addToText(null, STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
+                    addToText(null, STYLE_ERROR, "Command /translate " + rest.substring(0, end).trim() + " is not available");
                     return;
                 }
                 String t;
@@ -1292,17 +1300,21 @@ public class JDChat extends PluginOptional implements ControlListener {
                 JDUtilities.getSubConfig("JDCHAT").save();
 
             } else if (Regex.matches(cmd, CMD_CONNECT)) {
-                if (conn == null || !conn.isConnected()) initIRC();
+                if (conn == null || !conn.isConnected()) {
+                    initIRC();
+                }
             } else if (Regex.matches(cmd, CMD_DISCONNECT)) {
-                if (conn != null && conn.isConnected()) conn.close();
+                if (conn != null && conn.isConnected()) {
+                    conn.close();
+                }
             } else {
-                this.addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
+                addToText(null, STYLE_ERROR, "Command /" + cmd + " is not available");
             }
 
             textField.requestFocus();
         } else {
             conn.doPrivmsg(channel2, prepareToSend(text));
-            this.addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
+            addToText(getUser(conn.getNick()), STYLE_SELF, Utils.prepareMsg(text));
             textField.setText("");
             textField.requestFocus();
         }
@@ -1310,7 +1322,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void setEnabled(boolean b) {
         if (b) {
-            
+
             initGUI();
             JDUtilities.getController().addControlListener(this);
             new Thread() {
@@ -1333,7 +1345,9 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void setNick(String nickname) {
-        if (nickname == null) return;
+        if (nickname == null) {
+            return;
+        }
         addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
         conn.doNick(nickname);
@@ -1341,13 +1355,15 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void setNickAway(boolean b) {
-        if (nickaway == b) return;
-        this.nickaway = b;
+        if (nickaway == b) {
+            return;
+        }
+        nickaway = b;
         if (b) {
-            this.orgNick = conn.getNick();
-            this.setNick(conn.getNick().substring(0, Math.min(conn.getNick().length(), 11)) + "|away");
+            orgNick = conn.getNick();
+            setNick(conn.getNick().substring(0, Math.min(conn.getNick().length(), 11)) + "|away");
         } else {
-            this.setNick(orgNick);
+            setNick(orgNick);
 
         }
 
@@ -1373,7 +1389,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         Thread th = new Thread() {
             public void run() {
                 while (true) {
-                    if ((System.currentTimeMillis() - lastAction) > AWAY_TIMEOUT) {
+                    if (System.currentTimeMillis() - lastAction > AWAY_TIMEOUT) {
                         setNickAway(true);
                     } else {
                         setNickAway(false);
@@ -1381,7 +1397,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     try {
                         Thread.sleep(10000);
                     } catch (InterruptedException e) {
-                        
+
                         e.printStackTrace();
                     }
                 }
@@ -1399,8 +1415,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
         // USERLIST_STYLE
         sb.append("<ul>");
-        for (Iterator<User> it = NAMES.iterator(); it.hasNext();) {
-            User name = it.next();
+        for (User name : NAMES) {
             sb.append("<li>");
             sb.append("<span style='color:#" + name.color + (name.name.equals(conn.getNick()) ? ";font-weight:bold;" : "") + "'>");
             sb.append(name.getRank() + name.getNickLink("query"));
