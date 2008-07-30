@@ -33,42 +33,16 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     static private final String host = "save.raidrush.ws";
 
-    private String version = "1.1.0";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.1.0";
 
     public SaveRaidrushWs() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-  
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -89,7 +63,40 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+  
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

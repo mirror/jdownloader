@@ -41,68 +41,100 @@ import jd.utils.JDUtilities;
  */
 public class HTTPPost {
     /**
-     * Vollständige Request URL
-     */
-
-    private int                  requestTimeout   = 10000;
-    private int                  readTimeout      = 10000;
-    private URL                  url;
-    /**
-     * Host
-     */
-    private String               ip;
-    /**
-     * POrt
-     */
-    private int                  port             = 80;
-    /**
-     * Path (Pfad zur datei)
-     */
-    private String               path;
-    /**
-     * Query STring
-     */
-    private String               query;
-    /**
-     * Redirects automatisch folgen
-     */
-    private boolean              followRedirects;
-
-    /**
-     * Name der verwendeten Inputfrom (html)
-     */
-    private String               form             = "file_1";
-
-    private OutputStream         output;
-    /**
-     * Bytewriter wird zum versenden von bytes (upload) benötigt
-     */
-    private BufferedOutputStream outputByteWriter = null;
-    /**
      * Deliminator für post parameter
      */
     private String               boundary         = "-----------------------------333227e09c";
     /**
-     * logger
+     * Gibt an ob eine Veribindung aufgebaut ist.
      */
-    private Logger               logger           = JDUtilities.getLogger();
-    /**
-     * StreamWroter wird zum versenden von text verwendet
-     */
-    private OutputStreamWriter   outputwriter;
+    private boolean              connected        = false;
     /**
      * Interne Connection
      */
     private HTTPConnection    connection;
     /**
+     * Redirects automatisch folgen
+     */
+    private boolean              followRedirects;
+    /**
+     * Name der verwendeten Inputfrom (html)
+     */
+    private String               form             = "file_1";
+    /**
+     * Host
+     */
+    private String               ip;
+    /**
+     * logger
+     */
+    private Logger               logger           = JDUtilities.getLogger();
+    private OutputStream         output;
+
+    /**
+     * Bytewriter wird zum versenden von bytes (upload) benötigt
+     */
+    private BufferedOutputStream outputByteWriter = null;
+
+    /**
+     * StreamWroter wird zum versenden von text verwendet
+     */
+    private OutputStreamWriter   outputwriter;
+    /**
+     * Path (Pfad zur datei)
+     */
+    private String               path;
+    /**
+     * POrt
+     */
+    private int                  port             = 80;
+    /**
+     * Query STring
+     */
+    private String               query;
+    private int                  readTimeout      = 10000;
+    /**
+     * Vollständige Request URL
+     */
+
+    private int                  requestTimeout   = 10000;
+    /**
      * Gibt an ob ein Uploadvorgang durchgeführt wird
      */
     private boolean              upload           = false;
-    /**
-     * Gibt an ob eine Veribindung aufgebaut ist.
-     */
-    private boolean              connected        = false;
+    private URL                  url;
 
+    public HTTPPost(String urlString, boolean followRedirects) {
+   
+       URL u;
+       try {
+           logger.info(urlString);
+        u = new URL(urlString);
+
+        this.ip = u.getHost();
+        this.port = u.getPort();
+        this.path = u.getPath();
+        this.query = u.getQuery();
+        this.followRedirects = followRedirects;
+
+       
+            boolean follow = HttpURLConnection.getFollowRedirects();
+            HttpURLConnection.setFollowRedirects(followRedirects);
+            url = u;
+            logger.fine("POST " + url);
+            connection = new HTTPConnection(url.openConnection());
+            connection.setRequestMethod("POST");
+            // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
+            // in die INstanz übernommen wird
+            HttpURLConnection.setFollowRedirects(follow);
+
+        } catch (MalformedURLException e) {
+             e.printStackTrace();
+        } catch (IOException e) {
+             e.printStackTrace();
+        }
+
+    }
+    
     /**
      * @param ip
      * @param port
@@ -124,7 +156,7 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = new URL("http://" + ip + ":" + port + path + query);
             logger.fine("POST " + url);
-            connection = new HTTPConnection((HttpURLConnection) url.openConnection());
+            connection = new HTTPConnection(url.openConnection());
             connection.setRequestMethod("POST");
             // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
             // in die INstanz übernommen wird
@@ -137,37 +169,53 @@ public class HTTPPost {
         }
 
     }
-    
-    public HTTPPost(String urlString, boolean followRedirects) {
-   
-       URL u;
-       try {
-           logger.info(urlString);
-        u = new URL(urlString);
 
-        this.ip = u.getHost();
-        this.port = u.getPort();
-        this.path = u.getPath();
-        this.query = u.getQuery();
-        this.followRedirects = followRedirects;
+    /**
+     * Fügt einen Boundary String zum Post hinzu
+     */
+    public void addBoundary() {
+        write(boundary);
+    }
 
-       
-            boolean follow = HttpURLConnection.getFollowRedirects();
-            HttpURLConnection.setFollowRedirects(followRedirects);
-            url = u;
-            logger.fine("POST " + url);
-            connection = new HTTPConnection((HttpURLConnection) url.openConnection());
-            connection.setRequestMethod("POST");
-            // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
-            // in die INstanz übernommen wird
-            HttpURLConnection.setFollowRedirects(follow);
+    /**
+     * Schreibt den String zum POst
+     * 
+     * @param arg
+     */
+    public void addToRequest(String arg) {
+        write(arg);
+    }
+
+    /**
+     * Schließt alle Streams
+     */
+    public void close() {
+        try {
+            addBoundary();
+            addToRequest("--\r\n");
+            if (outputByteWriter != null)
+                outputByteWriter.close();
+            outputwriter.close();
+            if (output != null)
+                output.close();
+        } catch (IOException e) {
+             e.printStackTrace();
+        }
+    }
+
+    /**
+     * baut die Outputstreams auf
+     */
+    public void connect() {
+        try {
+            connection.setDoOutput(true);           
+            outputwriter = new OutputStreamWriter(output=connection.getOutputStream());
 
         } catch (MalformedURLException e) {
              e.printStackTrace();
         } catch (IOException e) {
              e.printStackTrace();
         }
-
     }
 
     /**
@@ -179,17 +227,131 @@ public class HTTPPost {
     }
 
     /**
-     * Hängt einen Post Parameter an
-     * 
-     * @param key
-     * @param value
+     * @return the boundary
      */
-    public void sendVariable(String key, String value) {
-        addBoundary();
-        addToRequest("\r\nContent-Disposition: form-data; name=\"" + key + "\"");
-        addToRequest("\r\n\r\n");
-        addToRequest(value + "\r\n");
+    public String getBoundary() {
+        return boundary;
+    }
 
+    /**
+     * @return the connection
+     */
+    public HTTPConnection getConnection() {
+        return connection;
+    }
+
+    /**
+     * @return the form
+     */
+    public String getForm() {
+        return form;
+    }
+
+    /**
+     * Gibt den Inputstream zurück
+     * 
+     * @return Inputstream
+     */
+    public InputStream getInputStream() {
+        InputStream ret = null;
+        connection.setConnectTimeout(requestTimeout);
+        connection.setReadTimeout(readTimeout);
+        try {
+            ret = connection.getInputStream();
+        } catch (IOException e) {
+            logger.severe(this.url + " : 500 Internal Server Error");
+            //  e.printStackTrace();
+        }
+        this.connected = true;
+        return ret;
+    }
+
+    /**
+     * @return the ip
+     */
+    public String getIp() {
+        return ip;
+    }
+
+    /**
+     * @return the path
+     */
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * @return the port
+     */
+    public int getPort() {
+        return port;
+    }
+
+    /**
+     * @return the query
+     */
+    public String getQuery() {
+        return query;
+    }
+
+    /**
+     * @return the readTimeout
+     */
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * Gibt die requestinfo zurück
+     * 
+     * @return RequestInfo
+     */
+    public RequestInfo getRequestInfo() {
+
+        String htmlCode = read();
+        String location = connection.getHeaderField("Location");
+        String cookie = connection.getHeaderField("Set-Cookie");
+        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
+        try {
+            responseCode = connection.getResponseCode();
+        }
+        catch (IOException e) { }
+        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(),responseCode);
+    }
+
+    /**
+     * @return the requestTimeout
+     */
+    public int getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    /**
+     * @return the url
+     */
+    public URL getUrl() {
+        return url;
+    }
+
+    /**
+     * @return the connected
+     */
+    public boolean isConnected() {
+        return connected;
+    }
+
+    /**
+     * @return the followRedirects
+     */
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    /**
+     * @return the upload
+     */
+    public boolean isUpload() {
+        return upload;
     }
 
     /**
@@ -199,6 +361,58 @@ public class HTTPPost {
      */
     public void post(String value) {
         addToRequest("\r\n" + value);
+
+    }
+
+    /**
+     * Liest vom internet INputstream
+     * 
+     * @return Inhalt
+     */
+    public String read() {
+        InputStream input;
+
+        input = getInputStream();
+        if (!isConnected())
+            return null;
+        Scanner r = new Scanner(input).useDelimiter("\\Z");
+        String ret = "";
+        while (r.hasNext()) {
+            ret += r.next();
+        }
+        try {
+            input.close();
+        } catch (IOException e) {
+             e.printStackTrace();
+        }
+        return ret;
+
+    }
+
+    /**
+     * Liest über einenGzipreader vom Iinputstream
+     * 
+     * @return Inhalt
+     */
+    public String readGZIP() {
+        GZIPInputStream input;
+
+        try {
+            input = new GZIPInputStream(getInputStream());
+            if (!isConnected())
+                return null;
+            Scanner r = new Scanner(input).useDelimiter("\\Z");
+            String ret = "";
+            while (r.hasNext()) {
+                ret += r.next();
+
+            }
+            input.close();
+            return ret;
+        } catch (IOException e) {
+             e.printStackTrace();
+            return "";
+        }
 
     }
 
@@ -272,56 +486,60 @@ public class HTTPPost {
     }
 
     /**
-     * Fügt einen Boundary String zum Post hinzu
+     * Hängt einen Post Parameter an
+     * 
+     * @param key
+     * @param value
      */
-    public void addBoundary() {
-        write(boundary);
+    public void sendVariable(String key, String value) {
+        addBoundary();
+        addToRequest("\r\nContent-Disposition: form-data; name=\"" + key + "\"");
+        addToRequest("\r\n\r\n");
+        addToRequest(value + "\r\n");
+
     }
 
     /**
-     * Gibt die requestinfo zurück
-     * 
-     * @return RequestInfo
+     * @param boundary
+     *            the boundary to set
      */
-    public RequestInfo getRequestInfo() {
-
-        String htmlCode = read();
-        String location = connection.getHeaderField("Location");
-        String cookie = connection.getHeaderField("Set-Cookie");
-        int responseCode =HttpURLConnection.HTTP_NOT_IMPLEMENTED; 
-        try {
-            responseCode = connection.getResponseCode();
-        }
-        catch (IOException e) { }
-        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(),responseCode);
+    public void setBoundary(String boundary) {
+        this.boundary = boundary;
     }
 
     /**
-     * Schreibt den String zum POst
-     * 
-     * @param arg
+     * @param form
+     *            the form to set
      */
-    public void addToRequest(String arg) {
-        write(arg);
+    public void setForm(String form) {
+        this.form = form;
     }
 
     /**
-     * Gibt den Inputstream zurück
-     * 
-     * @return Inputstream
+     * @param readTimeout
+     *            the readTimeout to set
      */
-    public InputStream getInputStream() {
-        InputStream ret = null;
-        connection.setConnectTimeout(requestTimeout);
-        connection.setReadTimeout(readTimeout);
-        try {
-            ret = connection.getInputStream();
-        } catch (IOException e) {
-            logger.severe(this.url + " : 500 Internal Server Error");
-            //  e.printStackTrace();
-        }
-        this.connected = true;
-        return ret;
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    /**
+     * setzt ein requestproperty
+     * 
+     * @param key
+     * @param value
+     */
+    public void setRequestProperty(String key, String value) {
+        connection.setRequestProperty(key, value);
+
+    }
+
+    /**
+     * @param requestTimeout
+     *            the requestTimeout to set
+     */
+    public void setRequestTimeout(int requestTimeout) {
+        this.requestTimeout = requestTimeout;
     }
 
     /**
@@ -337,224 +555,6 @@ public class HTTPPost {
         } catch (IOException e) {
              e.printStackTrace();
         }
-    }
-
-    /**
-     * Schließt alle Streams
-     */
-    public void close() {
-        try {
-            addBoundary();
-            addToRequest("--\r\n");
-            if (outputByteWriter != null)
-                outputByteWriter.close();
-            outputwriter.close();
-            if (output != null)
-                output.close();
-        } catch (IOException e) {
-             e.printStackTrace();
-        }
-    }
-
-    /**
-     * setzt ein requestproperty
-     * 
-     * @param key
-     * @param value
-     */
-    public void setRequestProperty(String key, String value) {
-        connection.setRequestProperty(key, value);
-
-    }
-
-    /**
-     * Liest vom internet INputstream
-     * 
-     * @return Inhalt
-     */
-    public String read() {
-        InputStream input;
-
-        input = getInputStream();
-        if (!isConnected())
-            return null;
-        Scanner r = new Scanner(input).useDelimiter("\\Z");
-        String ret = "";
-        while (r.hasNext()) {
-            ret += r.next();
-        }
-        try {
-            input.close();
-        } catch (IOException e) {
-             e.printStackTrace();
-        }
-        return ret;
-
-    }
-
-    /**
-     * Liest über einenGzipreader vom Iinputstream
-     * 
-     * @return Inhalt
-     */
-    public String readGZIP() {
-        GZIPInputStream input;
-
-        try {
-            input = new GZIPInputStream(getInputStream());
-            if (!isConnected())
-                return null;
-            Scanner r = new Scanner(input).useDelimiter("\\Z");
-            String ret = "";
-            while (r.hasNext()) {
-                ret += r.next();
-
-            }
-            input.close();
-            return ret;
-        } catch (IOException e) {
-             e.printStackTrace();
-            return "";
-        }
-
-    }
-
-    /**
-     * baut die Outputstreams auf
-     */
-    public void connect() {
-        try {
-            connection.setDoOutput(true);           
-            outputwriter = new OutputStreamWriter(output=connection.getOutputStream());
-
-        } catch (MalformedURLException e) {
-             e.printStackTrace();
-        } catch (IOException e) {
-             e.printStackTrace();
-        }
-    }
-
-    /**
-     * @return the form
-     */
-    public String getForm() {
-        return form;
-    }
-
-    /**
-     * @param form
-     *            the form to set
-     */
-    public void setForm(String form) {
-        this.form = form;
-    }
-
-    /**
-     * @return the connection
-     */
-    public HTTPConnection getConnection() {
-        return connection;
-    }
-
-    /**
-     * @return the boundary
-     */
-    public String getBoundary() {
-        return boundary;
-    }
-
-    /**
-     * @param boundary
-     *            the boundary to set
-     */
-    public void setBoundary(String boundary) {
-        this.boundary = boundary;
-    }
-
-    /**
-     * @return the followRedirects
-     */
-    public boolean isFollowRedirects() {
-        return followRedirects;
-    }
-
-    /**
-     * @return the ip
-     */
-    public String getIp() {
-        return ip;
-    }
-
-    /**
-     * @return the path
-     */
-    public String getPath() {
-        return path;
-    }
-
-    /**
-     * @return the port
-     */
-    public int getPort() {
-        return port;
-    }
-
-    /**
-     * @return the query
-     */
-    public String getQuery() {
-        return query;
-    }
-
-    /**
-     * @return the url
-     */
-    public URL getUrl() {
-        return url;
-    }
-
-    /**
-     * @return the readTimeout
-     */
-    public int getReadTimeout() {
-        return readTimeout;
-    }
-
-    /**
-     * @param readTimeout
-     *            the readTimeout to set
-     */
-    public void setReadTimeout(int readTimeout) {
-        this.readTimeout = readTimeout;
-    }
-
-    /**
-     * @return the requestTimeout
-     */
-    public int getRequestTimeout() {
-        return requestTimeout;
-    }
-
-    /**
-     * @param requestTimeout
-     *            the requestTimeout to set
-     */
-    public void setRequestTimeout(int requestTimeout) {
-        this.requestTimeout = requestTimeout;
-    }
-
-    /**
-     * @return the upload
-     */
-    public boolean isUpload() {
-        return upload;
-    }
-
-    /**
-     * @return the connected
-     */
-    public boolean isConnected() {
-        return connected;
     }
 
 }

@@ -24,6 +24,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,18 +36,18 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
      */
     private static final long serialVersionUID = -7983057329558110899L;
 
+    private ConfigContainer   container        = null;
+
+  
+
     /**
      * serialVersionUID
      */
     private Logger            logger           = JDUtilities.getLogger();
 
-  
-
-    private ConfigContainer   container        = null;
+    private Vector<ConfigEntriesPanel> subPanels=null;
 
     private JTabbedPane tabbedPane=null;
-
-    private Vector<ConfigEntriesPanel> subPanels=null;
 
     private String title;
 
@@ -60,31 +61,29 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
         load();
     }
 
-    public void save() {
-        if(subPanels!=null){
-            for( int i=0;i<subPanels.size();i++){
-                logger.info("Saved tab "+i);
-              
-                subPanels.get(i).save();
-               
-                
-            }
-            
-        }
-        if(container!=null){
-            logger.info("Save "+container.getTitle());
-        }else{
-            logger.info("Save normal panel"+this);
-        }
-        this.saveConfigEntries();
-        
-    }
-
     public void actionPerformed(ActionEvent e) {
 
     }
 
+    private void addTabbedPanel(String title,ConfigEntriesPanel configPanelPlugin) {
+        this.subPanels.add(configPanelPlugin);
+        tabbedPane.add(title,configPanelPlugin );
+        
+    }
+
     
+    @Override
+    public String getName() {
+
+        return title;
+    }
+
+    public Vector<ConfigEntriesPanel> getSubPanels() {
+        return subPanels;
+    }
+
+    
+    @Override
     public void initPanel() {
         if (container.getContainerNum() == 0) {
             Vector<ConfigEntry> entries = container.getEntries();
@@ -104,7 +103,7 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
             tabbedPane = new JTabbedPane();
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+            tabbedPane.setTabPlacement(SwingConstants.TOP);
             Vector<ConfigEntry> entries = container.getEntries();
 
             Vector<ConfigContainer> container = new Vector<ConfigContainer>();
@@ -129,26 +128,32 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
 
     }
 
-    private void addTabbedPanel(String title,ConfigEntriesPanel configPanelPlugin) {
-        this.subPanels.add(configPanelPlugin);
-        tabbedPane.add(title,configPanelPlugin );
-        
-    }
-
     
-    public String getName() {
-
-        return title;
-    }
-
-    
+    @Override
     public void load() {
         loadConfigEntries();
 
     }
 
-    public Vector<ConfigEntriesPanel> getSubPanels() {
-        return subPanels;
+    @Override
+    public void save() {
+        if(subPanels!=null){
+            for( int i=0;i<subPanels.size();i++){
+                logger.info("Saved tab "+i);
+              
+                subPanels.get(i).save();
+               
+                
+            }
+            
+        }
+        if(container!=null){
+            logger.info("Save "+container.getTitle());
+        }else{
+            logger.info("Save normal panel"+this);
+        }
+        this.saveConfigEntries();
+        
     }
 
 }

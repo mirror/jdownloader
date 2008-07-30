@@ -42,27 +42,12 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JACController {
-    private File path;
-    private static JComboBox methods;
     private static BrowseFile chooser;
+    private static JComboBox methods;
     private final static String methodsPath = UTILITIES
             .getFullPath(new String[] {
                     JDUtilities.getJDHomeDirectoryFromEnvironment()
                             .getAbsolutePath(), "jd", "captcha", "methods" });
-    JAntiCaptcha jac;
-    public JACController(File path, String methode) {
-        this.path = path;
-        jac = new JAntiCaptcha(methodsPath, methode);
-    }
-    public void showCaptcha()
-    {
-        jac.showPreparedCaptcha(path);
-    }
-    public void train()
-    {
-         jac.trainAllCaptchas(path.getAbsolutePath());
-         jac.saveMTHFile();
-    }
     public static void showDialog(final boolean isTrain) {
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -140,5 +125,20 @@ public class JACController {
         frame.add(panel, BorderLayout.CENTER);
         frame.pack();
         frame.setVisible(true);
+    }
+    JAntiCaptcha jac;
+    private File path;
+    public JACController(File path, String methode) {
+        this.path = path;
+        jac = new JAntiCaptcha(methodsPath, methode);
+    }
+    public void showCaptcha()
+    {
+        jac.showPreparedCaptcha(path);
+    }
+    public void train()
+    {
+         jac.trainAllCaptchas(path.getAbsolutePath());
+         jac.saveMTHFile();
     }
 }

@@ -24,8 +24,124 @@ import jd.utils.Reconnecter;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 
-    private static final long serialVersionUID = 1L;
     public static Logger logger = JDUtilities.getLogger();
+    private static final long serialVersionUID = 1L;
+
+    public static void extract(final Vector<String> paths, final long rtime, final boolean isServer) {
+
+        new Thread(new Runnable() {
+
+            public void run() {
+
+                if (isServer) {
+
+                    JDInit init = new JDInit();
+                    init.loadConfiguration();
+
+                }
+
+                while (true) {
+
+                    JUnrar unrar = new JUnrar();
+                    unrar.progressInTerminal = true;
+                    String downloadFolder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+                    LinkedList<String> folders = new LinkedList<String>();
+
+                    if (paths != null) {
+
+                        // leave out last element if there are more than one
+                        // folders
+                        short max = (short) paths.size();
+                        if (max > 1) max -= 1;
+
+                        for (int i = 0; i < max; i++) {
+
+                            folders.add(paths.get(i));
+
+                        }
+
+                    } else {
+                        folders.add(downloadFolder);
+                    }
+
+                    logger.info("Unrar input folders: " + folders.toString());
+                    unrar.setFolders(folders);
+                    unrar.useToextractlist = false;
+
+                    boolean useExtractFolder = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER);
+
+                    if (paths.size() > 1) {
+                        unrar.extractFolder = new File(paths.get(1));
+                    } else if (useExtractFolder) {
+                        unrar.extractFolder = new File(JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER));
+                    } else {
+
+                        if (paths.size() == 1) {
+                            unrar.extractFolder = new File(paths.get(0));
+                        } else {
+                            unrar.extractFolder = new File(downloadFolder);
+                        }
+
+                    }
+
+                    logger.info("Unrar output folder: " + unrar.extractFolder);
+
+                    unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
+                    unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, true);
+                    unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
+                    unrar.unrar();
+
+                    if (rtime >= 1) {
+
+                        try {
+                            Thread.sleep(rtime * 1000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+
+                    } else {
+
+                        if (isServer) System.exit(0);
+                        break;
+
+                    }
+
+                }
+
+            }
+
+        }).start();
+
+    }
+
+    public static void showCmdHelp() {
+
+        String[][] help = new String[][] {
+        		{ JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" },
+        		{ "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
+        		{ "-h/--help\t", "Show this help message" },
+        		{ "-a/--add-link(s)", "Add links" },
+        		{ "-c/--add-container(s)", "Add containers" },
+        		{ "-p/--add-password(s)", "Add passwords" },
+        		{ "-d/--start-download", "Start download" },
+        		{ "-D/--stop-download", "Stop download" },
+        		{ "-H/--hide\t", "Don't open Linkgrabber when adding Links" },
+        		{ "-m/--minimize\t", "Minimize download window" },
+        		{ "-f/--focus\t", "Get jD to foreground/focus" },
+        		{ "-s/--show\t", "Show JAC prepared captchas" },
+        		{ "-t/--train\t", "Train a JAC method" },
+        		{ "-r/--reconnect\t", "Perform a Reconnect" },
+        		{ "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
+        		{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
+                { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" },
+                { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" },
+                { "-n --new-instance", "Force new instance if another jD is running" } };
+
+        for (String helpLine[] : help) {
+            System.out.println(helpLine[0] + "\t" + helpLine[1]);
+        }
+
+    }
 
     Server() throws RemoteException {
         super();
@@ -221,7 +337,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 } else if (extractTime == -1) {
 
                     if (currentArg.matches("[\\d]+")) {
-                        extractTime = (int) Integer.parseInt(currentArg);
+                        extractTime = Integer.parseInt(currentArg);
                     } else
                         extractTime = 0;
 
@@ -292,122 +408,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
             Server.extract(paths, extractTime, false);
         }
         
-    }
-
-    public static void showCmdHelp() {
-
-        String[][] help = new String[][] {
-        		{ JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" },
-        		{ "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") },
-        		{ "-h/--help\t", "Show this help message" },
-        		{ "-a/--add-link(s)", "Add links" },
-        		{ "-c/--add-container(s)", "Add containers" },
-        		{ "-p/--add-password(s)", "Add passwords" },
-        		{ "-d/--start-download", "Start download" },
-        		{ "-D/--stop-download", "Stop download" },
-        		{ "-H/--hide\t", "Don't open Linkgrabber when adding Links" },
-        		{ "-m/--minimize\t", "Minimize download window" },
-        		{ "-f/--focus\t", "Get jD to foreground/focus" },
-        		{ "-s/--show\t", "Show JAC prepared captchas" },
-        		{ "-t/--train\t", "Train a JAC method" },
-        		{ "-r/--reconnect\t", "Perform a Reconnect" },
-        		{ "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
-        		{ "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)", "" },
-                { "\t\t\tExtract (optional from given directory and optional to given directory) with jD settings (optional periodly)", "" },
-                { "\t\t", "Example: java -jar JDownloader.jar -e /source/folder -r 60 [extract every minute from /source/folder to /source/folder" },
-                { "-n --new-instance", "Force new instance if another jD is running" } };
-
-        for (String helpLine[] : help) {
-            System.out.println(helpLine[0] + "\t" + helpLine[1]);
-        }
-
-    }
-
-    public static void extract(final Vector<String> paths, final long rtime, final boolean isServer) {
-
-        new Thread(new Runnable() {
-
-            public void run() {
-
-                if (isServer) {
-
-                    JDInit init = new JDInit();
-                    init.loadConfiguration();
-
-                }
-
-                while (true) {
-
-                    JUnrar unrar = new JUnrar();
-                    unrar.progressInTerminal = true;
-                    String downloadFolder = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
-                    LinkedList<String> folders = new LinkedList<String>();
-
-                    if (paths != null) {
-
-                        // leave out last element if there are more than one
-                        // folders
-                        short max = (short) paths.size();
-                        if (max > 1) max -= 1;
-
-                        for (int i = 0; i < max; i++) {
-
-                            folders.add(paths.get(i));
-
-                        }
-
-                    } else {
-                        folders.add(downloadFolder);
-                    }
-
-                    logger.info("Unrar input folders: " + folders.toString());
-                    unrar.setFolders(folders);
-                    unrar.useToextractlist = false;
-
-                    boolean useExtractFolder = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLE_EXTRACTFOLDER);
-
-                    if (paths.size() > 1) {
-                        unrar.extractFolder = new File(paths.get(1));
-                    } else if (useExtractFolder) {
-                        unrar.extractFolder = new File(JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_EXTRACTFOLDER));
-                    } else {
-
-                        if (paths.size() == 1) {
-                            unrar.extractFolder = new File(paths.get(0));
-                        } else {
-                            unrar.extractFolder = new File(downloadFolder);
-                        }
-
-                    }
-
-                    logger.info("Unrar output folder: " + unrar.extractFolder);
-
-                    unrar.overwriteFiles = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_OVERWRITE_FILES, false);
-                    unrar.autoDelete = JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_AUTODELETE, true);
-                    unrar.unrar = JDUtilities.getConfiguration().getStringProperty(Unrar.PROPERTY_UNRARCOMMAND);
-                    unrar.unrar();
-
-                    if (rtime >= 1) {
-
-                        try {
-                            Thread.sleep(rtime * 1000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-
-                    } else {
-
-                        if (isServer) System.exit(0);
-                        break;
-
-                    }
-
-                }
-
-            }
-
-        }).start();
-
     }
 
 }

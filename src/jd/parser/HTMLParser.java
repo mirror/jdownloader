@@ -27,112 +27,6 @@ import jd.utils.JDUtilities;
 public class HTMLParser {
 
     /**
-     * Gibt alle Hidden fields als hasMap zurück
-     * 
-     * @param data
-     * @return hasmap mit allen hidden fields variablen
-     */
-    public static HashMap<String, String> getInputHiddenFields(String data) {
-        Pattern intput1 = Pattern.compile("(?s)<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
-        Pattern intput2 = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
-        Pattern intput3 = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
-        Pattern intput4 = Pattern.compile("name=([^\\s]*)", Pattern.CASE_INSENSITIVE);
-        Pattern intput5 = Pattern.compile("value=([^\\s]*)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher1 = intput1.matcher(data);
-        Matcher matcher2;
-        Matcher matcher3;
-        Matcher matcher4;
-        Matcher matcher5;
-        HashMap<String, String> ret = new HashMap<String, String>();
-        boolean iscompl;
-        while (matcher1.find()) {
-            matcher2 = intput2.matcher(matcher1.group(1) + " ");
-            matcher3 = intput3.matcher(matcher1.group(1) + " ");
-            matcher4 = intput4.matcher(matcher1.group(1) + " ");
-            matcher5 = intput5.matcher(matcher1.group(1) + " ");
-            iscompl = false;
-            String key, value;
-            key = value = null;
-            if (matcher2.find()) {
-                iscompl = true;
-                key = matcher2.group(1);
-            } else if (matcher4.find()) {
-                iscompl = true;
-                key = matcher4.group(1);
-            }
-            if (matcher3.find() && iscompl)
-                value = matcher3.group(1);
-            else if (matcher5.find() && iscompl)
-                value = matcher5.group(1);
-            else
-                iscompl = false;
-            ret.put(key, value);
-        }
-        return ret;
-    }
-
-    /**
-     * Diese Methode sucht die vordefinierten input type="hidden" und formatiert
-     * sie zu einem poststring z.b. würde bei:
-     * 
-     * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
-     * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
-     * value="9" />
-     * 
-     * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * 
-     * @return ein String, der als POST Parameter genutzt werden kann und alle
-     *         Parameter des Formulars enthält
-     */
-    public static String getFormInputHidden(String data) {
-        return Plugin.joinMap(getInputHiddenFields(data), "=", "&");
-    }
-
-    /**
-     * Ermittelt alle hidden input felder in einem HTML Text und gibt die hidden
-     * variables als hashmap zurück es wird dabei nur der text zwischen start
-     * dun endpattern ausgewertet
-     * 
-     * @param data
-     * @param startPattern
-     * @param lastPattern
-     * @return hashmap mit hidden input variablen zwischen startPattern und
-     *         endPattern
-     */
-    public static HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
-        return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch());
-    }
-
-    /**
-     * Diese Methode sucht die vordefinierten input type="hidden" zwischen
-     * startpattern und lastpattern und formatiert sie zu einem poststring z.b.
-     * würde bei:
-     * 
-     * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
-     * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
-     * value="9" />
-     * 
-     * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param startPattern
-     *            der Pattern, bei dem die Suche beginnt
-     * @param lastPattern
-     *            der Pattern, bei dem die Suche endet
-     * @return ein String, der als POST Parameter genutzt werden kann und alle
-     *         Parameter des Formulars enthält
-     */
-    public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
-        String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch();
-        if (pat == null) return null;
-        return HTMLParser.getFormInputHidden(pat);
-    }
-
-    /**
      * Diese Methode sucht nach passwörtern in einem Datensatz
      * 
      * @param data
@@ -169,6 +63,52 @@ public class HTMLParser {
         }
 
         return ret;
+    }
+
+    /**
+     * Diese Methode sucht die vordefinierten input type="hidden" und formatiert
+     * sie zu einem poststring z.b. würde bei:
+     * 
+     * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
+     * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
+     * value="9" />
+     * 
+     * f=f50b0f&h=390b4be0182b85b0&b=9 ausgegeben werden
+     * 
+     * @param data
+     *            Der zu durchsuchende Text
+     * 
+     * @return ein String, der als POST Parameter genutzt werden kann und alle
+     *         Parameter des Formulars enthält
+     */
+    public static String getFormInputHidden(String data) {
+        return Plugin.joinMap(getInputHiddenFields(data), "=", "&");
+    }
+
+    /**
+     * Diese Methode sucht die vordefinierten input type="hidden" zwischen
+     * startpattern und lastpattern und formatiert sie zu einem poststring z.b.
+     * würde bei:
+     * 
+     * <input type="hidden" name="f" value="f50b0f" /> <input type="hidden"
+     * name="h" value="390b4be0182b85b0" /> <input type="hidden" name="b"
+     * value="9" />
+     * 
+     * f=f50b0f&h=390b4be0182b85b0&b=9 rauskommen
+     * 
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
+     * @return ein String, der als POST Parameter genutzt werden kann und alle
+     *         Parameter des Formulars enthält
+     */
+    public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
+        String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch();
+        if (pat == null) return null;
+        return HTMLParser.getFormInputHidden(pat);
     }
 
     /**
@@ -278,6 +218,66 @@ public class HTMLParser {
                 set.add(link);
             }
         }
-        return (String[]) set.toArray(new String[set.size()]);
+        return set.toArray(new String[set.size()]);
+    }
+
+    /**
+     * Gibt alle Hidden fields als hasMap zurück
+     * 
+     * @param data
+     * @return hasmap mit allen hidden fields variablen
+     */
+    public static HashMap<String, String> getInputHiddenFields(String data) {
+        Pattern intput1 = Pattern.compile("(?s)<[ ]?input([^>]*?type=['\"]?hidden['\"]?[^>]*?)[/]?>", Pattern.CASE_INSENSITIVE);
+        Pattern intput2 = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern intput3 = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE);
+        Pattern intput4 = Pattern.compile("name=([^\\s]*)", Pattern.CASE_INSENSITIVE);
+        Pattern intput5 = Pattern.compile("value=([^\\s]*)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher1 = intput1.matcher(data);
+        Matcher matcher2;
+        Matcher matcher3;
+        Matcher matcher4;
+        Matcher matcher5;
+        HashMap<String, String> ret = new HashMap<String, String>();
+        boolean iscompl;
+        while (matcher1.find()) {
+            matcher2 = intput2.matcher(matcher1.group(1) + " ");
+            matcher3 = intput3.matcher(matcher1.group(1) + " ");
+            matcher4 = intput4.matcher(matcher1.group(1) + " ");
+            matcher5 = intput5.matcher(matcher1.group(1) + " ");
+            iscompl = false;
+            String key, value;
+            key = value = null;
+            if (matcher2.find()) {
+                iscompl = true;
+                key = matcher2.group(1);
+            } else if (matcher4.find()) {
+                iscompl = true;
+                key = matcher4.group(1);
+            }
+            if (matcher3.find() && iscompl)
+                value = matcher3.group(1);
+            else if (matcher5.find() && iscompl)
+                value = matcher5.group(1);
+            else
+                iscompl = false;
+            ret.put(key, value);
+        }
+        return ret;
+    }
+
+    /**
+     * Ermittelt alle hidden input felder in einem HTML Text und gibt die hidden
+     * variables als hashmap zurück es wird dabei nur der text zwischen start
+     * dun endpattern ausgewertet
+     * 
+     * @param data
+     * @param startPattern
+     * @param lastPattern
+     * @return hashmap mit hidden input variablen zwischen startPattern und
+     *         endPattern
+     */
+    public static HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
+        return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch());
     }
 }

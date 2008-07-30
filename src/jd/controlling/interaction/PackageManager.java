@@ -46,22 +46,68 @@ import org.xml.sax.InputSource;
 
 public class PackageManager extends Interaction implements Serializable {
 
+    private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+
+    private static Vector<HashMap<String, String>> PACKAGE_DATA = null;
+
     /**
      * 
      */
     private static final long serialVersionUID = 1L;
 
-    private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
-
     private SubConfiguration managerConfig;
-
-    private static Vector<HashMap<String, String>> PACKAGE_DATA = null;
 
     public PackageManager() {
         managerConfig = JDUtilities.getSubConfig("PACKAGEMANAGER");
 
     }
 
+    @SuppressWarnings("unchecked")
+    private void checkNewInstalled() {
+        ArrayList<File> slist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
+        if (slist != null) for (File del : slist){
+            del.delete();
+            
+           String  html = JDLocale.L("modules.packagemanager.installednewpackage.title", "Package Installed") + "<hr><b>" + del.getName() + "</b><hr>";
+            JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+        }
+           
+
+        ArrayList<File> flist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_FAILED");
+        if (flist != null) for (File del : flist) {
+            del.delete();
+            JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.failed", "Installation failed. try again: ") + "<hr><b>" + del.getName() + "</b>", 15);
+
+        }
+
+        Object list = managerConfig.getProperty("NEW_INSTALLED");
+        managerConfig.setProperty("NEW_INSTALLED_SUCCESSFULL", null);
+        managerConfig.setProperty("NEW_INSTALLED", null);
+        managerConfig.setProperty("NEW_INSTALLED_FAILED", null);
+        managerConfig.save();
+        if (list == null) return;
+
+        ArrayList<File> readmes = (ArrayList<File>) list;
+        for (File readme : readmes) {
+            String html;
+            if (readme == null) {
+               
+                continue;
+            }
+            html = JDUtilities.getLocalFile(readme);
+            if (Regex.matches(html, "src\\=\"(.*?)\"")) {
+                html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+                html = JDLocale.L("modules.packagemanager.infonewpackage.title", "Package information") + "<hr><b>" + readme.getAbsolutePath() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
+                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+            } else {
+                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+            }
+
+        }
+
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     
     public boolean doInteraction(Object arg) {
@@ -109,49 +155,9 @@ public class PackageManager extends Interaction implements Serializable {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
-    private void checkNewInstalled() {
-        ArrayList<File> slist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
-        if (slist != null) for (File del : slist){
-            del.delete();
-            
-           String  html = JDLocale.L("modules.packagemanager.installednewpackage.title", "Package Installed") + "<hr><b>" + del.getName() + "</b><hr>";
-            JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-        }
-           
-
-        ArrayList<File> flist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_FAILED");
-        if (flist != null) for (File del : flist) {
-            del.delete();
-            JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.failed", "Installation failed. try again: ") + "<hr><b>" + del.getName() + "</b>", 15);
-
-        }
-
-        Object list = managerConfig.getProperty("NEW_INSTALLED");
-        managerConfig.setProperty("NEW_INSTALLED_SUCCESSFULL", null);
-        managerConfig.setProperty("NEW_INSTALLED", null);
-        managerConfig.setProperty("NEW_INSTALLED_FAILED", null);
-        managerConfig.save();
-        if (list == null) return;
-
-        ArrayList<File> readmes = (ArrayList<File>) list;
-        for (File readme : readmes) {
-            String html;
-            if (readme == null) {
-               
-                continue;
-            }
-            html = JDUtilities.getLocalFile(readme);
-            if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-                html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
-                html = JDLocale.L("modules.packagemanager.infonewpackage.title", "Package information") + "<hr><b>" + readme.getAbsolutePath() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
-                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-            } else {
-                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-            }
-
-        }
-
+    @Override
+    public String getInteractionName() {
+        return NAME;
     }
 
     public Vector<HashMap<String, String>> getPackageData() {
@@ -208,27 +214,12 @@ public class PackageManager extends Interaction implements Serializable {
 
     }
 
-    public void run() {
-    }
-
-    public String toString() {
-        return NAME;
-    }
-
-    
-    public String getInteractionName() {
-        return NAME;
-    }
-
-    
+    @Override
     public void initConfig() {
 
     }
 
     
-    public void resetInteraction() {
-    }
-
     @SuppressWarnings("unchecked")
     public void onDownloadedPackage(final DownloadLink downloadLink) {
         // File dir = JDUtilities.getResourceFile("packages");
@@ -243,6 +234,7 @@ public class PackageManager extends Interaction implements Serializable {
         managerConfig.setProperty("CURRENT_JDU_LIST",list);
         managerConfig.save();
         new Thread() {
+            @Override
             public void run() {
                 try {
                     Thread.sleep(1000);
@@ -261,5 +253,20 @@ public class PackageManager extends Interaction implements Serializable {
 
         // }
 
+    }
+
+    
+    @Override
+    public void resetInteraction() {
+    }
+
+    
+    @Override
+    public void run() {
+    }
+
+    @Override
+    public String toString() {
+        return NAME;
     }
 }

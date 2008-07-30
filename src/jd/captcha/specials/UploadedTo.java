@@ -34,33 +34,33 @@ import jd.utils.JDUtilities;
  */
 public class UploadedTo {
 
-    private static final double OBJECTCOLORCONTRAST     = 0.001;
+    private static final double FILLEDMAX               = 0.9;
 
-    private static final double OBJECTDETECTIONCONTRAST = 1;
+    private static final double FILLEDMIN               = 0.2;
 
-    private static final int    MINAREA                 = 200;
+    private static Logger       logger                  = JDUtilities.getLogger();
 
     private static final int    MAXAREA                 = 1200;
 
     // private static final int LETTERNUM = 4;
 
-    private static final double FILLEDMAX               = 0.9;
-
-    private static final double FILLEDMIN               = 0.2;
-
-    private static final int    MINWIDTH                = 8;
-
-    private static final int    MINHEIGHT               = 15;
-
-    private static final double MINWIDTHTOHEIGHT        = 0.2;
-
-    private static final double MAXWIDTHTOHEIGHT        = 2;
-
     private static final int    MAXHEIGHT               = 30;
 
     private static final int    MAXWIDTH                = 40;
 
-    private static Logger       logger                  = JDUtilities.getLogger();
+    private static final double MAXWIDTHTOHEIGHT        = 2;
+
+    private static final int    MINAREA                 = 200;
+
+    private static final int    MINHEIGHT               = 15;
+
+    private static final int    MINWIDTH                = 8;
+
+    private static final double MINWIDTHTOHEIGHT        = 0.2;
+
+    private static final double OBJECTCOLORCONTRAST     = 0.001;
+
+    private static final double OBJECTDETECTIONCONTRAST = 1;
 
     public static Letter[] getLetters(Captcha captcha) {
 

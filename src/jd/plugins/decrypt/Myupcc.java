@@ -33,43 +33,17 @@ public class Myupcc extends PluginForDecrypt {
 
     static private final String host = "myup.cc";
 
-    private String version = "1.0.0.0";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.0";
 
     public Myupcc() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
@@ -87,7 +61,40 @@ public class Myupcc extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

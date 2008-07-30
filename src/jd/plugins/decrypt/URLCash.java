@@ -31,44 +31,15 @@ import jd.plugins.RequestInfo;
 public class URLCash extends PluginForDecrypt {
 
     static private String host = "urlcash.net";
-    private String version = "1.0.0.0";
     private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.0";
 
     public URLCash() {
         super();        
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    
-        
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {        
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -84,7 +55,43 @@ public class URLCash extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    
+        
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

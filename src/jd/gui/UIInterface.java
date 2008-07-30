@@ -33,36 +33,32 @@ import jd.plugins.Plugin;
  */
 public interface UIInterface extends ControlListener {
     /**
-     * GUI minimieren
+     * GUI normal, aber im Vordergrund anzeigen
      */
-    public static int WINDOW_STATUS_MINIMIZED = 0;
+    public static int WINDOW_STATUS_FOREGROUND = 4;
     /**
      * GUI maximieren
      */
     public static int WINDOW_STATUS_MAXIMIZED = 1;
     /**
-     * GUI in den Tray legen
+     * GUI minimieren
      */
-    public static int WINDOW_STATUS_TRAYED = 2;
+    public static int WINDOW_STATUS_MINIMIZED = 0;
     /**
      * GUI normal anzeigen (Defaulteinstellungen)
      */
     public static int WINDOW_STATUS_NORMAL = 3;
     /**
-     * GUI normal, aber im Vordergrund anzeigen
+     * GUI in den Tray legen
      */
-    public static int WINDOW_STATUS_FOREGROUND = 4;
+    public static int WINDOW_STATUS_TRAYED = 2;
 
     /**
-     * Der Benutzer soll den Captcha Code eintippen
+     * Fügt Links zum Linkgrabber hinzu
      * 
-     * @param plugin
-     *            Das Plugin, daß den Captcha Code benötigt
-     * @param captchaAddress
-     *            Die Adresse des Captchas
-     * @return Der erkannte Text
+     * @param links
      */
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
+    public void addLinksToGrabber(Vector<DownloadLink> links);
 
     // /**
     // * Legt alle DownloadLinks fest
@@ -79,13 +75,7 @@ public interface UIInterface extends ControlListener {
      */
     public void addUIListener(UIListener listener);
 
-    /**
-     * Entfernt einen UIListener
-     * 
-     * @param listener
-     *            UIListener, der entfernt werden soll
-     */
-    public void removeUIListener(UIListener listener);
+    public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
 
     /**
      * Verteilt ein UIEvent an alle registrierten Listener
@@ -96,32 +86,35 @@ public interface UIInterface extends ControlListener {
     public void fireUIEvent(UIEvent pluginEvent);
 
     /**
-     * Zeigt einen MessageDialog an
+     * Der Benutzer soll den Captcha Code eintippen
      * 
-     * @param string
+     * @param plugin
+     *            Das Plugin, daß den Captcha Code benötigt
+     * @param captchaAddress
+     *            Die Adresse des Captchas
+     * @return Der erkannte Text
      */
-    public void showMessageDialog(String string);
+    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
 
     /**
-     * Zeigt einen Eingabe Dialog an
-     * 
-     * @param string
-     *            Die Nachricht, die angezeigt werden soll
-     * @return Der vom Benutzer eingegebene Text
+     * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
      */
-    public String showUserInputDialog(String string);
+    public void onJDInitComplete();
     
     /**
-     * Zeigt einen Eingabe Dialog an
+     * Entfernt einen UIListener
      * 
-     * @param string
-     *            Die Nachricht, die angezeigt werden soll
-     * @param def
-     *            default Wert
-     * @return Der vom Benutzer eingegebene Text
+     * @param listener
+     *            UIListener, der entfernt werden soll
      */
-    public String showUserInputDialog(String string,String def);
+    public void removeUIListener(UIListener listener);
     
+    /**
+     * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
+     * verwendet werden
+     */
+    public void setGUIStatus(int id);
+
     /**
      * Zeigt einen MessageDialog an
      * 
@@ -134,18 +127,11 @@ public interface UIInterface extends ControlListener {
     public boolean showCountdownConfirmDialog(String string, int sec);
 
     /**
-     * Fügt Links zum Linkgrabber hinzu
-     * 
-     * @param links
-     */
-    public void addLinksToGrabber(Vector<DownloadLink> links);
-
-    /**
-     * Zeigt einen Textarea dialog an
+     * Zeigt einen HTML dialog an
      * 
      * @param string
      */
-    public String showTextAreaDialog(String title, String question, String def);
+    public int showHelpMessage(String title, String message, String url);
 
     /**
      * Zeigt einen HTML dialog an
@@ -155,23 +141,37 @@ public interface UIInterface extends ControlListener {
     public boolean showHTMLDialog(String title, String htmlQuestion);
 
     /**
-     * Zeigt einen HTML dialog an
+     * Zeigt einen MessageDialog an
      * 
      * @param string
      */
-    public int showHelpMessage(String title, String message, String url);
+    public void showMessageDialog(String string);
 
     /**
-     * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
+     * Zeigt einen Textarea dialog an
+     * 
+     * @param string
      */
-    public void onJDInitComplete();
+    public String showTextAreaDialog(String title, String question, String def);
 
     /**
-     * Minimiert die GUI. als ID können die GUI_STATUS_IDS aus UIInterface,*
-     * verwendet werden
+     * Zeigt einen Eingabe Dialog an
+     * 
+     * @param string
+     *            Die Nachricht, die angezeigt werden soll
+     * @return Der vom Benutzer eingegebene Text
      */
-    public void setGUIStatus(int id);
+    public String showUserInputDialog(String string);
 
-    public void displayMiniWarning(String shortWarn, String longWarn, int showtime);
+    /**
+     * Zeigt einen Eingabe Dialog an
+     * 
+     * @param string
+     *            Die Nachricht, die angezeigt werden soll
+     * @param def
+     *            default Wert
+     * @return Der vom Benutzer eingegebene Text
+     */
+    public String showUserInputDialog(String string,String def);
 
 }

@@ -44,37 +44,51 @@ import jd.utils.JDUtilities;
  */
 public class LinkInputDialog extends JDialog implements ActionListener {
     /**
+     * schließt das Fenster bei Klick auf x
+     */
+    class MyWindowListener extends WindowAdapter {
+		
+		@Override
+        public void windowClosing(WindowEvent e) {
+			
+			linksString = "";
+		    owner.setVisible(true);
+		    
+		}           
+	}
+
+	@SuppressWarnings("unused")
+    private static Logger     logger           = JDUtilities.getLogger();
+    
+    /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-
-	/**
-     * In dieses Textfeld werden die Links eingegeben
-     */
-    private JTextArea        textArea;
-    
-    private JButton           btnOK;
     
     private JButton           btnCancel;
     
-	/**
-     * Scrollpane für das Textfeld
-     */
-    private JScrollPane       textScrollPane;
+	private JButton           btnOK;
     
 	/**
+     * eingegebene Links
+     */
+    private String            linksString      = null;
+
+    /**
      * Elternfenster
      */
     private JFrame            owner;
 
     /**
-     * eingegebene Links
+     * In dieses Textfeld werden die Links eingegeben
      */
-    private String            linksString      = null;
+    private JTextArea        textArea;
 
-    @SuppressWarnings("unused")
-    private static Logger     logger           = JDUtilities.getLogger();
-
+    /**
+     * Scrollpane für das Textfeld
+     */
+    private JScrollPane       textScrollPane;
+    
     /**
      * Erstellt einen neuen Dialog.
      * 
@@ -124,7 +138,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         setLocation(JDUtilities.getCenterOfComponent(owner, this));
         setVisible(true);
     }
-    
+
     /**
      * wird bei Actionen ausgeführt
      */
@@ -146,6 +160,7 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         
     }
 
+
     /**
      * @return die eingegebenen Links
      */
@@ -162,19 +177,5 @@ public class LinkInputDialog extends JDialog implements ActionListener {
         }
         return linksString;
     }
-
-
-    /**
-     * schließt das Fenster bei Klick auf x
-     */
-    class MyWindowListener extends WindowAdapter {
-		
-		public void windowClosing(WindowEvent e) {
-			
-			linksString = "";
-		    owner.setVisible(true);
-		    
-		}           
-	}
     
 }

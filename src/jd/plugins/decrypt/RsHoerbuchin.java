@@ -34,49 +34,18 @@ import jd.utils.JDUtilities;
 public class RsHoerbuchin extends PluginForDecrypt {
     static private final String host = "rs.hoerbuch.in";
 
-    private String version = "1.0.0.2";
-    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_DE = Pattern.compile("http://rs\\.hoerbuch\\.in/de-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[\\w]{6}.html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_DE.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_DE.flags() | patternLink_UP.flags());
+    // private String version = "1.0.0.2";
 
     public RsHoerbuchin() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
- 
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -100,5 +69,43 @@ public class RsHoerbuchin extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+ 
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

@@ -44,15 +44,19 @@ public class UploadedTo {
         main.go();
     }
 
-    private RequestInfo ri;
-
     private int         counter = 0;
+
+    private String      hoster;
 
     private long        initTime;
 
     private Logger      logger  = JDUtilities.getLogger();
 
-    private String      hoster;
+    private RequestInfo ri;
+
+    private String getCaptchaName() {
+        return hoster + "_" + initTime + "_captcha_" + counter + ".jpg";
+    }
 
     private void go() {
         String link = "http://uploaded.to/?id=v1zo22";
@@ -66,10 +70,6 @@ public class UploadedTo {
 
         }
 
-    }
-
-    private String getCaptchaName() {
-        return hoster + "_" + initTime + "_captcha_" + counter + ".jpg";
     }
 
     private void load(File file, String link) {

@@ -27,25 +27,6 @@ import javax.swing.filechooser.FileFilter;
 
 public class UnixSplitFileFilter extends FileFilter
 {
-	public UnixSplitFileFilter()
-	{
-	}
-
-	public boolean accept (File f)
-	{
-		return (isSplitFile (f.getName()) || f.isDirectory());
-	}
-
-	public String getDescription()
-	{
-		return "Files split using Unix split";
-	}
-
-	public static boolean isSplitFile (String s)
-	{
-		return s.endsWith ("aa");
-	}
-
 	public static String getJoinedFileName (String s)
 	{
 		int i = s.lastIndexOf ("aa");
@@ -54,6 +35,27 @@ public class UnixSplitFileFilter extends FileFilter
 			return s;
 		else
 			return s.substring (0, i);
+	}
+
+	public static boolean isSplitFile (String s)
+	{
+		return s.endsWith ("aa");
+	}
+
+	public UnixSplitFileFilter()
+	{
+	}
+
+	@Override
+    public boolean accept (File f)
+	{
+		return (isSplitFile (f.getName()) || f.isDirectory());
+	}
+
+	@Override
+    public String getDescription()
+	{
+		return "Files split using Unix split";
 	}
 }
 

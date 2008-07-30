@@ -36,23 +36,29 @@ import jd.utils.JDUtilities;
  */
 public class WebUpdate extends Interaction implements Serializable {
     /**
-     * 
-     */
-    private static final long   serialVersionUID = 5345996658356704386L;
-
-    /**
      * serialVersionUID
      */
     private static final String NAME             = JDLocale.L("interaction.webupdate.name","WebUpdate");
 
+    /**
+     * 
+     */
+    private static final long   serialVersionUID = 5345996658356704386L;
+
     private WebUpdater          updater;
 
     
+    @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting WebUpdate");
         updater = new WebUpdater(null);
         start();
         return true;
+    }
+
+    @Override
+    public String getInteractionName() {
+        return NAME;
     }
 
     /**
@@ -64,19 +70,19 @@ public class WebUpdate extends Interaction implements Serializable {
         return updater;
     }
 
-    public String toString() {
-        return JDLocale.L("interaction.webupdate.toString","WebUpdate durchführen");
-    }
+    
+    @Override
+    public void initConfig() {}
 
     
-    public String getInteractionName() {
-        return NAME;
-    }
+    @Override
+    public void resetInteraction() {}
 
     
     /**
      * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
      */
+    @Override
     public void run() {
         ProgressController progress = new ProgressController("Webupdater",5);
         Vector<Vector<String>> files = updater.getAvailableFiles();
@@ -140,8 +146,8 @@ logger.info(updater.getLogger().toString());
     }
 
     
-    public void initConfig() {}
-
-    
-    public void resetInteraction() {}
+    @Override
+    public String toString() {
+        return JDLocale.L("interaction.webupdate.toString","WebUpdate durchführen");
+    }
 }

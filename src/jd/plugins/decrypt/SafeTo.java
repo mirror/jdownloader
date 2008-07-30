@@ -32,59 +32,25 @@ import jd.utils.JDUtilities;
 
 public class SafeTo extends PluginForDecrypt {
 
-    private static final String host = "safe.to";
+    private static final String FILE_ID = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
 
 
-
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     /*
      * Suchmasken
      */
     private static final String FRAME_URL = "<frame src=\"°\" scrolling=\"auto\" name=\"FrameRedirect\" noresize>";
-    private static final String FILE_ID = "<input type=\"submit\" name=\"dl\" value=\"Download\" onClick=\"popup_dl(°)\">";
+
+    private static final String host = "safe.to";
     private static final String PASSWORD = "<input type=\"password\" name=\"pw\" class=\"txt\">";
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public SafeTo() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    public String getVersion() {
-      String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<ArrayList<String>> fileIDs = null;
@@ -134,6 +100,47 @@ public class SafeTo extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+      String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
 }

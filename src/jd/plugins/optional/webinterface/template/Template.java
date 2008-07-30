@@ -79,42 +79,135 @@ import jd.plugins.optional.webinterface.template.Tmpl.Parsers.Parser;
  */
 public class Template 
 {
+    private static boolean boolify(Object o)
+    {
+        String s;
+        if(o.getClass().getName().endsWith(".Boolean"))
+            return ((Boolean)o).booleanValue();
+        else if(o.getClass().getName().endsWith(".String"))
+            s = (String)o;
+        else
+            s = o.toString();
+
+        if(s.equals("0") || s.equals("") || s.equals("false"))
+            return false;
+        return true;
+    }
+    private static int intify(Object o)
+    {
+        String s;
+        if(o.getClass().getName().endsWith(".Integer"))
+            return ((Integer)o).intValue();
+        else if(o.getClass().getName().endsWith(".String"))
+            s = (String)o;
+        else
+            s = o.toString();
+
+        try {
+            return Integer.parseInt(s);
+        } catch(NumberFormatException nfe) {
+            return 0;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+	private static Vector<Hashtable<String, Object>> lowerCaseAll(Vector<?> v)
+    {
+        Vector<Hashtable<String, Object>> v2 = new Vector<Hashtable<String, Object>>();
+        for(Enumeration<?> e = v.elements(); e.hasMoreElements(); ) {
+            Hashtable<String, Object> h = (Hashtable<String, Object>)e.nextElement();
+            if(h == null) {
+                v2.addElement(h);
+                continue;
+            }
+            Hashtable<String, Object> h2 = new Hashtable<String, Object>();
+            for(Enumeration<String> e2 = h.keys(); e2.hasMoreElements(); ) {
+                String key = (String)e2.nextElement();
+                Object value = h.get(key);
+                String value_type = value.getClass().getName();
+                Util.debug_print("to lower case: " + key + "(" + value_type + ")");
+                if(value_type.endsWith(".Vector"))
+                    value = lowerCaseAll((Vector<?>)value);
+                h2.put(key.toLowerCase(), value);
+            }
+            v2.addElement(h2);
+        }
+        return v2;
+    }
+    private static String stringify(boolean b)
+    {
+        if(b)
+            return "1";
+        else
+            return "";
+    }
     private If __template__ = new If("__template__");
-    private Hashtable<String, Object> params = new Hashtable<String, Object>();
-
-    private boolean strict = true;
-    private boolean die_on_bad_params = false;
-    private boolean global_vars = false;
-    private boolean case_sensitive = false;
-    private boolean loop_context_vars = false;
-    private boolean debug = false;
-    private boolean no_includes = false;
-    private boolean search_path_on_include = false;
-    private int max_includes = 11;
-    private String filename = null;
-    private String scalarref = null;
     private String [] arrayref = null;
-    private String [] path = null;
-    private Reader filehandle = null;
-    private Filter [] filters = null;
-
+    private boolean case_sensitive = false;
+    private boolean debug = false;
+    private boolean die_on_bad_params = false;
     private Stack<Element> elements = new Stack<Element>();
+    private Reader filehandle = null;
+    private String filename = null;
+    private Filter [] filters = null;
+    private boolean global_vars = false;
+    private boolean loop_context_vars = false;
+    private int max_includes = 11;
+    private boolean no_includes = false;
+
+    private Hashtable<String, Object> params = new Hashtable<String, Object>();
     private Parser parser;
     
     
 
+    private String [] path = null;
+
+    private String scalarref = null;
+
+    private boolean search_path_on_include = false;
+
+    private boolean strict = true;
+
     /**
-     * Initialises a new HTML.Template object with the contents of
-     * the given file.
+     * Initialises a new Template object, using the values in the
+     * Hashtable args as defaults.
+     * <p>
+     * The parameters passed are the same as in the Template(Object [])
+     * constructor. Each with its own value.  Any one of filename, 
+     * scalarref or arrayref must be passed.
+     * <p>
+     * Eg:
+     * <pre>
+     *  Hashtable args = new Hashtable();
+     *  args.put("filename", "my_template.tmpl");
+     *  args.put("case_sensitive", "true");
+     *  args.put("loop_context_vars", Boolean.TRUE);
+     *  // args.put("max_includes", "5");
+     *  args.put("max_includes", new Integer(5));
      *
-     * @param filename          a string containing the name of 
-     *                  the file to be used as a 
-     *                  template.  This may be an 
-     *                  absolute or relative path to a 
-     *                  template file.
+     *  Template t = new Template(args);
+     * </pre>
+     * <p>
+     * The above code creates a new Template object, initialising
+     * its input file to my_template.tmpl, turning on case_sensitive
+     * parameter matching, and the loop context variables __FIRST__,
+     * __LAST__, __ODD__ and __INNER__, and restricting maximum depth of 
+     * includes to five.
+     * <p>
+     * Parameter values that take boolean values may either be a String
+     * containing the words true/false, or the Boolean values Boolean.TRUE
+     * and Boolean.FALSE.  Numeric values may be Strings, or Integers.
      *
+     * @since 0.0.10
+     *
+     * @param args      a Hashtable of name/value pairs to initialise
+     *          this template with.  Valid values are the same
+     *          as in the Template(Object []) constructor.
+     *          
      * @throws FileNotFoundException    If the file specified does not 
-     *                  exist.
+     *                  exist or no filename is passed.
+     * @throws IllegalArgumentException If an unknown parameter is
+     *                  passed.
      * @throws IllegalStateException    If &lt;tmpl_include&gt; is
      *                  used when no_includes is in
      *                  effect.
@@ -122,16 +215,23 @@ public class Template
      *                  occurred while reading the 
      *                  template.
      *
-     * @deprecated No replacement.  You should use either
-     *              {@link #Template(Object [])} or
-     *              {@link #Template(Hashtable)}
+     * @see #Template(Object [])
      */
-    public Template(String filename)
-            throws FileNotFoundException, 
+    public Template(Hashtable<?, ?> args)
+            throws FileNotFoundException,
+                IllegalArgumentException,
                 IllegalStateException,
                 IOException
+                
     {
-        this.filename = filename;
+        Enumeration<?> e = args.keys();
+        while(e.hasMoreElements()) {
+            String key = (String)e.nextElement();
+            Object value = args.get(key);
+
+            parseParam(key, value);
+        }
+
         init();
     }
 
@@ -327,45 +427,17 @@ public class Template
     }
 
     /**
-     * Initialises a new Template object, using the values in the
-     * Hashtable args as defaults.
-     * <p>
-     * The parameters passed are the same as in the Template(Object [])
-     * constructor. Each with its own value.  Any one of filename, 
-     * scalarref or arrayref must be passed.
-     * <p>
-     * Eg:
-     * <pre>
-     *  Hashtable args = new Hashtable();
-     *  args.put("filename", "my_template.tmpl");
-     *  args.put("case_sensitive", "true");
-     *  args.put("loop_context_vars", Boolean.TRUE);
-     *  // args.put("max_includes", "5");
-     *  args.put("max_includes", new Integer(5));
+     * Initialises a new HTML.Template object with the contents of
+     * the given file.
      *
-     *  Template t = new Template(args);
-     * </pre>
-     * <p>
-     * The above code creates a new Template object, initialising
-     * its input file to my_template.tmpl, turning on case_sensitive
-     * parameter matching, and the loop context variables __FIRST__,
-     * __LAST__, __ODD__ and __INNER__, and restricting maximum depth of 
-     * includes to five.
-     * <p>
-     * Parameter values that take boolean values may either be a String
-     * containing the words true/false, or the Boolean values Boolean.TRUE
-     * and Boolean.FALSE.  Numeric values may be Strings, or Integers.
+     * @param filename          a string containing the name of 
+     *                  the file to be used as a 
+     *                  template.  This may be an 
+     *                  absolute or relative path to a 
+     *                  template file.
      *
-     * @since 0.0.10
-     *
-     * @param args      a Hashtable of name/value pairs to initialise
-     *          this template with.  Valid values are the same
-     *          as in the Template(Object []) constructor.
-     *          
      * @throws FileNotFoundException    If the file specified does not 
-     *                  exist or no filename is passed.
-     * @throws IllegalArgumentException If an unknown parameter is
-     *                  passed.
+     *                  exist.
      * @throws IllegalStateException    If &lt;tmpl_include&gt; is
      *                  used when no_includes is in
      *                  effect.
@@ -373,229 +445,17 @@ public class Template
      *                  occurred while reading the 
      *                  template.
      *
-     * @see #Template(Object [])
+     * @deprecated No replacement.  You should use either
+     *              {@link #Template(Object [])} or
+     *              {@link #Template(Hashtable)}
      */
-    public Template(Hashtable<?, ?> args)
-            throws FileNotFoundException,
-                IllegalArgumentException,
+    public Template(String filename)
+            throws FileNotFoundException, 
                 IllegalStateException,
                 IOException
-                
     {
-        Enumeration<?> e = args.keys();
-        while(e.hasMoreElements()) {
-            String key = (String)e.nextElement();
-            Object value = args.get(key);
-
-            parseParam(key, value);
-        }
-
+        this.filename = filename;
         init();
-    }
-
-    /**
-     * Prints the parsed template to the provided PrintWriter.
-     *
-     * @param out   the PrintWriter that this template will be printed
-     *      to
-     */
-    public void printTo(PrintWriter out) 
-    {
-        out.print(output());
-    }
-
-    /**
-     * Returns the parsed template as a String.
-     *
-     * @return  a string containing the parsed template
-     */
-    public String output()
-    {
-        return __template__.parse(params);
-    }
-
-    /**
-     * Sets the values of parameters in this template from a Hashtable.
-     *
-     * @param params    a Hashtable containing name/value pairs for
-     *          this template.  Keys in this hashtable must
-     *          be Strings and values may be either Strings
-     *          or Vectors.
-     *          <p>
-     *          Parameter names are currently not case
-     *          sensitive.
-     *          <p>
-     *          Parameter names can contain only letters, 
-     *          digits, ., /, +, - and _ characters.
-     *          <p>
-     *          Parameter names starting and ending with
-     *          a double underscore are not permitted.
-     *          eg: <code>__myparam__</code> is illegal.
-     *
-     * @return      the number of parameters actually set.
-     *          Illegal parameters will not be set, but
-     *          no error/exception will be thrown.
-     */
-    public int setParams(Hashtable<?, ?> params) 
-    {
-        if(params == null || params.isEmpty())
-            return 0;
-        int count=0;
-        for(Enumeration<?> e = params.keys(); e.hasMoreElements();) {
-            Object key = e.nextElement();
-            if(key.getClass().getName().endsWith(".String")) {
-                Object value = params.get(key);
-                try {
-                    setParam((String)key, value);
-                    count++;
-                } catch (Exception pe) {
-                    // key was not a String or Vector
-                    // or key was null
-                    // don't increment count
-                }
-            }
-        }
-        if(count>0) {
-            Util.debug_print("Now dirty: set params");
-        }
-
-        return count;
-    }
-
-    /**
-     * Sets a single scalar parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are currently not case sensitive.
-     * @param value a String containing the value of this parameter 
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public String setParam(String name, String value)
-            throws IllegalArgumentException, NullPointerException
-    {
-        try {
-            return (String)setParam(name, (Object)value);
-        } catch(ClassCastException iae) {
-            return null;
-        }
-    }
-
-    /**
-     * Sets a single Integer parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are currently not case sensitive.
-     * @param value an Integer containing the value of this parameter   
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public Integer setParam(String name, Integer value)
-            throws IllegalArgumentException, NullPointerException
-    {
-        try {
-            return (Integer)setParam(name, (Object)value);
-        } catch(ClassCastException iae) {
-            return null;
-        }
-    }
-
-    /**
-     * Sets a single int parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are currently not case sensitive.
-     * @param value an int containing the value of this parameter   
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public int setParam(String name, int value)
-            throws IllegalArgumentException, NullPointerException
-    {
-        return setParam(name, new Integer(value)).intValue();
-    }
-
-    /**
-     * Sets a single boolean parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are currently not case sensitive.
-     * @param value a boolean containing the value of this parameter    
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public boolean setParam(String name, boolean value)
-            throws IllegalArgumentException, NullPointerException
-    {
-        return setParam(name, new Boolean(value)).booleanValue();
-    }
-
-    /**
-     * Sets a single Boolean parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are currently not case sensitive.
-     * @param value a Boolean containing the value of this parameter    
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public Boolean setParam(String name, Boolean value)
-            throws IllegalArgumentException, NullPointerException
-    {
-        try {
-            return (Boolean)setParam(name, (Object)value);
-        } catch(ClassCastException iae) {
-            return null;
-        }
-    }
-
-    /**
-     * Sets a single list parameter in this template.
-     *
-     * @param name  a String containing the name of this parameter.
-     *      Parameter names are not currently case sensitive.
-     * @param value a Vector containing a list of Hashtables of parameters
-     *
-     * @return              the value of the parameter set
-     * @throws IllegalArgumentException     if the parameter name contains
-     *                  illegal characters
-     * @throws NullPointerException     if the parameter name is null
-     *
-     * @see #setParams(Hashtable)
-     */
-    public Vector<?> setParam(String name, Vector<?> value) 
-            throws IllegalArgumentException, NullPointerException
-    {
-        try {
-            return (Vector<?>)setParam(name, (Object)value);
-        } catch(ClassCastException iae) {
-            return null;
-        }
     }
 
     /**
@@ -628,6 +488,175 @@ public class Template
             return params.get(name.toLowerCase());
     }
 
+    private void init()
+            throws FileNotFoundException, 
+                IllegalStateException,
+                IOException
+    {
+        if(this.filename == null && 
+                this.scalarref == null &&
+                this.arrayref == null &&
+                this.filehandle == null)
+            throw new FileNotFoundException("template filename required");
+        
+        Util.debug = this.debug;
+
+        params.put("__template__", "true");
+
+        String [] parser_params = {
+            "case_sensitive",   stringify(case_sensitive),
+            "strict",       stringify(strict),
+            "loop_context_vars",    stringify(loop_context_vars),
+            "global_vars",      stringify(global_vars)
+        };
+
+        parser = new Parser(parser_params);
+
+        if(this.filename != null)
+            read_file(filename);
+        else if(this.arrayref != null)
+            read_line_array(this.arrayref);
+        else if(this.scalarref != null)
+            read_line(this.scalarref);
+        else if(this.filehandle != null)
+            read_fh(this.filehandle);
+
+        if(!elements.empty())
+            System.err.println("stack not empty");
+    }
+
+    private BufferedReader openFile(String filename)
+            throws FileNotFoundException
+    {
+        boolean add_path=true;
+
+        if(!elements.empty() && !search_path_on_include)
+            add_path=false;
+
+        if(filename.startsWith("/"))
+            add_path=false;
+
+        if(this.path == null)
+            add_path=false;
+
+        Util.debug_print("open " + filename);
+        if(!add_path)
+            return new BufferedReader(new FileReader(filename));
+
+        BufferedReader br=null;
+        
+        for(int i=0; i<this.path.length; i++) {
+            try {
+                Util.debug_print("trying " + this.path[i] +
+                        "/" + filename);
+                br = new BufferedReader(
+                    new FileReader(
+                        this.path[i] + "/" + filename
+                    )
+                );
+                break;
+            } catch (FileNotFoundException fnfe) {
+            }
+        }
+
+        if(br == null)
+            throw new FileNotFoundException(filename);
+
+        return br;
+    }
+
+    /**
+     * Returns the parsed template as a String.
+     *
+     * @return  a string containing the parsed template
+     */
+    public String output()
+    {
+        return __template__.parse(params);
+    }
+
+    private Element parseLine(String line, Element e)
+            throws FileNotFoundException,
+                IllegalStateException,
+                IOException, 
+                EmptyStackException
+    {
+        Vector<?> parts;
+
+        parts = parser.parseLine(line);
+        Util.debug_print("Items: " + parts.size());
+
+        for(Enumeration<?> pt = parts.elements(); pt.hasMoreElements();) 
+        {
+            Object o = pt.nextElement();
+            
+            if(o.getClass().getName().endsWith(".String"))
+            {
+                if(((String)o).equals(""))
+                    continue;
+
+                e.add((String)o);
+                Util.debug_print("added: " +(String)o);
+                continue;
+            }
+                
+            // if we come here, then it is an element
+
+            Properties p = (Properties)o;
+            String type=p.getProperty("type");
+            Util.debug_print("adding element: " + type);
+
+            if(type.equals("include")) 
+            {
+                if(no_includes)
+                    throw new IllegalStateException(
+                        "<tmpl_include> not " +
+                        "allowed when " +
+                        "no_includes in effect"
+                    );
+                if(max_includes == 0) {
+                    throw new IndexOutOfBoundsException(
+                        "include too deep");
+                } else {
+                    // come here if positive 
+                    // or negative
+                    elements.push(e);
+                    read_file(p.getProperty("name"));
+                }
+            }
+            else if(type.equals("var"))
+            {
+                String name = p.getProperty("name");
+                String escape = p.getProperty("escape");
+                String def = p.getProperty("default");
+                Util.debug_print("name: " + name);
+                Util.debug_print("escape: " + escape);
+                Util.debug_print("default: " + def);
+                e.add(new Var(name, escape, def));
+            }
+            else if(type.equals("else")) 
+            {
+                Util.debug_print("adding branch");
+                ((Conditional)e).addBranch();
+            }
+            else if(p.getProperty("close").equals("true")) 
+            {
+                Util.debug_print("closing tag");
+                if(!type.equals(e.Type()))
+                    throw new EmptyStackException();
+
+                e = (Element)elements.pop();
+            } 
+            else
+            {
+                Element t = parser.getElement(p);
+                e.add(t);
+                elements.push(e);
+                e=t;
+            }
+        }
+        return e;
+    }
 
     private void parseParam(String key, Object value)
             throws IllegalStateException
@@ -728,189 +757,16 @@ public class Template
 
     }
 
-    private void init()
-            throws FileNotFoundException, 
-                IllegalStateException,
-                IOException
+
+    /**
+     * Prints the parsed template to the provided PrintWriter.
+     *
+     * @param out   the PrintWriter that this template will be printed
+     *      to
+     */
+    public void printTo(PrintWriter out) 
     {
-        if(this.filename == null && 
-                this.scalarref == null &&
-                this.arrayref == null &&
-                this.filehandle == null)
-            throw new FileNotFoundException("template filename required");
-        
-        Util.debug = this.debug;
-
-        params.put("__template__", "true");
-
-        String [] parser_params = {
-            "case_sensitive",   stringify(case_sensitive),
-            "strict",       stringify(strict),
-            "loop_context_vars",    stringify(loop_context_vars),
-            "global_vars",      stringify(global_vars)
-        };
-
-        parser = new Parser(parser_params);
-
-        if(this.filename != null)
-            read_file(filename);
-        else if(this.arrayref != null)
-            read_line_array(this.arrayref);
-        else if(this.scalarref != null)
-            read_line(this.scalarref);
-        else if(this.filehandle != null)
-            read_fh(this.filehandle);
-
-        if(!elements.empty())
-            System.err.println("stack not empty");
-    }
-
-
-    private Element parseLine(String line, Element e)
-            throws FileNotFoundException,
-                IllegalStateException,
-                IOException, 
-                EmptyStackException
-    {
-        Vector<?> parts;
-
-        parts = parser.parseLine(line);
-        Util.debug_print("Items: " + parts.size());
-
-        for(Enumeration<?> pt = parts.elements(); pt.hasMoreElements();) 
-        {
-            Object o = pt.nextElement();
-            
-            if(o.getClass().getName().endsWith(".String"))
-            {
-                if(((String)o).equals(""))
-                    continue;
-
-                e.add((String)o);
-                Util.debug_print("added: " +(String)o);
-                continue;
-            }
-                
-            // if we come here, then it is an element
-
-            Properties p = (Properties)o;
-            String type=p.getProperty("type");
-            Util.debug_print("adding element: " + type);
-
-            if(type.equals("include")) 
-            {
-                if(no_includes)
-                    throw new IllegalStateException(
-                        "<tmpl_include> not " +
-                        "allowed when " +
-                        "no_includes in effect"
-                    );
-                if(max_includes == 0) {
-                    throw new IndexOutOfBoundsException(
-                        "include too deep");
-                } else {
-                    // come here if positive 
-                    // or negative
-                    elements.push(e);
-                    read_file(p.getProperty("name"));
-                }
-            }
-            else if(type.equals("var"))
-            {
-                String name = p.getProperty("name");
-                String escape = p.getProperty("escape");
-                String def = p.getProperty("default");
-                Util.debug_print("name: " + name);
-                Util.debug_print("escape: " + escape);
-                Util.debug_print("default: " + def);
-                e.add(new Var(name, escape, def));
-            }
-            else if(type.equals("else")) 
-            {
-                Util.debug_print("adding branch");
-                ((Conditional)e).addBranch();
-            }
-            else if(p.getProperty("close").equals("true")) 
-            {
-                Util.debug_print("closing tag");
-                if(!type.equals(e.Type()))
-                    throw new EmptyStackException();
-
-                e = (Element)elements.pop();
-            } 
-            else
-            {
-                Element t = parser.getElement(p);
-                e.add(t);
-                elements.push(e);
-                e=t;
-            }
-        }
-        return e;
-    }
-
-    private void read_file(String filename)
-            throws FileNotFoundException, 
-                IllegalStateException,
-                IOException, 
-                EmptyStackException
-    {
-        BufferedReader br=openFile(filename);
-
-        String line;
-
-        Element e = null;
-        if(elements.empty())
-            e = __template__;
-        else
-            e = (Element)elements.pop();
-
-        max_includes--;
-        while((line=br.readLine()) != null) {
-            Util.debug_print("Line: " + line);
-            e = parseLine(line+"\n", e);
-        }
-        max_includes++;
-
-        br.close();
-        br=null;
-
-    }
-    
-    private void read_line_array(String [] lines)
-            throws FileNotFoundException, 
-                IllegalStateException,
-                IOException, 
-                EmptyStackException
-    {
-
-        Element e = __template__;
-
-        max_includes--;
-        for(int i=0; i<lines.length; i++) {
-            Util.debug_print(lines[i]);
-            e = parseLine(lines[i], e);
-        }
-        max_includes++;
-    }
-
-    private void read_line(String lines)
-            throws FileNotFoundException, 
-                IllegalStateException,
-                IOException, 
-                EmptyStackException
-    {
-
-        Element e = __template__;
-
-        max_includes--;
-        StringTokenizer st = new StringTokenizer(lines, "\n");
-        while(st.hasMoreTokens()) {
-            String line = st.nextToken();
-            Util.debug_print(line);
-            e = parseLine(line+"\n", e);
-        }
-        max_includes++;
+        out.print(output());
     }
 
     private void read_fh(Reader handle)
@@ -940,7 +796,160 @@ public class Template
         br=null;
 
     }
+
+
+    private void read_file(String filename)
+            throws FileNotFoundException, 
+                IllegalStateException,
+                IOException, 
+                EmptyStackException
+    {
+        BufferedReader br=openFile(filename);
+
+        String line;
+
+        Element e = null;
+        if(elements.empty())
+            e = __template__;
+        else
+            e = (Element)elements.pop();
+
+        max_includes--;
+        while((line=br.readLine()) != null) {
+            Util.debug_print("Line: " + line);
+            e = parseLine(line+"\n", e);
+        }
+        max_includes++;
+
+        br.close();
+        br=null;
+
+    }
+
+    private void read_line(String lines)
+            throws FileNotFoundException, 
+                IllegalStateException,
+                IOException, 
+                EmptyStackException
+    {
+
+        Element e = __template__;
+
+        max_includes--;
+        StringTokenizer st = new StringTokenizer(lines, "\n");
+        while(st.hasMoreTokens()) {
+            String line = st.nextToken();
+            Util.debug_print(line);
+            e = parseLine(line+"\n", e);
+        }
+        max_includes++;
+    }
     
+    private void read_line_array(String [] lines)
+            throws FileNotFoundException, 
+                IllegalStateException,
+                IOException, 
+                EmptyStackException
+    {
+
+        Element e = __template__;
+
+        max_includes--;
+        for(int i=0; i<lines.length; i++) {
+            Util.debug_print(lines[i]);
+            e = parseLine(lines[i], e);
+        }
+        max_includes++;
+    }
+
+    /**
+     * Sets a single boolean parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are currently not case sensitive.
+     * @param value a boolean containing the value of this parameter    
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public boolean setParam(String name, boolean value)
+            throws IllegalArgumentException, NullPointerException
+    {
+        return setParam(name, new Boolean(value)).booleanValue();
+    }
+
+    /**
+     * Sets a single Boolean parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are currently not case sensitive.
+     * @param value a Boolean containing the value of this parameter    
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public Boolean setParam(String name, Boolean value)
+            throws IllegalArgumentException, NullPointerException
+    {
+        try {
+            return (Boolean)setParam(name, (Object)value);
+        } catch(ClassCastException iae) {
+            return null;
+        }
+    }
+    
+    /**
+     * Sets a single int parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are currently not case sensitive.
+     * @param value an int containing the value of this parameter   
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public int setParam(String name, int value)
+            throws IllegalArgumentException, NullPointerException
+    {
+        return setParam(name, new Integer(value)).intValue();
+    }
+
+    /**
+     * Sets a single Integer parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are currently not case sensitive.
+     * @param value an Integer containing the value of this parameter   
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public Integer setParam(String name, Integer value)
+            throws IllegalArgumentException, NullPointerException
+    {
+        try {
+            return (Integer)setParam(name, (Object)value);
+        } catch(ClassCastException iae) {
+            return null;
+        }
+    }
+
     private Object setParam(String name, Object value)
             throws ClassCastException,
                 NullPointerException, 
@@ -991,108 +1000,99 @@ public class Template
         return value;
     }
 
-    @SuppressWarnings("unchecked")
-	private static Vector<Hashtable<String, Object>> lowerCaseAll(Vector<?> v)
+    /**
+     * Sets a single scalar parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are currently not case sensitive.
+     * @param value a String containing the value of this parameter 
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public String setParam(String name, String value)
+            throws IllegalArgumentException, NullPointerException
     {
-        Vector<Hashtable<String, Object>> v2 = new Vector<Hashtable<String, Object>>();
-        for(Enumeration<?> e = v.elements(); e.hasMoreElements(); ) {
-            Hashtable<String, Object> h = (Hashtable<String, Object>)e.nextElement();
-            if(h == null) {
-                v2.addElement(h);
-                continue;
-            }
-            Hashtable<String, Object> h2 = new Hashtable<String, Object>();
-            for(Enumeration<String> e2 = h.keys(); e2.hasMoreElements(); ) {
-                String key = (String)e2.nextElement();
-                Object value = h.get(key);
-                String value_type = value.getClass().getName();
-                Util.debug_print("to lower case: " + key + "(" + value_type + ")");
-                if(value_type.endsWith(".Vector"))
-                    value = lowerCaseAll((Vector<?>)value);
-                h2.put(key.toLowerCase(), value);
-            }
-            v2.addElement(h2);
-        }
-        return v2;
-    }
-
-    private static boolean boolify(Object o)
-    {
-        String s;
-        if(o.getClass().getName().endsWith(".Boolean"))
-            return ((Boolean)o).booleanValue();
-        else if(o.getClass().getName().endsWith(".String"))
-            s = (String)o;
-        else
-            s = o.toString();
-
-        if(s.equals("0") || s.equals("") || s.equals("false"))
-            return false;
-        return true;
-    }
-
-    private static int intify(Object o)
-    {
-        String s;
-        if(o.getClass().getName().endsWith(".Integer"))
-            return ((Integer)o).intValue();
-        else if(o.getClass().getName().endsWith(".String"))
-            s = (String)o;
-        else
-            s = o.toString();
-
         try {
-            return Integer.parseInt(s);
-        } catch(NumberFormatException nfe) {
-            return 0;
+            return (String)setParam(name, (Object)value);
+        } catch(ClassCastException iae) {
+            return null;
         }
     }
 
-    private static String stringify(boolean b)
+    /**
+     * Sets a single list parameter in this template.
+     *
+     * @param name  a String containing the name of this parameter.
+     *      Parameter names are not currently case sensitive.
+     * @param value a Vector containing a list of Hashtables of parameters
+     *
+     * @return              the value of the parameter set
+     * @throws IllegalArgumentException     if the parameter name contains
+     *                  illegal characters
+     * @throws NullPointerException     if the parameter name is null
+     *
+     * @see #setParams(Hashtable)
+     */
+    public Vector<?> setParam(String name, Vector<?> value) 
+            throws IllegalArgumentException, NullPointerException
     {
-        if(b)
-            return "1";
-        else
-            return "";
+        try {
+            return (Vector<?>)setParam(name, (Object)value);
+        } catch(ClassCastException iae) {
+            return null;
+        }
     }
     
-    private BufferedReader openFile(String filename)
-            throws FileNotFoundException
+    /**
+     * Sets the values of parameters in this template from a Hashtable.
+     *
+     * @param params    a Hashtable containing name/value pairs for
+     *          this template.  Keys in this hashtable must
+     *          be Strings and values may be either Strings
+     *          or Vectors.
+     *          <p>
+     *          Parameter names are currently not case
+     *          sensitive.
+     *          <p>
+     *          Parameter names can contain only letters, 
+     *          digits, ., /, +, - and _ characters.
+     *          <p>
+     *          Parameter names starting and ending with
+     *          a double underscore are not permitted.
+     *          eg: <code>__myparam__</code> is illegal.
+     *
+     * @return      the number of parameters actually set.
+     *          Illegal parameters will not be set, but
+     *          no error/exception will be thrown.
+     */
+    public int setParams(Hashtable<?, ?> params) 
     {
-        boolean add_path=true;
-
-        if(!elements.empty() && !search_path_on_include)
-            add_path=false;
-
-        if(filename.startsWith("/"))
-            add_path=false;
-
-        if(this.path == null)
-            add_path=false;
-
-        Util.debug_print("open " + filename);
-        if(!add_path)
-            return new BufferedReader(new FileReader(filename));
-
-        BufferedReader br=null;
-        
-        for(int i=0; i<this.path.length; i++) {
-            try {
-                Util.debug_print("trying " + this.path[i] +
-                        "/" + filename);
-                br = new BufferedReader(
-                    new FileReader(
-                        this.path[i] + "/" + filename
-                    )
-                );
-                break;
-            } catch (FileNotFoundException fnfe) {
+        if(params == null || params.isEmpty())
+            return 0;
+        int count=0;
+        for(Enumeration<?> e = params.keys(); e.hasMoreElements();) {
+            Object key = e.nextElement();
+            if(key.getClass().getName().endsWith(".String")) {
+                Object value = params.get(key);
+                try {
+                    setParam((String)key, value);
+                    count++;
+                } catch (Exception pe) {
+                    // key was not a String or Vector
+                    // or key was null
+                    // don't increment count
+                }
             }
         }
+        if(count>0) {
+            Util.debug_print("Now dirty: set params");
+        }
 
-        if(br == null)
-            throw new FileNotFoundException(filename);
-
-        return br;
+        return count;
     }
 }

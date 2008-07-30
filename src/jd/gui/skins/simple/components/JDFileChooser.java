@@ -35,8 +35,8 @@ public class JDFileChooser extends JFileChooser {
 	 * 
 	 */
 	private static final long serialVersionUID = 3315263822025280362L;
-	private Logger logger;
-    private String fcID;
+	private String fcID;
+    private Logger logger;
 
     public JDFileChooser() {
         super();
@@ -64,6 +64,7 @@ public class JDFileChooser extends JFileChooser {
     //    
     //    
     // }
+    @Override
     public File getSelectedFile() {
        
         File ret = super.getSelectedFile();

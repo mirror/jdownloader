@@ -39,8 +39,8 @@ public class ConfigPanelUpdater extends ConfigPanel{
      * 
      */
     private static final long serialVersionUID = 4145243293360008779L;
-private Configuration configuration;
 private SubConfiguration config;
+private Configuration configuration;
    
     
     
@@ -54,13 +54,14 @@ public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface){
         load();
     
     }
-    public void save(){
-        logger.info("save");
-        this.saveConfigEntries();
-        config.save();
-     }
+    @Override
+    public String getName() {
+        
+        return JDLocale.L("gui.config.webupdate.name","Webupdate");
+    }
    
 
+    @Override
     public void initPanel() {
        
        config = JDUtilities.getSubConfig("WEBUPDATE");
@@ -81,15 +82,18 @@ public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface){
         add(panel, BorderLayout.NORTH);
     }
     
+    @Override
     public void load() {
   this.loadConfigEntries();
         
     }
     
     
-    public String getName() {
-        
-        return JDLocale.L("gui.config.webupdate.name","Webupdate");
-    }
+    @Override
+    public void save(){
+        logger.info("save");
+        this.saveConfigEntries();
+        config.save();
+     }
     
 }

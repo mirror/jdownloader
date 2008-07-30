@@ -41,11 +41,11 @@ public class ConfigPanelDownload extends ConfigPanel {
      */
     private static final long serialVersionUID = 4145243293360008779L;
 
+    private ConfigEntriesPanel cep;
+
     private SubConfiguration config;
 
     private ConfigContainer container;
-
-    private ConfigEntriesPanel cep;
 
     public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -56,6 +56,25 @@ public class ConfigPanelDownload extends ConfigPanel {
 
     }
 
+    public String getName() {
+
+        return JDLocale.L("gui.config.download.name", "Netzwerk/Download");
+    }
+
+    public void initPanel() {
+        setupContainer();
+        this.setLayout(new GridBagLayout());
+
+        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Download"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
+    }
+
+    public void load() {
+        this.loadConfigEntries();
+
+    }
+
+    
     public void save() {
         logger.info("save");
         cep.save();
@@ -63,6 +82,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         config.save();
     }
 
+    
     public void setupContainer() {
         this.container = new ConfigContainer(this);
         config = JDUtilities.getSubConfig("DOWNLOAD");
@@ -206,26 +226,6 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
 
-    }
-
-    public void initPanel() {
-        setupContainer();
-        this.setLayout(new GridBagLayout());
-
-        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Download"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
-    }
-
-    
-    public void load() {
-        this.loadConfigEntries();
-
-    }
-
-    
-    public String getName() {
-
-        return JDLocale.L("gui.config.download.name", "Netzwerk/Download");
     }
 
 }

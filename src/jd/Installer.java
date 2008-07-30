@@ -57,15 +57,15 @@ public class Installer extends JDialog implements ActionListener, WindowListener
 
     //private Logger            logger           = JDUtilities.getLogger();
 
-    private JPanel            panel;
-
-    protected Insets          insets           = new Insets(0, 0, 0, 0);
-
-    private BrowseFile        homeDir, downloadDir;
+    private  boolean    aborted          = false;
 
     private JButton           btnOK;
 
-    private  boolean    aborted          = false;
+    private BrowseFile        homeDir, downloadDir;
+
+    protected Insets          insets           = new Insets(0, 0, 0, 0);
+
+    private JPanel            panel;
 
     /**
      * 
@@ -108,40 +108,9 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         this.setVisible(true);
     }
 
-    public void windowClosing(WindowEvent e) {
-        this.aborted=true;
-        JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted","Installation aborted!"));
-        homeDir.setText("");
-        downloadDir.setText("");
-  
-        
-    }
+    public void actionPerformed(ActionEvent e) {
+  this.setVisible(false);
 
-    public void windowActivated(WindowEvent e) {}
-
-    public void windowClosed(WindowEvent e) {}
-
-    public void windowDeactivated(WindowEvent e) {}
-
-    public void windowDeiconified(WindowEvent e) {}
-
-    public void windowIconified(WindowEvent e) {}
-
-    public void windowOpened(WindowEvent e) {}
-
-    public String getHomeDir() {
-      
-        new File(homeDir.getText()).mkdirs();
-        if (!new File(homeDir.getText()).exists() || !new File(homeDir.getText()).canRead()) {
-            this.aborted=true;
-            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nInstallation Directory is not valid: ") + homeDir.getText());
-            homeDir.setText("");
-            downloadDir.setText("");
-            this.dispose();
-            System.exit(1);
-            return null;
-        }
-        return homeDir.getText();
     }
 
     public String getDownloadDir() {
@@ -159,13 +128,44 @@ public class Installer extends JDialog implements ActionListener, WindowListener
         return downloadDir.getText();
     }
 
-    public void actionPerformed(ActionEvent e) {
-  this.setVisible(false);
-
+    public String getHomeDir() {
+      
+        new File(homeDir.getText()).mkdirs();
+        if (!new File(homeDir.getText()).exists() || !new File(homeDir.getText()).canRead()) {
+            this.aborted=true;
+            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid","Installation aborted!\r\nInstallation Directory is not valid: ") + homeDir.getText());
+            homeDir.setText("");
+            downloadDir.setText("");
+            this.dispose();
+            System.exit(1);
+            return null;
+        }
+        return homeDir.getText();
     }
 
     public  boolean isAborted() {
         return aborted;
     }
+
+    public void windowActivated(WindowEvent e) {}
+
+    public void windowClosed(WindowEvent e) {}
+
+    public void windowClosing(WindowEvent e) {
+        this.aborted=true;
+        JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted","Installation aborted!"));
+        homeDir.setText("");
+        downloadDir.setText("");
+  
+        
+    }
+
+    public void windowDeactivated(WindowEvent e) {}
+
+    public void windowDeiconified(WindowEvent e) {}
+
+    public void windowIconified(WindowEvent e) {}
+
+    public void windowOpened(WindowEvent e) {}
 
 }

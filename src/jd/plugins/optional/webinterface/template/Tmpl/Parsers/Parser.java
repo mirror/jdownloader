@@ -44,9 +44,9 @@ import jd.plugins.optional.webinterface.template.Tmpl.Element.Unless;
 public class Parser
 {
 	private boolean case_sensitive=false;
-	private boolean strict=true;
-	private boolean loop_context_vars=false;
 	private boolean global_vars=false;
+	private boolean loop_context_vars=false;
+	private boolean strict=true;
 
 	public Parser()
 	{
@@ -91,6 +91,33 @@ public class Parser
 		}
 	}
 
+	private String cleanTag(String tag)
+			throws IllegalArgumentException
+	{
+		String test_tag = new String(tag);
+		// first remove < and >
+		if(test_tag.startsWith("<"))
+			test_tag = test_tag.substring(1);
+		if(test_tag.endsWith(">"))
+			test_tag = test_tag.substring(0, test_tag.length()-1);
+		else
+			throw new IllegalArgumentException("Tags must start " +
+					"and end on the same line");
+
+		// remove any leading !-- and trailing
+		// -- in case of comment style tags
+		if(test_tag.startsWith("!--")) {
+			test_tag=test_tag.substring(3);
+		}
+		if(test_tag.endsWith("--")) {
+			test_tag=test_tag.substring(0, test_tag.length()-2);
+		}
+		// then leading and trailing spaces
+		test_tag = test_tag.trim();
+
+		return test_tag;
+	}
+
 	public Element getElement(Properties p)
 			throws NoSuchElementException
 	{
@@ -105,6 +132,141 @@ public class Parser
 						loop_context_vars, global_vars);
 		else
 			throw new NoSuchElementException(type);
+	}
+
+	private Properties getTagProps(String tag)
+			throws IllegalArgumentException,
+				NullPointerException
+	{
+		Properties p = new Properties();
+
+		tag = cleanTag(tag);
+
+		Util.debug_print("clean: " + tag);
+		
+		if(tag.startsWith("/")) {
+			p.put("close", "true");
+			tag=tag.substring(1);
+		} else {
+			p.put("close", "");
+		}
+
+		Util.debug_print("close: " + p.getProperty("close"));
+		
+		p.put("type", getTagType(tag));
+
+		Util.debug_print("type: " + p.getProperty("type"));
+
+		if(p.getProperty("type").equals("else") ||
+				p.getProperty("close").equals("true"))
+			return p;
+
+		if(p.getProperty("type").equals("var"))
+			p.put("escape", "");
+
+		int sp = tag.indexOf(" ");
+		// if we've got so far, this must succeed
+
+		tag = tag.substring(sp).trim();
+		Util.debug_print("checking params: " + tag);
+
+		// now, we should have either name=value pairs
+		// or name space escape in case of old style vars
+
+		if(tag.indexOf("=") < 0) {
+			// no = means old style
+			// first will be var name
+			// second if any will be escape
+
+			sp = tag.toLowerCase().indexOf(" escape");
+			if(sp < 0) {
+				// no escape
+				p.put("name", tag);
+				p.put("escape", "0");
+			} else {
+				tag = tag.substring(0, sp);
+				p.put("name", tag);
+				p.put("escape", "html");
+			}
+		} else {
+			// = means name=value pairs.
+			// use a StringTokenizer
+			StringTokenizer st = new StringTokenizer(tag, " =");
+			while(st.hasMoreTokens()) {
+				String key, value;
+				key = st.nextToken().toLowerCase();
+				if(st.hasMoreTokens())
+					value = st.nextToken();
+				else if(key.equals("escape"))
+					value = "html";
+				else
+					throw new NullPointerException(
+						"parameter " + key + " has no value");
+
+				if(value.startsWith("\"") && 
+						value.endsWith("\""))
+					value = value.substring(1,
+							value.length()-1);
+				else if(value.startsWith("'") && 
+						value.endsWith("'"))
+					value = value.substring(1,
+							value.length()-1);
+
+				if(value.length()==0)
+					throw new NullPointerException(
+						"parameter " + key + " has no value");
+
+				if(key.equals("escape"))
+					value=value.toLowerCase();
+
+				p.put(key, value);
+			}
+		}
+
+		String name = p.getProperty("name");
+		// if not case sensitive, and not special variable, flatten case
+		// never flatten case for includes
+		if(!case_sensitive && !p.getProperty("type").equals("include")
+			&& !( name.startsWith("__") && name.endsWith("__") ))
+		{
+			p.put("name", name.toLowerCase());
+		}
+
+		if(!Util.isNameChar(name))
+			throw new IllegalArgumentException(
+				"parameter name may only contain " +
+				"letters, digits, ., /, +, -, _");
+		// __var__ is allowed in the template, but not in the
+		// code.  this is so that people can reference __FIRST__,
+		// etc
+
+		return p;
+	}
+
+	private String getTagType(String tag)
+	{
+		int sp = tag.indexOf(" ");
+		String tag_type="";
+		if(sp < 0) {
+			tag_type = tag.toLowerCase();
+		} else {
+			tag_type = tag.substring(0, sp).toLowerCase();
+		}
+		if(tag_type.startsWith("tmpl_"))
+			tag_type=tag_type.substring(5);
+
+		Util.debug_print("tag_type: " + tag_type);
+
+		if(tag_type.equals("var") ||
+				tag_type.equals("if") ||
+				tag_type.equals("unless") ||
+				tag_type.equals("loop") ||
+				tag_type.equals("include") ||
+				tag_type.equals("else")) {
+			return tag_type;
+		} else {
+			return null;
+		}
 	}
 
 	public Vector<Object> parseLine(String line)
@@ -225,167 +387,5 @@ public class Parser
 			parts.addElement(temp.toString());
 
 		return parts;
-	}
-
-	private String cleanTag(String tag)
-			throws IllegalArgumentException
-	{
-		String test_tag = new String(tag);
-		// first remove < and >
-		if(test_tag.startsWith("<"))
-			test_tag = test_tag.substring(1);
-		if(test_tag.endsWith(">"))
-			test_tag = test_tag.substring(0, test_tag.length()-1);
-		else
-			throw new IllegalArgumentException("Tags must start " +
-					"and end on the same line");
-
-		// remove any leading !-- and trailing
-		// -- in case of comment style tags
-		if(test_tag.startsWith("!--")) {
-			test_tag=test_tag.substring(3);
-		}
-		if(test_tag.endsWith("--")) {
-			test_tag=test_tag.substring(0, test_tag.length()-2);
-		}
-		// then leading and trailing spaces
-		test_tag = test_tag.trim();
-
-		return test_tag;
-	}
-
-	private String getTagType(String tag)
-	{
-		int sp = tag.indexOf(" ");
-		String tag_type="";
-		if(sp < 0) {
-			tag_type = tag.toLowerCase();
-		} else {
-			tag_type = tag.substring(0, sp).toLowerCase();
-		}
-		if(tag_type.startsWith("tmpl_"))
-			tag_type=tag_type.substring(5);
-
-		Util.debug_print("tag_type: " + tag_type);
-
-		if(tag_type.equals("var") ||
-				tag_type.equals("if") ||
-				tag_type.equals("unless") ||
-				tag_type.equals("loop") ||
-				tag_type.equals("include") ||
-				tag_type.equals("else")) {
-			return tag_type;
-		} else {
-			return null;
-		}
-	}
-
-	private Properties getTagProps(String tag)
-			throws IllegalArgumentException,
-				NullPointerException
-	{
-		Properties p = new Properties();
-
-		tag = cleanTag(tag);
-
-		Util.debug_print("clean: " + tag);
-		
-		if(tag.startsWith("/")) {
-			p.put("close", "true");
-			tag=tag.substring(1);
-		} else {
-			p.put("close", "");
-		}
-
-		Util.debug_print("close: " + p.getProperty("close"));
-		
-		p.put("type", getTagType(tag));
-
-		Util.debug_print("type: " + p.getProperty("type"));
-
-		if(p.getProperty("type").equals("else") ||
-				p.getProperty("close").equals("true"))
-			return p;
-
-		if(p.getProperty("type").equals("var"))
-			p.put("escape", "");
-
-		int sp = tag.indexOf(" ");
-		// if we've got so far, this must succeed
-
-		tag = tag.substring(sp).trim();
-		Util.debug_print("checking params: " + tag);
-
-		// now, we should have either name=value pairs
-		// or name space escape in case of old style vars
-
-		if(tag.indexOf("=") < 0) {
-			// no = means old style
-			// first will be var name
-			// second if any will be escape
-
-			sp = tag.toLowerCase().indexOf(" escape");
-			if(sp < 0) {
-				// no escape
-				p.put("name", tag);
-				p.put("escape", "0");
-			} else {
-				tag = tag.substring(0, sp);
-				p.put("name", tag);
-				p.put("escape", "html");
-			}
-		} else {
-			// = means name=value pairs.
-			// use a StringTokenizer
-			StringTokenizer st = new StringTokenizer(tag, " =");
-			while(st.hasMoreTokens()) {
-				String key, value;
-				key = st.nextToken().toLowerCase();
-				if(st.hasMoreTokens())
-					value = st.nextToken();
-				else if(key.equals("escape"))
-					value = "html";
-				else
-					throw new NullPointerException(
-						"parameter " + key + " has no value");
-
-				if(value.startsWith("\"") && 
-						value.endsWith("\""))
-					value = value.substring(1,
-							value.length()-1);
-				else if(value.startsWith("'") && 
-						value.endsWith("'"))
-					value = value.substring(1,
-							value.length()-1);
-
-				if(value.length()==0)
-					throw new NullPointerException(
-						"parameter " + key + " has no value");
-
-				if(key.equals("escape"))
-					value=value.toLowerCase();
-
-				p.put(key, value);
-			}
-		}
-
-		String name = p.getProperty("name");
-		// if not case sensitive, and not special variable, flatten case
-		// never flatten case for includes
-		if(!case_sensitive && !p.getProperty("type").equals("include")
-			&& !( name.startsWith("__") && name.endsWith("__") ))
-		{
-			p.put("name", name.toLowerCase());
-		}
-
-		if(!Util.isNameChar(name))
-			throw new IllegalArgumentException(
-				"parameter name may only contain " +
-				"letters, digits, ., /, +, -, _");
-		// __var__ is allowed in the template, but not in the
-		// code.  this is so that people can reference __FIRST__,
-		// etc
-
-		return p;
 	}
 }

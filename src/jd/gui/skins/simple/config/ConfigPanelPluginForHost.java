@@ -58,6 +58,148 @@ import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListener, MouseListener, DropTargetListener {
 
+    private class InternalTableModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return getValueAt(0, columnIndex).getClass();
+        }
+
+        public int getColumnCount() {
+            return 6;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+            case 0:
+                return JDLocale.L("gui.config.plugin.host.column_id2", "ID");
+            case 1:
+                return JDLocale.L("gui.config.plugin.host.column_host2", "Host");
+            case 2:
+                return JDLocale.L("gui.config.plugin.host.column_version2", "Version");
+            case 3:
+                return JDLocale.L("gui.config.plugin.host.column_coder2", "Ersteller");
+            case 4:
+                return JDLocale.L("gui.config.plugin.host.column_agb2", "AGB");
+            case 5:
+                return JDLocale.L("gui.config.plugin.host.column_agbChecked2", "akzeptieren");
+
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return pluginsForHost.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            switch (columnIndex) {
+            case 0:
+                return rowIndex;
+            case 1:
+                return pluginsForHost.elementAt(rowIndex).getPluginName();
+            case 2:
+                return pluginsForHost.elementAt(rowIndex).getVersion();
+            case 3:
+                return pluginsForHost.elementAt(rowIndex).getCoder();
+            case 4:
+                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.elementAt(rowIndex).getAGBLink());
+            case 5:
+                return pluginsForHost.elementAt(rowIndex).isAGBChecked();
+
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex > 2;
+        }
+
+        /*
+         * Don't need to implement this method unless your table's data can
+         * change.
+         */
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            // logger.info("Set value: " + value);
+            if ((Boolean) value) {
+                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost());
+
+                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+            } else {
+                pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+            }
+        }
+    }
+
+    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
+
+        private JLinkButton btn;
+
+        private boolean stop = false;
+
+        public void actionPerformed(ActionEvent e) {
+
+            this.stop = true;
+            table.tableChanged(new TableModelEvent(table.getModel()));
+            // this.stopCellEditing();
+
+        }
+
+        public void addCellEditorListener(CellEditorListener l) {
+
+        }
+
+        public void cancelCellEditing() {
+
+        }
+
+        public Object getCellEditorValue() {
+
+            return null;
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+           
+
+            this.btn = (JLinkButton) value;
+            btn.addActionListener(this);
+            return (JLinkButton) value;
+        }
+
+        public boolean isCellEditable(EventObject anEvent) {
+
+            return true;
+        }
+
+        public void removeCellEditorListener(CellEditorListener l) {
+
+        }
+
+        public boolean shouldSelectCell(EventObject anEvent) {
+
+            return false;
+        }
+
+        public boolean stopCellEditing() {
+
+            return stop;
+        }
+
+    }
+
+    private class JLinkButtonRenderer implements TableCellRenderer {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            return (JLinkButton) value;
+        }
+
+    }
+
     /**
      * 
      */
@@ -65,16 +207,17 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JButton btnEdit;
 
-    private Configuration configuration;
-
-    private JTable table;
-
-    private Vector<PluginForHost> pluginsForHost;
-
     // private PluginForHost currentPlugin;
+
+    private Configuration configuration;
 
     private PluginForHost draggedPlugin;
 
+    private Vector<PluginForHost> pluginsForHost;
+
+    private JTable table;
+
+    
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -87,32 +230,103 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    /**
-     * Lädt alle Informationen
-     */
-    public void load() {
+    public void actionPerformed(ActionEvent e) {
 
-    }
-
-    /**
-     * Speichert alle Änderungen auf der Maske
-     */
-    public void save() {
-        // Interaction[] tmp= new Interaction[interactions.size()];
-        PluginForHost plg;
-        Vector<String> priority = new Vector<String>();
-        for (int i = 0; i < pluginsForHost.size(); i++) {
-
-            plg = pluginsForHost.elementAt(i);
-            priority.add(plg.getHost());
-            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+        if (e.getSource() == btnEdit) {
+            editEntry();
 
         }
-        configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
 
     }
 
     
+    public void dragEnter(DropTargetDragEvent e) {
+        int[] draggedRows = table.getSelectedRows();
+        this.draggedPlugin = pluginsForHost.get(draggedRows[0]);
+
+    }
+
+    public void dragExit(DropTargetEvent dte) {
+       
+
+    }
+
+    public void dragOver(DropTargetDragEvent e) {
+       
+        int id = table.rowAtPoint(e.getLocation());
+
+        // table.setSelectionModel(newModel)
+        // table.getSelectionModel().clearSelection();
+        // table.getSelectionModel().addSelectionInterval(id, id);
+        pluginsForHost.remove(draggedPlugin);
+        pluginsForHost.add(id, draggedPlugin);
+        table.tableChanged(new TableModelEvent(table.getModel()));
+        table.getSelectionModel().clearSelection();
+        table.getSelectionModel().addSelectionInterval(id, id);
+    }
+
+    public void drop(DropTargetDropEvent e) {
+
+        // logger.info("insert at " + table.rowAtPoint(e.getLocation()));
+        try {
+
+            // e.dropComplete(true);
+        } catch (Exception exc) {
+            // e.rejectDrop();
+            exc.printStackTrace();
+        }
+
+    }
+
+    public void dropActionChanged(DropTargetDragEvent dtde) {
+       
+
+    }
+    // private class CheckBoxRenderer implements TableCellRenderer {
+    // public Component getTableCellRendererComponent(JTable table, Object
+    // value, boolean isSelected, boolean hasFocus, int row, int column) {
+    // logger.info("BLABLA"+value);
+    // return (JCheckBox) value;
+    // }
+    //
+    // }
+    //    
+    // private class LinkButtonRenderer implements TableCellRenderer {
+    // public Component getTableCellRendererComponent(JTable table, Object
+    // value, boolean isSelected, boolean hasFocus, int row, int column) {
+    // return (JLinkButton) value;
+    // }
+    //
+    // }
+
+    private void editEntry() {
+        PluginForHost plugin = getSelectedPlugin();
+
+        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+
+            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+
+        }
+
+    }
+
+    @Override
+    public String getName() {
+
+        return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");
+    }
+
+    private int getSelectedInteractionIndex() {
+        return table.getSelectedRow();
+    }
+
+    private PluginForHost getSelectedPlugin() {
+        int index = getSelectedInteractionIndex();
+        if (index < 0) return null;
+        return this.pluginsForHost.elementAt(index);
+    }
+
+    @Override
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable(); // new InternalTable();
@@ -205,56 +419,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    private int getSelectedInteractionIndex() {
-        return table.getSelectedRow();
-    }
-
-    
-    public String getName() {
-
-        return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");
-    }
-
-    private void openPopupPanel(ConfigPanel config) {
-        JPanel panel = new JPanel(new BorderLayout());
-
-        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
-
-        PluginForHost plugin = this.getSelectedPlugin();
-        // currentPlugin = plugin;
-        if (plugin == null) return;
-
-        JPanel topPanel = new JPanel();
-        panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(config, BorderLayout.CENTER);
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-        pop.setVisible(true);
-    }
-
-    private PluginForHost getSelectedPlugin() {
-        int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return this.pluginsForHost.elementAt(index);
-    }
-
-    public void actionPerformed(ActionEvent e) {
-
-        if (e.getSource() == btnEdit) {
-            editEntry();
-
-        }
-
-    }
-
-    private void editEntry() {
-        PluginForHost plugin = getSelectedPlugin();
-
-        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-
-            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
-
-        }
+    /**
+     * Lädt alle Informationen
+     */
+    @Override
+    public void load() {
 
     }
 
@@ -266,153 +435,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseEntered(MouseEvent e) {
-    }
-
-    public void mouseExited(MouseEvent e) {
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    private class InternalTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = 1155282457354673850L;
-
-        public Class<?> getColumnClass(int columnIndex) {
-            return getValueAt(0, columnIndex).getClass();
-        }
-
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex > 2;
-        }
-
-        public int getColumnCount() {
-            return 6;
-        }
-
-        public int getRowCount() {
-            return pluginsForHost.size();
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-
-            switch (columnIndex) {
-            case 0:
-                return rowIndex;
-            case 1:
-                return pluginsForHost.elementAt(rowIndex).getPluginName();
-            case 2:
-                return pluginsForHost.elementAt(rowIndex).getVersion();
-            case 3:
-                return pluginsForHost.elementAt(rowIndex).getCoder();
-            case 4:
-                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.elementAt(rowIndex).getAGBLink());
-            case 5:
-                return pluginsForHost.elementAt(rowIndex).isAGBChecked();
-
-            }
-            return null;
-        }
-
-        /*
-         * Don't need to implement this method unless your table's data can
-         * change.
-         */
-        public void setValueAt(Object value, int row, int col) {
-            // logger.info("Set value: " + value);
-            if ((Boolean) value) {
-                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost());
-
-                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            } else {
-                pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            }
-        }
-
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return JDLocale.L("gui.config.plugin.host.column_id2", "ID");
-            case 1:
-                return JDLocale.L("gui.config.plugin.host.column_host2", "Host");
-            case 2:
-                return JDLocale.L("gui.config.plugin.host.column_version2", "Version");
-            case 3:
-                return JDLocale.L("gui.config.plugin.host.column_coder2", "Ersteller");
-            case 4:
-                return JDLocale.L("gui.config.plugin.host.column_agb2", "AGB");
-            case 5:
-                return JDLocale.L("gui.config.plugin.host.column_agbChecked2", "akzeptieren");
-
-            }
-            return super.getColumnName(column);
-        }
-    }
-
-    private class JLinkButtonRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JLinkButton) value;
-        }
-
-    }
-
-    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
-
-        private JLinkButton btn;
-
-        private boolean stop = false;
-
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-           
-
-            this.btn = (JLinkButton) value;
-            btn.addActionListener(this);
-            return (JLinkButton) value;
-        }
-
-        public void addCellEditorListener(CellEditorListener l) {
-
-        }
-
-        public void cancelCellEditing() {
-
-        }
-
-        public Object getCellEditorValue() {
-
-            return null;
-        }
-
-        public boolean isCellEditable(EventObject anEvent) {
-
-            return true;
-        }
-
-        public void removeCellEditorListener(CellEditorListener l) {
-
-        }
-
-        public boolean shouldSelectCell(EventObject anEvent) {
-
-            return false;
-        }
-
-        public boolean stopCellEditing() {
-
-            return stop;
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            this.stop = true;
-            table.tableChanged(new TableModelEvent(table.getModel()));
-            // this.stopCellEditing();
-
-        }
-
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer
@@ -448,63 +470,49 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     // }
     // }
 
-    public void dragEnter(DropTargetDragEvent e) {
-        int[] draggedRows = table.getSelectedRows();
-        this.draggedPlugin = pluginsForHost.get(draggedRows[0]);
-
+    public void mouseExited(MouseEvent e) {
     }
 
-    public void dragExit(DropTargetEvent dte) {
-       
-
+    public void mousePressed(MouseEvent e) {
     }
 
-    public void dragOver(DropTargetDragEvent e) {
-       
-        int id = table.rowAtPoint(e.getLocation());
-
-        // table.setSelectionModel(newModel)
-        // table.getSelectionModel().clearSelection();
-        // table.getSelectionModel().addSelectionInterval(id, id);
-        pluginsForHost.remove(draggedPlugin);
-        pluginsForHost.add(id, draggedPlugin);
-        table.tableChanged(new TableModelEvent(table.getModel()));
-        table.getSelectionModel().clearSelection();
-        table.getSelectionModel().addSelectionInterval(id, id);
+    public void mouseReleased(MouseEvent e) {
     }
 
-    public void drop(DropTargetDropEvent e) {
+    private void openPopupPanel(ConfigPanel config) {
+        JPanel panel = new JPanel(new BorderLayout());
 
-        // logger.info("insert at " + table.rowAtPoint(e.getLocation()));
-        try {
+        // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
 
-            // e.dropComplete(true);
-        } catch (Exception exc) {
-            // e.rejectDrop();
-            exc.printStackTrace();
+        PluginForHost plugin = this.getSelectedPlugin();
+        // currentPlugin = plugin;
+        if (plugin == null) return;
+
+        JPanel topPanel = new JPanel();
+        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(config, BorderLayout.CENTER);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setVisible(true);
+    }
+
+    /**
+     * Speichert alle Änderungen auf der Maske
+     */
+    @Override
+    public void save() {
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        PluginForHost plg;
+        Vector<String> priority = new Vector<String>();
+        for (int i = 0; i < pluginsForHost.size(); i++) {
+
+            plg = pluginsForHost.elementAt(i);
+            priority.add(plg.getHost());
+            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+
         }
+        configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
 
     }
-
-    public void dropActionChanged(DropTargetDragEvent dtde) {
-       
-
-    }
-    // private class CheckBoxRenderer implements TableCellRenderer {
-    // public Component getTableCellRendererComponent(JTable table, Object
-    // value, boolean isSelected, boolean hasFocus, int row, int column) {
-    // logger.info("BLABLA"+value);
-    // return (JCheckBox) value;
-    // }
-    //
-    // }
-    //    
-    // private class LinkButtonRenderer implements TableCellRenderer {
-    // public Component getTableCellRendererComponent(JTable table, Object
-    // value, boolean isSelected, boolean hasFocus, int row, int column) {
-    // return (JLinkButton) value;
-    // }
-    //
-    // }
 
 }

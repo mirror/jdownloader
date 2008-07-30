@@ -47,11 +47,11 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
      *
      */
     private static final long serialVersionUID = -1543456288909278519L;
+    private Configuration configuration;
     /**
      * Instanz zum speichern der parameter
      */
     private Unrar unrar;
-    private Configuration configuration;
     public   ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.unrar = Unrar.getInstance();
@@ -60,19 +60,18 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         load();
     }
 
-    public void save() {
-
-        this.saveConfigEntries();
-
-        configuration.setProperty(Configuration.PARAM_UNRAR_INSTANCE, unrar);
-
+    public void actionPerformed(ActionEvent e) {
+        new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
     }
 
-    public void load() {
-        this.loadConfigEntries();
+    @Override
+    public String getName() {
+
+        return JDLocale.L("modules.unrar.name");
     }
 
     
+    @Override
     public void initPanel() {
         GUIConfigEntry ce;
         configuration = JDUtilities.getConfiguration();
@@ -137,12 +136,17 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
     }
 
     
-    public String getName() {
-
-        return JDLocale.L("modules.unrar.name");
+    @Override
+    public void load() {
+        this.loadConfigEntries();
     }
 
-    public void actionPerformed(ActionEvent e) {
-        new jdUnrarPasswordListDialog(((SimpleGUI) this.uiinterface).getFrame()).setVisible(true);
+    @Override
+    public void save() {
+
+        this.saveConfigEntries();
+
+        configuration.setProperty(Configuration.PARAM_UNRAR_INSTANCE, unrar);
+
     }
 }

@@ -35,11 +35,44 @@ public class Util
 {
 	public static boolean debug=false;
 
+	public static void debug_print(Object o)
+	{
+		debug_print(o.toString());
+	}
+
+	public static void debug_print(String msg)
+	{
+		if(!debug)
+			return;
+
+		System.err.println(msg);
+	}
+
 	public static String escapeHTML(String element)
 	{
 		String s = new String(element);	// don't change the original
 		String [] metas = {"&", "<", ">", "\""};
 		String [] repls = {"&amp;", "&lt;", "&gt;", "&quot;"};
+		for(int i = 0; i < metas.length; i++) {
+			int pos=0;
+			do {
+				pos = s.indexOf(metas[i], pos);
+				if(pos<0)
+					break;
+
+				s = s.substring(0, pos) + repls[i] + s.substring(pos+1);
+				pos++;
+			} while(pos >= 0);
+		}
+
+		return s;
+	}
+
+	public static String escapeQuote(String element)
+	{
+		String s = new String(element);	// don't change the original
+		String [] metas = {"\"", "'"};
+		String [] repls = {"\\\"", "\\'"};
 		for(int i = 0; i < metas.length; i++) {
 			int pos=0;
 			do {
@@ -66,7 +99,7 @@ public class Util
 			if(!Character.isLetterOrDigit(c) &&
 					no_escape.indexOf(c)<0) 
 			{
-				String h = Integer.toHexString((int)c);
+				String h = Integer.toHexString(c);
 				s.append("%");
 				if(h.length()<2)
 					s.append("0");
@@ -77,26 +110,6 @@ public class Util
 		}
 
 		return s.toString();
-	}
-
-	public static String escapeQuote(String element)
-	{
-		String s = new String(element);	// don't change the original
-		String [] metas = {"\"", "'"};
-		String [] repls = {"\\\"", "\\'"};
-		for(int i = 0; i < metas.length; i++) {
-			int pos=0;
-			do {
-				pos = s.indexOf(metas[i], pos);
-				if(pos<0)
-					break;
-
-				s = s.substring(0, pos) + repls[i] + s.substring(pos+1);
-				pos++;
-			} while(pos >= 0);
-		}
-
-		return s;
 	}
 
 	public static boolean isNameChar(char c)
@@ -113,18 +126,5 @@ public class Util
 					alt_valid.indexOf(s.charAt(i))<0)
 				return false;
 		return true;
-	}
-
-	public static void debug_print(String msg)
-	{
-		if(!debug)
-			return;
-
-		System.err.println(msg);
-	}
-
-	public static void debug_print(Object o)
-	{
-		debug_print(o.toString());
 	}
 }

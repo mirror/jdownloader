@@ -30,25 +30,34 @@ import jd.utils.Replacer;
 
 public class SimpleExecute extends Interaction implements Serializable, ActionListener {
 
+    public static final String CONFIGNAME = "INTERACTION_SIMPLEEXECUTE";
+	/**
+     * serialVersionUID
+     */
+    private static final String NAME = JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+    public static String PROPERTY_COMMAND = "PROPERTY_COMMAND";
+
+    private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
+    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
+
+    private static final String PROPERTY_USE_EXECUTE_IN = "PROPERTY_USE_EXECUTE_IN";
+    public static String PROPERTY_WAIT_TERMINATION = "PROPERTY_WAIT_TERMINATION";
+    private static final String PROPERTY_WAITTIME = "PROPERTY_WAITTIME";
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public static final String CONFIGNAME = "INTERACTION_SIMPLEEXECUTE";
-    public static String PROPERTY_COMMAND = "PROPERTY_COMMAND";
-
-    public static String PROPERTY_WAIT_TERMINATION = "PROPERTY_WAIT_TERMINATION";
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
-
-    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
-    private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
-    private static final String PROPERTY_WAITTIME = "PROPERTY_WAITTIME";
-    private static final String PROPERTY_USE_EXECUTE_IN = "PROPERTY_USE_EXECUTE_IN";
 
     
+    public void actionPerformed(ActionEvent e) {
+
+       
+        this.getConfig().requestSave();
+        this.doInteraction(null);
+    }
+
+    
+    @Override
     public boolean doInteraction(Object arg) {
 
         String command = Replacer.insertVariables(getStringProperty(PROPERTY_COMMAND));
@@ -75,21 +84,13 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
     }
 
     
-    public String toString() {
-        return NAME;
-    }
-
-    
+    @Override
     public String getInteractionName() {
         return NAME;
     }
 
     
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
-    }
-
-    
+    @Override
     public void initConfig() {
        
         ConfigEntry cfg;
@@ -119,14 +120,19 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
     }
 
     
+    @Override
     public void resetInteraction() {
     }
 
-    public void actionPerformed(ActionEvent e) {
+    
+    @Override
+    public void run() {
+        // Nichts zu tun. Interaction braucht keinen Thread
+    }
 
-       
-        this.getConfig().requestSave();
-        this.doInteraction(null);
+    @Override
+    public String toString() {
+        return NAME;
     }
 
 

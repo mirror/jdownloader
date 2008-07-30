@@ -6,33 +6,33 @@ import java.util.ArrayList;
 import jd.plugins.Plugin;
 
 public class MenuItem extends Property {
+    public static final int CONTAINER = 0;
+    public static final int NORMAL = 1;
+    public static final int SEPARATOR = 3;
     /**
      * 
      */
     private static final long serialVersionUID = 9205555751462125274L;
-    public static final int CONTAINER = 0;
-    public static final int NORMAL = 1;
     public static final int TOGGLE = 2;
-    public static final int SEPARATOR = 3;
+    private int actionID;
+    private ActionListener actionListener;
+    private boolean enabled=true;
     private int id = NORMAL;
     private ArrayList<MenuItem> items;
-    private String title;
-    private ActionListener actionListener;
     private Plugin plugin;
     private boolean selected;
-    private int actionID;
-    private boolean enabled=true;
+    private String title;
     public MenuItem(int id) {
         this(id, null, -1);
     }
-    public MenuItem(String title, int actionID) {
-        this(NORMAL, title, actionID);
-    }
-
     public MenuItem(int id, String title, int actionID) {
         this.id = id;
         this.actionID = actionID;
         this.title = title;
+    }
+
+    public MenuItem(String title, int actionID) {
+        this(NORMAL, title, actionID);
     }
 
     public void addMenuItem(MenuItem m) {
@@ -44,31 +44,18 @@ public class MenuItem extends Property {
 
     }
 
+    public MenuItem get(int i) {
+        if (items == null) return null;
+        return items.get(i);
+    }
+
+    public int getActionID() {
+
+        return this.actionID;
+    }
+
     public ActionListener getActionListener() {
         return actionListener;
-    }
-
-    public MenuItem setActionListener(ActionListener actionListener) {
-        this.actionListener = actionListener;
-        return this;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public MenuItem setTitle(String title) {
-        this.title = title;
-        return this;
-    }
-
-    public Plugin getPlugin() {
-        return plugin;
-    }
-
-    public MenuItem setPlugin(Plugin plugin) {
-        this.plugin = plugin;
-        return this;
     }
 
     public int getID() {
@@ -76,18 +63,8 @@ public class MenuItem extends Property {
         return id;
     }
 
-    public boolean isSelected() {
-
-        return selected;
-    }
-
-    public void setSelected(boolean selected) {
-        this.selected = selected;
-    }
-
-    public MenuItem get(int i) {
-        if (items == null) return null;
-        return items.get(i);
+    public Plugin getPlugin() {
+        return plugin;
     }
 
     public int getSize() {
@@ -96,15 +73,8 @@ public class MenuItem extends Property {
         return items.size();
     }
 
-    public MenuItem setItems(ArrayList<MenuItem> createMenuitems) {
-        this.items = createMenuitems;
-        return this;
-
-    }
-
-    public int getActionID() {
-
-        return this.actionID;
+    public String getTitle() {
+        return title;
     }
 
     public boolean isEnabled() {
@@ -112,8 +82,38 @@ public class MenuItem extends Property {
         return enabled;
     }
 
+    public boolean isSelected() {
+
+        return selected;
+    }
+
+    public MenuItem setActionListener(ActionListener actionListener) {
+        this.actionListener = actionListener;
+        return this;
+    }
+
     public MenuItem setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
+    }
+
+    public MenuItem setItems(ArrayList<MenuItem> createMenuitems) {
+        this.items = createMenuitems;
+        return this;
+
+    }
+
+    public MenuItem setPlugin(Plugin plugin) {
+        this.plugin = plugin;
+        return this;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
+    }
+
+    public MenuItem setTitle(String title) {
+        this.title = title;
         return this;
     }
 

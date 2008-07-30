@@ -36,24 +36,24 @@ import jd.utils.JDUtilities;
 import de.savemytube.flv.FLV;
 
 public class Youtube extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("\\< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" \\>", Pattern.CASE_INSENSITIVE);
-
-    static private final String HOST = "youtube.com";
-    static private final String PLUGIN_NAME = HOST;
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
+    static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
+    public static final int CONVERT_ID_3GP = 4;
     public static final int CONVERT_ID_AUDIO = 0;
-    public static final int CONVERT_ID_VIDEO = 1;
+
     public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
     public static final int CONVERT_ID_MP4 = 3;
-    public static final int CONVERT_ID_3GP = 4;
-
-    static private final Pattern FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
-    static private final Pattern CONVERT = Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
+    public static final int CONVERT_ID_VIDEO = 1;
     static private final Pattern DOWNLOADFILE = Pattern.compile("< youtubedl url=\".*?\" decrypted=\"(.*?)\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+
+    static private final String HOST = "youtube.com";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("\\< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" \\>", Pattern.CASE_INSENSITIVE);
+    static private final String PLUGIN_NAME = HOST;
+    static private final Pattern YouTubeURL = Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\"[0-9]+?\" >", Pattern.CASE_INSENSITIVE);
 
     public Youtube() {
         super();
@@ -62,28 +62,48 @@ public class Youtube extends PluginForHost {
     }
 
     
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+        return "http://youtube.com/t/terms";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return HOST;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        RequestInfo requestInfo;
+        try {
+            requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getFirstMatch()));
+            String name = new Regex(requestInfo, FILENAME).getFirstMatch();
+
+            downloadLink.setName(name);
+
+            if (name == null) return false;
+
+            return true;
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+        return true;
     }
 
     
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     
@@ -91,6 +111,24 @@ public class Youtube extends PluginForHost {
         
     
 
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 50;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public String getPluginNameExtension(DownloadLink link) {
         int convert = Integer.parseInt(new Regex(link.getDownloadURL(), CONVERT).getFirstMatch());
         switch (convert) {
@@ -108,6 +146,19 @@ public class Youtube extends PluginForHost {
         return null;
     }
 
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(final DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
@@ -156,6 +207,7 @@ public class Youtube extends PluginForHost {
         if (dl.startDownload()) {
 
             new Thread() {
+                @Override
                 public void run() {
                     ProgressController progress = new ProgressController(JDLocale.L("plugins.host.YouTube.convert.audio", "Konvertiere zu *.mp3") + " " + downloadLink.getName(), 3);
                     progress.increase(1);
@@ -203,51 +255,14 @@ public class Youtube extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public void reset() {
         // this.url = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
-    }
-
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        RequestInfo requestInfo;
-        try {
-            requestInfo = HTTP.getRequest(new URL(new Regex(downloadLink.getDownloadURL(), YouTubeURL).getFirstMatch()));
-            String name = new Regex(requestInfo, FILENAME).getFirstMatch();
-
-            downloadLink.setName(name);
-
-            if (name == null) return false;
-
-            return true;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        return true;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 50;
-    }
-
-    
+    @Override
     public void resetPluginGlobals() {
 
-    }
-
-    
-    public String getAGBLink() {
-        return "http://youtube.com/t/terms";
     }
 }

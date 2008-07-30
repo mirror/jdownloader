@@ -40,54 +40,54 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class JDAction extends AbstractAction{
+    public static final int ABOUT = 32;
+
+    public static final int APP_ALLOW_RECONNECT =  31;
+    public static final int APP_CES= 30;
+    public static final int APP_CLIPBOARD= 28;
+    public static final int APP_CONFIGURATION        = 18;
+    public static final int APP_EXIT                 = 16;
+    public static final int APP_INSTALL_JDU = 34;
+    public static final int APP_LOAD_CONTAINER       = 15;
+    public static final int APP_LOAD_DLC = 23;
+    public static final int APP_LOG                  = 17;
+    public static final int APP_PASSWORDLIST = 27;
+    public static final int APP_PAUSE_DOWNLOADS = 22;
+    public static final int APP_RECONNECT            = 19;
+
+    public static final int APP_SAVE_DLC = 24;
+    public static final int APP_SHOW_LOG             = 11;
+    public static final int APP_START_STOP_DOWNLOADS = 10;
+    public static final int APP_STOP_DOWNLOADS       = 12;
+    public static final int APP_TESTER= 25;
+    public static final int APP_UNRAR= 26;
+
+    public static final int APP_UPDATE               = 20;
+    //public static final int APP_SEARCH               = 21;
+
+    public static final int HELP = 29;
+
+    public static final int ITEMS_ADD                =  7;
+    public static final int ITEMS_DISABLE            =  5;
+    public static final int ITEMS_DND                =  9;
+    public static final int ITEMS_ENABLE             =  6;
+    public static final int ITEMS_MOVE_BOTTOM        =  4;
+
+    public static final int ITEMS_MOVE_DOWN          =  2;
+    public static final int ITEMS_MOVE_TOP           =  3;
+    public static final int ITEMS_MOVE_UP            =  1;
+
+    public static final int ITEMS_REMOVE             =  8;
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 7393495345332708426L;
 
-    public static final int ITEMS_MOVE_UP            =  1;
-    public static final int ITEMS_MOVE_DOWN          =  2;
-    public static final int ITEMS_MOVE_TOP           =  3;
-    public static final int ITEMS_MOVE_BOTTOM        =  4;
-    public static final int ITEMS_DISABLE            =  5;
-    public static final int ITEMS_ENABLE             =  6;
-    public static final int ITEMS_ADD                =  7;
-    public static final int ITEMS_REMOVE             =  8;
-    public static final int ITEMS_DND                =  9;
-    public static final int APP_START_STOP_DOWNLOADS = 10;
-    public static final int APP_SHOW_LOG             = 11;
-    public static final int APP_STOP_DOWNLOADS       = 12;
-
-    public static final int APP_LOAD_CONTAINER       = 15;
-    public static final int APP_EXIT                 = 16;
-    public static final int APP_LOG                  = 17;
-    public static final int APP_CONFIGURATION        = 18;
-    public static final int APP_RECONNECT            = 19;
-    public static final int APP_UPDATE               = 20;
-    //public static final int APP_SEARCH               = 21;
-
-    public static final int APP_PAUSE_DOWNLOADS = 22;
-
-    public static final int APP_LOAD_DLC = 23;
-
-    public static final int APP_SAVE_DLC = 24;
-    public static final int APP_TESTER= 25;
-    public static final int APP_UNRAR= 26;
-    public static final int APP_PASSWORDLIST = 27;
-    public static final int APP_CLIPBOARD= 28;
-
-    public static final int HELP = 29;
-    public static final int APP_CES= 30;
-    public static final int APP_ALLOW_RECONNECT =  31;
-
-    public static final int ABOUT = 32;
-
     public static final int WIKI = 33;
-
-    public static final int APP_INSTALL_JDU = 34;
-    private ActionListener actionListener;
-    private int actionID;
     private KeyStroke accelerator;
+    private int actionID;
+    private ActionListener actionListener;
     private String ressourceName;
     /**
      * Erstellt ein neues JDAction-Objekt
@@ -132,10 +132,10 @@ public class JDAction extends AbstractAction{
     public void actionPerformed(ActionEvent e) {
         actionListener.actionPerformed(new ActionEvent(e.getSource(),actionID,ressourceName));
     }
-    public int getActionID(){
-        return actionID;
-    }
-   public KeyStroke getAccelerator() {
-      return accelerator;
-   }
+    public KeyStroke getAccelerator() {
+          return accelerator;
+       }
+   public int getActionID(){
+    return actionID;
+}
 }

@@ -34,8 +34,6 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class JACTestrun {
-    @SuppressWarnings("unused")
-    private Logger logger = UTILITIES.getLogger();
     /**
      * @param args
      */
@@ -44,6 +42,8 @@ public class JACTestrun {
         JACTestrun main = new JACTestrun();
         main.go();
     }
+    @SuppressWarnings("unused")
+    private Logger logger = UTILITIES.getLogger();
     private void go(){
 
         @SuppressWarnings("unused")

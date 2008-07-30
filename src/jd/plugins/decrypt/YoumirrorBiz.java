@@ -36,11 +36,11 @@ import org.mozilla.javascript.Scriptable;
 public class YoumirrorBiz extends PluginForDecrypt {
 
     final static String HOST = "youmirror.biz";
-    private String VERSION = "4.0.2";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youmirror\\.biz/(.*/)?(file|folder)/.+", Pattern.CASE_INSENSITIVE);
-
-    private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
     private final static Pattern patternFileName = Pattern.compile("<div align=\"left\">(.*?) \\(.*\\) <br />");
+    static Pattern patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
+
+    static Pattern patternJSDESFile = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
+    static Pattern patternJsScript = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
 
     // <a href="#" id="contentlink_0"
     // rev="/links/76b5bb4380524456c61c1afb1638fbe7/" rel="linklayer"><img
@@ -52,47 +52,18 @@ public class YoumirrorBiz extends PluginForDecrypt {
     // 600);" id="dlok">share.gulli.com</a>
     static Pattern patternMirrorLink = Pattern.compile("<a href=\"[^\"]*\" onclick=\"createWnd\\('([^']*)[^>]*>([^<]+)</a>", Pattern.CASE_INSENSITIVE);
 
-    static Pattern patternJSDESFile = Pattern.compile("<script type=\"text/javascript\" src=\"/([^\"]+)\">");
+    private final static Pattern patternTableRowLink = Pattern.compile("<tr[^>]*>(.*?)</tr>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
-    static Pattern patternJsScript = Pattern.compile("<script[^>].*>(.*)\\n[^\\n]*=\\s*(des.*).\\n[^\\n]*document.write\\(.*?</script>", Pattern.DOTALL);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youmirror\\.biz/(.*/)?(file|folder)/.+", Pattern.CASE_INSENSITIVE);
 
-    static Pattern patternHosterIframe = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
+    // private String version = "4.0.2";
 
     public YoumirrorBiz() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    
-        
-   
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Context cx = null;
@@ -186,7 +157,43 @@ public class YoumirrorBiz extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    
+        
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

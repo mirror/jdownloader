@@ -26,72 +26,31 @@ import java.io.InputStream;
 
 public class CountingInputStream extends InputStream
 {
+	private int iLastRead = 0;
 	private InputStream is;
 	private long lRead = 0;
 	private long lTotal = -1;
-	private int iLastRead = 0;
 
 	public CountingInputStream (InputStream input)
 	{
 		is = input;
 	}
 
-	public int read() throws IOException
-	{
-		lRead++;
-		iLastRead = 1;
-		return is.read();
-	}
-
-	public int read (byte[] ba) throws IOException
-	{
-		iLastRead = is.read (ba);
-
-		lRead += iLastRead;
-		return iLastRead;
-	}
-
-	public int read (byte[] ba, int off, int len) throws IOException
-	{
-		iLastRead = is.read (ba, off, len);
-
-		lRead += iLastRead;
-		return iLastRead;
-	}
-
-	public int available() throws IOException
+	@Override
+    public int available() throws IOException
 	{
 		return is.available();
 	}
 
-	public void close() throws IOException
+	@Override
+    public void close() throws IOException
 	{
 		is.close();
 	}
 
-	public void mark (int i)
+	public long getDiff()
 	{
-		is.mark (i);
-	}
-
-	public boolean markSupported()
-	{
-		return is.markSupported();
-	}
-
-	public void reset() throws IOException
-	{
-		is.reset();
-	}
-
-	public long skip (long l) throws IOException
-	{
-		return is.skip (l);
-	}
-
-	public long getRead()
-	{
-		return lRead;
+		return lTotal - lRead;
 	}
 
 	public int getLastRead()
@@ -107,13 +66,63 @@ public class CountingInputStream extends InputStream
 		return i;
 	}
 
+	public long getRead()
+	{
+		return lRead;
+	}
+
+	@Override
+    public void mark (int i)
+	{
+		is.mark (i);
+	}
+
+	@Override
+    public boolean markSupported()
+	{
+		return is.markSupported();
+	}
+
+	@Override
+    public int read() throws IOException
+	{
+		lRead++;
+		iLastRead = 1;
+		return is.read();
+	}
+
+	@Override
+    public int read (byte[] ba) throws IOException
+	{
+		iLastRead = is.read (ba);
+
+		lRead += iLastRead;
+		return iLastRead;
+	}
+
+	@Override
+    public int read (byte[] ba, int off, int len) throws IOException
+	{
+		iLastRead = is.read (ba, off, len);
+
+		lRead += iLastRead;
+		return iLastRead;
+	}
+
+	@Override
+    public void reset() throws IOException
+	{
+		is.reset();
+	}
+
 	public void setTotal (long l)
 	{
 		lTotal = l;
 	}
 
-	public long getDiff()
+	@Override
+    public long skip (long l) throws IOException
 	{
-		return lTotal - lRead;
+		return is.skip (l);
 	}
 }

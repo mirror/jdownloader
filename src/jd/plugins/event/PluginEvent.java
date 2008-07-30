@@ -28,14 +28,30 @@ import jd.plugins.Plugin;
  */
 public class PluginEvent extends AWTEvent {
     /**
-     * serialVersionUID
+     * Drag & Drop soll aktiviert werden
      */
-    private static final long serialVersionUID             = -7243557276278230057L;
-    /**
-     * Neue Bytes wurden geladen bytes anzahl als parameter
-     */
-    //public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
+    public static final int   PLUGIN_CONTROL_DND           = 10;
    
+    /**
+     * JDownloader soll beendet werden
+     */
+    public static final int   PLUGIN_CONTROL_EXIT          = 11;
+    /**
+     * Die Verbindung sol getrennt werden
+     */
+    public static final int   PLUGIN_CONTROL_RECONNECT     = 13;
+    /**
+     * Die Konfiguration soll angezeigt werden
+     */
+    public static final int   PLUGIN_CONTROL_SHOW_CONFIG   = 9;
+    /**
+     * Die UI soll angezeigt werden
+     */
+    public static final int   PLUGIN_CONTROL_SHOW_UI       = 8;
+    /**
+     * Die Downloads sollen gestartet/gestoppt werden
+     */
+    public static final int   PLUGIN_CONTROL_START_STOP    = 12;
     /**
      * Links wurden entschlüsselt
      */
@@ -49,33 +65,13 @@ public class PluginEvent extends AWTEvent {
      */
     public static final int   PLUGIN_DOWNLOAD_SPEED        = 7;
     /**
-     * Die UI soll angezeigt werden
+     * serialVersionUID
      */
-    public static final int   PLUGIN_CONTROL_SHOW_UI       = 8;
+    private static final long serialVersionUID             = -7243557276278230057L;
     /**
-     * Die Konfiguration soll angezeigt werden
+     * Neue Bytes wurden geladen bytes anzahl als parameter
      */
-    public static final int   PLUGIN_CONTROL_SHOW_CONFIG   = 9;
-    /**
-     * Drag & Drop soll aktiviert werden
-     */
-    public static final int   PLUGIN_CONTROL_DND           = 10;
-    /**
-     * JDownloader soll beendet werden
-     */
-    public static final int   PLUGIN_CONTROL_EXIT          = 11;
-    /**
-     * Die Downloads sollen gestartet/gestoppt werden
-     */
-    public static final int   PLUGIN_CONTROL_START_STOP    = 12;
-    /**
-     * Die Verbindung sol getrennt werden
-     */
-    public static final int   PLUGIN_CONTROL_RECONNECT     = 13;
-    /**
-     * Plugin, von dem dieses Event ausgegangen ist
-     */
-    private Plugin            source;
+    //public static final int   PLUGIN_DOWNLOAD_BYTES        = 0;
     /**
      * ID des Events
      */
@@ -84,6 +80,10 @@ public class PluginEvent extends AWTEvent {
      * Optionaler Parameter
      */
     private Object            parameter;
+    /**
+     * Plugin, von dem dieses Event ausgegangen ist
+     */
+    private Plugin            source;
     /**
      * Erstellt ein neues PluginEvent
      * 
@@ -101,11 +101,12 @@ public class PluginEvent extends AWTEvent {
     public int getEventID() {
         return eventID;
     }
-    public Plugin getSource() {
-        return source;
-    }
     // Hat das einen grund warumd as getParameter1 heißt?
     public Object getParameter1() {
         return parameter;
+    }
+    @Override
+    public Plugin getSource() {
+        return source;
     }
 }

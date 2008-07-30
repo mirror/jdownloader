@@ -36,32 +36,6 @@ public class SAUGUS extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-  
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
     public String deca1(String input) {
         final String keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
         String output = "";
@@ -85,13 +59,13 @@ public class SAUGUS extends PluginForDecrypt {
             type2 = (char) (((get2 & 15) << 4) | (get3 >> 2));
             type3 = (char) (((get3 & 3) << 6) | get4);
 
-            output = output + (char) type1;
+            output = output + type1;
 
             if (get3 != 64) {
-                output = output + (char) type2;
+                output = output + type2;
             }
             if (get4 != 64) {
-                output = output + (char) type3;
+                output = output + type3;
             }
         } while (i < input.length());
 
@@ -99,6 +73,7 @@ public class SAUGUS extends PluginForDecrypt {
     }
 
     
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -133,8 +108,40 @@ public class SAUGUS extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+  
+
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

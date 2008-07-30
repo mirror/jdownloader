@@ -37,15 +37,14 @@ import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", Pattern.CASE_INSENSITIVE);
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.5";
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    static private final String CODER = "JD-Team";
     // static private final Pattern GETID =
     // Pattern.compile("http://[\\w\\.]*?filer.net/file([\\d]+)/.*?",
     // Pattern.CASE_INSENSITIVE);
     static private final String HOST = "filer.net";
-    static private final String PLUGIN_NAME = HOST;
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.5";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
-    static private final String CODER = "JD-Team";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", Pattern.CASE_INSENSITIVE);
     // static private final String FILE_NOT_FOUND = "Konnte Download nicht
     // finden";
     // static private final String FILE_NOT_FOUND2 = "Oops! We couldn't find
@@ -65,6 +64,7 @@ public class Filer extends PluginForHost {
     // static private final String WRONG_CAPTCHACODE = "<img
     // src=\"/captcha.png\"";
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
+    static private final String PLUGIN_NAME = HOST;
 
     // private String cookie;
     // private String dlink = null;
@@ -79,93 +79,12 @@ public class Filer extends PluginForHost {
     }
 
     
-    public String getCoder() {
-        return CODER;
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            try {
-                this.doPremium(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                this.doFree(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        }
-        return;
-    }
-
-    public void doPremium(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        String page = null;
-        Browser br = new Browser();
-        br.postPage("http://www.filer.net/login", "username=" + JDUtilities.urlEncode(user) + "&password=" + JDUtilities.urlEncode(pass) + "&commit=Einloggen");
-        page = br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(false);
-        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getFirstMatch();
-        br.getPage("http://www.filer.net/dl/" + id);
-
-        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
-        logger.info("Filename: " + getFileNameFormHeader(con));
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setParameter(20000l);
-            return;
-        }
-        downloadLink.setName(getFileNameFormHeader(con));
-
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-        dl.startDownload();
-
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
@@ -268,21 +187,59 @@ public class Filer extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
-    public void reset() {
-
-    }
-
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        String page = null;
+        Browser br = new Browser();
+        br.postPage("http://www.filer.net/login", "username=" + JDUtilities.urlEncode(user) + "&password=" + JDUtilities.urlEncode(pass) + "&commit=Einloggen");
+        page = br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
+        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getFirstMatch();
+        br.getPage("http://www.filer.net/dl/" + id);
+
+        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
+        int length = con.getContentLength();
+        downloadLink.setDownloadMax(length);
+        logger.info("Filename: " + getFileNameFormHeader(con));
+        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
+            return;
+        }
+        downloadLink.setName(getFileNameFormHeader(con));
+
+        dl = new RAFDownload(this, downloadLink, con);
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
+        dl.startDownload();
+
     }
 
     
+    @Override
+    public String getAGBLink() {
+       
+        return "http://www.filer.net/faq";
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    
+        
+    
+
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         String page;
@@ -317,7 +274,19 @@ public class Filer extends PluginForHost {
         return false;
     }
 
+    @Override
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
     
+    @Override
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -326,6 +295,62 @@ public class Filer extends PluginForHost {
         }
     }
 
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+            try {
+                this.doPremium(downloadLink);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        } else {
+            try {
+                this.doFree(downloadLink);
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+        }
+        return;
+    }
+
+    @Override
+    public void reset() {
+
+    }
+
+    
+    @Override
+    public void resetPluginGlobals() {
+       
+
+    }
+
+    
     private void setConfigElements() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
@@ -335,17 +360,5 @@ public class Filer extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account verwenden")));
         cfg.setDefaultValue(false);
 
-    }
-
-    
-    public void resetPluginGlobals() {
-       
-
-    }
-
-    
-    public String getAGBLink() {
-       
-        return "http://www.filer.net/faq";
     }
 }

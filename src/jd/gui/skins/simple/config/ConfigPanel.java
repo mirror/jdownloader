@@ -40,13 +40,13 @@ public abstract class ConfigPanel extends JPanel {
 
     protected Vector<GUIConfigEntry> entries          = new Vector<GUIConfigEntry>();
 
-    protected UIInterface          uiinterface;
-
-    protected JPanel               panel;
+    protected Insets               insets           = new Insets(1, 5, 1, 5);
 
     protected Logger               logger           = JDUtilities.getLogger();
 
-    protected Insets               insets           = new Insets(1, 5, 1, 5);
+    protected JPanel               panel;
+
+    protected UIInterface          uiinterface;
 
     ConfigPanel(UIInterface uiinterface) {
         int n = 2;
@@ -65,6 +65,26 @@ public abstract class ConfigPanel extends JPanel {
 
     }
 
+    @Override
+    public abstract String getName();
+
+    public abstract void initPanel();
+
+    public abstract void load();
+
+    public void loadConfigEntries() {
+        Iterator<GUIConfigEntry> it = entries.iterator();
+
+        while (it.hasNext()) {
+            GUIConfigEntry akt = it.next();
+
+            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) akt.setData(akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName()));
+
+        }
+    }
+
+    public abstract void save();
+
     public void saveConfigEntries() {
         Iterator<GUIConfigEntry> it = entries.iterator();
         Vector<SubConfiguration> subs= new   Vector<SubConfiguration>();
@@ -82,23 +102,4 @@ public abstract class ConfigPanel extends JPanel {
         Iterator<SubConfiguration> it2 = subs.iterator();
         while(it2.hasNext())it2.next().save();
     }
-
-    public void loadConfigEntries() {
-        Iterator<GUIConfigEntry> it = entries.iterator();
-
-        while (it.hasNext()) {
-            GUIConfigEntry akt = it.next();
-
-            if (akt.getConfigEntry().getPropertyInstance() != null && akt.getConfigEntry().getPropertyName() != null) akt.setData(akt.getConfigEntry().getPropertyInstance().getProperty(akt.getConfigEntry().getPropertyName()));
-
-        }
-    }
-
-    public abstract void initPanel();
-
-    public abstract void save();
-
-    public abstract void load();
-
-    public abstract String getName();
 }

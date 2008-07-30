@@ -37,25 +37,21 @@ public class ConfigPanelGeneral extends ConfigPanel {
      * serialVersionUID
      */
     private static final long serialVersionUID = 3383448498625377495L;
-    private JLabel lblHomeDir;
     private BrowseFile brsHomeDir;
     private Configuration configuration;
+    private JLabel lblHomeDir;
     public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
         initPanel();
         load();
     }
-    public void save() {
-        this.saveConfigEntries();
-
-        JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
-        if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
-            JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
-
-        }
+    @Override
+    public String getName() {
+        return JDLocale.L("gui.config.general.name", "Allgemein");
     }
     
+    @Override
     public void initPanel() {
         GUIConfigEntry ce;
    
@@ -98,11 +94,19 @@ public class ConfigPanelGeneral extends ConfigPanel {
         add(panel, BorderLayout.NORTH);
     }
     
+    @Override
     public void load() {
         this.loadConfigEntries();
     }
     
-    public String getName() {
-        return JDLocale.L("gui.config.general.name", "Allgemein");
+    @Override
+    public void save() {
+        this.saveConfigEntries();
+
+        JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
+        if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
+            JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
+
+        }
     }
 }

@@ -31,8 +31,8 @@ import jd.plugins.RequestInfo;
 public class RsXXXBlog extends PluginForDecrypt {
     static private final String host = "rs.xxx-blog.org";
 
-    private String version = "1.0.0.2";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.2";
 
     public RsXXXBlog() {
         super();
@@ -41,38 +41,7 @@ public class RsXXXBlog extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-   
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -85,5 +54,43 @@ public class RsXXXBlog extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
+    }
+
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+   
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

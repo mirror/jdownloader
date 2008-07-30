@@ -33,15 +33,26 @@ import jd.captcha.utils.UTILITIES;
  * @author JD-Team
  */
 public class LetterComperator {
+    private static final int ANBCOLOR = 0xff0000;
+    private static final int ANBFILTEREDCOLOR = 0xffcccc;
+    private static final int BNACOLOR = 0x0000ff;
+    private static final int BNAFILTEREDCOLOR = 0xccccff;
+    // Farbkonstanten für die überlagerungsbilder
+    private static final int BOTHCOLOR = 0x660099;
+    /**
+     * Gibt an ob ein Intersectionletter( schnittbilder) erstellt werden soll.
+     * Achtung langsam!
+     */
+    public static boolean CREATEINTERSECTIONLETTER = false;
+    /**
+     * Detection IDS Keine ERkennung. fehler!
+     */
+    public static final int ERROR = -1;
     // Ids die Auskunft über die Art der ERkennung geben
     /**
      * Detection IDS Erkennung durch einen Perfectmatch schwellwert
      */
     public static final int PERFECTMATCH = 1;
-    /**
-     * Detection IDS Keine ERkennung. fehler!
-     */
-    public static final int ERROR = -1;
     /**
      * Detection IDS Erkennung durch den quickscan
      */
@@ -50,98 +61,87 @@ public class LetterComperator {
      * Detection IDS Perfect Match durch den Quickscan
      */
     public static final int QUICKSCANPERFECTMATCH = 3;
-    // Farbkonstanten für die überlagerungsbilder
-    private static final int BOTHCOLOR = 0x660099;
-    private static final int BNACOLOR = 0x0000ff;
-    private static final int ANBCOLOR = 0xff0000;
-    private static final int BNAFILTEREDCOLOR = 0xccccff;
-    private static final int ANBFILTEREDCOLOR = 0xffcccc;
     // Buchstaben a und b. a ist das captachbild und b das datenbankbild
     private Letter a = null;
-    private Letter b = null;
 
-    private double valityPercent = 10000.0;
-    private JAntiCaptcha owner;
-    private JACScript jas;
-    /**
-     * Gibt an ob ein Intersectionletter( schnittbilder) erstellt werden soll.
-     * Achtung langsam!
-     */
-    public static boolean CREATEINTERSECTIONLETTER = false;
-    private double pixelErrorA = 0;
-    private double pixelErrorB = 0;
-    private double tmpErrorA;
-    private double tmpErrorB;
-    private double errorAWeight;
-    private double errorbWeight;
-    private int tmpPixelBButNotA;
-    private int tmpPixelAButNotB;
-    private int pixelANotB = 0;
-    private int pixelBNotA = 0;
-    private double coverageFaktorA = 0;
-    private double coverageFaktorB = 0;
-    private double tmpCoverageFaktorA;
-    private double tmpCoverageFaktorB;
-    private double coverageFaktorAWeight;
-    private double coverageFaktorBWeight;
-    private int tmpPixelBoth = 0;
-    private int pixelBoth = 0;
-    private int pixelAll;
-    private double totalPixelError = 0;
-    private double widthFaktor = 0;
-    private double heightFaktor = 0;
-    private double tmpHeightFaktor;
-    private double tmpWidthFaktor;
-    private double localHeightPercent;
-    private double localWidthPercent;
-    private int intersectionStartX = 0;
-    private int intersectionStartY = 0;
-    private int intersectionWidth = 0;
-    private int intersectionHeight = 0;
-    private Letter intersectionLetter = new Letter();
-    private int[][] intersectionGrid = new int[0][0];
-    private double intersectionDimensionWeight;
-    private int overlayNoiseSize;
-    private double reliability;
-    private Logger logger = UTILITIES.getLogger();
-    private int detectionType;
+    private Letter b = null;
+    private int[] bc = new int[2];
+    Vector<Vector<Integer>> bothElements = new Vector<Vector<Integer>>();
     private int bothElementsNum;
     private double cleftFaktor;
-    Vector<Integer> element;
-    Vector<Vector<Integer>> bothElements = new Vector<Vector<Integer>>();
-    int minCleftSize;
-    private int[][] elementGrid;
-    private int scanVarianceX = -1;
-    private int scanVarianceY = -1;
-    private int scanTime = -1;
-    private double tmpErrorTotal;
-
-    private int preScanFaktor;
-    private int preScanFilter;
-
-    private double tmpPreScanValue;
-    private double preValityPercent;
-    private int[] offset;
-    private int[] imgOffset;
-    public int[] intersectionDimension;
-    private int[] bc = new int[2];
-    private int scanStepX;
-    private int scanStepY;
-    private double tmpHeightAFaktor;
-    private double tmpWidthAFaktor;
-    private double intersectionAHeightWeight;
-    private double intersectionAWidthWeight;
-    private double intersectionAHeightFaktor;
-    private double intersectionAWidthFaktor;
-    private double prescanDivider;
+    private double coverageFaktorA = 0;
+    private double coverageFaktorAWeight;
+    private double coverageFaktorB = 0;
+    private double coverageFaktorBWeight;
+    private int detectionType;
     private double divider;
-
+    Vector<Integer> element;
+    private int[][] elementGrid;
+    private double errorAWeight;
+    private double errorbWeight;
+    private Object[] extensionCodeArguments = new Object[] { null,0.0 };
     private Method extensionCodeMethod = null;
     @SuppressWarnings("unchecked")
     private Class[] extensionCodeParameterTypes = new Class[] { LetterComperator.class ,Double.class};
-    private Object[] extensionCodeArguments = new Object[] { null,0.0 };
     private double extensionError = 0.0;
+    private double heightFaktor = 0;
+    private int[] imgOffset;
+    private double intersectionAHeightFaktor;
+    private double intersectionAHeightWeight;
+    private double intersectionAWidthFaktor;
+    private double intersectionAWidthWeight;
+    public int[] intersectionDimension;
+    private double intersectionDimensionWeight;
+    private int[][] intersectionGrid = new int[0][0];
+    private int intersectionHeight = 0;
+    private Letter intersectionLetter = new Letter();
+    private int intersectionStartX = 0;
+    private int intersectionStartY = 0;
+    private int intersectionWidth = 0;
+    private JACScript jas;
+    private double localHeightPercent;
+    private double localWidthPercent;
+    private Logger logger = UTILITIES.getLogger();
+    int minCleftSize;
+    private int[] offset;
+    private int overlayNoiseSize;
+    private JAntiCaptcha owner;
+    private int pixelAll;
+    private int pixelANotB = 0;
+    private int pixelBNotA = 0;
+    private int pixelBoth = 0;
+    private double pixelErrorA = 0;
+    private double pixelErrorB = 0;
+    private double prescanDivider;
+    private int preScanFaktor;
+    private int preScanFilter;
+    private double preValityPercent;
+
+    private double reliability;
+    private int scanStepX;
+
+    private int scanStepY;
+    private int scanTime = -1;
+    private int scanVarianceX = -1;
+    private int scanVarianceY = -1;
+    private double tmpCoverageFaktorA;
+    private double tmpCoverageFaktorB;
+    private double tmpErrorA;
+    private double tmpErrorB;
+    private double tmpErrorTotal;
     public double tmpExtensionError=0.0;
+    private double tmpHeightAFaktor;
+    private double tmpHeightFaktor;
+    private int tmpPixelAButNotB;
+    private int tmpPixelBButNotA;
+    private int tmpPixelBoth = 0;
+    private double tmpPreScanValue;
+
+    private double tmpWidthAFaktor;
+    private double tmpWidthFaktor;
+    private double totalPixelError = 0;
+    private double valityPercent = 10000.0;
+    private double widthFaktor = 0;
 
     /**
      * @param a
@@ -151,6 +151,465 @@ public class LetterComperator {
         super();
         this.a = a;
         this.b = b;
+
+    }
+
+    /**
+     * TRansformiert Koordinaten von letter a nach b
+     * 
+     * @param x
+     * @param y
+     * @param xx
+     * @param yy
+     * @return neue Koordinaten
+     */
+    private int[] coordinatesFromAToB(int x, int y, int xx, int yy, int[] con) {
+        con[0] = x - xx;
+        con[1] = y - yy;
+        return con;
+    }
+
+    /**
+     * @return the a
+     */
+    public Letter getA() {
+        return a;
+    }
+
+    /**
+     * @return the b
+     */
+    public Letter getB() {
+        return b;
+    }
+
+    /**
+     * 
+     * @return Anzahl der Elemente aus denen die Schnitttmenge besteht. je näher
+     *         an eins desto besser
+     */
+    public int getBothElementsNum() {
+        return bothElementsNum;
+    }
+
+    /**
+     * @return the coverageFaktorA
+     */
+    public double getCoverageFaktorA() {
+        return coverageFaktorA;
+    }
+
+    /**
+     * 
+     * @return the coverageFaktorB
+     */
+    public double getCoverageFaktorB() {
+        return coverageFaktorB;
+    }
+
+    /**
+     * @return Gibt den decoed value von b zurück
+     */
+    public String getDecodedValue() {
+        if (b == null || b.getDecodedValue() == null || b.getDecodedValue().length() != 1) return "-";
+        return this.b.getDecodedValue();
+    }
+
+    /**
+     * 
+     * @return Detection ID
+     */
+    public int getDetectionType() {
+        return this.detectionType;
+    }
+
+    public Letter getDifference() {
+        try {
+            int xx = this.imgOffset[0];
+            int yy = this.imgOffset[1];
+            int left = this.offset[0];
+            int top = this.offset[1];
+            int tmpIntersectionWidth = this.intersectionDimension[0];
+            int tmpIntersectionHeight = this.intersectionDimension[1];
+
+            // long starter=UTILITIES.getTimer();
+
+            int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
+
+            for (int x = 0; x < tmpIntersectionWidth; x++) {
+                for (int y = 0; y < tmpIntersectionHeight; y++) {
+                    g[x][y] = getA().getMaxPixelValue();
+                    int pixelType = getPixelType(x, y, xx, yy, left, top);
+
+                    switch (pixelType) {
+                    case 0:
+
+                        // g[x][y] = 0xcccccc;
+                        break;
+                    case 1:
+                        if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
+
+                            // g[x][y] = 0xff0000;
+                        } else {
+                            // g[x][y] = 0xff0000;
+
+                        }
+                        g[x][y] = 0;
+                        break;
+                    case 2:
+                        if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
+
+                            g[x][y] = 0;
+                        } else {
+                            g[x][y] = 0;
+                            // g[x][y] = 0x00ff00;
+                        }
+                        break;
+                    default:
+
+                    }
+                }
+            }
+
+            Letter ret = getA().createLetter();
+            int[] l = getA().getLocation();
+            ret.setLocation(new int[] { l[0] + left, l[1] + top });
+            ret.setGrid(g);
+            ret.clean();
+            return ret;
+        } catch (Exception e) {
+            return getA();
+        }
+
+    }
+
+    /**
+     * Rekursive Funktion, Die die große eines Elements zurückgibt. in den grids
+     * werden schon vergebene pixel abgelegt
+     * 
+     * @param x
+     * @param y
+     * @param xx
+     * @param yy
+     * @param left
+     * @param top
+     * @param pixelType
+     * @param elementGrid
+     * @param counter
+     * @return größe des Elements
+     */
+    private Integer getElement(int x, int y, int xx, int yy, int left, int top, int pixelType, int[][] elementGrid, Vector<Integer> counter) {
+        if (x < 0 || y < 0 || x >= elementGrid.length || elementGrid.length == 0 || y >= elementGrid[0].length) return null;
+        if (elementGrid[x][y] != 0) return null;
+        int pt = getPixelType(x, y, xx, yy, left, top);
+
+        if (pt == pixelType) {
+            counter.add(pixelType);
+            elementGrid[x][y] = pixelType + 100;
+            getElement(x - 1, y, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x - 1, y - 1, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x, y - 1, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x + 1, y - 1, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x + 1, y, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x + 1, y + 1, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x, y + 1, xx, yy, left, top, pt, elementGrid, counter);
+            getElement(x - 1, y + 1, xx, yy, left, top, pt, elementGrid, counter);
+        }
+        return null;
+    }
+
+    public double getExtensionError() {
+        return extensionError;
+    }
+
+    /**
+     * @return the heightPercent
+     */
+    public double getHeightFaktor() {
+        return heightFaktor;
+    }
+
+    /**
+     * 
+     * @return Kombinierter Wert aus Valityvalue und Reliability. Kann zur
+     *         berechnung der erkennungssicherheit verwendet werden
+     */
+    public double getIdentificationReliability() {
+        return getValityPercent() - getReliability();
+
+    }
+
+    public int[] getImgOffset() {
+        return imgOffset;
+    }
+
+    public Letter getIntersection() {
+        try {
+            // int xx = this.imgOffset[0];
+            // int yy = this.imgOffset[1];
+            int left = this.offset[0];
+            int top = this.offset[1];
+            int tmpIntersectionWidth = this.intersectionDimension[0];
+            int tmpIntersectionHeight = this.intersectionDimension[1];
+
+            // long starter=UTILITIES.getTimer();
+
+            int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
+
+            for (int x = 0; x < tmpIntersectionWidth; x++) {
+                for (int y = 0; y < tmpIntersectionHeight; y++) {
+                    g[x][y] = a.getPixelValue(x + left, y + top);
+
+                }
+            }
+
+            Letter ret = getA().createLetter();
+            int[] l = getA().getLocation();
+            ret.setLocation(new int[] { l[0] + left, l[1] + top });
+            ret.setGrid(g);
+            ret.clean();
+            return ret;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return getA();
+        }
+
+    }
+
+    public double getIntersectionAHeightFaktor() {
+        return intersectionAHeightFaktor;
+    }
+
+    public double getIntersectionAWidthFaktor() {
+        return intersectionAWidthFaktor;
+    }
+
+    public int[] getIntersectionDimension() {
+        return intersectionDimension;
+    }
+
+    /**
+     * @return the intersectionHeight
+     */
+    public int getIntersectionHeight() {
+        return intersectionHeight;
+    }
+
+    /**
+     * @return gibt einen Letterzurück, aus dem gut erkannt werden kann wie sich
+     *         das ergebniss zusammensetzt. gleiche antile werden lila gefärbt,
+     *         banteile rot und a anteile blau Um den Intersectionletter
+     *         auszugene muss zuerst setCreateIntersectionLetter(true)
+     *         ausgeführt werden
+     */
+    public Letter getIntersectionLetter() {
+
+        return this.intersectionLetter;
+    }
+
+    /**
+     * @return the intersectionStartX
+     */
+    public int getIntersectionStartX() {
+        return intersectionStartX;
+    }
+
+    /**
+     * @return the intersectionStartY
+     */
+    public int getIntersectionStartY() {
+        return intersectionStartY;
+    }
+
+    /**
+     * @return the intersectionWidth
+     */
+    public int getIntersectionWidth() {
+        return intersectionWidth;
+    }
+
+    public double getLocalHeightPercent() {
+        return localHeightPercent;
+    }
+
+    public int[] getOffset() {
+        return offset;
+    }
+
+    public JAntiCaptcha getOwner() {
+        return owner;
+    }
+
+    /**
+     * @return the pixelANotB
+     */
+    public int getPixelANotB() {
+        return pixelANotB;
+    }
+
+    /**
+     * @return the pixelBNotA
+     */
+    public int getPixelBNotA() {
+        return pixelBNotA;
+    }
+
+    /**
+     * @return the pixelBoth
+     */
+    public int getPixelBoth() {
+        return pixelBoth;
+    }
+
+    /**
+     * @return the pixelErrorA
+     */
+    public double getPixelErrorA() {
+        return pixelErrorA;
+    }
+
+    /**
+     * @return the pixelErrorB
+     */
+    public double getPixelErrorB() {
+        return pixelErrorB;
+    }
+
+    /**
+     * Gib zurück ob es sich um einen gemeinsammenpixel handekt oder nicht
+     * 
+     * @param x
+     * @param y
+     * @param xx
+     * @param yy
+     * @param left
+     * @param top
+     * @return -2(fehler)/ 0 gemeinsammer schwarzer Pixel /1 Pixel B aber nicht
+     *         a / 2 pixel A aber nicht B/ -1 beide weiß
+     */
+    private int getPixelType(int x, int y, int xx, int yy, int left, int top) {
+
+        int va = a.getPixelValue(x + left, y + top);
+        bc = coordinatesFromAToB(x + left, y + top, xx, yy, this.bc);
+        int vb = b.getPixelValue(bc[0], bc[1]);
+        if (va < 0 || vb < 0) { return -2; }
+        if (vb == 0 && va == 0) {
+            return 0;
+        } else if (vb == 0) {
+            return 1;
+        } else if (va == 0) {
+
+        return 2; }
+        return -1;
+    }
+
+    /**
+     * 
+     * @return Das Prescan Ergebniss
+     */
+    public double getPreValityPercent() {
+        return preValityPercent;
+    }
+
+    public double getRealValityValue() {
+        return this.valityPercent;
+    }
+
+    /**
+     * 
+     * @return ReliabilityValue. ABstand zum nächstbesten Buchstaben
+     */
+    public double getReliability() {
+        return reliability;
+    }
+
+    /**
+     * @return the scanTime
+     */
+    public int getScanTime() {
+        return scanTime;
+    }
+
+    /**
+     * @return the scanVarianceX
+     */
+    public int getScanVarianceX() {
+        if (scanVarianceX >= 0) return scanVarianceX;
+        return jas.getInteger("scanVarianceX");
+    }
+
+    /**
+     * @return the scanVarianceY
+     */
+    public int getScanVarianceY() {
+        if (scanVarianceX >= 0) return scanVarianceY;
+        return jas.getInteger("scanVarianceY");
+    }
+
+    public double getTmpExtensionError() {
+        return tmpExtensionError;
+    }
+
+    /**
+     * @return the totalPixelError
+     */
+    public double getTotalPixelError() {
+        return totalPixelError;
+    }
+
+    /**
+     * @return Prozentwert 0(gut) bis 100 (schlecht) der Übereinstimmung
+     */
+    public double getValityPercent() {
+        return Math.min(100.0, this.valityPercent);
+    }
+
+    /**
+     * @return the widthPercent
+     */
+    public double getWidthFaktor() {
+        return widthFaktor;
+    }
+
+    /**
+     * Prüft ob de aktuellepixel nachbarn mit dem selben Pixeltype hat
+     * 
+     * @param x
+     * @param y
+     * @param xx
+     * @param yy
+     * @param left
+     * @param top
+     * @param pixelType
+     * @return anzahl der Nachbarn
+     */
+    private int hasNeighbour(int x, int y, int xx, int yy, int left, int top, int pixelType) {
+
+        int ret = 0;
+        int faktor = 1;
+        for (int xt = -faktor; xt <= faktor; xt++) {
+            for (int yt = -faktor; yt <= faktor; yt++) {
+                if (xt == 0 && yt == 0) continue;
+                if (getPixelType(x + xt, y + yt, xx, yy, left, top) == pixelType) ret++;
+                ;
+
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * @return the createIntersectionLetter
+     */
+    public boolean isCreateIntersectionLetter() {
+        return CREATEINTERSECTIONLETTER;
+    }
+
+    /**
+     * Führt den Vergleichsvorgang aus
+     */
+    public void run() {
+        scan();
 
     }
 
@@ -288,66 +747,6 @@ public class LetterComperator {
 
     }
 
-    public void setValityPercent(double bestValue) {
-        this.valityPercent = bestValue;
-
-    }
-
-    private double scanPreIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
-        double tmpError;
-        int yStep = Math.max(1, tmpIntersectionHeight / (preScanFaktor + 1));
-
-        tmpPixelBoth = 0;
-        tmpPixelBButNotA = 0;
-        tmpPixelAButNotB = 0;
-        pixelAll = 0;
-        for (int y = yStep; y <= tmpIntersectionHeight - yStep; y += yStep) {
-            for (int x = 0; x < tmpIntersectionWidth; x++) {
-                pixelAll++;
-
-                int pixelType = getPixelType(x, y, xx, yy, left, top);
-                switch (pixelType) {
-                case 0:
-                    tmpPixelBoth++;
-                    break;
-                case 1:
-                    tmpPixelBButNotA++;
-                    break;
-                case 2:
-                    tmpPixelAButNotB++;
-                    break;
-                }
-            }
-        }
-        // logger.info((UTILITIES.getTimer() - startTime)+ "intersection
-        // scantime: "+(UTILITIES.getTimer()-starter2));
-        if (pixelAll > 0) {
-            tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
-            tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
-            tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
-            setLocalHeightPercent((double) tmpIntersectionHeight / (double) b.getHeight());
-            localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
-            tmpHeightFaktor = Math.pow(1.0 - getLocalHeightPercent(), 2);
-            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
-
-            // tmpHeightAFaktor = Math.pow(1.0 - (double) tmpIntersectionHeight
-            // / (double) a.getHeight(), 2);
-            // tmpWidthAFaktor = Math.pow(1.0 - (double) tmpIntersectionWidth /
-            // (double) a.getWidth(), 2);
-            tmpError = tmpErrorTotal;
-            tmpError += Math.min(1.0, tmpHeightFaktor) * intersectionDimensionWeight;
-            tmpError += Math.min(1.0, tmpWidthFaktor) * intersectionDimensionWeight;
-            tmpError += Math.min(1.0, tmpHeightAFaktor) * intersectionAHeightWeight;
-            tmpError += Math.min(1.0, tmpWidthAFaktor) * intersectionAWidthWeight;
-            tmpError /= this.prescanDivider;
-            tmpError *= 1.2;
-
-            return (int) (100 * tmpError);
-        } else {
-            return 100;
-        }
-    }
-
     private double scanIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
         this.offset = new int[] { left, top };
         this.imgOffset = new int[] { xx, yy };
@@ -411,8 +810,8 @@ public class LetterComperator {
             tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
             tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
 
-            tmpCoverageFaktorA = 1.0 - ((double) tmpPixelBoth / ((double) a.getElementPixel() / (scanStepX * scanStepY)));
-            tmpCoverageFaktorB = 1.0 - ((double) tmpPixelBoth / ((double) b.getElementPixel() / (scanStepX * scanStepY)));
+            tmpCoverageFaktorA = 1.0 - (tmpPixelBoth / ((double) a.getElementPixel() / (scanStepX * scanStepY)));
+            tmpCoverageFaktorB = 1.0 - (tmpPixelBoth / ((double) b.getElementPixel() / (scanStepX * scanStepY)));
             setLocalHeightPercent((double) tmpIntersectionHeight / (double) b.getHeight());
             localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
 
@@ -456,239 +855,137 @@ public class LetterComperator {
         }
     }
 
+    private double scanPreIntersection(int xx, int yy, int left, int top, int tmpIntersectionWidth, int tmpIntersectionHeight) {
+        double tmpError;
+        int yStep = Math.max(1, tmpIntersectionHeight / (preScanFaktor + 1));
+
+        tmpPixelBoth = 0;
+        tmpPixelBButNotA = 0;
+        tmpPixelAButNotB = 0;
+        pixelAll = 0;
+        for (int y = yStep; y <= tmpIntersectionHeight - yStep; y += yStep) {
+            for (int x = 0; x < tmpIntersectionWidth; x++) {
+                pixelAll++;
+
+                int pixelType = getPixelType(x, y, xx, yy, left, top);
+                switch (pixelType) {
+                case 0:
+                    tmpPixelBoth++;
+                    break;
+                case 1:
+                    tmpPixelBButNotA++;
+                    break;
+                case 2:
+                    tmpPixelAButNotB++;
+                    break;
+                }
+            }
+        }
+        // logger.info((UTILITIES.getTimer() - startTime)+ "intersection
+        // scantime: "+(UTILITIES.getTimer()-starter2));
+        if (pixelAll > 0) {
+            tmpErrorA = (double) tmpPixelAButNotB / (double) (tmpPixelBoth + tmpPixelAButNotB);
+            tmpErrorB = (double) tmpPixelBButNotA / (double) (tmpPixelBButNotA + tmpPixelBoth);
+            tmpErrorTotal = tmpErrorA * errorAWeight + tmpErrorB * errorbWeight;
+            setLocalHeightPercent((double) tmpIntersectionHeight / (double) b.getHeight());
+            localWidthPercent = (double) tmpIntersectionWidth / (double) b.getWidth();
+            tmpHeightFaktor = Math.pow(1.0 - getLocalHeightPercent(), 2);
+            tmpWidthFaktor = Math.pow(1.0 - localWidthPercent, 2);
+
+            // tmpHeightAFaktor = Math.pow(1.0 - (double) tmpIntersectionHeight
+            // / (double) a.getHeight(), 2);
+            // tmpWidthAFaktor = Math.pow(1.0 - (double) tmpIntersectionWidth /
+            // (double) a.getWidth(), 2);
+            tmpError = tmpErrorTotal;
+            tmpError += Math.min(1.0, tmpHeightFaktor) * intersectionDimensionWeight;
+            tmpError += Math.min(1.0, tmpWidthFaktor) * intersectionDimensionWeight;
+            tmpError += Math.min(1.0, tmpHeightAFaktor) * intersectionAHeightWeight;
+            tmpError += Math.min(1.0, tmpWidthAFaktor) * intersectionAWidthWeight;
+            tmpError /= this.prescanDivider;
+            tmpError *= 1.2;
+
+            return (int) (100 * tmpError);
+        } else {
+            return 100;
+        }
+    }
+
+    /**
+     * @param a
+     *            the a to set
+     */
+    public void setA(Letter a) {
+        this.a = a;
+    }
+
+    /**
+     * @param b
+     *            the b to set
+     */
+    public void setB(Letter b) {
+        this.b = b;
+    }
+
     private void setBothElementNum(int i) {
         this.bothElementsNum = i;
 
     }
 
     /**
-     * 
-     * @return Anzahl der Elemente aus denen die Schnitttmenge besteht. je näher
-     *         an eins desto besser
+     * @param coverageFaktor
+     *            the coverageFaktor to set
      */
-    public int getBothElementsNum() {
-        return bothElementsNum;
+    private void setCoverageFaktorA(double coverageFaktor) {
+        this.coverageFaktorA = coverageFaktor;
+    }
+
+    private void setCoverageFaktorB(double coverageFaktor) {
+        this.coverageFaktorB = coverageFaktor;
     }
 
     /**
-     * Rekursive Funktion, Die die große eines Elements zurückgibt. in den grids
-     * werden schon vergebene pixel abgelegt
-     * 
-     * @param x
-     * @param y
-     * @param xx
-     * @param yy
-     * @param left
-     * @param top
-     * @param pixelType
-     * @param elementGrid
-     * @param counter
-     * @return größe des Elements
+     * @param createIntersectionLetter
+     *            the createIntersectionLetter to set
      */
-    private Integer getElement(int x, int y, int xx, int yy, int left, int top, int pixelType, int[][] elementGrid, Vector<Integer> counter) {
-        if (x < 0 || y < 0 || x >= elementGrid.length || elementGrid.length == 0 || y >= elementGrid[0].length) return null;
-        if (elementGrid[x][y] != 0) return null;
-        int pt = getPixelType(x, y, xx, yy, left, top);
-
-        if (pt == pixelType) {
-            counter.add(pixelType);
-            elementGrid[x][y] = pixelType + 100;
-            getElement(x - 1, y, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x - 1, y - 1, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x, y - 1, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x + 1, y - 1, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x + 1, y, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x + 1, y + 1, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x, y + 1, xx, yy, left, top, pt, elementGrid, counter);
-            getElement(x - 1, y + 1, xx, yy, left, top, pt, elementGrid, counter);
-        }
-        return null;
+    public void setCreateIntersectionLetter(boolean createIntersectionLetter) {
+        CREATEINTERSECTIONLETTER = createIntersectionLetter;
     }
 
     /**
-     * Prüft ob de aktuellepixel nachbarn mit dem selben Pixeltype hat
+     * Setzt die art der ERkennung. Siehe Detection IDS
      * 
-     * @param x
-     * @param y
-     * @param xx
-     * @param yy
-     * @param left
-     * @param top
-     * @param pixelType
-     * @return anzahl der Nachbarn
+     * @param matchtype
      */
-    private int hasNeighbour(int x, int y, int xx, int yy, int left, int top, int pixelType) {
+    public void setDetectionType(int matchtype) {
+        this.detectionType = matchtype;
+    }
 
-        int ret = 0;
-        int faktor = 1;
-        for (int xt = -faktor; xt <= faktor; xt++) {
-            for (int yt = -faktor; yt <= faktor; yt++) {
-                if (xt == 0 && yt == 0) continue;
-                if (getPixelType(x + xt, y + yt, xx, yy, left, top) == pixelType) ret++;
-                ;
-
-            }
-        }
-        return ret;
+    public void setExtensionError(double extensionError) {
+        this.extensionError = extensionError;
     }
 
     /**
-     * TRansformiert Koordinaten von letter a nach b
-     * 
-     * @param x
-     * @param y
-     * @param xx
-     * @param yy
-     * @return neue Koordinaten
+     * @param heightPercent
+     *            the heightPercent to set
      */
-    private int[] coordinatesFromAToB(int x, int y, int xx, int yy, int[] con) {
-        con[0] = x - xx;
-        con[1] = y - yy;
-        return con;
+    public void setHeightFaktor(double heightPercent) {
+        this.heightFaktor = heightPercent;
     }
 
-    public Letter getDifference() {
-        try {
-            int xx = this.imgOffset[0];
-            int yy = this.imgOffset[1];
-            int left = this.offset[0];
-            int top = this.offset[1];
-            int tmpIntersectionWidth = this.intersectionDimension[0];
-            int tmpIntersectionHeight = this.intersectionDimension[1];
-
-            // long starter=UTILITIES.getTimer();
-
-            int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
-
-            for (int x = 0; x < tmpIntersectionWidth; x++) {
-                for (int y = 0; y < tmpIntersectionHeight; y++) {
-                    g[x][y] = getA().getMaxPixelValue();
-                    int pixelType = getPixelType(x, y, xx, yy, left, top);
-
-                    switch (pixelType) {
-                    case 0:
-
-                        // g[x][y] = 0xcccccc;
-                        break;
-                    case 1:
-                        if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
-
-                            // g[x][y] = 0xff0000;
-                        } else {
-                            // g[x][y] = 0xff0000;
-
-                        }
-                        g[x][y] = 0;
-                        break;
-                    case 2:
-                        if (hasNeighbour(x, y, xx, yy, left, top, pixelType) > overlayNoiseSize) {
-
-                            g[x][y] = 0;
-                        } else {
-                            g[x][y] = 0;
-                            // g[x][y] = 0x00ff00;
-                        }
-                        break;
-                    default:
-
-                    }
-                }
-            }
-
-            Letter ret = getA().createLetter();
-            int[] l = getA().getLocation();
-            ret.setLocation(new int[] { l[0] + left, l[1] + top });
-            ret.setGrid(g);
-            ret.clean();
-            return ret;
-        } catch (Exception e) {
-            return getA();
-        }
-
+    public void setIntersectionAHeightFaktor(double intersectionAHeightFaktor) {
+        this.intersectionAHeightFaktor = intersectionAHeightFaktor;
     }
 
-    public Letter getIntersection() {
-        try {
-            // int xx = this.imgOffset[0];
-            // int yy = this.imgOffset[1];
-            int left = this.offset[0];
-            int top = this.offset[1];
-            int tmpIntersectionWidth = this.intersectionDimension[0];
-            int tmpIntersectionHeight = this.intersectionDimension[1];
-
-            // long starter=UTILITIES.getTimer();
-
-            int[][] g = new int[tmpIntersectionWidth][tmpIntersectionHeight];
-
-            for (int x = 0; x < tmpIntersectionWidth; x++) {
-                for (int y = 0; y < tmpIntersectionHeight; y++) {
-                    g[x][y] = a.getPixelValue(x + left, y + top);
-
-                }
-            }
-
-            Letter ret = getA().createLetter();
-            int[] l = getA().getLocation();
-            ret.setLocation(new int[] { l[0] + left, l[1] + top });
-            ret.setGrid(g);
-            ret.clean();
-            return ret;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return getA();
-        }
-
+    public void setIntersectionAWidthFaktor(double intersectionAWidthFaktor) {
+        this.intersectionAWidthFaktor = intersectionAWidthFaktor;
     }
 
     /**
-     * Gib zurück ob es sich um einen gemeinsammenpixel handekt oder nicht
-     * 
-     * @param x
-     * @param y
-     * @param xx
-     * @param yy
-     * @param left
-     * @param top
-     * @return -2(fehler)/ 0 gemeinsammer schwarzer Pixel /1 Pixel B aber nicht
-     *         a / 2 pixel A aber nicht B/ -1 beide weiß
+     * @param intersectionHeight
+     *            the intersectionHeight to set
      */
-    private int getPixelType(int x, int y, int xx, int yy, int left, int top) {
-
-        int va = a.getPixelValue(x + left, y + top);
-        bc = coordinatesFromAToB(x + left, y + top, xx, yy, this.bc);
-        int vb = b.getPixelValue(bc[0], bc[1]);
-        if (va < 0 || vb < 0) { return -2; }
-        if (vb == 0 && va == 0) {
-            return 0;
-        } else if (vb == 0) {
-            return 1;
-        } else if (va == 0) {
-
-        return 2; }
-        return -1;
-    }
-
-    /**
-     * @return Prozentwert 0(gut) bis 100 (schlecht) der Übereinstimmung
-     */
-    public double getValityPercent() {
-        return Math.min(100.0, this.valityPercent);
-    }
-
-    public double getRealValityValue() {
-        return this.valityPercent;
-    }
-
-    /**
-     * 
-     * @return Das Prescan Ergebniss
-     */
-    public double getPreValityPercent() {
-        return preValityPercent;
-    }
-
-    private void setPreValityPercent(double value) {
-        this.preValityPercent = value;
+    private void setIntersectionHeight(int intersectionHeight) {
+        this.intersectionHeight = intersectionHeight;
     }
 
     /**
@@ -701,61 +998,31 @@ public class LetterComperator {
     }
 
     /**
-     * @return gibt einen Letterzurück, aus dem gut erkannt werden kann wie sich
-     *         das ergebniss zusammensetzt. gleiche antile werden lila gefärbt,
-     *         banteile rot und a anteile blau Um den Intersectionletter
-     *         auszugene muss zuerst setCreateIntersectionLetter(true)
-     *         ausgeführt werden
+     * @param intersectionStartX
+     *            the intersectionStartX to set
      */
-    public Letter getIntersectionLetter() {
-
-        return this.intersectionLetter;
+    private void setIntersectionStartX(int intersectionStartX) {
+        this.intersectionStartX = intersectionStartX;
     }
 
     /**
-     * @return Gibt den decoed value von b zurück
+     * @param intersectionStartY
+     *            the intersectionStartY to set
      */
-    public String getDecodedValue() {
-        if (b == null || b.getDecodedValue() == null || b.getDecodedValue().length() != 1) return "-";
-        return this.b.getDecodedValue();
+    private void setIntersectionStartY(int intersectionStartY) {
+        this.intersectionStartY = intersectionStartY;
     }
 
     /**
-     * @return the a
+     * @param intersectionWidth
+     *            the intersectionWidth to set
      */
-    public Letter getA() {
-        return a;
+    private void setIntersectionWidth(int intersectionWidth) {
+        this.intersectionWidth = intersectionWidth;
     }
 
-    /**
-     * @param a
-     *            the a to set
-     */
-    public void setA(Letter a) {
-        this.a = a;
-    }
-
-    /**
-     * @return the b
-     */
-    public Letter getB() {
-        return b;
-    }
-
-    /**
-     * @param b
-     *            the b to set
-     */
-    public void setB(Letter b) {
-        this.b = b;
-    }
-
-    /**
-     * Führt den Vergleichsvorgang aus
-     */
-    public void run() {
-        scan();
-
+    public void setLocalHeightPercent(double localHeightPercent) {
+        this.localHeightPercent = localHeightPercent;
     }
 
     /**
@@ -806,85 +1073,27 @@ public class LetterComperator {
     }
 
     /**
-     * @return the createIntersectionLetter
+     * @param pixelANotB
+     *            the pixelANotB to set
      */
-    public boolean isCreateIntersectionLetter() {
-        return CREATEINTERSECTIONLETTER;
+    private void setPixelANotB(int pixelANotB) {
+        this.pixelANotB = pixelANotB;
     }
 
     /**
-     * @param createIntersectionLetter
-     *            the createIntersectionLetter to set
+     * @param pixelBNotA
+     *            the pixelBNotA to set
      */
-    public void setCreateIntersectionLetter(boolean createIntersectionLetter) {
-        CREATEINTERSECTIONLETTER = createIntersectionLetter;
+    private void setPixelBNotA(int pixelBNotA) {
+        this.pixelBNotA = pixelBNotA;
     }
 
     /**
-     * @return the intersectionHeight
+     * @param pixelBoth
+     *            the pixelBoth to set
      */
-    public int getIntersectionHeight() {
-        return intersectionHeight;
-    }
-
-    /**
-     * @param intersectionHeight
-     *            the intersectionHeight to set
-     */
-    private void setIntersectionHeight(int intersectionHeight) {
-        this.intersectionHeight = intersectionHeight;
-    }
-
-    /**
-     * @return the intersectionStartX
-     */
-    public int getIntersectionStartX() {
-        return intersectionStartX;
-    }
-
-    /**
-     * @param intersectionStartX
-     *            the intersectionStartX to set
-     */
-    private void setIntersectionStartX(int intersectionStartX) {
-        this.intersectionStartX = intersectionStartX;
-    }
-
-    /**
-     * @return the intersectionStartY
-     */
-    public int getIntersectionStartY() {
-        return intersectionStartY;
-    }
-
-    /**
-     * @param intersectionStartY
-     *            the intersectionStartY to set
-     */
-    private void setIntersectionStartY(int intersectionStartY) {
-        this.intersectionStartY = intersectionStartY;
-    }
-
-    /**
-     * @return the intersectionWidth
-     */
-    public int getIntersectionWidth() {
-        return intersectionWidth;
-    }
-
-    /**
-     * @param intersectionWidth
-     *            the intersectionWidth to set
-     */
-    private void setIntersectionWidth(int intersectionWidth) {
-        this.intersectionWidth = intersectionWidth;
-    }
-
-    /**
-     * @return the pixelErrorA
-     */
-    public double getPixelErrorA() {
-        return pixelErrorA;
+    private void setPixelBoth(int pixelBoth) {
+        this.pixelBoth = pixelBoth;
     }
 
     /**
@@ -896,10 +1105,44 @@ public class LetterComperator {
     }
 
     /**
-     * @return the totalPixelError
+     * @param pixelErrorB
+     *            the pixelErrorB to set
      */
-    public double getTotalPixelError() {
-        return totalPixelError;
+    private void setPixelErrorB(double pixelErrorB) {
+        this.pixelErrorB = pixelErrorB;
+    }
+
+    private void setPreValityPercent(double value) {
+        this.preValityPercent = value;
+    }
+
+    /**
+     * TODO: Gleiche buchtaben als nächsten nachbarn ignoriere Setzte den
+     * reliability wert. Er ist de Abstand zum nächstmöglichen Treffer. Und
+     * sagtdeshalb etwas über die ERkennungswarscheinlichkeit aus
+     * 
+     * @param d
+     */
+    public void setReliability(double d) {
+        this.reliability = d;
+
+    }
+
+    /**
+     * Setzt die zu verwendene Scanvarianz. (Anzal der pixel die über den rand
+     * gescannt werden)
+     * 
+     * @param x
+     * @param y
+     */
+    public void setScanVariance(int x, int y) {
+        scanVarianceX = x;
+        scanVarianceY = y;
+
+    }
+
+    public void setTmpExtensionError(double tmpExtensionError) {
+        this.tmpExtensionError = tmpExtensionError;
     }
 
     /**
@@ -910,19 +1153,17 @@ public class LetterComperator {
         this.totalPixelError = totalPixelError;
     }
 
-    /**
-     * @return the pixelErrorB
-     */
-    public double getPixelErrorB() {
-        return pixelErrorB;
+    public void setValityPercent(double bestValue) {
+        this.valityPercent = bestValue;
+
     }
 
     /**
-     * @param pixelErrorB
-     *            the pixelErrorB to set
+     * @param widthPercent
+     *            the widthPercent to set
      */
-    private void setPixelErrorB(double pixelErrorB) {
-        this.pixelErrorB = pixelErrorB;
+    public void setWidthFaktor(double widthPercent) {
+        this.widthFaktor = widthPercent;
     }
 
     /**
@@ -931,6 +1172,7 @@ public class LetterComperator {
      * 
      * @return parameterstring
      */
+    @Override
     public String toString() {
         Hashtable<String, Object> hs = new Hashtable<String, Object>();
         // if(getDecodedValue().equalsIgnoreCase("v")&&getBothElementsNum()==3){
@@ -986,247 +1228,6 @@ public class LetterComperator {
         hs.put("totalFaktor", tmpError);
         return (tmpError * 100) + "% " + hs.toString() + "\r\n" + calc;
 
-    }
-
-    /**
-     * @return the pixelANotB
-     */
-    public int getPixelANotB() {
-        return pixelANotB;
-    }
-
-    /**
-     * @param pixelANotB
-     *            the pixelANotB to set
-     */
-    private void setPixelANotB(int pixelANotB) {
-        this.pixelANotB = pixelANotB;
-    }
-
-    /**
-     * @return the pixelBNotA
-     */
-    public int getPixelBNotA() {
-        return pixelBNotA;
-    }
-
-    /**
-     * @param pixelBNotA
-     *            the pixelBNotA to set
-     */
-    private void setPixelBNotA(int pixelBNotA) {
-        this.pixelBNotA = pixelBNotA;
-    }
-
-    /**
-     * @return the pixelBoth
-     */
-    public int getPixelBoth() {
-        return pixelBoth;
-    }
-
-    /**
-     * @param pixelBoth
-     *            the pixelBoth to set
-     */
-    private void setPixelBoth(int pixelBoth) {
-        this.pixelBoth = pixelBoth;
-    }
-
-    /**
-     * @return the heightPercent
-     */
-    public double getHeightFaktor() {
-        return heightFaktor;
-    }
-
-    /**
-     * @param heightPercent
-     *            the heightPercent to set
-     */
-    public void setHeightFaktor(double heightPercent) {
-        this.heightFaktor = heightPercent;
-    }
-
-    /**
-     * @return the widthPercent
-     */
-    public double getWidthFaktor() {
-        return widthFaktor;
-    }
-
-    /**
-     * @param widthPercent
-     *            the widthPercent to set
-     */
-    public void setWidthFaktor(double widthPercent) {
-        this.widthFaktor = widthPercent;
-    }
-
-    /**
-     * @return the coverageFaktorA
-     */
-    public double getCoverageFaktorA() {
-        return coverageFaktorA;
-    }
-
-    /**
-     * 
-     * @return the coverageFaktorB
-     */
-    public double getCoverageFaktorB() {
-        return coverageFaktorB;
-    }
-
-    /**
-     * @param coverageFaktor
-     *            the coverageFaktor to set
-     */
-    private void setCoverageFaktorA(double coverageFaktor) {
-        this.coverageFaktorA = coverageFaktor;
-    }
-
-    private void setCoverageFaktorB(double coverageFaktor) {
-        this.coverageFaktorB = coverageFaktor;
-    }
-
-    /**
-     * TODO: Gleiche buchtaben als nächsten nachbarn ignoriere Setzte den
-     * reliability wert. Er ist de Abstand zum nächstmöglichen Treffer. Und
-     * sagtdeshalb etwas über die ERkennungswarscheinlichkeit aus
-     * 
-     * @param d
-     */
-    public void setReliability(double d) {
-        this.reliability = d;
-
-    }
-
-    /**
-     * 
-     * @return ReliabilityValue. ABstand zum nächstbesten Buchstaben
-     */
-    public double getReliability() {
-        return reliability;
-    }
-
-    /**
-     * 
-     * @return Kombinierter Wert aus Valityvalue und Reliability. Kann zur
-     *         berechnung der erkennungssicherheit verwendet werden
-     */
-    public double getIdentificationReliability() {
-        return getValityPercent() - getReliability();
-
-    }
-
-    /**
-     * Setzt die art der ERkennung. Siehe Detection IDS
-     * 
-     * @param matchtype
-     */
-    public void setDetectionType(int matchtype) {
-        this.detectionType = matchtype;
-    }
-
-    /**
-     * 
-     * @return Detection ID
-     */
-    public int getDetectionType() {
-        return this.detectionType;
-    }
-
-    /**
-     * Setzt die zu verwendene Scanvarianz. (Anzal der pixel die über den rand
-     * gescannt werden)
-     * 
-     * @param x
-     * @param y
-     */
-    public void setScanVariance(int x, int y) {
-        scanVarianceX = x;
-        scanVarianceY = y;
-
-    }
-
-    /**
-     * @return the scanVarianceX
-     */
-    public int getScanVarianceX() {
-        if (scanVarianceX >= 0) return scanVarianceX;
-        return jas.getInteger("scanVarianceX");
-    }
-
-    /**
-     * @return the scanVarianceY
-     */
-    public int getScanVarianceY() {
-        if (scanVarianceX >= 0) return scanVarianceY;
-        return jas.getInteger("scanVarianceY");
-    }
-
-    /**
-     * @return the scanTime
-     */
-    public int getScanTime() {
-        return scanTime;
-    }
-
-    public int[] getOffset() {
-        return offset;
-    }
-
-    public int[] getImgOffset() {
-        return imgOffset;
-    }
-
-    public int[] getIntersectionDimension() {
-        return intersectionDimension;
-    }
-
-    public double getIntersectionAWidthFaktor() {
-        return intersectionAWidthFaktor;
-    }
-
-    public void setIntersectionAWidthFaktor(double intersectionAWidthFaktor) {
-        this.intersectionAWidthFaktor = intersectionAWidthFaktor;
-    }
-
-    public double getIntersectionAHeightFaktor() {
-        return intersectionAHeightFaktor;
-    }
-
-    public void setIntersectionAHeightFaktor(double intersectionAHeightFaktor) {
-        this.intersectionAHeightFaktor = intersectionAHeightFaktor;
-    }
-
-    public double getExtensionError() {
-        return extensionError;
-    }
-
-    public void setExtensionError(double extensionError) {
-        this.extensionError = extensionError;
-    }
-
-    public JAntiCaptcha getOwner() {
-        return owner;
-    }
-
-    public double getTmpExtensionError() {
-        return tmpExtensionError;
-    }
-
-    public void setTmpExtensionError(double tmpExtensionError) {
-        this.tmpExtensionError = tmpExtensionError;
-    }
-
-    public void setLocalHeightPercent(double localHeightPercent) {
-        this.localHeightPercent = localHeightPercent;
-    }
-
-    public double getLocalHeightPercent() {
-        return localHeightPercent;
     }
 
 }

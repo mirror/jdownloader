@@ -37,27 +37,27 @@ import jd.utils.JDUtilities;
 
 public class XupIn extends PluginForHost {
 
-    private static final String CODER = "jD-Team";
-    private static final String HOST = "xup.in";
     //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
     private static final String AGB_LINK = "http://www.xup.in/terms/";
-
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?", Pattern.CASE_INSENSITIVE);
-    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
-
-    private String vid = "";
-    private String vtime = "";
-    private String vpass = "";
-    private String captchaAddress = "";
-    private String cookie = "";
+    private static final String CODER = "jD-Team";
+    private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
 
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
-    private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
+    private static final String HOST = "xup.in";
+
+    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
     private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
-    private static final String VID = "value=\"(.*?)\" name=\"vid\"";
-    private static final String VTIME = "value=\"([0-9]+)\" name=\"vtime\"";
     private static final String NOT_FOUND = "File does not exist";
     private static final String PASSWORD_PROTECTED = "Bitte Passwort eingeben";
+    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?", Pattern.CASE_INSENSITIVE);
+
+    private static final String VID = "value=\"(.*?)\" name=\"vid\"";
+    private static final String VTIME = "value=\"([0-9]+)\" name=\"vtime\"";
+    private String captchaAddress = "";
+    private String cookie = "";
+    private String vid = "";
+    private String vpass = "";
+    private String vtime = "";
 
     public XupIn() {
 
@@ -71,66 +71,25 @@ public class XupIn extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
-    }
-
-    
-    public void reset() {
-
-        vid = "";
-        vtime = "";
-        vpass = "";
-        captchaAddress = "";
-        cookie = "";
-
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    
-    public void resetPluginGlobals() {
-    }
-
-    
+    @Override
     public String getAGBLink() {
         return AGB_LINK;
     }
 
     
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -174,6 +133,43 @@ public class XupIn extends PluginForHost {
 
     }
 
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return MAX_SIMULTAN_DOWNLOADS;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PATTERN_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -303,6 +299,22 @@ public class XupIn extends PluginForHost {
 
         dl.startDownload();
 
+    }
+
+    
+    @Override
+    public void reset() {
+
+        vid = "";
+        vtime = "";
+        vpass = "";
+        captchaAddress = "";
+        cookie = "";
+
+    }
+
+    @Override
+    public void resetPluginGlobals() {
     }
 
 }

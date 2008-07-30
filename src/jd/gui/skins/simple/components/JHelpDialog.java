@@ -33,6 +33,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextPane;
+import javax.swing.WindowConstants;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
@@ -41,22 +42,14 @@ import jd.utils.JDUtilities;
 
 public class JHelpDialog extends JDialog implements ActionListener {
 
-    /**
+    public abstract class Action{        
+        public abstract boolean doAction();
+    }
+
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-
-	protected Insets  insets            = new Insets(5, 5, 5, 5);
-
-    protected Logger  logger            = JDUtilities.getLogger();
-
-    private JButton   btn1;
-
-    private JButton   btn2;
-
-    private JButton   btn3;
-
-    public static int STATUS_UNANSWERED = 0;
 
     public static int STATUS_ANSWER_1   = 1;
 
@@ -64,13 +57,50 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
     public static int STATUS_ANSWER_3   = 3;
 
-    private JTextPane htmlArea;
+    public static int STATUS_UNANSWERED = 0;
 
-    private int       status            = STATUS_UNANSWERED;
+    public static int showHelpMessage(JFrame parent, String title, String message,final URL url) {
+        return showHelpMessage(parent, title, message, url,JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));
+      
+    }
+
+    public static int showHelpMessage(JFrame parent, String title, String message,final URL url,String helpText) {
+
+        title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
+//        int buttons = JOptionPane.YES_NO_OPTION;
+//        int messageType = JOptionPane.INFORMATION_MESSAGE;
+//        String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"), JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
+        JHelpDialog d = new JHelpDialog(parent, title, message);
+        d.getBtn3().setVisible(false);
+        d.getBtn1().setText(helpText);
+        d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));      
+        d.action1= d.new Action(){
+            @Override
+            public boolean doAction(){               
+                        JLinkButton.openURL(url);
+                return true;
+            }
+        };
+        d.showDialog();
+        return d.getStatus();
+    }
+
     public Action action1;
+
     private Action action2;
+
     private Action action3;
+
+    private JButton   btn1;
+    private JButton   btn2;
+    private JButton   btn3;
+    private JTextPane htmlArea;
+    protected Insets  insets            = new Insets(5, 5, 5, 5);
+
+    protected Logger  logger            = JDUtilities.getLogger();
+
     private JFrame    parentFrame;
+    private int       status            = STATUS_UNANSWERED;
 
     public JHelpDialog(JFrame frame, String title, String html) {
         super(frame);
@@ -109,57 +139,9 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
         // setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(getBtn1());
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         // this.setLocationRelativeTo(null);
 
-    }
-
-    public static int showHelpMessage(JFrame parent, String title, String message,final URL url) {
-        return showHelpMessage(parent, title, message, url,JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));
-      
-    }
-    /**
-     * @param status the status to set
-     */
-    public void setStatus(int status) {
-        this.status = status;
-    }
-
-    /**
-     * @return the status
-     */
-    public int getStatus() {
-        return status;
-    }
-
-    public static int showHelpMessage(JFrame parent, String title, String message,final URL url,String helpText) {
-
-        title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
-//        int buttons = JOptionPane.YES_NO_OPTION;
-//        int messageType = JOptionPane.INFORMATION_MESSAGE;
-//        String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"), JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
-        JHelpDialog d = new JHelpDialog(parent, title, message);
-        d.getBtn3().setVisible(false);
-        d.getBtn1().setText(helpText);
-        d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));      
-        d.action1= d.new Action(){
-            public boolean doAction(){               
-                        JLinkButton.openURL(url);
-                return true;
-            }
-        };
-        d.showDialog();
-        return d.getStatus();
-    }
-    
-
-    
-    public void showDialog() {
-        this.setVisible(true);
-        this.setLocation(JDUtilities.getCenterOfComponent(parentFrame, this));
-        this.setVisible(false);
-        setModal(true);
-        this.setVisible(true);
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -183,20 +165,36 @@ public class JHelpDialog extends JDialog implements ActionListener {
             dispose();
         }
     }
+    
 
+    
+    /**
+     * @return the btn1
+     */
+    public JButton getBtn1() {
+        return btn1;
+    }
 
     /**
-     * @param btn3 the btn3 to set
+     * @return the btn2
      */
-    public void setBtn3(JButton btn3) {
-        this.btn3 = btn3;
+    public JButton getBtn2() {
+        return btn2;
     }
+
 
     /**
      * @return the btn3
      */
     public JButton getBtn3() {
         return btn3;
+    }
+
+    /**
+     * @return the status
+     */
+    public int getStatus() {
+        return status;
     }
     /**
      * @param btn1 the btn1 to set
@@ -206,26 +204,30 @@ public class JHelpDialog extends JDialog implements ActionListener {
     }
 
     /**
-     * @return the btn1
-     */
-    public JButton getBtn1() {
-        return btn1;
-    }
-    /**
      * @param btn2 the btn2 to set
      */
     public void setBtn2(JButton btn2) {
         this.btn2 = btn2;
     }
+    /**
+     * @param btn3 the btn3 to set
+     */
+    public void setBtn3(JButton btn3) {
+        this.btn3 = btn3;
+    }
 
     /**
-     * @return the btn2
+     * @param status the status to set
      */
-    public JButton getBtn2() {
-        return btn2;
+    public void setStatus(int status) {
+        this.status = status;
     }
-    public abstract class Action{        
-        public abstract boolean doAction();
+    public void showDialog() {
+        this.setVisible(true);
+        this.setLocation(JDUtilities.getCenterOfComponent(parentFrame, this));
+        this.setVisible(false);
+        setModal(true);
+        this.setVisible(true);
     }
 
 }

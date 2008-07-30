@@ -43,10 +43,10 @@ public class ConfigPanelGUI extends ConfigPanel {
      * 
      */
     private static final long serialVersionUID = 5474787504978441198L;
+    private ConfigEntriesPanel cep;
+    private ConfigContainer container;
     // private Configuration configuration;
     private SubConfiguration guiConfig;
-    private ConfigContainer container;
-    private ConfigEntriesPanel cep;
 
     // private Vector<String> changer;
     /**
@@ -61,15 +61,13 @@ public class ConfigPanelGUI extends ConfigPanel {
         load();
     }
 
-    public void save() {
-        logger.info("save");
-        cep.save();
-        //this.saveConfigEntries();
-     
-        guiConfig.save();
+    @Override
+    public String getName() {
+        return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
     }
 
     
+    @Override
     public void initPanel() {
         setupConfiguration();
          
@@ -79,6 +77,22 @@ public class ConfigPanelGUI extends ConfigPanel {
     
     }
 
+    @Override
+    public void load() {
+        this.loadConfigEntries();
+    }
+
+    
+    @Override
+    public void save() {
+        logger.info("save");
+        cep.save();
+        //this.saveConfigEntries();
+     
+        guiConfig.save();
+    }
+
+    
     private void setupConfiguration() {
         this.container = new ConfigContainer(this);
 
@@ -169,15 +183,5 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce = (new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, guiConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")).setDefaultValue(true));
         extended.addEntry(ce);
 
-    }
-
-    
-    public void load() {
-        this.loadConfigEntries();
-    }
-
-    
-    public String getName() {
-        return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
     }
 }

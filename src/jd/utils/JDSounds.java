@@ -33,21 +33,25 @@ import jd.parser.Regex;
  * werte einzusetzen
  */
 public class JDSounds {
-    private static final String SOUND_DIR = "jd/snd/";
+    private static HashMap<String, String> data = new HashMap<String, String>();
 
-    public static final String PARAM_CURRENTTHEME = "SOUND_CURRENTTHEME";
-
-    private static String THEMES_DIR = "jd/themes/";
+    private static boolean enabled=true;
 
     private static Logger logger = JDUtilities.getLogger();
 
-    private static HashMap<String, String> data = new HashMap<String, String>();
+    private static boolean paralellSounds=false;
+
+    public static final String PARAM_CURRENTTHEME = "SOUND_CURRENTTHEME";
 
    
-private static boolean paralellSounds=false;
-private static boolean enabled=true;
 private static boolean playing=false;
     // private static File themeFile; ;
+private static final String SOUND_DIR = "jd/snd/";
+private static String THEMES_DIR = "jd/themes/";
+
+    public static boolean getParalell(){
+        return paralellSounds;
+    }
 
     public static Vector<String> getSoundIDs() {
         File dir = JDUtilities.getResourceFile(THEMES_DIR);
@@ -71,46 +75,11 @@ private static boolean playing=false;
 
 
     }
-
-    /**
-     * Gibt ein Soundfile
-     * 
-     * @param key
-     * @return
-     */
-    public static File SF(String key) {
-        key=V(key);
-        if(key==null)return null;
-        return JDUtilities.getResourceFile(SOUND_DIR+key+".mp3");
+    
+    public static boolean isEnabled() {
+        return enabled;
     }
     
-    public static File SF(String key,String def) {
-        key=V(key,def);
-        if(key==null)return null;
-        return JDUtilities.getResourceFile(SOUND_DIR+key+".mp3");
-    }
-    
-    /**
-     * Legt fest ob sich sounds überschneiden dürfen. Default ist false.d.h. dass ein 2. Sound nicht gespielt wird wenn der erste noch läuft
-     * @param v
-     */
-    public static void setParalell(boolean v){
-        paralellSounds=v;
-    }
-    public static boolean getParalell(){
-        return paralellSounds;
-    }
-
-    /**
-     * Spielt den Sound zu key. Das Spielen läuft in einem Thread, also nicht blockierend ab
-     * @return
-     */
-    public static boolean PT(String key) {
-        return playSound(SF(key),true);
-    }
-    public static boolean PT(String key,String def) {
-        return playSound(SF(key,def),true);
-    }
     /**
      * Spielt einen Sound ab und blockiert bis der Sound fertig gespirlt wurde
      * @param key
@@ -122,76 +91,83 @@ private static boolean playing=false;
     public static boolean P(String key,String def) {
         return playSound(SF(key,def),false);
     }
-/**
- * Spielt einen Sound ab
- * @param f
- * @param threated 
- * @return
- */
-    private static boolean playSound(final File f, boolean threated) {
-        if (f==null ||!f.exists()) return false;
-        if(playing && !paralellSounds)return false;
-        playing=true;
-        if (threated) {
-            new Thread() {
-                public void run() {
-                    AdvancedPlayer p;
-                    try {
-                        p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
 
-                        p.play();
-                     
-                    } catch (FileNotFoundException e) {
-
-                        e.printStackTrace();
-                    } catch (JavaLayerException e) {
-
-                        e.printStackTrace();
+    /**
+     * Spielt einen Sound ab
+     * @param f
+     * @param threated 
+     * @return
+     */
+        private static boolean playSound(final File f, boolean threated) {
+            if (f==null ||!f.exists()) return false;
+            if(playing && !paralellSounds)return false;
+            playing=true;
+            if (threated) {
+                new Thread() {
+                    @Override
+                    public void run() {
+                        AdvancedPlayer p;
+                        try {
+                            p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
+    
+                            p.play();
+                         
+                        } catch (FileNotFoundException e) {
+    
+                            e.printStackTrace();
+                        } catch (JavaLayerException e) {
+    
+                            e.printStackTrace();
+                        }
+                        playing=false;
+    
                     }
-                    playing=false;
-
+    
+                }.start();
+            } else {
+                AdvancedPlayer p;
+                try {
+                    p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
+                    
+                    p.play();
+                } catch (FileNotFoundException e) {
+    
+                    e.printStackTrace();
+                } catch (JavaLayerException e) {
+    
+                    e.printStackTrace();
                 }
-
-            }.start();
-        } else {
-            AdvancedPlayer p;
-            try {
-                p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
-                
-                p.play();
-            } catch (FileNotFoundException e) {
-
-                e.printStackTrace();
-            } catch (JavaLayerException e) {
-
-                e.printStackTrace();
+                playing=false;
             }
-            playing=false;
+    
+            return true;
         }
-
-        return true;
-    }
-
-
     /**
-     * Gibt einen Sound String zum Key zurück
-     * 
-     * @param key
+     * Spielt den Sound zu key. Das Spielen läuft in einem Thread, also nicht blockierend ab
      * @return
      */
-    public static String V(String key) {
-        return getSoundValue(key, null);
+    public static boolean PT(String key) {
+        return playSound(SF(key),true);
     }
-
+    public static boolean PT(String key,String def) {
+        return playSound(SF(key,def),true);
+    }
     /**
-     * Gibt einen Sound String zum Key zurück
+     * aktiviert/deaktiviert sounds
      * 
-     * @param key
-     * @return
+     * @param enabled
      */
-    public static String V(String key, String def) {
-        return getSoundValue(key, def);
-    }
+        public static void setEnabled(boolean enabled) {
+            JDSounds.enabled = enabled;
+        }
+/**
+ * Legt fest ob sich sounds überschneiden dürfen. Default ist false.d.h. dass ein 2. Sound nicht gespielt wird wenn der erste noch läuft
+ * @param v
+ */
+public static void setParalell(boolean v){
+    paralellSounds=v;
+}
+
 
     /*
      * private static void saveData() { Iterator<Entry<String, String>>
@@ -230,16 +206,41 @@ private static boolean playing=false;
 
     }
 
-    public static boolean isEnabled() {
-        return enabled;
+    /**
+     * Gibt ein Soundfile
+     * 
+     * @param key
+     * @return
+     */
+    public static File SF(String key) {
+        key=V(key);
+        if(key==null)return null;
+        return JDUtilities.getResourceFile(SOUND_DIR+key+".mp3");
+    }
+
+    public static File SF(String key,String def) {
+        key=V(key,def);
+        if(key==null)return null;
+        return JDUtilities.getResourceFile(SOUND_DIR+key+".mp3");
+    }
+
+    /**
+     * Gibt einen Sound String zum Key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static String V(String key) {
+        return getSoundValue(key, null);
     }
 /**
- * aktiviert/deaktiviert sounds
+ * Gibt einen Sound String zum Key zurück
  * 
- * @param enabled
+ * @param key
+ * @return
  */
-    public static void setEnabled(boolean enabled) {
-        JDSounds.enabled = enabled;
-    }
+public static String V(String key, String def) {
+    return getSoundValue(key, def);
+}
 
 }

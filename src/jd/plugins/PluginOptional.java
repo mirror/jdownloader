@@ -27,24 +27,12 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 0;
     
-    public boolean doBotCheck(File file) { return false; }
     public static int VERSION_ID=0;
-  
-     public String getHost()            { return null; }
-     public String getLinkName()        { return null; }
-     public Pattern getSupportedLinks() { return null; }
-    
-    public String getPluginName() {
-        return "Unnamend Optional Plugin";
-    }
     public static int getVersionID(){
         return VERSION_ID;
     }
-
-    public abstract boolean initAddon();
-    public abstract String getRequirements();
-    public abstract void onExit();
-    public void controlEvent(ControlEvent event) {
+  
+     public void controlEvent(ControlEvent event) {
         
         //Deaktiviert das PLugin beim beenden
         if (event.getID() == ControlEvent.CONTROL_SYSTEM_EXIT) {
@@ -57,4 +45,21 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
         }
         
     }
+     @Override
+    public boolean doBotCheck(File file) { return false; }
+     @Override
+    public String getHost()            { return null; }
+    
+    @Override
+    public String getLinkName()        { return null; }
+    @Override
+    public String getPluginName() {
+        return "Unnamend Optional Plugin";
+    }
+
+    public abstract String getRequirements();
+    @Override
+    public Pattern getSupportedLinks() { return null; }
+    public abstract boolean initAddon();
+    public abstract void onExit();
 }

@@ -32,6 +32,7 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.WindowConstants;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
@@ -49,15 +50,15 @@ import jd.utils.JDUtilities;
  */
 public class CaptchaDialog extends JDialog implements ActionListener {
 
+    @SuppressWarnings("unused")
+    private static Logger logger = JDUtilities.getLogger();
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 5880899982952719438L;
 
-    /**
-     * In dieses Textfeld wird der Code eingegeben
-     */
-    private JTextField textField;
+    private JButton btnBAD;
 
     /**
      * Bestätigungsknopf
@@ -69,15 +70,15 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     private String captchaText = null;
 
-    private JButton btnBAD;
-
-    private Thread jacThread;
     public int countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
-
     private Thread countdownThread;
 
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+    private Thread jacThread;
+
+    /**
+     * In dieses Textfeld wird der Code eingegeben
+     */
+    private JTextField textField;
 
     /**
      * Erstellt einen neuen Dialog.
@@ -129,6 +130,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             setTitle(JDLocale.L("gui.captchaWindow.title", "jAntiCaptcha aktiv!"));
             final String host = plugin.getHost();
             this.jacThread = new Thread("JAC") {
+                @Override
                 public void run() {
 
                     String code = JDUtilities.getCaptcha(plugin, host, file, true);
@@ -174,6 +176,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
           
             this.countdownThread = new Thread() {
 
+                @Override
                 public void run() {
                     int c = countdown * 1000;
                     while(!CaptchaDialog.this.isActive()){
@@ -226,7 +229,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
         btnBAD.addActionListener(this);
 
         getRootPane().setDefaultButton(btnOK);
-        setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
         // setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         JDUtilities.addToGridBag(this, label, 0, 0, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);

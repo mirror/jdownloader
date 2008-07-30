@@ -32,6 +32,32 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JDAboutDialog {
     
+    private final static class LinkAction extends AbstractAction {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		private String url;
+        private LinkAction(String label, String url) {
+            super(label);
+            this.url = url;
+        }
+        @SuppressWarnings("deprecation")
+		public void actionPerformed(ActionEvent e) {
+            try {
+                BrowserLauncher.openURL(url);
+            } catch (UnsupportedOperatingSystemException e1) {
+                e1.printStackTrace();
+            } catch (BrowserLaunchingExecutionException e1) {
+                e1.printStackTrace();
+            } catch (BrowserLaunchingInitializingException e1) {
+                e1.printStackTrace();
+            }
+        }
+    }
+    
+    
+
     static JFrame getDialog() {
         JFrame dialog = new JFrame();
         dialog.setResizable(false);
@@ -97,6 +123,7 @@ public class JDAboutDialog {
         
         Thread t = new Thread() {
             
+            @Override
             public void run() {
                 try {
                     final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
@@ -116,32 +143,6 @@ public class JDAboutDialog {
         t.start();
         
         return dialog;
-    }
-    
-    
-
-    private final static class LinkAction extends AbstractAction {
-        /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		private String url;
-        private LinkAction(String label, String url) {
-            super(label);
-            this.url = url;
-        }
-        @SuppressWarnings("deprecation")
-		public void actionPerformed(ActionEvent e) {
-            try {
-                BrowserLauncher.openURL(url);
-            } catch (UnsupportedOperatingSystemException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingExecutionException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingInitializingException e1) {
-                e1.printStackTrace();
-            }
-        }
     }
 
 

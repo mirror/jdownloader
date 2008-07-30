@@ -34,27 +34,6 @@ import jd.plugins.HTTPPost;
 import jd.plugins.RequestInfo;
 
 public class Upload {
-    // private static Logger logger= JDUtilities.getLogger();
-    public static String toPastebinCom(String str, String name) {
-        RequestInfo requestInfo = null;
-        try {
-            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://jd_" + JDUtilities.getMD5(str) + ".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2=" + URLEncoder.encode(str, "UTF-8") + "&poster=" + URLEncoder.encode(name, "UTF-8") + "&paste=Send&expiry=f&email=", false);
-        } catch (MalformedURLException e1) {
-
-            e1.printStackTrace();
-        } catch (IOException e1) {
-
-            e1.printStackTrace();
-        }
-        if (requestInfo != null && requestInfo.isOK()) {
-
-            return requestInfo.getLocation();
-
-        } else {
-            return null;
-        }
-    }
-
     public static String toJDownloader(String str, String desc) {
         try {
             RequestInfo ri = HTTP.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc=" + JDUtilities.urlEncode(desc) + "&log=" + JDUtilities.urlEncode(str));
@@ -111,6 +90,27 @@ public class Upload {
         return null;
     }
 
+    // private static Logger logger= JDUtilities.getLogger();
+    public static String toPastebinCom(String str, String name) {
+        RequestInfo requestInfo = null;
+        try {
+            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://jd_" + JDUtilities.getMD5(str) + ".pastebin.com/pastebin.php"), null, null, "parent_pid=&format=text&code2=" + URLEncoder.encode(str, "UTF-8") + "&poster=" + URLEncoder.encode(name, "UTF-8") + "&paste=Send&expiry=f&email=", false);
+        } catch (MalformedURLException e1) {
+
+            e1.printStackTrace();
+        } catch (IOException e1) {
+
+            e1.printStackTrace();
+        }
+        if (requestInfo != null && requestInfo.isOK()) {
+
+            return requestInfo.getLocation();
+
+        } else {
+            return null;
+        }
+    }
+
     public static String toRamzahlCom(File file) {
         try {
             Form form = Form.getForms("http://ramzal.com/upload")[0];
@@ -161,28 +161,6 @@ public class Upload {
             e.printStackTrace();
         }
         return "";
-    }
-
-    public static String toUploadedToPremium(File file, String username, String password) {
-        try {
-
-            Form form = Form.getForms("http://uploaded.to/login")[0];
-            form.put("email", username);
-            form.put("password", password);
-            form.withHtmlCode = false;
-            String cookie = form.getRequestInfo(false).getCookie();
-            RequestInfo reqestinfo = HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
-            form = Form.getForms(reqestinfo)[0];
-            form.fileToPost = file;
-            form.setRequestPoperty("Cookie", cookie);
-            form.action = new Regex(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch() + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
-            reqestinfo = form.getRequestInfo();
-            return new Regex(HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-
     }
 
     public static String toUploadedTo(String str, String name) {
@@ -304,4 +282,26 @@ public class Upload {
      * 
      * return false; }
      */
+
+    public static String toUploadedToPremium(File file, String username, String password) {
+        try {
+
+            Form form = Form.getForms("http://uploaded.to/login")[0];
+            form.put("email", username);
+            form.put("password", password);
+            form.withHtmlCode = false;
+            String cookie = form.getRequestInfo(false).getCookie();
+            RequestInfo reqestinfo = HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true);
+            form = Form.getForms(reqestinfo)[0];
+            form.fileToPost = file;
+            form.setRequestPoperty("Cookie", cookie);
+            form.action = new Regex(reqestinfo.getHtmlCode(), "document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch() + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
+            reqestinfo = form.getRequestInfo();
+            return new Regex(HTTP.getRequest(new URL("http://uploaded.to/home"), cookie, null, true).getHtmlCode(), "http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+
+    }
 }

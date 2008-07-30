@@ -19,18 +19,18 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDLowSpeed extends PluginOptional {
+    private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
+    
+    private static final String PROPERTY_MAXSPEED = "PROPERTY_MAXSPEED";
+    private static final String PROPERTY_MINSPEED = "PROPERTY_MINSPEED";
+    private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    
-    private String version = "0.1";
-    private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
-    private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";
-    private static final String PROPERTY_MAXSPEED = "PROPERTY_MAXSPEED";
-    private static final String PROPERTY_MINSPEED = "PROPERTY_MINSPEED";
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
-    private Thread pluginThread = null;
     private boolean isRunning = false;
+    private Thread pluginThread = null;
+    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
+    // private String version = "0.1";
 
     public JDLowSpeed() {
         ConfigEntry cfg;
@@ -43,39 +43,40 @@ public class JDLowSpeed extends PluginOptional {
     }
 
     
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    
-    public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
-        logger.info("JDLowSpeed detection ok");
-        return true;
-    }
-
-    
-    public void onExit() {
-       
-
-    }
-
-    
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
-
-        if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.enabled", "Low Speederkennung einschalten"), 0).setActionListener(this));
-            m.setSelected(false);
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        MenuItem mi = (MenuItem) e.getSource();
+        if (mi.getActionID() == 0) {
+            subConfig.setProperty(PROPERTY_ENABLED, true);
+            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
+                initPlugin();
+            }
+            subConfig.save();
         } else {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.disabled", "Low Speederkennung ausschalten"), 1).setActionListener(this));
-            m.setSelected(true);
+            subConfig.setProperty(PROPERTY_ENABLED, false);
+            stopPlugin();
+            subConfig.save();
+
         }
-        return menu;
     }
 
+    
+    @Override
+    public void controlEvent(ControlEvent event) {
+        super.controlEvent(event);
+        if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
+            if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_START) {
+                initPlugin();
+            } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
+                stopPlugin();
+            } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
+                stopPlugin();
+            }
+        }
+
+    }
+
+    
     private void controllDownload(final DownloadLink downloadLink, final ArrayList<DownloadLink> other, final int minspeed, final int maxspeed) {
         if (downloadLink.getSpeedMeter().getSpeed() < minspeed) {
             new Thread(new Runnable() {
@@ -100,7 +101,7 @@ public class JDLowSpeed extends PluginOptional {
                             Iterator<DownloadLink> iter = other.iterator();
                             long othersSpeed = 0;
                             while (iter.hasNext()) {
-                                DownloadLink downloadLink2 = (DownloadLink) iter.next();
+                                DownloadLink downloadLink2 = iter.next();
                                 if (downloadLink2.getLinkStatus().isPluginActive() || downloadLink2.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) othersSpeed += downloadLink2.getSpeedMeter().getSpeed();
                             }
                             if (othersSpeed != 0 && ((size - downloadLink.getDownloadCurrent()) / speed) < (size / ((maxspeed * 5 / 4) - othersSpeed))) { return; }
@@ -117,6 +118,52 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
+    
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        MenuItem m;
+
+        if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
+
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.enabled", "Low Speederkennung einschalten"), 0).setActionListener(this));
+            m.setSelected(false);
+        } else {
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.disabled", "Low Speederkennung ausschalten"), 1).setActionListener(this));
+            m.setSelected(true);
+        }
+        return menu;
+    }
+
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
+    }
+
+    @Override
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    @Override
+    public String getVersion() {
+       
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    @Override
+    public boolean initAddon() {
+        JDUtilities.getController().addControlListener(this);
+        logger.info("JDLowSpeed detection ok");
+        return true;
+    }
+
+    
     private void initPlugin() {
         if (!isRunning) {
             logger.info("start");
@@ -148,11 +195,11 @@ public class JDLowSpeed extends PluginOptional {
                             }
                             ff = dlsToCheck.iterator();
                             while (ff.hasNext()) {
-                                DownloadLink downloadLink = (DownloadLink) ff.next();
+                                DownloadLink downloadLink = ff.next();
                                 ArrayList<DownloadLink> other = new ArrayList<DownloadLink>();
                                 Iterator<DownloadLink> it = dls.iterator();
                                 while (it.hasNext()) {
-                                    DownloadLink downloadLink2 = (DownloadLink) it.next();
+                                    DownloadLink downloadLink2 = it.next();
                                     if (!downloadLink2.equals(downloadLink)) other.add(downloadLink);
                                 }
 
@@ -173,57 +220,19 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
+  
+    
+    @Override
+    public void onExit() {
+       
+
+    }
+
+    
     private void stopPlugin() {
         logger.info("stop");
         isRunning = false;
 
-    }
-
-    public void controlEvent(ControlEvent event) {
-        super.controlEvent(event);
-        if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-            if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_START) {
-                initPlugin();
-            } else if (event.getID() == ControlEvent.CONTROL_DOWNLOAD_STOP) {
-                stopPlugin();
-            } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
-                stopPlugin();
-            }
-        }
-
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        MenuItem mi = (MenuItem) e.getSource();
-        if (mi.getActionID() == 0) {
-            subConfig.setProperty(PROPERTY_ENABLED, true);
-            if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-                initPlugin();
-            }
-            subConfig.save();
-        } else {
-            subConfig.setProperty(PROPERTY_ENABLED, false);
-            stopPlugin();
-            subConfig.save();
-
-        }
-    }
-
-    
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-  
-    
-    public String getPluginName() {
-        return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
-    }
-
-    
-    public String getVersion() {
-       
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
 }

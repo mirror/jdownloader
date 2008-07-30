@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -39,38 +40,49 @@ import jd.utils.JDUtilities;
 
 public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
-    /**
+    @SuppressWarnings("unused")
+    private static Logger logger = JDUtilities.getLogger();
+
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	/**
+    public final static int STYLE_CANCEL = 1 << 2;
+
+    public final static int STYLE_MSGLABLE = 1 << 4;
+
+    public final static int STYLE_OK = 1 << 1;
+
+    public final static int STYLE_STOP_COUNTDOWN = 1 << 3;
+
+    public static void main(String[] args) {
+       showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
+
+    }
+
+    public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
+        CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
+
+        return d.result;
+    }
+    private JButton btnBAD;
+    private JButton btnCnTh;
+    /**
      * Bestätigungsknopf
      */
     private JButton btnOK;
-
-    private JButton btnBAD;
-
     private Thread countdownThread;
 
     private Component htmlArea;
-
+    public boolean result = false;
     private JScrollPane scrollPane;
 
-    public boolean result = false;
-
-    private JButton btnCnTh;
-    public final static int STYLE_OK = 1 << 1;
-    public final static int STYLE_CANCEL = 1 << 2;
-    public final static int STYLE_STOP_COUNTDOWN = 1 << 3;
-    public final static int STYLE_MSGLABLE = 1 << 4;
-
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
     public CountdownConfirmDialog(Frame owner, String msg, int countdown)
     {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
+
     public CountdownConfirmDialog(final Frame owner, final String msg, final int countdown, final boolean defaultResult, final int style) {
         super(owner);
         setModal(true);
@@ -79,6 +91,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         this.countdownThread = new Thread() {
 
+            @Override
             public void run() {
                 int c = countdown;
 
@@ -132,7 +145,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             btnBAD.addActionListener(this);
             JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
@@ -156,17 +169,6 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         if (countdownThread != null && countdownThread.isAlive()) this.countdownThread.interrupt();
         countdownThread = null;
-    }
-
-    public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
-        CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
-
-        return d.result;
-    }
-
-    public static void main(String[] args) {
-       showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
-
     }
     
     public void hyperlinkUpdate(HyperlinkEvent e) {

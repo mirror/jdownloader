@@ -26,21 +26,13 @@ import java.io.IOException;
 public abstract class AxeWorker extends Thread
 {
     protected AxeEventListener ael = null;
-    protected ProgressEventListener pel = null;
     protected boolean bStopped;
+    protected long lCurrent;
     protected long lJobSize;
     protected ProgressEvent pe;
-    protected long lCurrent;
+    protected ProgressEventListener pel = null;
 
-    public void setEventListener (AxeEventListener ael)
-    {
-        this.ael = ael;
-    }
-
-    public AxeEventListener getEventListener()
-    {
-        return ael;
-    }
+    protected abstract void computeJobSize() throws IOException;
 
     protected void dispatchEvent (AxeEvent ae)
     {
@@ -48,26 +40,10 @@ public abstract class AxeWorker extends Thread
             ael.handleEvent (ae);
     }
 
-    public void setProgressEventListener (ProgressEventListener pel)
+    protected void dispatchIncrementalProgress (long l)
     {
-        this.pel = pel;
-    }
-
-    public ProgressEventListener getProgressEventListener()
-    {
-        return pel;
-    }
-
-    protected void dispatchProgressEvent (ProgressEvent pe)
-    {
-        if (pel != null)
-            pel.handleEvent (pe);
-    }
-
-    protected void initProgress()
-    {
-        lCurrent = 0;
-        pe = new ProgressEvent (this, 0, lJobSize);
+        lCurrent += l;
+        dispatchProgress();
     }
 
     protected void dispatchProgress ()
@@ -82,10 +58,10 @@ public abstract class AxeWorker extends Thread
         dispatchProgress();
     }
 
-    protected void dispatchIncrementalProgress (long l)
+    protected void dispatchProgressEvent (ProgressEvent pe)
     {
-        lCurrent += l;
-        dispatchProgress();
+        if (pel != null)
+            pel.handleEvent (pe);
     }
 
     public void freeze()
@@ -95,5 +71,29 @@ public abstract class AxeWorker extends Thread
         System.out.println ("Freezed!");
     }
 
-    protected abstract void computeJobSize() throws IOException;
+    public AxeEventListener getEventListener()
+    {
+        return ael;
+    }
+
+    public ProgressEventListener getProgressEventListener()
+    {
+        return pel;
+    }
+
+    protected void initProgress()
+    {
+        lCurrent = 0;
+        pe = new ProgressEvent (this, 0, lJobSize);
+    }
+
+    public void setEventListener (AxeEventListener ael)
+    {
+        this.ael = ael;
+    }
+
+    public void setProgressEventListener (ProgressEventListener pel)
+    {
+        this.pel = pel;
+    }
 }

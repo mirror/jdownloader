@@ -36,21 +36,21 @@ import jd.utils.JDUtilities;
 public class YourFilesBiz extends PluginForHost {
 
     private static final String CODER = "eXecuTe";
-    private static final String HOST = "yourfiles.biz";
-    private static final String PLUGIN_NAME = HOST;
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
-
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
-    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
-
-    private String downloadURL = "";
-    private HTTPConnection urlConnection;
+    private static final String DOWNLOAD_LINK = "value='http://°'>";
+    private static final String DOWNLOAD_NAME = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
 
     // Suchmasken
     private static final String DOWNLOAD_SIZE = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
-    private static final String DOWNLOAD_NAME = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
-    private static final String DOWNLOAD_LINK = "value='http://°'>";
+    private static final String HOST = "yourfiles.biz";
+
+    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
+
+    private static final String PLUGIN_NAME = HOST;
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    private String downloadURL = "";
+    private HTTPConnection urlConnection;
 
     public YourFilesBiz() {
 
@@ -63,54 +63,25 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://yourfiles.biz/rules.php";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-
-        this.downloadURL = "";
-        urlConnection = null;
-
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -152,6 +123,64 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
+    
+    private int getFileSize(String source) {
+
+        int size = 0;
+        String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
+        if (sizeString == null) sizeString = "";
+
+        if (sizeString.contains("MB")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString) * 1024 * 1024);
+        } else if (sizeString.contains("KB")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString) * 1024);
+        } else if (sizeString.contains("Byte")) {
+            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
+            size = (int) Math.round(Double.parseDouble(sizeString));
+        }
+
+        return size;
+
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return MAX_SIMULTAN_DOWNLOADS;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -212,33 +241,16 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     
+    @Override
+    public void reset() {
+
+        this.downloadURL = "";
+        urlConnection = null;
+
+    }
+
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://yourfiles.biz/rules.php";
-    }
-
-    private int getFileSize(String source) {
-
-        int size = 0;
-        String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
-        if (sizeString == null) sizeString = "";
-
-        if (sizeString.contains("MB")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString) * 1024 * 1024);
-        } else if (sizeString.contains("KB")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString) * 1024);
-        } else if (sizeString.contains("Byte")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString));
-        }
-
-        return size;
-
     }
 
 }

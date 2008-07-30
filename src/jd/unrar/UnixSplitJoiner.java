@@ -33,18 +33,60 @@ import java.io.InputStream;
 public class UnixSplitJoiner extends JAxeJoiner
 {
 
-	public UnixSplitJoiner (String sFile, String sDir)
-	{
-		super (sFile, sDir);
-	}
-
 	public UnixSplitJoiner (String sFile)
 	{
 		super (sFile);
 		sDestDir = new File (sFile).getParent();
 	}
 
-	public void run()
+	public UnixSplitJoiner (String sFile, String sDir)
+	{
+		super (sFile, sDir);
+	}
+
+	@Override
+    protected boolean checkNoOverwrite (File f)
+	{
+		File fTemp = new File (sJoinedFile);
+
+		return !fTemp.exists();
+	}
+
+	@Override
+    protected void computeJobSize()
+	{
+		long lReturn = 0;
+		int i = 0;
+		File fTemp;
+
+		do
+		{
+			fTemp = new File (sJoinedFile + getSuffix (i));
+			lReturn += fTemp.length();
+			i++;
+		} while (fTemp.exists());
+
+		lJobSize = lReturn;
+	}
+
+	@Override
+    protected void doCleanup()
+	{
+		new File (sJoinedFile).delete();
+	}
+
+	private String getSuffix (int n)
+	{
+		char[] ca = new char[2];
+
+		ca[0] = (char) ('a' + (n / 26));
+		ca[1] = (char) ('a' + (n % 26));
+
+		return new String (ca);
+	}
+
+	@Override
+    public void run()
 	{
 		File fToJoin, fTemp = null;
 		InputStream is = null;
@@ -150,43 +192,5 @@ public class UnixSplitJoiner extends JAxeJoiner
 			dispatchProgress (lJobSize);
 			dispatchEvent (new JobEndEvent (this, "Join terminated."));
 		}
-	}
-
-	protected boolean checkNoOverwrite (File f)
-	{
-		File fTemp = new File (sJoinedFile);
-
-		return !fTemp.exists();
-	}
-
-	protected void computeJobSize()
-	{
-		long lReturn = 0;
-		int i = 0;
-		File fTemp;
-
-		do
-		{
-			fTemp = new File (sJoinedFile + getSuffix (i));
-			lReturn += fTemp.length();
-			i++;
-		} while (fTemp.exists());
-
-		lJobSize = lReturn;
-	}
-
-	protected void doCleanup()
-	{
-		new File (sJoinedFile).delete();
-	}
-
-	private String getSuffix (int n)
-	{
-		char[] ca = new char[2];
-
-		ca[0] = (char) ('a' + (n / 26));
-		ca[1] = (char) ('a' + (n % 26));
-
-		return new String (ca);
 	}
 }

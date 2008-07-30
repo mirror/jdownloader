@@ -38,28 +38,45 @@ public class DataHu extends PluginForHost {
 
     //
     
+    public DataHu() {
+        super();
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://filebase.to/tos/";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
+            if (requestInfo.getHtmlCode().length() == 0) return false;
+            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
+            String name = test[test.length - 1];
+            downloadLink.setName(name);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     
@@ -68,15 +85,35 @@ public class DataHu extends PluginForHost {
    
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public DataHu() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (aborted) {
@@ -124,37 +161,12 @@ public class DataHu extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (requestInfo.getHtmlCode().length() == 0) return false;
-            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
-            String name = test[test.length - 1];
-            downloadLink.setName(name);
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://filebase.to/tos/";
     }
 }

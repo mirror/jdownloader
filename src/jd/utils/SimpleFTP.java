@@ -39,11 +39,39 @@ import java.util.StringTokenizer;
  */
 public class SimpleFTP {
 
+    private static boolean DEBUG = false;
+
+    private BufferedReader reader = null;
+
+    private Socket socket = null;
+
+    private BufferedWriter writer = null;
+
     /**
      * Create an instance of SimpleFTP.
      */
     public SimpleFTP() {
 
+    }
+
+    /**
+     * Enter ASCII mode for sending text files. This is usually the default
+     * mode. Make sure you use binary mode if you are sending images or other
+     * binary data, as ASCII mode is likely to corrupt them.
+     */
+    public synchronized boolean ascii() throws IOException {
+        sendLine("TYPE A");
+        String response = readLine();
+        return (response.startsWith("200 "));
+    }
+
+    /**
+     * Enter binary mode for sending binary files.
+     */
+    public synchronized boolean bin() throws IOException {
+        sendLine("TYPE I");
+        String response = readLine();
+        return (response.startsWith("200 "));
     }
 
     /**
@@ -88,6 +116,15 @@ public class SimpleFTP {
     }
 
     /**
+     * Changes the working directory (like cd). Returns true if successful.
+     */
+    public synchronized boolean cwd(String dir) throws IOException {
+        sendLine("CWD " + dir);
+        String response = readLine();
+        return (response.startsWith("250 "));
+    }
+
+    /**
      * Disconnects from the FTP server.
      */
     public synchronized void disconnect() throws IOException {
@@ -115,13 +152,46 @@ public class SimpleFTP {
         return dir;
     }
 
-    /**
-     * Changes the working directory (like cd). Returns true if successful.
-     */
-    public synchronized boolean cwd(String dir) throws IOException {
-        sendLine("CWD " + dir);
+    private String readLine() throws IOException {
+        String line = reader.readLine();
+        if (DEBUG) {
+            System.out.println("< " + line);
+        }
+        return line;
+    }
+    public boolean remove(String string) throws IOException {
+        sendLine("DELE "+string);
         String response = readLine();
-        return (response.startsWith("250 "));
+        if(response.startsWith("250"))return true;
+        return false;
+
+    }
+    public boolean rename(String from, String to) throws IOException {
+        sendLine("RNFR "+from);
+        String response = readLine();
+        if(!response.startsWith("350"))return false;
+        sendLine("RNTO "+to);
+        response = readLine();
+        if(response.startsWith("250"))return true;
+        return false;
+
+    }
+
+    /**
+     * Sends a raw command to the FTP server.
+     */
+    private void sendLine(String line) throws IOException {
+        if (socket == null) { throw new IOException("SimpleFTP is not connected."); }
+        try {
+            writer.write(line + "\r\n");
+            writer.flush();
+            if (DEBUG) {
+                System.out.println("> " + line);
+            }
+        } catch (IOException e) {
+            socket = null;
+            throw e;
+        }
     }
 
     /**
@@ -136,7 +206,7 @@ public class SimpleFTP {
 
         return stor(new FileInputStream(file), filename);
     }
-
+    
     /**
      * Sends a file to be stored on the FTP server. Returns true if the file
      * transfer was successful. The file is sent in passive mode to avoid NAT or
@@ -184,76 +254,6 @@ public class SimpleFTP {
 
         response = readLine();
         return response.startsWith("226 ");
-    }
-
-    /**
-     * Enter binary mode for sending binary files.
-     */
-    public synchronized boolean bin() throws IOException {
-        sendLine("TYPE I");
-        String response = readLine();
-        return (response.startsWith("200 "));
-    }
-
-    /**
-     * Enter ASCII mode for sending text files. This is usually the default
-     * mode. Make sure you use binary mode if you are sending images or other
-     * binary data, as ASCII mode is likely to corrupt them.
-     */
-    public synchronized boolean ascii() throws IOException {
-        sendLine("TYPE A");
-        String response = readLine();
-        return (response.startsWith("200 "));
-    }
-
-    /**
-     * Sends a raw command to the FTP server.
-     */
-    private void sendLine(String line) throws IOException {
-        if (socket == null) { throw new IOException("SimpleFTP is not connected."); }
-        try {
-            writer.write(line + "\r\n");
-            writer.flush();
-            if (DEBUG) {
-                System.out.println("> " + line);
-            }
-        } catch (IOException e) {
-            socket = null;
-            throw e;
-        }
-    }
-
-    private String readLine() throws IOException {
-        String line = reader.readLine();
-        if (DEBUG) {
-            System.out.println("< " + line);
-        }
-        return line;
-    }
-
-    private Socket socket = null;
-    private BufferedReader reader = null;
-    private BufferedWriter writer = null;
-
-    private static boolean DEBUG = false;
-
-    public boolean remove(String string) throws IOException {
-        sendLine("DELE "+string);
-        String response = readLine();
-        if(response.startsWith("250"))return true;
-        return false;
-
-    }
-    
-    public boolean rename(String from, String to) throws IOException {
-        sendLine("RNFR "+from);
-        String response = readLine();
-        if(!response.startsWith("350"))return false;
-        sendLine("RNTO "+to);
-        response = readLine();
-        if(response.startsWith("250"))return true;
-        return false;
-
     }
 
 }

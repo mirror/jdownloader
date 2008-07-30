@@ -28,7 +28,6 @@ import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.plugins.download.DownloadInterface;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -39,17 +38,21 @@ import jd.utils.JDUtilities;
  */
 public class DownloadLink extends Property implements Serializable, Comparable<DownloadLink> {
 
-    /**
-     * serialVersionUID
-     */
-    private FilePackage filePackage;
+    public static final int LINKTYPE_CONTAINER = 1;
 
-    private static final long serialVersionUID = 1981079856214268373L;
+    public static final int LINKTYPE_JDU = 2;
 
     public static final int LINKTYPE_NORMAL = 0;
 
-    public static final int LINKTYPE_CONTAINER = 1;
-    public static final int LINKTYPE_JDU = 2;
+    /**
+     * Hierhin soll die Datei gespeichert werden.
+     */
+    // private String fileOutput;
+    /**
+     * Logger für Meldungen
+     */
+    private static Logger logger = JDUtilities.getLogger();
+    private static final long serialVersionUID = 1981079856214268373L;
 
     // public static final int STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
     // 24;
@@ -64,35 +67,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // private transient boolean aborted = false;
 //    private transient String statusText = "";
 
-    /**
-     * Beschreibung des Downloads
-     */
-    private String name;
+    private transient Boolean available = null;
 
-    private String downloadPath = null;
-
-    /**
-     * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
-     * Pfad) abgespeichert.
-     */
-    private String staticFileName;
-
-    /**
-     * Von hier soll de Download stattfinden
-     */
-    private String urlDownload;
-
-    /**
-     * Hoster des Downloads
-     */
-    private String host;
+    private int[] chunksProgress = null;
 
     /**
      * Containername
      */
     private String container;
-
-    private boolean isMirror = false;
 
     /**
      * Dateiname des Containers
@@ -105,9 +87,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int containerIndex = -1;
 
     /**
-     * Zeigt an, ob dieser Downloadlink aktiviert ist
+     * Aktuell heruntergeladene Bytes der Datei
      */
-    private boolean isEnabled;
+    private long downloadCurrent;
+
+    private transient DownloadInterface downloadInstance;
+
+    private transient SingleDownloadController downloadLinkController;
+
+    /**
+     * Maximum der heruntergeladenen Datei (Dateilänge)
+     */
+    private long downloadMax;
+
+    private String downloadPath = null;
 
 //    /**
 //     * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
@@ -115,34 +108,26 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 //    private transient boolean inProgress = false;
 
     /**
-     * Das Plugin, das für diesen Download zuständig ist
+     * serialVersionUID
      */
-    private transient Plugin plugin;
+    private FilePackage filePackage;
 
     /**
-     * Falls vorhanden, das Plugin für den Container, aus der dieser Download
-     * geladen wurde
+     * Hoster des Downloads
      */
-    private transient PluginForContainer pluginForContainer;
+    private String host;
 
     /**
-     * Maximum der heruntergeladenen Datei (Dateilänge)
+     * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
-    private long downloadMax;
+    private boolean isEnabled;
+
+    private boolean isMirror = false;
 
     /**
-     * Aktuell heruntergeladene Bytes der Datei
+     * Lokaler Pfad zum letzten captchafile
      */
-    private long downloadCurrent;
-
-    /**
-     * Hierhin soll die Datei gespeichert werden.
-     */
-    // private String fileOutput;
-    /**
-     * Logger für Meldungen
-     */
-    private static Logger logger = JDUtilities.getLogger();
+    private File latestCaptchaFile = null;
 
 //    /**
 //     * Status des DownloadLinks
@@ -159,43 +144,57 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 //     */
 //    private transient long waittime = 0;
 
+    private boolean limited = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
+
+    private LinkStatus linkStatus;
+
+    private int linkType = LINKTYPE_NORMAL;
+
+    private int maximalspeed = -1;
+
     /**
-     * Lokaler Pfad zum letzten captchafile
+     * Beschreibung des Downloads
      */
-    private File latestCaptchaFile = null;
+    private String name;
+
+    private int partID = -1;
+
+    /**
+     * Das Plugin, das für diesen Download zuständig ist
+     */
+    private transient Plugin plugin;
+
+    /**
+     * Falls vorhanden, das Plugin für den Container, aus der dieser Download
+     * geladen wurde
+     */
+    private transient PluginForContainer pluginForContainer;
+
+    public LinkedList<Object> saveObjects = new LinkedList<Object>();
+
+    private String sourcePluginComment = null;
+
+    private Vector<String> sourcePluginPasswords = null;
 
     /**
      * Speedmeter zum berechnen des downloadspeeds
      */
     private transient SpeedMeter speedMeter;
 
-    private transient Boolean available = null;
-
-    public LinkedList<Object> saveObjects = new LinkedList<Object>();
-
-    private Vector<String> sourcePluginPasswords = null;
-
-    private String sourcePluginComment = null;
-
-    private int maximalspeed = -1;
-
-    private int linkType = LINKTYPE_NORMAL;
-
-    private transient String tempUrlDownload;
-
-    private boolean limited = (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0);
-
-    private transient DownloadInterface downloadInstance;
-
-    private int[] chunksProgress = null;
-
-    private int partID = -1;
+    /**
+     * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
+     * Pfad) abgespeichert.
+     */
+    private String staticFileName;
 
    
 
-    private transient SingleDownloadController downloadLinkController;
+    private transient String tempUrlDownload;
 
-    private LinkStatus linkStatus;
+    /**
+     * Von hier soll de Download stattfinden
+     */
+    private String urlDownload;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -227,89 +226,133 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (name == null && urlDownload != null) this.name = this.extractFileNameFromURL();
     }
 
-    /**
-     * Liefert den Datei Namen dieses Downloads zurück. Wurde der Name mit
-     * setStaticFileName(String) festgelegt wird dieser Name zurückgegeben
-     * 
-     * @return Name des Downloads
-     */
-    public String getName() {
+    public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
 
-        if (this.getStaticFileName() == null) return name == null ? UNKNOWN_FILE_NAME : name;
-        return this.getStaticFileName();
+        if (this.sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
+            this.sourcePluginPasswords.add(sourcePluginPassword);
+        }
 
+        return this;
     }
 
-    /**
-     * Gibt den Hoster dieses Links azurück.
-     * 
-     * @return Der Hoster, auf dem dieser Link verweist
-     */
-    public String getHost() {
-        return host;
-    }
-
-    /**
-     * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
-     * 
-     * @return Das Plugin
-     */
-    public Plugin getPlugin() {
-        return plugin;
-    }
-
-    public PluginForContainer getPluginForContainer() {
-        return pluginForContainer;
-    }
-
-    /**
-     * Liefert die Datei zurück, in die dieser Download gespeichert werden soll
-     * 
-     * @return Die Datei zum Abspeichern
-     */
-    public String getFileOutput() {
-        return JDUtilities.validatePath(getFileOutput0());
-
-    }
-
-    public String getFileOutput0() {
-        if (downloadPath != null) {
-            return new File(new File(downloadPath), getName()).getAbsolutePath();
-        } else {
-            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
-            } else {
-
-                return null;
-
-            }
+    public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
+        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
+            this.addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
 
     }
 
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
-     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
-     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
-     * überprüft werden
+     * Über diese funktion kann das plugin den link benachrichten dass neue
+     * bytes geladen worden sind. dadurchw ird der interne speedmesser
+     * aktualisiert
      * 
-     * @return Link wurde schon getestet (true) nicht getestet(false)
+     * @param bytes
      */
-    public boolean isAvailabilityChecked() {
-        return available != null;
+    // public void addBytes(int bytes, int difftime) {
+    //
+    // this.getSpeedMeter().addSpeedValue(bytes/difftime);
+    //
+    // }
+    public void addSpeedValue(int speed) {
+        this.getSpeedMeter().addSpeedValue(speed);
+    }
 
+    public int compareTo(DownloadLink o) {
+
+        return this.getDownloadURL().compareTo(o.getDownloadURL());
+        // return
+        // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
 
     /**
-     * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
-     * online ist
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
+     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
      * 
-     * @return true/false
+     * @return Datename des Downloads.
      */
-    public boolean isAvailable() {
-        if (this.available != null) { return available; }
-        available = ((PluginForHost) getPlugin()).getFileInformation(this);
-        return available;
+    public String extractFileNameFromURL() {
+        int index = Math.max(this.getDownloadURL().lastIndexOf("/"), this.getDownloadURL().lastIndexOf("\\"));
+        return this.getDownloadURL().substring(index + 1);
+    }
+
+    /**
+     * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
+     * der downlaodinstanz zu resumezwecken verwendet
+     * 
+     * @return
+     */
+    public int[] getChunksProgress() {
+        return chunksProgress;
+    }
+
+    public String getContainer() {
+        return container;
+    }
+
+    public String getContainerFile() {
+        return containerFile;
+    }
+
+    public int getContainerIndex() {
+        return containerIndex;
+    }
+
+    /**
+     * Liefert die bisher heruntergeladenen Bytes zurück
+     * 
+     * @return Anzahl der heruntergeladenen Bytes
+     */
+    public long getDownloadCurrent() {
+        return downloadCurrent;
+    }
+
+    public DownloadInterface getDownloadInstance() {
+        return downloadInstance;
+    }
+
+////    /**
+////     * Liefert den Status dieses Downloads zurück
+////     * 
+////     * @return Status des Downloads
+////     */
+//    public int getStatus() {
+//        return status;
+//    }
+
+//    /**
+//     * Zeigt, ob dieser Download grad in Bearbeitung ist
+//     * 
+//     * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
+//     *         hinzugezählt
+//     */
+//    public boolean isPluginActive() {
+//        return inProgress;
+//    }
+
+    public SingleDownloadController getDownloadLinkController() {
+        return downloadLinkController;
+    }
+
+    /**
+     * Die Größe der Datei
+     * 
+     * @return Die Größe der Datei
+     */
+    public long getDownloadMax() {
+
+        return Math.max(getDownloadCurrent(), downloadMax);
+    }
+
+    /**
+     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurück
+     * 
+     * @return Downloadgeschwindigkeit in bytes/sekunde
+     */
+    public int getDownloadSpeed() {
+        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return -1;
+        return getSpeedMeter().getSpeed();
     }
 
     /**
@@ -336,110 +379,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         return this.urlDownload;
-    }
-
-    /**
-     * Liefert die bisher heruntergeladenen Bytes zurück
-     * 
-     * @return Anzahl der heruntergeladenen Bytes
-     */
-    public long getDownloadCurrent() {
-        return downloadCurrent;
-    }
-
-    /**
-     * Die Größe der Datei
-     * 
-     * @return Die Größe der Datei
-     */
-    public long getDownloadMax() {
-
-        return Math.max(getDownloadCurrent(), downloadMax);
-    }
-
-////    /**
-////     * Liefert den Status dieses Downloads zurück
-////     * 
-////     * @return Status des Downloads
-////     */
-//    public int getStatus() {
-//        return status;
-//    }
-
-//    /**
-//     * Zeigt, ob dieser Download grad in Bearbeitung ist
-//     * 
-//     * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
-//     *         hinzugezählt
-//     */
-//    public boolean isPluginActive() {
-//        return inProgress;
-//    }
-
-    /**
-     * Zeigt, ob dieser Download aktiviert ist
-     * 
-     * @return wahr, falls dieser DownloadLink aktiviert ist
-     */
-    public boolean isEnabled() {
-        return isEnabled;
-    }
-
-    /**
-     * Setzt nachträglich das Plugin. Wird nur zum Laden der Liste benötigt
-     * 
-     * @param plugin
-     *            Das für diesen Download zuständige Plugin
-     */
-    public void setLoadedPlugin(PluginForHost plugin) {
-        this.plugin = plugin;
-    }
-
-    /**
-     * Verändert den Aktiviert-Status
-     * 
-     * @param isEnabled
-     *            Soll dieser DownloadLink aktiviert sein oder nicht
-     */
-    public void setEnabled(boolean isEnabled) {
-        if (!isEnabled) {
-            this.setAborted(true);
-        } else {
-            this.setAborted(false);
-        }
-        if (isEnabled == true) {
-            this.setAborted(false);
-            if (host != null && plugin == null) {
-                logger.severe("Es ist kein passendes HostPlugin geladen");
-                return;
-            }
-            if (container != null && pluginForContainer == null) {
-                logger.severe("Es ist kein passendes ContainerPlugin geladen");
-                return;
-            }
-        }
-        this.isEnabled = isEnabled;
-    }
-
-    /**
-     * Setzt die URL, von der heruntergeladen werden soll
-     * 
-     * @param urlDownload
-     *            Die URL von der heruntergeladen werden soll
-     */
-    public void setUrlDownload(String urlDownload) {
-        if (urlDownload != null) urlDownload = urlDownload.trim();
-        if (this.linkType == LINKTYPE_CONTAINER) {
-            this.tempUrlDownload = urlDownload;
-            this.urlDownload = null;
-            return;
-        }
-        if (urlDownload != null) {
-            this.urlDownload = urlDownload;
-        } else {
-            this.urlDownload = null;
-        }
-
     }
 
 //    /**
@@ -472,30 +411,45 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 //    }
 
     /**
-     * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die
-     * Fortschrittsanzeige
+     * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
+     * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
+     * darstellung des link und kann zusatzinformationen wie dateigröße oder
+     * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
+     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
+     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
      * 
-     * @param downloadedCurrent
-     *            Anzahl der heruntergeladenen Bytes
+     * @return Erweiterter "Dateiname"
      */
-    public void setDownloadCurrent(long downloadedCurrent) {
-        this.downloadCurrent = downloadedCurrent;
+    public String getFileInfomationString() {
+        if (getPlugin() instanceof PluginForHost) {
+            return ((PluginForHost) getPlugin()).getFileInformationString(this);
+        } else {
+            return getName();
+        }
     }
 
     /**
-     * Setzt die Größe der herunterzuladenden Datei, und aktualisiert die
-     * Fortschrittsanzeige
+     * Liefert die Datei zurück, in die dieser Download gespeichert werden soll
      * 
-     * @param downloadMax
-     *            Die Größe der Datei
+     * @return Die Datei zum Abspeichern
      */
-    public void setDownloadMax(int downloadMax) {
+    public String getFileOutput() {
+        return JDUtilities.validatePath(getFileOutput0());
 
-        this.downloadMax = downloadMax;
     }
 
-    public void requestGuiUpdate() {
-        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
+    public String getFileOutput0() {
+        if (downloadPath != null) {
+            return new File(new File(downloadPath), getName()).getAbsolutePath();
+        } else {
+            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+                return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
+            } else {
+
+                return null;
+
+            }
+        }
 
     }
 
@@ -515,51 +469,33 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // }
 
     /**
-     * Setzt den Downloadpfad neu
+     * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
+     * abhängig)
      * 
-     * @param downloadPath
-     *            der neue downloadPfad
+     * @return FilePackage
      */
-    public void setDownloadPath(String downloadPath) {
-        this.downloadPath = downloadPath;
-
+    public FilePackage getFilePackage() {
+        if (filePackage == null) setFilePackage(JDUtilities.getController().getDefaultFilePackage());
+        return filePackage;
     }
 
     /**
-     * Setzt den Namen des Downloads neu
+     * Gibt den Hoster dieses Links azurück.
      * 
-     * @param name
-     *            Neuer Name des Downloads
+     * @return Der Hoster, auf dem dieser Link verweist
      */
-    public void setName(String name) {
-        if (name != null && name.length() > 3) {
-            this.name = name;
-            updatePartID();
-
-        } else {
-            // logger.severe("Set invalid filename: " + name);
-        }
-
+    public String getHost() {
+        return host;
     }
 
-    private void updatePartID() {
-        String name = this.getName();
-        String ext;
-        int index;
-        this.partID = -1;
-        while (name.length() > 0) {
-            index = name.lastIndexOf(".");
-            if (index <= 0) index = name.length() - 1;
-            ext = name.substring(index + 1);
-            name = name.substring(0, index);
-            try {
-                this.partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
-                break;
-            } catch (Exception e) {
-            }
-
-        }
-
+    /**
+     * Gibt den Pfad zum zuletzt gespeichertem Captchabild für diesen download
+     * zurück
+     * 
+     * @return captcha pfad
+     */
+    public File getLatestCaptchaFile() {
+        return latestCaptchaFile;
     }
 
 //    /**
@@ -574,41 +510,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
  
 
-    /**
-     * Setzt alle DownloadWErte zurück
-     */
-    public void reset() {
-        if (getLinkStatus().isPluginActive()) {
-            this.setAborted(true);
-            while (getLinkStatus().isPluginActive()) {
-                try {
-                    Thread.sleep(200);
-                } catch (InterruptedException e) {
-                    
-                    e.printStackTrace();
-                }
-            }
-        }
-        downloadMax = 0;
-       
-        this.chunksProgress = null;
-        this.downloadLinkController = null;
-        downloadCurrent = 0;
-       
-        this.linkStatus= new LinkStatus(this);
-
+    public LinkStatus getLinkStatus() {
+       if(this.linkStatus==null)linkStatus= new LinkStatus(this);
+        return linkStatus;
     }
 
-    /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
-     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
-     * 
-     * @return Datename des Downloads.
-     */
-    public String extractFileNameFromURL() {
-        int index = Math.max(this.getDownloadURL().lastIndexOf("/"), this.getDownloadURL().lastIndexOf("\\"));
-        return this.getDownloadURL().substring(index + 1);
+    public int getLinkType() {
+        return linkType;
     }
 
 //    /**
@@ -652,40 +560,82 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 //        return getRemainingWaittime() > 0;
 //    }
 
+    public int getMaximalspeed() {
+        // return 5000000/40;
+
+        // int maxspeed =
+        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.
+        // PARAM_DOWNLOAD_MAX_SPEED,
+        // 0) * 1024;
+        //
+        // if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
+        // maxspeed = Math.max(1, maxspeed / (Math.max(1,
+        // JDUtilities.getController().getRunningDownloadNum())));
+
+        // return 800 * 1024;
+        if (maximalspeed <= 0) {
+            maximalspeed = Integer.MAX_VALUE;
+        }
+        return maximalspeed;
+    }
+
     /**
-     * Speichert das zuletzt geladene captchabild für diesen link
+     * Liefert den Datei Namen dieses Downloads zurück. Wurde der Name mit
+     * setStaticFileName(String) festgelegt wird dieser Name zurückgegeben
      * 
-     * @param dest
+     * @return Name des Downloads
      */
-    public void setLatestCaptchaFile(File dest) {
-        this.latestCaptchaFile = dest;
+    public String getName() {
+
+        if (this.getStaticFileName() == null) return name == null ? UNKNOWN_FILE_NAME : name;
+        return this.getStaticFileName();
+
+    }
+
+    public int getPartByName() {
+        // if(partID<0){
+        // this.setName(this.extractFileNameFromURL());
+        // }
+        return this.partID;
 
     }
 
     /**
-     * Gibt den Pfad zum zuletzt gespeichertem Captchabild für diesen download
-     * zurück
+     * Liefert das Plugin zurück, daß diesen DownloadLink handhabt
      * 
-     * @return captcha pfad
+     * @return Das Plugin
      */
-    public File getLatestCaptchaFile() {
-        return latestCaptchaFile;
+    public Plugin getPlugin() {
+        return plugin;
     }
 
-    /**
-     * Über diese funktion kann das plugin den link benachrichten dass neue
-     * bytes geladen worden sind. dadurchw ird der interne speedmesser
-     * aktualisiert
-     * 
-     * @param bytes
-     */
-    // public void addBytes(int bytes, int difftime) {
-    //
-    // this.getSpeedMeter().addSpeedValue(bytes/difftime);
-    //
-    // }
-    public void addSpeedValue(int speed) {
-        this.getSpeedMeter().addSpeedValue(speed);
+    public PluginForContainer getPluginForContainer() {
+        return pluginForContainer;
+    }
+
+ 
+    public String getSourcePluginComment() {
+        return sourcePluginComment;
+    }
+
+    public String getSourcePluginPassword() {
+        if (sourcePluginPasswords.size() == 0) return null;
+        if (sourcePluginPasswords.size() == 1) return sourcePluginPasswords.get(0);
+        String ret = "{";
+        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
+            if (sourcePluginPasswords.get(i).trim().length() > 0) {
+                ret += "\"" + sourcePluginPasswords.get(i) + "\"";
+                if (i < sourcePluginPasswords.size() - 1) {
+                    ret += ", ";
+                }
+            }
+        }
+        ret += "}";
+        return ret;
+    }
+
+    public Vector<String> getSourcePluginPasswords() {
+        return sourcePluginPasswords;
     }
 
     /**
@@ -701,16 +651,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwindigkeit in bytes/sekunde zurück
+     * Gibt den Statischen Downloadnamen zurück. Wird null zurückgegeben, so
+     * wird der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
-     * @return Downloadgeschwindigkeit in bytes/sekunde
+     * @return Statischer Dateiname
      */
-    public int getDownloadSpeed() {
-        if (!getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return -1;
-        return getSpeedMeter().getSpeed();
+    public String getStaticFileName() {
+        return staticFileName;
     }
 
- 
     /**
      * @return true falls der download abgebrochen wurde
      */
@@ -719,6 +668,78 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         return getDownloadLinkController().isAborted();
+    }
+
+    /**
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
+     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
+     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
+     * überprüft werden
+     * 
+     * @return Link wurde schon getestet (true) nicht getestet(false)
+     */
+    public boolean isAvailabilityChecked() {
+        return available != null;
+
+    }
+
+    /**
+     * Führt einen verfügbarkeitscheck durch. GIbt true zurück wenn der link
+     * online ist
+     * 
+     * @return true/false
+     */
+    public boolean isAvailable() {
+        if (this.available != null) { return available; }
+        available = ((PluginForHost) getPlugin()).getFileInformation(this);
+        return available;
+    }
+
+    /**
+     * Zeigt, ob dieser Download aktiviert ist
+     * 
+     * @return wahr, falls dieser DownloadLink aktiviert ist
+     */
+    public boolean isEnabled() {
+        return isEnabled;
+    }
+
+    public boolean isLimited() {
+        return limited;
+    }
+
+    public boolean isMirror() {
+        return isMirror;
+    }
+
+    public void requestGuiUpdate() {
+        JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
+
+    }
+
+    /**
+     * Setzt alle DownloadWErte zurück
+     */
+    public void reset() {
+        if (getLinkStatus().isPluginActive()) {
+            this.setAborted(true);
+            while (getLinkStatus().isPluginActive()) {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    
+                    e.printStackTrace();
+                }
+            }
+        }
+        downloadMax = 0;
+       
+        this.chunksProgress = null;
+        this.downloadLinkController = null;
+        downloadCurrent = 0;
+       
+        this.linkStatus= new LinkStatus(this);
+
     }
 
     /**
@@ -741,15 +762,96 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     }
 
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
     /**
-     * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
-     * abhängig)
+     * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
+     * ablegen. Damit können downloads resumed werden
      * 
-     * @return FilePackage
+     * @param is
      */
-    public FilePackage getFilePackage() {
-        if (filePackage == null) setFilePackage(JDUtilities.getController().getDefaultFilePackage());
-        return filePackage;
+    public void setChunksProgress(int[] is) {
+        this.chunksProgress = is;
+
+    }
+
+    public void setContainerFile(String containerFile) {
+        this.containerFile = containerFile;
+    }
+
+    public void setContainerIndex(int containerIndex) {
+        this.containerIndex = containerIndex;
+    }
+
+    /**
+     * Setzt die Anzahl der heruntergeladenen Bytes fest und aktualisiert die
+     * Fortschrittsanzeige
+     * 
+     * @param downloadedCurrent
+     *            Anzahl der heruntergeladenen Bytes
+     */
+    public void setDownloadCurrent(long downloadedCurrent) {
+        this.downloadCurrent = downloadedCurrent;
+    }
+
+    public void setDownloadInstance(DownloadInterface downloadInterface) {
+        this.downloadInstance = downloadInterface;
+
+    }
+
+    public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
+        this.downloadLinkController = downloadLinkController;
+    }
+
+    /**
+     * Setzt die Größe der herunterzuladenden Datei, und aktualisiert die
+     * Fortschrittsanzeige
+     * 
+     * @param downloadMax
+     *            Die Größe der Datei
+     */
+    public void setDownloadMax(int downloadMax) {
+
+        this.downloadMax = downloadMax;
+    }
+
+    /**
+     * Setzt den Downloadpfad neu
+     * 
+     * @param downloadPath
+     *            der neue downloadPfad
+     */
+    public void setDownloadPath(String downloadPath) {
+        this.downloadPath = downloadPath;
+
+    }
+
+    /**
+     * Verändert den Aktiviert-Status
+     * 
+     * @param isEnabled
+     *            Soll dieser DownloadLink aktiviert sein oder nicht
+     */
+    public void setEnabled(boolean isEnabled) {
+        if (!isEnabled) {
+            this.setAborted(true);
+        } else {
+            this.setAborted(false);
+        }
+        if (isEnabled == true) {
+            this.setAborted(false);
+            if (host != null && plugin == null) {
+                logger.severe("Es ist kein passendes HostPlugin geladen");
+                return;
+            }
+            if (container != null && pluginForContainer == null) {
+                logger.severe("Es ist kein passendes ContainerPlugin geladen");
+                return;
+            }
+        }
+        this.isEnabled = isEnabled;
     }
 
     /**
@@ -774,31 +876,84 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Diese methhode Frag das eigene Plugin welche Informationen über die File
-     * bereit gestellt werden. Der String eignet Sich zur darstellung in der UI
+     * Speichert das zuletzt geladene captchabild für diesen link
      * 
-     * @return STring
+     * @param dest
      */
-    public String toString() {
-        return this.getName() + "-> " + this.getFileOutput() + "(" + this.getHost() + ")";
+    public void setLatestCaptchaFile(File dest) {
+        this.latestCaptchaFile = dest;
+
+    }
+
+    public void setLimited(boolean limited) {
+        this.limited = limited;
+    }
+
+    public void setLinkType(int linktypeContainer) {
+        if (linktypeContainer == linkType) return;
+        if (linkType == LINKTYPE_CONTAINER) {
+            logger.severe("You are not allowd to Change the Linktype of " + this);
+            return;
+        }
+        if (linktypeContainer == LINKTYPE_CONTAINER && this.urlDownload != null) {
+            logger.severe("This link already has a value for urlDownload");
+            urlDownload = null;
+        }
+        this.linkType = linktypeContainer;
+
     }
 
     /**
-     * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
-     * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
-     * darstellung des link und kann zusatzinformationen wie dateigröße oder
-     * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
-     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
-     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
+     * Setzt nachträglich das Plugin. Wird nur zum Laden der Liste benötigt
      * 
-     * @return Erweiterter "Dateiname"
+     * @param plugin
+     *            Das für diesen Download zuständige Plugin
      */
-    public String getFileInfomationString() {
-        if (getPlugin() instanceof PluginForHost) {
-            return ((PluginForHost) getPlugin()).getFileInformationString(this);
+    public void setLoadedPlugin(PluginForHost plugin) {
+        this.plugin = plugin;
+    }
+
+    public void setLoadedPluginForContainer(PluginForContainer pluginForContainer) {
+        this.pluginForContainer = pluginForContainer;
+        container = pluginForContainer.getHost();
+    }
+
+    public void setMaximalSpeed(int maximalspeed) {
+        maximalspeed = Math.max(20, maximalspeed);
+        // logger.info(this+ " LINKSPEED: "+maximalspeed);
+        int diff = this.maximalspeed - maximalspeed;
+        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed;
+    }
+
+    public void setMirror(boolean isMirror) {
+        this.isMirror = isMirror;
+    }
+
+    /**
+     * Setzt den Namen des Downloads neu
+     * 
+     * @param name
+     *            Neuer Name des Downloads
+     */
+    public void setName(String name) {
+        if (name != null && name.length() > 3) {
+            this.name = name;
+            updatePartID();
+
         } else {
-            return getName();
+            // logger.severe("Set invalid filename: " + name);
         }
+
+    }
+
+    public DownloadLink setSourcePluginComment(String sourcePluginComment) {
+        this.sourcePluginComment = sourcePluginComment;
+        return this;
+    }
+
+    public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword) {
+        this.sourcePluginPasswords = sourcePluginPassword;
+        return this;
     }
 
     /**
@@ -816,217 +971,62 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         updatePartID();
     }
 
+
+
+
+
+
+
     /**
-     * Gibt den Statischen Downloadnamen zurück. Wird null zurückgegeben, so
-     * wird der dateiname von den jeweiligen plugins automatisch ermittelt.
+     * Setzt die URL, von der heruntergeladen werden soll
      * 
-     * @return Statischer Dateiname
+     * @param urlDownload
+     *            Die URL von der heruntergeladen werden soll
      */
-    public String getStaticFileName() {
-        return staticFileName;
-    }
-
-    public void setLoadedPluginForContainer(PluginForContainer pluginForContainer) {
-        this.pluginForContainer = pluginForContainer;
-        container = pluginForContainer.getHost();
-    }
-
-    public String getContainer() {
-        return container;
-    }
-
-    public String getContainerFile() {
-        return containerFile;
-    }
-
-    public void setContainerFile(String containerFile) {
-        this.containerFile = containerFile;
-    }
-
-    public int getContainerIndex() {
-        return containerIndex;
-    }
-
-    public void setContainerIndex(int containerIndex) {
-        this.containerIndex = containerIndex;
-    }
-
-    public int compareTo(DownloadLink o) {
-
-        return this.getDownloadURL().compareTo(o.getDownloadURL());
-        // return
-        // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
-    }
-
-    public Vector<String> getSourcePluginPasswords() {
-        return sourcePluginPasswords;
-    }
-
-    public DownloadLink setSourcePluginPasswords(Vector<String> sourcePluginPassword) {
-        this.sourcePluginPasswords = sourcePluginPassword;
-        return this;
-    }
-
-    public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
-
-        if (this.sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
-            this.sourcePluginPasswords.add(sourcePluginPassword);
-        }
-
-        return this;
-    }
-
-    public String getSourcePluginPassword() {
-        if (sourcePluginPasswords.size() == 0) return null;
-        if (sourcePluginPasswords.size() == 1) return sourcePluginPasswords.get(0);
-        String ret = "{";
-        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
-            if (sourcePluginPasswords.get(i).trim().length() > 0) {
-                ret += "\"" + sourcePluginPasswords.get(i) + "\"";
-                if (i < sourcePluginPasswords.size() - 1) {
-                    ret += ", ";
-                }
-            }
-        }
-        ret += "}";
-        return ret;
-    }
-
-    public String getSourcePluginComment() {
-        return sourcePluginComment;
-    }
-
-    public DownloadLink setSourcePluginComment(String sourcePluginComment) {
-        this.sourcePluginComment = sourcePluginComment;
-        return this;
-    }
-
-    public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
-        for (int i = 0; i < sourcePluginPasswords.size(); i++) {
-            this.addSourcePluginPassword(sourcePluginPasswords.get(i));
-        }
-
-    }
-
-    public boolean isMirror() {
-        return isMirror;
-    }
-
-    public void setMirror(boolean isMirror) {
-        this.isMirror = isMirror;
-    }
-
-    public void setDownloadInstance(DownloadInterface downloadInterface) {
-        this.downloadInstance = downloadInterface;
-
-    }
-
-    public int getMaximalspeed() {
-        // return 5000000/40;
-
-        // int maxspeed =
-        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.
-        // PARAM_DOWNLOAD_MAX_SPEED,
-        // 0) * 1024;
-        //
-        // if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
-        // maxspeed = Math.max(1, maxspeed / (Math.max(1,
-        // JDUtilities.getController().getRunningDownloadNum())));
-
-        // return 800 * 1024;
-        if (maximalspeed <= 0) {
-            maximalspeed = Integer.MAX_VALUE;
-        }
-        return maximalspeed;
-    }
-
-    public void setMaximalSpeed(int maximalspeed) {
-        maximalspeed = Math.max(20, maximalspeed);
-        // logger.info(this+ " LINKSPEED: "+maximalspeed);
-        int diff = this.maximalspeed - maximalspeed;
-        if (diff > 500 || diff < 500) this.maximalspeed = maximalspeed;
-    }
-
-    public void setLinkType(int linktypeContainer) {
-        if (linktypeContainer == linkType) return;
-        if (linkType == LINKTYPE_CONTAINER) {
-            logger.severe("You are not allowd to Change the Linktype of " + this);
+    public void setUrlDownload(String urlDownload) {
+        if (urlDownload != null) urlDownload = urlDownload.trim();
+        if (this.linkType == LINKTYPE_CONTAINER) {
+            this.tempUrlDownload = urlDownload;
+            this.urlDownload = null;
             return;
         }
-        if (linktypeContainer == LINKTYPE_CONTAINER && this.urlDownload != null) {
-            logger.severe("This link already has a value for urlDownload");
-            urlDownload = null;
+        if (urlDownload != null) {
+            this.urlDownload = urlDownload;
+        } else {
+            this.urlDownload = null;
         }
-        this.linkType = linktypeContainer;
-
-    }
-
-    public int getLinkType() {
-        return linkType;
-    }
-
-    public DownloadInterface getDownloadInstance() {
-        return downloadInstance;
-    }
-
-    public boolean isLimited() {
-        return limited;
-    }
-
-    public void setLimited(boolean limited) {
-        this.limited = limited;
-    }
-
-    /**
-     * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
-     * ablegen. Damit können downloads resumed werden
-     * 
-     * @param is
-     */
-    public void setChunksProgress(int[] is) {
-        this.chunksProgress = is;
 
     }
 
     /**
-     * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
-     * der downlaodinstanz zu resumezwecken verwendet
+     * Diese methhode Frag das eigene Plugin welche Informationen über die File
+     * bereit gestellt werden. Der String eignet Sich zur darstellung in der UI
      * 
-     * @return
+     * @return STring
      */
-    public int[] getChunksProgress() {
-        return chunksProgress;
+    @Override
+    public String toString() {
+        return this.getName() + "-> " + this.getFileOutput() + "(" + this.getHost() + ")";
     }
 
-    public void setAvailable(boolean available) {
-        this.available = available;
-    }
+    private void updatePartID() {
+        String name = this.getName();
+        String ext;
+        int index;
+        this.partID = -1;
+        while (name.length() > 0) {
+            index = name.lastIndexOf(".");
+            if (index <= 0) index = name.length() - 1;
+            ext = name.substring(index + 1);
+            name = name.substring(0, index);
+            try {
+                this.partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+                break;
+            } catch (Exception e) {
+            }
 
-    public int getPartByName() {
-        // if(partID<0){
-        // this.setName(this.extractFileNameFromURL());
-        // }
-        return this.partID;
+        }
 
-    }
-
-
-
-
-
-
-
-    public SingleDownloadController getDownloadLinkController() {
-        return downloadLinkController;
-    }
-
-    public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
-        this.downloadLinkController = downloadLinkController;
-    }
-
-    public LinkStatus getLinkStatus() {
-       if(this.linkStatus==null)linkStatus= new LinkStatus(this);
-        return linkStatus;
     }
 
 }

@@ -2,9 +2,6 @@ package jd.wizardry7.view.pages;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
-
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -20,18 +17,15 @@ public class Welcome extends DefaultWizardPage {
 		return INSTANCE;
 	}
 	
-	private Welcome() {
+	private JLabel label;
+	
+    private Welcome() {
 		super();
 	}
-	
-    private JLabel label;
 
 	
-	protected void initComponents() {
-		label = new JLabel("Welcome to the JDownloader configuration Wizard");
-	}
-	
-	protected Component createBody() {
+	@Override
+    protected Component createBody() {
 		initComponents();
 
 		int n = 10;
@@ -40,6 +34,11 @@ public class Welcome extends DefaultWizardPage {
         panel.add(label, BorderLayout.NORTH);
         
 		return panel;
+	}
+	
+	@Override
+    protected void initComponents() {
+		label = new JLabel("Welcome to the JDownloader configuration Wizard");
 	}
 
 

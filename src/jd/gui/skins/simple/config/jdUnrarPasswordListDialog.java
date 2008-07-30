@@ -48,23 +48,23 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
     private static final long serialVersionUID = 1L;
 
     /**
-     * JTextField wo der Passwort Output eingetragen wird
-     */
-    private JTextArea pwField;
-
-    /**
-     * JScrollPane fuer das pwField
-     */
-    private JScrollPane pwScrollPane;
-
-    /**
      * Knopf zum schliessen des Fensters
      */
     private JButton btnCancel;
+
     /**
      * Knopf zum scheichern der Passwörter
      */
     private JButton btnSave;
+
+    /**
+     * JTextField wo der Passwort Output eingetragen wird
+     */
+    private JTextArea pwField;
+    /**
+     * JScrollPane fuer das pwField
+     */
+    private JScrollPane pwScrollPane;
 
     /**
      * Primary Constructor

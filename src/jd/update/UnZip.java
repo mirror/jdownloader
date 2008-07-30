@@ -31,16 +31,21 @@ import java.util.zip.ZipFile;
 
 
 public class UnZip {
-	protected ZipFile zipF;
+	public boolean autoDelete = false;
 
 	/** The buffer for reading/writing the ZipFile data */
 	protected byte[] b;
+	@SuppressWarnings("unchecked")
+	protected SortedSet dirsMade;
 	/**
 	 * Der Ziehpfand in dem entpackt werden soll
 	 */
 	private File targetPath = null;
+	protected boolean warnedMkDir = false;
+
+	protected ZipFile zipF;
+
 	private File zipFile = null;
-	public boolean autoDelete = false;
 
 	/**
 	 * Konstruktor in dem nur das zipFile angegeben wird
@@ -69,26 +74,6 @@ public class UnZip {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected SortedSet dirsMade;
-
-	@SuppressWarnings("unchecked")
-	public String[] listFiles() {
-		try {
-			zipF = new ZipFile(zipFile);
-			Enumeration all = zipF.entries();
-			LinkedList<String> ret = new LinkedList<String>();
-			while (all.hasMoreElements()) {
-				ret.add(((ZipEntry) all.nextElement()).getName());
-			}
-			return ret.toArray(new String[ret.size()]);
-
-		} catch (IOException err) {
-			err.printStackTrace();
-		}
-		return null;
-	}
-
-	@SuppressWarnings("unchecked")
 	public File[] extract() throws Exception{
 		dirsMade = new TreeSet();
 	
@@ -105,8 +90,6 @@ public class UnZip {
 
 	
 	}
-
-	protected boolean warnedMkDir = false;
 
 	@SuppressWarnings("unchecked")
 	protected File getFile(ZipEntry e) throws IOException {
@@ -145,5 +128,22 @@ public class UnZip {
 			os.close();
 			return toExtract;
 		}
+
+	@SuppressWarnings("unchecked")
+	public String[] listFiles() {
+		try {
+			zipF = new ZipFile(zipFile);
+			Enumeration all = zipF.entries();
+			LinkedList<String> ret = new LinkedList<String>();
+			while (all.hasMoreElements()) {
+				ret.add(((ZipEntry) all.nextElement()).getName());
+			}
+			return ret.toArray(new String[ret.size()]);
+
+		} catch (IOException err) {
+			err.printStackTrace();
+		}
+		return null;
+	}
 
 }

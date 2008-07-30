@@ -31,46 +31,17 @@ import jd.plugins.RequestInfo;
 public class Tinyurl extends PluginForDecrypt {
 
     static private String host = "tinyurl.com";
-    private String version = "2.0.0.0";
+    private Pattern patternLink = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/.*");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})", Pattern.CASE_INSENSITIVE);
 
-    private Pattern patternLink = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/.*");
+    // private String version = "2.0.0.0";
 
     public Tinyurl() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    
-        
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -97,7 +68,43 @@ public class Tinyurl extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    
+        
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

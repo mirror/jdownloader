@@ -36,6 +36,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
@@ -61,35 +62,50 @@ import org.jdesktop.swingx.JXTitledSeparator;
  * 
  */
 public class ConfigurationDialog extends JFrame implements ActionListener, ChangeListener {
-    /**
-     * serialVersionUID
-     */
-    private static final long serialVersionUID = 4046836223202290819L;
-
-    private Configuration configuration;
-
-    private JTabbedPane tabbedPane;
-
     private static ConfigurationDialog CURRENTDIALOG = null;
-
-    private JButton btnSave;
-
-    private JButton btnCancel;
-
-    private UIInterface uiinterface;
-
-    private Vector<ConfigPanel> configPanels = new Vector<ConfigPanel>();
 
     public static ConfigurationDialog DIALOG;
 
     public static Frame PARENTFRAME = null;
 
+    /**
+     * serialVersionUID
+     */
+    private static final long serialVersionUID = 4046836223202290819L;
+
+    /**
+     * Zeigt die Konfiguration an
+     * 
+     * @param frame
+     * @param uiinterface
+     * @return
+     */
+    public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
+        if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) return false;
+
+        CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
+
+        return true;
+    }
+
+    private JButton btnCancel;
+
+    private JButton btnRestart;
+
+    private JButton btnSave;
+
     @SuppressWarnings("unchecked")
     private Vector<Class> configClasses = new Vector<Class>();
 
+    private Vector<ConfigPanel> configPanels = new Vector<ConfigPanel>();
+
+    private Configuration configuration;
+
     private Vector<JPanel> containerPanels = new Vector<JPanel>();
 
-    private JButton btnRestart;
+    private JTabbedPane tabbedPane;
+
+    private UIInterface uiinterface;
 
     /**
      * @param parent
@@ -112,9 +128,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         if (laf.contains("nimbus") || laf.contains("gtk")) tabbedPane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
 
         tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        tabbedPane.setTabPlacement(SwingConstants.LEFT);
         if (System.getProperty("os.name").toLowerCase().contains("mac") && UIManager.getLookAndFeel().getClass().getName().equals(UIManager.getSystemLookAndFeelClassName())) {
-            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+            tabbedPane.setTabPlacement(SwingConstants.TOP);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
         }
 
@@ -224,50 +240,27 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         setVisible(true);
     }
 
-    private String fill(String s, int maxLength) {
-        int add = maxLength - s.length();
-        for (int i = 0; i < add; i++) {
-            s += " ";
-        }
-        return s;
-    }
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnRestart) {
+            for (int i = 0; i < configPanels.size(); i++) {
+                if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
+            }
+            JDUtilities.setConfiguration(configuration);
+            JDUtilities.saveConfig();
+            JDUtilities.restartJD();
 
-    @SuppressWarnings("unchecked")
-    private void paintPanel(int i) {
+        } else if (e.getSource() == btnSave) {
+            for (int i = 0; i < configPanels.size(); i++) {
+                if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
+            }
+            JDUtilities.setConfiguration(configuration);
+            JDUtilities.saveConfig();
 
-        if (i < configPanels.size() && configPanels.get(i) != null) return;
-        if (i > containerPanels.size() - 1) i = containerPanels.size() - 1;
-        Class class1 = configClasses.get(i);
-        ConfigPanel panel = initSubPanel(class1);
-        configPanels.remove(i);
-        configPanels.add(i, panel);
-        JPanel container = containerPanels.get(i);
-
-        JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBorder(null);
-        // JDUtilities.addToGridBag(container, scrollPane,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH,
-        // GridBagConstraints.NORTH);
-        container.add(panel, BorderLayout.CENTER);
-        // container.add(scrollPane, BorderLayout.CENTER);
-    }
-
-    @SuppressWarnings("unchecked")
-    public ConfigPanel initSubPanel(Class class1) {
-        try {
-
-            Class[] classes = new Class[] { Configuration.class, UIInterface.class };
-            Constructor con = class1.getConstructor(classes);
-            return (ConfigPanel) con.newInstance(new Object[] { configuration, uiinterface });
         }
 
-        catch (Exception e) {
+        this.dispose();
 
-            e.printStackTrace();
-        }
-        return null;
+        setVisible(false);
     }
 
     /**
@@ -317,42 +310,50 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         tabbedPane.addTab(title, JDUtilities.getscaledImageIcon(icon, 20, -1), p);
     }
 
-    /**
-     * Zeigt die Konfiguration an
-     * 
-     * @param frame
-     * @param uiinterface
-     * @return
-     */
-    public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
-        if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) return false;
-
-        CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
-
-        return true;
+    private String fill(String s, int maxLength) {
+        int add = maxLength - s.length();
+        for (int i = 0; i < add; i++) {
+            s += " ";
+        }
+        return s;
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnRestart) {
-            for (int i = 0; i < configPanels.size(); i++) {
-                if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
-            }
-            JDUtilities.setConfiguration(configuration);
-            JDUtilities.saveConfig();
-            JDUtilities.restartJD();
+    @SuppressWarnings("unchecked")
+    public ConfigPanel initSubPanel(Class class1) {
+        try {
 
-        } else if (e.getSource() == btnSave) {
-            for (int i = 0; i < configPanels.size(); i++) {
-                if (configPanels.elementAt(i) != null) configPanels.elementAt(i).save();
-            }
-            JDUtilities.setConfiguration(configuration);
-            JDUtilities.saveConfig();
-
+            Class[] classes = new Class[] { Configuration.class, UIInterface.class };
+            Constructor con = class1.getConstructor(classes);
+            return (ConfigPanel) con.newInstance(new Object[] { configuration, uiinterface });
         }
 
-        this.dispose();
+        catch (Exception e) {
 
-        setVisible(false);
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void paintPanel(int i) {
+
+        if (i < configPanels.size() && configPanels.get(i) != null) return;
+        if (i > containerPanels.size() - 1) i = containerPanels.size() - 1;
+        Class class1 = configClasses.get(i);
+        ConfigPanel panel = initSubPanel(class1);
+        configPanels.remove(i);
+        configPanels.add(i, panel);
+        JPanel container = containerPanels.get(i);
+
+        JScrollPane scrollPane = new JScrollPane(panel);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBorder(null);
+        // JDUtilities.addToGridBag(container, scrollPane,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH,
+        // GridBagConstraints.NORTH);
+        container.add(panel, BorderLayout.CENTER);
+        // container.add(scrollPane, BorderLayout.CENTER);
     }
 
     public void stateChanged(ChangeEvent e) {

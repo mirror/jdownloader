@@ -33,15 +33,25 @@ import jd.parser.Regex;
  * werte einzusetzen
  */
 public class JDTheme {
-    private static String THEME_DIR = "jd/themes/";
-
-    private static Logger logger = JDUtilities.getLogger();
-
     private static HashMap<String, String> data = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData;
 
+    private static Logger logger = JDUtilities.getLogger();
+
+    private static String THEME_DIR = "jd/themes/";
+
     // private static File themeFile; ;
+
+    /**
+     * Gibt eine Farbe zum key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static Color C(String key, String def) {
+        return new Color(Integer.parseInt(V(key, def), 16));
+    }
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
@@ -74,16 +84,16 @@ public class JDTheme {
         return def;
 
     }
-
     /**
-     * Gibt ein icon zum key zurück
+     * Gibt ein Image zum key zurück
      * 
      * @param key
      * @return
      */
-    public static ImageIcon II(String key) {
-        return new ImageIcon(JDUtilities.getImage(V(key)));
+    public static Image I(String key) {
+        return JDUtilities.getImage(V(key));
     }
+    
     /**
      * Gibt ein skaliertes Image zurück
      * @param key
@@ -94,15 +104,14 @@ public class JDTheme {
     public static Image I(String key,int width,int height) {
         return JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH);
     }
-    
     /**
-     * Gibt ein Image zum key zurück
+     * Gibt ein icon zum key zurück
      * 
      * @param key
      * @return
      */
-    public static Image I(String key) {
-        return JDUtilities.getImage(V(key));
+    public static ImageIcon II(String key) {
+        return new ImageIcon(JDUtilities.getImage(V(key)));
     }
     /**
      * Gibt ein skaliertes ImageIcon zurück
@@ -113,35 +122,6 @@ public class JDTheme {
      */
     public static ImageIcon II(String key,int width,int height) {
         return new ImageIcon(JDUtilities.getImage(V(key)).getScaledInstance(width, height, Image.SCALE_SMOOTH));
-    }
-    /**
-     * Gibt eine Farbe zum key zurück
-     * 
-     * @param key
-     * @return
-     */
-    public static Color C(String key, String def) {
-        return new Color(Integer.parseInt(V(key, def), 16));
-    }
-
-    /**
-     * Gibt einen Theme String zum Key zurück
-     * 
-     * @param key
-     * @return
-     */
-    public static String V(String key) {
-        return getThemeValue(key, null);
-    }
-
-    /**
-     * Gibt einen Theme String zum Key zurück
-     * 
-     * @param key
-     * @return
-     */
-    public static String V(String key, String def) {
-        return getThemeValue(key, def);
     }
 
     /*
@@ -205,6 +185,26 @@ public class JDTheme {
 
         }
 
+    }
+
+    /**
+     * Gibt einen Theme String zum Key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static String V(String key) {
+        return getThemeValue(key, null);
+    }
+
+    /**
+     * Gibt einen Theme String zum Key zurück
+     * 
+     * @param key
+     * @return
+     */
+    public static String V(String key, String def) {
+        return getThemeValue(key, def);
     }
 
 }

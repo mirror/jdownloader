@@ -23,42 +23,37 @@ import java.io.Serializable;
 public class BackupLink implements Serializable {
   
 
+    public static final int LINKTYPE_CONTAINER = 1;
+	public static final int LINKTYPE_NORMAL = 0;
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public static final int LINKTYPE_NORMAL = 0;
-    public static final int LINKTYPE_CONTAINER = 1;
   
 
-    /**
-     * Von hier soll de Download stattfinden
-     */
-    private String            urlDownload;
- 
     /**
      * Containername
      */
     private String            container;
-    
-
+ 
     /**
      * Dateiname des Containers
      */
     private String            containerFile;
+    
+
     /**
      * Index dieses DownloadLinks innerhalb der Containerdatei
      */
     private int               containerIndex=-1;
-    private int linkType;
     private String containerType;
+    private int linkType;
+    /**
+     * Von hier soll de Download stattfinden
+     */
+    private String            urlDownload;
   
   
-    public BackupLink(String urlDownload) {       
-        linkType=LINKTYPE_NORMAL;
-            this.urlDownload = urlDownload;
-    
-    }
     public BackupLink(File containerfile, int id,String containerType) {       
         containerFile=containerfile.getAbsolutePath();
         containerIndex=id;
@@ -66,8 +61,10 @@ public class BackupLink implements Serializable {
         linkType=LINKTYPE_CONTAINER;
 
 }
-    public String getUrlDownload() {
-        return urlDownload;
+    public BackupLink(String urlDownload) {       
+        linkType=LINKTYPE_NORMAL;
+            this.urlDownload = urlDownload;
+    
     }
     public String getContainer() {
         return container;
@@ -78,12 +75,16 @@ public class BackupLink implements Serializable {
     public int getContainerIndex() {
         return containerIndex;
     }
-    public int getLinkType() {
-        return linkType;
-    }
     public String getContainerType() {
         return containerType;
     }
+    public int getLinkType() {
+        return linkType;
+    }
+    public String getUrlDownload() {
+        return urlDownload;
+    }
+@Override
 public String toString(){
     return " containerType :"+containerType+" linkType :"+linkType+" containerIndex :"+containerIndex+" container :"+container+" urlDownload :"+urlDownload;
 }

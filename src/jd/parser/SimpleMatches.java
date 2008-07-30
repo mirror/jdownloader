@@ -30,20 +30,27 @@ import jd.utils.JDUtilities;
 public  class SimpleMatches {
 
     /**
-     * Regexp.getMatches() verwenden
+     * Regexp.count() verwenden
      * 
-     * Schreibt alle Treffer von pattern in source in den übergebenen Vector.
-     * Als Rückgabe erhält man einen 2D-Vector
+     * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
      * 
-     * @param source
-     *            Quelltext
+     * @param data
+     *            Der zu durchsuchende Text
      * @param pattern
-     *            als Pattern wird ein Normaler String mit ° als Wildcard
-     *            verwendet.
-     * @return Treffer
+     *            Das Pattern, daß im Text gefunden werden soll
+     * @return Anzahl der Treffer
      */
-    public @Deprecated static ArrayList<ArrayList<String>> getAllSimpleMatches (Object source, String pattern) {
-        return SimpleMatches.getAllSimpleMatches(source.toString(), Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL));
+    public @Deprecated  static int countOccurences(String data, Pattern pattern) {
+        int position = 0;
+        int occurences = 0;
+        if (pattern != null) {
+            Matcher matcher = pattern.matcher(data);
+            while (matcher.find(position)) {
+                occurences++;
+                position = matcher.start() + matcher.group().length();
+            }
+        }
+        return occurences;
     }
 
     /**
@@ -76,6 +83,40 @@ public  class SimpleMatches {
     /**
      * Regexp.getMatches(int group) verwenden
      * 
+     * @param source
+     * @param pattern
+     * @param id
+     * @return
+     */
+    public @Deprecated static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
+
+        ArrayList<String> ret = new ArrayList<String>();
+        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
+            if (id <= r.groupCount()) ret.add(r.group(id).trim());
+        }
+        return ret;
+    }
+
+    /**
+     * Regexp.getMatches() verwenden
+     * 
+     * Schreibt alle Treffer von pattern in source in den übergebenen Vector.
+     * Als Rückgabe erhält man einen 2D-Vector
+     * 
+     * @param source
+     *            Quelltext
+     * @param pattern
+     *            als Pattern wird ein Normaler String mit ° als Wildcard
+     *            verwendet.
+     * @return Treffer
+     */
+    public @Deprecated static ArrayList<ArrayList<String>> getAllSimpleMatches (Object source, String pattern) {
+        return SimpleMatches.getAllSimpleMatches(source.toString(), Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL));
+    }
+
+    /**
+     * Regexp.getMatches(int group) verwenden
+     * 
      * Gibt von allen treffer von pattern in source jeweils den id-ten Match
      * einem vector zurück. Als pattern kommt ein Simplepattern zum einsatz
      * 
@@ -91,6 +132,83 @@ public  class SimpleMatches {
             if (id <= r.groupCount()) ret.add(r.group(id).trim());
         }
         return ret;
+    }
+    /**
+     * Die Regex ist default Pattern.DOTALL also einfach startPattern(.*?)lastPattern
+     * 
+     * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
+     * Zeilenumbrueche werden dabei auch unterstuetzt
+     * 
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param startPattern
+     *            der Pattern, bei dem die Suche beginnt
+     * @param lastPattern
+     *            der Pattern, bei dem die Suche endet
+     * 
+     * @return der Text zwischen den gefundenen stellen oder, falls nichts
+     *         gefunden wurde, der vollständige Text
+     */
+    public @Deprecated static String getBetween(String data, String startPattern, String lastPattern) {
+        Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
+        Matcher match = p.matcher(data);
+        if (match.find()) return match.group(1);
+        return data;
+    }
+
+    /**
+     * Regexp.getFirstMatch(int group) verwenden
+     * 
+     * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
+     * eine Untergruppe zurück
+     * 
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
+     * @param group
+     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
+     *            vollständige Treffer.
+     * @return Der Treffer
+     */
+    public @Deprecated  static String getFirstMatch(String data, Pattern pattern, int group) {
+        String hit = null;
+        if (data == null) return null;
+        if (pattern != null) {
+            Matcher matcher = pattern.matcher(data);
+            if (matcher.find() && group <= matcher.groupCount()) {
+                hit = matcher.group(group);
+            }
+        }
+        return hit;
+    }
+
+    /**
+     * Regexp.getMatches(0) verwenden
+     * 
+     * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
+     * und gibt die Treffer als Vector zurück
+     * 
+     * @param data
+     *            Der zu durchsuchende Text
+     * @param pattern
+     *            Das Muster, nach dem gesucht werden soll
+     * @return Alle Treffer in dem Text
+     */
+    public @Deprecated  static Vector<String> getMatches(String data, Pattern pattern) {
+        Vector<String> hits = null;
+        if (pattern != null) {
+            Matcher matcher = pattern.matcher(data);
+            if (matcher.find()) {
+                hits = new Vector<String>();
+                int position = 0;
+                while (matcher.find(position)) {
+                    hits.add(matcher.group());
+                    position = matcher.start() + matcher.group().length();
+                }
+            }
+        }
+        return hits;
     }
 
     /**
@@ -136,22 +254,6 @@ public  class SimpleMatches {
         String[] res = SimpleMatches.getSimpleMatches(source.toString(), pattern);
         if (res != null && res.length > id) { return res[id]; }
         return null;
-    }
-    /**
-     * Regexp.getMatches(int group) verwenden
-     * 
-     * @param source
-     * @param pattern
-     * @param id
-     * @return
-     */
-    public @Deprecated static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
-
-        ArrayList<String> ret = new ArrayList<String>();
-        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
-            if (id <= r.groupCount()) ret.add(r.group(id).trim());
-        }
-        return ret;
     }
 
     /**
@@ -217,109 +319,7 @@ public  class SimpleMatches {
                 set.add(m.group());
             }
         }
-        return (String[]) set.toArray(new String[set.size()]);
-    }
-
-    /**
-     * Die Regex ist default Pattern.DOTALL also einfach startPattern(.*?)lastPattern
-     * 
-     * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
-     * Zeilenumbrueche werden dabei auch unterstuetzt
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param startPattern
-     *            der Pattern, bei dem die Suche beginnt
-     * @param lastPattern
-     *            der Pattern, bei dem die Suche endet
-     * 
-     * @return der Text zwischen den gefundenen stellen oder, falls nichts
-     *         gefunden wurde, der vollständige Text
-     */
-    public @Deprecated static String getBetween(String data, String startPattern, String lastPattern) {
-        Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
-        Matcher match = p.matcher(data);
-        if (match.find()) return match.group(1);
-        return data;
-    }
-
-    /**
-     * Regexp.count() verwenden
-     * 
-     * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Pattern, daß im Text gefunden werden soll
-     * @return Anzahl der Treffer
-     */
-    public @Deprecated  static int countOccurences(String data, Pattern pattern) {
-        int position = 0;
-        int occurences = 0;
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            while (matcher.find(position)) {
-                occurences++;
-                position = matcher.start() + matcher.group().length();
-            }
-        }
-        return occurences;
-    }
-
-    /**
-     * Regexp.getMatches(0) verwenden
-     * 
-     * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
-     * und gibt die Treffer als Vector zurück
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
-     * @return Alle Treffer in dem Text
-     */
-    public @Deprecated  static Vector<String> getMatches(String data, Pattern pattern) {
-        Vector<String> hits = null;
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) {
-                hits = new Vector<String>();
-                int position = 0;
-                while (matcher.find(position)) {
-                    hits.add(matcher.group());
-                    position = matcher.start() + matcher.group().length();
-                }
-            }
-        }
-        return hits;
-    }
-
-    /**
-     * Regexp.getFirstMatch(int group) verwenden
-     * 
-     * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
-     * eine Untergruppe zurück
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
-     * @param group
-     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
-     *            vollständige Treffer.
-     * @return Der Treffer
-     */
-    public @Deprecated  static String getFirstMatch(String data, Pattern pattern, int group) {
-        String hit = null;
-        if (data == null) return null;
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find() && group <= matcher.groupCount()) {
-                hit = matcher.group(group);
-            }
-        }
-        return hit;
+        return set.toArray(new String[set.size()]);
     }
 
     

@@ -39,47 +39,47 @@ import jd.utils.JDUtilities;
  * noch?)
  */
 public class Gulli extends PluginForHost {
-    // http://share.gulli.com/files/819611887
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share\\.gulli\\.com/files/[\\d]+.*", Pattern.CASE_INSENSITIVE);
-
-    static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(/captcha[^\"]*)");
-
-    static private final Pattern PAT_FILE_ID = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
-
-    static private final Pattern PAT_DOWNLOAD_URL = Pattern.compile("<form action=\"/(download[^\"]*)");
-    static private final String PAT_DOWNLOAD_SIZE_MB = "div id=\"share_download\">°<h1>° (° MB)</h1>";
-    private static final String PAT_DOWNLOAD_SIZE_B = "div id=\"share_download\">°<h1>° (° B)</h1>";
-
-    private static final String PAT_DOWNLOAD_SIZE_KB = "div id=\"share_download\">°<h1>° (° KB)</h1>";
-
-    static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
-
-    static private final Pattern PAT_DOWNLOAD_ERROR = Pattern.compile("share.gulli.com/error([^\"]*)");
-
-    static private final String HOST_URL = "http://share.gulli.com/";
+    static private final String CODER = "JD-Team";
 
     static private final String DOWNLOAD_URL = "http://share.gulli.com/download";
 
     static private final String HOST = "share.gulli.com";
 
-    static private final String PLUGIN_NAME = HOST;
+    static private final String HOST_URL = "http://share.gulli.com/";
+    static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(/captcha[^\"]*)");
+    static private final Pattern PAT_DOWNLOAD_ERROR = Pattern.compile("share.gulli.com/error([^\"]*)");
+
+    static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
+
+    private static final String PAT_DOWNLOAD_SIZE_B = "div id=\"share_download\">°<h1>° (° B)</h1>";
+
+    private static final String PAT_DOWNLOAD_SIZE_KB = "div id=\"share_download\">°<h1>° (° KB)</h1>";
+
+    static private final String PAT_DOWNLOAD_SIZE_MB = "div id=\"share_download\">°<h1>° (° MB)</h1>";
+
+    static private final Pattern PAT_DOWNLOAD_URL = Pattern.compile("<form action=\"/(download[^\"]*)");
+
+    static private final Pattern PAT_FILE_ID = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
+
+    // http://share.gulli.com/files/819611887
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share\\.gulli\\.com/files/[\\d]+.*", Pattern.CASE_INSENSITIVE);
 
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0";
 
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final String CODER = "JD-Team";
+    static private final String PLUGIN_NAME = HOST;
+
+    private String cookie;
 
     /**
      * ID des Files bei gulli
      */
     private String fileId;
 
-    private String cookie;
+    private HTTPConnection finalDownloadConnection;
 
     private String finalDownloadURL;
-
-    private HTTPConnection finalDownloadConnection;
 
     // private boolean serverIPChecked;
 
@@ -90,28 +90,68 @@ public class Gulli extends PluginForHost {
     }
 
     
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+       
+        return "http://share.gulli.com/faq";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return HOST;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        RequestInfo requestInfo;
+        String name = downloadLink.getName();
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        downloadLink.setName(name);
+        try {
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
+            if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) { return false; }
+            requestInfo = HTTP.readFromURL(requestInfo.getConnection());
+
+            int filesize = 0;
+            String size;
+            size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);
+
+            if (size != null) filesize = (int) (Double.parseDouble(size));
+
+            if (size == null) {
+
+                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2);
+
+                if (size != null) filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024);
+            }
+            if (size == null) {
+                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
+
+                if (size != null) filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024 * 1024);
+
+            }
+            if (filesize > 0) downloadLink.setDownloadMax(filesize);
+
+            return true;
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+        return false;
     }
 
     
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
+    @Override
     public String getHost() {
         return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
     
@@ -119,17 +159,46 @@ public class Gulli extends PluginForHost {
         
     
 
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            return 20;
+        } else {
+            return 1;
+        }
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
     // 
     // public URLConnection getURLConnection() {
     // // XXX: ???
     // return null;
     // }
+    @Override
     public void handle(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         RequestInfo requestInfo = null;
         String dlUrl = null;
 
-        DownloadLink downloadLink = (DownloadLink) parameter;
+        DownloadLink downloadLink = parameter;
         String name = downloadLink.getName();
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
         downloadLink.setName(name);
@@ -235,11 +304,7 @@ public class Gulli extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public void reset() {
         fileId = null;
         cookie = null;
@@ -249,62 +314,9 @@ public class Gulli extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        RequestInfo requestInfo;
-        String name = downloadLink.getName();
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
-        downloadLink.setName(name);
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
-            if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) { return false; }
-            requestInfo = HTTP.readFromURL(requestInfo.getConnection());
-
-            int filesize = 0;
-            String size;
-            size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);
-
-            if (size != null) filesize = (int) (Double.parseDouble(size));
-
-            if (size == null) {
-
-                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2);
-
-                if (size != null) filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024);
-            }
-            if (size == null) {
-                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
-
-                if (size != null) filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024 * 1024);
-
-            }
-            if (filesize > 0) downloadLink.setDownloadMax(filesize);
-
-            return true;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
-
-    
+    @Override
     public void resetPluginGlobals() {
        
 
-    }
-
-    
-    public String getAGBLink() {
-       
-        return "http://share.gulli.com/faq";
     }
 }

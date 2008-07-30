@@ -25,10 +25,10 @@ package jd.controlling;
  * 
  */
 public class SpeedMeter {
-	private int lastSpeed = 0;
+	private static final int capacity = 5;
 	
 	private int c=0;
-	private static final int capacity = 5;
+	private int lastSpeed = 0;
 	private int[] speeds = new int[capacity];
 
 

@@ -11,28 +11,17 @@ import org.schwering.irc.lib.IRCUser;
 
 class IRCListener implements IRCEventListener {
    
+    public static Logger logger = JDUtilities.getLogger();
     private JDChat owner;
     public IRCListener(JDChat owner){
         this.owner=owner;
     }
-    public static Logger logger = JDUtilities.getLogger();
-    public void onRegistered() {
-        //logger.info("Connected");
-        owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, "Connection estabilished");
-        owner.onConnected();
-    }
-
     public void onDisconnected() {
         //logger.info("Disconnected");
         owner.setLoggedIn(false);
         owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
    
         
-    }
-
-    public void onError(String msg) {
-        owner.addToText(null,JDChat.STYLE_ERROR, Utils.prepareMsg(msg));
-        //logger.info("Error: " + msg);
     }
 
     public void onError(int num, String msg) {
@@ -49,6 +38,11 @@ class IRCListener implements IRCEventListener {
                 
             
         }
+    }
+
+    public void onError(String msg) {
+        owner.addToText(null,JDChat.STYLE_ERROR, Utils.prepareMsg(msg));
+        //logger.info("Error: " + msg);
     }
 
     public void onInvite(String chan, IRCUser u, String nickPass) {
@@ -113,6 +107,10 @@ class IRCListener implements IRCEventListener {
       //owner.requestNameList();
 
     }
+
+    public void onPing(String p) {
+//logger.info("ping: "+p);
+    }
  
 
     public void onPrivmsg(String chan, IRCUser u, String msg) {
@@ -145,6 +143,12 @@ class IRCListener implements IRCEventListener {
         owner.removeUser(u.getNick());
     }
 
+    public void onRegistered() {
+        //logger.info("Connected");
+        owner.addToText(null,JDChat.STYLE_SYSTEM_MESSAGE, "Connection estabilished");
+        owner.onConnected();
+    }
+
     public void onReply(int num, String value, String msg) {
         
         //logger.info("Reply #" + num + ": " + value + " " + msg);
@@ -165,10 +169,6 @@ class IRCListener implements IRCEventListener {
 
     public void onTopic(String chan, IRCUser u, String topic) {
         //logger.info(chan + "> " + u.getNick() + " changes topic into: " + topic);
-    }
-
-    public void onPing(String p) {
-//logger.info("ping: "+p);
     }
 
     public void unknown(String a, String b, String c, String d) {

@@ -36,98 +36,33 @@ import jd.utils.JDUtilities;
  */
 
 public abstract class PluginForContainer extends Plugin {
-    private static final int STATUS_NOTEXTRACTED = 0;
-
-    private static final int STATUS_ERROR_EXTRACTING = 1;
-
-    // private static final int STATUS_SUCCESS = 2;
-
-    protected String md5;
-    protected ProgressController progress;
-    private int status = STATUS_NOTEXTRACTED;
-
-    protected Vector<String> downloadLinksURL;
-
     private static HashMap<String, Vector<DownloadLink>> CONTAINER = new HashMap<String, Vector<DownloadLink>>();
 
     private static HashMap<String, Vector<String>> CONTAINERLINKS = new HashMap<String, Vector<String>>();
 
+    // private static final int STATUS_SUCCESS = 2;
+
     private static HashMap<String, PluginForContainer> PLUGINS = new HashMap<String, PluginForContainer>();
+    private static final int STATUS_ERROR_EXTRACTING = 1;
+    private static final int STATUS_NOTEXTRACTED = 0;
 
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
-    protected Vector<String> EXTENSIONS = new Vector<String>();
-
     private ContainerStatus containerStatus;
 
-    /**
-     * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
-     * werden kann
-     * 
-     * @param downloadLink
-     *            Der DownloadLink, dessen URL zurückgegeben werden soll
-     * @return Die URL als String
-     */
+    protected Vector<String> downloadLinksURL;
 
-    public synchronized String extractDownloadURL(DownloadLink downloadLink) {
-        // logger.info("EXTRACT " + downloadLink);
-        if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
-        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
-        return downloadLinksURL.get(downloadLink.getContainerIndex());
-    }
+    protected Vector<String> EXTENSIONS = new Vector<String>();
 
-    public ArrayList<MenuItem> createMenuitems() {
-        return null;
-    }
+    protected String md5;
 
-    public abstract String[] encrypt(String plain);
+    protected ProgressController progress;
+
+    private int status = STATUS_NOTEXTRACTED;
 
     public abstract ContainerStatus callDecryption(File file);
 
-    public String createContainerString(Vector<DownloadLink> downloadLinks) {
-        return null;
-    }
-
-    /**
-     * Erstellt eine Kopie des Containers im Homedir.
-     */
-    public synchronized void doDecryption(String parameter) {
-        logger.info("DO STEP");
-        String file = (String) parameter;
-        if (status == STATUS_ERROR_EXTRACTING) {
-            logger.severe("Expired JD Version. Could not extract links");
-            return;
-        }
-        if (file == null) {
-            logger.severe("Containerfile == null");
-            return;
-        }
-        File f = new File(file);
-        if (md5 == null) md5 = JDUtilities.getLocalHash(f);
-
-        String extension = JDUtilities.getFileExtension(f);
-        if (f.exists()) {
-
-            File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension);
-            if (!res.exists()) {
-                JDUtilities.copyFile(f, res);
-
-            }
-            if (!res.exists()) {
-                logger.severe("Could not copy file to homedir");
-
-            }
-
-            this.containerStatus = callDecryption(res);
-
-        }
-        return;
-    }
-
-    public Vector<String> getExtensions() {
-        return this.EXTENSIONS;
-    }
-
+    @Override
     public synchronized boolean canHandle(String data) {
 
         if (data == null) return false;
@@ -135,60 +70,14 @@ public abstract class PluginForContainer extends Plugin {
 
         return false;
     }
-    public String getLinkName() {
-       return null;
+
+    public String createContainerString(Vector<DownloadLink> downloadLinks) {
+        return null;
     }
-    public synchronized void initContainer(String filename) {
-        if (filename == null) return;
-        if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
-            logger.info("Cached " + filename);
-            containedLinks = CONTAINER.get(filename);
-            if (containedLinks != null) {
-                Iterator<DownloadLink> it = containedLinks.iterator();
-                while (it.hasNext()) {
-                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                }
-            }
 
-            downloadLinksURL = CONTAINERLINKS.get(filename);
-
-            return;
-
-        }
-
-        if (containedLinks == null || containedLinks.size() == 0) {
-            logger.info("Init Container");
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
-            if (progress != null) progress.finalize();
-            progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
-            progress.increase(1);
-
-            doDecryption(filename);
-            progress.increase(1);
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
-            logger.info(filename + " Parse");
-            if (containedLinks != null && downloadLinksURL != null) {
-                decryptLinkProtectorLinks();
-                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + containedLinks.size()));
-                Iterator<DownloadLink> it = containedLinks.iterator();
-                while (it.hasNext()) {
-                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
-                }
-                progress.increase(1);
-            }
-            if (containedLinks == null || containedLinks.size() == 0) {
-                CONTAINER.put(filename, null);
-                CONTAINERLINKS.put(filename, null);
-
-            } else {
-
-                CONTAINER.put(filename, containedLinks);
-                CONTAINERLINKS.put(filename, downloadLinksURL);
-            }
-            progress.finalize();
-            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
-
-        }
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+        return null;
     }
 
     /**
@@ -260,18 +149,58 @@ public abstract class PluginForContainer extends Plugin {
     }
 
     /**
-     * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks
-     * zurück.
-     * 
-     * @param filename
-     *            Die Containerdatei
-     * @return Ein Vector mit DownloadLinks
+     * Erstellt eine Kopie des Containers im Homedir.
      */
-    public Vector<DownloadLink> getContainedDownloadlinks() {
+    public synchronized void doDecryption(String parameter) {
+        logger.info("DO STEP");
+        String file = parameter;
+        if (status == STATUS_ERROR_EXTRACTING) {
+            logger.severe("Expired JD Version. Could not extract links");
+            return;
+        }
+        if (file == null) {
+            logger.severe("Containerfile == null");
+            return;
+        }
+        File f = new File(file);
+        if (md5 == null) md5 = JDUtilities.getLocalHash(f);
 
-        return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
+        String extension = JDUtilities.getFileExtension(f);
+        if (f.exists()) {
+
+            File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension);
+            if (!res.exists()) {
+                JDUtilities.copyFile(f, res);
+
+            }
+            if (!res.exists()) {
+                logger.severe("Could not copy file to homedir");
+
+            }
+
+            this.containerStatus = callDecryption(res);
+
+        }
+        return;
     }
 
+    public abstract String[] encrypt(String plain);
+
+    /**
+     * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
+     * werden kann
+     * 
+     * @param downloadLink
+     *            Der DownloadLink, dessen URL zurückgegeben werden soll
+     * @return Die URL als String
+     */
+
+    public synchronized String extractDownloadURL(DownloadLink downloadLink) {
+        // logger.info("EXTRACT " + downloadLink);
+        if (downloadLinksURL == null) initContainer(downloadLink.getContainerFile());
+        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) return null;
+        return downloadLinksURL.get(downloadLink.getContainerIndex());
+    }
     /**
      * Findet anhand des Hostnamens ein passendes Plugiln
      * 
@@ -287,6 +216,27 @@ public abstract class PluginForContainer extends Plugin {
             if (pHost.canHandle(data)) { return pHost; }
         }
         return null;
+    }
+    /**
+     * Liefert alle in der Containerdatei enthaltenen Dateien als DownloadLinks
+     * zurück.
+     * 
+     * @param filename
+     *            Die Containerdatei
+     * @return Ein Vector mit DownloadLinks
+     */
+    public Vector<DownloadLink> getContainedDownloadlinks() {
+
+        return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
+    }
+
+    public Vector<String> getExtensions() {
+        return this.EXTENSIONS;
+    }
+
+    @Override
+    public String getLinkName() {
+       return null;
     }
 
     /**
@@ -311,5 +261,58 @@ public abstract class PluginForContainer extends Plugin {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public synchronized void initContainer(String filename) {
+        if (filename == null) return;
+        if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
+            logger.info("Cached " + filename);
+            containedLinks = CONTAINER.get(filename);
+            if (containedLinks != null) {
+                Iterator<DownloadLink> it = containedLinks.iterator();
+                while (it.hasNext()) {
+                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                }
+            }
+
+            downloadLinksURL = CONTAINERLINKS.get(filename);
+
+            return;
+
+        }
+
+        if (containedLinks == null || containedLinks.size() == 0) {
+            logger.info("Init Container");
+            fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
+            if (progress != null) progress.finalize();
+            progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
+            progress.increase(1);
+
+            doDecryption(filename);
+            progress.increase(1);
+            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
+            logger.info(filename + " Parse");
+            if (containedLinks != null && downloadLinksURL != null) {
+                decryptLinkProtectorLinks();
+                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + containedLinks.size()));
+                Iterator<DownloadLink> it = containedLinks.iterator();
+                while (it.hasNext()) {
+                    it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
+                }
+                progress.increase(1);
+            }
+            if (containedLinks == null || containedLinks.size() == 0) {
+                CONTAINER.put(filename, null);
+                CONTAINERLINKS.put(filename, null);
+
+            } else {
+
+                CONTAINER.put(filename, containedLinks);
+                CONTAINERLINKS.put(filename, downloadLinksURL);
+            }
+            progress.finalize();
+            fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
+
+        }
     }
 }

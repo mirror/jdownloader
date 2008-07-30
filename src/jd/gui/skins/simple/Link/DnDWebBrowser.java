@@ -49,42 +49,21 @@ import javax.swing.event.HyperlinkListener;
 
 public class DnDWebBrowser extends JDialog {
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 
-     */
-
-    private WebToolBar toolBar;
-
-    private WebBrowserPane browserPane = new WebBrowserPane();
-
-    public DnDWebBrowser(JFrame owner) {
-        super(owner);
-        setModal(true);
-        toolBar = new WebToolBar(browserPane);
-
-        browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY, new DropTargetHandler()));
-
-        Container contentPane = getContentPane();
-        contentPane.add(toolBar, BorderLayout.NORTH);
-        contentPane.add(new JScrollPane(browserPane), BorderLayout.CENTER);
-    }
-
-    public void goTo(URL url) {
-        try {
-            browserPane.setPage(url);
-            toolBar.urlTextField.setText(url.toString());
-        } catch (IOException e) {
-            
-            e.printStackTrace();
-        }
-    }
-
     private class DropTargetHandler implements DropTargetListener {
+        public void dragEnter(DropTargetDragEvent event) {
+            if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
+                event.acceptDrag(DnDConstants.ACTION_COPY);
+            else {
+                event.rejectDrag();
+            }
+        }
+
+        public void dragExit(DropTargetEvent event) {
+        }
+
+        public void dragOver(DropTargetDragEvent event) {
+        }
+
         @SuppressWarnings({ "unchecked", "deprecation" })
         public void drop(DropTargetDropEvent event) {
             Transferable transferable = event.getTransferable();
@@ -112,23 +91,44 @@ public class DnDWebBrowser extends JDialog {
             }
         }
 
-        public void dragEnter(DropTargetDragEvent event) {
-            if (event.isDataFlavorSupported(DataFlavor.javaFileListFlavor))
-                event.acceptDrag(DnDConstants.ACTION_COPY);
-            else {
-                event.rejectDrag();
-            }
-        }
-
-        public void dragExit(DropTargetEvent event) {
-        }
-
-        public void dragOver(DropTargetDragEvent event) {
-        }
-
         public void dropActionChanged(DropTargetDragEvent event) {
         }
 
+    }
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
+    private WebBrowserPane browserPane = new WebBrowserPane();
+
+    /**
+     * 
+     */
+
+    private WebToolBar toolBar;
+
+    public DnDWebBrowser(JFrame owner) {
+        super(owner);
+        setModal(true);
+        toolBar = new WebToolBar(browserPane);
+
+        browserPane.setDropTarget(new DropTarget(browserPane, DnDConstants.ACTION_COPY, new DropTargetHandler()));
+
+        Container contentPane = getContentPane();
+        contentPane.add(toolBar, BorderLayout.NORTH);
+        contentPane.add(new JScrollPane(browserPane), BorderLayout.CENTER);
+    }
+
+    public void goTo(URL url) {
+        try {
+            browserPane.setPage(url);
+            toolBar.urlTextField.setText(url.toString());
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+        }
     }
 }
 
@@ -155,26 +155,10 @@ class WebBrowserPane extends JEditorPane {
         setEditable(false);
     }
 
-    public void goToURL(URL url) {
-        displayPage(url);
-        history.add(url);
-        historyIndex = history.size() - 1;
-    }
-
-    public URL forward() {
-        historyIndex++;
-        if (historyIndex >= history.size()) historyIndex = history.size() - 1;
-
-        URL url = (URL) history.get(historyIndex);
-        displayPage(url);
-
-        return url;
-    }
-
     public URL back() {
         historyIndex--;
         if (historyIndex < 0) historyIndex = 0;
-        URL url = (URL) history.get(historyIndex);
+        URL url = history.get(historyIndex);
         displayPage(url);
 
         return url;
@@ -187,6 +171,22 @@ class WebBrowserPane extends JEditorPane {
             ioException.printStackTrace();
         }
     }
+
+    public URL forward() {
+        historyIndex++;
+        if (historyIndex >= history.size()) historyIndex = history.size() - 1;
+
+        URL url = history.get(historyIndex);
+        displayPage(url);
+
+        return url;
+    }
+
+    public void goToURL(URL url) {
+        displayPage(url);
+        history.add(url);
+        historyIndex = history.size() - 1;
+    }
 }
 
 class WebToolBar extends JToolBar implements HyperlinkListener {
@@ -196,17 +196,17 @@ class WebToolBar extends JToolBar implements HyperlinkListener {
      */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 
-     */
-
-    private WebBrowserPane webBrowserPane;
-
     private JButton backButton;
 
     private JButton forwardButton;
 
     public JTextField urlTextField;
+
+    /**
+     * 
+     */
+
+    private WebBrowserPane webBrowserPane;
 
     public WebToolBar(WebBrowserPane browser) {
         super("Web Navigation");

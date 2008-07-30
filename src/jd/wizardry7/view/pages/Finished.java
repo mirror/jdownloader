@@ -20,19 +20,16 @@ public class Finished extends DefaultWizardPage {
 		return INSTANCE;
 	}
 	
-	private Finished() {
+	private JLabel label;
+	
+    private Finished() {
 		super();
 		setPreferredSize(new Dimension(500,600));
 	}
-	
-    private JLabel label;
 
 	
-	protected void initComponents() {
-	    label = new JLabel("You did it! Press the finish button to use JDownloader.");
-	}
-	
-	protected Component createBody() {
+	@Override
+    protected Component createBody() {
 		initComponents();
 
 		int n = 10;
@@ -43,9 +40,15 @@ public class Finished extends DefaultWizardPage {
 		return panel;
 	}
 	
-	
-	public void exitWizardPage() {
+	@Override
+    public void exitWizardPage() {
 	    JOptionPane.showMessageDialog(null, "You finsished the Wizard!");
+	}
+	
+	
+	@Override
+    protected void initComponents() {
+	    label = new JLabel("You did it! Press the finish button to use JDownloader.");
 	}
 
 }

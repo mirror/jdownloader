@@ -36,18 +36,12 @@ import java.util.zip.ZipInputStream;
 
 public class JAxeJoiner extends AxeWriterWorker
 {
+    protected final int BUFFER_SIZE = 1024;
+    private boolean bZipped = false;
+    protected final int CHUNK_UNIT = 1024;
+    protected String sDestDir;
     protected String sFileToJoin;
     protected String sJoinedFile;
-    protected String sDestDir;
-    private boolean bZipped = false;
-    protected final int BUFFER_SIZE = 1024;
-    protected final int CHUNK_UNIT = 1024;
-
-    public JAxeJoiner (String sFile, String sDir)
-    {
-        sFileToJoin = sFile;
-        sDestDir = sDir;
-    }
 
     public JAxeJoiner (String sFile)
     {
@@ -55,6 +49,43 @@ public class JAxeJoiner extends AxeWriterWorker
         sDestDir = new File (sFile).getParent();
     }
 
+    public JAxeJoiner (String sFile, String sDir)
+    {
+        sFileToJoin = sFile;
+        sDestDir = sDir;
+    }
+
+    @Override
+    protected boolean checkNoOverwrite (File f)
+    {
+        File fTemp = new File (sJoinedFile);
+
+        return !fTemp.exists();
+    }
+
+    @Override
+    protected void computeJobSize()
+    {
+        long lReturn = 0;
+        int i = 1;
+        File fTemp;
+
+        do
+        {
+            fTemp = new File (i == 1 ? sFileToJoin : sJoinedFile + "." + formatWidth (i, 3) + (bZipped ? ".zip" : ""));
+            lReturn += fTemp.length();
+            i++;
+        } while (fTemp.exists());
+
+        lJobSize = lReturn;
+    }
+
+    protected void doCleanup()
+    {
+        new File (sJoinedFile).delete();
+    }
+
+    @Override
     public void run()
     {
         File fToJoin, fTemp = null;
@@ -189,33 +220,5 @@ public class JAxeJoiner extends AxeWriterWorker
             dispatchProgress (lJobSize);
             dispatchEvent (new JobEndEvent (this, "Join terminated."));
         }
-    }
-
-    protected boolean checkNoOverwrite (File f)
-    {
-        File fTemp = new File (sJoinedFile);
-
-        return !fTemp.exists();
-    }
-
-    protected void computeJobSize()
-    {
-        long lReturn = 0;
-        int i = 1;
-        File fTemp;
-
-        do
-        {
-            fTemp = new File (i == 1 ? sFileToJoin : sJoinedFile + "." + formatWidth (i, 3) + (bZipped ? ".zip" : ""));
-            lReturn += fTemp.length();
-            i++;
-        } while (fTemp.exists());
-
-        lJobSize = lReturn;
-    }
-
-    protected void doCleanup()
-    {
-        new File (sJoinedFile).delete();
     }
 }

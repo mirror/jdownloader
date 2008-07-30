@@ -53,52 +53,185 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDTrayIcon extends PluginOptional {
+    private class info extends Thread {
+        private Point p;
+
+        public info(Point p) {
+            this.p = p;
+        }
+
+        public void run() {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                interrupt();
+            }
+
+            if (popupMenu.isVisible()) return;
+
+            String displaytext = "";
+            int speed = 0;
+            int downloads = 0;
+
+            showTooltip(p);
+
+            while (counter > 0) {
+                displaytext = "<html><center><b>jDownloader</b></center><br><br>";
+                downloads = JDUtilities.getController().getRunningDownloadNum();
+
+                if (downloads == 0)
+                    displaytext += JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>";
+                else
+                    displaytext += "<i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i> " + downloads + "<br>";
+
+                speed = JDUtilities.getController().getSpeedMeter() / 1000;
+
+                displaytext += "<br><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i> " + speed + "kb/s";
+
+                displaytext += "</html>";
+                toollabel.setText(displaytext);
+
+                counter--;
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    interrupt();
+                }
+            }
+
+            hideTooltip();
+        }
+    }
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    private JPopupMenu popupMenu;
-    private JWindow trayParent;
-    private TrayIcon trayIcon;
-    private JMenuItem exit;
-    private JMenuItem showhide;
-    private JMenuItem startstop;
-    private JMenuItem stopafter;
-    private JMenuItem update;
-    private JMenuItem configuration;
-    private JCheckBoxMenuItem reconnect;
     private JCheckBoxMenuItem clipboard;
+    private JMenuItem configuration;
+    private int counter = 0;
     private JMenuItem dnd;
-    private JWindow toolparent;
-    private JLabel toollabel;
+    private JMenuItem exit;
     private info i;
-    private JMenu speeds;
+    private JPopupMenu popupMenu;
+    private JCheckBoxMenuItem reconnect;
+    private JMenuItem showhide;
     private JMenuItem speed1;
     private JMenuItem speed2;
     private JMenuItem speed3;
     private JMenuItem speed4;
     private JMenuItem speed5;
-    private int counter = 0;
+    private JMenu speeds;
+    private JMenuItem startstop;
+    private JMenuItem stopafter;
+    private JLabel toollabel;
+    private JWindow toolparent;
+    private TrayIcon trayIcon;
+    private JWindow trayParent;
 
     
-    public String getCoder() {
-        return "jD-Team";
-    }
+    private JMenuItem update;
 
     
     
      
 
     
+    public void actionPerformed(ActionEvent e) {
+        SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+        if (e.getSource() == showhide) {
+            toggleshowhide();
+        } else if (e.getSource() == exit) {
+            JDUtilities.getController().exit();
+
+        } else if (e.getSource() == startstop) {
+            JDUtilities.getController().toggleStartStop();
+
+        } else if (e.getSource() == clipboard) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
+        } else if (e.getSource() == dnd) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));
+
+        } else if (e.getSource() == stopafter) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
+        } else if (e.getSource() == update) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
+        } else if (e.getSource() == configuration) {
+            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
+        } else if (e.getSource() == reconnect) {
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,  JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
+
+            JDUtilities.saveConfig();
+        } else if (e.getSource() == speed1) {
+            int speed = this.getProperties().getIntegerProperty("SPEED1", 100);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+        } else if (e.getSource() == speed2) {
+            int speed = this.getProperties().getIntegerProperty("SPEED2", 200);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+        } else if (e.getSource() == speed3) {
+            int speed = this.getProperties().getIntegerProperty("SPEED3", 300);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+        } else if (e.getSource() == speed4) {
+            int speed = this.getProperties().getIntegerProperty("SPEED4", 400);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+        } else if (e.getSource() == speed5) {
+            int speed = this.getProperties().getIntegerProperty("SPEED5", 500);
+            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
+            JDUtilities.getSubConfig("DOWNLOAD").save();
+            simplegui.setSpeedStatusBar(speed);
+        }
+    }
+
+    
+    /**
+     * Compute the proper position for a popup
+     */
+    private Point computeDisplayPoint(int x, int y, Dimension dim) {
+        if (x - dim.width > 0) x -= dim.width;
+        if (y - dim.height > 0) y -= dim.height;
+        return new Point(x, y);
+    }
+
+    
+    private JMenuItem createMenuItem(String name) {
+        JMenuItem menuItem = new JMenuItem(name);
+        menuItem.setIcon(null);
+        menuItem.addActionListener(this);
+        popupMenu.add(menuItem);
+        return menuItem;
+    }
+
+    public ArrayList<MenuItem> createMenuitems() {
+        return null;
+    }
+
+    public String getCoder() {
+        return "jD-Team";
+    }
+
     public String getPluginName() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }
 
-    
+    public String getRequirements() {
+        return "JRE 1.6+";
+    }
+
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
-    
+    private void hideTooltip() {
+        toolparent.setVisible(false);
+        counter = 0;
+    }
+
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try {
@@ -214,79 +347,24 @@ public class JDTrayIcon extends PluginOptional {
         }
     }
 
-    private JMenuItem createMenuItem(String name) {
-        JMenuItem menuItem = new JMenuItem(name);
-        menuItem.setIcon(null);
-        menuItem.addActionListener(this);
-        popupMenu.add(menuItem);
-        return menuItem;
+    public void onExit() {
+        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+
     }
 
-    public void actionPerformed(ActionEvent e) {
-        SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-        if (e.getSource() == showhide) {
-            toggleshowhide();
-        } else if (e.getSource() == exit) {
-            JDUtilities.getController().exit();
-
-        } else if (e.getSource() == startstop) {
-            JDUtilities.getController().toggleStartStop();
-
-        } else if (e.getSource() == clipboard) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
-        } else if (e.getSource() == dnd) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));
-
-        } else if (e.getSource() == stopafter) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
-        } else if (e.getSource() == update) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));
-        } else if (e.getSource() == configuration) {
-            simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-        } else if (e.getSource() == reconnect) {
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT,  JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-
-            JDUtilities.saveConfig();
-        } else if (e.getSource() == speed1) {
-            int speed = this.getProperties().getIntegerProperty("SPEED1", 100);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
-        } else if (e.getSource() == speed2) {
-            int speed = this.getProperties().getIntegerProperty("SPEED2", 200);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
-        } else if (e.getSource() == speed3) {
-            int speed = this.getProperties().getIntegerProperty("SPEED3", 300);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
-        } else if (e.getSource() == speed4) {
-            int speed = this.getProperties().getIntegerProperty("SPEED4", 400);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
-        } else if (e.getSource() == speed5) {
-            int speed = this.getProperties().getIntegerProperty("SPEED5", 500);
-            JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
-            simplegui.setSpeedStatusBar(speed);
-        }
-    }
-
+    
     private void setTrayPopUp(JPopupMenu trayMenu) {
         popupMenu = trayMenu;
 
         popupMenu.addPopupMenuListener(new PopupMenuListener() {
-            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+            public void popupMenuCanceled(PopupMenuEvent e) {
             }
 
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 trayParent.setVisible(false);
             }
 
-            public void popupMenuCanceled(PopupMenuEvent e) {
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
             }
         });
         popupMenu.setVisible(true);
@@ -312,6 +390,9 @@ public class JDTrayIcon extends PluginOptional {
         });
 
         trayIcon.addMouseMotionListener(new MouseMotionListener() {
+            public void mouseDragged(MouseEvent e) {
+            }
+
             public void mouseMoved(MouseEvent e) {
                 if (popupMenu.isVisible()) { return; }
                 if (counter > 0) {
@@ -323,9 +404,6 @@ public class JDTrayIcon extends PluginOptional {
 
                 i = new info(e.getPoint());
                 i.start();
-            }
-
-            public void mouseDragged(MouseEvent e) {
             }
         });
     }
@@ -354,11 +432,7 @@ public class JDTrayIcon extends PluginOptional {
         });
     }
 
-    private void hideTooltip() {
-        toolparent.setVisible(false);
-        counter = 0;
-    }
-
+    
     private void showTooltip(final Point p) {
         toolparent.setVisible(true);
         toolparent.toFront();
@@ -388,15 +462,7 @@ public class JDTrayIcon extends PluginOptional {
         });
     }
 
-    /**
-     * Compute the proper position for a popup
-     */
-    private Point computeDisplayPoint(int x, int y, Dimension dim) {
-        if (x - dim.width > 0) x -= dim.width;
-        if (y - dim.height > 0) y -= dim.height;
-        return new Point(x, y);
-    }
-
+    
     private void toggleshowhide() {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
         if (showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"))) {
@@ -408,72 +474,6 @@ public class JDTrayIcon extends PluginOptional {
             simplegui.getFrame().setVisible(true);
             showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"));
         }
-    }
-
-    
-    public String getRequirements() {
-        return "JRE 1.6+";
-    }
-
-    private class info extends Thread {
-        private Point p;
-
-        public info(Point p) {
-            this.p = p;
-        }
-
-        public void run() {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                interrupt();
-            }
-
-            if (popupMenu.isVisible()) return;
-
-            String displaytext = "";
-            int speed = 0;
-            int downloads = 0;
-
-            showTooltip(p);
-
-            while (counter > 0) {
-                displaytext = "<html><center><b>jDownloader</b></center><br><br>";
-                downloads = JDUtilities.getController().getRunningDownloadNum();
-
-                if (downloads == 0)
-                    displaytext += JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>";
-                else
-                    displaytext += "<i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i> " + downloads + "<br>";
-
-                speed = JDUtilities.getController().getSpeedMeter() / 1000;
-
-                displaytext += "<br><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i> " + speed + "kb/s";
-
-                displaytext += "</html>";
-                toollabel.setText(displaytext);
-
-                counter--;
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    interrupt();
-                }
-            }
-
-            hideTooltip();
-        }
-    }
-
-    
-    public ArrayList<MenuItem> createMenuitems() {
-        return null;
-    }
-
-    
-    public void onExit() {
-        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
-
     }
 
 }

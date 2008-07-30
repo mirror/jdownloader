@@ -26,23 +26,23 @@ public class ScheduleFrame extends JPanel implements ActionListener{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	//Objekte werden erzeugt
-    Timer t = new Timer(10000,this); 
-    Timer c = new Timer(1000,this);
+	Timer c = new Timer(1000,this); 
+    SpinnerDateModel date_model = new SpinnerDateModel();
+    String dateFormat = "HH:mm:ss | dd.MM.yy";
+    JLabel label;
     JSpinner maxdls = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN,2),1,10,1));
     JSpinner maxspeed = new JSpinner(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED),0,50000,50));
     JCheckBox premium = new JCheckBox();
+    
     JCheckBox reconnect = new JCheckBox();
-    JCheckBox stop_start = new JCheckBox();
-    
-    SpinnerDateModel date_model = new SpinnerDateModel();
-    JSpinner time = new JSpinner(date_model);
-    String dateFormat = "HH:mm:ss | dd.MM.yy";
-    
     JSpinner repeat = new JSpinner(new SpinnerNumberModel(0,0,24,1));
-    JLabel label;
-    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start","Start"));        
-    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running"," Not Running!"));    
+    JButton start = new JButton(JDLocale.L("addons.schedule.menu.start","Start"));
+    
+    JLabel status = new JLabel(JDLocale.L("addons.schedule.menu.running"," Not Running!"));
+    JCheckBox stop_start = new JCheckBox();
+    //Objekte werden erzeugt
+    Timer t = new Timer(10000,this);        
+    JSpinner time = new JSpinner(date_model);    
     
     boolean visible = false;
     

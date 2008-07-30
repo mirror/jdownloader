@@ -33,48 +33,19 @@ import jd.utils.JDUtilities;
 public class UploadJockeycom extends PluginForDecrypt {
 
     static private final String HOST = "uploadjockey.com";
-    private String VERSION = "1.0.0";
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
     private String CODER = "JD-Team";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0";
 
     public UploadJockeycom() {
         super();
     }
 
     
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    
-        
-    
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         URL url;
         RequestInfo requestInfo;
@@ -96,7 +67,43 @@ public class UploadJockeycom extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

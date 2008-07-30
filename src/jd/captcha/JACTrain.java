@@ -33,7 +33,6 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class JACTrain {
-    private Logger logger = UTILITIES.getLogger();
     /**
      * @param args
      */
@@ -43,6 +42,7 @@ public class JACTrain {
         
         main.go();
     }
+    private Logger logger = UTILITIES.getLogger();
     private void go(){
 
         String methodsPath=UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods"});

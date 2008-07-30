@@ -102,77 +102,654 @@ import jd.utils.JDUtilities;
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
 
-    private static final long serialVersionUID = 4974425479842618402L;
+    /**
+     * 
+     * @author JD-Team
+     * 
+     */
+    class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
+
+        /**
+         * 
+         * @author JD-Team
+         * 
+         */
+        private class InternalTable extends JTable {
+            /**
+             * serialVersionUID
+             */
+            private static final long serialVersionUID = 4424930948374806098L;
+
+            private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
+
+            
+            public TableCellRenderer getCellRenderer(int arg0, int arg1) {
+                return internalTableCellRenderer;
+            }
+        }
+
+        /**
+         * Celllistrenderer Für die Linklisten
+         * 
+         * @author JD-Team
+         * 
+         */
+        private class InternalTableCellRenderer extends DefaultTableCellRenderer {
+
+            private static final long serialVersionUID = -7858580590383167251L;
+
+            private final Color COLOR_DONE = new Color(0, 255, 0, 20);
+
+            private final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
+
+            private final Color COLOR_SORT_MARK = new Color(40, 225, 40, 40);
+
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                int id = row;
+                DownloadLink dLink = linkList.get(id);
+
+                if (isSelected) {
+                    c.setBackground(Color.DARK_GRAY);
+                    if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                        c.setBackground(COLOR_ERROR_OFFLINE.darker());
+
+                    } else if (dLink.isAvailabilityChecked()) {
+                        c.setBackground(COLOR_DONE.darker());
+
+                    }
+                    if (Math.abs(sortedOn) == column) {
+                        c.setBackground(COLOR_SORT_MARK.darker());
+                    }
+
+                    c.setForeground(Color.WHITE);
+
+                } else {
+                    c.setBackground(Color.WHITE);
+                    if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                        c.setBackground(COLOR_ERROR_OFFLINE);
+                    } else if (dLink.isAvailabilityChecked()) {
+                        c.setBackground(COLOR_DONE);
+
+                    }
+
+                    if (Math.abs(sortedOn) == column) {
+                        c.setBackground(COLOR_SORT_MARK);
+                    }
+                    c.setForeground(Color.BLACK);
+                }
+
+                return c;
+            }
+        }
+
+        private class InternalTableModel extends AbstractTableModel {
+
+            private static final long serialVersionUID = -7475394342173736030L;
+
+            public Class<?> getColumnClass(int columnIndex) {
+                switch (columnIndex) {
+                case 0:
+                    return Integer.class;
+
+                }
+                return String.class;
+            }
+
+            public int getColumnCount() {
+                return 5;
+            }
+
+            public String getColumnName(int column) {
+
+                switch (column) {
+                case 0:
+                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.id", "*");
+                case 1:
+                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.host", "Host");
+                case 2:
+                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.link", "Link");
+                case 3:
+                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe");
+                case 4:
+                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.info", "Info");
+
+                }
+                return super.getColumnName(column);
+
+            }
+
+            public int getRowCount() {
+
+                return linkList.size();
+            }
+
+            public Object getValueAt(int rowIndex, int columnIndex) {
+
+                switch (columnIndex) {
+                case 0:
+                    return rowIndex + 1;
+                case 1:
+                    return linkList.get(rowIndex).getHost();
+                case 2:
+                    return linkList.get(rowIndex).getName();
+                case 3:
+                    return linkList.get(rowIndex).isAvailabilityChecked() ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "*";
+                case 4:
+                    return getInfoString(linkList.get(rowIndex));
+
+                }
+                return null;
+            }
+        }
+
+        public static final int HOSTER = 1;
+
+        public static final int INFO = 4;
+
+        public static final int NAME = 2;
+
+        private static final long serialVersionUID = -7394319645950106241L;
+
+        public static final int SIZE = 3;
+
+        protected PackageTab _this;
+
+        private ComboBrowseFile brwSaveTo;
+
+        private Vector<DownloadLink> linkList;
+
+        private int sortedOn = 1;
+
+        private JTable table;
+
+        private JTextField txtComment;
+
+        private JTextField txtName;
+
+        private JTextField txtPassword;
+
+        public PackageTab() {
+            linkList = new Vector<DownloadLink>();
+            _this = this;
+            buildGui();
+        }
+
+        public void actionPerformed(ActionEvent e) {
+
+            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"))) {
+                int[] rows = table.getSelectedRows();
+
+                for (int i = rows.length - 1; i >= 0; i--) {
+                    totalLinkList.remove(linkList.remove(rows[i]));
+                }
+
+                this.refreshTable();
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
+                PackageTab newTab = addTab();
+                int[] rows = table.getSelectedRows();
+                if (0 < rows.length) {
+                    DownloadLink linksToTransfer[] = new DownloadLink[rows.length];
+                    int targetIndex = 0;
+                    for (int i = rows.length - 1; i >= 0; i--) {
+                        linksToTransfer[targetIndex++] = this.getLinkAt(rows[i]);
+                        linkList.remove(rows[i]);
+                    }
+                    newTab.addLinks(linksToTransfer);
+                    this.refreshTable();
+                }
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
+                int[] rows = table.getSelectedRows();
+
+                Vector<DownloadLink> list = new Vector<DownloadLink>();
+                for (int i = 0; i < rows.length; i++) {
+                    list.add(linkList.remove(rows[i]));
+                }
+
+                totalLinkList.removeAll(linkList);
+                linkList = list;
+                this.refreshTable();
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {
+                int[] rows = table.getSelectedRows();
+
+                Vector<DownloadLink> list = new Vector<DownloadLink>();
+                for (int i = 0; i < rows.length; i++) {
+                    list.add(linkList.get(rows[i]));
+                }
+
+                linkList = list;
+                int idx = tabbedPane.getSelectedIndex();
+                confirmPackage(idx);
+                removePackageAt(idx);
+                if (tabList.size() == 0) {
+                    this.setVisible(false);
+                    dispose();
+                }
+            }
+        }
+
+        public void addLinks(DownloadLink[] list) {
+            String password = getPassword();
+            String comment = getComment();
+
+            String[] pws = JUnrar.getPasswordArray(password);
+            Vector<String> pwList = new Vector<String>();
+            for (int i = 0; i < pws.length; i++) {
+                pwList.add(pws[i]);
+            }
+
+            for (int i = 0; i < list.length; i++) {
+             
+                linkList.add(list[i]);
+
+                pws = JUnrar.getPasswordArray(list[i].getSourcePluginPassword());
+                for (int i2 = 0; i2 < pws.length; i2++) {
+                    if (pwList.indexOf(pws[i2]) < 0) {
+                        pwList.add(pws[i2]);
+                    }
+                }
+
+                String newComment = list[i].getSourcePluginComment();
+                if (newComment != null && comment.indexOf(newComment) < 0) {
+                    comment += "|" + newComment;
+                }
+            }
+
+            if (comment.startsWith("|")) comment = comment.substring(1);
+
+            String pw = JUnrar.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
+
+            if (!txtComment.hasFocus()) txtComment.setText(comment);
+            if (!txtPassword.hasFocus()) txtPassword.setText(pw);
+            refreshTable();
+            sortOn();
+        }
+
+        private void buildGui() {
+            setLayout(new GridBagLayout());
+            JLabel lblName = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename"));
+            JLabel lblSaveto = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter"));
+            JLabel lblPassword = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort"));
+            JLabel lblComment = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar"));
+
+            this.txtName = new JTextField();
+            this.txtPassword = new JTextField();
+            this.txtComment = new JTextField();
+
+            this.brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
+            brwSaveTo.setEditable(true);
+            brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+            brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+
+            txtName.setPreferredSize(new Dimension(450, 20));
+            txtPassword.setPreferredSize(new Dimension(450, 20));
+            txtComment.setPreferredSize(new Dimension(450, 20));
+            brwSaveTo.setPreferredSize(new Dimension(450, 20));
+            txtName.setMinimumSize(new Dimension(250, 20));
+            txtPassword.setMinimumSize(new Dimension(250, 20));
+            txtComment.setMinimumSize(new Dimension(250, 20));
+            brwSaveTo.setMinimumSize(new Dimension(250, 20));
+
+            PlainDocument doc = (PlainDocument) txtName.getDocument();
+            doc.addDocumentListener(new DocumentListener() {
+                public void changedUpdate(DocumentEvent e) {
+                    onPackageNameChanged(_this);
+                }
+
+                public void insertUpdate(DocumentEvent e) {
+
+                    onPackageNameChanged(_this);
+                }
+
+                public void removeUpdate(DocumentEvent e) {
+
+                    onPackageNameChanged(_this);
+                }
+            });
+            this.table = new InternalTable();
+            table.getTableHeader().addMouseListener(this);
+            InternalTableModel internalTableModel = new InternalTableModel();
+            table.addKeyListener(this);
+            table.setModel(internalTableModel);
+
+            // table.setAutoCreateRowSorter(true);
+            // table.setUpdateSelectionOnSort(true);
+            table.setGridColor(Color.BLUE);
+            table.setAutoCreateColumnsFromModel(true);
+            table.setModel(internalTableModel);
+            table.addMouseListener(this);
+            table.setDragEnabled(true);
+            table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
+            table.getTableHeader().setReorderingAllowed(false);
+
+            this.setPreferredSize(new Dimension(700, 350));
+
+            TableColumn col = null;
+            for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+                col = table.getColumnModel().getColumn(c);
+                switch (c) {
+                case 0:
+                    col.setMinWidth(20);
+                    col.setMaxWidth(30);
+                    col.setPreferredWidth(30);
+                    break;
+                case 1:
+                    col.setMinWidth(50);
+                    col.setMaxWidth(200);
+                    col.setPreferredWidth(150);
+                    break;
+                case 2:
+                    col.setMinWidth(50);
+                    col.setMaxWidth(250);
+                    col.setPreferredWidth(150);
+                    break;
+                case 3:
+                    col.setMinWidth(50);
+                    col.setMaxWidth(120);
+                    col.setPreferredWidth(100);
+                    break;
+                case 4:
+                    col.setPreferredWidth(150);
+                    break;
+
+                }
+            }
+
+            int n = 10;
+            JPanel north = new JPanel(new BorderLayout(n, n));
+            JPanel east = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            JPanel center = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            north.add(east, BorderLayout.WEST);
+            north.add(center, BorderLayout.CENTER);
+
+            east.add(lblName);
+            east.add(lblSaveto);
+            east.add(lblPassword);
+            east.add(lblComment);
+
+            center.add(txtName);
+            center.add(brwSaveTo);
+            center.add(txtPassword);
+            center.add(txtComment);
+
+            setLayout(new BorderLayout(n, n));
+            setBorder(new EmptyBorder(n, n, n, n));
+            add(north, BorderLayout.NORTH);
+            add(new JScrollPane(table), BorderLayout.CENTER);
+
+        }
+
+        public String getComment() {
+            return this.txtComment.getText();
+        }
+
+        public String getDownloadDirectory() {
+            return this.brwSaveTo.getText();
+        }
+
+        public DownloadLink getLinkAt(int id) {
+            DownloadLink ret = linkList.get(id);
+            return ret;
+        }
+
+        public Vector<DownloadLink> getLinkList() {
+            Vector<DownloadLink> ret = new Vector<DownloadLink>();
+            ret.addAll(linkList);
+            return ret;
+        }
+
+        public Vector<Vector<DownloadLink>> getMirrors() {
+            HashMap<String, Vector<DownloadLink>> mirrormap = new HashMap<String, Vector<DownloadLink>>();
+            Vector<Vector<DownloadLink>> mirrorvector = new Vector<Vector<DownloadLink>>();
+
+            for (int i = 0; i < linkList.size(); i++) {
+                String key = linkList.get(i).getName().toLowerCase().replaceAll(".html", "").replaceAll(".htm", "");
+                if (!mirrormap.containsKey(key)) {
+                    Vector<DownloadLink> filelist;
+                    mirrormap.put(key, filelist = new Vector<DownloadLink>());
+                    mirrorvector.add(filelist);
+                }
+                mirrormap.get(key).add(linkList.get(i));
+                linkList.get(i).setMirror(false);
+
+            }
+
+            return mirrorvector;
+        }
+
+        public String getPackageName() {
+            return txtName.getText().trim();
+        }
+
+        public String getPassword() {
+            return this.txtPassword.getText();
+        }
+
+        /**
+         * Checks if a packageTab is empty
+         * 
+         * @return false if there are links within this package, true otherwise
+         */
+        public boolean isEmpty() {
+            return linkList.size() == 0;
+        }
+
+        public void keyPressed(KeyEvent e) {
+        }
+
+        public void keyReleased(KeyEvent e) {
+            if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+                int[] rows = table.getSelectedRows();
+                for (int i = rows.length - 1; i >= 0; i--) {
+                    int id = rows[i];
+
+                    totalLinkList.remove(this.linkList.remove(id));
+                }
+                this.refreshTable();
+            }
+        }
+
+        public void keyTyped(KeyEvent e) {
+        }
+
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        public void mouseEntered(MouseEvent e) {
+        }
+
+        public void mouseExited(MouseEvent e) {
+        }
+
+        public void mousePressed(MouseEvent e) {
+            if (e.getSource() instanceof JTableHeader) {
+                JTableHeader header = (JTableHeader) e.getSource();
+                int column = header.columnAtPoint(e.getPoint());
+                if (sortedOn == column) {
+                    sortedOn *= -1;
+                } else {
+                    this.sortedOn = column;
+                }
+
+                this.sortOn();
+            } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+                Point point = e.getPoint();
+
+                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package") }, this);
+            }
+
+        }
+
+        public void mouseReleased(MouseEvent e) {
+        }
+
+        private void refreshTable() {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    table.tableChanged(new TableModelEvent(table.getModel()));
+                    onPackageNameChanged(PackageTab.this);
+
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                }
+            });
+        }
+
+        public DownloadLink removeLinkAt(int id) {
+            DownloadLink ret = linkList.remove(id);
+            refreshTable();
+            return ret;
+        }
+
+        public void removeLinks(Vector<DownloadLink> move) {
+            for (int i = 0; i < move.size(); i++) {
+                for (int b = 0; b < linkList.size(); b++) {
+                    if (linkList.get(b) == move.get(i)) {
+                        linkList.remove(b);
+                        continue;
+                    }
+                }
+            }
+            refreshTable();
+        }
+
+        public void setComment(String comm) {
+            txtComment.setText(comm);
+        }
+
+        public void setDownloadDirectory(String dir) {
+            brwSaveTo.setText(dir);
+        }
+
+        public void setLinkList(Vector<DownloadLink> finalList) {
+            linkList = new Vector<DownloadLink>();
+            linkList.addAll(finalList);
+            refreshTable();
+        }
+
+        public void setPackageName(String name) {
+            txtName.setText(name);
+        }
+
+        public void setPassword(String pw) {
+            txtPassword.setText(pw);
+        }
+
+        public void sortOn() {
+            switch (Math.abs(sortedOn)) {
+            case HOSTER:
+                Collections.sort(linkList, new Comparator<DownloadLink>() {
+                    public int compare(DownloadLink a, DownloadLink b) {
+                        return sortedOn > 0 ? a.getHost().compareToIgnoreCase(b.getHost()) : b.getHost().compareToIgnoreCase(a.getHost());
+                    }
+
+                });
+
+                break;
+            case NAME:
+                Collections.sort(linkList, new Comparator<DownloadLink>() {
+                    public int compare(DownloadLink a, DownloadLink b) {
+                        return sortedOn > 0 ? a.getName().compareToIgnoreCase(b.getName()) : b.getName().compareToIgnoreCase(a.getName());
+
+                    }
+
+                });
+
+                break;
+            case SIZE:
+                Collections.sort(linkList, new Comparator<DownloadLink>() {
+                    public int compare(DownloadLink a, DownloadLink b) {
+                        if (a.getDownloadMax() == b.getDownloadMax()) return 0;
+                        return sortedOn > 0 ? a.getDownloadMax() > b.getDownloadMax() ? 1 : -1 : a.getDownloadMax() < b.getDownloadMax() ? 1 : -1;
+                    }
+
+                });
+                break;
+            case INFO:
+                Collections.sort(linkList, new Comparator<DownloadLink>() {
+                    public int compare(DownloadLink a, DownloadLink b) {
+                        return sortedOn > 0 ? getInfoString(a).compareToIgnoreCase(getInfoString(b)) : getInfoString(b).compareToIgnoreCase(getInfoString(a));
+                    }
+
+                });
+                break;
+
+            }
+            refreshTable();
+        }
+    }
 
     private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
     public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V2";
 
-    private static final String PROPERTY_HOSTSELECTIONREMOVE = "PROPERTY_HOSTSELECTIONREMOVE";
-
     private static final String PROPERTY_HOSTSELECTIONPACKAGEONLY = "PROPERTY_HOSTSELECTIONPACKAGEONLY";
 
-    public static final String PROPERTY_POSITION = "PROPERTY_POSITION";
+    private static final String PROPERTY_HOSTSELECTIONREMOVE = "PROPERTY_HOSTSELECTIONREMOVE";
 
     public static final String PROPERTY_ONLINE_CHECK = "DO_ONLINE_CHECK_V2";
 
-    private JTabbedPane tabbedPane;
+    public static final String PROPERTY_POSITION = "PROPERTY_POSITION";
 
     protected static int REL = GridBagConstraints.RELATIVE;
 
     protected static int REM = GridBagConstraints.REMAINDER;
 
-    private JButton acceptAll;
-
-    protected Logger logger = JDUtilities.getLogger();
+    private static final long serialVersionUID = 4974425479842618402L;
 
     private JButton accept;
 
-    private SimpleGUI parentFrame;
-
-    private Vector<PackageTab> tabList;
-
-    private JProgressBar progress;
-
-    private Vector<DownloadLink> waitingLinkList;
-
-    private Thread gatherer;
-
-    private JCheckBoxMenuItem mAutoPackage;
-
-    private JCheckBoxMenuItem mHostSelectionPackageOnly;
-
-    private JCheckBoxMenuItem mHostSelectionRemove;
-    
-    private JMenuItem[] mHostSelection;
-
-    private JMenuItem mRemovePackage;
-
-    private JMenuItem mPremiumMirror;
-
-    private JMenuItem mFreeMirror;
-
-    private JMenuItem mPriorityMirror;
-
-    private JMenuItem mRemoveOffline;
-
-    private JMenuItem mRemoveEmptyPackages;
+    private JButton acceptAll;
 
     private int currentTab = -1;
 
+    private Thread gatherer;
+
     private SubConfiguration guiConfig;
-
-    private JMenuItem mMerge;
-
-    private JMenuItem mSplitByHost;
-
-    private JMenuItem mRemoveOfflineAll;
-
-    private JButton sortPackages;
 
     private JComboBox insertAtPosition;
 
+    protected Logger logger = JDUtilities.getLogger();
+
+    private JCheckBoxMenuItem mAutoPackage;
+
+    private JMenuItem mFreeMirror;
+
+    private JMenuItem[] mHostSelection;
+
+    private JCheckBoxMenuItem mHostSelectionPackageOnly;
+    
+    private JCheckBoxMenuItem mHostSelectionRemove;
+
+    private JMenuItem mMerge;
+
+    private JMenuItem mPremiumMirror;
+
+    private JMenuItem mPriorityMirror;
+
+    private JMenuItem mRemoveEmptyPackages;
+
+    private JMenuItem mRemoveOffline;
+
+    private JMenuItem mRemoveOfflineAll;
+
+    private JMenuItem mRemovePackage;
+
+    private JMenuItem mSplitByHost;
+
+    private SimpleGUI parentFrame;
+
+    private JProgressBar progress;
+
+    private JButton sortPackages;
+
+    private JTabbedPane tabbedPane;
+
+    private Vector<PackageTab> tabList;
+
     private ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
+
+    private Vector<DownloadLink> waitingLinkList;
 
     /**
      * @param parent
@@ -196,454 +773,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         pack();
         SimpleGUI.restoreWindow(null, null, this);
         this.setVisible(true);
-    }
-
-    private void initGUI() {
-        buildMenu();
-
-        sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
-        sortPackages.addActionListener(this);
-        acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
-        acceptAll.addActionListener(this);
-        accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "Paket übernehmen"));
-        accept.addActionListener(this);
-        insertAtPosition = new JComboBox(new String[] { JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende") });
-        insertAtPosition.setSelectedIndex(guiConfig.getIntegerProperty(PROPERTY_POSITION, 1));
-        insertAtPosition.addActionListener(this);
-
-        progress = new JProgressBar();
-        progress.setBorder(BorderFactory.createEtchedBorder());
-        progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
-        progress.setStringPainted(true);
-
-        tabbedPane = new JTabbedPane();
-        tabbedPane.addChangeListener(this);
-        tabbedPane.addMouseListener(this);
-        tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
-        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.setTabPlacement(JTabbedPane.LEFT);
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
-            logger.finer("OS: " + System.getProperty("os.name") + " SET TABS ON TOP");
-            tabbedPane.setTabPlacement(JTabbedPane.TOP);
-        }
-        new DropTarget(tabbedPane, this);
-
-        this.setName("LINKGRABBER");
-
-        int n = 5;
-        JPanel panel = new JPanel(new BorderLayout(n, n));
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        setContentPane(panel);
-
-        JPanel inner = new JPanel(new BorderLayout(n, n));
-
-        JPanel south = new JPanel(new BorderLayout(n, n));
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
-
-        south.add(sortPackages, BorderLayout.WEST);
-        bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.insertAtPosition", "Einfügen an Position:")));
-        bpanel.add(insertAtPosition);
-        JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
-        separator.setPreferredSize(new Dimension(5, 20));
-        bpanel.add(separator);
-        bpanel.add(acceptAll);
-        bpanel.add(accept);
-        south.add(bpanel, BorderLayout.CENTER);
-
-        panel.add(inner, BorderLayout.CENTER);
-        inner.add(tabbedPane, BorderLayout.CENTER);
-        inner.add(progress, BorderLayout.SOUTH);
-        panel.add(south, BorderLayout.SOUTH);
-
-        acceptAll.getRootPane().setDefaultButton(acceptAll);
-
-        setPreferredSize(new Dimension(640, 480));
-        setLocationRelativeTo(null);
-        pack();
-
-        if (SimpleGUI.getLastDimension(this, null) != null) {
-            this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
-        }
-        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
-            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
-        }
-
-        this.setVisible(true);
-    }
-
-    private void buildMenu() {
-        // Where the GUI is created:
-        JMenuBar menuBar;
-        JMenu menu, submenu, subsubmenu;
-
-        // Create the menu bar.
-        menuBar = new JMenuBar();
-
-        // Extras Menü
-        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.extras", "Extras"));
-        menuBar.add(menu);
-
-        mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
-        mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
-        mAutoPackage.addActionListener(this);
-        menu.add(mAutoPackage);
-
-        // Edit Menü
-        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
-        menuBar.add(menu);
-
-        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "Zu einem Paket zusammenfassen"));
-        mMerge.addActionListener(this);
-        menu.add(mMerge);
-        mSplitByHost = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.splitByHost", "Pakete nach Host aufteilen"));
-        mSplitByHost.addActionListener(this);
-        menu.add(mSplitByHost);
-        menu.addSeparator();
-        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Links entfernen (Paket)"));
-        mRemoveOffline.addActionListener(this);
-        menu.add(mRemoveOffline);
-        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Links entfernen (Alle)"));
-        mRemoveOfflineAll.addActionListener(this);
-        menu.add(mRemoveOfflineAll);
-        menu.addSeparator();
-        mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removepackage", "Paket verwerfen"));
-        mRemovePackage.addActionListener(this);
-        menu.add(mRemovePackage);
-        mRemoveEmptyPackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptypackages", "Leere Pakete verwerfen"));
-        mRemoveEmptyPackages.addActionListener(this);
-        menu.add(mRemoveEmptyPackages);
-
-        // Auswahl Menü
-        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection", "Auswahl"));
-        menuBar.add(menu);
-
-        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection.mirror", "Mirrorauswahl"));
-        menu.add(submenu);
-        mPremiumMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premium", "Premium"));
-        mPremiumMirror.setEnabled(true);
-        mPremiumMirror.addActionListener(this);
-        submenu.add(mPremiumMirror);
-        mFreeMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.free", "Free"));
-        mFreeMirror.setEnabled(true);
-        mFreeMirror.addActionListener(this);
-        submenu.add(mFreeMirror);
-        mPriorityMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.priority", "Priority"));
-        mPriorityMirror.setEnabled(true);
-        mPriorityMirror.addActionListener(this);
-        submenu.add(mPriorityMirror);
-        menu.addSeparator();
-        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection", "Host Auswahl"));
-        menu.add(submenu);
-        mHostSelectionPackageOnly = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly", "Nur aktuelles Paket"));
-        mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, false));
-        mHostSelectionPackageOnly.addActionListener(this);
-        submenu.add(mHostSelectionPackageOnly);
-        mHostSelectionRemove = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove", "Restliche Links verwerfen"));
-        mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
-        mHostSelectionRemove.addActionListener(this);
-        submenu.add(mHostSelectionRemove);
-        submenu.addSeparator();
-        submenu.addSeparator();
-        Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
-        mHostSelection = new JMenuItem[hosts.size()];
-        subsubmenu = null;
-        for (int i = 0; i < hosts.size(); ++i) {
-            if (i % 10 == 0) {
-                if (subsubmenu != null) {
-                    submenu = subsubmenu;
-                }
-                if (hosts.size() - i > 10) {
-                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelectionMore", "Weitere Hoster"));
-                    submenu.add(subsubmenu);
-                    submenu.addSeparator();
-                }
-            }
-            mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
-            mHostSelection[i].addActionListener(this);
-            submenu.add(mHostSelection[i]);
-        }
-        
-        this.setJMenuBar(menuBar);
-    }
-
-    public int getTotalLinkCount() {
-        return totalLinkList.size();
-    }
-
-    public synchronized void addLinks(DownloadLink[] linkList) {
-
-        for (int i = 0; i < linkList.length; i++) {
-            if (isDupe(linkList[i])) continue;
-            this.totalLinkList.add(linkList[i]);
-            if (linkList[i].isAvailabilityChecked()) {
-                attachLinkToPackage(linkList[i]);
-            } else {
-                waitingLinkList.add(linkList[i]);
-            }
-        }
-        if (waitingLinkList.size() > 0) {
-            startLinkGatherer();
-        }
-    }
-
-    private boolean isDupe(DownloadLink link) {
-        for (DownloadLink l : totalLinkList) {
-            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())) return true;
-        }
-        return false;
-    }
-
-    private void startLinkGatherer() {
-
-        progress.setMaximum(waitingLinkList.size());
-        progress.setString(null);
-        if (gatherer != null && gatherer.isAlive()) return;
-        this.gatherer = new Thread() {
-            public synchronized void run() {
-                DownloadLink link;
-                DownloadLink next;
-                while (waitingLinkList.size() > 0) {
-
-                    link = waitingLinkList.remove(0);
-                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
-                        attachLinkToPackage(link);
-                        try {
-                            Thread.sleep(5);
-                        } catch (InterruptedException e) {
-                        }
-                    } else {
-                        if (!link.isAvailabilityChecked()) {
-                            Iterator<DownloadLink> it = waitingLinkList.iterator();
-                            Vector<DownloadLink> links = new Vector<DownloadLink>();
-                            Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
-                            links.add(link);
-                            dlLinks.add(link);
-                            while (it.hasNext()) {
-                                next = it.next();
-                                if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
-                                    dlLinks.add(next);
-                                    links.add(next);
-                                }
-                            }
-                            if (links.size() > 1) {
-                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
-                                if (ret != null) {
-                                    for (int i = 0; i < links.size(); i++) {
-                                        dlLinks.get(i).setAvailable(ret[i]);
-                                    }
-                                }
-                            }
-                        }
-                        link.isAvailable();
-//                        if (link.isAvailable() ) {
-
-                            attachLinkToPackage(link);
-
-//                        }
-                    }
-                    progress.setValue(waitingLinkList.size());
-
-                }
-                progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
-
-            }
-        };
-
-        gatherer.start();
-    }
-
-    private void reprintTabbedPane() {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-
-                Collections.sort(tabList, new Comparator<PackageTab>() {
-                    public int compare(PackageTab a, PackageTab b) {
-                        return a.getPackageName().compareTo(b.getPackageName());
-                    }
-                });
-                synchronized (tabbedPane) {
-                    tabbedPane.removeAll();
-                    PackageTab tab;
-                    for (int i = 0; i < tabList.size(); i++) {
-                        tab = tabList.get(i);
-                        String title = tab.getPackageName();
-                        if (title.length() > 20) {
-                            // tabbedPane.setToolTipTextAt(i, title);
-                            title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
-                        }
-
-                        tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
-
-                    }
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
-
-                }
-
-            }
-        });
-    }
-
-    private void attachLinkToPackage(DownloadLink link) {
-        String packageName;
-        boolean autoPackage = false;
-        if (link.getFilePackage() != JDUtilities.getController().getDefaultFilePackage()) {
-            packageName = (link.getFilePackage().getName());
-        } else {
-            autoPackage = true;
-            packageName = (this.removeExtension(link.getName()));
-        }
-        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
-            // logger.finer("No Auto package");
-            int lastIndex = tabList.size() - 1;
-            if (lastIndex < 0) {
-                addTab().setPackageName(packageName);
-            }
-            lastIndex = tabList.size() - 1;
-            addLinksToTab(new DownloadLink[] { link }, lastIndex);
-            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
-            tabList.get(lastIndex).setPackageName(newPackageName);
-            onPackageNameChanged(tabList.get(lastIndex));
-
-        } else {
-            // logger.finer("Auto package");
-            int bestSim = 0;
-            int bestIndex = -1;
-            // logger.info("link: " + link.getName());
-            for (int i = 0; i < tabList.size(); i++) {
-
-                int sim = comparePackages(tabList.get(i).getPackageName(), packageName);
-                if (sim > bestSim) {
-                    bestSim = sim;
-                    bestIndex = i;
-                }
-            }
-            // logger.info("Best sym: "+bestSim);
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
-
-                addLinksToTab(new DownloadLink[] { link }, tabList.size());
-                tabList.get(tabList.size() - 1).setPackageName(packageName);
-            } else {
-                // logger.info("Found package " +
-                // tabList.get(bestIndex).getpackageName());
-                String newPackageName = autoPackage ? getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
-                tabList.get(bestIndex).setPackageName(newPackageName);
-                onPackageNameChanged(tabList.get(bestIndex));
-                addLinksToTab(new DownloadLink[] { link }, bestIndex);
-
-            }
-
-        }
-
-    }
-
-    private String removeExtension(String a) {
-        // logger.finer("file " + a);
-        if (a == null) return a;
-        a = a.replaceAll("\\.part([0-9]+)", "");
-        a = a.replaceAll("\\.html", "");
-        a = a.replaceAll("\\.htm", "");
-        int i = a.lastIndexOf(".");
-        // logger.info("FOund . " + i);
-        String ret;
-        if (i <= 1 || (a.length() - i) > 5) {
-            ret = a.toLowerCase().trim();
-        } else {
-            // logger.info("Remove ext");
-            ret = a.substring(0, i).toLowerCase().trim();
-        }
-
-        if (a.equals(ret)) return ret;
-        return (ret);
-
-    }
-
-    private int comparePackages(String a, String b) {
-
-        int c = 0;
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) c++;
-        }
-
-        if (Math.min(a.length(), b.length()) == 0) return 0;
-        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
-        // (b.length()) + ")");
-        return (c * 100) / (b.length());
-    }
-
-    private String getSimString(String a, String b) {
-
-        String ret = "";
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                ret += a.charAt(i);
-            } 
-        }
-        return ret;
-    }
-
-    private void setTitle() {
-        setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
-    }
-
-    public void addLinksToTab(DownloadLink[] linkList, int id) {
-
-        PackageTab tab;
-        // logger.info(id + " - " + tabList.size());
-        if (id >= tabList.size()) {
-            tab = addTab();
-        } else {
-            tab = tabList.get(id);
-        }
-        // logger.finer("add " + linkList.length + " links at " + id);
-
-        tab.addLinks(linkList);
-
-        // validate();
-        onPackageNameChanged(tab);
-    }
-
-    protected void removePackageAt(int i) {
-        PackageTab tab = tabList.remove(i);
-        tabbedPane.removeTabAt(i);
-        totalLinkList.removeAll(tab.getLinkList());
-        this.setTitle();
-    }
-
-    protected void removePackage(PackageTab tab) {
-        removePackageAt(tabList.indexOf(tab));
-
-        totalLinkList.removeAll(tab.getLinkList());
-    }
-
-    protected PackageTab getSelectedTab() {
-        return tabList.get(this.tabbedPane.getSelectedIndex());
-    }
-
-    protected void onPackageNameChanged(PackageTab tab) {
-        for (int i = 0; i < tabList.size(); i++) {
-            if (tabList.get(i) == tab) {
-                String title = tab.getPackageName();
-                if (title.length() > 20) {
-                    tabbedPane.setToolTipTextAt(i, title);
-                    title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
-                }
-                tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
-                return;
-            }
-        }
-    }
-
-    private PackageTab addTab() {
-        PackageTab tab = new PackageTab();
-        tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
-        this.tabList.add(tab);
-        tabbedPane.addTab(tab.getPackageName(), tab);
-        return tab;
-    }
-
-    protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) { return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText(); }
-        return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -845,58 +974,206 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         this.setTitle();
     }
 
-    private void confirmSimpleHost(int idx, String host) {
-        confirmPackage(idx, host);
-        if ((guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true)) || 
-                (tabList.get(idx).isEmpty())) {
-            this.removePackageAt(idx);
-        }
-    }
+    public synchronized void addLinks(DownloadLink[] linkList) {
 
-    /**
-     * checks the LinkGrabber if there are any packages left If not, the
-     * Linkgrabber will be closed and disposed. If there are packages left
-     * nothing happens
-     */
-    private void emptyCheck() {
-        if (this.tabList.size() == 0) {
-            this.setVisible(false);
-            this.dispose();
-        }
-    }
-
-    private void removeOfflineLinks(PackageTab tab) {
-        Vector<DownloadLink> list = tab.getLinkList();
-        for (int i = list.size() - 1; i >= 0; --i) {
-            if (!list.get(i).isAvailable()) {
-                totalLinkList.remove(tab.removeLinkAt(i));
+        for (int i = 0; i < linkList.length; i++) {
+            if (isDupe(linkList[i])) continue;
+            this.totalLinkList.add(linkList[i]);
+            if (linkList[i].isAvailabilityChecked()) {
+                attachLinkToPackage(linkList[i]);
+            } else {
+                waitingLinkList.add(linkList[i]);
             }
         }
-        this.onPackageNameChanged(tab);
-    }
-
-    private void removeEmptyPackages() {
-        for (int i = tabList.size() - 1; i >= 0; --i) {
-            PackageTab tab = tabList.get(i);
-            if (tab.isEmpty()) {
-                this.removePackage(tab);
-            }
+        if (waitingLinkList.size() > 0) {
+            startLinkGatherer();
         }
     }
 
-    private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
-        Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
+    public void addLinksToTab(DownloadLink[] linkList, int id) {
 
-        for (int b = 0; b < pfh.size(); b++) {
-            PluginForHost plugin = pfh.get(b);
-
-            for (int c = 0; c < mirrors.size(); c++) {
-                DownloadLink mirror = mirrors.get(c);
-                if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) return mirror;
-            }
+        PackageTab tab;
+        // logger.info(id + " - " + tabList.size());
+        if (id >= tabList.size()) {
+            tab = addTab();
+        } else {
+            tab = tabList.get(id);
         }
-        logger.severe("Could not find Priorityhoster. This should be impossible. Use first link!");
-        return mirrors.get(0);
+        // logger.finer("add " + linkList.length + " links at " + id);
+
+        tab.addLinks(linkList);
+
+        // validate();
+        onPackageNameChanged(tab);
+    }
+
+    private PackageTab addTab() {
+        PackageTab tab = new PackageTab();
+        tab.setPackageName(JDLocale.L("gui.linkgrabber.lbl.newpackage", "neues package"));
+        this.tabList.add(tab);
+        tabbedPane.addTab(tab.getPackageName(), tab);
+        return tab;
+    }
+
+    private void attachLinkToPackage(DownloadLink link) {
+        String packageName;
+        boolean autoPackage = false;
+        if (link.getFilePackage() != JDUtilities.getController().getDefaultFilePackage()) {
+            packageName = (link.getFilePackage().getName());
+        } else {
+            autoPackage = true;
+            packageName = (this.removeExtension(link.getName()));
+        }
+        if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
+            // logger.finer("No Auto package");
+            int lastIndex = tabList.size() - 1;
+            if (lastIndex < 0) {
+                addTab().setPackageName(packageName);
+            }
+            lastIndex = tabList.size() - 1;
+            addLinksToTab(new DownloadLink[] { link }, lastIndex);
+            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
+            tabList.get(lastIndex).setPackageName(newPackageName);
+            onPackageNameChanged(tabList.get(lastIndex));
+
+        } else {
+            // logger.finer("Auto package");
+            int bestSim = 0;
+            int bestIndex = -1;
+            // logger.info("link: " + link.getName());
+            for (int i = 0; i < tabList.size(); i++) {
+
+                int sim = comparePackages(tabList.get(i).getPackageName(), packageName);
+                if (sim > bestSim) {
+                    bestSim = sim;
+                    bestIndex = i;
+                }
+            }
+            // logger.info("Best sym: "+bestSim);
+            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
+
+                addLinksToTab(new DownloadLink[] { link }, tabList.size());
+                tabList.get(tabList.size() - 1).setPackageName(packageName);
+            } else {
+                // logger.info("Found package " +
+                // tabList.get(bestIndex).getpackageName());
+                String newPackageName = autoPackage ? getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
+                tabList.get(bestIndex).setPackageName(newPackageName);
+                onPackageNameChanged(tabList.get(bestIndex));
+                addLinksToTab(new DownloadLink[] { link }, bestIndex);
+
+            }
+
+        }
+
+    }
+
+    private void buildMenu() {
+        // Where the GUI is created:
+        JMenuBar menuBar;
+        JMenu menu, submenu, subsubmenu;
+
+        // Create the menu bar.
+        menuBar = new JMenuBar();
+
+        // Extras Menü
+        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.extras", "Extras"));
+        menuBar.add(menu);
+
+        mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
+        mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
+        mAutoPackage.addActionListener(this);
+        menu.add(mAutoPackage);
+
+        // Edit Menü
+        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
+        menuBar.add(menu);
+
+        mMerge = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.merge", "Zu einem Paket zusammenfassen"));
+        mMerge.addActionListener(this);
+        menu.add(mMerge);
+        mSplitByHost = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.splitByHost", "Pakete nach Host aufteilen"));
+        mSplitByHost.addActionListener(this);
+        menu.add(mSplitByHost);
+        menu.addSeparator();
+        mRemoveOffline = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOffline", "Fehlerhafte Links entfernen (Paket)"));
+        mRemoveOffline.addActionListener(this);
+        menu.add(mRemoveOffline);
+        mRemoveOfflineAll = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeOfflineAll", "Fehlerhafte Links entfernen (Alle)"));
+        mRemoveOfflineAll.addActionListener(this);
+        menu.add(mRemoveOfflineAll);
+        menu.addSeparator();
+        mRemovePackage = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removepackage", "Paket verwerfen"));
+        mRemovePackage.addActionListener(this);
+        menu.add(mRemovePackage);
+        mRemoveEmptyPackages = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.edit.removeEmptypackages", "Leere Pakete verwerfen"));
+        mRemoveEmptyPackages.addActionListener(this);
+        menu.add(mRemoveEmptyPackages);
+
+        // Auswahl Menü
+        menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection", "Auswahl"));
+        menuBar.add(menu);
+
+        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.selection.mirror", "Mirrorauswahl"));
+        menu.add(submenu);
+        mPremiumMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.premium", "Premium"));
+        mPremiumMirror.setEnabled(true);
+        mPremiumMirror.addActionListener(this);
+        submenu.add(mPremiumMirror);
+        mFreeMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.free", "Free"));
+        mFreeMirror.setEnabled(true);
+        mFreeMirror.addActionListener(this);
+        submenu.add(mFreeMirror);
+        mPriorityMirror = new JMenuItem(JDLocale.L("gui.linkgrabber.menu.selection.priority", "Priority"));
+        mPriorityMirror.setEnabled(true);
+        mPriorityMirror.addActionListener(this);
+        submenu.add(mPriorityMirror);
+        menu.addSeparator();
+        submenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelection", "Host Auswahl"));
+        menu.add(submenu);
+        mHostSelectionPackageOnly = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionPackageOnly", "Nur aktuelles Paket"));
+        mHostSelectionPackageOnly.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, false));
+        mHostSelectionPackageOnly.addActionListener(this);
+        submenu.add(mHostSelectionPackageOnly);
+        mHostSelectionRemove = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.hostSelectionRemove", "Restliche Links verwerfen"));
+        mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
+        mHostSelectionRemove.addActionListener(this);
+        submenu.add(mHostSelectionRemove);
+        submenu.addSeparator();
+        submenu.addSeparator();
+        Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
+        mHostSelection = new JMenuItem[hosts.size()];
+        subsubmenu = null;
+        for (int i = 0; i < hosts.size(); ++i) {
+            if (i % 10 == 0) {
+                if (subsubmenu != null) {
+                    submenu = subsubmenu;
+                }
+                if (hosts.size() - i > 10) {
+                    subsubmenu = new JMenu(JDLocale.L("gui.linkgrabber.menu.hostSelectionMore", "Weitere Hoster"));
+                    submenu.add(subsubmenu);
+                    submenu.addSeparator();
+                }
+            }
+            mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
+            mHostSelection[i].addActionListener(this);
+            submenu.add(mHostSelection[i]);
+        }
+        
+        this.setJMenuBar(menuBar);
+    }
+
+    private int comparePackages(String a, String b) {
+
+        int c = 0;
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) c++;
+        }
+
+        if (Math.min(a.length(), b.length()) == 0) return 0;
+        // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
+        // (b.length()) + ")");
+        return (c * 100) / (b.length());
     }
 
     private void confirmAll() {
@@ -971,6 +1248,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + files);
     }
 
+    private void confirmSimpleHost(int idx, String host) {
+        confirmPackage(idx, host);
+        if ((guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true)) || 
+                (tabList.get(idx).isEmpty())) {
+            this.removePackageAt(idx);
+        }
+    }
+
     public void dragEnter(DropTargetDragEvent dtde) {
         if (this.currentTab < 0) currentTab = tabbedPane.getSelectedIndex();
     }
@@ -1040,6 +1325,146 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void dropActionChanged(DropTargetDragEvent dtde) {
     }
 
+    /**
+     * checks the LinkGrabber if there are any packages left If not, the
+     * Linkgrabber will be closed and disposed. If there are packages left
+     * nothing happens
+     */
+    private void emptyCheck() {
+        if (this.tabList.size() == 0) {
+            this.setVisible(false);
+            this.dispose();
+        }
+    }
+
+    protected String getInfoString(DownloadLink link) {
+        if (!link.isAvailabilityChecked()) { return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText(); }
+        return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
+    }
+
+    private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
+        Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
+
+        for (int b = 0; b < pfh.size(); b++) {
+            PluginForHost plugin = pfh.get(b);
+
+            for (int c = 0; c < mirrors.size(); c++) {
+                DownloadLink mirror = mirrors.get(c);
+                if (mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) return mirror;
+            }
+        }
+        logger.severe("Could not find Priorityhoster. This should be impossible. Use first link!");
+        return mirrors.get(0);
+    }
+
+    protected PackageTab getSelectedTab() {
+        return tabList.get(this.tabbedPane.getSelectedIndex());
+    }
+
+    private String getSimString(String a, String b) {
+
+        String ret = "";
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) {
+                ret += a.charAt(i);
+            } 
+        }
+        return ret;
+    }
+
+    public int getTotalLinkCount() {
+        return totalLinkList.size();
+    }
+
+    private void initGUI() {
+        buildMenu();
+
+        sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
+        sortPackages.addActionListener(this);
+        acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
+        acceptAll.addActionListener(this);
+        accept = new JButton(JDLocale.L("gui.linkgrabber.btn.accept", "Paket übernehmen"));
+        accept.addActionListener(this);
+        insertAtPosition = new JComboBox(new String[] { JDLocale.L("gui.linkgrabber.pos.top", "Anfang"), JDLocale.L("gui.linkgrabber.pos.bottom", "Ende") });
+        insertAtPosition.setSelectedIndex(guiConfig.getIntegerProperty(PROPERTY_POSITION, 1));
+        insertAtPosition.addActionListener(this);
+
+        progress = new JProgressBar();
+        progress.setBorder(BorderFactory.createEtchedBorder());
+        progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
+        progress.setStringPainted(true);
+
+        tabbedPane = new JTabbedPane();
+        tabbedPane.addChangeListener(this);
+        tabbedPane.addMouseListener(this);
+        tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+        tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+            logger.finer("OS: " + System.getProperty("os.name") + " SET TABS ON TOP");
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
+        new DropTarget(tabbedPane, this);
+
+        this.setName("LINKGRABBER");
+
+        int n = 5;
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
+        setContentPane(panel);
+
+        JPanel inner = new JPanel(new BorderLayout(n, n));
+
+        JPanel south = new JPanel(new BorderLayout(n, n));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, n, 0));
+
+        south.add(sortPackages, BorderLayout.WEST);
+        bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.insertAtPosition", "Einfügen an Position:")));
+        bpanel.add(insertAtPosition);
+        JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
+        separator.setPreferredSize(new Dimension(5, 20));
+        bpanel.add(separator);
+        bpanel.add(acceptAll);
+        bpanel.add(accept);
+        south.add(bpanel, BorderLayout.CENTER);
+
+        panel.add(inner, BorderLayout.CENTER);
+        inner.add(tabbedPane, BorderLayout.CENTER);
+        inner.add(progress, BorderLayout.SOUTH);
+        panel.add(south, BorderLayout.SOUTH);
+
+        acceptAll.getRootPane().setDefaultButton(acceptAll);
+
+        setPreferredSize(new Dimension(640, 480));
+        setLocationRelativeTo(null);
+        pack();
+
+        if (SimpleGUI.getLastDimension(this, null) != null) {
+            this.setPreferredSize(SimpleGUI.getLastDimension(this, null));
+        }
+        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
+            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
+        }
+
+        this.setVisible(true);
+    }
+
+    private boolean isDupe(DownloadLink link) {
+        for (DownloadLink l : totalLinkList) {
+            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())) return true;
+        }
+        return false;
+    }
+
+    public void keyPressed(KeyEvent e) {
+    }
+
+    public void keyReleased(KeyEvent e) {
+    }
+
+    public void keyTyped(KeyEvent e) {
+    }
+
     public void mouseClicked(MouseEvent e) {
     }
 
@@ -1060,593 +1485,168 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mouseReleased(MouseEvent e) {
     }
 
-    public void keyPressed(KeyEvent e) {
+    protected void onPackageNameChanged(PackageTab tab) {
+        for (int i = 0; i < tabList.size(); i++) {
+            if (tabList.get(i) == tab) {
+                String title = tab.getPackageName();
+                if (title.length() > 20) {
+                    tabbedPane.setToolTipTextAt(i, title);
+                    title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+                }
+                tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
+                return;
+            }
+        }
     }
 
-    public void keyReleased(KeyEvent e) {
+    private void removeEmptyPackages() {
+        for (int i = tabList.size() - 1; i >= 0; --i) {
+            PackageTab tab = tabList.get(i);
+            if (tab.isEmpty()) {
+                this.removePackage(tab);
+            }
+        }
     }
 
-    public void keyTyped(KeyEvent e) {
+    private String removeExtension(String a) {
+        // logger.finer("file " + a);
+        if (a == null) return a;
+        a = a.replaceAll("\\.part([0-9]+)", "");
+        a = a.replaceAll("\\.html", "");
+        a = a.replaceAll("\\.htm", "");
+        int i = a.lastIndexOf(".");
+        // logger.info("FOund . " + i);
+        String ret;
+        if (i <= 1 || (a.length() - i) > 5) {
+            ret = a.toLowerCase().trim();
+        } else {
+            // logger.info("Remove ext");
+            ret = a.substring(0, i).toLowerCase().trim();
+        }
+
+        if (a.equals(ret)) return ret;
+        return (ret);
+
+    }
+
+    private void removeOfflineLinks(PackageTab tab) {
+        Vector<DownloadLink> list = tab.getLinkList();
+        for (int i = list.size() - 1; i >= 0; --i) {
+            if (!list.get(i).isAvailable()) {
+                totalLinkList.remove(tab.removeLinkAt(i));
+            }
+        }
+        this.onPackageNameChanged(tab);
+    }
+
+    protected void removePackage(PackageTab tab) {
+        removePackageAt(tabList.indexOf(tab));
+
+        totalLinkList.removeAll(tab.getLinkList());
+    }
+
+    protected void removePackageAt(int i) {
+        PackageTab tab = tabList.remove(i);
+        tabbedPane.removeTabAt(i);
+        totalLinkList.removeAll(tab.getLinkList());
+        this.setTitle();
+    }
+
+    private void reprintTabbedPane() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                Collections.sort(tabList, new Comparator<PackageTab>() {
+                    public int compare(PackageTab a, PackageTab b) {
+                        return a.getPackageName().compareTo(b.getPackageName());
+                    }
+                });
+                synchronized (tabbedPane) {
+                    tabbedPane.removeAll();
+                    PackageTab tab;
+                    for (int i = 0; i < tabList.size(); i++) {
+                        tab = tabList.get(i);
+                        String title = tab.getPackageName();
+                        if (title.length() > 20) {
+                            // tabbedPane.setToolTipTextAt(i, title);
+                            title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+                        }
+
+                        tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
+
+                    }
+                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+
+                }
+
+            }
+        });
+    }
+
+    private void setTitle() {
+        setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+    }
+
+    private void startLinkGatherer() {
+
+        progress.setMaximum(waitingLinkList.size());
+        progress.setString(null);
+        if (gatherer != null && gatherer.isAlive()) return;
+        this.gatherer = new Thread() {
+            public synchronized void run() {
+                DownloadLink link;
+                DownloadLink next;
+                while (waitingLinkList.size() > 0) {
+
+                    link = waitingLinkList.remove(0);
+                    if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
+                        attachLinkToPackage(link);
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                        }
+                    } else {
+                        if (!link.isAvailabilityChecked()) {
+                            Iterator<DownloadLink> it = waitingLinkList.iterator();
+                            Vector<DownloadLink> links = new Vector<DownloadLink>();
+                            Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
+                            links.add(link);
+                            dlLinks.add(link);
+                            while (it.hasNext()) {
+                                next = it.next();
+                                if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
+                                    dlLinks.add(next);
+                                    links.add(next);
+                                }
+                            }
+                            if (links.size() > 1) {
+                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
+                                if (ret != null) {
+                                    for (int i = 0; i < links.size(); i++) {
+                                        dlLinks.get(i).setAvailable(ret[i]);
+                                    }
+                                }
+                            }
+                        }
+                        link.isAvailable();
+//                        if (link.isAvailable() ) {
+
+                            attachLinkToPackage(link);
+
+//                        }
+                    }
+                    progress.setValue(waitingLinkList.size());
+
+                }
+                progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
+
+            }
+        };
+
+        gatherer.start();
     }
 
     public void stateChanged(ChangeEvent e) {
-    }
-
-    /**
-     * 
-     * @author JD-Team
-     * 
-     */
-    class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
-
-        private static final long serialVersionUID = -7394319645950106241L;
-
-        public static final int HOSTER = 1;
-
-        public static final int NAME = 2;
-
-        public static final int SIZE = 3;
-
-        public static final int INFO = 4;
-
-        private JTextField txtName;
-
-        private JTextField txtPassword;
-
-        private JTextField txtComment;
-
-        private ComboBrowseFile brwSaveTo;
-
-        private JTable table;
-
-        private Vector<DownloadLink> linkList;
-
-        protected PackageTab _this;
-
-        private int sortedOn = 1;
-
-        public PackageTab() {
-            linkList = new Vector<DownloadLink>();
-            _this = this;
-            buildGui();
-        }
-
-        public void setLinkList(Vector<DownloadLink> finalList) {
-            linkList = new Vector<DownloadLink>();
-            linkList.addAll(finalList);
-            refreshTable();
-        }
-
-        /**
-         * Checks if a packageTab is empty
-         * 
-         * @return false if there are links within this package, true otherwise
-         */
-        public boolean isEmpty() {
-            return linkList.size() == 0;
-        }
-
-        public Vector<Vector<DownloadLink>> getMirrors() {
-            HashMap<String, Vector<DownloadLink>> mirrormap = new HashMap<String, Vector<DownloadLink>>();
-            Vector<Vector<DownloadLink>> mirrorvector = new Vector<Vector<DownloadLink>>();
-
-            for (int i = 0; i < linkList.size(); i++) {
-                String key = linkList.get(i).getName().toLowerCase().replaceAll(".html", "").replaceAll(".htm", "");
-                if (!mirrormap.containsKey(key)) {
-                    Vector<DownloadLink> filelist;
-                    mirrormap.put(key, filelist = new Vector<DownloadLink>());
-                    mirrorvector.add(filelist);
-                }
-                mirrormap.get(key).add(linkList.get(i));
-                linkList.get(i).setMirror(false);
-
-            }
-
-            return mirrorvector;
-        }
-
-        public void removeLinks(Vector<DownloadLink> move) {
-            for (int i = 0; i < move.size(); i++) {
-                for (int b = 0; b < linkList.size(); b++) {
-                    if (linkList.get(b) == move.get(i)) {
-                        linkList.remove(b);
-                        continue;
-                    }
-                }
-            }
-            refreshTable();
-        }
-
-        public DownloadLink getLinkAt(int id) {
-            DownloadLink ret = linkList.get(id);
-            return ret;
-        }
-
-        public DownloadLink removeLinkAt(int id) {
-            DownloadLink ret = linkList.remove(id);
-            refreshTable();
-            return ret;
-        }
-
-        public Vector<DownloadLink> getLinkList() {
-            Vector<DownloadLink> ret = new Vector<DownloadLink>();
-            ret.addAll(linkList);
-            return ret;
-        }
-
-        public String getPackageName() {
-            return txtName.getText().trim();
-        }
-
-        public void setPackageName(String name) {
-            txtName.setText(name);
-        }
-
-        public String getDownloadDirectory() {
-            return this.brwSaveTo.getText();
-        }
-
-        public void setDownloadDirectory(String dir) {
-            brwSaveTo.setText(dir);
-        }
-
-        public String getPassword() {
-            return this.txtPassword.getText();
-        }
-
-        public void setComment(String comm) {
-            txtComment.setText(comm);
-        }
-
-        public String getComment() {
-            return this.txtComment.getText();
-        }
-
-        public void setPassword(String pw) {
-            txtPassword.setText(pw);
-        }
-
-        public void sortOn() {
-            switch (Math.abs(sortedOn)) {
-            case HOSTER:
-                Collections.sort(linkList, new Comparator<DownloadLink>() {
-                    public int compare(DownloadLink a, DownloadLink b) {
-                        return sortedOn > 0 ? a.getHost().compareToIgnoreCase(b.getHost()) : b.getHost().compareToIgnoreCase(a.getHost());
-                    }
-
-                });
-
-                break;
-            case NAME:
-                Collections.sort(linkList, new Comparator<DownloadLink>() {
-                    public int compare(DownloadLink a, DownloadLink b) {
-                        return sortedOn > 0 ? a.getName().compareToIgnoreCase(b.getName()) : b.getName().compareToIgnoreCase(a.getName());
-
-                    }
-
-                });
-
-                break;
-            case SIZE:
-                Collections.sort(linkList, new Comparator<DownloadLink>() {
-                    public int compare(DownloadLink a, DownloadLink b) {
-                        if (a.getDownloadMax() == b.getDownloadMax()) return 0;
-                        return sortedOn > 0 ? a.getDownloadMax() > b.getDownloadMax() ? 1 : -1 : a.getDownloadMax() < b.getDownloadMax() ? 1 : -1;
-                    }
-
-                });
-                break;
-            case INFO:
-                Collections.sort(linkList, new Comparator<DownloadLink>() {
-                    public int compare(DownloadLink a, DownloadLink b) {
-                        return sortedOn > 0 ? getInfoString(a).compareToIgnoreCase(getInfoString(b)) : getInfoString(b).compareToIgnoreCase(getInfoString(a));
-                    }
-
-                });
-                break;
-
-            }
-            refreshTable();
-        }
-
-        public void addLinks(DownloadLink[] list) {
-            String password = getPassword();
-            String comment = getComment();
-
-            String[] pws = JUnrar.getPasswordArray(password);
-            Vector<String> pwList = new Vector<String>();
-            for (int i = 0; i < pws.length; i++) {
-                pwList.add(pws[i]);
-            }
-
-            for (int i = 0; i < list.length; i++) {
-             
-                linkList.add(list[i]);
-
-                pws = JUnrar.getPasswordArray(list[i].getSourcePluginPassword());
-                for (int i2 = 0; i2 < pws.length; i2++) {
-                    if (pwList.indexOf(pws[i2]) < 0) {
-                        pwList.add(pws[i2]);
-                    }
-                }
-
-                String newComment = list[i].getSourcePluginComment();
-                if (newComment != null && comment.indexOf(newComment) < 0) {
-                    comment += "|" + newComment;
-                }
-            }
-
-            if (comment.startsWith("|")) comment = comment.substring(1);
-
-            String pw = JUnrar.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
-
-            if (!txtComment.hasFocus()) txtComment.setText(comment);
-            if (!txtPassword.hasFocus()) txtPassword.setText(pw);
-            refreshTable();
-            sortOn();
-        }
-
-        private void refreshTable() {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    table.tableChanged(new TableModelEvent(table.getModel()));
-                    onPackageNameChanged(PackageTab.this);
-
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
-                }
-            });
-        }
-
-        private void buildGui() {
-            setLayout(new GridBagLayout());
-            JLabel lblName = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename"));
-            JLabel lblSaveto = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter"));
-            JLabel lblPassword = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort"));
-            JLabel lblComment = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar"));
-
-            this.txtName = new JTextField();
-            this.txtPassword = new JTextField();
-            this.txtComment = new JTextField();
-
-            this.brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
-            brwSaveTo.setEditable(true);
-            brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-            brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-
-            txtName.setPreferredSize(new Dimension(450, 20));
-            txtPassword.setPreferredSize(new Dimension(450, 20));
-            txtComment.setPreferredSize(new Dimension(450, 20));
-            brwSaveTo.setPreferredSize(new Dimension(450, 20));
-            txtName.setMinimumSize(new Dimension(250, 20));
-            txtPassword.setMinimumSize(new Dimension(250, 20));
-            txtComment.setMinimumSize(new Dimension(250, 20));
-            brwSaveTo.setMinimumSize(new Dimension(250, 20));
-
-            PlainDocument doc = (PlainDocument) txtName.getDocument();
-            doc.addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent e) {
-                    onPackageNameChanged(_this);
-                }
-
-                public void insertUpdate(DocumentEvent e) {
-
-                    onPackageNameChanged(_this);
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-
-                    onPackageNameChanged(_this);
-                }
-            });
-            this.table = new InternalTable();
-            table.getTableHeader().addMouseListener(this);
-            InternalTableModel internalTableModel = new InternalTableModel();
-            table.addKeyListener(this);
-            table.setModel(internalTableModel);
-
-            // table.setAutoCreateRowSorter(true);
-            // table.setUpdateSelectionOnSort(true);
-            table.setGridColor(Color.BLUE);
-            table.setAutoCreateColumnsFromModel(true);
-            table.setModel(internalTableModel);
-            table.addMouseListener(this);
-            table.setDragEnabled(true);
-            table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
-            table.getTableHeader().setReorderingAllowed(false);
-
-            this.setPreferredSize(new Dimension(700, 350));
-
-            TableColumn col = null;
-            for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-                col = table.getColumnModel().getColumn(c);
-                switch (c) {
-                case 0:
-                    col.setMinWidth(20);
-                    col.setMaxWidth(30);
-                    col.setPreferredWidth(30);
-                    break;
-                case 1:
-                    col.setMinWidth(50);
-                    col.setMaxWidth(200);
-                    col.setPreferredWidth(150);
-                    break;
-                case 2:
-                    col.setMinWidth(50);
-                    col.setMaxWidth(250);
-                    col.setPreferredWidth(150);
-                    break;
-                case 3:
-                    col.setMinWidth(50);
-                    col.setMaxWidth(120);
-                    col.setPreferredWidth(100);
-                    break;
-                case 4:
-                    col.setPreferredWidth(150);
-                    break;
-
-                }
-            }
-
-            int n = 10;
-            JPanel north = new JPanel(new BorderLayout(n, n));
-            JPanel east = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            JPanel center = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
-            north.add(east, BorderLayout.WEST);
-            north.add(center, BorderLayout.CENTER);
-
-            east.add(lblName);
-            east.add(lblSaveto);
-            east.add(lblPassword);
-            east.add(lblComment);
-
-            center.add(txtName);
-            center.add(brwSaveTo);
-            center.add(txtPassword);
-            center.add(txtComment);
-
-            setLayout(new BorderLayout(n, n));
-            setBorder(new EmptyBorder(n, n, n, n));
-            add(north, BorderLayout.NORTH);
-            add(new JScrollPane(table), BorderLayout.CENTER);
-
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"))) {
-                int[] rows = table.getSelectedRows();
-
-                for (int i = rows.length - 1; i >= 0; i--) {
-                    totalLinkList.remove(linkList.remove(rows[i]));
-                }
-
-                this.refreshTable();
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
-                PackageTab newTab = addTab();
-                int[] rows = table.getSelectedRows();
-                if (0 < rows.length) {
-                    DownloadLink linksToTransfer[] = new DownloadLink[rows.length];
-                    int targetIndex = 0;
-                    for (int i = rows.length - 1; i >= 0; i--) {
-                        linksToTransfer[targetIndex++] = this.getLinkAt(rows[i]);
-                        linkList.remove(rows[i]);
-                    }
-                    newTab.addLinks(linksToTransfer);
-                    this.refreshTable();
-                }
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
-                int[] rows = table.getSelectedRows();
-
-                Vector<DownloadLink> list = new Vector<DownloadLink>();
-                for (int i = 0; i < rows.length; i++) {
-                    list.add(linkList.remove(rows[i]));
-                }
-
-                totalLinkList.removeAll(linkList);
-                linkList = list;
-                this.refreshTable();
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {
-                int[] rows = table.getSelectedRows();
-
-                Vector<DownloadLink> list = new Vector<DownloadLink>();
-                for (int i = 0; i < rows.length; i++) {
-                    list.add(linkList.get(rows[i]));
-                }
-
-                linkList = list;
-                int idx = tabbedPane.getSelectedIndex();
-                confirmPackage(idx);
-                removePackageAt(idx);
-                if (tabList.size() == 0) {
-                    this.setVisible(false);
-                    dispose();
-                }
-            }
-        }
-
-        private class InternalTableModel extends AbstractTableModel {
-
-            private static final long serialVersionUID = -7475394342173736030L;
-
-            public int getColumnCount() {
-                return 5;
-            }
-
-            public Class<?> getColumnClass(int columnIndex) {
-                switch (columnIndex) {
-                case 0:
-                    return Integer.class;
-
-                }
-                return String.class;
-            }
-
-            public int getRowCount() {
-
-                return linkList.size();
-            }
-
-            public Object getValueAt(int rowIndex, int columnIndex) {
-
-                switch (columnIndex) {
-                case 0:
-                    return rowIndex + 1;
-                case 1:
-                    return linkList.get(rowIndex).getHost();
-                case 2:
-                    return linkList.get(rowIndex).getName();
-                case 3:
-                    return linkList.get(rowIndex).isAvailabilityChecked() ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "*";
-                case 4:
-                    return getInfoString(linkList.get(rowIndex));
-
-                }
-                return null;
-            }
-
-            public String getColumnName(int column) {
-
-                switch (column) {
-                case 0:
-                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.id", "*");
-                case 1:
-                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.host", "Host");
-                case 2:
-                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.link", "Link");
-                case 3:
-                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe");
-                case 4:
-                    return JDLocale.L("gui.linkgrabber.packagetab.table.column.info", "Info");
-
-                }
-                return super.getColumnName(column);
-
-            }
-        }
-
-        public void mouseClicked(MouseEvent e) {
-        }
-
-        public void mouseEntered(MouseEvent e) {
-        }
-
-        public void mouseExited(MouseEvent e) {
-        }
-
-        public void mousePressed(MouseEvent e) {
-            if (e.getSource() instanceof JTableHeader) {
-                JTableHeader header = (JTableHeader) e.getSource();
-                int column = header.columnAtPoint(e.getPoint());
-                if (sortedOn == column) {
-                    sortedOn *= -1;
-                } else {
-                    this.sortedOn = column;
-                }
-
-                this.sortOn();
-            } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                Point point = e.getPoint();
-
-                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package") }, this);
-            }
-
-        }
-
-        public void mouseReleased(MouseEvent e) {
-        }
-
-        public void keyPressed(KeyEvent e) {
-        }
-
-        public void keyReleased(KeyEvent e) {
-            if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-                int[] rows = table.getSelectedRows();
-                for (int i = rows.length - 1; i >= 0; i--) {
-                    int id = rows[i];
-
-                    totalLinkList.remove(this.linkList.remove(id));
-                }
-                this.refreshTable();
-            }
-        }
-
-        /**
-         * 
-         * @author JD-Team
-         * 
-         */
-        private class InternalTable extends JTable {
-            /**
-             * serialVersionUID
-             */
-            private static final long serialVersionUID = 4424930948374806098L;
-
-            private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-
-            
-            public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-                return internalTableCellRenderer;
-            }
-        }
-
-        public void keyTyped(KeyEvent e) {
-        }
-
-        /**
-         * Celllistrenderer Für die Linklisten
-         * 
-         * @author JD-Team
-         * 
-         */
-        private class InternalTableCellRenderer extends DefaultTableCellRenderer {
-
-            private static final long serialVersionUID = -7858580590383167251L;
-
-            private final Color COLOR_DONE = new Color(0, 255, 0, 20);
-
-            private final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
-
-            private final Color COLOR_SORT_MARK = new Color(40, 225, 40, 40);
-
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                int id = row;
-                DownloadLink dLink = linkList.get(id);
-
-                if (isSelected) {
-                    c.setBackground(Color.DARK_GRAY);
-                    if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
-                        c.setBackground(COLOR_ERROR_OFFLINE.darker());
-
-                    } else if (dLink.isAvailabilityChecked()) {
-                        c.setBackground(COLOR_DONE.darker());
-
-                    }
-                    if (Math.abs(sortedOn) == column) {
-                        c.setBackground(COLOR_SORT_MARK.darker());
-                    }
-
-                    c.setForeground(Color.WHITE);
-
-                } else {
-                    c.setBackground(Color.WHITE);
-                    if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
-                        c.setBackground(COLOR_ERROR_OFFLINE);
-                    } else if (dLink.isAvailabilityChecked()) {
-                        c.setBackground(COLOR_DONE);
-
-                    }
-
-                    if (Math.abs(sortedOn) == column) {
-                        c.setBackground(COLOR_SORT_MARK);
-                    }
-                    c.setForeground(Color.BLACK);
-                }
-
-                return c;
-            }
-        }
     }
 
 }

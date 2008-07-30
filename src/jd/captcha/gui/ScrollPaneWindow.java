@@ -63,6 +63,7 @@ public class ScrollPaneWindow extends BasicWindow {
      * @param y
      * @param cmp
      */
+    @Override
     public void setComponent(final int x, final int y, final Component cmp) {
         if(cmp==null)return;
         SwingUtilities.invokeLater(new Runnable() {
@@ -73,11 +74,28 @@ public class ScrollPaneWindow extends BasicWindow {
         });
     }
     /**
+     * Fügt relative Threadsafe  an x,y das Bild img ein
+     * @param x
+     * @param y
+     * @param img 
+     */
+    @Override
+    public void setImage(final int x, final int y, final Image img) {
+        if(img==null)return;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                panel.add(new ImageComponent(img), getGBC(x, y, 1, 1));
+
+            }
+        });
+    }
+    /**
      * Fügt relative Threadsafe  an x,y den text cmp ein
      * @param x
      * @param y
      * @param cmp
      */
+    @Override
     public void setText(final int x, final int y, final Object cmp) {
         if(cmp==null)return;
         // final ScrollPaneWindow _this=this;
@@ -91,21 +109,6 @@ public class ScrollPaneWindow extends BasicWindow {
             }
         });
 
-    }
-    /**
-     * Fügt relative Threadsafe  an x,y das Bild img ein
-     * @param x
-     * @param y
-     * @param img 
-     */
-    public void setImage(final int x, final int y, final Image img) {
-        if(img==null)return;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                panel.add(new ImageComponent(img), getGBC(x, y, 1, 1));
-
-            }
-        });
     }
 
 }

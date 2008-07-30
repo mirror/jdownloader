@@ -19,16 +19,23 @@ import com.jgoodies.forms.layout.FormLayout;
 
 public class DefaultHeader extends JPanel {
 
-	JLabel steptext;
-	JLabel stepdescription;
-	private Icon icon;
-	
-	static Font titleFont = new Font("Arial", Font.BOLD, 12);
 	static Font descriptionFont = new Font("Arial", Font.PLAIN, 10);
+	static Font titleFont = new Font("Arial", Font.BOLD, 12);
+	private static void paintHorizontalGradient(Graphics2D g2, int x, int y, int w, int h) {
+        Color gradientColor = Color.lightGray;
+        g2.setPaint(new GradientPaint(100F, h, Color.WHITE, w, h, gradientColor));
+        g2.fillRect(x, y, w, h);
+    }
+	
+	private Icon icon;
+	JLabel stepdescription;
 
+	JLabel steptext;
+	
 	public DefaultHeader(String titleKey, String descriptionKey, Icon icon) {
 		this(titleKey, descriptionKey, icon, null);
 	}
+
 	
 	public DefaultHeader(String titleKey, String descriptionKey, Icon icon, int... messageArguments) {
 		super(new BorderLayout(0,0));
@@ -44,7 +51,9 @@ public class DefaultHeader extends JPanel {
 		
 		this.createHeader();
 	}
-
+	
+	
+	
 	
 	private JPanel createHeader() {
 		FormLayout layout = new FormLayout("l:d, 3dlu, r:p:g", "pref, 2px, f:pref:grow");
@@ -65,21 +74,13 @@ public class DefaultHeader extends JPanel {
 		return this;
 	}
 	
-	
-	
-	
-	protected void paintComponent(Graphics g) {
+    @Override
+    protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		paintHorizontalGradient(g2, 0, 0, this.getWidth(), this.getHeight());
 	}
-	
-    private static void paintHorizontalGradient(Graphics2D g2, int x, int y, int w, int h) {
-        Color gradientColor = Color.lightGray;
-        g2.setPaint(new GradientPaint(100F, h, Color.WHITE, w, h, gradientColor));
-        g2.fillRect(x, y, w, h);
-    }
     
 }
     

@@ -39,19 +39,29 @@ import jd.captcha.utils.UTILITIES;
 @SuppressWarnings("unchecked")
 public class PixelObject implements Comparable {
     /**
-     * Logger
-     */
-    public Logger logger = UTILITIES.getLogger();
-
-    /**
-     * Interner Vector
-     */
-    private ArrayList<int[]> object;
-    public LetterComperator detected = null;
-    /**
      * Farbdurschnitt des Onkekts
      */
     private int avg = 0;
+
+    /**
+     * Anzahl der gleichbleibenden add Aufrufe bis ein durchschnitt as icher
+     * angesehen wird
+     */
+    private int avgIsSaveNum = 10;
+    private boolean bordered=true;
+    public int colorpixel = 0;
+
+    /**
+     * Kontrastwert für die durchschnisserkennung
+     */
+    private double contrast;
+
+    public LetterComperator detected = null;
+
+    /**
+     * Logger
+     */
+    public Logger logger = UTILITIES.getLogger();
 
     /**
      * Interne prüfvariable die hochgezählt wird wenn dieneuen Pixel keine
@@ -60,35 +70,9 @@ public class PixelObject implements Comparable {
     private int noAvgChanges = 0;
 
     /**
-     * Anzahl der gleichbleibenden add Aufrufe bis ein durchschnitt as icher
-     * angesehen wird
+     * Interner Vector
      */
-    private int avgIsSaveNum = 10;
-
-    /**
-     * Als sicher angenommener Farb durchschnitt
-     */
-    private int saveAvg = 0;
-
-    /**
-     * Minimaler x Wert
-     */
-    private int xMin = Integer.MAX_VALUE;
-
-    /**
-     * Maximaler X Wert
-     */
-    private int xMax = Integer.MIN_VALUE;
-
-    /**
-     * Minimaler y Wert
-     */
-    private int yMin = Integer.MAX_VALUE;
-
-    /**
-     * Maximaler Y Wert
-     */
-    private int yMax = Integer.MIN_VALUE;
+    private ArrayList<int[]> object;
 
     /**
      * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen
@@ -97,15 +81,31 @@ public class PixelObject implements Comparable {
     private PixelGrid owner;
 
     /**
-     * Kontrastwert für die durchschnisserkennung
+     * Als sicher angenommener Farb durchschnitt
      */
-    private double contrast;
+    private int saveAvg = 0;
 
     private double whiteContrast = 1;
 
-    public int colorpixel = 0;
+    /**
+     * Maximaler X Wert
+     */
+    private int xMax = Integer.MIN_VALUE;
 
-    private boolean bordered=true;
+    /**
+     * Minimaler x Wert
+     */
+    private int xMin = Integer.MAX_VALUE;
+
+    /**
+     * Maximaler Y Wert
+     */
+    private int yMax = Integer.MIN_VALUE;
+
+    /**
+     * Minimaler y Wert
+     */
+    private int yMin = Integer.MAX_VALUE;
 
     /**
      * @param owner
@@ -150,40 +150,118 @@ public class PixelObject implements Comparable {
 
     }
 
-    /**
-     * Gibt die resulitierende Bildbreite zurück
-     * 
-     * @return Breite
-     */
-    public int getWidth() {
-        return xMax - xMin + 1;
+    public void add(PixelObject current) {
+        for (int i = 0; i < current.object.size(); i++) {
+            add(current.object.get(i)[0], current.object.get(i)[1], current.object.get(i)[2]);
+        }
+
     }
 
     /**
-     * Gibt die resulztierende Bildhöhe zurück
+     * Schnelle aber ungenauere align Methode
      * 
-     * @return Höhe
+     * @return Versucht das Objekt automatisch auszurichten
      */
-    public int getHeight() {
-        return yMax - yMin + 1;
-    }
+    public PixelObject align() {
+        int accuracy = 1;
+        PixelObject r = turn(-accuracy);
+        PixelObject l = turn(accuracy);
 
-    /**
-     * 
-     * @return Gibt die Position (Links oben) des Objekts im gesamtCaptcha an
-     */
-    public int[] getLocation() {
+        int angle;
+        // UTILITIES.trace(getWidthToHeight()+" : right:"+r.getWidthToHeight()+"
+        // left:"+l.getWidthToHeight());
+        if (r.getWidthToHeight() >= getWidthToHeight() && l.getWidthToHeight() >= getWidthToHeight()) return this;
+        int steps = r.getWidthToHeight() < l.getWidthToHeight() ? -accuracy : accuracy;
+        angle = steps * 2;
+        PixelObject ret = r.getWidthToHeight() < l.getWidthToHeight() ? r : l;
+        PixelObject next;
+        while ((next = turn(angle)).getWidthToHeight() < ret.getWidthToHeight()) {
+            // UTILITIES.trace("akt angle: "+angle+" wh:
+            // "+next.getWidthToHeight());
+            ret = next;
 
-        int[] ret = { xMin, yMin };
+            angle += steps;
+        }
         return ret;
+
     }
 
     /**
+     * Gibt sucht von winkael A bis Winkel B die Beste DRehposition und gibt
+     * diese zurück Langsammer, aber genauer
      * 
-     * @return Gibt die Fläche des Objekts zurück
+     * @param angleA
+     * @param angleB
+     * @return Ausgerichtetes PixelObjekt
      */
-    public int getArea() {
-        return getWidth() * getHeight();
+    public PixelObject align(int angleA, int angleB) {
+        if (angleB < angleA) {
+            int tmp = angleB;
+            angleB = angleA;
+            angleA = tmp;
+        }
+        int accuracy = owner.owner.getJas().getInteger("AlignAngleSteps");
+        double bestValue = Double.MAX_VALUE;
+        PixelObject res = null;
+        PixelObject tmp;
+        // UTILITIES.trace("ALIGN "+this.getWidthToHeight());
+        for (int angle = angleA; angle < angleB; angle += accuracy) {
+
+            tmp = turn(angle < 0 ? 360 + angle : angle);
+
+            // UTILITIES.trace((angle<0?360+angle:angle)+" test
+            // "+this.getWidthToHeight());
+            if (tmp.getWidthToHeight() < bestValue) {
+                bestValue = tmp.getWidthToHeight();
+                res = tmp;
+            }
+        }
+
+        return res;
+    }
+
+    public int compareTo(Object arg) {
+        if (((PixelObject) arg).getLocation()[0] < this.getLocation()[0]) return 1;
+        if (((PixelObject) arg).getLocation()[0] > this.getLocation()[0]) return -1;
+        return 0;
+    }
+
+    public PixelObject[] cut(int x1, int x2, int overlap) {
+        PixelObject pre = new PixelObject(owner);
+        PixelObject post = new PixelObject(owner);
+        PixelObject cutter = new PixelObject(owner);
+       if(x1<this.owner.owner.getJas().getInteger("minimumLetterWidth"))pre=null;
+       if(xMax-xMin-x2<this.owner.owner.getJas().getInteger("minimumLetterWidth"))post=null;
+            for (int i = 0; i < getSize(); i++) {
+                int[] akt = elementAt(i);
+                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
+                    cutter.add(akt[0], akt[1], this.saveAvg);
+                }
+//                if (pre!=null&&akt[0] < xMin + x1 + overlap) {
+//                    pre.add(akt[0], akt[1], this.saveAvg);
+//                }else if(pre==null&&akt[0] < xMin + x1 + overlap){
+//                    cutter.add(akt[0], akt[1], this.saveAvg);
+//                }
+//                if (post!=null&&akt[0] > (xMin + x2) - overlap) {
+//                    post.add(akt[0], akt[1], this.saveAvg);
+//                }else if (post==null&&akt[0] > (xMin + x2) - overlap){
+//                    cutter.add(akt[0], akt[1], this.saveAvg);
+//                }
+                if (pre!=null&&akt[0] < xMin + x1) {
+                    pre.add(akt[0], akt[1], this.saveAvg);
+                }else if(pre==null&&akt[0] < xMin + x1){
+                    cutter.add(akt[0], akt[1], this.saveAvg);
+                }
+                if (post!=null&&akt[0] > (xMin + x2)) {
+                    post.add(akt[0], akt[1], this.saveAvg);
+                }else if (post==null&&akt[0] > (xMin + x2)){
+                    cutter.add(akt[0], akt[1], this.saveAvg);
+                }
+
+            }
+
+      
+        return new PixelObject[] {pre, cutter, post };
     }
 
     /**
@@ -208,8 +286,122 @@ public class PixelObject implements Comparable {
         if (color > (int) (whiteContrast * owner.getMaxPixelValue())) return false;
         if (getSize() == 0) return true;
 
-        return ((int) Math.abs(tavg - color) < (int) (owner.getMaxPixelValue() * this.contrast));
+        return (Math.abs(tavg - color) < (int) (owner.getMaxPixelValue() * this.contrast));
 
+    }
+
+    /**
+     * 
+     * @param i
+     * @return Gibt den pixel bei i zurück [x,y,color}
+     */
+    public int[] elementAt(int i) {
+        return object.get(i);
+    }
+
+    /**
+     * 
+     * @return Gibt die Fläche des Objekts zurück
+     */
+    public int getArea() {
+        return getWidth() * getHeight();
+    }
+
+    /**
+     * 
+     * @return Gibt farbe des Objekts zurück
+     */
+    public int getAverage() {
+        return avg;
+    }
+
+    /**
+     * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente
+     * des Buchstabens enthält.
+     * 
+     * @param letter
+     * @return
+     */
+    public Vector<int[]> getBorderVector(Letter letter) {
+        Vector<int[]> ret = new Vector<int[]>();
+        if (letter == null) letter = this.toLetter();
+        int[][] grid = letter.getGrid();
+
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            int x = akt[0];
+            int y = akt[1];
+
+            int[][] map = letter.getLocalMap(grid, x, y);
+            boolean c = false;
+            for (int xx = 0; xx < 3; xx++) {
+                for (int yy = 0; yy < 3; yy++) {
+                    if (map[xx][yy] != 0) {
+                        c = true;
+                        break;
+                    }
+                }
+            }
+            if (c) ret.add(akt);
+        }
+
+        return ret;
+
+    }
+
+    public int getDistanceTo(int x, int y) {
+       int mindist=Integer.MAX_VALUE;
+       
+       for(int[]akt:object){
+           int xd=Math.abs(x-akt[0]);
+           int yd=Math.abs(y-akt[1]);
+           int dis= (int)Math.sqrt(xd*xd+yd*yd);
+           mindist=Math.min(mindist, dis);
+       }
+        return mindist;
+    }
+
+    /**
+     * Gibt die resulztierende Bildhöhe zurück
+     * 
+     * @return Höhe
+     */
+    public int getHeight() {
+        return yMax - yMin + 1;
+    }
+
+    /**
+     * 
+     * @return Gibt die Position (Links oben) des Objekts im gesamtCaptcha an
+     */
+    public int[] getLocation() {
+
+        int[] ret = { xMin, yMin };
+        return ret;
+    }
+
+    /**
+     * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die
+     * Pixelkonzentration an diesem Punkt an.
+     * 
+     * @param x
+     * @param y
+     * @return
+     */
+    public long getMassValue(int x, int y) {
+        long ret = 0;
+        for (int i = 0; i < getSize(); i++) {
+            int[] akt = elementAt(i);
+            if (x == akt[0] && y == akt[1]) {
+                ret += owner.getMaxPixelValue() * 2;
+            } else {
+                int col = owner.getMaxPixelValue() - akt[2];
+                double dist = Math.sqrt(Math.abs(akt[0] - x) * Math.abs(akt[0] - x) + Math.abs(akt[1] - y) * Math.abs(akt[1] - y)) / 0.5;
+
+                ret += col / (dist + 1);
+            }
+        }
+        return ret;
     }
 
     /**
@@ -222,11 +414,47 @@ public class PixelObject implements Comparable {
     }
 
     /**
+     * Gibt die resulitierende Bildbreite zurück
      * 
-     * @return Gibt farbe des Objekts zurück
+     * @return Breite
      */
-    public int getAverage() {
-        return avg;
+    public int getWidth() {
+        return xMax - xMin + 1;
+    }
+
+    /**
+     * 
+     * @return Gibt das Breite/Höhe Verjältniss zurück
+     */
+    public double getWidthToHeight() {
+        return (double) getWidth() / (double) getHeight();
+    }
+
+    /**
+     * @return the xMin
+     */
+    public int getXMin() {
+        return xMin;
+    }
+
+    /**
+     * @return the yMin
+     */
+    public int getYMin() {
+        return yMin;
+    }
+
+    public boolean isBordered() {
+        return bordered;
+    }
+
+    public void setBordered(boolean b) {
+        bordered=b;
+        
+    }
+
+    public void setColor(int pixelValue) {
+
     }
 
     /**
@@ -240,12 +468,13 @@ public class PixelObject implements Comparable {
     }
 
     /**
+     * Setzte den WhiteKontrast
      * 
-     * @param i
-     * @return Gibt den pixel bei i zurück [x,y,color}
+     * @param objectContrast
      */
-    public int[] elementAt(int i) {
-        return object.get(i);
+    public void setWhiteContrast(double objectContrast) {
+        this.whiteContrast = objectContrast;
+
     }
 
     /**
@@ -331,75 +560,9 @@ public class PixelObject implements Comparable {
 
     }
 
-    /**
-     * 
-     * @return Gibt das Breite/Höhe Verjältniss zurück
-     */
-    public double getWidthToHeight() {
-        return (double) getWidth() / (double) getHeight();
-    }
-
-    /**
-     * Schnelle aber ungenauere align Methode
-     * 
-     * @return Versucht das Objekt automatisch auszurichten
-     */
-    public PixelObject align() {
-        int accuracy = 1;
-        PixelObject r = turn(-accuracy);
-        PixelObject l = turn(accuracy);
-
-        int angle;
-        // UTILITIES.trace(getWidthToHeight()+" : right:"+r.getWidthToHeight()+"
-        // left:"+l.getWidthToHeight());
-        if (r.getWidthToHeight() >= getWidthToHeight() && l.getWidthToHeight() >= getWidthToHeight()) return this;
-        int steps = r.getWidthToHeight() < l.getWidthToHeight() ? -accuracy : accuracy;
-        angle = steps * 2;
-        PixelObject ret = r.getWidthToHeight() < l.getWidthToHeight() ? r : l;
-        PixelObject next;
-        while ((next = turn(angle)).getWidthToHeight() < ret.getWidthToHeight()) {
-            // UTILITIES.trace("akt angle: "+angle+" wh:
-            // "+next.getWidthToHeight());
-            ret = next;
-
-            angle += steps;
-        }
-        return ret;
-
-    }
-
-    /**
-     * Gibt sucht von winkael A bis Winkel B die Beste DRehposition und gibt
-     * diese zurück Langsammer, aber genauer
-     * 
-     * @param angleA
-     * @param angleB
-     * @return Ausgerichtetes PixelObjekt
-     */
-    public PixelObject align(int angleA, int angleB) {
-        if (angleB < angleA) {
-            int tmp = angleB;
-            angleB = angleA;
-            angleA = tmp;
-        }
-        int accuracy = owner.owner.getJas().getInteger("AlignAngleSteps");
-        double bestValue = Double.MAX_VALUE;
-        PixelObject res = null;
-        PixelObject tmp;
-        // UTILITIES.trace("ALIGN "+this.getWidthToHeight());
-        for (int angle = angleA; angle < angleB; angle += accuracy) {
-
-            tmp = turn(angle < 0 ? 360 + angle : angle);
-
-            // UTILITIES.trace((angle<0?360+angle:angle)+" test
-            // "+this.getWidthToHeight());
-            if (tmp.getWidthToHeight() < bestValue) {
-                bestValue = tmp.getWidthToHeight();
-                res = tmp;
-            }
-        }
-
-        return res;
+    @Override
+    public String toString() {
+        return super.toString() + " " + this.getLocation()[0];
     }
 
     /**
@@ -416,168 +579,6 @@ public class PixelObject implements Comparable {
             po.add(n[0], n[1], avg);
         }
         return po;
-    }
-
-    public int compareTo(Object arg) {
-        if (((PixelObject) arg).getLocation()[0] < this.getLocation()[0]) return 1;
-        if (((PixelObject) arg).getLocation()[0] > this.getLocation()[0]) return -1;
-        return 0;
-    }
-
-    /**
-     * Setzte den WhiteKontrast
-     * 
-     * @param objectContrast
-     */
-    public void setWhiteContrast(double objectContrast) {
-        this.whiteContrast = objectContrast;
-
-    }
-
-    /**
-     * @return the xMin
-     */
-    public int getXMin() {
-        return xMin;
-    }
-
-    /**
-     * @return the yMin
-     */
-    public int getYMin() {
-        return yMin;
-    }
-
-    public String toString() {
-        return super.toString() + " " + this.getLocation()[0];
-    }
-
-    /**
-     * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die
-     * Pixelkonzentration an diesem Punkt an.
-     * 
-     * @param x
-     * @param y
-     * @return
-     */
-    public long getMassValue(int x, int y) {
-        long ret = 0;
-        for (int i = 0; i < getSize(); i++) {
-            int[] akt = elementAt(i);
-            if (x == akt[0] && y == akt[1]) {
-                ret += owner.getMaxPixelValue() * 2;
-            } else {
-                int col = owner.getMaxPixelValue() - akt[2];
-                double dist = Math.sqrt(Math.abs(akt[0] - x) * Math.abs(akt[0] - x) + Math.abs(akt[1] - y) * Math.abs(akt[1] - y)) / 0.5;
-
-                ret += col / (dist + 1);
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente
-     * des Buchstabens enthält.
-     * 
-     * @param letter
-     * @return
-     */
-    public Vector<int[]> getBorderVector(Letter letter) {
-        Vector<int[]> ret = new Vector<int[]>();
-        if (letter == null) letter = this.toLetter();
-        int[][] grid = letter.getGrid();
-
-        for (int i = 0; i < getSize(); i++) {
-            int[] akt = elementAt(i);
-            int x = akt[0];
-            int y = akt[1];
-
-            int[][] map = letter.getLocalMap(grid, x, y);
-            boolean c = false;
-            for (int xx = 0; xx < 3; xx++) {
-                for (int yy = 0; yy < 3; yy++) {
-                    if (map[xx][yy] != 0) {
-                        c = true;
-                        break;
-                    }
-                }
-            }
-            if (c) ret.add(akt);
-        }
-
-        return ret;
-
-    }
-
-    public void setColor(int pixelValue) {
-
-    }
-
-    public void add(PixelObject current) {
-        for (int i = 0; i < current.object.size(); i++) {
-            add(current.object.get(i)[0], current.object.get(i)[1], current.object.get(i)[2]);
-        }
-
-    }
-
-    public PixelObject[] cut(int x1, int x2, int overlap) {
-        PixelObject pre = new PixelObject(owner);
-        PixelObject post = new PixelObject(owner);
-        PixelObject cutter = new PixelObject(owner);
-       if(x1<this.owner.owner.getJas().getInteger("minimumLetterWidth"))pre=null;
-       if(xMax-xMin-x2<this.owner.owner.getJas().getInteger("minimumLetterWidth"))post=null;
-            for (int i = 0; i < getSize(); i++) {
-                int[] akt = elementAt(i);
-                if (akt[0] >= xMin + x1 - overlap && akt[0] <= (xMin + x2) + overlap) {
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-//                if (pre!=null&&akt[0] < xMin + x1 + overlap) {
-//                    pre.add(akt[0], akt[1], this.saveAvg);
-//                }else if(pre==null&&akt[0] < xMin + x1 + overlap){
-//                    cutter.add(akt[0], akt[1], this.saveAvg);
-//                }
-//                if (post!=null&&akt[0] > (xMin + x2) - overlap) {
-//                    post.add(akt[0], akt[1], this.saveAvg);
-//                }else if (post==null&&akt[0] > (xMin + x2) - overlap){
-//                    cutter.add(akt[0], akt[1], this.saveAvg);
-//                }
-                if (pre!=null&&akt[0] < xMin + x1) {
-                    pre.add(akt[0], akt[1], this.saveAvg);
-                }else if(pre==null&&akt[0] < xMin + x1){
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-                if (post!=null&&akt[0] > (xMin + x2)) {
-                    post.add(akt[0], akt[1], this.saveAvg);
-                }else if (post==null&&akt[0] > (xMin + x2)){
-                    cutter.add(akt[0], akt[1], this.saveAvg);
-                }
-
-            }
-
-      
-        return new PixelObject[] {pre, cutter, post };
-    }
-
-    public boolean isBordered() {
-        return bordered;
-    }
-
-    public void setBordered(boolean b) {
-        bordered=b;
-        
-    }
-
-    public int getDistanceTo(int x, int y) {
-       int mindist=Integer.MAX_VALUE;
-       
-       for(int[]akt:object){
-           int xd=Math.abs(x-akt[0]);
-           int yd=Math.abs(y-akt[1]);
-           int dis= (int)Math.sqrt(xd*xd+yd*yd);
-           mindist=Math.min(mindist, dis);
-       }
-        return mindist;
     }
     
 }

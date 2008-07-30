@@ -21,12 +21,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
@@ -40,33 +38,33 @@ import jd.utils.JDUtilities;
  */
 public class Filefactory {
 
-    private static final double OBJECTCOLORCONTRAST = 0.01;
+    private static final double FILLEDMAX = 0.9;
 
-    private static final double OBJECTDETECTIONCONTRAST = 0.95;
+    private static final double FILLEDMIN = 0.2;
 
-    private static final int MINAREA = 200;
+    private static Logger logger = JDUtilities.getLogger();
 
     private static final int MAXAREA = 1200;
 
     // private static final int LETTERNUM = 4;
 
-    private static final double FILLEDMAX = 0.9;
-
-    private static final double FILLEDMIN = 0.2;
-
-    private static final int MINWIDTH = 8;
-
-    private static final int MINHEIGHT = 15;
-
-    private static final double MINWIDTHTOHEIGHT = 0.2;
-
-    private static final double MAXWIDTHTOHEIGHT = 2;
-
     private static final int MAXHEIGHT = 30;
 
     private static final int MAXWIDTH = 40;
 
-    private static Logger logger = JDUtilities.getLogger();
+    private static final double MAXWIDTHTOHEIGHT = 2;
+
+    private static final int MINAREA = 200;
+
+    private static final int MINHEIGHT = 15;
+
+    private static final int MINWIDTH = 8;
+
+    private static final double MINWIDTHTOHEIGHT = 0.2;
+
+    private static final double OBJECTCOLORCONTRAST = 0.01;
+
+    private static final double OBJECTDETECTIONCONTRAST = 0.95;
 
     public static Letter[] getLetters(Captcha captcha) {
         ArrayList<PixelObject> os = new ArrayList<PixelObject>();

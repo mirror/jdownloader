@@ -33,51 +33,22 @@ import jd.utils.JDUtilities;
 
 public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
-    private String version = "1.0.0.0";
+    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/", Pattern.CASE_INSENSITIVE);
+
+    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)", Pattern.CASE_INSENSITIVE);
 
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?filefox\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?alphawarez\\.us/\\?id=.+)" + "|(http://[\\w\\.]*?pirate-loads\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fettrap\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?omega-music\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?hardcoremetal\\.biz/\\?id=.+)" + "|(http://[\\w\\.]*?flashload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?twin-warez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?steelwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fullstreams\\.info/\\?id=.+)" + "|(http://[\\w\\.]*?lionwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?1dl\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?chrome-database\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?youwarez\\.biz/\\?id=.+)"
             + "|(http://[\\w\\.]*?saugking\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?leetpornz\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?freefiles4u\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?dark-load\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?crimeland\\.de/\\?id=.+)" + "|(http://[\\w\\.]*?get-warez\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?meinsound\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?projekt-tempel-news\\.de.vu/\\?id=.+)" + "|(http://[\\w\\.]*?datensau\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?musik\\.am(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?spreaded\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?relfreaks\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?babevidz\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serien24\\.com(/\\?id=.+|/download/.+/.+\\.html))"
             + "|(http://[\\w\\.]*?porn-freaks\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-4-free\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-reactor\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?porn-traffic\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?chili-warez\\.net(/\\?id=.+|/.+/.+\\.html))" + "|(http://[\\w\\.]*?game-freaks\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?isos\\.at(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?your-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?mov-world\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xtreme-warez\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?sceneload\\.to(/\\?id=.+|/download/.+/.+\\.html))"
             + "|(http://[\\w\\.]*?oxygen-warez\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?epicspeedload\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?serienfreaks\\.to(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serienfreaks\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?warez-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?ddl-scene\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/\\?id=.+)", Pattern.CASE_INSENSITIVE);
-
-    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/", Pattern.CASE_INSENSITIVE);
-    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.0";
 
     public UCMS() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    
-        
-    
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -159,7 +130,43 @@ public class UCMS extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

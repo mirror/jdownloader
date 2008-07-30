@@ -39,26 +39,73 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForContainer;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForContainer extends ConfigPanel implements ActionListener, MouseListener {
 
-    /**
+    private class InternalTableModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return 3;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return JDLocale.L("gui.config.plugin.container.column_host","Host");
+                case 1:
+//                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
+                    return JDLocale.L("gui.config.plugin.container.column_version","Version");
+                case 2:
+                    return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
+
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return pluginsForContainer.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            switch (columnIndex) {
+                case 0:
+                    return pluginsForContainer.elementAt(rowIndex).getPluginName();
+                case 1:
+//                    return pluginsForContainer.elementAt(rowIndex).getPluginID();
+                    return pluginsForContainer.elementAt(rowIndex).getVersion();
+                case 2:
+                    return pluginsForContainer.elementAt(rowIndex).getCoder();
+
+            }
+            return null;
+        }
+    }
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -169660462836773855L;
-	/**
+    /**
      * 
      */
 
     private JButton                  btnEdit;
-    private JTable                   table;
  
     private Configuration configuration;
 //  private PluginForDecrypt         currentPlugin;
     private Vector<PluginForContainer> pluginsForContainer;
+    private JTable                   table;
+
     public ConfigPanelPluginForContainer(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration=configuration;
@@ -69,28 +116,37 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     }
 
-    /**
-     * Lädt alle Informationen
-     */
-    public void load() {
-
-    }
-
-    /**
-     * Speichert alle Änderungen auf der Maske
-     * TODO: PluginsForDecrypt haben noch keinen properties laoder. 
-     */
-    public void save() {
-        // Interaction[] tmp= new Interaction[interactions.size()];
-        PluginForContainer plg;
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            plg = pluginsForContainer.elementAt(i);
-            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnEdit) {
+            editEntry();
         }
-
     }
 
     
+    private void editEntry() {
+        PluginForContainer plugin = getSelectedPlugin();
+        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+        }
+    }
+
+    @Override
+    public String getName() {
+        return JDLocale.L("gui.config.plugin.container.name","Container");
+    }
+
+    
+    private int getSelectedInteractionIndex() {
+        return table.getSelectedRow();
+    }
+
+    private PluginForContainer getSelectedPlugin() {
+        int index = getSelectedInteractionIndex();
+        if (index < 0) return null;
+        return this.pluginsForContainer.elementAt(index);
+    }
+
+    @Override
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable(); //new InternalTable();
@@ -144,15 +200,22 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     }
 
-    private int getSelectedInteractionIndex() {
-        return table.getSelectedRow();
-    }
+    /**
+     * Lädt alle Informationen
+     */
+    @Override
+    public void load() {
 
-    
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.container.name","Container");
     }
-
+    public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() > 1) {
+            editEntry();
+        }
+    }
+    public void mouseEntered(MouseEvent e)  { }
+    public void mouseExited(MouseEvent e)   { }
+    public void mousePressed(MouseEvent e)  { }
+    public void mouseReleased(MouseEvent e) { }
     private void openPopupPanel(ConfigPanel config) {
         JPanel panel = new JPanel(new BorderLayout());
 
@@ -169,77 +232,19 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
-
-    private PluginForContainer getSelectedPlugin() {
-        int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return this.pluginsForContainer.elementAt(index);
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnEdit) {
-            editEntry();
-        }
-    }
-    private void editEntry() {
-        PluginForContainer plugin = getSelectedPlugin();
-        if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
-        }
-    }
-    public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1) {
-            editEntry();
-        }
-    }
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
     
-    private class InternalTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = 1155282457354673850L;
-
-        public Class<?> getColumnClass(int columnIndex) {
-            return String.class;
+    /**
+     * Speichert alle Änderungen auf der Maske
+     * TODO: PluginsForDecrypt haben noch keinen properties laoder. 
+     */
+    @Override
+    public void save() {
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        PluginForContainer plg;
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            plg = pluginsForContainer.elementAt(i);
+            if (plg.getProperties() != null) configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
         }
 
-        public int getColumnCount() {
-            return 3;
-        }
-
-        public int getRowCount() {
-            return pluginsForContainer.size();
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-
-            switch (columnIndex) {
-                case 0:
-                    return pluginsForContainer.elementAt(rowIndex).getPluginName();
-                case 1:
-//                    return pluginsForContainer.elementAt(rowIndex).getPluginID();
-                    return pluginsForContainer.elementAt(rowIndex).getVersion();
-                case 2:
-                    return pluginsForContainer.elementAt(rowIndex).getCoder();
-
-            }
-            return null;
-        }
-
-        public String getColumnName(int column) {
-            switch (column) {
-                case 0:
-                    return JDLocale.L("gui.config.plugin.container.column_host","Host");
-                case 1:
-//                    return JDLocale.L("gui.config.plugin.container.column_id","ID");
-                    return JDLocale.L("gui.config.plugin.container.column_version","Version");
-                case 2:
-                    return JDLocale.L("gui.config.plugin.container.column_author","Ersteller");
-
-            }
-            return super.getColumnName(column);
-        }
     }
 }

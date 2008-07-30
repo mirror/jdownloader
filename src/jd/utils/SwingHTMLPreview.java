@@ -14,6 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -29,57 +30,24 @@ public class SwingHTMLPreview extends javax.swing.JFrame implements DocumentList
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	JTextArea top;
-    JEditorPane bottom;
-    
-    /** Creates a new instance of SwingHTMLPreview */
-    public SwingHTMLPreview() {
-    }
-    
-    @SuppressWarnings("deprecation")
+	@SuppressWarnings("deprecation")
 	public static void main(String args[]) {
         SwingHTMLPreview instance = new SwingHTMLPreview();
         instance.init();
         instance.show();
     }
-
-    public void init() {
-        Container content = getContentPane();
-        content.setBackground(Color.white);
-        content.setLayout(new GridLayout(2,1)); 
-        
-        top = new JTextArea();
-        top.setEditable(true);
-        
-        top.setLineWrap(true);
-        top.setWrapStyleWord(true);
-        top.getDocument().addDocumentListener(this);
-        JScrollPane topScrollPane = new JScrollPane(top);
-        topScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        topScrollPane.setBorder(BorderFactory.createTitledBorder("Raw HTML"));      
-        
-        bottom = new JEditorPane();
-        bottom.setEditable(false);
-        bottom.setContentType("text/html");
-        JScrollPane bottomScrollPane = new JScrollPane(bottom);
-        bottomScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        bottomScrollPane.setBorder(BorderFactory.createTitledBorder("Swing Rendered"));      
-        
-        content.add(topScrollPane);
-        content.add(bottomScrollPane);
-        setTitle("SwingHTMLPreview");
-        setSize(400,400);
-    }
+    JEditorPane bottom;
     
-    public void insertUpdate(DocumentEvent e) {
-        copyContents(e);
+    JTextArea top;
+    
+    /** Creates a new instance of SwingHTMLPreview */
+    public SwingHTMLPreview() {
     }
-    public void removeUpdate(DocumentEvent e) {
-        copyContents(e);
-    }
+
     public void changedUpdate(DocumentEvent e) {
         copyContents(e);
     }
+    
     private void copyContents(DocumentEvent e) {
         String backup = bottom.getText();
         // some bad HTML causes the JEditorPane to choke;
@@ -94,6 +62,39 @@ public class SwingHTMLPreview extends javax.swing.JFrame implements DocumentList
             bottom.setText(backup);
             top.setCaretColor(Color.red);
         }
+    }
+    public void init() {
+        Container content = getContentPane();
+        content.setBackground(Color.white);
+        content.setLayout(new GridLayout(2,1)); 
+        
+        top = new JTextArea();
+        top.setEditable(true);
+        
+        top.setLineWrap(true);
+        top.setWrapStyleWord(true);
+        top.getDocument().addDocumentListener(this);
+        JScrollPane topScrollPane = new JScrollPane(top);
+        topScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        topScrollPane.setBorder(BorderFactory.createTitledBorder("Raw HTML"));      
+        
+        bottom = new JEditorPane();
+        bottom.setEditable(false);
+        bottom.setContentType("text/html");
+        JScrollPane bottomScrollPane = new JScrollPane(bottom);
+        bottomScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        bottomScrollPane.setBorder(BorderFactory.createTitledBorder("Swing Rendered"));      
+        
+        content.add(topScrollPane);
+        content.add(bottomScrollPane);
+        setTitle("SwingHTMLPreview");
+        setSize(400,400);
+    }
+    public void insertUpdate(DocumentEvent e) {
+        copyContents(e);
+    }
+    public void removeUpdate(DocumentEvent e) {
+        copyContents(e);
     }
 
 

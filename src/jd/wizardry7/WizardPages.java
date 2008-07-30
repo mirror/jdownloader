@@ -20,13 +20,51 @@ import jd.wizardry7.view.pages.Welcome;
 public class WizardPages {
 	
 	private static final ImageIcon aboutIcon      = getImageIcon("res/about.gif");
-	private static final ImageIcon cancelIcon      = getImageIcon("res/stop.png");
 	private static final ImageIcon backwardIcon    = getImageIcon("res/leftarrow.png");
-	private static final ImageIcon forwardIcon     = getImageIcon("res/rightarrow.png");
+	private static final ImageIcon cancelIcon      = getImageIcon("res/stop.png");
 	private static final ImageIcon finishIcon      = getImageIcon("res/finish.gif");
+	private static final ImageIcon forwardIcon     = getImageIcon("res/rightarrow.png");
 	
 	
-	public static DefaultWizardPage[] getWizardPages() {
+	private static JButton getAboutButton() {
+	    return getButton("About", "Visit the JDownloader Website", aboutIcon, WizardController.helpAction);
+	}
+
+	private static JButton getBackButton() {
+		return getButton("Previous", "Previous-Tooltip", backwardIcon, WizardController.backwardAction);
+	}
+
+	
+	
+	private static JButton getButton(String text, String tooltip, ImageIcon imageIcon, Action action) {
+        JButton button = new JButton(action);
+        button.setText(text);
+        button.setToolTipText(tooltip);
+        button.setIcon(imageIcon);
+        return button;
+    }
+	
+	private static JButton getCancelButton() {
+		return getButton("Cancel", "BUTTONS_CANCEL_TOOLTIP", cancelIcon, WizardController.cancelAction);
+	}
+
+    private static JButton getFinishButton() {
+        return getButton("Finish", "Start using JDownloader", finishIcon, WizardController.finishedAction);
+    }
+		
+	private static ImageIcon getImageIcon(String icon) {
+        return new ImageIcon(icon);
+    }
+
+    private static JButton getNextButton() {
+		JButton button = getButton("Next", "BUTTONS_NEXT_TOOLTIP", forwardIcon, WizardController.forwardAction);
+		button.setHorizontalTextPosition(SwingConstants.LEFT);
+		return button;
+	}
+    
+
+
+    public static DefaultWizardPage[] getWizardPages() {
 		DefaultWizardPage[] wizardPages = new DefaultWizardPage[]{
 				Welcome.getInstance(),
 				CheckAGB.getInstance(),
@@ -67,43 +105,5 @@ public class WizardPages {
 
 		return wizardPages;
 	}
-
-	private static ImageIcon getImageIcon(String icon) {
-        return new ImageIcon(icon);
-    }
-
-	
-	
-	private static JButton getAboutButton() {
-	    return getButton("About", "Visit the JDownloader Website", aboutIcon, WizardController.helpAction);
-	}
-	
-	private static JButton getBackButton() {
-		return getButton("Previous", "Previous-Tooltip", backwardIcon, WizardController.backwardAction);
-	}
-
-    private static JButton getNextButton() {
-		JButton button = getButton("Next", "BUTTONS_NEXT_TOOLTIP", forwardIcon, WizardController.forwardAction);
-		button.setHorizontalTextPosition(SwingConstants.LEFT);
-		return button;
-	}
-		
-	private static JButton getCancelButton() {
-		return getButton("Cancel", "BUTTONS_CANCEL_TOOLTIP", cancelIcon, WizardController.cancelAction);
-	}
-
-    private static JButton getFinishButton() {
-        return getButton("Finish", "Start using JDownloader", finishIcon, WizardController.finishedAction);
-    }
-    
-
-
-    private static JButton getButton(String text, String tooltip, ImageIcon imageIcon, Action action) {
-        JButton button = new JButton(action);
-        button.setText(text);
-        button.setToolTipText(tooltip);
-        button.setIcon(imageIcon);
-        return button;
-    }
 
 }

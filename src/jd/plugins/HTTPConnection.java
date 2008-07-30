@@ -36,9 +36,9 @@ public class HTTPConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
     private HttpURLConnection connection;
-    private HashMap<String, List<String>> requestProperties = null;
-
     private String postData;
+
+    private HashMap<String, List<String>> requestProperties = null;
 
     public HTTPConnection(URLConnection openConnection) {
         this.connection = (HttpURLConnection) openConnection;
@@ -54,28 +54,18 @@ public class HTTPConnection {
 
     }
 
-    public void setReadTimeout(int timeout) {
-        connection.setReadTimeout(timeout);
+    public void connect() throws IOException {
+
+        connection.connect();
 
     }
 
-    public void setConnectTimeout(int timeout) {
-        connection.setConnectTimeout(timeout);
-
+    public int getContentLength() {
+        return connection.getContentLength();
     }
 
-    public void setInstanceFollowRedirects(boolean redirect) {
-        connection.setInstanceFollowRedirects(redirect);
-
-    }
-
-    public void setRequestProperty(String key, String value) {
-        LinkedList<String> l = new LinkedList<String>();
-
-        l.add(value);
-        requestProperties.put(key, l);
-        connection.setRequestProperty(key, value);
-
+    public String getContentType() {
+        return connection.getContentType();
     }
 
     public String getHeaderField(String string) {
@@ -86,23 +76,9 @@ public class HTTPConnection {
         return connection.getHeaderFields();
     }
 
-    public void setDoOutput(boolean b) {
-        connection.setDoOutput(b);
+    public HttpURLConnection getHTTPURLConnection() {
+        return connection;
 
-    }
-
-    public void connect() throws IOException {
-
-        connection.connect();
-
-    }
-
-    public OutputStream getOutputStream() throws IOException {
-        return connection.getOutputStream();
-    }
-
-    public int getResponseCode() throws IOException {
-        return connection.getResponseCode();
     }
 
     public InputStream getInputStream() throws IOException {
@@ -113,21 +89,16 @@ public class HTTPConnection {
         }
     }
 
-    public URL getURL() {
-        return connection.getURL();
+    public OutputStream getOutputStream() throws IOException {
+        return connection.getOutputStream();
     }
 
-    public String getContentType() {
-        return connection.getContentType();
+    public String getPostData() {
+        return postData;
     }
 
-    public HttpURLConnection getHTTPURLConnection() {
-        return connection;
-
-    }
-
-    public int getContentLength() {
-        return connection.getContentLength();
+    public String getRequestMethod() {
+        return connection.getRequestMethod();
     }
 
     public Map<String, List<String>> getRequestProperties() {
@@ -139,14 +110,12 @@ public class HTTPConnection {
         return connection.getRequestProperty(string);
     }
 
-    public void post(String parameter) throws IOException {
-        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-        if (parameter != null) wr.write(parameter);
+    public int getResponseCode() throws IOException {
+        return connection.getResponseCode();
+    }
 
-        this.postData = parameter;
-        wr.flush();
-        wr.close();
-
+    public URL getURL() {
+        return connection.getURL();
     }
 
     public void post(byte[] parameter) throws IOException {
@@ -154,6 +123,16 @@ public class HTTPConnection {
         if (parameter != null) wr.write(parameter);
 
         this.postData = "binary";
+        wr.flush();
+        wr.close();
+
+    }
+
+    public void post(String parameter) throws IOException {
+        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+        if (parameter != null) wr.write(parameter);
+
+        this.postData = parameter;
         wr.flush();
         wr.close();
 
@@ -169,8 +148,24 @@ public class HTTPConnection {
 
     }
 
-    public String getPostData() {
-        return postData;
+    public void setConnectTimeout(int timeout) {
+        connection.setConnectTimeout(timeout);
+
+    }
+
+    public void setDoOutput(boolean b) {
+        connection.setDoOutput(b);
+
+    }
+
+    public void setInstanceFollowRedirects(boolean redirect) {
+        connection.setInstanceFollowRedirects(redirect);
+
+    }
+
+    public void setReadTimeout(int timeout) {
+        connection.setReadTimeout(timeout);
+
     }
 
     public void setRequestMethod(String string) throws ProtocolException {
@@ -178,8 +173,13 @@ public class HTTPConnection {
 
     }
 
-    public String getRequestMethod() {
-        return connection.getRequestMethod();
+    public void setRequestProperty(String key, String value) {
+        LinkedList<String> l = new LinkedList<String>();
+
+        l.add(value);
+        requestProperties.put(key, l);
+        connection.setRequestProperty(key, value);
+
     }
 
 }

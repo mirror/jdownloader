@@ -34,6 +34,10 @@ import jd.utils.JDUtilities;
  */
 @SuppressWarnings("unchecked")
 public abstract class PluginForDecrypt extends Plugin implements Comparable {
+    private String cryptedLink = null;
+
+    protected Vector<String> default_password = new Vector<String>();
+
     protected ProgressController progress;
 
     /**
@@ -51,29 +55,37 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     }
 
-    public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {
-        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        for (int i = 0; i < cryptedLinks.length; i++) {
-            decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
-        }
-
-        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
-
-        return decryptedLinks;
-    }
-
-    private String cryptedLink = null;
-
     // private String decrypterDefaultPassword = null;
 
     // private String decrypterDefaultComment = null;
 
-    protected Vector<String> default_password = new Vector<String>();;
+    /**
+     * vergleicht Decryptplugins anhand des Hostnamens wird zur Sortierung
+     * benötigt
+     */
+    public int compareTo(Object o) {
+        return getHost().toLowerCase().compareTo(((PluginForDecrypt) o).getHost().toLowerCase());
+    };
 
+    protected DownloadLink createDownloadlink(String link) {
+        DownloadLink dl = new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
+        return dl;
+    }
+
+    @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
+
+    /**
+     * Diese Methode arbeitet die unterschiedlichen schritte ab. und gibt den
+     * gerade abgearbeiteten Schritt jeweisl zurück.
+     * 
+     * @param step
+     * @param parameter
+     * @return gerade abgeschlossener Schritt
+     */
+    public abstract ArrayList<DownloadLink> decryptIt(String parameter);
 
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
@@ -116,9 +128,16 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     }
 
-    protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(this, null, this.getHost(), JDUtilities.htmlDecode(link), true);
-        return dl;
+    public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {
+        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        for (int i = 0; i < cryptedLinks.length; i++) {
+            decryptedLinks.addAll(decryptLink(cryptedLinks[i]));
+        }
+
+        this.fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
+
+        return decryptedLinks;
     }
 
     /**
@@ -146,21 +165,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         return hits;
     }
 
-    /**
-     * Diese Methode arbeitet die unterschiedlichen schritte ab. und gibt den
-     * gerade abgearbeiteten Schritt jeweisl zurück.
-     * 
-     * @param step
-     * @param parameter
-     * @return gerade abgeschlossener Schritt
-     */
-    public abstract ArrayList<DownloadLink> decryptIt(String parameter);
-
-    public Vector<String> getDefaultPassswords() {
-        return default_password;
-
-    }
-
     // /**
     // * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
     // */
@@ -168,12 +172,18 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     // return doStep(step, (String) parameter);
     // }
 
+    public Vector<String> getDefaultPassswords() {
+        return default_password;
+
+    }
+
     /**
      * Gibt den namen des internen CryptedLinks zurück
      * 
      * @return encryptedLink
      */
 
+    @Override
     public String getLinkName() {
         if (cryptedLink == null) return "";
         try {
@@ -182,14 +192,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             // e.printStackTrace();
             return "";
         }
-    }
-
-    /**
-     * vergleicht Decryptplugins anhand des Hostnamens wird zur Sortierung
-     * benötigt
-     */
-    public int compareTo(Object o) {
-        return getHost().toLowerCase().compareTo(((PluginForDecrypt) o).getHost().toLowerCase());
     }
 
 }

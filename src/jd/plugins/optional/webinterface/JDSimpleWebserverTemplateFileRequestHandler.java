@@ -23,8 +23,8 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 
-    private JDSimpleWebserverResponseCreator response;
     private DecimalFormat f = new DecimalFormat("#0");
+    private JDSimpleWebserverResponseCreator response;
 
     private Vector<Object> v_info = new Vector<Object>();
 
@@ -90,6 +90,60 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("all_infos", v_info);
 
         }
+    }
+
+    private void add_linkadder_page(Template t, HashMap<String, String> requestParameter) {
+        Vector<Object> v, v2 = new Vector<Object>();
+        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
+        v = new Vector<Object>();
+
+        FilePackage filePackage;
+        DownloadLink dLink;
+        Integer Package_ID;
+        Integer Download_ID;
+
+        for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
+            filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
+
+            h = new Hashtable<Object, Object>();
+            /* Paket Infos */
+            h.put("download_name", filePackage.getName());
+
+            h.put("package_id", Package_ID.toString());
+
+            v2 = new Vector<Object>();
+
+            for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
+                dLink = filePackage.getDownloadLinks().get(Download_ID);
+
+                /* Download Infos */
+
+                h2 = new Hashtable<Object, Object>();
+
+                h2.put("package_id", Package_ID.toString());
+                h2.put("download_id", Download_ID.toString());
+                h2.put("download_name", dLink.getName());
+
+                h2.put("download_hoster", dLink.getHost());
+
+                v2.addElement(h2);
+
+            }
+            h.put("downloads", v2);
+            v.addElement(h);
+        }
+//      t.setParam("message_status", "show");
+//      t.setParam("message", "great work");
+        t.setParam("pakete", v);
+    }
+
+    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
+        String[] pws = JUnrar.returnPasswords();
+        String pwlist = "";
+        for (int i = 0; i < pws.length; i++) {
+            pwlist = pwlist + System.getProperty("line.separator") + pws[i];
+        }
+        t.setParam("password_list", pwlist);
     }
 
     private void add_single_info(Template t, HashMap<String, String> requestParameter) {
@@ -185,13 +239,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             t.setParam("single_infos", v_info);
         }
         ;
-    }
-
-    private void addEntry(String var, String value) {
-        Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
-        h_info.put("info_var", var);
-        h_info.put("info_value", value);
-        v_info.addElement(h_info);
     }
 
     /*
@@ -314,58 +361,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("pakete", v);
     }
 
-    private void add_linkadder_page(Template t, HashMap<String, String> requestParameter) {
-        Vector<Object> v, v2 = new Vector<Object>();
-        Hashtable<Object, Object> h, h2 = new Hashtable<Object, Object>();
-        v = new Vector<Object>();
-
-        FilePackage filePackage;
-        DownloadLink dLink;
-        Integer Package_ID;
-        Integer Download_ID;
-
-        for (Package_ID = 0; Package_ID < JDWebinterface.Link_Adder_Packages.size(); Package_ID++) {
-            filePackage = JDWebinterface.Link_Adder_Packages.get(Package_ID);
-
-            h = new Hashtable<Object, Object>();
-            /* Paket Infos */
-            h.put("download_name", filePackage.getName());
-
-            h.put("package_id", Package_ID.toString());
-
-            v2 = new Vector<Object>();
-
-            for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
-                dLink = filePackage.getDownloadLinks().get(Download_ID);
-
-                /* Download Infos */
-
-                h2 = new Hashtable<Object, Object>();
-
-                h2.put("package_id", Package_ID.toString());
-                h2.put("download_id", Download_ID.toString());
-                h2.put("download_name", dLink.getName());
-
-                h2.put("download_hoster", dLink.getHost());
-
-                v2.addElement(h2);
-
-            }
-            h.put("downloads", v2);
-            v.addElement(h);
-        }
-//      t.setParam("message_status", "show");
-//      t.setParam("message", "great work");
-        t.setParam("pakete", v);
-    }
-
-    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-        String[] pws = JUnrar.returnPasswords();
-        String pwlist = "";
-        for (int i = 0; i < pws.length; i++) {
-            pwlist = pwlist + System.getProperty("line.separator") + pws[i];
-        }
-        t.setParam("password_list", pwlist);
+    private void addEntry(String var, String value) {
+        Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
+        h_info.put("info_var", var);
+        h_info.put("info_value", value);
+        v_info.addElement(h_info);
     }
 
     @SuppressWarnings("deprecation")

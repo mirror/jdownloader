@@ -30,14 +30,15 @@ import jd.plugins.RequestInfo;
 
 public class Bm4uin extends PluginForDecrypt {
     static private final String host = "bm4u.in";
-    private String version = "1.0.0.0";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.0";
 
     public Bm4uin() {
         super();
     }
 
     
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -60,35 +61,41 @@ public class Bm4uin extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+
     }
 
     
-    public String getHost() {
-        return host;
+    @Override
+    public String getCoder() {
+        return "JD-Team";
     }
 
  
 
     
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
     public String getPluginName() {
         return host;
     }
 
     
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
     
+    @Override
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-
     }
 }

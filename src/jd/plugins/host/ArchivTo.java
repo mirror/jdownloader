@@ -35,40 +35,58 @@ import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
 
-    private static final String HOST = "archiv.to";
+    static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
 
    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
-
     static private final String FILESIZE = "<td width=\".*\">: ([0-9]+) Byte";
 
-    static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
+    private static final String HOST = "archiv.to";
+
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 
     //
     
+    public ArchivTo() {
+        super();
+
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://archiv.to/?Module=Policy";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
+            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+            if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
+                downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
+            } else
+                return false;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     
@@ -77,15 +95,35 @@ public class ArchivTo extends PluginForHost {
     
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public ArchivTo() {
-        super();
-
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -119,38 +157,12 @@ public class ArchivTo extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
-            } else
-                return false;
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://archiv.to/?Module=Policy";
     }
 }

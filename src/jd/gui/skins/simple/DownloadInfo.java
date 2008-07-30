@@ -46,12 +46,12 @@ import jd.utils.JDUtilities;
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
 public class DownloadInfo extends JFrame {
+    @SuppressWarnings("unused")
+    private static Logger logger = JDUtilities.getLogger();
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
     private DownloadLink downloadLink;
     private int i = 0;
     private JPanel panel;
@@ -76,6 +76,7 @@ public class DownloadInfo extends JFrame {
        
         
         new Thread() {
+            @Override
             public void run() {
                 do  {
                     
@@ -98,6 +99,36 @@ public class DownloadInfo extends JFrame {
         setVisible(true);
         
 
+    }
+
+    private void addEntry(String string, JComponent value) {
+
+        JLabel key;
+        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
+        i++;
+
+    }
+
+    private void addEntry(String label, String data) {
+        if (label == null && data == null) {
+            JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+            return;
+        }
+        JLabel key;
+        JDUtilities.addToGridBag(panel, key = new JLabel(JDLocale.L("gui.linkInfo." + label, label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        JLabel value;
+        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setHorizontalAlignment(SwingConstants.RIGHT);
+        value.setForeground(Color.DARK_GRAY);
+
+        i++;
     }
 
     private void initDialog() {
@@ -175,35 +206,5 @@ public class DownloadInfo extends JFrame {
             }
 
         }
-    }
-
-    private void addEntry(String string, JComponent value) {
-
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-
-        i++;
-
-    }
-
-    private void addEntry(String label, String data) {
-        if (label == null && data == null) {
-            JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-            return;
-        }
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(JDLocale.L("gui.linkInfo." + label, label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        JLabel value;
-        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setHorizontalAlignment(SwingConstants.RIGHT);
-        value.setForeground(Color.DARK_GRAY);
-
-        i++;
     }
 }

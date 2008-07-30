@@ -30,20 +30,9 @@ import jd.utils.JDUtilities;
 
 public class BatchReconnect extends Interaction implements Serializable {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-
-	public static String        PROPERTY_TERMINAL                 = "TERMINAL";
-
-    public static final String  PROPERTY_IP_WAIT_FOR_RETURN       = "WAIT_FOR_RETURN";
-
     private static final String NAME                              = JDLocale.L("interaction.batchreconnect.name", "Batch Reconnect");
 
-    private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
-
-    private static final String PARAM_IPCHECKWAITTIME             = "EXTERN_RECONNECT_IPCHECKWAITTIME";
+	private static final String PARAM_IPCHECKWAITTIME             = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES                     = "EXTERN_RECONNECT_RETRIES";
 
@@ -51,9 +40,21 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     private static final String PROPERTY_DO_OUTPUT                = "PROPERTY_DO_OUTPUT";
 
+    public static final String  PROPERTY_IP_WAIT_FOR_RETURN       = "WAIT_FOR_RETURN";
+
+    private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
+
+    public static String        PROPERTY_TERMINAL                 = "TERMINAL";
+
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
     private int                 retries                           = 0;
 
     
+    @Override
     public boolean doInteraction(Object arg) {
 
         retries++;
@@ -117,6 +118,51 @@ public class BatchReconnect extends Interaction implements Serializable {
         return false;
     }
 
+    @Override
+    public String getInteractionName() {
+        return NAME;
+    }
+
+    
+    @Override
+    public void initConfig() {
+       SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, conf, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
+        if (System.getProperty("os.name").indexOf("Linux") >= 0) {
+            cfg.setDefaultValue("/bin/bash");
+        }
+        else if (System.getProperty("os.name").indexOf("Windows") >= 0) {
+            cfg.setDefaultValue("cmd /c");
+        }
+        else {
+            cfg.setDefaultValue("/bin/bash");
+        }
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, conf, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, conf, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.batchreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_RETRIES, JDLocale.L("interaction.batchreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.batchreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist[sek]"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, conf, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
+
+    }
+
+    
+    @Override
+    public void resetInteraction() {
+        retries = 0;
+    }
+
+    
+    @Override
+    public void run() {
+    // Nichts zu tun. Interaction braucht keinen Thread
+    }
+
+    
     private void runCommands() {
         SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
         int waitForReturn = conf.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);
@@ -145,49 +191,9 @@ public class BatchReconnect extends Interaction implements Serializable {
     }
 
     
+    @Override
     public String toString() {
         return JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
-    }
-
-    
-    public String getInteractionName() {
-        return NAME;
-    }
-
-    
-    public void run() {
-    // Nichts zu tun. Interaction braucht keinen Thread
-    }
-
-    
-    public void initConfig() {
-       SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, conf, PROPERTY_TERMINAL, JDLocale.L("interaction.batchreconnect.terminal", "Interpreter")));
-        if (System.getProperty("os.name").indexOf("Linux") >= 0) {
-            cfg.setDefaultValue("/bin/bash");
-        }
-        else if (System.getProperty("os.name").indexOf("Windows") >= 0) {
-            cfg.setDefaultValue("cmd /c");
-        }
-        else {
-            cfg.setDefaultValue("/bin/bash");
-        }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, conf, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, conf, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.batchreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_RETRIES, JDLocale.L("interaction.batchreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.batchreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist[sek]"), 0, 600).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, conf, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
-
-    }
-
-    
-    public void resetInteraction() {
-        retries = 0;
     }
 
 }

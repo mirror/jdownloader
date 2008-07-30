@@ -32,100 +32,215 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RAFDownload extends DownloadInterface {
+    class ChunkBuffer {
+        public ByteBuffer buffer;
+        public int chunkID;
+        public int chunkPosition;
+        public long position;
+
+        public ChunkBuffer(ByteBuffer buffer, long position, int chunkposition, int chunkid) {
+            this.buffer = buffer;
+            this.position = position;
+            this.chunkPosition=chunkposition;
+            this.chunkID=chunkid;
+        }
+    }
+
+    class WriterWorker extends Thread {
+
+        public boolean waitFlag = true;
+
+        public WriterWorker() {
+            start();
+        }
+
+        @Override
+        public void run() {
+            ChunkBuffer buf;
+            while (!isInterrupted() || bufferList.size() > 0) {
+                synchronized (this) {
+
+                    while (!isInterrupted() && waitFlag) {
+                        try {
+                            wait();
+                        } catch (Exception e) {
+                            // e.printStackTrace();
+                            // return;
+                        }
+                    }
+                }
+
+                while (bufferList.size() > 0) {
+                    synchronized (bufferList) {
+                        buf = bufferList.remove(0);
+                    }
+                    try {
+
+                        synchronized (outputChannel) {
+                            outputFile.seek(buf.position);
+                            outputChannel.write(buf.buffer);
+                            
+                            if (buf.chunkID >= 0) downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
+                            
+                            // logger.info("Wrote buffer. rest: " +
+                            // bufferList.size());
+                        }
+
+                    } catch (Exception e) {
+
+                        // e.printStackTrace();
+                        error(LinkStatus.ERROR_LOCAL_IO,JDUtilities.convertExceptionReadable(e));
+
+                        addException(e);
+                    }
+                }
+                waitFlag = true;
+
+            }
+
+        }
+    }
+
+    private ArrayList<ChunkBuffer> bufferList = new ArrayList<ChunkBuffer>();
+
+    protected FileChannel[] channels;
+
+    protected long hdWritesPerSecond;
+
+    private FileChannel outputChannel;
+
+    private RandomAccessFile outputFile;
+
+    protected File[] partFiles;
+
+    protected long writeCount = 0;
+    private WriterWorker writer;
+
+    protected long writeTimer = System.currentTimeMillis();
+
     private Boolean writeType;
 
+    
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         super(plugin, downloadLink, urlConnection);
         this.writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
     }
 
-    protected long writeTimer = System.currentTimeMillis();
+    private boolean checkResumabled() {
 
-    protected long writeCount = 0;
+        if (!isResume() || downloadLink.getChunksProgress() == null) return false;
 
-    protected long hdWritesPerSecond;
+        int loaded = 0;
+        int fileSize = (int) getFileSize();
+        int chunks = downloadLink.getChunksProgress().length;
+        int part = fileSize / chunks;
 
-    protected FileChannel[] channels;
-
-    protected File[] partFiles;
-
-    private FileChannel outputChannel;
-
-    private RandomAccessFile outputFile;
-    private ArrayList<ChunkBuffer> bufferList = new ArrayList<ChunkBuffer>();
-
-    private WriterWorker writer;
-
-    protected boolean writeChunkBytes(Chunk chunk) {
-     
-
-            if (writeType) {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
-                buffer.put(chunk.buffer);
-                buffer.flip();
-                synchronized (bufferList) {
-                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),(int) chunk.getCurrentBytesPosition() - 1,chunk.getID()));
-                    // logger.info("new buffer. size: " + bufferList.size());
-                }
-
-                if (this.writer == null) {
-                    writer = new WriterWorker();
-
-                }
-
-                synchronized (writer) {
-                    if (writer.waitFlag) {
-                        writer.waitFlag = false;
-                        writer.notify();
-                    }
-
-                }
-//            } else {
-//                try {
-//                    synchronized (outputChannel) {
-//                        outputFile.seek(chunk.getWritePosition());
-//                        outputChannel.write(chunk.buffer);
-//                        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
-//                        
-//                        return true;
-//                    }
-//
-//                } catch (Exception e) {
-//
-//                    // e.printStackTrace();
-//                    error(ERROR_LOCAL_IO);
-//                    addException(e);
-//                    return false;
-//                }
-//
-//            }
-
-        } else {
-            chunk.buffer.clear();
+        for (int i = 0; i < chunks; i++) {
+            loaded += downloadLink.getChunksProgress()[i] - i * part;
         }
-        return true;
-        // try {
-        // // int limit = chunk.buffer.limit()-chunk.buffer.position();
-        //
-        // if (maxBytes < 0) {
-        // synchronized (outputChannel) {
-        // outputFile.seek(chunk.getWritePosition());
-        // outputChannel.write(chunk.buffer);
-        // }
-        // } else {
-        // chunk.buffer.clear();
-        // }
-        //
-        // } catch (Exception e) {
-        //
-        // e.printStackTrace();
-        // error(ERROR_LOCAL_IO);
-        // addException(e);
-        // }
+        if (chunks > 0) {
+
+            this.setChunkNum(chunks);
+            logger.info("Resume with " + chunks + " chunks");
+
+            return true;
+        }
+        return false;
 
     }
 
     
+    @Override
+    protected void onChunksReady() {
+        if (writer != null) {
+            synchronized (writer) {
+                if (writer.waitFlag) {
+                    writer.waitFlag = false;
+                    writer.notify();
+                }
+
+            }
+            if (!handleErrors()) {
+
+                writer.interrupt();
+            }
+
+            while (writer.isAlive() && bufferList.size() > 0) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        System.gc();
+        System.runFinalization();
+        //
+        logger.info("CLOSE HD FILE");
+        try {
+          this.outputChannel.force(false);
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        try {
+            outputFile.close();
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        try {
+            outputChannel.close();
+        } catch (Exception e) {
+            // e.printStackTrace();
+        }
+        if (!handleErrors()) {
+
+        return; }
+        try {
+            if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
+
+                logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
+                error(LinkStatus.ERROR_LOCAL_IO,JDLocale.L("system.download.errors.couldnotrename","Could not rename partfile"));
+
+            }
+            DownloadLink sfv;
+            if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
+                if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
+
+                    String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
+                    if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
+                        String[] l = Regex.getLines(sfvText);
+                        boolean c = false;
+                        for (String line : l) {
+                            logger.info(line + " - " + Long.toHexString(crc).toUpperCase());
+                            if (line.trim().endsWith(Long.toHexString(crc).toUpperCase()) || line.trim().endsWith(Long.toHexString(crc).toLowerCase())) {
+                                c = true;
+                                logger.info("CRC CHECK SUCCESS");
+                                break;
+                            }
+                        }
+                        if (c) {
+                           // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
+                        } else {
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L("system.download.errors.crcfailed","CRC Check failed"));
+
+                        }
+
+                    }
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            addException(e);
+        }
+
+    }
+
+    @Override
     protected void setupChunks() {
         try {
 
@@ -227,185 +342,74 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    private boolean checkResumabled() {
+    @Override
+    protected boolean writeChunkBytes(Chunk chunk) {
+     
 
-        if (!isResume() || downloadLink.getChunksProgress() == null) return false;
-
-        int loaded = 0;
-        int fileSize = (int) getFileSize();
-        int chunks = downloadLink.getChunksProgress().length;
-        int part = fileSize / chunks;
-
-        for (int i = 0; i < chunks; i++) {
-            loaded += downloadLink.getChunksProgress()[i] - i * part;
-        }
-        if (chunks > 0) {
-
-            this.setChunkNum(chunks);
-            logger.info("Resume with " + chunks + " chunks");
-
-            return true;
-        }
-        return false;
-
-    }
-
-    
-    protected void onChunksReady() {
-        if (writer != null) {
-            synchronized (writer) {
-                if (writer.waitFlag) {
-                    writer.waitFlag = false;
-                    writer.notify();
+            if (writeType) {
+                ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
+                buffer.put(chunk.buffer);
+                buffer.flip();
+                synchronized (bufferList) {
+                    bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),(int) chunk.getCurrentBytesPosition() - 1,chunk.getID()));
+                    // logger.info("new buffer. size: " + bufferList.size());
                 }
 
-            }
-            if (!handleErrors()) {
+                if (this.writer == null) {
+                    writer = new WriterWorker();
 
-                writer.interrupt();
-            }
-
-            while (writer.isAlive() && bufferList.size() > 0) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    
-                    e.printStackTrace();
                 }
-            }
-        }
 
-        System.gc();
-        System.runFinalization();
+                synchronized (writer) {
+                    if (writer.waitFlag) {
+                        writer.waitFlag = false;
+                        writer.notify();
+                    }
+
+                }
+//            } else {
+//                try {
+//                    synchronized (outputChannel) {
+//                        outputFile.seek(chunk.getWritePosition());
+//                        outputChannel.write(chunk.buffer);
+//                        if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = (int) chunk.getCurrentBytesPosition() - 1;
+//                        
+//                        return true;
+//                    }
+//
+//                } catch (Exception e) {
+//
+//                    // e.printStackTrace();
+//                    error(ERROR_LOCAL_IO);
+//                    addException(e);
+//                    return false;
+//                }
+//
+//            }
+
+        } else {
+            chunk.buffer.clear();
+        }
+        return true;
+        // try {
+        // // int limit = chunk.buffer.limit()-chunk.buffer.position();
         //
-        logger.info("CLOSE HD FILE");
-        try {
-          this.outputChannel.force(false);
-        } catch (Exception e) {
-            // e.printStackTrace();
-        }
-        try {
-            outputFile.close();
-        } catch (Exception e) {
-            // e.printStackTrace();
-        }
-        try {
-            outputChannel.close();
-        } catch (Exception e) {
-            // e.printStackTrace();
-        }
-        if (!handleErrors()) {
+        // if (maxBytes < 0) {
+        // synchronized (outputChannel) {
+        // outputFile.seek(chunk.getWritePosition());
+        // outputChannel.write(chunk.buffer);
+        // }
+        // } else {
+        // chunk.buffer.clear();
+        // }
+        //
+        // } catch (Exception e) {
+        //
+        // e.printStackTrace();
+        // error(ERROR_LOCAL_IO);
+        // addException(e);
+        // }
 
-        return; }
-        try {
-            if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
-
-                logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
-                error(LinkStatus.ERROR_LOCAL_IO,JDLocale.L("system.download.errors.couldnotrename","Could not rename partfile"));
-
-            }
-            DownloadLink sfv;
-            if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
-                if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
-
-                    String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
-                    if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
-                        String[] l = Regex.getLines(sfvText);
-                        boolean c = false;
-                        for (String line : l) {
-                            logger.info(line + " - " + Long.toHexString(crc).toUpperCase());
-                            if (line.trim().endsWith(Long.toHexString(crc).toUpperCase()) || line.trim().endsWith(Long.toHexString(crc).toLowerCase())) {
-                                c = true;
-                                logger.info("CRC CHECK SUCCESS");
-                                break;
-                            }
-                        }
-                        if (c) {
-                           // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
-                        } else {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L("system.download.errors.crcfailed","CRC Check failed"));
-
-                        }
-
-                    }
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            addException(e);
-        }
-
-    }
-
-    class WriterWorker extends Thread {
-
-        public boolean waitFlag = true;
-
-        public WriterWorker() {
-            start();
-        }
-
-        public void run() {
-            ChunkBuffer buf;
-            while (!isInterrupted() || bufferList.size() > 0) {
-                synchronized (this) {
-
-                    while (!isInterrupted() && waitFlag) {
-                        try {
-                            wait();
-                        } catch (Exception e) {
-                            // e.printStackTrace();
-                            // return;
-                        }
-                    }
-                }
-
-                while (bufferList.size() > 0) {
-                    synchronized (bufferList) {
-                        buf = bufferList.remove(0);
-                    }
-                    try {
-
-                        synchronized (outputChannel) {
-                            outputFile.seek(buf.position);
-                            outputChannel.write(buf.buffer);
-                            
-                            if (buf.chunkID >= 0) downloadLink.getChunksProgress()[buf.chunkID] = buf.chunkPosition;
-                            
-                            // logger.info("Wrote buffer. rest: " +
-                            // bufferList.size());
-                        }
-
-                    } catch (Exception e) {
-
-                        // e.printStackTrace();
-                        error(LinkStatus.ERROR_LOCAL_IO,JDUtilities.convertExceptionReadable(e));
-
-                        addException(e);
-                    }
-                }
-                waitFlag = true;
-
-            }
-
-        }
-    }
-
-    class ChunkBuffer {
-        public long position;
-        public ByteBuffer buffer;
-        public int chunkPosition;
-        public int chunkID;
-
-        public ChunkBuffer(ByteBuffer buffer, long position, int chunkposition, int chunkid) {
-            this.buffer = buffer;
-            this.position = position;
-            this.chunkPosition=chunkposition;
-            this.chunkID=chunkid;
-        }
     }
 
 }

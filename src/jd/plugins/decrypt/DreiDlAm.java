@@ -33,42 +33,76 @@ public class DreiDlAm extends PluginForDecrypt {
 
     final static String host = "3dl.am";
 
-    private String version = "0.6.1";
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
+    // private String version = "0.6.1";
 
     public DreiDlAm() {
         super();
     }
 
     
-    public String getCoder() {
-        return "jD-Team|b0ffed";
+    private String decryptFromDownload(String parameter) {
+        String link = new String();
+
+        try {
+            parameter.replace("&quot;", "\"");
+
+            RequestInfo request = HTTP.getRequest(new URL(parameter));
+            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<form action=\"http://3dl.am/download/start/", "/\"");
+            link = "http://3dl.am/download/start/" + layer + "/";
+
+            // passwort auslesen
+            if (request.getHtmlCode().indexOf("<b>Passwort:</b></td><td><input type='text' value='") != -1) {
+
+                String password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
+
+                if (!password.contains("kein") && !password.contains("kein P")) default_password.add(password);
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return link;
     }
 
     
-    public String getHost() {
-        return host;
+    private String decryptFromLink(String parameter) {
+        String link = new String();
+        try {
+            RequestInfo request = HTTP.getRequest(new URL(parameter));
+            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<frame src=\"", "\" width=\"100%\"");
+            link = layer;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return link;
     }
 
   
 
     
-    public String getPluginName() {
-        return host;
+    private ArrayList<String> decryptFromStart(String parameter) {
+        ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
+        ArrayList<String> linksReturn = new ArrayList<String>();
+        try {
+            RequestInfo request = HTTP.getRequest(new URL(parameter));
+            links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "value='http://3dl.am/link/°/'");
+
+            for (int i = 0; i < links.size(); i++) {
+                linksReturn.add("http://3dl.am/link/" + links.get(i).get(0) + "/");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return linksReturn;
     }
 
     
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -102,62 +136,35 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    private String decryptFromDownload(String parameter) {
-        String link = new String();
-
-        try {
-            parameter.replace("&quot;", "\"");
-
-            RequestInfo request = HTTP.getRequest(new URL(parameter));
-            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<form action=\"http://3dl.am/download/start/", "/\"");
-            link = "http://3dl.am/download/start/" + layer + "/";
-
-            // passwort auslesen
-            if (request.getHtmlCode().indexOf("<b>Passwort:</b></td><td><input type='text' value='") != -1) {
-
-                String password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
-
-                if (!password.contains("kein") && !password.contains("kein P")) default_password.add(password);
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return link;
+    
+    @Override
+    public String getCoder() {
+        return "jD-Team|b0ffed";
     }
 
-    private ArrayList<String> decryptFromStart(String parameter) {
-        ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
-        ArrayList<String> linksReturn = new ArrayList<String>();
-        try {
-            RequestInfo request = HTTP.getRequest(new URL(parameter));
-            links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "value='http://3dl.am/link/°/'");
-
-            for (int i = 0; i < links.size(); i++) {
-                linksReturn.add("http://3dl.am/link/" + links.get(i).get(0) + "/");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return linksReturn;
+    
+    @Override
+    public String getHost() {
+        return host;
     }
 
-    private String decryptFromLink(String parameter) {
-        String link = new String();
-        try {
-            RequestInfo request = HTTP.getRequest(new URL(parameter));
-            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<frame src=\"", "\" width=\"100%\"");
-            link = layer;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return link;
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

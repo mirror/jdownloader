@@ -14,8 +14,8 @@ abstract public class DefaultWizardPage extends JPanel {
 	 */
 	protected static Object dataStoreBetweenWizardPages;
 	
-	private Component header;
 	private Component footer;
+	private Component header;
 	
 	protected DefaultWizardPage() {
 		super(new BorderLayout(0,0));
@@ -27,40 +27,40 @@ abstract public class DefaultWizardPage extends JPanel {
 		super(new BorderLayout(0,0));
 	}
 	
-	protected void initComponents() {}
-	protected abstract Component createBody();
+	public String backwardValidation() {System.out.println("backwardValidation"); return "";}
+	public String cancelValidation() {System.out.println("cancelValidation"); return "";}
 	
 	
 
+	protected abstract Component createBody();
+
+	public void enterWizardPageAfterForward() {}
+	
+	
+	public void exitWizardPage() {}
+	
+	public String forwardValidation() {System.out.println("forwardValidation"); return "";}
+	
+	
 	public Component getFooter() {
 		return footer;
 	}
-
+	
 	public Component getHeader() {
 		return header;
 	}
 	
-	
-	public void setHeader(Component header) {
-		this.header = header; 
-		this.add(this.header, BorderLayout.NORTH);
-	}
-	
+	protected void initComponents() {}
+
+
 	public void setFooter(Component footer) {
 		this.footer = footer;
 		this.add(this.footer, BorderLayout.SOUTH);
 	}
-	
-	
-	public String forwardValidation() {System.out.println("forwardValidation"); return "";}
-	
-	public String backwardValidation() {System.out.println("backwardValidation"); return "";}
-	
-	public String cancelValidation() {System.out.println("cancelValidation"); return "";}
 
-
-	public void exitWizardPage() {}
-
-	public void enterWizardPageAfterForward() {}
+	public void setHeader(Component header) {
+		this.header = header; 
+		this.add(this.header, BorderLayout.NORTH);
+	}
 	
 }

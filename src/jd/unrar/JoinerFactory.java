@@ -27,6 +27,11 @@ import jd.utils.JDUtilities;
 
 public class JoinerFactory
 {
+	public static JAxeJoiner getJoiner (File FileName)
+	{
+		return getJoiner (FileName, FileName.getParentFile());
+	}
+
 	public static JAxeJoiner getJoiner (File FileName, File DestDir)
 	{
 	    
@@ -42,10 +47,5 @@ public class JoinerFactory
 		}
 
 		return null;
-	}
-
-	public static JAxeJoiner getJoiner (File FileName)
-	{
-		return getJoiner (FileName, FileName.getParentFile());
 	}
 }

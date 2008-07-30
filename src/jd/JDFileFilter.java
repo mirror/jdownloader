@@ -31,9 +31,9 @@ import java.io.FileFilter;
  */
 public class JDFileFilter extends javax.swing.filechooser.FileFilter implements FileFilter {
     /**
-     * Name der Datei ohne Extension
+     * Sollen Verzeichnisse akzeptiert werden?
      */
-    private String   name              = null;
+    private boolean  acceptDirectories = true;
 
     /**
      * Extension der Datei (mit Punkt)
@@ -42,9 +42,9 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     private String extensions=null;
 
     /**
-     * Sollen Verzeichnisse akzeptiert werden?
+     * Name der Datei ohne Extension
      */
-    private boolean  acceptDirectories = true;
+    private String   name              = null;
 
     /**
      * Erstellt einen neuen JDFileFilter
@@ -64,6 +64,40 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         this.acceptDirectories = acceptDirectories;
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
+     */
+    @Override
+    public boolean accept(File f) {
+        if (f.isDirectory()) return acceptDirectories;
+        if (extension != null) {
+            for (int i = 0; i < extension.length; i++) {
+                 if (f.getName().toLowerCase().endsWith(extension[i].toLowerCase())) return true;
+            }
+            return false;
+        }
+        if (name != null) {
+            if (!f.getName().startsWith(name)) return false;
+        }
+        return true;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.swing.filechooser.FileFilter#getDescription()
+     */
+    /**
+     * Gibt die Filefilter beschreibung zurück
+     */
+    
+    @Override
+    public String getDescription() {
+        return "Containerfiles";
+    }
+
     /**
      * Liefert ein FileObjekt zurück, daß aus dem Name und der Extension
      * zusammengesetzt wird
@@ -81,37 +115,5 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         else
             filename.append(".*");
         return new File(filename.toString());
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.filechooser.FileFilter#getDescription()
-     */
-    /**
-     * Gibt die Filefilter beschreibung zurück
-     */
-    
-    public String getDescription() {
-        return "Containerfiles";
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
-     */
-    public boolean accept(File f) {
-        if (f.isDirectory()) return acceptDirectories;
-        if (extension != null) {
-            for (int i = 0; i < extension.length; i++) {
-                 if (f.getName().toLowerCase().endsWith(extension[i].toLowerCase())) return true;
-            }
-            return false;
-        }
-        if (name != null) {
-            if (!f.getName().startsWith(name)) return false;
-        }
-        return true;
     }
 }

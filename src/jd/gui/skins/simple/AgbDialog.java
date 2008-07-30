@@ -48,24 +48,24 @@ public class AgbDialog extends JDialog implements ActionListener {
 	
 	private static final long serialVersionUID = 1L;
 	
+    private JButton           btnCancel;
+    private JButton           btnOK;
+    private JCheckBox         checkAgbAccepted;
+    /**
+     * abzuarbeitender Link
+     */
+    
+    private DownloadLink     downloadLink;
     private JLabel        	  labelInfo1;
     private JLabel        	  labelInfo2;
-    private JLinkButton       linkAgb;
-    private JCheckBox         checkAgbAccepted;
-    private JButton           btnOK;
-    private JButton           btnCancel;
+    
+	private JLinkButton       linkAgb;
     
 	/**
      * betroffenes Plugin
      */
     
     private PluginForHost     plugin;
-    
-	/**
-     * abzuarbeitender Link
-     */
-    
-    private DownloadLink     downloadLink;
 
     /**
      * zeigt einen Dialog in dem man die Hoster AGB akzeptieren kann

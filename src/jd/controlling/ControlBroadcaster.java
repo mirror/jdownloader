@@ -55,17 +55,6 @@ public class ControlBroadcaster extends Thread {
     }
 
     /**
-     * Emtfernt einen Listener
-     * 
-     * @param listener
-     *            Der zu entfernende Listener
-     */
-    public void removeControlListener(ControlListener listener) {
-        if (controlListener == null) controlListener = new Vector<ControlListener>();
-        controlListener.remove(listener);
-    }
-
-    /**
      * Verteilt Ein Event an alle Listener
      * 
      * @param controlEvent
@@ -87,7 +76,18 @@ public class ControlBroadcaster extends Thread {
         ControlEvent c = new ControlEvent(this, controlID, param);
         Iterator<ControlListener> iterator = controlListener.iterator();
         while (iterator.hasNext()) {
-            ((ControlListener) iterator.next()).controlEvent(c);
+            (iterator.next()).controlEvent(c);
         }
+    }
+
+    /**
+     * Emtfernt einen Listener
+     * 
+     * @param listener
+     *            Der zu entfernende Listener
+     */
+    public void removeControlListener(ControlListener listener) {
+        if (controlListener == null) controlListener = new Vector<ControlListener>();
+        controlListener.remove(listener);
     }
 }

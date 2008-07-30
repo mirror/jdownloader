@@ -28,18 +28,19 @@ import jd.utils.JDUtilities;
 
 public class CaptchaMethodLoader extends Interaction implements Serializable {
 
+    private static final String NAME              = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
+
+	public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
+
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private static final String NAME              = JDLocale.L("interaction.captchaMethodLoader.name", "Captcha Erkennung aktualisieren");
-
-    public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
-
     public CaptchaMethodLoader() {}
 
     
+    @Override
     public boolean doInteraction(Object arg) {
        if(true) return false;
        // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false))return false;
@@ -93,25 +94,30 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
         return true;
     }
 
-    /**
-     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-     */
-    public void run() {}
-
-    public String toString() {
-        return NAME;
-    }
-
-    
+    @Override
     public String getInteractionName() {
         return NAME;
     }
 
-    
+    @Override
     public void initConfig() {
 
     }
 
     
+    @Override
     public void resetInteraction() {}
+
+    
+    /**
+     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
+     */
+    @Override
+    public void run() {}
+
+    
+    @Override
+    public String toString() {
+        return NAME;
+    }
 }

@@ -40,134 +40,15 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Form {
-    public static final int         METHOD_POST      = 0;
+    public static final int         METHOD_FILEPOST  = 3;
 
     public static final int         METHOD_GET       = 1;
 
+    public static final int         METHOD_POST      = 0;
+
     public static final int         METHOD_PUT       = 2;
 
-    public static final int         METHOD_FILEPOST  = 3;
-
     public static final int         METHOD_UNKNOWN   = 99;
-
-    public boolean                  withHtmlCode     = true;
-
-    /**
-     * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei
-     * getRequestInfo nicht unterstützt ), FILEPOST = 3 (Ist eigentlich ein Post
-     * da aber dateien Gesendet werden hab ich Filepost draus gemacht)
-     */
-    public int                      method;
-
-    /**
-     * Action der Form entspricht auch oft einer URL
-     */
-    public String                   action;
-
-    /**
-     * Die eigenschaften der Form z.B. id oder name (ohne method und action)
-     * kann zur Identifikation verwendet werden
-     */
-    public HashMap<String, String>  formProperties   = new HashMap<String, String>();
-
-    /**
-     * Value und name von Inputs/Textareas/Selectoren HashMap<name, value>
-     * Achtung müssen zum teil noch ausgefüllt werden
-     */
-    public HashMap<String, String>  vars             = new HashMap<String, String>();
-
-    /**
-     * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
-     * hochgeladen werden sollen
-     */
-    public File                     fileToPost       = null;
-
-    private String                  filetoPostName   = null;
-
-    /**
-     * Wird bei der Benutzung von getForms automatisch gesetzt
-     */
-    private RequestInfo             baseRequest;
-
-    /**
-     * zusätzliche request Poperties die gesetzt werden sollen z.B. Range
-     */
-    private HashMap<String, String> requestPoperties = new HashMap<String, String>();
-
-    private String[] getNameValue(String data) {
-        Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
-        String key, value;
-        key = value = null;
-        if (matcher.find()) {
-            key = matcher.group(1);
-        }
-        else {
-            matcher = Pattern.compile("name=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
-            if (matcher.find()) key = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
-        }
-        if (key == null) {
-
-            if (data.toLowerCase().matches(".*type=[\"']?file.*")) {
-                this.method = METHOD_FILEPOST;
-                this.filetoPostName = "";
-                return null;
-            }
-            return null;
-        }
-
-        matcher = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
-        if (matcher.find())
-            value = matcher.group(1);
-        else {
-            matcher = Pattern.compile("value=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
-            if (matcher.find()) value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
-        }
-        if (value != null && value.matches("[\\s]*")) value = null;
-        if (value == null && data.toLowerCase().matches(".*type=[\"']?file.*")) {
-            this.method = METHOD_FILEPOST;
-            this.filetoPostName = key;
-            return null;
-        }
-
-        return new String[] { key, value };
-    }
-
-    /**
-     * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
-     */
-    private HashMap<String, String> getInputFields(String data) {
-        HashMap<String, String> ret = new HashMap<String, String>();
-        Matcher matcher = Pattern.compile("(?s)<[\\s]*(input|textarea|select)(.*?)>", Pattern.CASE_INSENSITIVE).matcher(data);
-        while (matcher.find()) {
-            String[] nv = getNameValue(matcher.group(2));
-            if (nv != null) {
-                if (!ret.containsKey(nv[0]) || ret.get(nv[0]).equals("")) ret.put(nv[0], ((nv[1] == null) ? "" : nv[1]));
-            }
-        }
-        return ret;
-    }
-
-    public static Form[] getForms(String url) {
-        try {
-            return getForms(new URL(url));
-        }
-        catch (MalformedURLException e) {
-            // TODO Automatisch erstellter Catch-Block
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static Form[] getForms(URL url) {
-        try {
-            return getForms(HTTP.getRequest(url));
-        }
-        catch (IOException e) {
-            // TODO Automatisch erstellter Catch-Block
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     /**
      * Ein Array mit allen Forms einer Seite
@@ -239,6 +120,109 @@ public class Form {
             }
         }
         return forms.toArray(new Form[forms.size()]);
+    }
+
+    public static Form[] getForms(String url) {
+        try {
+            return getForms(new URL(url));
+        }
+        catch (MalformedURLException e) {
+            // TODO Automatisch erstellter Catch-Block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Form[] getForms(URL url) {
+        try {
+            return getForms(HTTP.getRequest(url));
+        }
+        catch (IOException e) {
+            // TODO Automatisch erstellter Catch-Block
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Action der Form entspricht auch oft einer URL
+     */
+    public String                   action;
+
+    /**
+     * Wird bei der Benutzung von getForms automatisch gesetzt
+     */
+    private RequestInfo             baseRequest;
+
+    /**
+     * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
+     * hochgeladen werden sollen
+     */
+    public File                     fileToPost       = null;
+
+    private String                  filetoPostName   = null;
+
+    /**
+     * Die eigenschaften der Form z.B. id oder name (ohne method und action)
+     * kann zur Identifikation verwendet werden
+     */
+    public HashMap<String, String>  formProperties   = new HashMap<String, String>();
+
+    /**
+     * Methode der Form POST = 0, GET = 1 ( PUT = 2 wird jedoch bei
+     * getRequestInfo nicht unterstützt ), FILEPOST = 3 (Ist eigentlich ein Post
+     * da aber dateien Gesendet werden hab ich Filepost draus gemacht)
+     */
+    public int                      method;
+
+    /**
+     * zusätzliche request Poperties die gesetzt werden sollen z.B. Range
+     */
+    private HashMap<String, String> requestPoperties = new HashMap<String, String>();
+
+    /**
+     * Value und name von Inputs/Textareas/Selectoren HashMap<name, value>
+     * Achtung müssen zum teil noch ausgefüllt werden
+     */
+    public HashMap<String, String>  vars             = new HashMap<String, String>();
+
+    public boolean                  withHtmlCode     = true;
+
+    public String getAction() {
+        URL baseurl = baseRequest.getConnection().getURL();
+        String ret=action;
+        if (action == null || action.matches("[\\s]*")) {
+            if (baseurl == null) return null;
+            ret = baseurl.toString();
+        }
+        else if (!ret.matches("http://.*")) {
+            if (baseurl == null) return null;
+            if (ret.charAt(0) == '/')
+                ret = "http://" + baseurl.getHost() + ret;
+            else if (ret.charAt(0) == '&') {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*"))
+                    ret = base + ret;
+                else
+                    ret = base + "/" + ret;
+            }
+            else if (ret.charAt(0) == '?') {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*")) {
+                    ret = base.replaceFirst("\\?.*", "") + ret;
+                }
+                else
+                    ret = base + "/" + ret;
+            }
+            else {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*"))
+                    ret = base.substring(0, base.lastIndexOf("/")) + "/" + ret;
+                else
+                    ret = base + "/" + ret;
+            }
+        }
+        return ret;
     }
 
     @SuppressWarnings("deprecation")
@@ -386,6 +370,59 @@ public class Form {
     }
 
     /**
+     * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
+     */
+    private HashMap<String, String> getInputFields(String data) {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        Matcher matcher = Pattern.compile("(?s)<[\\s]*(input|textarea|select)(.*?)>", Pattern.CASE_INSENSITIVE).matcher(data);
+        while (matcher.find()) {
+            String[] nv = getNameValue(matcher.group(2));
+            if (nv != null) {
+                if (!ret.containsKey(nv[0]) || ret.get(nv[0]).equals("")) ret.put(nv[0], ((nv[1] == null) ? "" : nv[1]));
+            }
+        }
+        return ret;
+    }
+
+    private String[] getNameValue(String data) {
+        Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
+        String key, value;
+        key = value = null;
+        if (matcher.find()) {
+            key = matcher.group(1);
+        }
+        else {
+            matcher = Pattern.compile("name=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
+            if (matcher.find()) key = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
+        }
+        if (key == null) {
+
+            if (data.toLowerCase().matches(".*type=[\"']?file.*")) {
+                this.method = METHOD_FILEPOST;
+                this.filetoPostName = "";
+                return null;
+            }
+            return null;
+        }
+
+        matcher = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
+        if (matcher.find())
+            value = matcher.group(1);
+        else {
+            matcher = Pattern.compile("value=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
+            if (matcher.find()) value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
+        }
+        if (value != null && value.matches("[\\s]*")) value = null;
+        if (value == null && data.toLowerCase().matches(".*type=[\"']?file.*")) {
+            this.method = METHOD_FILEPOST;
+            this.filetoPostName = key;
+            return null;
+        }
+
+        return new String[] { key, value };
+    }
+
+    /**
      * Erzeugt aus der Form eine RequestInfo
      */
     public RequestInfo getRequestInfo() {
@@ -445,6 +482,32 @@ public class Form {
         return null;
     }
 
+    public void put(String key, String value) {
+        vars.put(key, value);
+    }
+
+    public void remove(String key) {
+        vars.remove(key);
+    }
+
+    public void setRequestPoperty(String key, String value) {
+        requestPoperties.put(key, value);
+    }
+
+    public String setVariable(int i,String value) {
+        
+        for( Iterator<String> it = vars.keySet().iterator();it.hasNext();){
+            
+            if(--i<=0){
+                String key=it.next();
+                vars.put(key, value);
+                return key;
+            }
+        }
+    return null;
+        
+    }
+
     public String toString() {
         String ret = "";
         ret += "Action: " + action + "\n";
@@ -470,68 +533,5 @@ public class Form {
             ret += "requestPopertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
         }
         return ret;
-    }
-
-    public void put(String key, String value) {
-        vars.put(key, value);
-    }
-
-    public void remove(String key) {
-        vars.remove(key);
-    }
-
-    public void setRequestPoperty(String key, String value) {
-        requestPoperties.put(key, value);
-    }
-
-    public String getAction() {
-        URL baseurl = baseRequest.getConnection().getURL();
-        String ret=action;
-        if (action == null || action.matches("[\\s]*")) {
-            if (baseurl == null) return null;
-            ret = baseurl.toString();
-        }
-        else if (!ret.matches("http://.*")) {
-            if (baseurl == null) return null;
-            if (ret.charAt(0) == '/')
-                ret = "http://" + baseurl.getHost() + ret;
-            else if (ret.charAt(0) == '&') {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*"))
-                    ret = base + ret;
-                else
-                    ret = base + "/" + ret;
-            }
-            else if (ret.charAt(0) == '?') {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*")) {
-                    ret = base.replaceFirst("\\?.*", "") + ret;
-                }
-                else
-                    ret = base + "/" + ret;
-            }
-            else {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*"))
-                    ret = base.substring(0, base.lastIndexOf("/")) + "/" + ret;
-                else
-                    ret = base + "/" + ret;
-            }
-        }
-        return ret;
-    }
-
-    public String setVariable(int i,String value) {
-        
-        for( Iterator<String> it = vars.keySet().iterator();it.hasNext();){
-            
-            if(--i<=0){
-                String key=it.next();
-                vars.put(key, value);
-                return key;
-            }
-        }
-    return null;
-        
     }
 }

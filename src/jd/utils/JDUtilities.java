@@ -123,55 +123,33 @@ import sun.misc.BASE64Encoder;
  * @author astaldo/JD-Team
  */
 public class JDUtilities {
-
+    public static String LOGGER_NAME = "java_downloader";
     /**
      * Parametername für den Konfigpath
      */
     public static final String CONFIG_PATH = "jDownloader.config";
 
-    private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+    /**
+     * Die Konfiguration
+     */
+    private static Configuration configuration = new Configuration();
+
+    private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
 
     /**
-     * Loggername
+     * Der DownloadController
      */
-    public static String LOGGER_NAME = "java_downloader";
+    private static JDController controller = null;
 
     /**
-     * Titel der Applikation
+     * Das aktuelle Verzeichnis (Laden/Speichern)
      */
-    public static final String JD_VERSION = "0.";
-
-    public static final String JD_REVISION = "$Id$";
+    private static File currentDirectory;
 
     /**
-     * Versionsstring der Applikation
+     * Damit werden die JARs rausgesucht
      */
-    public static final String JD_TITLE = "jDownloader";
-
-    private static final int RUNTYPE_WEBSTART = 0;
-
-    public static final int RUNTYPE_LOCAL = 1;
-
-    public static final int RUNTYPE_LOCAL_JARED = 2;
-
-    public static final int RUNTYPE_LOCAL_ENV = 3;
-
-    // private static final int OS_TYPE = -1;
-
-    // private static Vector<PluginForSearch> pluginsForSearch = null;
-
-    private static Vector<PluginForContainer> pluginsForContainer = null;
-
-    private static Vector<PluginForHost> pluginsForHost = null;
-
-    private static HashMap<String, PluginOptional> pluginsOptional = null;
-
-    private static Vector<PluginForDecrypt> pluginsForDecrypt;
-    private static Vector<File> saveReadObject = new Vector<File>();
-    /**
-     * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
-     */
-    private static JDClassLoader jdClassLoader = null;
+    public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
 
     /**
      * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
@@ -186,149 +164,116 @@ public class JDUtilities {
     private static File homeDirectoryFile = null;
 
     /**
-     * Der DownloadController
+     * Alle verfügbaren Bilder werden hier gespeichert
      */
-    private static JDController controller = null;
+    private static HashMap<String, Image> images = new HashMap<String, Image>();
+
+    public static final String JD_REVISION = "$Id$";
+
+    // private static final int OS_TYPE = -1;
+
+    // private static Vector<PluginForSearch> pluginsForSearch = null;
+
+    /**
+     * Versionsstring der Applikation
+     */
+    public static final String JD_TITLE = "jDownloader";
+
+    /**
+     * Titel der Applikation
+     */
+    public static final String JD_VERSION = "0.";
+
+    /**
+     * Ein URLClassLoader, um Dateien aus dem HomeVerzeichnis zu holen
+     */
+    private static JDClassLoader jdClassLoader = null;
+
+    /**
+     * Angaben über Spracheinstellungen
+     */
+    private static Locale locale = null;
+    /**
+     * Der Logger für Meldungen
+     */
+    private static Logger logger = JDUtilities.getLogger();
+    /**
+     * Loggername
+     */
+
+
+    private static Vector<PluginForContainer> pluginsForContainer = null;
+
+    private static Vector<PluginForDecrypt> pluginsForDecrypt;
+
+    private static Vector<PluginForHost> pluginsForHost = null;
+
+    private static HashMap<String, PluginOptional> pluginsOptional = null;
 
     /**
      * RessourceBundle für Texte
      */
     private static ResourceBundle resourceBundle = null;
 
-    /**
-     * Angaben über Spracheinstellungen
-     */
-    private static Locale locale = null;
+    public static final int RUNTYPE_LOCAL = 1;
+    public static final int RUNTYPE_LOCAL_ENV = 3;
+    public static final int RUNTYPE_LOCAL_JARED = 2;
+
+    private static final int RUNTYPE_WEBSTART = 0;
+
+    private static Vector<File> saveReadObject = new Vector<File>();
+
+    private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
     /**
-     * Alle verfügbaren Bilder werden hier gespeichert
-     */
-    private static HashMap<String, Image> images = new HashMap<String, Image>();
-    private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
-    /**
-     * Der Logger für Meldungen
-     */
-    private static Logger logger = JDUtilities.getLogger();
-
-    /**
-     * Damit werden die JARs rausgesucht
-     */
-    public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
-
-    /**
-     * Das aktuelle Verzeichnis (Laden/Speichern)
-     */
-    private static File currentDirectory;
-
-    /**
-     * Die Konfiguration
-     */
-    private static Configuration configuration = new Configuration();
-
-    /**
-     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
-     * s gebraucht.
+     * Fügt ein Bild zur Map hinzu
      * 
-     * @return
+     * @param imageName
+     *            Name des Bildes, daß hinzugefügt werden soll
+     * @param image
+     *            Das hinzuzufügende Bild
      */
-    public static File getCurrentWorkingDirectory(String id) {
-        if (id == null) id = "";
-        String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
-        String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
-
-        File dlDirectory;
-        // File lastDirectory;
-        if (dlDir == null) {
-            dlDirectory = new File("");
-        } else {
-            dlDirectory = new File(dlDir);
-        }
-
-        if (lastDir == null) return dlDirectory;
-        return new File(lastDir);
-
+    public static void addImage(String imageName, Image image) {
+        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
+        images.put(imageName, image);
     }
 
     /**
-     * Setztd as aktuelle woringdirectory für den filebrowser
+     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
-     * @param f
-     */
-    public static void setCurrentWorkingDirectory(File f, String id) {
-        if (id == null) id = "";
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
-    }
-
-    /**
-     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
-     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
-     * 
+     * @param cont
+     *            Der Container, dem eine Komponente hinzugefuegt werden soll
      * @param comp
-     *            Komponente, dessen Frame Objekt gesucht wird
-     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
-     *         keins gefunden wird
+     *            Die Komponente, die hinzugefuegt werden soll
+     * @param x
+     *            X-Position innerhalb des GriBagLayouts
+     * @param y
+     *            Y-Position innerhalb des GriBagLayouts
+     * @param width
+     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
+     * @param height
+     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
+     * @param weightX
+     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
+     * @param weightY
+     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
+     * @param insets
+     *            Abstände der Komponente
+     * @param fill
+     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
+     * @param anchor
+     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
-    public static Frame getParentFrame(Component comp) {
-        if (comp == null) return null;
-        while (comp != null && !(comp instanceof Frame))
-            comp = comp.getParent();
-        if (comp instanceof Frame)
-            return (Frame) comp;
-        else
-            return null;
-    }
-
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return RevissionID
-     */
-    public static String getRevision() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 2) {
-            int rev = JDUtilities.filterInt(data[2]);
-            double r = (double) rev / 1000.0;
-            return r + "";
+    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
+        if (cont == null) {
+            logger.severe("Container ==null");
+            return;
         }
-        return null;
-    }
-
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Letztes Änderungs datum
-     */
-    public static String getLastChangeDate() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 3) {
-            String[] date = data[3].split("-");
-            if (date.length != 3) return null;
-            return date[2] + "." + date[1] + "." + date[0];
+        if (comp == null) {
+            logger.severe("Componente ==null");
+            return;
         }
-        return null;
-    }
-
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Letzte änderungsuhrzeit
-     */
-    public static String getLastChangeTime() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 4) { return data[4].substring(0, data[4].length() - 1); }
-        return null;
-    }
-
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Name des programmierers der die letzten Änderungen durchgeführt
-     *         hat
-     */
-    public static String getLastChangeAuthor() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 5) { return data[5]; }
-        return null;
+        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
     /**
@@ -382,362 +327,414 @@ public class JDUtilities {
     }
 
     /**
-     * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
+     * Fügt dem Dateinamen den erkannten Code noch hinzu
      * 
-     * @param cont
-     *            Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp
-     *            Die Komponente, die hinzugefuegt werden soll
-     * @param x
-     *            X-Position innerhalb des GriBagLayouts
-     * @param y
-     *            Y-Position innerhalb des GriBagLayouts
-     * @param width
-     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height
-     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX
-     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY
-     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets
-     *            Abstände der Komponente
-     * @param fill
-     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor
-     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
+     * @param file
+     *            Die Datei, der der Captchacode angefügt werden soll
+     * @param captchaCode
+     *            Der erkannte Captchacode
+     * @param isGood
+     *            Zeigt, ob der erkannte Captchacode korrekt ist
      */
-    public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
-        if (cont == null) {
-            logger.severe("Container ==null");
-            return;
-        }
-        if (comp == null) {
-            logger.severe("Componente ==null");
-            return;
-        }
-        addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
+    public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
+        String dest = file.getAbsolutePath();
+        if (captchaCode == null) captchaCode = "null";
+        String isGoodText;
+        if (isGood)
+            isGoodText = "_GOOD";
+        else
+            isGoodText = "_BAD";
+        int idx = dest.lastIndexOf('.');
+        dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
+        final File file2 = new File(dest);
+        file.renameTo(file2);
+        /*
+         * if(!isGood) { new Thread(new Runnable(){
+         * 
+         * public void run() { Upload.uploadToCollector(plugin, file2);
+         * 
+         * }}).start(); }
+         */
     }
 
-    public static String sprintf(String pattern, String[] inset) {
+    public static String arrayToString(String[] a, String separator) {
 
-        for (int i = 0; i < inset.length; i++) {
-            int ind = pattern.indexOf("%s");
-            pattern = pattern.substring(0, ind) + inset[i] + pattern.substring(ind + 2);
+        String result = "";
 
-        }
+        if (a.length > 0) {
 
-        return pattern;
-    }
+            result = a[0];
 
-    /**
-     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
-     * zentriert werden kann
-     * 
-     * @param parent
-     *            Die Komponente, an der ausgerichtet wird
-     * @param child
-     *            Die Komponente die ausgerichtet werden soll
-     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
-     *         zentriert dargestellt werden kann
-     */
-    public static Point getCenterOfComponent(Component parent, Component child) {
-        Point center;
-        if (parent == null || !parent.isShowing()) {
-            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-            int width = screenSize.width;
-            int height = screenSize.height;
-            center = new Point(width / 2, height / 2);
-        } else {
-            center = parent.getLocationOnScreen();
-            center.x += parent.getWidth() / 2;
-            center.y += parent.getHeight() / 2;
-        }
-        // Dann Auszurichtende Komponente in die Berechnung einfließen lassen
-        center.x -= child.getWidth() / 2;
-        center.y -= child.getHeight() / 2;
-        return center;
-    }
-
-    /**
-     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
-     * 
-     * @param key
-     *            Identifier der gewünschten Zeichenkette
-     * @return Die gewünschte Zeichnenkette
-     */
-    public static String getResourceString(String key) {
-        if (resourceBundle == null) {
-            if (locale == null) {
-                locale = Locale.getDefault();
+            for (int i = 1; i < a.length; i++) {
+                result = result + separator + a[i];
             }
-            resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
-        }
-        String result = key;
-        try {
 
-            result = resourceBundle.getString(key);
-        } catch (MissingResourceException e) {
-            logger.warning("resource missing:" + e.getKey());
         }
+
         return result;
+
     }
 
-    /**
-     * Liefert einer char aus dem aktuellen ResourceBundle zurück
-     * 
-     * @param key
-     *            Identifier des gewünschten chars
-     * @return der gewünschte char
-     */
-    public static char getResourceChar(String key) {
-        char result = 0;
-        String s = getResourceString(key);
-        if (s != null && s.length() > 0) {
-            result = s.charAt(0);
-        }
-        return result;
-    }
-
-    /**
-     * Liefert aus der Map der geladenen Bilder ein Element zurück
-     * 
-     * @param imageName
-     *            Name des Bildes das zurückgeliefert werden soll
-     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
-     *         kann
-     */
-    public static Image getImage(String imageName) {
-
-        if (images.get(imageName) == null) {
-            ClassLoader cl = JDUtilities.getJDClassLoader();
-            Toolkit toolkit = Toolkit.getDefaultToolkit();
-            return toolkit.getImage(cl.getResource("jd/img/" + imageName + ".png"));
-        }
-        return images.get(imageName);
-    }
-
-    /**
-     * Fügt ein Bild zur Map hinzu
-     * 
-     * @param imageName
-     *            Name des Bildes, daß hinzugefügt werden soll
-     * @param image
-     *            Das hinzuzufügende Bild
-     */
-    public static void addImage(String imageName, Image image) {
-        Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
-        images.put(imageName, image);
-    }
-
-    /**
-     * Liefert das Basisverzeichnis für jD zurück.
-     * 
-     * @return ein File, daß das Basisverzeichnis angibt
-     */
-    public static File getJDHomeDirectoryFromEnvironment() {
-        String envDir = null;// System.getenv("JD_HOME");
-        File currentDir = null;
-
-        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class") + "";
-        dir = dir.split("\\.jar\\!")[0] + ".jar";
-        dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
+    public static String Base64Decode(String base64) {
+        if (base64 == null) return null;
         try {
-            currentDir = new File(new URI(dir));
+            byte[] plain = new BASE64Decoder().decodeBuffer(base64);
+            if (JDUtilities.filterString(new String(plain)).length() < (plain.length / 1.5)) { return base64; }
+            return new String(plain);
+        } catch (IOException e) {
+            return base64;
+        }
+    }
 
-            // logger.info(" App dir: "+currentDir+" -
-            // "+System.getProperty("java.class.path"));
-            if (currentDir.isFile()) currentDir = currentDir.getParentFile();
+    public static String Base64Encode(String plain) {
 
-        } catch (URISyntaxException e) {
-            
+        if (plain == null) return null;
+        String base64 = new BASE64Encoder().encode(plain.getBytes());
+        base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
+
+        return base64;
+    }
+
+    public static String convertExceptionReadable(Exception e) {
+        String s = e.getClass().getName().replaceAll("Exception", "");
+        s = s.substring(s.lastIndexOf(".") + 1);
+        String ret = "";
+        String letter = null;
+        for (int i = 0; i < s.length(); i++) {
+            if ((letter = s.substring(i, i + 1)).equals(letter.toUpperCase())) {
+                ret += " " + letter;
+            } else {
+                ret += letter;
+            }
+        }
+        String message = e.getLocalizedMessage();
+
+        return (message != null) ? (ret.trim() + ": " + message) : ret.trim();
+
+    }
+
+    /**
+     * Zum Kopieren von einem Ort zum anderen
+     * 
+     * @param in
+     * @param out
+     * @throws IOException
+     */
+    public static boolean copyFile(File in, File out) {
+        FileChannel inChannel = null;
+
+        FileChannel outChannel = null;
+        try {
+            if (!out.exists()) {
+                out.getParentFile().mkdirs();
+                out.createNewFile();
+            }
+            inChannel = new FileInputStream(in).getChannel();
+
+            outChannel = new FileOutputStream(out).getChannel();
+
+            inChannel.transferTo(0, inChannel.size(), outChannel);
+
+            return true;
+        } catch (FileNotFoundException e1) {
+
+            e1.printStackTrace();
+            if (inChannel != null) try {
+                inChannel.close();
+
+                if (outChannel != null) outChannel.close();
+            } catch (IOException e) {
+
+                e.printStackTrace();
+                return false;
+            }
+            return false;
+        } catch (IOException e) {
+
             e.printStackTrace();
         }
+        try {
+            if (inChannel != null) inChannel.close();
 
-        // logger.info("RunDir: " + currentDir);
+            if (outChannel != null) outChannel.close();
+        } catch (IOException e) {
 
-        switch (getRunType()) {
-        case RUNTYPE_LOCAL_JARED:
-            envDir = currentDir.getAbsolutePath();
-            // logger.info("JD_HOME from current Path :" + envDir);
-            break;
-        case RUNTYPE_LOCAL_ENV:
-            envDir = System.getenv("JD_HOME");
-            // logger.info("JD_HOME from environment:" + envDir);
-            break;
-        default:
-            envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
-            // logger.info("JD_HOME from user.home :" + envDir);
-
+            e.printStackTrace();
+            return false;
         }
+        return true;
+    }
 
-        if (envDir == null) {
-            envDir = "." + System.getProperty("file.separator") + ".jd_home/";
-            logger.info("JD_HOME from current directory:" + envDir);
+    public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
+        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        for (int i = 0; i < pfc.size(); i++) {
+            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).createContainerString(downloadLinks); }
         }
-        File jdHomeDir = new File(envDir);
-        if (!jdHomeDir.exists()) {
-            jdHomeDir.mkdirs();
-        }
-        return jdHomeDir;
+        return null;
     }
 
     /**
-     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
-     * arumenten
+     * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
+     * server ab. Der Serverpfad steht noch in WebUpdater.java
      * 
-     * @param classPath
-     * @param arguments
+     * @author JD-Team
+     * @return Anzahl der aktualisierten Files
+     */
+    public static int doWebupdate() {
+        WebUpdater wu = new WebUpdater(null);
+        wu.run();
+        return wu.getUpdatedFiles();
+    }
+
+    /**
+     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
+     * 
+     * @param file
+     * @param con
+     * @return Erfolg true/false
+     */
+    public static boolean download(File file, HTTPConnection con) {
+        try {
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    logger.severe("Konnte Datei nicht überschreiben " + file);
+                    return false;
+                }
+            }
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+            logger.info(" file" + file + " - " + con.getContentLength());
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+            byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+            output.close();
+            input.close();
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Lädt eine url lokal herunter
+     * 
+     * @param file
+     * @param urlString
+     * @return Erfolg true/false
+     */
+    public static boolean download(File file, String urlString) {
+        try {
+            urlString = URLDecoder.decode(urlString, "UTF-8");
+            URL url = new URL(urlString);
+            HTTPConnection con = new HTTPConnection(url.openConnection());
+            con.setInstanceFollowRedirects(true);
+            return download(file, con);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public static boolean downloadBinary(String filepath, String fileurl) {
+
+        try {
+            fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
+            File file = new File(filepath);
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    logger.info("Konnte Datei nicht löschen " + file);
+                    return false;
+                }
+
+            }
+
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            fileurl = URLDecoder.decode(fileurl, "UTF-8");
+
+            URL url = new URL(fileurl);
+            HTTPConnection con = new HTTPConnection(url.openConnection());
+
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+
+            byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+            output.close();
+            input.close();
+
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+
+        }
+
+    }
+
+    /**
+     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+     * 
+     * @param string
+     * @param encryption
+     * @return ciphertext
+     */
+    public static String[] encrypt(String string, String encryption) {
+        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        for (int i = 0; i < pfc.size(); i++) {
+            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).encrypt(string); }
+        }
+        return null;
+
+    }
+
+    /**
+     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
+     * 
+     * @param i
+     * @param num
+     * @param fill
+     * @return aufgefüllte Zeichenkette
+     */
+    public static String fillInteger(int i, int num, String fill) {
+        String ret = "" + i;
+        while (ret.length() < num)
+            ret = fill + ret;
+        return ret;
+    }
+
+    public static String fillString(String binaryString, String pre, String post,int length) {
+        while(binaryString.length()<length){
+            if(binaryString.length()<length)binaryString=pre+binaryString;
+            if(binaryString.length()<length)binaryString=binaryString+post;
+        }
+        return binaryString;
+    }
+
+    /**
+     * GIbt den Integer der sich in src befindet zurück. alle nicht
+     * integerzeichen werden ausgefiltert
+     * 
+     * @param src
+     * @return Integer in src
+     */
+    public static int filterInt(String src) {
+        try {
+            return Integer.parseInt(filterString(src, "1234567890"));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Filtert alle nicht lesbaren zeichen aus str
+     * 
+     * @param str
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public static Object getHomeDirInstance(String classPath, Object[] arguments) {
-        classPath = classPath.replaceAll("\\.class", "");
-        classPath = classPath.replaceAll("\\/", ".");
-        classPath = classPath.replaceAll("\\\\", ".");
-        logger.finer("Load Class form homedir: " + classPath);
-        Class newClass = null;
-        // Zuerst versuchen die klasse aus dem appdir zu laden( praktisch zum
-        // entwicklen solcher klassen)
-        try {
-            newClass = Class.forName(classPath);
-        } catch (ClassNotFoundException e1) {
-        }
-        // Falls das nicht geklappt hat wird die klasse im homedir gesucht
-        if (newClass == null) {
-            try {
-                String url = urlEncode(new File((getJDHomeDirectoryFromEnvironment().getAbsolutePath())).toURI().toURL().toString());
-                URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
-                newClass = Class.forName(classPath, true, cl);
-            } catch (ClassNotFoundException e) {
-
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-                
-                e.printStackTrace();
-            }
-        }
-        try {
-            // newClass = Class.forName(classPath);
-            Class[] classes = new Class[arguments.length];
-            for (int i = 0; i < arguments.length; i++) {
-                classes[i] = arguments[i].getClass();
-            }
-            Constructor con = newClass.getConstructor(classes);
-            return con.newInstance(arguments);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-
-            e.printStackTrace();
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-        return null;
+    public static String filterString(String str) {
+        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890<>='\"/";
+        return filterString(str, allowed);
     }
 
     /**
-     * Schreibt das Home Verzeichnis in den Webstart Cache
+     * Filtert alle zeichen aus str die in filter nicht auftauchen
      * 
-     * @param newHomeDir
-     *            Das neue JD-HOME
+     * @param str
+     * @param filter
+     * @return
      */
-    @SuppressWarnings("unchecked")
-    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
-        try {
-            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
-            String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
-            setHomeDirectory(homeDir);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-    }
+    public static String filterString(String str, String filter) {
+        if (str == null || filter == null) return "";
 
-    public static void waitOnObject(File file) {
-        int c = 0;
-        while (saveReadObject.contains(file)) {
-            if (c++ > 1000) return;
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                
-                e.printStackTrace();
+        byte[] org = str.getBytes();
+        byte[] mask = filter.getBytes();
+        byte[] ret = new byte[org.length];
+        int count = 0;
+        int i;
+        for (i = 0; i < org.length; i++) {
+            byte letter = org[i];
+            for (int t = 0; t < mask.length; t++) {
+                if (letter == mask[t]) {
+                    ret[count] = letter;
+                    count++;
+                    break;
+                }
             }
         }
-    }
-
-    public static SubConfiguration getSubConfig(String name) {
-        if (subConfigs.containsKey(name)) return subConfigs.get(name);
-
-        SubConfiguration cfg = new SubConfiguration(name);
-        subConfigs.put(name, cfg);
-        cfg.save();
-        return cfg;
-
-    }
-
-    public static String xmltoStr(Document header) {
-        Transformer transformer;
-        try {
-            transformer = TransformerFactory.newInstance().newTransformer();
-
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-            // initialize StreamResult with File object to save to file
-            StreamResult result = new StreamResult(new StringWriter());
-
-            DOMSource source = new DOMSource(header);
-
-            transformer.transform(source, result);
-
-            String xmlString = result.getWriter().toString();
-            return xmlString;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        return new String(ret).trim();
     }
 
     /**
-     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
-     * zu laden
+     * Formatiert Byes in einen MB String [MM.MM MB]
      * 
-     * @return URLClassLoader
+     * @param downloadMax
+     * @return MegaByte Formatierter String
      */
-    public static JDClassLoader getJDClassLoader() {
-        if (jdClassLoader == null) {
-            File homeDir = getJDHomeDirectoryFromEnvironment();
-            // String url = null;
-            // Url Encode des pfads für den Classloader
-            logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
-            jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
+    public static String formatBytesToMB(long downloadMax) {
+        DecimalFormat c = new DecimalFormat("0.00");
+        return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
+    }
 
-        }
-        return jdClassLoader;
+    public static String formatKbReadable(int value) {
+
+        DecimalFormat c = new DecimalFormat("0.00");
+        ;
+        if (value >= (1024 * 1024)) {
+
+        return c.format(value / (1024 * 1024.0)) + " GB"; }
+        if (value >= (1024)) {
+
+        return c.format(value / 1024.0) + " MB"; }
+        return value + " KB";
+
+    }
+
+    /**
+     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
+     * 
+     * @param eta
+     *            toURI().toURL();
+     * @return formatierte Zeit
+     */
+    public static String formatSeconds(int eta) {
+        int hours = eta / (60 * 60);
+        eta -= hours * 60 * 60;
+        int minutes = eta / 60;
+        int seconds = eta - minutes * 60;
+        if (hours == 0) { return fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0"); }
+        return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0");
     }
 
     /**
@@ -826,6 +823,1024 @@ public class JDUtilities {
         else {
             return getController().getCaptchaCodeFromUser(plugin, file, null);
         }
+    }
+
+    /**
+     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
+     * zentriert werden kann
+     * 
+     * @param parent
+     *            Die Komponente, an der ausgerichtet wird
+     * @param child
+     *            Die Komponente die ausgerichtet werden soll
+     * @return Ein Punkt, mit dem diese Komponente mit der setLocation Methode
+     *         zentriert dargestellt werden kann
+     */
+    public static Point getCenterOfComponent(Component parent, Component child) {
+        Point center;
+        if (parent == null || !parent.isShowing()) {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int width = screenSize.width;
+            int height = screenSize.height;
+            center = new Point(width / 2, height / 2);
+        } else {
+            center = parent.getLocationOnScreen();
+            center.x += parent.getWidth() / 2;
+            center.y += parent.getHeight() / 2;
+        }
+        // Dann Auszurichtende Komponente in die Berechnung einfließen lassen
+        center.x -= child.getWidth() / 2;
+        center.y -= child.getHeight() / 2;
+        return center;
+    }
+
+    /**
+     * @return Configuration instanz
+     */
+    public static Configuration getConfiguration() {
+        return configuration;
+    }
+
+    /**
+     * Gibt den verwendeten Controller zurück
+     * 
+     * @return gerade verwendete controller-instanz
+     */
+    public static JDController getController() {
+        return controller;
+    }
+
+    public static long getCRC(File file) {
+
+        try {
+
+            CheckedInputStream cis = null;
+            // long fileSize = 0;
+            try {
+                // Computer CRC32 checksum
+                cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
+
+                // fileSize = file.length();
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return 0;
+            }
+
+            byte[] buf = new byte[128];
+            while (cis.read(buf) >= 0) {
+            }
+
+            long checksum = cis.getChecksum().getValue();
+            return checksum;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return 0;
+        }
+
+    }
+
+    /**
+     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
+     * s gebraucht.
+     * 
+     * @return
+     */
+    public static File getCurrentWorkingDirectory(String id) {
+        if (id == null) id = "";
+        String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
+        String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
+
+        File dlDirectory;
+        // File lastDirectory;
+        if (dlDir == null) {
+            dlDirectory = new File("");
+        } else {
+            dlDirectory = new File(dlDir);
+        }
+
+        if (lastDir == null) return dlDirectory;
+        return new File(lastDir);
+
+    }
+
+    /**
+     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
+     * übereinstimmende Text wird dann zurückgegeben
+     * 
+     * @param a
+     *            Erster String, der vergleicht werden soll
+     * @param b
+     *            Zweiter String, der vergleicht werden soll
+     * @return Übereinstimmender Text
+     */
+    public static String getEqualString(String a, String b) {
+        String first, second;
+        int index = 0;
+        if (a.length() <= b.length()) {
+            first = a.toLowerCase();
+            second = b.toLowerCase();
+        } else {
+            first = b;
+            second = a;
+        }
+        for (int i = 0; i < first.length(); i++) {
+            if (first.charAt(i) == second.charAt(i))
+                index = i;
+            else
+                break;
+        }
+        if (index > 0)
+            return first.substring(0, index + 1);
+        else
+            return "";
+    }
+
+    /***************************************************************************
+     * Gibt die Endung einer FIle zurück oder null
+     * 
+     * @param ret
+     * @return
+     */
+    public static String getFileExtension(File ret) {
+        if (ret == null) return null;
+        String str = ret.getAbsolutePath();
+
+        int i3 = str.lastIndexOf(".");
+
+        if (i3 > 0) { return str.substring(i3 + 1); }
+        return null;
+    }
+
+    public static UIInterface getGUI() {
+        return JDUtilities.getController().getUiInterface();
+    }
+
+    /**
+     * @author astaldo
+     * @return homeDirectory
+     */
+    public static String getHomeDirectory() {
+        return homeDirectory;
+    }
+
+    /**
+     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
+     * arumenten
+     * 
+     * @param classPath
+     * @param arguments
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static Object getHomeDirInstance(String classPath, Object[] arguments) {
+        classPath = classPath.replaceAll("\\.class", "");
+        classPath = classPath.replaceAll("\\/", ".");
+        classPath = classPath.replaceAll("\\\\", ".");
+        logger.finer("Load Class form homedir: " + classPath);
+        Class newClass = null;
+        // Zuerst versuchen die klasse aus dem appdir zu laden( praktisch zum
+        // entwicklen solcher klassen)
+        try {
+            newClass = Class.forName(classPath);
+        } catch (ClassNotFoundException e1) {
+        }
+        // Falls das nicht geklappt hat wird die klasse im homedir gesucht
+        if (newClass == null) {
+            try {
+                String url = urlEncode(new File((getJDHomeDirectoryFromEnvironment().getAbsolutePath())).toURI().toURL().toString());
+                URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
+                newClass = Class.forName(classPath, true, cl);
+            } catch (ClassNotFoundException e) {
+
+                e.printStackTrace();
+            } catch (MalformedURLException e) {
+                
+                e.printStackTrace();
+            }
+        }
+        try {
+            // newClass = Class.forName(classPath);
+            Class[] classes = new Class[arguments.length];
+            for (int i = 0; i < arguments.length; i++) {
+                classes[i] = arguments[i].getClass();
+            }
+            Constructor con = newClass.getConstructor(classes);
+            return con.newInstance(arguments);
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+
+            e.printStackTrace();
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Liefert aus der Map der geladenen Bilder ein Element zurück
+     * 
+     * @param imageName
+     *            Name des Bildes das zurückgeliefert werden soll
+     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
+     *         kann
+     */
+    public static Image getImage(String imageName) {
+
+        if (images.get(imageName) == null) {
+            ClassLoader cl = JDUtilities.getJDClassLoader();
+            Toolkit toolkit = Toolkit.getDefaultToolkit();
+            return toolkit.getImage(cl.getResource("jd/img/" + imageName + ".png"));
+        }
+        return images.get(imageName);
+    }
+
+    /**
+     * Prüft anhand der Globalen IP Check einstellungen die IP
+     * 
+     * @return ip oder /offline
+     */
+    public static String getIPAddress() {
+        if (getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
+            logger.finer("IP Check is disabled. return current Milliseconds");
+            return System.currentTimeMillis() + "";
+        }
+
+        String site = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
+        String patt = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
+
+        try {
+            logger.finer("IP Check via " + site);
+            RequestInfo requestInfo = HTTP.getRequest(new URL(site), null, null, true);
+            Pattern pattern = Pattern.compile(patt);
+            Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
+            if (matcher.find()) {
+                if (matcher.groupCount() > 0) {
+                    return matcher.group(1);
+                } else {
+                    logger.severe("Primary bad Regex: " + patt);
+
+                }
+            }
+            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
+
+        }
+
+        catch (Exception e1) {
+            logger.severe("url not found. " + e1.toString());
+
+        }
+
+        try {
+            site = "http://jdownloaderipcheck.ath.cx";
+
+            logger.finer("IP Check via jdownloaderipcheck.ath.cx");
+            RequestInfo ri;
+
+            ri = HTTP.getRequest(new URL(site), null, null, true);
+            String ip = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
+            if (ip == null) {
+                logger.info("Sec. IP Check failed.");
+                return "offline";
+            } else {
+                logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
+                return ip;
+            }
+        }
+
+        catch (Exception e1) {
+            logger.severe("url not found. " + e1.toString());
+            logger.info("Sec. IP Check failed.");
+
+        }
+
+        return "offline";
+    }
+
+    /**
+     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
+     * 
+     * @author JD-Team
+     * @return gibt den Pfad zu den JAC Methoden zurück
+     */
+    public static String getJACMethodsDirectory() {
+
+        return "jd/captcha/methods/";
+    }
+
+    /**
+     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
+     *         1.603
+     */
+    public static Double getJavaVersion() {
+        String version = System.getProperty("java.version");
+        int majorVersion = JDUtilities.filterInt(version.substring(0, version.indexOf(".")));
+        int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
+        return Double.parseDouble(majorVersion + "." + subversion);
+    }
+
+    /**
+     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
+     * zu laden
+     * 
+     * @return URLClassLoader
+     */
+    public static JDClassLoader getJDClassLoader() {
+        if (jdClassLoader == null) {
+            File homeDir = getJDHomeDirectoryFromEnvironment();
+            // String url = null;
+            // Url Encode des pfads für den Classloader
+            logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
+            jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
+
+        }
+        return jdClassLoader;
+    }
+
+    /**
+     * Liefert das Basisverzeichnis für jD zurück.
+     * 
+     * @return ein File, daß das Basisverzeichnis angibt
+     */
+    public static File getJDHomeDirectoryFromEnvironment() {
+        String envDir = null;// System.getenv("JD_HOME");
+        File currentDir = null;
+
+        String dir = Thread.currentThread().getContextClassLoader().getResource("jd/Main.class") + "";
+        dir = dir.split("\\.jar\\!")[0] + ".jar";
+        dir = dir.substring(Math.max(dir.indexOf("file:"), 0));
+        try {
+            currentDir = new File(new URI(dir));
+
+            // logger.info(" App dir: "+currentDir+" -
+            // "+System.getProperty("java.class.path"));
+            if (currentDir.isFile()) currentDir = currentDir.getParentFile();
+
+        } catch (URISyntaxException e) {
+            
+            e.printStackTrace();
+        }
+
+        // logger.info("RunDir: " + currentDir);
+
+        switch (getRunType()) {
+        case RUNTYPE_LOCAL_JARED:
+            envDir = currentDir.getAbsolutePath();
+            // logger.info("JD_HOME from current Path :" + envDir);
+            break;
+        case RUNTYPE_LOCAL_ENV:
+            envDir = System.getenv("JD_HOME");
+            // logger.info("JD_HOME from environment:" + envDir);
+            break;
+        default:
+            envDir = System.getProperty("user.home") + System.getProperty("file.separator") + ".jd_home/";
+            // logger.info("JD_HOME from user.home :" + envDir);
+
+        }
+
+        if (envDir == null) {
+            envDir = "." + System.getProperty("file.separator") + ".jd_home/";
+            logger.info("JD_HOME from current directory:" + envDir);
+        }
+        File jdHomeDir = new File(envDir);
+        if (!jdHomeDir.exists()) {
+            jdHomeDir.mkdirs();
+        }
+        return jdHomeDir;
+    }
+
+    public static String getJDTitle() {
+        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
+        // + ") - "
+        // + JDUtilities.getConfiguration().getIntegerProperty(
+        // Configuration.CID, -1);
+        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
+            ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
+
+        }
+        if (getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) { return "[BETA!] " + ret; }
+        return ret;
+    }
+
+    /**
+     * parsed den JD_REVISION String auf
+     * 
+     * @return Name des programmierers der die letzten Änderungen durchgeführt
+     *         hat
+     */
+    public static String getLastChangeAuthor() {
+        String[] data = JD_REVISION.split(" ");
+        if (data.length > 5) { return data[5]; }
+        return null;
+    }
+
+    /**
+     * parsed den JD_REVISION String auf
+     * 
+     * @return Letztes Änderungs datum
+     */
+    public static String getLastChangeDate() {
+        String[] data = JD_REVISION.split(" ");
+        if (data.length > 3) {
+            String[] date = data[3].split("-");
+            if (date.length != 3) return null;
+            return date[2] + "." + date[1] + "." + date[0];
+        }
+        return null;
+    } 
+
+    /**
+     * parsed den JD_REVISION String auf
+     * 
+     * @return Letzte änderungsuhrzeit
+     */
+    public static String getLastChangeTime() {
+        String[] data = JD_REVISION.split(" ");
+        if (data.length > 4) { return data[4].substring(0, data[4].length() - 1); }
+        return null;
+    }
+
+    public static Locale getLocale() {
+        return locale;
+    }
+
+    /**
+     * public static String getLocalFile(File file) Liest file über einen
+     * bufferdReader ein und gibt den Inhalt asl String zurück
+     * 
+     * @param file
+     * @return File Content als String
+     */
+    public static String getLocalFile(File file) {
+        if (!file.exists()) return "";
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new FileReader(file));
+
+            String line;
+            StringBuffer ret = new StringBuffer();
+            String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                ret.append(line + sep);
+            }
+            f.close();
+            return ret.toString();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    /**
+     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
+     * zurück
+     * 
+     * @author JD-Team
+     * @param f
+     * @return Hashstring Md5
+     */
+    public static String getLocalHash(File f) {
+        try {
+            if (!f.exists()) return null;
+            MessageDigest md;
+            md = MessageDigest.getInstance("md5");
+            byte[] b = new byte[1024];
+            InputStream in = new FileInputStream(f);
+            for (int n = 0; (n = in.read(b)) > -1;) {
+                md.update(b, 0, n);
+            }
+            byte[] digest = md.digest();
+            String ret = "";
+            for (int i = 0; i < digest.length; i++) {
+                String tmp = Integer.toHexString(digest[i] & 0xFF);
+                if (tmp.length() < 2) tmp = "0" + tmp;
+                ret += tmp;
+            }
+            in.close();
+            return ret;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
+     * 
+     * @return LogKlasse
+     */
+    public static Logger getLogger() {
+        if (logger == null) {
+
+            logger = Logger.getLogger(LOGGER_NAME);
+            Formatter formatter = new LogFormatter();
+            logger.setUseParentHandlers(false);
+            Handler console = new ConsoleHandler();
+
+            console.setLevel(Level.ALL);
+            console.setFormatter(formatter);
+            logger.addHandler(console);
+
+            logger.setLevel(Level.ALL);
+            logger.addHandler(new Handler() {
+                public void close() {
+                }
+
+                public void flush() {
+                }
+
+                public void publish(LogRecord logRecord) {
+                    // System.out.println(logRecord.getLevel() + ":");
+                    // System.out.println(logRecord.getSourceClassName() + ":");
+                    // System.out.println(logRecord.getSourceMethodName() +
+                    // ":");
+                    // System.out.println("<" + logRecord.getMessage() + ">");
+                    // System.out.println("\n");
+                    if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
+                }
+            });
+
+            // logger.finer("Init Logger:" + LOGGER_NAME);
+            // Leitet System.out zum Logger um.
+            // final PrintStream err = System.err;
+            OutputStream os = new OutputStream() {
+                private StringBuffer buffer = new StringBuffer();
+
+                
+                public void write(int b) throws IOException {
+                    // err.write(b);
+                    if ((b == 13 || b == 10)) {
+                        if (buffer.length() > 0) {
+                            JDUtilities.getLogger().severe(buffer.toString());
+                            if (buffer.indexOf("OutOfMemoryError") >= 0) {
+                                logger.finer("Restart");
+                                boolean res;
+                                res = getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
+
+                                if (res) {
+
+                                    JDUtilities.restartJD();
+                                }
+                            }
+
+                        }
+                        buffer = new StringBuffer();
+
+                    } else {
+                        buffer.append((char) b);
+
+                    }
+
+                }
+
+            };
+            System.setErr(new PrintStream(os));
+
+        }
+        return logger;
+    }
+
+    /**
+     * Gibt den MD5 hash eines Strings zurück
+     * 
+     * @param arg
+     * @return MD% hash von arg
+     */
+    public static String getMD5(String arg) {
+        if (arg == null) return arg;
+        try {
+            MessageDigest md = MessageDigest.getInstance("md5");
+            byte[] digest = md.digest(arg.getBytes());
+            String ret = "";
+            String tmp;
+            for (byte d : digest) {
+                tmp = Integer.toHexString(d & 0xFF);
+                ret += (tmp.length() < 2) ? "0" + tmp : tmp;
+            }
+            return ret;
+        } catch (NoSuchAlgorithmException e) {
+        }
+        return "";
+    }
+
+    /**
+     * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
+     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
+     * 
+     * @param comp
+     *            Komponente, dessen Frame Objekt gesucht wird
+     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
+     *         keins gefunden wird
+     */
+    public static Frame getParentFrame(Component comp) {
+        if (comp == null) return null;
+        while (comp != null && !(comp instanceof Frame))
+            comp = comp.getParent();
+        if (comp instanceof Frame)
+            return (Frame) comp;
+        else
+            return null;
+    }
+
+    public static String getPercent(long downloadCurrent, long downloadMax) {
+        DecimalFormat c = new DecimalFormat("0.00");
+        ;
+
+        return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
+    }
+
+    /**
+     * Sucht ein passendes Plugin für ein Containerfile
+     * 
+     * @param container
+     *            Der Host, von dem das Plugin runterladen kann
+     * @param containerPath
+     * @return Ein passendes Plugin oder null
+     */
+    public static PluginForContainer getPluginForContainer(String container, String containerPath) {
+        if (containerPath != null && containerPlugins.containsKey(containerPath)) return containerPlugins.get(containerPath);
+        PluginForContainer ret = null;
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            if (pluginsForContainer.get(i).getHost().equals(container)) {
+                try {
+                    ret = pluginsForContainer.get(i).getClass().newInstance();
+                    if (containerPath != null) containerPlugins.put(containerPath, ret);
+                    return ret;
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Sucht ein passendes Plugin für einen Anbieter
+     * 
+     * @param host
+     *            Der Host, von dem das Plugin runterladen kann
+     * @return Ein passendes Plugin oder null
+     */
+    public static PluginForHost getPluginForHost(String host) {
+        for (int i = 0; i < pluginsForHost.size(); i++) {
+            if (pluginsForHost.get(i).getHost().equals(host)) return pluginsForHost.get(i);
+        }
+        return null;
+    }
+
+    /**
+     * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
+     * 
+     * @return Plugins zum Laden von Containerdateien
+     */
+    public static Vector<PluginForContainer> getPluginsForContainer() {
+        return pluginsForContainer;
+    }
+
+    /**
+     * Liefert alle geladenen Plugins zum Entschlüsseln zurück
+     * 
+     * @return Plugins zum Entschlüsseln
+     */
+    public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
+        return pluginsForDecrypt;
+    }
+
+    /**
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
+     * wird dabei sortiert zurückgegeben
+     * 
+     * @return Plugins zum Downloaden von einem Anbieter
+     */
+    @SuppressWarnings("unchecked")
+    public static Vector<PluginForHost> getPluginsForHost() {
+        // return pluginsForHost;
+
+        Vector<PluginForHost> plgs = new Vector<PluginForHost>();
+        if (pluginsForHost != null) plgs.addAll(pluginsForHost);
+        Vector<PluginForHost> pfh = new Vector<PluginForHost>();
+        Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
+        for (int i = 0; i < priority.size(); i++) {
+            for (int b = plgs.size() - 1; b >= 0; b--) {
+                if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
+                    PluginForHost plg = plgs.remove(b);
+                    pfh.add(plg);
+                    break;
+                }
+            }
+        }
+        pfh.addAll(plgs);
+        return pfh;
+    }
+
+    /**
+     * Liefert alle optionalen Plugins zurücl
+     * 
+     * @return Alle optionalen Plugins
+     */
+    public static HashMap<String, PluginOptional> getPluginsOptional() {
+        return pluginsOptional;
+    }
+
+    /**
+     * Liefert einer char aus dem aktuellen ResourceBundle zurück
+     * 
+     * @param key
+     *            Identifier des gewünschten chars
+     * @return der gewünschte char
+     */
+    public static char getResourceChar(String key) {
+        char result = 0;
+        String s = getResourceString(key);
+        if (s != null && s.length() > 0) {
+            result = s.charAt(0);
+        }
+        return result;
+    }
+
+    // public static String runTestCommand(String command, String[] parameter,
+    // String runIn, int waitForReturn, boolean returnValue) {
+    // if (command == null || command.trim().length() == 0) {
+    // logger.severe("Execute Parameter error: No Command");
+    // return "";
+    // }
+    // if (parameter == null) parameter = new String[] {};
+    // String[] params = new String[parameter.length + 1];
+    // params[0] = command;
+    // System.arraycopy(parameter, 0, params, 1, parameter.length);
+    // Vector<String> tmp = new Vector<String>();
+    // String par = "";
+    // for (int i = 0; i < params.length; i++) {
+    // if (params[i] != null && params[i].trim().length() > 0) {
+    // par += params[i] + " ";
+    // tmp.add(params[i].trim());
+    // }
+    // }
+    // params = tmp.toArray(new String[] {});
+    // logger.info("RUN: " + tmp);
+    // ProcessBuilder pb = new ProcessBuilder(params);
+    // if (runIn != null && runIn.length() > 0) {
+    // if (new File(runIn).exists()) {
+    // pb.directory(new File(runIn));
+    // } else {
+    // logger.severe("Working drectory " + runIn + " does not exist!");
+    // }
+    // }
+    //
+    // Process process;
+    //
+    // try {
+    // logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn +
+    // " trace: " + returnValue);
+    // process = pb.start();
+    // if (waitForReturn > 0 || waitForReturn < 0) {
+    // long t = System.currentTimeMillis();
+    // while (true) {
+    // try {
+    // process.exitValue();
+    // break;
+    // } catch (Exception e) {
+    // if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn *
+    // 1000) {
+    // logger.severe(command + ": Prozess ist nach " + waitForReturn + "
+    // Sekunden nicht beendet worden. Breche ab.");
+    // process.destroy();
+    // }
+    // }
+    // }
+    // String ret = "";
+    // if (returnValue) {
+    // Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
+    //
+    // while (s.hasNext())
+    // ret += s.next();
+    // }
+    // return ret;
+    // }
+    // return null;
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // logger.severe("Error executing " + command + ": " +
+    // e.getLocalizedMessage());
+    // return null;
+    // }
+    // }
+
+    /**
+     * Gibt ein FileOebject zu einem Resourcstring zurück
+     * 
+     * @author JD-Team
+     * @param resource
+     *            Ressource, die geladen werden soll
+     * @return File zu arg
+     */
+    public static File getResourceFile(String resource) {
+        JDClassLoader cl = getJDClassLoader();
+        if (cl == null) {
+            logger.severe("Classloader ==null: ");
+            return null;
+        }
+        URL clURL = getJDClassLoader().getResource(resource);
+
+        if (clURL != null) {
+            try {
+                return new File(clURL.toURI());
+            } catch (URISyntaxException e) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
+     * 
+     * @param key
+     *            Identifier der gewünschten Zeichenkette
+     * @return Die gewünschte Zeichnenkette
+     */
+    public static String getResourceString(String key) {
+        if (resourceBundle == null) {
+            if (locale == null) {
+                locale = Locale.getDefault();
+            }
+            resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
+        }
+        String result = key;
+        try {
+
+            result = resourceBundle.getString(key);
+        } catch (MissingResourceException e) {
+            logger.warning("resource missing:" + e.getKey());
+        }
+        return result;
+    }
+
+    /**
+     * parsed den JD_REVISION String auf
+     * 
+     * @return RevissionID
+     */
+    public static String getRevision() {
+        String[] data = JD_REVISION.split(" ");
+        if (data.length > 2) {
+            int rev = JDUtilities.filterInt(data[2]);
+            double r = (double) rev / 1000.0;
+            return r + "";
+        }
+        return null;
+    }
+
+    /**
+     * 
+     */
+    public static int getRunType() {
+
+        try {
+
+            Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
+            if (en.hasMoreElements()) {
+                String root = en.nextElement().toString();
+                // logger.info(root);
+                if (root.indexOf("http://") >= 0) {
+                    logger.info("Depr.: Webstart");
+                    return RUNTYPE_WEBSTART;
+                }
+                if (root.indexOf("jar") >= 0) {
+                    // logger.info("Default: Local jared");
+                    return RUNTYPE_LOCAL_JARED;
+                }
+            }
+            if (System.getenv("JD_HOME") != null) {
+                if (new File(System.getenv("JD_HOME")).exists()) {
+                    logger.info("Dev.: Local splitted from environment variable");
+                    return RUNTYPE_LOCAL_ENV;
+                }
+            }
+            // logger.info("Dev.: Local splitted");
+            return RUNTYPE_LOCAL;
+        } catch (Exception e) {
+            
+            e.printStackTrace();
+        }
+        return 0;
+
+    }
+
+    public static ImageIcon getscaledImageIcon(Image image, int width, int height) {
+        return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    }
+
+    public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
+        return getscaledImageIcon(icon.getImage(), width, height);
+    }
+
+    public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
+        return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
+    }
+
+    /**
+     * Gibt den Stacktrace einer exception zurück
+     * 
+     * @param e
+     * @return
+     */
+    public static String getStackTraceForException(Exception e) {
+        StringWriter sw = new StringWriter(2000);
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.getBuffer().toString();
+    }
+
+    public static SubConfiguration getSubConfig(String name) {
+        if (subConfigs.containsKey(name)) return subConfigs.get(name);
+
+        SubConfiguration cfg = new SubConfiguration(name);
+        subConfigs.put(name, cfg);
+        cfg.save();
+        return cfg;
+
+    }
+
+    /**
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
+     * 
+     * @return
+     */
+    public static Vector<PluginForHost> getUnsortedPluginsForHost() {
+        return pluginsForHost;
+    }
+
+    /**
+     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
+     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
+     * 
+     * @param str
+     * @return decoded string
+     */
+    public static String htmlDecode(String str) {
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
+        // Br0th3rs.part1.rar
+        if (str == null) return null;
+        String pattern = "\\&\\#x([a-f0-9A-F]+)\\;?";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 16);
+                if (c == '$'||c=='\\') {
+                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?","\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", c + "");
+                }
+            }
+        }
+
+        pattern = "\\&\\#(\\d+)\\;?";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 10);
+                if (c == '$'||c=='\\') {
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", c + "");
+                }
+            }
+        }
+
+        pattern = "\\%([a-f0-9A-F]{2})";
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1), 16);
+                if (c == '$'||c=='\\') {
+                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}","\\"+ c );
+                } else {
+                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
+                }
+            }
+        }
+        try {
+            str = URLDecoder.decode(str, "UTF-8");
+        } catch (Exception e) {
+        }
+        return HTMLEntities.unhtmlentities(str);
     }
 
     // /**
@@ -960,6 +1975,128 @@ public class JDUtilities {
         return null;
     }
 
+    public static void logException(Error e) {
+        getLogger().log(Level.SEVERE, "Error", e);
+        e.printStackTrace();
+
+    }
+
+    /**
+     * Fügt dem Log eine Exception hinzu
+     * 
+     * @param e
+     */
+    public static void logException(Exception e) {
+        getLogger().log(Level.SEVERE, "Exception", e);
+        e.printStackTrace();
+    }
+
+    public static void playMp3(File file) {
+        AdvancedPlayer p;
+        try {
+            p = new AdvancedPlayer(new FileInputStream(file.getAbsolutePath()));
+
+            p.play();
+        } catch (FileNotFoundException e) {
+
+            e.printStackTrace();
+        } catch (JavaLayerException e) {
+
+            e.printStackTrace();
+        }
+    }
+
+    public static boolean removeDirectoryOrFile(File dir) {
+        if (dir.isDirectory()) {
+            String[] children = dir.list();
+            for (int i = 0; i < children.length; i++) {
+                boolean success = removeDirectoryOrFile(new File(dir, children[i]));
+                if (!success) { return false; }
+            }
+        }
+
+        return dir.delete();
+    }
+
+    // public static boolean initFileLogger() {
+    // try {
+    // if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG,
+    // true)) {
+    // Handler file_handler = new
+    // FileHandler(getConfiguration().getStringProperty(Configuration.
+    // PARAM_WRITE_LOG_PATH,
+    // getResourceFile("jd_log.txt").getAbsolutePath()));
+    // logger.addHandler(file_handler);
+    // logger.info("File Logger active: " +
+    // getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH,
+    // getResourceFile("jd_log.txt").getAbsolutePath()));
+    // return true;
+    // }
+    // }
+    // catch (SecurityException e) {
+    // e.printStackTrace();
+    // }
+    // catch (IOException e) {
+    // e.printStackTrace();
+    // }
+    // return false;
+    // }
+
+    /**
+     * Ersetzt die Platzhalter in einem String
+     * 
+     * @param command
+     * @return Neuer String mit ersetzen Platzhaltern
+     */
+    public static String replacePlaceHolder(String command) {
+        if (controller == null) return command;
+        command = command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
+        command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
+        return command;
+    }
+
+    public static void restartJD() {
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        System.exit(0);
+
+    }
+
+    public static void restartJD(String[] jdArgs) {
+
+        String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
+        String[] finalArgs = new String[jdArgs.length + javaArgs.length];
+        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
+        System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
+
+        logger.info(JDUtilities.runCommand("java", finalArgs, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        System.exit(0);
+    }
+
+    /**
+     * Führt einen Externen befehl aus.
+     * 
+     * @param command
+     * @param parameter
+     * @param runIn
+     * @param waitForReturn
+     * @return null oder die rückgabe des befehls falls waitforreturn == true
+     *         ist
+     */
+    public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
+        Executer exec = new Executer(command);
+        exec.addParameters(parameter);
+        exec.setRunin(runIn);
+        exec.setWaitTimeout(waitForReturn);
+        exec.start();
+        exec.waitTimeout();
+        return exec.getStream() + " \r\n " + exec.getErrorStream();
+    }
+
+    public static void saveConfig() {
+        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+
+    }
+
     /**
      * Speichert ein Objekt
      * 
@@ -1052,640 +2189,6 @@ public class JDUtilities {
     }
 
     /**
-     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden
-     * 
-     * @param eta
-     *            toURI().toURL();
-     * @return formatierte Zeit
-     */
-    public static String formatSeconds(int eta) {
-        int hours = eta / (60 * 60);
-        eta -= hours * 60 * 60;
-        int minutes = eta / 60;
-        int seconds = eta - minutes * 60;
-        if (hours == 0) { return fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0"); }
-        return fillInteger(hours, 2, "0") + ":" + fillInteger(minutes, 2, "0") + ":" + fillInteger(seconds, 2, "0");
-    }
-
-    /**
-     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
-     * 
-     * @param i
-     * @param num
-     * @param fill
-     * @return aufgefüllte Zeichenkette
-     */
-    public static String fillInteger(int i, int num, String fill) {
-        String ret = "" + i;
-        while (ret.length() < num)
-            ret = fill + ret;
-        return ret;
-    }
-
-    /**
-     * Liefert alle geladenen Plugins zum Entschlüsseln zurück
-     * 
-     * @return Plugins zum Entschlüsseln
-     */
-    public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
-        return pluginsForDecrypt;
-    }
-
-    /**
-     * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
-     * 
-     * @return Plugins zum Laden von Containerdateien
-     */
-    public static Vector<PluginForContainer> getPluginsForContainer() {
-        return pluginsForContainer;
-    }
-
-    /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
-     * 
-     * @return
-     */
-    public static Vector<PluginForHost> getUnsortedPluginsForHost() {
-        return pluginsForHost;
-    }
-
-    /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
-     * wird dabei sortiert zurückgegeben
-     * 
-     * @return Plugins zum Downloaden von einem Anbieter
-     */
-    @SuppressWarnings("unchecked")
-    public static Vector<PluginForHost> getPluginsForHost() {
-        // return pluginsForHost;
-
-        Vector<PluginForHost> plgs = new Vector<PluginForHost>();
-        if (pluginsForHost != null) plgs.addAll(pluginsForHost);
-        Vector<PluginForHost> pfh = new Vector<PluginForHost>();
-        Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
-        for (int i = 0; i < priority.size(); i++) {
-            for (int b = plgs.size() - 1; b >= 0; b--) {
-                if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
-                    PluginForHost plg = plgs.remove(b);
-                    pfh.add(plg);
-                    break;
-                }
-            }
-        }
-        pfh.addAll(plgs);
-        return pfh;
-    }
-
-    /**
-     * Liefert alle optionalen Plugins zurücl
-     * 
-     * @return Alle optionalen Plugins
-     */
-    public static HashMap<String, PluginOptional> getPluginsOptional() {
-        return pluginsOptional;
-    }
-
-    /**
-     * Gibt den MD5 hash eines Strings zurück
-     * 
-     * @param arg
-     * @return MD% hash von arg
-     */
-    public static String getMD5(String arg) {
-        if (arg == null) return arg;
-        try {
-            MessageDigest md = MessageDigest.getInstance("md5");
-            byte[] digest = md.digest(arg.getBytes());
-            String ret = "";
-            String tmp;
-            for (byte d : digest) {
-                tmp = Integer.toHexString(d & 0xFF);
-                ret += (tmp.length() < 2) ? "0" + tmp : tmp;
-            }
-            return ret;
-        } catch (NoSuchAlgorithmException e) {
-        }
-        return "";
-    }
-
-    /**
-     * Sucht ein passendes Plugin für einen Anbieter
-     * 
-     * @param host
-     *            Der Host, von dem das Plugin runterladen kann
-     * @return Ein passendes Plugin oder null
-     */
-    public static PluginForHost getPluginForHost(String host) {
-        for (int i = 0; i < pluginsForHost.size(); i++) {
-            if (pluginsForHost.get(i).getHost().equals(host)) return pluginsForHost.get(i);
-        }
-        return null;
-    }
-
-    /**
-     * Sucht ein passendes Plugin für ein Containerfile
-     * 
-     * @param container
-     *            Der Host, von dem das Plugin runterladen kann
-     * @param containerPath
-     * @return Ein passendes Plugin oder null
-     */
-    public static PluginForContainer getPluginForContainer(String container, String containerPath) {
-        if (containerPath != null && containerPlugins.containsKey(containerPath)) return containerPlugins.get(containerPath);
-        PluginForContainer ret = null;
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            if (pluginsForContainer.get(i).getHost().equals(container)) {
-                try {
-                    ret = pluginsForContainer.get(i).getClass().newInstance();
-                    if (containerPath != null) containerPlugins.put(containerPath, ret);
-                    return ret;
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @return Configuration instanz
-     */
-    public static Configuration getConfiguration() {
-        return configuration;
-    }
-
-    /**
-     * Setzt die Konfigurations instanz
-     * 
-     * @param configuration
-     */
-    public static void setConfiguration(Configuration configuration) {
-        JDUtilities.configuration = configuration;
-    }
-
-    /**
-     * @author astaldo
-     * @return homeDirectory
-     */
-    public static String getHomeDirectory() {
-        return homeDirectory;
-    }
-
-    /**
-     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
-     * 
-     * @author JD-Team
-     * @return gibt den Pfad zu den JAC Methoden zurück
-     */
-    public static String getJACMethodsDirectory() {
-
-        return "jd/captcha/methods/";
-    }
-
-    /**
-     * Gibt ein FileOebject zu einem Resourcstring zurück
-     * 
-     * @author JD-Team
-     * @param resource
-     *            Ressource, die geladen werden soll
-     * @return File zu arg
-     */
-    public static File getResourceFile(String resource) {
-        JDClassLoader cl = getJDClassLoader();
-        if (cl == null) {
-            logger.severe("Classloader ==null: ");
-            return null;
-        }
-        URL clURL = getJDClassLoader().getResource(resource);
-
-        if (clURL != null) {
-            try {
-                return new File(clURL.toURI());
-            } catch (URISyntaxException e) {
-            }
-        }
-        return null;
-    }
-
-    /**
-     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
-     * zurück
-     * 
-     * @author JD-Team
-     * @param f
-     * @return Hashstring Md5
-     */
-    public static String getLocalHash(File f) {
-        try {
-            if (!f.exists()) return null;
-            MessageDigest md;
-            md = MessageDigest.getInstance("md5");
-            byte[] b = new byte[1024];
-            InputStream in = new FileInputStream(f);
-            for (int n = 0; (n = in.read(b)) > -1;) {
-                md.update(b, 0, n);
-            }
-            byte[] digest = md.digest();
-            String ret = "";
-            for (int i = 0; i < digest.length; i++) {
-                String tmp = Integer.toHexString(digest[i] & 0xFF);
-                if (tmp.length() < 2) tmp = "0" + tmp;
-                ret += tmp;
-            }
-            in.close();
-            return ret;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    /**
-     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
-     *         Zeichen aus
-     * @param str
-     * @return str URLCodiert
-     */
-    @SuppressWarnings("deprecation")
-    public static String urlEncode(String str) {
-        try {
-            return URLEncoder.encode(str);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-        return null;
-        /*
-         * 
-         * 
-         * if (str == null) return str; String allowed =
-         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
-         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
-         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
-         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
-         * (l.length() == 1 ? "0" + l : l); } }
-         */
-
-    }
-
-    /**
-     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
-     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
-     * 
-     * @param str
-     * @return decoded string
-     */
-    public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
-        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
-        // Br0th3rs.part1.rar
-        if (str == null) return null;
-        String pattern = "\\&\\#x([a-f0-9A-F]+)\\;?";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?","\\"+ c );
-                } else {
-                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", c + "");
-                }
-            }
-        }
-
-        pattern = "\\&\\#(\\d+)\\;?";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 10);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\"+ c );
-                } else {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", c + "");
-                }
-            }
-        }
-
-        pattern = "\\%([a-f0-9A-F]{2})";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$'||c=='\\') {
-                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}","\\"+ c );
-                } else {
-                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
-                }
-            }
-        }
-        try {
-            str = URLDecoder.decode(str, "UTF-8");
-        } catch (Exception e) {
-        }
-        return HTMLEntities.unhtmlentities(str);
-    } 
-
-    /**
-     * Schreibt content in eine Lokale textdatei
-     * 
-     * @param file
-     * @param content
-     * @return true/False je nach Erfolg des Schreibvorgangs
-     */
-    public static boolean writeLocalFile(File file, String content) {
-        try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    logger.severe("Konnte Datei nicht löschen " + file);
-                    return false;
-                }
-            }
-            if (file.getParent() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            BufferedWriter f = new BufferedWriter(new FileWriter(file));
-            f.write(content);
-            f.close();
-            return true;
-        } catch (Exception e) {
-            // e.printStackTrace();
-            return false; 
-        }
-    }
-
-    /**
-     * 
-     */
-    public static int getRunType() {
-
-        try {
-
-            Enumeration<URL> en = Thread.currentThread().getContextClassLoader().getResources("jd/Main.class");
-            if (en.hasMoreElements()) {
-                String root = en.nextElement().toString();
-                // logger.info(root);
-                if (root.indexOf("http://") >= 0) {
-                    logger.info("Depr.: Webstart");
-                    return RUNTYPE_WEBSTART;
-                }
-                if (root.indexOf("jar") >= 0) {
-                    // logger.info("Default: Local jared");
-                    return RUNTYPE_LOCAL_JARED;
-                }
-            }
-            if (System.getenv("JD_HOME") != null) {
-                if (new File(System.getenv("JD_HOME")).exists()) {
-                    logger.info("Dev.: Local splitted from environment variable");
-                    return RUNTYPE_LOCAL_ENV;
-                }
-            }
-            // logger.info("Dev.: Local splitted");
-            return RUNTYPE_LOCAL;
-        } catch (Exception e) {
-            
-            e.printStackTrace();
-        }
-        return 0;
-
-    }
-
-    /**
-     * public static String getLocalFile(File file) Liest file über einen
-     * bufferdReader ein und gibt den Inhalt asl String zurück
-     * 
-     * @param file
-     * @return File Content als String
-     */
-    public static String getLocalFile(File file) {
-        if (!file.exists()) return "";
-        BufferedReader f;
-        try {
-            f = new BufferedReader(new FileReader(file));
-
-            String line;
-            StringBuffer ret = new StringBuffer();
-            String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                ret.append(line + sep);
-            }
-            f.close();
-            return ret.toString();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        return "";
-    }
-
-    /**
-     * Zum Kopieren von einem Ort zum anderen
-     * 
-     * @param in
-     * @param out
-     * @throws IOException
-     */
-    public static boolean copyFile(File in, File out) {
-        FileChannel inChannel = null;
-
-        FileChannel outChannel = null;
-        try {
-            if (!out.exists()) {
-                out.getParentFile().mkdirs();
-                out.createNewFile();
-            }
-            inChannel = new FileInputStream(in).getChannel();
-
-            outChannel = new FileOutputStream(out).getChannel();
-
-            inChannel.transferTo(0, inChannel.size(), outChannel);
-
-            return true;
-        } catch (FileNotFoundException e1) {
-
-            e1.printStackTrace();
-            if (inChannel != null) try {
-                inChannel.close();
-
-                if (outChannel != null) outChannel.close();
-            } catch (IOException e) {
-
-                e.printStackTrace();
-                return false;
-            }
-            return false;
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        try {
-            if (inChannel != null) inChannel.close();
-
-            if (outChannel != null) outChannel.close();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * @author JD-Team
-     * @param str
-     * @return str als UTF8Decodiert
-     */
-    public static String UTF8Decode(String str) {
-        if (str == null) return null;
-        try {
-            return new String(str.getBytes(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * @author JD-Team
-     * @param str
-     * @return str als UTF8 Kodiert
-     */
-    public static String UTF8Encode(String str) {
-        try {
-            return new String(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * Setzt das Homedirectory und erstellt es notfalls neu
-     * 
-     * @param homeDirectory
-     */
-    public static void setHomeDirectory(String homeDirectory) {
-        JDUtilities.homeDirectory = homeDirectory;
-        homeDirectoryFile = new File(homeDirectory);
-        if (!homeDirectoryFile.exists()) homeDirectoryFile.mkdirs();
-    }
-
-    /**
-     * Lädt eine url lokal herunter
-     * 
-     * @param file
-     * @param urlString
-     * @return Erfolg true/false
-     */
-    public static boolean download(File file, String urlString) {
-        try {
-            urlString = URLDecoder.decode(urlString, "UTF-8");
-            URL url = new URL(urlString);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-            con.setInstanceFollowRedirects(true);
-            return download(file, con);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static boolean downloadBinary(String filepath, String fileurl) {
-
-        try {
-            fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
-            File file = new File(filepath);
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    logger.info("Konnte Datei nicht löschen " + file);
-                    return false;
-                }
-
-            }
-
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            fileurl = URLDecoder.decode(fileurl, "UTF-8");
-
-            URL url = new URL(fileurl);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
-
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-
-        }
-
-    }
-
-    /**
-     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
-     * 
-     * @param file
-     * @param con
-     * @return Erfolg true/false
-     */
-    public static boolean download(File file, HTTPConnection con) {
-        try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    logger.severe("Konnte Datei nicht überschreiben " + file);
-                    return false;
-                }
-            }
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            logger.info(" file" + file + " - " + con.getContentLength());
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
      * Speichert ein byteArray in ein file.
      * 
      * @param file
@@ -1721,186 +2224,12 @@ public class JDUtilities {
     }
 
     /**
-     * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
-     * server ab. Der Serverpfad steht noch in WebUpdater.java
+     * Setzt die Konfigurations instanz
      * 
-     * @author JD-Team
-     * @return Anzahl der aktualisierten Files
+     * @param configuration
      */
-    public static int doWebupdate() {
-        WebUpdater wu = new WebUpdater(null);
-        wu.run();
-        return wu.getUpdatedFiles();
-    }
-
-    /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
-     * config editiert werden.
-     * 
-     * @param ip
-     * @return
-     */
-    public static boolean validateIP(String ip) {
-        return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
-    }
-
-    /**
-     * Prüft anhand der Globalen IP Check einstellungen die IP
-     * 
-     * @return ip oder /offline
-     */
-    public static String getIPAddress() {
-        if (getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
-            logger.finer("IP Check is disabled. return current Milliseconds");
-            return System.currentTimeMillis() + "";
-        }
-
-        String site = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
-        String patt = getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
-
-        try {
-            logger.finer("IP Check via " + site);
-            RequestInfo requestInfo = HTTP.getRequest(new URL(site), null, null, true);
-            Pattern pattern = Pattern.compile(patt);
-            Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
-            if (matcher.find()) {
-                if (matcher.groupCount() > 0) {
-                    return matcher.group(1);
-                } else {
-                    logger.severe("Primary bad Regex: " + patt);
-
-                }
-            }
-            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
-
-        }
-
-        catch (Exception e1) {
-            logger.severe("url not found. " + e1.toString());
-
-        }
-
-        try {
-            site = "http://jdownloaderipcheck.ath.cx";
-
-            logger.finer("IP Check via jdownloaderipcheck.ath.cx");
-            RequestInfo ri;
-
-            ri = HTTP.getRequest(new URL(site), null, null, true);
-            String ip = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
-            if (ip == null) {
-                logger.info("Sec. IP Check failed.");
-                return "offline";
-            } else {
-                logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
-                return ip;
-            }
-        }
-
-        catch (Exception e1) {
-            logger.severe("url not found. " + e1.toString());
-            logger.info("Sec. IP Check failed.");
-
-        }
-
-        return "offline";
-    }
-
-    /**
-     * Führt einen Externen befehl aus.
-     * 
-     * @param command
-     * @param parameter
-     * @param runIn
-     * @param waitForReturn
-     * @return null oder die rückgabe des befehls falls waitforreturn == true
-     *         ist
-     */
-    public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
-        Executer exec = new Executer(command);
-        exec.addParameters(parameter);
-        exec.setRunin(runIn);
-        exec.setWaitTimeout(waitForReturn);
-        exec.start();
-        exec.waitTimeout();
-        return exec.getStream() + " \r\n " + exec.getErrorStream();
-    }
-
-    // public static String runTestCommand(String command, String[] parameter,
-    // String runIn, int waitForReturn, boolean returnValue) {
-    // if (command == null || command.trim().length() == 0) {
-    // logger.severe("Execute Parameter error: No Command");
-    // return "";
-    // }
-    // if (parameter == null) parameter = new String[] {};
-    // String[] params = new String[parameter.length + 1];
-    // params[0] = command;
-    // System.arraycopy(parameter, 0, params, 1, parameter.length);
-    // Vector<String> tmp = new Vector<String>();
-    // String par = "";
-    // for (int i = 0; i < params.length; i++) {
-    // if (params[i] != null && params[i].trim().length() > 0) {
-    // par += params[i] + " ";
-    // tmp.add(params[i].trim());
-    // }
-    // }
-    // params = tmp.toArray(new String[] {});
-    // logger.info("RUN: " + tmp);
-    // ProcessBuilder pb = new ProcessBuilder(params);
-    // if (runIn != null && runIn.length() > 0) {
-    // if (new File(runIn).exists()) {
-    // pb.directory(new File(runIn));
-    // } else {
-    // logger.severe("Working drectory " + runIn + " does not exist!");
-    // }
-    // }
-    //
-    // Process process;
-    //
-    // try {
-    // logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn +
-    // " trace: " + returnValue);
-    // process = pb.start();
-    // if (waitForReturn > 0 || waitForReturn < 0) {
-    // long t = System.currentTimeMillis();
-    // while (true) {
-    // try {
-    // process.exitValue();
-    // break;
-    // } catch (Exception e) {
-    // if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn *
-    // 1000) {
-    // logger.severe(command + ": Prozess ist nach " + waitForReturn + "
-    // Sekunden nicht beendet worden. Breche ab.");
-    // process.destroy();
-    // }
-    // }
-    // }
-    // String ret = "";
-    // if (returnValue) {
-    // Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-    //
-    // while (s.hasNext())
-    // ret += s.next();
-    // }
-    // return ret;
-    // }
-    // return null;
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // logger.severe("Error executing " + command + ": " +
-    // e.getLocalizedMessage());
-    // return null;
-    // }
-    // }
-
-    /**
-     * Gibt den verwendeten Controller zurück
-     * 
-     * @return gerade verwendete controller-instanz
-     */
-    public static JDController getController() {
-        return controller;
+    public static void setConfiguration(Configuration configuration) {
+        JDUtilities.configuration = configuration;
     }
 
     /**
@@ -1914,368 +2243,32 @@ public class JDUtilities {
     }
 
     /**
-     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
-     *         1.603
+     * Setztd as aktuelle woringdirectory für den filebrowser
+     * 
+     * @param f
      */
-    public static Double getJavaVersion() {
-        String version = System.getProperty("java.version");
-        int majorVersion = JDUtilities.filterInt(version.substring(0, version.indexOf(".")));
-        int subversion = JDUtilities.filterInt(version.substring(version.indexOf(".") + 1));
-        return Double.parseDouble(majorVersion + "." + subversion);
+    public static void setCurrentWorkingDirectory(File f, String id) {
+        if (id == null) id = "";
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
     }
 
     /**
-     * Ersetzt die Platzhalter in einem String
+     * Setzt das Homedirectory und erstellt es notfalls neu
      * 
-     * @param command
-     * @return Neuer String mit ersetzen Platzhaltern
+     * @param homeDirectory
      */
-    public static String replacePlaceHolder(String command) {
-        if (controller == null) return command;
-        command = command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
-        command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
-        return command;
-    }
-
-    /**
-     * Formatiert Byes in einen MB String [MM.MM MB]
-     * 
-     * @param downloadMax
-     * @return MegaByte Formatierter String
-     */
-    public static String formatBytesToMB(long downloadMax) {
-        DecimalFormat c = new DecimalFormat("0.00");
-        return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
-    }
-
-    /**
-     * GIbt den Integer der sich in src befindet zurück. alle nicht
-     * integerzeichen werden ausgefiltert
-     * 
-     * @param src
-     * @return Integer in src
-     */
-    public static int filterInt(String src) {
-        try {
-            return Integer.parseInt(filterString(src, "1234567890"));
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    public static long getCRC(File file) {
-
-        try {
-
-            CheckedInputStream cis = null;
-            // long fileSize = 0;
-            try {
-                // Computer CRC32 checksum
-                cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
-
-                // fileSize = file.length();
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return 0;
-            }
-
-            byte[] buf = new byte[128];
-            while (cis.read(buf) >= 0) {
-            }
-
-            long checksum = cis.getChecksum().getValue();
-            return checksum;
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            return 0;
-        }
-
-    }
-
-    /**
-     * Filtert alle nicht lesbaren zeichen aus str
-     * 
-     * @param str
-     * @return
-     */
-    public static String filterString(String str) {
-        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890<>='\"/";
-        return filterString(str, allowed);
-    }
-
-    /**
-     * Filtert alle zeichen aus str die in filter nicht auftauchen
-     * 
-     * @param str
-     * @param filter
-     * @return
-     */
-    public static String filterString(String str, String filter) {
-        if (str == null || filter == null) return "";
-
-        byte[] org = str.getBytes();
-        byte[] mask = filter.getBytes();
-        byte[] ret = new byte[org.length];
-        int count = 0;
-        int i;
-        for (i = 0; i < org.length; i++) {
-            byte letter = org[i];
-            for (int t = 0; t < mask.length; t++) {
-                if (letter == mask[t]) {
-                    ret[count] = letter;
-                    count++;
-                    break;
-                }
-            }
-        }
-        return new String(ret).trim();
-    }
-
-    /**
-     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
-     * übereinstimmende Text wird dann zurückgegeben
-     * 
-     * @param a
-     *            Erster String, der vergleicht werden soll
-     * @param b
-     *            Zweiter String, der vergleicht werden soll
-     * @return Übereinstimmender Text
-     */
-    public static String getEqualString(String a, String b) {
-        String first, second;
-        int index = 0;
-        if (a.length() <= b.length()) {
-            first = a.toLowerCase();
-            second = b.toLowerCase();
-        } else {
-            first = b;
-            second = a;
-        }
-        for (int i = 0; i < first.length(); i++) {
-            if (first.charAt(i) == second.charAt(i))
-                index = i;
-            else
-                break;
-        }
-        if (index > 0)
-            return first.substring(0, index + 1);
-        else
-            return "";
-    }
-
-    public static String getJDTitle() {
-        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
-        // + ") - "
-        // + JDUtilities.getConfiguration().getIntegerProperty(
-        // Configuration.CID, -1);
-        if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-            ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
-
-        }
-        if (getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) { return "[BETA!] " + ret; }
-        return ret;
-    }
-
-    /**
-     * Fügt dem Dateinamen den erkannten Code noch hinzu
-     * 
-     * @param file
-     *            Die Datei, der der Captchacode angefügt werden soll
-     * @param captchaCode
-     *            Der erkannte Captchacode
-     * @param isGood
-     *            Zeigt, ob der erkannte Captchacode korrekt ist
-     */
-    public static void appendInfoToFilename(final Plugin plugin, File file, String captchaCode, boolean isGood) {
-        String dest = file.getAbsolutePath();
-        if (captchaCode == null) captchaCode = "null";
-        String isGoodText;
-        if (isGood)
-            isGoodText = "_GOOD";
-        else
-            isGoodText = "_BAD";
-        int idx = dest.lastIndexOf('.');
-        dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
-        final File file2 = new File(dest);
-        file.renameTo(file2);
-        /*
-         * if(!isGood) { new Thread(new Runnable(){
-         * 
-         * public void run() { Upload.uploadToCollector(plugin, file2);
-         * 
-         * }}).start(); }
-         */
-    }
-
-    public static Locale getLocale() {
-        return locale;
+    public static void setHomeDirectory(String homeDirectory) {
+        JDUtilities.homeDirectory = homeDirectory;
+        homeDirectoryFile = new File(homeDirectory);
+        if (!homeDirectoryFile.exists()) homeDirectoryFile.mkdirs();
     }
 
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
 
-    /***************************************************************************
-     * Gibt die Endung einer FIle zurück oder null
-     * 
-     * @param ret
-     * @return
-     */
-    public static String getFileExtension(File ret) {
-        if (ret == null) return null;
-        String str = ret.getAbsolutePath();
-
-        int i3 = str.lastIndexOf(".");
-
-        if (i3 > 0) { return str.substring(i3 + 1); }
-        return null;
-    }
-
-    /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
-     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
-     * 
-     * @return LogKlasse
-     */
-    public static Logger getLogger() {
-        if (logger == null) {
-
-            logger = Logger.getLogger(LOGGER_NAME);
-            Formatter formatter = new LogFormatter();
-            logger.setUseParentHandlers(false);
-            Handler console = new ConsoleHandler();
-
-            console.setLevel(Level.ALL);
-            console.setFormatter(formatter);
-            logger.addHandler(console);
-
-            logger.setLevel(Level.ALL);
-            logger.addHandler(new Handler() {
-                public void publish(LogRecord logRecord) {
-                    // System.out.println(logRecord.getLevel() + ":");
-                    // System.out.println(logRecord.getSourceClassName() + ":");
-                    // System.out.println(logRecord.getSourceMethodName() +
-                    // ":");
-                    // System.out.println("<" + logRecord.getMessage() + ">");
-                    // System.out.println("\n");
-                    if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
-                }
-
-                public void flush() {
-                }
-
-                public void close() {
-                }
-            });
-
-            // logger.finer("Init Logger:" + LOGGER_NAME);
-            // Leitet System.out zum Logger um.
-            // final PrintStream err = System.err;
-            OutputStream os = new OutputStream() {
-                private StringBuffer buffer = new StringBuffer();
-
-                
-                public void write(int b) throws IOException {
-                    // err.write(b);
-                    if ((b == 13 || b == 10)) {
-                        if (buffer.length() > 0) {
-                            JDUtilities.getLogger().severe(buffer.toString());
-                            if (buffer.indexOf("OutOfMemoryError") >= 0) {
-                                logger.finer("Restart");
-                                boolean res;
-                                res = getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
-
-                                if (res) {
-
-                                    JDUtilities.restartJD();
-                                }
-                            }
-
-                        }
-                        buffer = new StringBuffer();
-
-                    } else {
-                        buffer.append((char) b);
-
-                    }
-
-                }
-
-            };
-            System.setErr(new PrintStream(os));
-
-        }
-        return logger;
-    }
-
-    // public static boolean initFileLogger() {
-    // try {
-    // if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG,
-    // true)) {
-    // Handler file_handler = new
-    // FileHandler(getConfiguration().getStringProperty(Configuration.
-    // PARAM_WRITE_LOG_PATH,
-    // getResourceFile("jd_log.txt").getAbsolutePath()));
-    // logger.addHandler(file_handler);
-    // logger.info("File Logger active: " +
-    // getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH,
-    // getResourceFile("jd_log.txt").getAbsolutePath()));
-    // return true;
-    // }
-    // }
-    // catch (SecurityException e) {
-    // e.printStackTrace();
-    // }
-    // catch (IOException e) {
-    // e.printStackTrace();
-    // }
-    // return false;
-    // }
-
-    /**
-     * Fügt dem Log eine Exception hinzu
-     * 
-     * @param e
-     */
-    public static void logException(Exception e) {
-        getLogger().log(Level.SEVERE, "Exception", e);
-        e.printStackTrace();
-    }
-
-    public static void logException(Error e) {
-        getLogger().log(Level.SEVERE, "Error", e);
-        e.printStackTrace();
-
-    }
-
-    /**
-     * Gibt den Stacktrace einer exception zurück
-     * 
-     * @param e
-     * @return
-     */
-    public static String getStackTraceForException(Exception e) {
-        StringWriter sw = new StringWriter(2000);
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        return sw.getBuffer().toString();
-    }
-
-    /**
-     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
-     * 
-     * @param string
-     * @param encryption
-     * @return ciphertext
-     */
-    public static String[] encrypt(String string, String encryption) {
-        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
-        for (int i = 0; i < pfc.size(); i++) {
-            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).encrypt(string); }
-        }
-        return null;
+    public static void setPluginForContainerList(Vector<PluginForContainer> loadPlugins) {
+        pluginsForContainer = loadPlugins;
 
     }
 
@@ -2289,140 +2282,19 @@ public class JDUtilities {
 
     }
 
-    public static void setPluginForContainerList(Vector<PluginForContainer> loadPlugins) {
-        pluginsForContainer = loadPlugins;
-
-    }
-
     public static void setPluginOptionalList(HashMap<String, PluginOptional> loadPlugins) {
         pluginsOptional = loadPlugins;
 
     }
 
-    public static void restartJD() {
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-        System.exit(0);
-
-    }
-
-    public static void restartJD(String[] jdArgs) {
-
-        String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
-        String[] finalArgs = new String[jdArgs.length + javaArgs.length];
-        System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
-        System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
-
-        logger.info(JDUtilities.runCommand("java", finalArgs, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-        System.exit(0);
-    }
-
-    public static void saveConfig() {
-        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
-
-    }
-
-    public static UIInterface getGUI() {
-        return JDUtilities.getController().getUiInterface();
-    }
-
-    public static String Base64Decode(String base64) {
-        if (base64 == null) return null;
+    public static boolean sleep(int i) {
         try {
-            byte[] plain = new BASE64Decoder().decodeBuffer(base64);
-            if (JDUtilities.filterString(new String(plain)).length() < (plain.length / 1.5)) { return base64; }
-            return new String(plain);
-        } catch (IOException e) {
-            return base64;
-        }
-    }
-
-    public static void playMp3(File file) {
-        AdvancedPlayer p;
-        try {
-            p = new AdvancedPlayer(new FileInputStream(file.getAbsolutePath()));
-
-            p.play();
-        } catch (FileNotFoundException e) {
-
-            e.printStackTrace();
-        } catch (JavaLayerException e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    public static String Base64Encode(String plain) {
-
-        if (plain == null) return null;
-        String base64 = new BASE64Encoder().encode(plain.getBytes());
-        base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
-
-        return base64;
-    }
-
-    public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
-        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
-        for (int i = 0; i < pfc.size(); i++) {
-            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).createContainerString(downloadLinks); }
-        }
-        return null;
-    }
-
-    public static String convertExceptionReadable(Exception e) {
-        String s = e.getClass().getName().replaceAll("Exception", "");
-        s = s.substring(s.lastIndexOf(".") + 1);
-        String ret = "";
-        String letter = null;
-        for (int i = 0; i < s.length(); i++) {
-            if ((letter = s.substring(i, i + 1)).equals(letter.toUpperCase())) {
-                ret += " " + letter;
-            } else {
-                ret += letter;
-            }
-        }
-        String message = e.getLocalizedMessage();
-
-        return (message != null) ? (ret.trim() + ": " + message) : ret.trim();
-
-    }
-
-    public static String arrayToString(String[] a, String separator) {
-
-        String result = "";
-
-        if (a.length > 0) {
-
-            result = a[0];
-
-            for (int i = 1; i < a.length; i++) {
-                result = result + separator + a[i];
-            }
-
+            Thread.sleep(i);
+            return true;
+        } catch (InterruptedException e) {
+            return false;
         }
 
-        return result;
-
-    }
-
-    public static String formatKbReadable(int value) {
-
-        DecimalFormat c = new DecimalFormat("0.00");
-        ;
-        if (value >= (1024 * 1024)) {
-
-        return c.format(value / (1024 * 1024.0)) + " GB"; }
-        if (value >= (1024)) {
-
-        return c.format(value / 1024.0) + " MB"; }
-        return value + " KB";
-
-    }
-
-    public static String getPercent(long downloadCurrent, long downloadMax) {
-        DecimalFormat c = new DecimalFormat("0.00");
-        ;
-
-        return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
     }
 
     /**
@@ -2441,26 +2313,82 @@ public class JDUtilities {
 
     }
 
-    public static boolean removeDirectoryOrFile(File dir) {
-        if (dir.isDirectory()) {
-            String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                boolean success = removeDirectoryOrFile(new File(dir, children[i]));
-                if (!success) { return false; }
-            }
+    public static String sprintf(String pattern, String[] inset) {
+
+        for (int i = 0; i < inset.length; i++) {
+            int ind = pattern.indexOf("%s");
+            pattern = pattern.substring(0, ind) + inset[i] + pattern.substring(ind + 2);
+
         }
 
-        return dir.delete();
+        return pattern;
     }
 
-    public static boolean sleep(int i) {
+    /**
+     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
+     *         Zeichen aus
+     * @param str
+     * @return str URLCodiert
+     */
+    @SuppressWarnings("deprecation")
+    public static String urlEncode(String str) {
         try {
-            Thread.sleep(i);
-            return true;
-        } catch (InterruptedException e) {
-            return false;
+            return URLEncoder.encode(str);
+        } catch (Exception e) {
+            // TODO: handle exception
         }
+        return null;
+        /*
+         * 
+         * 
+         * if (str == null) return str; String allowed =
+         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
+         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
+         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
+         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
+         * (l.length() == 1 ? "0" + l : l); } }
+         */
 
+    }
+
+    /**
+     * @author JD-Team
+     * @param str
+     * @return str als UTF8Decodiert
+     */
+    public static String UTF8Decode(String str) {
+        if (str == null) return null;
+        try {
+            return new String(str.getBytes(), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * @author JD-Team
+     * @param str
+     * @return str als UTF8 Kodiert
+     */
+    public static String UTF8Encode(String str) {
+        try {
+            return new String(str.getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
+     * config editiert werden.
+     * 
+     * @param ip
+     * @return
+     */
+    public static boolean validateIP(String ip) {
+        return Pattern.compile(getConfiguration().getStringProperty(Configuration.PARAM_GLOBAL_IP_MASK, "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)" + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b")).matcher(ip).matches();
     }
 
     public static String validatePath(String fileOutput0) {
@@ -2476,24 +2404,96 @@ public class JDUtilities {
         return fileOutput0;
     }
 
-    public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
-        return getscaledImageIcon(icon.getImage(), width, height);
-    }
-
-    public static ImageIcon getscaledImageIcon(Image image, int width, int height) {
-        return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
-    }
-
-    public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
-        return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
-    }
-
-    public static String fillString(String binaryString, String pre, String post,int length) {
-        while(binaryString.length()<length){
-            if(binaryString.length()<length)binaryString=pre+binaryString;
-            if(binaryString.length()<length)binaryString=binaryString+post;
+    public static void waitOnObject(File file) {
+        int c = 0;
+        while (saveReadObject.contains(file)) {
+            if (c++ > 1000) return;
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                
+                e.printStackTrace();
+            }
         }
-        return binaryString;
+    }
+
+    /**
+     * Schreibt das Home Verzeichnis in den Webstart Cache
+     * 
+     * @param newHomeDir
+     *            Das neue JD-HOME
+     */
+    @SuppressWarnings("unchecked")
+    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
+        try {
+            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
+            String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
+            setHomeDirectory(homeDir);
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Schreibt content in eine Lokale textdatei
+     * 
+     * @param file
+     * @param content
+     * @return true/False je nach Erfolg des Schreibvorgangs
+     */
+    public static boolean writeLocalFile(File file, String content) {
+        try {
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    logger.severe("Konnte Datei nicht löschen " + file);
+                    return false;
+                }
+            }
+            if (file.getParent() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+            BufferedWriter f = new BufferedWriter(new FileWriter(file));
+            f.write(content);
+            f.close();
+            return true;
+        } catch (Exception e) {
+            // e.printStackTrace();
+            return false; 
+        }
+    }
+
+    public static String xmltoStr(Document header) {
+        Transformer transformer;
+        try {
+            transformer = TransformerFactory.newInstance().newTransformer();
+
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+
+            // initialize StreamResult with File object to save to file
+            StreamResult result = new StreamResult(new StringWriter());
+
+            DOMSource source = new DOMSource(header);
+
+            transformer.transform(source, result);
+
+            String xmlString = result.getWriter().toString();
+            return xmlString;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

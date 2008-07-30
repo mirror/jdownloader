@@ -69,7 +69,8 @@ public class ImageComponent extends JComponent {
 	 * zeichnet Bild
 	 * @param g 
 	 */
-	public void paintComponent(Graphics g) {
+	@Override
+    public void paintComponent(Graphics g) {
 		g.drawImage(image, 0, 0, null);
 	}
 }

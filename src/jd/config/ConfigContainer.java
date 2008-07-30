@@ -32,10 +32,56 @@ import jd.utils.JDUtilities;
  * 
  */
 public class ConfigContainer implements Serializable {
+    public static final int ACTION_REQUEST_SAVE = 0;
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 6583843494325603616L;
+    /**
+     * ConfigElement ist ein Browser für eine Datei public ConfigEntry(int type,
+     * Property propertyInstance, String propertyName, String label) {
+     */
+    public static final int TYPE_BROWSEFILE = 7;
+    /**
+     * ConfigElement ist ein Browser für ein Verzeichnis public ConfigEntry(int
+     * type, Property propertyInstance, String propertyName, String label) {
+     */
+    public static final int TYPE_BROWSEFOLDER = 9;
+    /**
+     * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
+     * listener, String label)
+     */
+    public static final int TYPE_BUTTON = 2;
+    /**
+     * ConfigElement ist eine Checkbox
+     */
+    public static final int TYPE_CHECKBOX = 3;
+    /**
+     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, Object[] list, String label)
+     */
+    public static final int TYPE_COMBOBOX = 1;
+    public static final int TYPE_CONTAINER = 13;
+    /**
+     * ConfigElement ist ein Label ConfigEntry(int type, String label)
+     */
+    public static final int TYPE_LABEL = 4;
+    public static final int TYPE_LINK = 12;
+    /**
+     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, String label) {
+     */
+    public static final int TYPE_PASSWORDFIELD = 11;
+    /**
+     * ConfigElement ist ein Radiobutton ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, Object[] list, String label)
+     */
+    public static final int TYPE_RADIOFIELD = 5;
+
+    /**
+     * ConfigElement ist eine Trennlinie ConfigEntry(int type)
+     */
+    public static final int TYPE_SEPARATOR = 6;
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner) ConfigEntry(int type,
      * Property propertyInstance, String propertyName, String label, int start,
@@ -43,71 +89,25 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_SPINNER = 8;
     /**
-     * ConfigElement ist ein Browser für eine Datei public ConfigEntry(int type,
-     * Property propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, String label) {
      */
-    public static final int TYPE_BROWSEFILE = 7;
-    /**
-     * ConfigElement ist eine Trennlinie ConfigEntry(int type)
-     */
-    public static final int TYPE_SEPARATOR = 6;
-    /**
-     * ConfigElement ist ein Radiobutton ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
-     */
-    public static final int TYPE_RADIOFIELD = 5;
-    /**
-     * ConfigElement ist ein Label ConfigEntry(int type, String label)
-     */
-    public static final int TYPE_LABEL = 4;
-    /**
-     * ConfigElement ist eine Checkbox
-     */
-    public static final int TYPE_CHECKBOX = 3;
-    /**
-     * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
-     * listener, String label)
-     */
-    public static final int TYPE_BUTTON = 2;
-    /**
-     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
-     */
-    public static final int TYPE_COMBOBOX = 1;
+    public static final int TYPE_TEXTAREA = 10;
     /**
      * ConfigElement ist ein Textfeld public ConfigEntry(int type, Property
      * propertyInstance, String propertyName, String label) {
      */
     public static final int TYPE_TEXTFIELD = 0;
-    /**
-     * ConfigElement ist ein Browser für ein Verzeichnis public ConfigEntry(int
-     * type, Property propertyInstance, String propertyName, String label) {
-     */
-    public static final int TYPE_BROWSEFOLDER = 9;
-    /**
-     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
-     */
-    public static final int TYPE_TEXTAREA = 10;
 
-    /**
-     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
-     */
-    public static final int TYPE_PASSWORDFIELD = 11;
-    public static final int TYPE_LINK = 12;
-    public static final int TYPE_CONTAINER = 13;
-    public static final int ACTION_REQUEST_SAVE = 0;
+    private ActionListener actionListener;
 
-    private Property propertyInstance;
-
-    @SuppressWarnings("unused")
-    private Object instance;
+    private int containers = 0;
 
     private Vector<ConfigEntry> content = new Vector<ConfigEntry>();
-    private int containers = 0;
+    @SuppressWarnings("unused")
+    private Object instance;
+    private Property propertyInstance;
     private String title;
-    private ActionListener actionListener;
 
     public ConfigContainer(Object instance) {
         this.instance = instance;
@@ -135,6 +135,19 @@ public class ConfigContainer implements Serializable {
         content.add(entry);
     }
 
+    public int getContainerNum() {
+        return containers;
+    }
+
+    /**
+     * Gibt eine Liste aller gespeicherten Konfigurationseinträge zurück
+     * 
+     * @return Liste aller gespeicherten Konfigurationseinträge
+     */
+    public Vector<ConfigEntry> getEntries() {
+        return content;
+    }
+
     /**
      * Gibt den Konfigurationseintrag an der Stelle i zurück
      * 
@@ -145,15 +158,6 @@ public class ConfigContainer implements Serializable {
     public ConfigEntry getEntryAt(int i) {
         if (content.size() <= i) return null;
         return content.elementAt(i);
-    }
-
-    /**
-     * Gibt eine Liste aller gespeicherten Konfigurationseinträge zurück
-     * 
-     * @return Liste aller gespeicherten Konfigurationseinträge
-     */
-    public Vector<ConfigEntry> getEntries() {
-        return content;
     }
 
     /**
@@ -168,25 +172,8 @@ public class ConfigContainer implements Serializable {
         return propertyInstance;
     }
 
-    /**
-     * Setzt die Propertyinstanz zurück, die dieser Container zum Speichern
-     * verwendet(Es werden nur die einstellungen überdeckt bei denen die
-     * propertyinstanz bei den ConfigEntries null ist
-     */
-    public void setPropertyInstance(Property propertInstance) {
-        this.propertyInstance = propertInstance;
-    }
-
-    public int getContainerNum() {
-        return containers;
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public void requestSave() {
@@ -198,6 +185,19 @@ public class ConfigContainer implements Serializable {
     public void setActionListener(ActionListener listener) {
         this.actionListener = listener;
 
+    }
+
+    /**
+     * Setzt die Propertyinstanz zurück, die dieser Container zum Speichern
+     * verwendet(Es werden nur die einstellungen überdeckt bei denen die
+     * propertyinstanz bei den ConfigEntries null ist
+     */
+    public void setPropertyInstance(Property propertInstance) {
+        this.propertyInstance = propertInstance;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
 }

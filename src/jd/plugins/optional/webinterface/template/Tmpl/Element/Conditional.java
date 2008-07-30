@@ -56,6 +56,24 @@ public class Conditional extends Element
 		this.data[0] = new Vector<Object>();
 	}
 
+	@Override
+    public void add(Element node)
+	{
+		if(data[1] != null)
+			data[1].addElement(node);
+		else
+			data[0].addElement(node);
+	}
+
+	@Override
+    public void add(String text)
+	{
+		if(data[1] != null)
+			data[1].addElement(text);
+		else
+			data[0].addElement(text);
+	}
+
 	public void addBranch() throws IndexOutOfBoundsException
 	{
 		if(data[1] != null)
@@ -67,29 +85,8 @@ public class Conditional extends Element
 			data[1] = new Vector<Object>();
 	}
 
-	public void add(String text)
-	{
-		if(data[1] != null)
-			data[1].addElement(text);
-		else
-			data[0].addElement(text);
-	}
-
-	public void add(Element node)
-	{
-		if(data[1] != null)
-			data[1].addElement(node);
-		else
-			data[0].addElement(node);
-	}
-
-	public void setControlValue(Object control_val)
-			throws IllegalArgumentException
-	{
-		this.control_val = process_var(control_val);
-	}
-
-	public String parse(Hashtable<?, ?> params)
+	@Override
+    public String parse(Hashtable<?, ?> params)
 	{
 		if(!params.containsKey(this.name))
 			this.control_val = false;
@@ -118,26 +115,6 @@ public class Conditional extends Element
 		return output.toString();
 	}
 
-	public String typeOfParam(String param)
-			throws NoSuchElementException
-	{
-		for(int i=0; i<data.length; i++)
-		{
-			if(data[i] == null)
-				continue;
-			for(Enumeration<?> e = data[i].elements(); 
-				e.hasMoreElements();)
-			{
-				Object o = e.nextElement();
-				if(o.getClass().getName().endsWith(".String"))
-					continue;
-				if(((Element)o).Name().equals(param))
-					return ((Element)o).Type();
-			}
-		}
-		throw new NoSuchElementException(param);
-	}
-
 	private boolean process_var(Object control_val) 
 			throws IllegalArgumentException 
 	{
@@ -163,6 +140,33 @@ public class Conditional extends Element
 		} else {
 			throw new IllegalArgumentException("Unrecognised type");
 		}
+	}
+
+	public void setControlValue(Object control_val)
+			throws IllegalArgumentException
+	{
+		this.control_val = process_var(control_val);
+	}
+
+	@Override
+    public String typeOfParam(String param)
+			throws NoSuchElementException
+	{
+		for(int i=0; i<data.length; i++)
+		{
+			if(data[i] == null)
+				continue;
+			for(Enumeration<?> e = data[i].elements(); 
+				e.hasMoreElements();)
+			{
+				Object o = e.nextElement();
+				if(o.getClass().getName().endsWith(".String"))
+					continue;
+				if(((Element)o).Name().equals(param))
+					return ((Element)o).Type();
+			}
+		}
+		throw new NoSuchElementException(param);
 	}
 }
 

@@ -24,57 +24,15 @@ import jd.utils.Reconnecter;
 
 public class JDSimpleWebserverRequestHandler {
 
-    private HashMap<String, String> headers;
-    private JDSimpleWebserverResponseCreator response;
-
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private HashMap<String, String> headers;
+
     private Logger logger = JDUtilities.getLogger();
+    private JDSimpleWebserverResponseCreator response;
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
         this.response = response;
         this.headers = headers;
-    }
-
-    private String removeExtension(String a) {
-        if (a == null) return a;
-        a = a.replaceAll("\\.part([0-9]+)", "");
-        a = a.replaceAll("\\.html", "");
-        a = a.replaceAll("\\.htm", "");
-        int i = a.lastIndexOf(".");
-        String ret;
-        if (i <= 1 || (a.length() - i) > 5) {
-            ret = a.toLowerCase().trim();
-        } else {
-            ret = a.substring(0, i).toLowerCase().trim();
-        }
-
-        if (a.equals(ret)) return ret;
-        return (ret);
-
-    }
-
-    private int comparepackages(String a, String b) {
-
-        int c = 0;
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) c++;
-        }
-
-        if (Math.min(a.length(), b.length()) == 0) return 0;
-        return (c * 100) / (b.length());
-    }
-
-    private String getSimString(String a, String b) {
-
-        String ret = "";
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                ret += a.charAt(i);
-            } else {
-                // return ret;
-            }
-        }
-        return ret;
     }
 
     private void addLinkstoWaitingList(Vector<DownloadLink> waitingLinkList) {
@@ -147,29 +105,28 @@ public class JDSimpleWebserverRequestHandler {
         }
     }
 
-    private Vector<DownloadLink> loadContainerFile(final File file) {
+    private int comparepackages(String a, String b) {
 
-        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
-        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginForContainer pContainer;
+        int c = 0;
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) c++;
+        }
 
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            pContainer = pluginsForContainer.get(i);
-            if (pContainer.canHandle(file.getName())) {
-                try {
-                    pContainer = pContainer.getClass().newInstance();
-                    pContainer.initContainer(file.getAbsolutePath());
-                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                    if (links != null && links.size() != 0) {
-                        downloadLinks = links;
-                        break;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+        if (Math.min(a.length(), b.length()) == 0) return 0;
+        return (c * 100) / (b.length());
+    }
+
+    private String getSimString(String a, String b) {
+
+        String ret = "";
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) {
+                ret += a.charAt(i);
+            } else {
+                // return ret;
             }
         }
-        return downloadLinks;
+        return ret;
     }
 
     @SuppressWarnings("static-access")
@@ -551,6 +508,49 @@ public class JDSimpleWebserverRequestHandler {
             }
 
         }
+
+    }
+
+    private Vector<DownloadLink> loadContainerFile(final File file) {
+
+        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        PluginForContainer pContainer;
+
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+            pContainer = pluginsForContainer.get(i);
+            if (pContainer.canHandle(file.getName())) {
+                try {
+                    pContainer = pContainer.getClass().newInstance();
+                    pContainer.initContainer(file.getAbsolutePath());
+                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                    if (links != null && links.size() != 0) {
+                        downloadLinks = links;
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return downloadLinks;
+    }
+
+    private String removeExtension(String a) {
+        if (a == null) return a;
+        a = a.replaceAll("\\.part([0-9]+)", "");
+        a = a.replaceAll("\\.html", "");
+        a = a.replaceAll("\\.htm", "");
+        int i = a.lastIndexOf(".");
+        String ret;
+        if (i <= 1 || (a.length() - i) > 5) {
+            ret = a.toLowerCase().trim();
+        } else {
+            ret = a.substring(0, i).toLowerCase().trim();
+        }
+
+        if (a.equals(ret)) return ret;
+        return (ret);
 
     }
 }

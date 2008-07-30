@@ -39,11 +39,6 @@ public class AxeEvent
 		sMessage = s;
 	}
 
-	public void setMessage (String s)
-	{
-		sMessage = s;
-	}
-
 	public String getMessage()
 	{
 		return sMessage;
@@ -52,5 +47,10 @@ public class AxeEvent
 	public Object getSource()
 	{
 		return oSource;
+	}
+
+	public void setMessage (String s)
+	{
+		sMessage = s;
 	}
 }

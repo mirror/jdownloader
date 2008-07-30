@@ -39,18 +39,18 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private static final String HOST = "share-online.biz";
 
-    private static final String PLUGIN_NAME = HOST;
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "2.0.0.0";
 
     //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final String PLUGIN_NAME = HOST;
+    private String captchaCode;
+    private File captchaFile;
+    private String passCode;
     private RequestInfo requestInfo;
     private String url;
-    private File captchaFile;
-    private String captchaCode;
-    private String passCode;
 
     public ShareOnlineBiz() {
         super();
@@ -58,50 +58,25 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://share-online.biz/rules.php";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         url = downloadLink.getDownloadURL();
@@ -139,6 +114,42 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 1;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -233,13 +244,14 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     
-    public void resetPluginGlobals() {
-       
+    @Override
+    public void reset() {
     }
 
     
-    public String getAGBLink() {
-        return "http://share-online.biz/rules.php";
+    @Override
+    public void resetPluginGlobals() {
+       
     }
 
 }

@@ -17,6 +17,48 @@ public class Schedule extends PluginOptional implements ControlListener {
     ScheduleControl sControl = new ScheduleControl();
     
     
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        this.sControl.status.start();
+        this.sControl.status.setInitialDelay(1000);
+        this.sControl.setVisible(true);
+    }
+
+    
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        menu.add(new MenuItem(JDLocale.L("addons.schedule.menu.settings","Settings"),0).setActionListener(this));
+        return menu;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "Tudels";
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("addons.schedule.name","Schedule");
+    }
+
+    
+   
+
+    
+    @Override
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    @Override
+    public String getVersion() {
+        return "0.5";
+    }
+    
+    @Override
     public boolean initAddon() {
       
                logger.info("Schedule OK");
@@ -27,41 +69,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
 
     
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDLocale.L("addons.schedule.menu.settings","Settings"),0).setActionListener(this));
-        return menu;
-    }
-
-    
-    public String getCoder() {
-        return "Tudels";
-    }
-
-    
-   
-
-    
-    public String getVersion() {
-        return "0.5";
-    }
-
-    public String getPluginName() {
-        return JDLocale.L("addons.schedule.name","Schedule");
-    }
-    
-    public void actionPerformed(ActionEvent e) {
-        this.sControl.status.start();
-        this.sControl.status.setInitialDelay(1000);
-        this.sControl.setVisible(true);
-    }
-
-    
+    @Override
     public void onExit() {
        
         

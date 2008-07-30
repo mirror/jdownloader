@@ -7,7 +7,7 @@ import jd.utils.HTMLEntities;
 public class Utils {
     public static String getRandomColor() {
         
-        String col = Integer.toHexString((int)new Color((int) (Math.random() * 0xffffff)).darker().getRGB());
+        String col = Integer.toHexString(new Color((int) (Math.random() * 0xffffff)).darker().getRGB());
         while (col.length() < 6)
             col = "0" + col;
         return col.substring(col.length()-6);

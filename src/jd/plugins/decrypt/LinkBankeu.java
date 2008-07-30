@@ -33,11 +33,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class LinkBankeu extends PluginForDecrypt {
+    private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
     static private final String host = "LinkBank.eu";
-    private String version = "1.0.0.0";
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+", Pattern.CASE_INSENSITIVE);
-    private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
+    // private String version = "1.0.0.0";
 
     public LinkBankeu() {
         super();
@@ -45,8 +45,9 @@ public class LinkBankeu extends PluginForDecrypt {
     }
 
     
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
@@ -71,38 +72,44 @@ public class LinkBankeu extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getHost() {
-        return host;
+    @Override
+    public String getCoder() {
+        return "JD-Team";
     }
 
   
 
     
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
     public String getPluginName() {
         return host;
     }
 
     
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    
+    @Override
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
     private void setConfigEelements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
     }
 }

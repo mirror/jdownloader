@@ -40,43 +40,43 @@ import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
+    static private final String CODER = "JD-Team";
 
-    static private final String HOST = "depositfiles.com";
+    private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";
 
-    static private final String PLUGIN_NAME = HOST;
+    static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.3";
 
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final String CODER = "JD-Team";
+    static private final String HOST = "depositfiles.com";
 
     // private Pattern HIDDENPARAM = Pattern.compile("<input type=\"hidden\"
     // name=\"gateway_result\" value=\"([\\d]+)\">", Pattern.CASE_INSENSITIVE);
+
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
+
+    private static final String PATTERN_PREMIUM_FINALURL = "var dwnsrc = \"(.*?)\";";
+
+    // private Pattern ICID = Pattern.compile("name=\"icid\" value=\"(.*?)\"");
+
+    private static final String PATTERN_PREMIUM_REDIRECT = "window.location.href = '(.*?)';";
+
+    static private final String PLUGIN_NAME = HOST;
+
+    private String cookie;
 
     private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
     private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr&ouml;&szlig;e: <b>(.*?)</b>");
 
-    // private Pattern ICID = Pattern.compile("name=\"icid\" value=\"(.*?)\"");
-
-    // Rechtschreibfehler übernommen
-    private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
-
-    static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
-
-    private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";
-
-    private static final String PATTERN_PREMIUM_REDIRECT = "window.location.href = '(.*?)';";
-
-    private static final String PATTERN_PREMIUM_FINALURL = "var dwnsrc = \"(.*?)\";";
-
     // private String captchaAddress;
 
     private String finalURL;
 
-    private String cookie;
+    // Rechtschreibfehler übernommen
+    private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
 
     // private String icid;
 
@@ -90,188 +90,18 @@ public class DepositFiles extends PluginForHost {
         setConfigElements();
     }
 
-    private void setConfigElements() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
-
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
-    public void handle(DownloadLink parameter) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
-
-        // premium
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            this.doPremium(downloadLink);
-        } else {
-            this.doFree(downloadLink);
-        }
-
-    }
-
-    private void doPremium(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        RequestInfo requestInfo;
-        String user = (String) this.getProperties().getProperty("PREMIUM_USER");
-        String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
-
-        // switch (step.getStep()) {
-
-        // case PluginStep.STEP_WAIT_TIME:
-
-        String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
-        link = link.replace("com/ru/files/", "com/de/files/");
-        link = link.replace("com/files/", "com/de/files/");
-        downloadLink.setUrlDownload(link);
-
-        finalURL = link;
-        requestInfo = HTTP.getRequest(new URL(finalURL));
-        cookie = requestInfo.getCookie();
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-
-        }
-
-        if (new File(downloadLink.getFileOutput()).exists()) {
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
-
-        // Datei geloescht?
-        if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
-            logger.severe("Download not found");
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
-
-        if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe("Download not possible now");
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setParameter(60000l);
-            return;
-
-        }
-
-        Form[] forms = requestInfo.getForms();
-        Form login = forms[0];
-        login.vars.put("login", user);
-        login.vars.put("password", pass);
-        login.vars.put("x", "30");
-        login.vars.put("y", "11");
-        requestInfo = login.getRequestInfo();
-        cookie += "; " + requestInfo.getCookie();
-
-        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_REDIRECT).getFirstMatch();
-        requestInfo = HTTP.getRequest(new URL(finalURL), cookie, finalURL, true);
-        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
-
-            String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-            requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
-
-        } else {
-            logger.info(requestInfo.getHtmlCode());
-        }
-        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL).getFirstMatch();
-
-        if (finalURL == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-
-        }
-
-        // //case PluginStep.STEP_GET_CAPTCHA_FILE:
-        // //step.setStatus(PluginStep.STATUS_SKIP);
-        // downloadLink.getLinkStatus().setStatusText("Premiumdownload");
-        // step = nextStep(step);
-
-        // case PluginStep.STEP_PENDING:
-
-        // step.setStatus(PluginStep.STATUS_SKIP);
-
-        // case PluginStep.STEP_DOWNLOAD:
-
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), cookie, finalURL, true);
-
-        if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setParameter(20000l);
-            return;
-
-        }
-
-        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-
-        if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setParameter(20000l);
-            return;
-
-        }
-
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
-        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-        dl.startDownload();
-
-    }
-
     public void doFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
         RequestInfo requestInfo;
 
-        DownloadLink downloadLink = (DownloadLink) parameter;
+        DownloadLink downloadLink = parameter;
         Browser br = new Browser();
 
         // switch (step.getStep()) {
@@ -460,18 +290,137 @@ public class DepositFiles extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
+    private void doPremium(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        RequestInfo requestInfo;
+        String user = (String) this.getProperties().getProperty("PREMIUM_USER");
+        String pass = (String) this.getProperties().getProperty("PREMIUM_PASS");
+
+        // switch (step.getStep()) {
+
+        // case PluginStep.STEP_WAIT_TIME:
+
+        String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
+        link = link.replace("com/ru/files/", "com/de/files/");
+        link = link.replace("com/files/", "com/de/files/");
+        downloadLink.setUrlDownload(link);
+
+        finalURL = link;
+        requestInfo = HTTP.getRequest(new URL(finalURL));
+        cookie = requestInfo.getCookie();
+        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+
+        if (new File(downloadLink.getFileOutput()).exists()) {
+            logger.severe("File already exists. " + downloadLink.getFileOutput());
+            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+
+        // Datei geloescht?
+        if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
+            logger.severe("Download not found");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+
+        if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("Download not possible now");
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // step.setParameter(60000l);
+            return;
+
+        }
+
+        Form[] forms = requestInfo.getForms();
+        Form login = forms[0];
+        login.vars.put("login", user);
+        login.vars.put("password", pass);
+        login.vars.put("x", "30");
+        login.vars.put("y", "11");
+        requestInfo = login.getRequestInfo();
+        cookie += "; " + requestInfo.getCookie();
+
+        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_REDIRECT).getFirstMatch();
+        requestInfo = HTTP.getRequest(new URL(finalURL), cookie, finalURL, true);
+        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
+
+            String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+            requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
+
+        } else {
+            logger.info(requestInfo.getHtmlCode());
+        }
+        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL).getFirstMatch();
+
+        if (finalURL == null) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            return;
+
+        }
+
+        // //case PluginStep.STEP_GET_CAPTCHA_FILE:
+        // //step.setStatus(PluginStep.STATUS_SKIP);
+        // downloadLink.getLinkStatus().setStatusText("Premiumdownload");
+        // step = nextStep(step);
+
+        // case PluginStep.STEP_PENDING:
+
+        // step.setStatus(PluginStep.STATUS_SKIP);
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), cookie, finalURL, true);
+
+        if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
+
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
+            return;
+
+        }
+
+        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+
+        if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
+            return;
+
+        }
+
+        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+
+        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
+        dl.startDownload();
+
     }
 
     
-    public void reset() {
-        this.finalURL = null;
+    public String getAGBLink() {
+        return "http://depositfiles.com/en/agreem.html";
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    
+    @Override
+    public String getCoder() {
+        return CODER;
     }
 
     
@@ -519,6 +468,21 @@ public class DepositFiles extends PluginForHost {
     }
 
     
+    
+        
+   
+
+    @Override
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -528,13 +492,58 @@ public class DepositFiles extends PluginForHost {
     }
 
     
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
+    public void handle(DownloadLink parameter) throws Exception {
+        DownloadLink downloadLink = parameter;
+
+        // premium
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            this.doPremium(downloadLink);
+        } else {
+            this.doFree(downloadLink);
+        }
+
+    }
+
+    
+    @Override
+    public void reset() {
+        this.finalURL = null;
+    }
+
+    
     public void resetPluginGlobals() {
         this.finalURL = "";
     }
 
     
-    public String getAGBLink() {
-        return "http://depositfiles.com/en/agreem.html";
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
+        cfg.setDefaultValue(false);
+
     }
 
 }

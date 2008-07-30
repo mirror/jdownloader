@@ -40,31 +40,19 @@ import jd.utils.JDUtilities;
 //  http://netload.in/mindestens20zeichen
 //http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
 public class Netloadin extends PluginForHost {
-    // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
-    static private final String HOST = "netload.in";
-    static private final String PLUGIN_NAME = HOST;
-    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.1.0";
-    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
-    static private final String CODER = "JD-Team";
     static private final String AGB_LINK = "http://netload.in/index.php?id=13";
-    // /Simplepattern
-    static private final String DOWNLOAD_URL = "<div class=\"Free_dl\"><a href=\"°\">";
     // <img src="share/includes/captcha.php?t=1189894445" alt="Sicherheitsbild"
     // />
     static private final String CAPTCHA_URL = "<img src=\"share/includes/captcha.php?t=°\" alt=\"Sicherheitsbild\" />";
-    // <form method="post" action="index.php?id=10">
-    static private final String POST_URL = "<form method=\"post\" action=\"°\">";
-    static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
-    static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"°\" >Alternativ klicke hier.</a>";
-    static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
-    static private final String FILE_DAMAGED = "Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen.";
-    static private final String FILE_HARDWARE = "Die Datei wurde Opfer einer defekten Festplatte";
-
-    static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.1.0";
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    static private final String CODER = "JD-Team";
     static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
+    static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
     static private final String DOWNLOAD_START = "download_load.tpl";
+    // /Simplepattern
+    static private final String DOWNLOAD_URL = "<div class=\"Free_dl\"><a href=\"°\">";
     // static private final String DOWNLOAD_WAIT = "download_wait.tpl";
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
     /**
@@ -72,85 +60,20 @@ public class Netloadin extends PluginForHost {
      * gerade wartezeit hat. Überflüssige
      */
     private static long END_OF_DOWNLOAD_LIMIT = 0;
+    static private final String FILE_DAMAGED = "Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen.";
+    static private final String FILE_HARDWARE = "Die Datei wurde Opfer einer defekten Festplatte";
+    static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
+    static private final String HOST = "netload.in";
+
     static private long LAST_FILE_STARTED = 0;
+    static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
+    static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"°\" >Alternativ klicke hier.</a>";
+    // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
+    static private final String PLUGIN_NAME = HOST;
+    // <form method="post" action="index.php?id=10">
+    static private final String POST_URL = "<form method=\"post\" action=\"°\">";
     private static final String PROPERTY_TRY_2_SIMULTAN = "TRY_2_SIMULTAN";
-
-    private String finalURL;
-
-    private String captchaURL;
-    private String fileID;
-    private String postURL;
-    private String sessionID;
-    private String userCookie;
-    private Long waitTime;
-    private String fileStatusText;
-
-    public Netloadin() {
-        setConfigElements();
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-    }
-
-    
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
-    // 
-    // public URLConnection getURLConnection() {
-    // // XXX: ???
-    // return null;
-    // }
-    public void handle(DownloadLink parameter) throws Exception {
-        DownloadLink downloadLink = (DownloadLink) parameter;
-        // Download-URL aktualisieren
-        downloadLink.setUrlDownload("http://netload.in/datei" + getID(downloadLink.getDownloadURL()) + ".htm");
-        // RequestInfo requestInfo;
-
-        // if (aborted) {
-        // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
-        // logger.warning("Plugin aborted");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
-
-        // premium
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            this.doPremium(downloadLink);
-        } else {
-            this.doFree(downloadLink);
-        }
-
-    }
 
     private static String getID(String link) {
         // http://www.netload.in/datei408a37036e4ceacf1d24857fbc9acbed.htm
@@ -162,6 +85,32 @@ public class Netloadin extends PluginForHost {
 
     }
 
+    private String captchaURL;
+    private String fileID;
+    private String fileStatusText;
+    private String finalURL;
+    private String postURL;
+    private String sessionID;
+    private String userCookie;
+
+    private Long waitTime;
+
+    
+    public Netloadin() {
+        setConfigElements();
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
     private void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -313,6 +262,7 @@ public class Netloadin extends PluginForHost {
 
     }
 
+    
     private void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         String user = (String) this.getProperties().getProperty("PREMIUM_USER");
@@ -411,37 +361,21 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.Plugin#doBotCheck(java.io.File)
-     */
     
-    public boolean doBotCheck(File file) {
-        return false;
+    public String getAGBLink() {
+        return AGB_LINK;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#reset()
-     */
     
-    public void reset() {
-        requestInfo = null;
-        this.sessionID = null;
-        this.captchaURL = null;
-        this.fileID = null;
-        this.postURL = null;
-        this.finalURL = null;
+    
+        
+   
+
+    @Override
+    public String getCoder() {
+        return CODER;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#checkAvailability(jd.plugins.DownloadLink)
-     */
-    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         //
@@ -487,6 +421,16 @@ public class Netloadin extends PluginForHost {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see jd.plugins.Plugin#doBotCheck(java.io.File)
+     */
     
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
@@ -504,6 +448,78 @@ public class Netloadin extends PluginForHost {
         }
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see jd.plugins.PluginForHost#reset()
+     */
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see jd.plugins.PluginForHost#checkAvailability(jd.plugins.DownloadLink)
+     */
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    // 
+    // public URLConnection getURLConnection() {
+    // // XXX: ???
+    // return null;
+    // }
+    @Override
+    public void handle(DownloadLink parameter) throws Exception {
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        // Download-URL aktualisieren
+        downloadLink.setUrlDownload("http://netload.in/datei" + getID(downloadLink.getDownloadURL()) + ".htm");
+        // RequestInfo requestInfo;
+
+        // if (aborted) {
+        // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
+        // logger.warning("Plugin aborted");
+        // linkStatus.addStatus(LinkStatus.TODO);
+        // //step.setStatus(PluginStep.STATUS_TODO);
+        // return;
+        // }
+
+        // premium
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            this.doPremium(downloadLink);
+        } else {
+            this.doFree(downloadLink);
+        }
+
+    }
+
+    public void reset() {
+        requestInfo = null;
+        this.sessionID = null;
+        this.captchaURL = null;
+        this.fileID = null;
+        this.postURL = null;
+        this.finalURL = null;
+    }
+
+    
+    public void resetPluginGlobals() {
+        END_OF_DOWNLOAD_LIMIT = 0l;
+    }
+
+    
     private void setConfigElements() {
 
         ConfigEntry cfg;
@@ -518,15 +534,5 @@ public class Netloadin extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_TRY_2_SIMULTAN, JDLocale.L("plugins.host.netload.try2SimultanDownloads", "Versuchen 2 Dateien gleichzeitig zu laden")));
         cfg.setDefaultValue(false);
 
-    }
-
-    
-    public void resetPluginGlobals() {
-        END_OF_DOWNLOAD_LIMIT = 0l;
-    }
-
-    
-    public String getAGBLink() {
-        return AGB_LINK;
     }
 }

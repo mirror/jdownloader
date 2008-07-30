@@ -30,6 +30,34 @@ import jd.unrar.Merge;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
+class mergeFile extends File {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
+    public mergeFile(String pathname) {
+        super(pathname);
+        // TODO Auto-generated constructor stub
+    }
+
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof File) {
+            File file = (File) obj;
+            if (!file.getParentFile().equals(getParentFile())) return false;
+            String oName = file.getName(), name = getName();
+            String matcher = (name.matches(".*\\.\\a.$") ? (name.replaceFirst("\\.a.$", "")) : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")));
+            String oMatcher = (oName.matches(".*\\.\\a.$") ? (oName.replaceFirst("\\.a.$", "")) : (oName.replaceFirst("\\.[\\d]+($|\\..*)", "")));
+            return matcher.equalsIgnoreCase(oMatcher);
+
+        }
+        return false;
+    }
+
+}
+
 /**
  * Diese Klasse fürs automatische Entpacken
  * 
@@ -40,14 +68,19 @@ public class Unrar extends Interaction implements Serializable {
      * soll nicht mitserialisiert werden fals sich die instanz aufhängt
      */
     private transient static Unrar INSTANCE = null;
-    private transient DownloadLink lastFinishedDownload = null;
     private transient static boolean IS_RUNNING = false;
+    /**
+     * serialVersionUID
+     */
 
-    // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
-    // eine factory aufgerufen.
-    private Unrar() {
-        super();
-    }
+    private transient static final String NAME = JDLocale.L("interaction.unrar.name");
+
+    public transient static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD", PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE", PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES", PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED", PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION", PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER", PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER", PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE", PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE", PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 2467582501274722811L;
 
     public static Unrar getInstance() {
         if (INSTANCE == null) {
@@ -61,20 +94,16 @@ public class Unrar extends Interaction implements Serializable {
 
     }
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 2467582501274722811L;
+    private transient DownloadLink lastFinishedDownload = null;
 
-    /**
-     * serialVersionUID
-     */
-
-    private transient static final String NAME = JDLocale.L("interaction.unrar.name");
-
-    public transient static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD", PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE", PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES", PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED", PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION", PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER", PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER", PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE", PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE", PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
+    // DIese Interaction sollte nur einmal exisitieren und wird deshalb über
+    // eine factory aufgerufen.
+    private Unrar() {
+        super();
+    }
 
     
+    @Override
     public boolean doInteraction(Object arg) {
         lastFinishedDownload = (DownloadLink) arg;
         start();
@@ -82,20 +111,12 @@ public class Unrar extends Interaction implements Serializable {
 
     }
 
-    public boolean getWaitForTermination() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
-    }
-
-    
-    public String toString() {
-        return JDLocale.L("interaction.unrar.name");
-    }
-
-    
+    @Override
     public String getInteractionName() {
         return NAME;
     }
 
+    
     private JUnrar getUnrar() {
         JUnrar unrar;
 
@@ -134,6 +155,23 @@ public class Unrar extends Interaction implements Serializable {
     }
 
     
+    @Override
+    public boolean getWaitForTermination() {
+        return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
+    }
+
+    @Override
+    public void initConfig() {
+
+    }
+
+    
+    @Override
+    public void resetInteraction() {
+    }
+
+    
+    @Override
     public void run() {
         int c = 0;
         if (IS_RUNNING) logger.warning("Process is in queue, there is already an unrar process running");
@@ -155,7 +193,7 @@ public class Unrar extends Interaction implements Serializable {
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
                 Iterator<DownloadLink> iter = JDUtilities.getController().getFinishedLinks().iterator();
                 while (iter.hasNext()) {
-                    DownloadLink element = (DownloadLink) iter.next();
+                    DownloadLink element = iter.next();
                     logger.info("finished File: " + element.getFileOutput());
                     File folder = new File(element.getFileOutput()).getParentFile();
                     logger.info("Folder: " + folder);
@@ -185,7 +223,7 @@ public class Unrar extends Interaction implements Serializable {
         Iterator<File> iter = unpacked.iterator();
         LinkedList<mergeFile> mergeFiles = new LinkedList<mergeFile>();
         while (iter.hasNext()) {
-            File file = (File) iter.next();
+            File file = iter.next();
             mergeFile mergeFile = new mergeFile(file.getAbsolutePath());
             if (!mergeFiles.contains(mergeFile)) mergeFiles.add(mergeFile);
             if (JDUtilities.getController().isContainerFile(file)) {
@@ -197,7 +235,7 @@ public class Unrar extends Interaction implements Serializable {
             Merge.mergeIt(new File(lastFinishedDownload.getFileOutput()), unrar.followingFiles, DELETE_MERGEDFILES, unrar.extractFolder);
             Iterator<mergeFile> miter = mergeFiles.iterator();
             while (miter.hasNext()) {
-                mergeFile mergeFile = (mergeFile) miter.next();
+                mergeFile mergeFile = miter.next();
                 Merge.mergeIt(mergeFile, unrar.followingFiles, DELETE_MERGEDFILES, unrar.extractFolder);
             }
         }
@@ -207,38 +245,8 @@ public class Unrar extends Interaction implements Serializable {
     }
 
     
-    public void initConfig() {
-
+    @Override
+    public String toString() {
+        return JDLocale.L("interaction.unrar.name");
     }
-
-    
-    public void resetInteraction() {
-    }
-}
-
-class mergeFile extends File {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
-
-    public mergeFile(String pathname) {
-        super(pathname);
-        // TODO Auto-generated constructor stub
-    }
-
-    
-    public boolean equals(Object obj) {
-        if (obj instanceof File) {
-            File file = (File) obj;
-            if (!file.getParentFile().equals(getParentFile())) return false;
-            String oName = file.getName(), name = getName();
-            String matcher = (name.matches(".*\\.\\a.$") ? (name.replaceFirst("\\.a.$", "")) : (name.replaceFirst("\\.[\\d]+($|\\..*)", "")));
-            String oMatcher = (oName.matches(".*\\.\\a.$") ? (oName.replaceFirst("\\.a.$", "")) : (oName.replaceFirst("\\.[\\d]+($|\\..*)", "")));
-            return matcher.equalsIgnoreCase(oMatcher);
-
-        }
-        return false;
-    }
-
 }

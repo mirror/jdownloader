@@ -44,12 +44,12 @@ import jd.utils.JDUtilities;
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
 public class PackageInfo extends JFrame {
+    @SuppressWarnings("unused")
+    private static Logger     logger           = JDUtilities.getLogger();
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
-    @SuppressWarnings("unused")
-    private static Logger     logger           = JDUtilities.getLogger();
     private jd.plugins.FilePackage      fp;
     private int               i                = 0;
     private JPanel            panel;
@@ -73,6 +73,7 @@ public class PackageInfo extends JFrame {
        
         
         new Thread() {
+            @Override
             public void run() {
                 do  {
                     
@@ -94,38 +95,19 @@ public class PackageInfo extends JFrame {
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - this.getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - this.getHeight() / 2));
         setVisible(true);
     }
-    private void initDialog() {
-        panel = new JPanel(new GridBagLayout());
-        int n = 10;
-        panel.setBorder(new EmptyBorder(n,n,n,n));
-        panel.setBackground(Color.WHITE);
-        panel.setForeground(Color.WHITE);
-        if (sp != null) this.remove(sp);
-        this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
-         addEntry("name",fp.getName());
-       addEntry(null,(String)null);
-       addEntry("comment",fp.getComment());
-       addEntry("dldirectory",fp.getDownloadDirectory());
-       addEntry("packagesize",JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize())+" "+fp.getTotalEstimatedPackageSize()+" KB");
-       addEntry("loaded",JDUtilities.formatKbReadable(fp.getTotalKBLoaded())+" "+fp.getTotalKBLoaded()+" KB");
-       addEntry("links","");
-       if (!fp.getPassword().equals("")) addEntry("Password",fp.getPassword());
-       DownloadLink next=null;
-       int i=1;
-       for(Iterator<DownloadLink> it = fp.getDownloadLinks().iterator();it.hasNext();i++){
-           next=it.next();
-           //addEntry2(i+". "+next.getName(),"("+JDUtilities.getPercent(next.getDownloadCurrent(),next.getDownloadMax())+") "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
-           JProgressBar p;
-         
-           addEntry(i+". "+next.getName(), p = new JProgressBar(0, 100));
-           p.setValue((int)(next.getDownloadCurrent() * 100 / Math.max(1,next.getDownloadMax())));
-           p.setStringPainted(true);
-           p.setString(JDUtilities.formatKbReadable((int)next.getDownloadSpeed()/1024)+"/s "+ JDUtilities.getPercent((int)next.getDownloadCurrent(), (int)next.getDownloadMax())+" | "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
-      
-       }
-       
-       //addEntry(null,null);
-      // addEntry("properties",fp.getProperties()+"");
+    private void addEntry(String string, JComponent value) {
+
+        JLabel key;
+        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+//        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+//        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        key.setBorder(new EmptyBorder(0,0,0,5));
+        value.setBorder(new EmptyBorder(0,5,0,0));
+
+        i++;
+
     }
 //    
 //    private void addEntry2(String label, String data) {
@@ -157,19 +139,38 @@ public class PackageInfo extends JFrame {
 
         i++;
     }
-    private void addEntry(String string, JComponent value) {
-
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-//        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-//        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        key.setBorder(new EmptyBorder(0,0,0,5));
-        value.setBorder(new EmptyBorder(0,5,0,0));
-
-        i++;
-
+    private void initDialog() {
+        panel = new JPanel(new GridBagLayout());
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n,n,n,n));
+        panel.setBackground(Color.WHITE);
+        panel.setForeground(Color.WHITE);
+        if (sp != null) this.remove(sp);
+        this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
+         addEntry("name",fp.getName());
+       addEntry(null,(String)null);
+       addEntry("comment",fp.getComment());
+       addEntry("dldirectory",fp.getDownloadDirectory());
+       addEntry("packagesize",JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize())+" "+fp.getTotalEstimatedPackageSize()+" KB");
+       addEntry("loaded",JDUtilities.formatKbReadable(fp.getTotalKBLoaded())+" "+fp.getTotalKBLoaded()+" KB");
+       addEntry("links","");
+       if (!fp.getPassword().equals("")) addEntry("Password",fp.getPassword());
+       DownloadLink next=null;
+       int i=1;
+       for(Iterator<DownloadLink> it = fp.getDownloadLinks().iterator();it.hasNext();i++){
+           next=it.next();
+           //addEntry2(i+". "+next.getName(),"("+JDUtilities.getPercent(next.getDownloadCurrent(),next.getDownloadMax())+") "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
+           JProgressBar p;
+         
+           addEntry(i+". "+next.getName(), p = new JProgressBar(0, 100));
+           p.setValue((int)(next.getDownloadCurrent() * 100 / Math.max(1,next.getDownloadMax())));
+           p.setStringPainted(true);
+           p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed()/1024)+"/s "+ JDUtilities.getPercent((int)next.getDownloadCurrent(), (int)next.getDownloadMax())+" | "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
+      
+       }
+       
+       //addEntry(null,null);
+      // addEntry("properties",fp.getProperties()+"");
     }
 }
 

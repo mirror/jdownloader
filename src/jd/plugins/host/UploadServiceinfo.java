@@ -22,45 +22,13 @@ public class UploadServiceinfo extends PluginForHost {
 
     private static final String HOST = "uploadservice.info";
    
-    private String url;
-    private String postdata;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
+    private String postdata;
     private RequestInfo requestInfo;
+    private String url;
 
     //
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-
- 
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
     public UploadServiceinfo() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
@@ -68,6 +36,83 @@ public class UploadServiceinfo extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+        return "http://www.uploadservice.info/rules.html";
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
+            if (!requestInfo.containsHTML("<strong>Die ausgew&auml;hlte Datei existiert nicht!</strong>")) {
+                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                String filesize = null;
+                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getFirstMatch()) != null) {
+                    downloadLink.setDownloadMax(new Integer(filesize) * 1024 * 1024);
+                }
+                return true;
+            }
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        downloadLink.setAvailable(false);
+        return false;
+    }
+
+
+ 
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -110,45 +155,12 @@ public class UploadServiceinfo extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("<strong>Die ausgew&auml;hlte Datei existiert nicht!</strong>")) {
-                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
-                String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax(new Integer(filesize) * 1024 * 1024);
-                }
-                return true;
-            }
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://www.uploadservice.info/rules.html";
     }
 }

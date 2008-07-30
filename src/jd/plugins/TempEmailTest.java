@@ -38,7 +38,8 @@ public class TempEmailTest {
 				System.out.println(email.getMail(i));
 			}
 			System.out.println(email.getFilteredMail(new MailFilter(){
-				public boolean fromAdress(String[] mailInfo) {
+				@Override
+                public boolean fromAdress(String[] mailInfo) {
 					if(mailInfo[0].matches("dwd.*")) return true;
 					return false;
 				}}));

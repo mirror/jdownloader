@@ -70,23 +70,23 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     // private Configuration configuration;
 
-    private HTTPLiveHeader lh;
-
-    private GUIConfigEntry routerScript;
-
-    private GUIConfigEntry ip;
-
-    private GUIConfigEntry user;
-
-    private GUIConfigEntry pass;
-
     private JButton btnAutoConfig;
-
-    private JButton btnSelectRouter;
 
     private JButton btnFindIP;
 
+    private JButton btnSelectRouter;
+
+    private GUIConfigEntry ip;
+
+    private HTTPLiveHeader lh;
+
     private MiniLogDialog mld;
+
+    private GUIConfigEntry pass;
+
+    private GUIConfigEntry routerScript;
+
+    private GUIConfigEntry user;
 
     public SubPanelLiveHeaderReconnect(UIInterface uiinterface, Interaction interaction) {
         super(uiinterface);
@@ -95,60 +95,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         this.lh = (HTTPLiveHeader) interaction;
         load();
 
-    }
-
-    public void save() {
-        this.saveConfigEntries();
-
-    }
-
-    
-    public void initPanel() {
-        GUIConfigEntry ce;
-
-        // ConfigEntry cfg;
-        btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen"));
-        btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
-        btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
-
-        btnSelectRouter.addActionListener(this);
-        btnAutoConfig.addActionListener(this);
-        btnFindIP.addActionListener(this);
-        JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
-        addGUIConfigEntry(user);
-        pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
-        addGUIConfigEntry(pass);
-        String routerip = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
-
-        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")).setDefaultValue(routerip));
-        addGUIConfigEntry(ip);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
-        addGUIConfigEntry(ce);
-
-        routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
-        addGUIConfigEntry(routerScript);
-
-        add(panel);
-
-    }
-
-    
-    public void load() {
-        this.loadConfigEntries();
-    }
-
-    
-    public String getName() {
-        return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -161,6 +107,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             mld.getProgress().setValue(2);
             // mld.setEnabled(true);
             new Thread() {
+                @Override
                 public void run() {
                     ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
                     mld.getProgress().setValue(60);
@@ -232,10 +179,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                     refreshList();
                 }
 
-                public void removeUpdate(DocumentEvent e) {
-                    refreshList();
-                }
-
                 private void refreshList() {
                     String search = searchField.getText().toLowerCase();
                     String[] hits = search.split(" ");
@@ -252,10 +195,15 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                     }
                     list.setModel(defaultListModel);
                 }
+
+                public void removeUpdate(DocumentEvent e) {
+                    refreshList();
+                }
             });
             searchField.addFocusListener(new FocusAdapter() {
                 boolean onInit = true;
 
+                @Override
                 public void focusGained(FocusEvent e) {
                     if (onInit) {
                         onInit = !onInit;
@@ -343,6 +291,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                 final ProgressDialog progress = new ProgressDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, false);
 
                 th = new Thread() {
+                    @Override
                     public void run() {
 
                         GetRouterInfo routerInfo = new GetRouterInfo(progress);
@@ -384,6 +333,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     }
 
+    
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
             LogRecord l = (LogRecord) event.getParameter();
@@ -394,6 +344,63 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                 mld.getProgress().setValue(mld.getProgress().getValue() + 1);
             }
         }
+
+    }
+
+    
+    @Override
+    public String getName() {
+        return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
+    }
+
+    
+    @Override
+    public void initPanel() {
+        GUIConfigEntry ce;
+
+        // ConfigEntry cfg;
+        btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen"));
+        btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
+        btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
+
+        btnSelectRouter.addActionListener(this);
+        btnAutoConfig.addActionListener(this);
+        btnFindIP.addActionListener(this);
+        JDUtilities.addToGridBag(panel, btnSelectRouter, 0, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, btnFindIP, 1, 0, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        JDUtilities.addToGridBag(panel, btnAutoConfig, 2, 0, GridBagConstraints.REMAINDER, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        user = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_USER, JDLocale.L("gui.config.liveHeader.user", "Login User (->%%%user%%%)")));
+        addGUIConfigEntry(user);
+        pass = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_PASS, JDLocale.L("gui.config.liveHeader.password", "Login Passwort (->%%%pass%%%)")));
+        addGUIConfigEntry(pass);
+        String routerip = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+
+        ip = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IP, JDLocale.L("gui.config.liveHeader.routerIP", "RouterIP (->%%%routerip%%%)")).setDefaultValue(routerip));
+        addGUIConfigEntry(ip);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
+        addGUIConfigEntry(ce);
+        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
+        addGUIConfigEntry(ce);
+
+        routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
+        addGUIConfigEntry(routerScript);
+
+        add(panel);
+
+    }
+
+    @Override
+    public void load() {
+        this.loadConfigEntries();
+    }
+
+    @Override
+    public void save() {
+        this.saveConfigEntries();
 
     }
 

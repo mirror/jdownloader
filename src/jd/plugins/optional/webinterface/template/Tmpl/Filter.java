@@ -90,15 +90,15 @@ package jd.plugins.optional.webinterface.template.Tmpl;
 public interface Filter
 {
 	/**
-	 * Tells HTML.Template to call the parse(String) method of this filter.
-	 */
-	public final static int SCALAR=1;
-
-	/**
 	 * Tells HTML.Template to call the parse(String []) method of this 
 	 * filter.
 	 */
 	public final static int ARRAY=2;
+
+	/**
+	 * Tells HTML.Template to call the parse(String) method of this filter.
+	 */
+	public final static int SCALAR=1;
 
 	/**
 	 * Tells HTML.Template what kind of filter this is.

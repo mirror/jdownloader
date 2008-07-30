@@ -27,8 +27,8 @@ import jd.plugins.PluginForDecrypt;
 public class Safelink extends PluginForDecrypt {
     static private final String host = "safelink.in";
 
-    private String version = "2.0.0.0";    
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);    
+    // private String version = "2.0.0.0";
 
     public Safelink() {
         super();       
@@ -36,42 +36,49 @@ public class Safelink extends PluginForDecrypt {
 
     
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {        
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();        
         parameter = parameter.replaceFirst("http://.*?/r", "http://serienjunkies.org/safe/r");
         decryptedLinks.add(this.createDownloadlink(parameter));        
         return decryptedLinks;
+    }
+
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

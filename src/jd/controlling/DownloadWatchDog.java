@@ -42,25 +42,25 @@ import jd.utils.Reconnecter;
  */
 public class DownloadWatchDog extends Thread implements ControlListener {
 
-    /**
-     * Der Logger
-     */
-    private Logger logger = JDUtilities.getLogger();
+    private boolean aborted = false;
+
+    private boolean aborting;
 
     /**
      * Downloadlinks die gerade aktiv sind
      */
     private Vector<SingleDownloadController> activeDownloadControllers = new Vector<SingleDownloadController>();
 
-    private boolean aborted = false;
-
     private JDController controller;
+
+    /**
+     * Der Logger
+     */
+    private Logger logger = JDUtilities.getLogger();
 
     private boolean pause = false;
 
     private int totalSpeed = 0;
-
-    private boolean aborting;
 
     public DownloadWatchDog(JDController controller) {
 
@@ -68,6 +68,332 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         controller.addControlListener(this);
     }
 
+    /**
+     * Bricht den Watchdog ab. Alle laufenden downloads werden beendet und die
+     * downloadliste zurückgesetzt. Diese Funktion blockiert bis alle Downloads
+     * erfolgreich abgeborhcen wurden.
+     */
+    void abort() {
+        logger.finer("Breche alle actove links ab");
+        this.aborting = true;
+        this.aborted = true;
+
+        ProgressController progress = new ProgressController("Termination", activeDownloadControllers.size());
+        progress.setStatusText("Stopping all downloads " + activeDownloadControllers);
+        progress.setRange(100);
+        ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
+
+        synchronized (activeDownloadControllers) {
+            for (Iterator<SingleDownloadController> it = activeDownloadControllers.iterator(); it.hasNext();) {
+                al.add(it.next().abortDownload().getDownloadLink());
+            }
+
+            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+            boolean check = true;
+            // Warteschleife bis alle activelinks abgebrochen wurden
+            logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
+
+            while (true) {
+                progress.increase(1);
+                check = true;
+                for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                    if (activeDownloadControllers.get(i).getDownloadLink().getLinkStatus().isPluginActive()) {
+                        check = false;
+                        break;
+                    }
+                }
+                if (check) break;
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+        logger.info("Active links abgebrochen");
+
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
+
+        progress.finalize();
+        logger.finer("Abbruch komplett");
+
+        this.clearDownloadListStatus();
+        this.aborting = false;
+    }
+
+    /**
+     * bricht den dpwnloadlink ab.
+     * 
+     * @param link
+     */
+    public void abortDownloadLink(DownloadLink link) {
+        SingleDownloadController dlThread = getDownloadThread(link);
+        if (dlThread != null) {
+            dlThread.abortDownload();
+            removeDownloadLinkFromActiveList(link);
+        }
+        ;
+
+    }
+
+    /**
+     * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
+     */
+    private void clearDownloadListStatus() {
+
+        activeDownloadControllers.removeAllElements();
+        // logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS
+        // ZURÜCKGESETZT!");
+        Vector<FilePackage> fps;
+        Vector<DownloadLink> links;
+        fps = controller.getPackages();
+        for (Iterator<FilePackage> fpsIt = fps.iterator(); fpsIt.hasNext();) {
+            links = fpsIt.next().getDownloadLinks();
+            for (int i = 0; i < links.size(); i++) {
+                if (!links.elementAt(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+
+                    links.elementAt(i).getLinkStatus().setStatusText(null);
+                    links.elementAt(i).setAborted(false);
+                    links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                    links.elementAt(i).getLinkStatus().resetWaitTime();
+                }
+
+            }
+        }
+        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
+
+    }
+
+    public void controlEvent(ControlEvent event) {
+
+        switch (event.getID()) {
+
+        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+            if (!(event.getSource() instanceof PluginForHost)) return;
+            removeDownloadLinkFromActiveList(((SingleDownloadController) event.getParameter()).getDownloadLink());
+            // Wenn ein Download beendet wurde wird überprüft ob gerade ein
+            // Download in der Warteschleife steckt. Wenn ja wird ein
+            // Reconnectversuch gemacht. Die handleInteraction - funktion
+            // blockiert den Aufruf wenn es noch weitere Downloads gibt die
+            // gerade laufen
+
+            // one: for (Iterator<FilePackage> it =
+            // controller.getPackages().iterator(); it.hasNext();) {
+            // for (Iterator<DownloadLink> it2 =
+            // it.next().getDownloadLinks().iterator(); it2.hasNext();) {
+            //
+            // if (it2.next().isWaitingForReconnect()) {
+            //
+            // controller.requestReconnect();
+            //
+            // break one;
+            //
+            // }
+            //
+            // }
+            // }
+
+            break;
+
+        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
+
+            break;
+        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
+            break;
+
+        }
+
+    }
+
+    /**
+     * Delegiert den Aufruf des multicasters an den controller weiter
+     * 
+     * @param controlEvent
+     */
+    private void deligateFireControlEvent(ControlEvent controlEvent) {
+        controller.fireControlEvent(controlEvent);
+
+    }
+
+    // /**
+    // * Entfernt
+    // */
+    // private void cleanActiveVector() {
+    // int statusD;
+    // logger.info("Clean Activevector");
+    // for (int i = this.activeLinks.size() - 1; i >= 0; i--) {
+    // statusD = this.activeLinks.get(i).getDownloadLink().getStatus();
+    //
+    // if (statusD == LinkStatus.FINISHED ||
+    // (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep()
+    // != null &&
+    // this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().getStatus()
+    // == PluginStep.STATUS_ERROR)) {
+    // activeLinks.remove(i);
+    // }
+    //
+    // }
+    //
+    // logger.info("Clean ünrig_ " + activeLinks.size());
+    //
+    // }
+
+    public Vector<SingleDownloadController> getActiveDownloadControllers() {
+        return activeDownloadControllers;
+    }
+
+    /**
+     * Zählt die Downloads die bereits über das Hostplugin laufen
+     * 
+     * @param plugin
+     * @return Anzahl der downloads über das plugin
+     */
+    private int getDownloadNumByHost(PluginForHost plugin) {
+        int num = 0;
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                if (this.activeDownloadControllers.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
+                    num++;
+                }
+
+            }
+        }
+        return num;
+    }
+
+    /**
+     * Gibt den Downloadthread zu einem link zurück
+     * 
+     * @param link
+     * @return
+     */
+    private SingleDownloadController getDownloadThread(DownloadLink link) {
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < activeDownloadControllers.size(); i++) {
+                if (activeDownloadControllers.get(i).getDownloadLink() == link) { return activeDownloadControllers.get(i); }
+
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Liefert den nächsten DownloadLink
+     * 
+     * @return Der nächste DownloadLink oder null
+     */
+    public DownloadLink getNextDownloadLink() {
+
+        DownloadLink nextDownloadLink = null;
+        try {
+            for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
+                for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
+                    nextDownloadLink = it2.next();
+                    if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        nextDownloadLink.reset();
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                    }
+
+                    if (!this.isDownloadLinkActive(nextDownloadLink)) {
+                        // if (!nextDownloadLink.isAborted()) {
+                        if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
+                            if (nextDownloadLink.isEnabled()) {
+                                if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
+                                        int rw = ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime();
+                                        if (nextDownloadLink.getPlugin() != null && ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime() <= 0) {
+                                            if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
+
+                                            return nextDownloadLink; }
+                                        }
+                                    }
+                                }
+                            }
+                            // }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fängt concurrentmodification Exceptions ab
+        }
+        return null;
+    }
+
+    /**
+     * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
+     * sich wirklich in der downloadpahse befinden
+     * 
+     * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
+     *         werden. ohne iteration
+     */
+    public int getRunningDownloadNum() {
+        int ret = 0;
+        DownloadLink nextDownloadLink;
+        for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
+            for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
+
+                nextDownloadLink = it2.next();
+                if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) ret++;
+
+            }
+        }
+
+        return ret;
+    }
+
+    /**
+     * Gibt die Configeinstellung zurück, wieviele simultane Downloads der user
+     * erlaubt hat
+     * 
+     * @return
+     */
+    public int getSimultanDownloadNum() {
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+    }
+
+    /**
+     * @return the totalSpeed
+     */
+    public int getTotalSpeed() {
+        return totalSpeed;
+    }
+
+    public boolean isAborted() {
+        return !isAlive();
+    }
+
+    boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
+        synchronized (activeDownloadControllers) {
+            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
+                if (this.activeDownloadControllers.get(i).getDownloadLink() == nextDownloadLink) { return true; }
+
+            }
+        }
+        return false;
+    }
+
+    public void pause(boolean value) {
+        this.pause = value;
+        logger.info("KKK " + value);
+
+    }
+
+    private boolean removeDownloadLinkFromActiveList(DownloadLink parameter) {
+        synchronized (activeDownloadControllers) {
+            for (int i = activeDownloadControllers.size() - 1; i >= 0; i--) {
+
+                if (activeDownloadControllers.get(i).getDownloadLink() == parameter) {
+                    activeDownloadControllers.remove(i);
+                    return true;
+                }
+
+            }
+        }
+        return false;
+
+    }
+
+    @Override
     public void run() {
         // int started;
         Vector<DownloadLink> links;
@@ -152,7 +478,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         DownloadLink element;
                         while (iter.hasNext()) {
-                            element = (DownloadLink) iter.next();
+                            element = iter.next();
                             element.setLimited(isLimited);
                             if (element.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
 
@@ -206,16 +532,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     }
 
     /**
-     * Delegiert den Aufruf des multicasters an den controller weiter
-     * 
-     * @param controlEvent
-     */
-    private void deligateFireControlEvent(ControlEvent controlEvent) {
-        controller.fireControlEvent(controlEvent);
-
-    }
-
-    /**
      * Aktiviert solange neue Downloads, bis die Maxmalanzahl erreicht ist oder
      * die Liste zueende ist
      * 
@@ -238,56 +554,12 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     }
 
     /**
-     * Gibt die Configeinstellung zurück, wieviele simultane Downloads der user
-     * erlaubt hat
-     * 
-     * @return
+     * @param totalSpeed
+     *            the totalSpeed to set
      */
-    public int getSimultanDownloadNum() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+    public void setTotalSpeed(int totalSpeed) {
+        this.totalSpeed = totalSpeed;
     }
-
-    /**
-     * Zählt die Downloads die bereits über das Hostplugin laufen
-     * 
-     * @param plugin
-     * @return Anzahl der downloads über das plugin
-     */
-    private int getDownloadNumByHost(PluginForHost plugin) {
-        int num = 0;
-        synchronized (activeDownloadControllers) {
-            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
-                if (this.activeDownloadControllers.get(i).getDownloadLink().getPlugin().getPluginID().equals(plugin.getPluginID())) {
-                    num++;
-                }
-
-            }
-        }
-        return num;
-    }
-
-    // /**
-    // * Entfernt
-    // */
-    // private void cleanActiveVector() {
-    // int statusD;
-    // logger.info("Clean Activevector");
-    // for (int i = this.activeLinks.size() - 1; i >= 0; i--) {
-    // statusD = this.activeLinks.get(i).getDownloadLink().getStatus();
-    //
-    // if (statusD == LinkStatus.FINISHED ||
-    // (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep()
-    // != null &&
-    // this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().getStatus()
-    // == PluginStep.STATUS_ERROR)) {
-    // activeLinks.remove(i);
-    // }
-    //
-    // }
-    //
-    // logger.info("Clean ünrig_ " + activeLinks.size());
-    //
-    // }
 
     private void startDownloadThread(DownloadLink dlink) {
         synchronized (activeDownloadControllers) {
@@ -299,277 +571,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             download.start();
             activeDownloadControllers.add(download);
         }
-    }
-
-    /**
-     * Bricht den Watchdog ab. Alle laufenden downloads werden beendet und die
-     * downloadliste zurückgesetzt. Diese Funktion blockiert bis alle Downloads
-     * erfolgreich abgeborhcen wurden.
-     */
-    void abort() {
-        logger.finer("Breche alle actove links ab");
-        this.aborting = true;
-        this.aborted = true;
-
-        ProgressController progress = new ProgressController("Termination", activeDownloadControllers.size());
-        progress.setStatusText("Stopping all downloads " + activeDownloadControllers);
-        progress.setRange(100);
-        ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
-
-        synchronized (activeDownloadControllers) {
-            for (Iterator<SingleDownloadController> it = activeDownloadControllers.iterator(); it.hasNext();) {
-                al.add(it.next().abortDownload().getDownloadLink());
-            }
-
-            deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
-            boolean check = true;
-            // Warteschleife bis alle activelinks abgebrochen wurden
-            logger.finer("Warten bis alle activeLinks abgebrochen wurden.");
-
-            while (true) {
-                progress.increase(1);
-                check = true;
-                for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
-                    if (activeDownloadControllers.get(i).getDownloadLink().getLinkStatus().isPluginActive()) {
-                        check = false;
-                        break;
-                    }
-                }
-                if (check) break;
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-        logger.info("Active links abgebrochen");
-
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, al));
-
-        progress.finalize();
-        logger.finer("Abbruch komplett");
-
-        this.clearDownloadListStatus();
-        this.aborting = false;
-    }
-
-    /**
-     * Setzt den Status der Downloadliste zurück. zB. bei einem Abbruch
-     */
-    private void clearDownloadListStatus() {
-
-        activeDownloadControllers.removeAllElements();
-        // logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS
-        // ZURÜCKGESETZT!");
-        Vector<FilePackage> fps;
-        Vector<DownloadLink> links;
-        fps = controller.getPackages();
-        for (Iterator<FilePackage> fpsIt = fps.iterator(); fpsIt.hasNext();) {
-            links = fpsIt.next().getDownloadLinks();
-            for (int i = 0; i < links.size(); i++) {
-                if (!links.elementAt(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-
-                    links.elementAt(i).getLinkStatus().setStatusText(null);
-                    links.elementAt(i).setAborted(false);
-                    links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                    links.elementAt(i).getLinkStatus().resetWaitTime();
-                }
-
-            }
-        }
-        deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
-
-    }
-
-    public void controlEvent(ControlEvent event) {
-
-        switch (event.getID()) {
-
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) return;
-            removeDownloadLinkFromActiveList(((SingleDownloadController) event.getParameter()).getDownloadLink());
-            // Wenn ein Download beendet wurde wird überprüft ob gerade ein
-            // Download in der Warteschleife steckt. Wenn ja wird ein
-            // Reconnectversuch gemacht. Die handleInteraction - funktion
-            // blockiert den Aufruf wenn es noch weitere Downloads gibt die
-            // gerade laufen
-
-            // one: for (Iterator<FilePackage> it =
-            // controller.getPackages().iterator(); it.hasNext();) {
-            // for (Iterator<DownloadLink> it2 =
-            // it.next().getDownloadLinks().iterator(); it2.hasNext();) {
-            //
-            // if (it2.next().isWaitingForReconnect()) {
-            //
-            // controller.requestReconnect();
-            //
-            // break one;
-            //
-            // }
-            //
-            // }
-            // }
-
-            break;
-
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-
-            break;
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            break;
-
-        }
-
-    }
-
-    private boolean removeDownloadLinkFromActiveList(DownloadLink parameter) {
-        synchronized (activeDownloadControllers) {
-            for (int i = activeDownloadControllers.size() - 1; i >= 0; i--) {
-
-                if (activeDownloadControllers.get(i).getDownloadLink() == parameter) {
-                    activeDownloadControllers.remove(i);
-                    return true;
-                }
-
-            }
-        }
-        return false;
-
-    }
-
-    /**
-     * Liefert den nächsten DownloadLink
-     * 
-     * @return Der nächste DownloadLink oder null
-     */
-    public DownloadLink getNextDownloadLink() {
-
-        DownloadLink nextDownloadLink = null;
-        try {
-            for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
-                for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
-                    nextDownloadLink = it2.next();
-                    if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        nextDownloadLink.reset();
-                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                    }
-
-                    if (!this.isDownloadLinkActive(nextDownloadLink)) {
-                        // if (!nextDownloadLink.isAborted()) {
-                        if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                            if (nextDownloadLink.isEnabled()) {
-                                if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
-                                        int rw = ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime();
-                                        if (nextDownloadLink.getPlugin() != null && ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime() <= 0) {
-                                            if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
-
-                                            return nextDownloadLink; }
-                                        }
-                                    }
-                                }
-                            }
-                            // }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fängt concurrentmodification Exceptions ab
-        }
-        return null;
-    }
-
-    boolean isDownloadLinkActive(DownloadLink nextDownloadLink) {
-        synchronized (activeDownloadControllers) {
-            for (int i = 0; i < this.activeDownloadControllers.size(); i++) {
-                if (this.activeDownloadControllers.get(i).getDownloadLink() == nextDownloadLink) { return true; }
-
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Gibt den Downloadthread zu einem link zurück
-     * 
-     * @param link
-     * @return
-     */
-    private SingleDownloadController getDownloadThread(DownloadLink link) {
-        synchronized (activeDownloadControllers) {
-            for (int i = 0; i < activeDownloadControllers.size(); i++) {
-                if (activeDownloadControllers.get(i).getDownloadLink() == link) { return activeDownloadControllers.get(i); }
-
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
-     * sich wirklich in der downloadpahse befinden
-     * 
-     * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
-     *         werden. ohne iteration
-     */
-    public int getRunningDownloadNum() {
-        int ret = 0;
-        DownloadLink nextDownloadLink;
-        for (Iterator<FilePackage> it = controller.getPackages().iterator(); it.hasNext();) {
-            for (Iterator<DownloadLink> it2 = it.next().getDownloadLinks().iterator(); it2.hasNext();) {
-
-                nextDownloadLink = it2.next();
-                if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) ret++;
-
-            }
-        }
-
-        return ret;
-    }
-
-    /**
-     * bricht den dpwnloadlink ab.
-     * 
-     * @param link
-     */
-    public void abortDownloadLink(DownloadLink link) {
-        SingleDownloadController dlThread = getDownloadThread(link);
-        if (dlThread != null) {
-            dlThread.abortDownload();
-            removeDownloadLinkFromActiveList(link);
-        }
-        ;
-
-    }
-
-    public boolean isAborted() {
-        return !isAlive();
-    }
-
-    public void pause(boolean value) {
-        this.pause = value;
-        logger.info("KKK " + value);
-
-    }
-
-    /**
-     * @param totalSpeed
-     *            the totalSpeed to set
-     */
-    public void setTotalSpeed(int totalSpeed) {
-        this.totalSpeed = totalSpeed;
-    }
-
-    /**
-     * @return the totalSpeed
-     */
-    public int getTotalSpeed() {
-        return totalSpeed;
-    }
-
-    public Vector<SingleDownloadController> getActiveDownloadControllers() {
-        return activeDownloadControllers;
     }
 
 }

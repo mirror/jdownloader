@@ -33,18 +33,18 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class ImageFap extends PluginForHost {
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", Pattern.CASE_INSENSITIVE);
-
-    static private final String HOST = "imagefap.com";
-    static private final String PLUGIN_NAME = HOST;
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.3";
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
+    static private final String HOST = "imagefap.com";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", Pattern.CASE_INSENSITIVE);
+    static private final String PLUGIN_NAME = HOST;
+
     private String gallery_name;
     private String picture_name;
-    private String uploader_name;
     private RequestInfo requestInfo;
+    private String uploader_name;
 
     public ImageFap() {
         super();
@@ -52,35 +52,6 @@ public class ImageFap extends PluginForHost {
     }
 
     
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
     private String DecryptLink(String code) { // similar to lD() @
         // imagefap.com
         try {
@@ -93,7 +64,7 @@ public class ImageFap extends PluginForHost {
                 // logger.info("decrypt6 " +
                 // (Integer.parseInt(code.substring(code.length()-1,code.length()
                 // ))));
-                int charcode = ((int) (s1.charAt(i))) - (Integer.parseInt(code.substring(code.length() - 1, code.length())));
+                int charcode = ((s1.charAt(i))) - (Integer.parseInt(code.substring(code.length() - 1, code.length())));
                 // logger.info("decrypt7 " + charcode);
                 t = t + new Character((char) charcode).toString();
                 // t+=new Character((char)
@@ -114,6 +85,100 @@ public class ImageFap extends PluginForHost {
         return null;
     }
 
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+        return "http://imagefap.com/faq.php";
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (gallery_name != null) gallery_name = gallery_name.trim();
+            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+
+            if (picture_name != null) {
+                FilePackage fp = new FilePackage();
+                fp.setName(uploader_name);
+                downloadLink.setName(gallery_name + File.separator + picture_name);
+                downloadLink.setFilePackage(fp);
+                return true;
+            }
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+        downloadLink.setAvailable(false);
+        return false;
+    }
+
+    
+    
+        
+   
+
+    private boolean getFileInformation2(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (gallery_name != null) gallery_name = gallery_name.trim();
+            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            if (picture_name != null) { return true; }
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+        downloadLink.setAvailable(false);
+        return false;
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 50;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -148,66 +213,13 @@ public class ImageFap extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
-    private boolean getFileInformation2(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
-            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (gallery_name != null) gallery_name = gallery_name.trim();
-            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (picture_name != null) { return true; }
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
-
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
-            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (gallery_name != null) gallery_name = gallery_name.trim();
-            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-
-            if (picture_name != null) {
-                FilePackage fp = new FilePackage();
-                fp.setName(uploader_name);
-                downloadLink.setName(gallery_name + File.separator + picture_name);
-                downloadLink.setFilePackage(fp);
-                return true;
-            }
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 50;
-    }
-
-    
+    @Override
     public void resetPluginGlobals() {
 
-    }
-
-    
-    public String getAGBLink() {
-        return "http://imagefap.com/faq.php";
     }
 }

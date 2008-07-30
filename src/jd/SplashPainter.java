@@ -33,16 +33,17 @@ public class SplashPainter
     private static final long serialVersionUID = 1L;
         private Image image;
        
-        public void setImage(Image image)
-        {
-                this.image = image;
-                setPreferredSize(new Dimension(image.getWidth(null),image.getHeight(null)));
-        }
-       
-        
+        @Override
         public void paintComponent(Graphics g)
         {
                 super.paintComponents(g);
                 g.drawImage(image,0,0,this);
+        }
+       
+        
+        public void setImage(Image image)
+        {
+                this.image = image;
+                setPreferredSize(new Dimension(image.getWidth(null),image.getHeight(null)));
         }
 } 

@@ -49,9 +49,9 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
      */
     private static final long serialVersionUID = 8764525546298642601L;
     
-    private DragNDrop target;
     private JLabel label;
   //  private Logger logger;
+    private DragNDrop target;
 
   //  private Point point;
     /**
@@ -86,29 +86,18 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         pack();
     }
     /**
-     * Setzt den Südlichen text im Target
-     * @param text
-     */
-    public void setText(String text){
-        label.setText(text);
-        this.pack();
-    }
-    /**
      * Deligiert den UILIstener zur Targetkomponente
      * @param listener
      */
     public void addUIListener(UIListener listener) {
         target.addUIListener(listener);
     }
-/**
- * Entfernt die Targetkomponente als Listener
- * @param listener
- */
-    public void removeUIListener(UIListener listener) {
-        target.removeUIListener(listener);
+    public void mouseClicked(MouseEvent e) {
+        JDUtilities.getLogger().info("click");
+        
     }
-public void mouseClicked(MouseEvent e) {
-    JDUtilities.getLogger().info("click");
+public void mouseDragged(MouseEvent e) {
+   //this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
     
 }
 public void mouseEntered(MouseEvent e) {
@@ -119,6 +108,10 @@ public void mouseExited(MouseEvent e) {
     JDUtilities.getLogger().info("exit");
     
 }
+public void mouseMoved(MouseEvent e) {
+    //JDUtilities.getLogger().info("move");
+    
+}
 public void mousePressed(MouseEvent e) {
   //  this.point=e.getPoint();
     
@@ -127,13 +120,20 @@ public void mouseReleased(MouseEvent e) {
     JDUtilities.getLogger().info("release");
     
 }
-public void mouseDragged(MouseEvent e) {
-   //this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
-    
-}
-public void mouseMoved(MouseEvent e) {
-    //JDUtilities.getLogger().info("move");
-    
+/**
+ * Entfernt die Targetkomponente als Listener
+ * @param listener
+ */
+    public void removeUIListener(UIListener listener) {
+        target.removeUIListener(listener);
+    }
+/**
+ * Setzt den Südlichen text im Target
+ * @param text
+ */
+public void setText(String text){
+    label.setText(text);
+    this.pack();
 }
 public void windowActivated(WindowEvent e) {
    

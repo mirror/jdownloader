@@ -55,6 +55,17 @@ public class JDCrypt {
     */
 
     /**
+     * Entschlüsselt eine Zeichenkette, welche mit der Methode encrypt
+     * verschlüsselt wurde.
+     * 
+     * @param str Description of the Parameter
+     * @return String the encrypted string.
+     * @exception SecurityException Description of the Exception
+     */
+    public static String decrypt(String str) throws SecurityException {
+        return str;
+    }
+    /**
      * Verschlüsselt eine Zeichenkette
      * 
      * @param str Description of the Parameter
@@ -75,17 +86,6 @@ public class JDCrypt {
 //            throw new SecurityException("Could not encrypt: " + e.getMessage());
 //        }
 //    
-    }
-    /**
-     * Entschlüsselt eine Zeichenkette, welche mit der Methode encrypt
-     * verschlüsselt wurde.
-     * 
-     * @param str Description of the Parameter
-     * @return String the encrypted string.
-     * @exception SecurityException Description of the Exception
-     */
-    public static String decrypt(String str) throws SecurityException {
-        return str;
     }
 
 //        if(encryptCipher == null || decryptCipher == null)

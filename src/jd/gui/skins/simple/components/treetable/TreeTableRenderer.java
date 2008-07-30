@@ -20,60 +20,85 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class TreeTableRenderer extends DefaultTableCellRenderer {
+    private class MiniBar extends JLabel {
+
+        private static final long serialVersionUID = -3508403269097752259L;
+        private double p;
+
+        
+        public double getPercent() {
+            return p;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (p != 0) {
+                int n = 3;
+                ((Graphics2D) g).setPaint(new GradientPaint(0, 0, ACTIVE_PROGRESS_COLOR, getWidth(), getHeight(), ACTIVE_PROGRESS_COLOR.darker()));
+                g.fillRect(0, getHeight() - n, (int) (getWidth() * p), n);
+            }
+            super.paintComponent(g);
+        }
+
+        public void setPercent(double percent) {
+            p = percent;
+        }
+    }
+
+    private static Color ACTIVE_PROGRESS_COLOR;
+
+    private static Color ACTIVE_PROGRESS_COLOR_FONT_A;
+
+    private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
+
+    private static Color DONE_COLOR;
+
+    private static Color DONE_COLOR_FONT_A;
+
+    private static Color DONE_COLOR_FONT_B;
+
+    private static Color ERROR_PROGRESS_COLOR;
+
+    private static Color ERROR_PROGRESS_COLOR_FONT_A;
+
+    private static Color ERROR_PROGRESS_COLOR_FONT_B;
+
+    private static Color FONT_COLOR;
+
+    private static Color INACTIVE_PROGRESS_COLOR;
+
+    private static Color INACTIVE_PROGRESS_COLOR_FONT_A;
+
+    private static Color INACTIVE_PROGRESS_COLOR_FONT_B;
+
+    private static Color PACKAGE_PROGRESS_COLOR;
+
+    private static Color PACKAGE_PROGRESS_COLOR_FONT_A;
+
+    private static Color PACKAGE_PROGRESS_COLOR_FONT_B;
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = -3912572910439565199L;
 
-    private JLabel label;
+    private DecimalFormat c = new DecimalFormat("0.00");
 
-    private JProgressBar progress;
-
-    private static Color PACKAGE_PROGRESS_COLOR;
-
-    private static Color ERROR_PROGRESS_COLOR;
-
-    private static Color DONE_COLOR;
-
-    private static Color INACTIVE_PROGRESS_COLOR;
-
-    private static Color ACTIVE_PROGRESS_COLOR;
-
-    private static Color PACKAGE_PROGRESS_COLOR_FONT_A;
-
-    private static Color ERROR_PROGRESS_COLOR_FONT_A;
-
-    private static Color DONE_COLOR_FONT_A;
-
-    private static Color INACTIVE_PROGRESS_COLOR_FONT_A;
-
-    private static Color ACTIVE_PROGRESS_COLOR_FONT_A;
-
-    private static Color PACKAGE_PROGRESS_COLOR_FONT_B;
-
-    private static Color ERROR_PROGRESS_COLOR_FONT_B;
-
-    private static Color DONE_COLOR_FONT_B;
-
-    private static Color INACTIVE_PROGRESS_COLOR_FONT_B;
-
-    private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
-
-    private static Color FONT_COLOR;
-
-    private DownloadTreeTable table;
+    private Component co;
 
     private DownloadLink dLink;
 
     private FilePackage fp;
 
-    private TreeProgressBarUI ui;
-
-    private DecimalFormat c = new DecimalFormat("0.00");
-
-    private Component co;
+    private JLabel label;
 
     private MiniBar miniBar;
+
+    private JProgressBar progress;
+
+    private DownloadTreeTable table;
+
+    private TreeProgressBarUI ui;
 
     TreeTableRenderer(DownloadTreeTable downloadTreeTable) {
 
@@ -113,6 +138,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     }
 
+    @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         column = this.table.getColumn(column).getModelIndex();
         if (column == DownloadTreeTableModel.COL_STATUS && value instanceof FilePackage) {
@@ -209,29 +235,5 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
         return co;
 
-    }
-
-    private class MiniBar extends JLabel {
-
-        private static final long serialVersionUID = -3508403269097752259L;
-        private double p;
-
-        
-        protected void paintComponent(Graphics g) {
-            if (p != 0) {
-                int n = 3;
-                ((Graphics2D) g).setPaint(new GradientPaint(0, 0, ACTIVE_PROGRESS_COLOR, getWidth(), getHeight(), ACTIVE_PROGRESS_COLOR.darker()));
-                g.fillRect(0, getHeight() - n, (int) (getWidth() * p), n);
-            }
-            super.paintComponent(g);
-        }
-
-        public void setPercent(double percent) {
-            p = percent;
-        }
-
-        public double getPercent() {
-            return p;
-        }
     }
 }

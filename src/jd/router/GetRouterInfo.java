@@ -39,9 +39,24 @@ import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
 public class GetRouterInfo {
-    public String password = null;
+    private class InternalAuthenticator extends Authenticator {
+        private String username, password;
 
-    public String username = null;
+        public InternalAuthenticator(String user, String pass) {
+            username = user;
+            password = pass;
+        }
+
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+        }
+    }
+
+    public static boolean validateIP(String iPaddress) {
+        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
+        return IP_PATTERN.matcher(iPaddress).matches();
+    }
 
     public String adress = null;
 
@@ -49,37 +64,21 @@ public class GetRouterInfo {
 
     private Logger logger = JDUtilities.getLogger();
 
-    private Vector<String[]> routerDatas = null;
-
-    private ProgressDialog progressBar;
+    private String loginPass;
 
     private String loginUser;
 
-    private String loginPass;
+    public String password = null;
+
+    private ProgressDialog progressBar;
+
+    private Vector<String[]> routerDatas = null;
+
+    public String username = null;
 
     public GetRouterInfo(ProgressDialog progress) {
         this.progressBar = progress;
         if (progressBar != null) progressBar.setMaximum(100);
-    }
-
-    private void setProgressText(String text) {
-
-        if (progressBar != null) {
-            progressBar.setString(text);
-            this.progressBar.setStringPainted(true);
-        } else {
-            logger.info(text);
-        }
-    }
-
-    private void setProgress(int val) {
-
-        if (progressBar != null) {
-            progressBar.setValue(val);
-
-        } else {
-            logger.info(val + "%");
-        }
     }
 
     private boolean checkport80(String host) {
@@ -93,11 +92,6 @@ public class GetRouterInfo {
         }
         return false;
 
-    }
-
-    public static boolean validateIP(String iPaddress) {
-        final Pattern IP_PATTERN = Pattern.compile("\\b(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b");
-        return IP_PATTERN.matcher(iPaddress).matches();
     }
 
     public String getAdress() {
@@ -184,6 +178,46 @@ public class GetRouterInfo {
         return null;
 
     }
+
+    public String[] getRouterData(String ip) {
+        setProgressText("Get Routerdata");
+        adress=ip;
+        if (getRouterDatas() == null) { return null; }
+        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
+        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
+        final int size = routerDatas.size();
+        for (int i = 0; i < size && !cancel; i++) {
+            final String[] data = routerDatas.get(i);
+            setProgressText("Testing router: " + data[1]);
+            setProgress(i * 100 / size);
+
+            if (isEmpty(username)) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
+            } else {
+                data[4] = username;
+            }
+            if (isEmpty(password)) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
+            } else {
+                data[5] = password;
+            }
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
+            JDUtilities.saveConfig();
+            if (Reconnecter.waitForNewIP(1)) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
+                JDUtilities.saveConfig();
+                setProgress(100);
+                return data;
+            }
+        }
+        setProgress(100);
+        return null;
+    }
  
     public Vector<String[]> getRouterDatas() {
         if (routerDatas != null) return routerDatas;
@@ -226,57 +260,6 @@ public class GetRouterInfo {
 
     }
 
-    public String[] getRouterData(String ip) {
-        setProgressText("Get Routerdata");
-        adress=ip;
-        if (getRouterDatas() == null) { return null; }
-        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
-        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
-        final int size = routerDatas.size();
-        for (int i = 0; i < size && !cancel; i++) {
-            final String[] data = routerDatas.get(i);
-            setProgressText("Testing router: " + data[1]);
-            setProgress(i * 100 / size);
-
-            if (isEmpty(username)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
-            } else {
-                data[4] = username;
-            }
-            if (isEmpty(password)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
-            } else {
-                data[5] = password;
-            }
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
-            JDUtilities.saveConfig();
-            if (Reconnecter.waitForNewIP(1)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
-                JDUtilities.saveConfig();
-                setProgress(100);
-                return data;
-            }
-        }
-        setProgress(100);
-        return null;
-    }
-    private class InternalAuthenticator extends Authenticator {
-        private String username, password;
-
-        public InternalAuthenticator(String user, String pass) {
-            username = user;
-            password = pass;
-        }
-
-        protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password.toCharArray());
-        }
-    }
     public void setLoginPass(String text) {
         this.loginPass=text;
         
@@ -284,5 +267,23 @@ public class GetRouterInfo {
     public void setLoginUser(String text) {
         this.loginUser=text;
         
+    }
+    private void setProgress(int val) {
+
+        if (progressBar != null) {
+            progressBar.setValue(val);
+
+        } else {
+            logger.info(val + "%");
+        }
+    }
+    private void setProgressText(String text) {
+
+        if (progressBar != null) {
+            progressBar.setString(text);
+            this.progressBar.setStringPainted(true);
+        } else {
+            logger.info(text);
+        }
     }
 }

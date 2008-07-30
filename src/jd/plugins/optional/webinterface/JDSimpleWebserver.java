@@ -19,60 +19,6 @@ import jd.utils.JDUtilities;
 
 public class JDSimpleWebserver extends Thread {
 
-    private ServerSocket Server_Socket;
-
-    private boolean Server_Running = true;
-
-    private Logger logger = JDUtilities.getLogger();
-
-    public static int CURRENT_CLIENT_COUNTER = 0;
-
-    private static int max_clientCounter = 0;
-
-    private static String AuthUser = "";
-    private static boolean NeedAuth = false;
-
-    public JDSimpleWebserver() {
-
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
-        max_clientCounter = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_CONNECTIONS, 10);
-        AuthUser = "Basic " + JDUtilities.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
-        NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
-        try {
-            Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765));
-            logger.info("Webinterface: Server started");
-            start();
-        } catch (IOException e) {
-            logger.severe("WebInterface: Server failed to start!");
-        }
-    }
-
-    public void run() {
-        while (Server_Running) {
-            try {
-                while (getCurrentClientCounter() >= max_clientCounter) {
-                    try {
-                        /* logger.info("warte"); */
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                    }
-                    ;
-                }
-                ;
-                Socket Client_Socket = Server_Socket.accept();
-                // logger.info("WebInterface: Client[" +
-                // getCurrentClientCounter() + "/" + max_clientCounter +
-                // "] connecting from " + Client_Socket.getInetAddress());
-
-                Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
-                client_thread.start();
-
-            } catch (IOException e) {
-                logger.severe("WebInterface: Client-Connection failed");
-            }
-        }
-    }
-
     private class JDRequestHandler implements Runnable {
 
         private Socket Current_Socket;
@@ -81,13 +27,6 @@ public class JDSimpleWebserver extends Thread {
 
         public JDRequestHandler(Socket Client_Socket) {
             this.Current_Socket = Client_Socket;
-        }
-
-        public void run() {
-            addToCurrentClientCounter(1);
-            run0();
-            addToCurrentClientCounter(-1);
-
         }
 
         public String readline(BufferedInputStream reader) {
@@ -123,6 +62,13 @@ public class JDSimpleWebserver extends Thread {
                 e.printStackTrace();
             }
             return new String(buffer).substring(0, index);
+        }
+
+        public void run() {
+            addToCurrentClientCounter(1);
+            run0();
+            addToCurrentClientCounter(-1);
+
         }
 
         public void run0() {
@@ -298,13 +244,32 @@ public class JDSimpleWebserver extends Thread {
         }
     }
 
-    /**
-     * greift Threadsafe auf den clientcounter zu
-     * 
-     * @return
-     */
-    public synchronized int getCurrentClientCounter() {
-        return CURRENT_CLIENT_COUNTER;
+    private static String AuthUser = "";
+
+    public static int CURRENT_CLIENT_COUNTER = 0;
+
+    private static int max_clientCounter = 0;
+
+    private static boolean NeedAuth = false;
+
+    private Logger logger = JDUtilities.getLogger();
+    private boolean Server_Running = true;
+
+    private ServerSocket Server_Socket;
+
+    public JDSimpleWebserver() {
+
+        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        max_clientCounter = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_CONNECTIONS, 10);
+        AuthUser = "Basic " + JDUtilities.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
+        NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
+        try {
+            Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765));
+            logger.info("Webinterface: Server started");
+            start();
+        } catch (IOException e) {
+            logger.severe("WebInterface: Server failed to start!");
+        }
     }
 
     /**
@@ -316,6 +281,42 @@ public class JDSimpleWebserver extends Thread {
     public synchronized int addToCurrentClientCounter(int i) {
         CURRENT_CLIENT_COUNTER += i;
         return CURRENT_CLIENT_COUNTER;
+    }
+
+    /**
+     * greift Threadsafe auf den clientcounter zu
+     * 
+     * @return
+     */
+    public synchronized int getCurrentClientCounter() {
+        return CURRENT_CLIENT_COUNTER;
+    }
+
+    @Override
+    public void run() {
+        while (Server_Running) {
+            try {
+                while (getCurrentClientCounter() >= max_clientCounter) {
+                    try {
+                        /* logger.info("warte"); */
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                    }
+                    ;
+                }
+                ;
+                Socket Client_Socket = Server_Socket.accept();
+                // logger.info("WebInterface: Client[" +
+                // getCurrentClientCounter() + "/" + max_clientCounter +
+                // "] connecting from " + Client_Socket.getInetAddress());
+
+                Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
+                client_thread.start();
+
+            } catch (IOException e) {
+                logger.severe("WebInterface: Client-Connection failed");
+            }
+        }
     }
 
     /**

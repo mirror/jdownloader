@@ -31,6 +31,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -49,7 +50,17 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
 	 */
 	private static final long serialVersionUID = -655039113948925165L;
 
-	/**
+	public static String showDialog(JFrame frame, String title, String question, String def){
+        TextAreaDialogWithHtmlMsg  tda= new TextAreaDialogWithHtmlMsg( frame,  title,  question,  def);
+        return tda.getText();
+        
+    }
+
+    private JButton     btnCancel;
+
+    private JButton     btnOk;
+
+    /**
      * 
      */
 
@@ -57,18 +68,13 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
 
     protected Logger    logger = JDUtilities.getLogger();
 
-    private JButton     btnOk;
-
-    private JButton     btnCancel;
-
-    private JTextPane   textArea;
-
    // private JLabel      lblText;
 
     private JScrollPane scrollPane;
 
     private String text=null;
 
+    private JTextPane   textArea;
     private TextAreaDialogWithHtmlMsg(JFrame frame, String title, String question, String def) {
         super(frame);
     
@@ -111,7 +117,7 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
         pack();
         setLocation(JDUtilities.getCenterOfComponent(frame, this));
         getRootPane().setDefaultButton(btnOk);
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.add(p,BorderLayout.SOUTH);
      
         this.setVisible(false);
@@ -124,21 +130,16 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
      
 
     }
-    public static String showDialog(JFrame frame, String title, String question, String def){
-        TextAreaDialogWithHtmlMsg  tda= new TextAreaDialogWithHtmlMsg( frame,  title,  question,  def);
-        return tda.getText();
-        
+public void actionPerformed(ActionEvent e) {
+    if (e.getSource() == btnOk) {
+        this.text=textArea.getText();
+        dispose();
+    }else{
+        dispose();
     }
-private String getText(){
-    return text;
 }
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOk) {
-            this.text=textArea.getText();
-            dispose();
-        }else{
-            dispose();
-        }
+    private String getText(){
+        return text;
     }
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {

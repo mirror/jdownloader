@@ -35,29 +35,36 @@ import jd.utils.Replacer;
  */
 public class ExternExecute extends Interaction implements Serializable,ActionListener {
     /**
-     * 
+     * serialVersionUID
      */
-    private static final long   serialVersionUID          = 4793649294489149258L;
+    private static final String NAME                      = JDLocale.L("interaction.externExecute.name","Extern Execute");
     /**
      * Unter diesen Namen werden die entsprechenden Parameter gespeichert
      *
      */
     public static String        PROPERTY_COMMAND          = "InteractionExternExecute_" + "Command";
+    private static final String PROPERTY_DISABLED = "PROPERTY_DISABLED";
+    private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";
+    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
+
+    private static final String PROPERTY_WAIT_FOR_RETURN = "PROPERTY_WAIT_FOR_RETURN";
     /**
      * Unter diesen Namen werden die entsprechenden Parameter gespeichert
      *
      */
     public static String        PROPERTY_WAIT_TERMINATION = "InteractionExternExecute_" + "WaitTermination";
     /**
-     * serialVersionUID
+     * 
      */
-    private static final String NAME                      = JDLocale.L("interaction.externExecute.name","Extern Execute");
-    private static final String PROPERTY_DISABLED = "PROPERTY_DISABLED";
-
-    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
-    private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";
-    private static final String PROPERTY_WAIT_FOR_RETURN = "PROPERTY_WAIT_FOR_RETURN";
+    private static final long   serialVersionUID          = 4793649294489149258L;
     
+    public void actionPerformed(ActionEvent e) {
+        
+       this.doInteraction(null);
+        
+    }
+    
+    @Override
     public boolean doInteraction(Object arg) {
         
         if (getBooleanProperty(PROPERTY_DISABLED, false)) {
@@ -78,18 +85,12 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
     
     }
     
-    public String toString() {
-        return JDLocale.L("interaction.externExecute.toString","Externes Programm aufrufen");
-    }
-    
+    @Override
     public String getInteractionName() {
         return NAME;
     }
     
-    public void run() {
-    // Nichts zu tun. Interaction braucht keinen Thread
-    }
-    
+    @Override
     public void initConfig() {
         
        // ConfigEntry cfg;
@@ -115,11 +116,16 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
       
     }
     
+    @Override
     public void resetInteraction() {
     }
-    public void actionPerformed(ActionEvent e) {
-        
-       this.doInteraction(null);
-        
+    
+    @Override
+    public void run() {
+    // Nichts zu tun. Interaction braucht keinen Thread
+    }
+    @Override
+    public String toString() {
+        return JDLocale.L("interaction.externExecute.toString","Externes Programm aufrufen");
     }
 }

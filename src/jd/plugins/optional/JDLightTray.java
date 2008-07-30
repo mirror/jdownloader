@@ -40,28 +40,48 @@ public class JDLightTray extends PluginOptional implements MouseListener {
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    private TrayIcon trayIcon;
-
     private TrayIconPopup popup;
 
+    private TrayIcon trayIcon;
+
     
-    public String getCoder() {
-        return "jD-Team";
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
     }
 
   
 
     
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+        return null;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "jD-Team";
+    }
+
+    
+    @Override
     public String getPluginName() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }
 
-    
+    @Override
+    public String getRequirements() {
+        return "JRE 1.6+";
+    }
+
+    @Override
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
     
+    @Override
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try{
@@ -78,6 +98,7 @@ public class JDLightTray extends PluginOptional implements MouseListener {
         }
     }
 
+    
     private void initGUI() {
 
         trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
@@ -93,18 +114,21 @@ public class JDLightTray extends PluginOptional implements MouseListener {
         }
     }
 
-    public void actionPerformed(ActionEvent e) {
+    public void mouseClicked(MouseEvent e) {
+       
 
     }
 
-    
-    public String getRequirements() {
-        return "JRE 1.6+";
+    public void mouseEntered(MouseEvent e) {
+       
+
     }
 
-    
-    public ArrayList<MenuItem> createMenuitems() {
-        return null;
+
+
+    public void mouseExited(MouseEvent e) {
+       
+
     }
 
     public void mousePressed(MouseEvent e) {
@@ -153,24 +177,8 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     }
 
-
-
-    public void mouseClicked(MouseEvent e) {
-       
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-       
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-       
-
-    }
-
     
+    @Override
     public void onExit() {
         if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
         

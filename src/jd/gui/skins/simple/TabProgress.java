@@ -44,14 +44,99 @@ import jd.utils.JDLocale;
  */
 public class TabProgress extends JPanel implements ActionListener {
     /**
+     * Das TableModel ist notwendig, um die Daten darzustellen
+     * 
+     * @author astaldo
+     */
+    private class InternalTableModel extends AbstractTableModel {
+        /**
+         * serialVersionUID
+         */
+        private static final long serialVersionUID      = 8135707376690458846L;
+
+        /**
+         * Bezeichnung der Spalte für die Fortschrittsanzeige
+         */
+        private String            labelColumnProgress   = JDLocale.L("gui.tab.plugin_activity.column_progress");
+
+        /**
+         * Bezeichnung der Spalte für den Pluginnamen
+         */
+        private String            labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            switch (columnIndex) {
+
+                case 0:
+                    return String.class;
+                case 1:
+                    return JProgressBar.class;
+            }
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return 2;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return labelColumnStatusText;
+
+                case 1:
+                    return labelColumnProgress;
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+
+            return controllers.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            if (controllers.size() <= rowIndex) return null;
+            ProgressController p = controllers.get(rowIndex);
+            if (bars.size() <= rowIndex) return null;
+            JProgressBar b = bars.get(rowIndex);
+            switch (columnIndex) {
+                case 0:
+                    return p.getID()+": "+p.getStatusText();
+                case 1:
+                    return b;
+
+            }
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            return " col " + controllers.size();
+        }
+    }
+
+    /**
+     * Diese Klasse zeichnet eine JProgressBar in der Tabelle
+     * 
+     * @author astaldo
+     */
+    private class ProgressBarRenderer implements TableCellRenderer {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            return (JProgressBar) value;
+        }
+
+    }
+
+    /**
      * serialVersionUID
      */
     private static final long          serialVersionUID = -8537543161116653345L;
 
-    /**
-     * Die Tabelle für die Pluginaktivitäten
-     */
-    private JTable                     table;
+    private Vector<JProgressBar>       bars;
 
     /**
      * Hier werden alle Fortschritte der Plugins gespeichert
@@ -59,11 +144,17 @@ public class TabProgress extends JPanel implements ActionListener {
 
     private Vector<ProgressController> controllers;
 
-    private Vector<JProgressBar>       bars;
+    //private Logger                     logger           = JDUtilities.getLogger();
 
     private Timer flickerTimer;
 
-    //private Logger                     logger           = JDUtilities.getLogger();
+  
+    
+    /**
+     * Die Tabelle für die Pluginaktivitäten
+     */
+    private JTable                     table;
+
 
     public TabProgress() {
         controllers = new Vector<ProgressController>();
@@ -95,96 +186,9 @@ public class TabProgress extends JPanel implements ActionListener {
         add(scrollPane);
     }
 
-  
-    
-    /**
-     * Das TableModel ist notwendig, um die Daten darzustellen
-     * 
-     * @author astaldo
-     */
-    private class InternalTableModel extends AbstractTableModel {
-        /**
-         * serialVersionUID
-         */
-        private static final long serialVersionUID      = 8135707376690458846L;
-
-        /**
-         * Bezeichnung der Spalte für den Pluginnamen
-         */
-        private String            labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
-
-        /**
-         * Bezeichnung der Spalte für die Fortschrittsanzeige
-         */
-        private String            labelColumnProgress   = JDLocale.L("gui.tab.plugin_activity.column_progress");
-
-        public String toString() {
-            return " col " + controllers.size();
-        }
-
-        public Class<?> getColumnClass(int columnIndex) {
-            switch (columnIndex) {
-
-                case 0:
-                    return String.class;
-                case 1:
-                    return JProgressBar.class;
-            }
-            return String.class;
-        }
-
-        public int getColumnCount() {
-            return 2;
-        }
-
-        public int getRowCount() {
-
-            return controllers.size();
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-
-            if (controllers.size() <= rowIndex) return null;
-            ProgressController p = controllers.get(rowIndex);
-            if (bars.size() <= rowIndex) return null;
-            JProgressBar b = bars.get(rowIndex);
-            switch (columnIndex) {
-                case 0:
-                    return p.getID()+": "+p.getStatusText();
-                case 1:
-                    return b;
-
-            }
-            return null;
-        }
-
-        public String getColumnName(int column) {
-            switch (column) {
-                case 0:
-                    return labelColumnStatusText;
-
-                case 1:
-                    return labelColumnProgress;
-            }
-            return super.getColumnName(column);
-        }
-    }
-
-
-    /**
-     * Diese Klasse zeichnet eine JProgressBar in der Tabelle
-     * 
-     * @author astaldo
-     */
-    private class ProgressBarRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JProgressBar) value;
-        }
-
-    }
-
-    public synchronized boolean hasController(ProgressController source) {
-        return controllers.contains(source);
+    public void actionPerformed(ActionEvent e) {
+        this.setVisible(false);
+        
     }
 
     public synchronized void addController(ProgressController source) {
@@ -197,6 +201,15 @@ public class TabProgress extends JPanel implements ActionListener {
         this.controllers.add(0, source);
         updateController(source);
 
+    }
+
+    public synchronized Vector<ProgressController> getControllers() {
+
+        return controllers;
+    }
+
+    public synchronized boolean hasController(ProgressController source) {
+        return controllers.contains(source);
     }
 
     public synchronized void removeController(ProgressController source) {
@@ -240,15 +253,5 @@ public class TabProgress extends JPanel implements ActionListener {
 
         table.tableChanged(new TableModelEvent(table.getModel()));
 
-    }
-
-    public synchronized Vector<ProgressController> getControllers() {
-
-        return controllers;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        this.setVisible(false);
-        
     }
 }

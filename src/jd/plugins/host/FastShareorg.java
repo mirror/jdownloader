@@ -22,34 +22,63 @@ public class FastShareorg extends PluginForHost {
 
     private static final String HOST = "fastshare.org";
    
-    private String url;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fastshare\\.org/download/(.*)", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
+    private String url;
 
     //
     
+    public FastShareorg() {
+        super();
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://www.fastshare.org/discl.php";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
+            if (!requestInfo.containsHTML("No filename specified or the file has been deleted")) {
+                downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "Wenn sie die Datei \"<b>", "</b>\"")));
+                String filesize = null;
+                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                }
+                return true;
+            }
+        } catch (MalformedURLException e) {
+            
+            e.printStackTrace();
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+        }
+        downloadLink.setAvailable(false);
+        return false;
     }
 
     
@@ -58,17 +87,35 @@ public class FastShareorg extends PluginForHost {
    
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public FastShareorg() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -115,47 +162,12 @@ public class FastShareorg extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("No filename specified or the file has been deleted")) {
-                downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "Wenn sie die Datei \"<b>", "</b>\"")));
-                String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024);
-                }
-                return true;
-            }
-        } catch (MalformedURLException e) {
-            
-            e.printStackTrace();
-        } catch (IOException e) {
-            
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://www.fastshare.org/discl.php";
     }
 }

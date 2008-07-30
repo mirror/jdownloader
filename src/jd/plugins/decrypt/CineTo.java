@@ -31,40 +31,13 @@ import jd.plugins.RequestInfo;
 
 public class CineTo extends PluginForDecrypt {
     final static String host = "cine.to";
-    private String version = "1.2.0";
-    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
+    // private String version = "1.2.0";
 
     public CineTo() {
         super();        
-    }
-
-    
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
     
@@ -106,6 +79,14 @@ public class CineTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+
+
+    
     private String extractCaptcha(String[][] source, int captchanumber) {
         String[] erg = new String[15];
 
@@ -163,8 +144,27 @@ public class CineTo extends PluginForDecrypt {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    public String getHost() {
+        return host;
+    }
+
+    
+    public String getPluginName() {
+        return host;
+    }
+
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
 }

@@ -55,184 +55,114 @@ public class PixelGrid extends Property {
      */
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Logger
-     */
-    public Logger logger = UTILITIES.getLogger();
+    public static void fillLetter(Letter l) {
 
-    /**
-     * ParameterDump
-     */
-    public JAntiCaptcha owner;
+        int limit = 200;
+        int[][] tmp = new int[l.getWidth()][l.getHeight()];
 
-    /**
-     * Internes grid
-     */
-    public int[][] grid;
+        for (int x = 0; x < l.getWidth(); x++) {
+            for (int y = 0; y < l.getHeight(); y++) {
+                if (l.grid[x][y] > limit && tmp[x][y] != 1) {
+                    PixelObject p = new PixelObject(l);
+                    recFill(p, l, x, y, tmp, 0);
+                    if (p.isBordered() && p.getSize() < 60) {
+                        l.fillWithObject(p, 0);
+                    }
+                    // BasicWindow.showImage(l.getImage(2), x+" - "+y);
 
-    /**
-     * Pixel Array
-     */
-    public int[] pixel;
-    private int[] location = new int[] { 0, 0 };
-
-    protected int[][] tmpGrid;
-
-    public int[] getLocation() {
-        return location;
-    }
-
-    public void setLocation(int[] loc) {
-        this.location = loc;
-    }
-
-    /**
-     * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
-     * 
-     * @param value
-     * @param owner
-     * @return Prozent der Erkennungssicherheit
-     */
-    public static int getValityPercent(int value, JAntiCaptcha owner) {
-        if (value < 0) { return 100; }
-        return (int) ((100.0 * (double) value) / (double) getMaxPixelValue(owner));
-    }
-
-    /**
-     * Konstruktor
-     * 
-     * @param width
-     *            Breite des Bildes in pixel
-     * @param height
-     *            Höhe des Bildes in Pixel
-     */
-    public PixelGrid(int width, int height) {
-        grid = new int[width][height];
-
-    }
-
-    /**
-     * Normalisiert die Pixel und sorgt so für einen höheren Kontrast
-     */
-    public void normalize() {
-        normalize(1);
-
-    }
-
-    /**
-     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast
-     * wird dabei künstlich erhöht bzw erniedrigt.
-     * 
-     * @param multi
-     */
-    public void normalize(double multi) {
-        normalize(multi, 0, 0);
-    }
-
-    /**
-     * Normalisiert den Bereich zwischen cutMin und CutMax
-     * 
-     * @param multi
-     * @param cutMax
-     * @param cutMin
-     */
-    public void normalize(double multi, double cutMax, double cutMin) {
-        int max = 0;
-        int min = Integer.MAX_VALUE;
-        int akt;
-        cutMin *= getMaxPixelValue();
-        cutMax *= getMaxPixelValue();
-        cutMax = getMaxPixelValue() - cutMax;
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                akt = getPixelValue(x, y);
-                if (akt < min && akt > cutMin) min = akt;
-                if (akt > max && akt < cutMax) max = akt;
-            }
-        }
-
-        Double faktor = (double) (max - min) / (double) getMaxPixelValue();
-        if (JAntiCaptcha.isLoggerActive()) logger.fine(min + " <> " + max + " : " + faktor);
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                akt = getPixelValue(x, y);
-                if (akt <= cutMin) {
-                    setPixelValue(x, y, 0);
-                    continue;
                 }
-                if (akt >= cutMax) {
-                    setPixelValue(x, y, getMaxPixelValue());
-                    continue;
-                }
-
-                akt -= min;
-                akt /= faktor;
-                akt *= multi;
-                // if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y)+"
-                // = "+akt);
-                akt = Math.min(akt, getMaxPixelValue());
-                akt = Math.max(akt, 0);
-                setPixelValue(x, y, (int) akt);
-
             }
         }
 
     }
 
-    /**
-     * Gibt die Breite des internen captchagrids zurück
-     * 
-     * @return breite
-     */
-    public int getWidth() {
-        return grid.length;
+    public static int[] getDimension(int[][] grid) {
+
+        int topLines = 0;
+        int bottomLines = 0;
+        int leftLines = 0;
+        int rightLines = 0;
+
+        int width = grid.length;
+        int height = grid[0].length;
+        row: for (int x = 0; x < width; x++) {
+
+            for (int y = 0; y < height; y++) {
+                // JDUtilities.getLogger().info(grid[x][y]+"");
+                if (grid[x][y] == 0) {
+                    // grid[x][y] = 0xff0000;
+                    break row;
+                }
+            }
+
+            leftLines++;
+        }
+        // JDUtilities.getLogger().info("left "+leftLines);
+        row: for (int x = width - 1; x >= 0; x--) {
+
+            for (int y = 0; y < height; y++) {
+
+                if (grid[x][y] == 0) {
+                    // grid[x][y] = 0xff0000;
+                    break row;
+                }
+            }
+
+            rightLines++;
+        }
+        // JDUtilities.getLogger().info("right "+rightLines);
+        if (leftLines >= width || (width - rightLines) > width) { return new int[] { 0, 0 }; }
+        ;
+
+        line: for (int y = 0; y < height; y++) {
+
+            for (int x = leftLines; x < width - rightLines; x++) {
+                if (grid[x][y] == 0) {
+                    // grid[x][y] = 0xff0000;
+
+                    break line;
+                }
+            }
+
+            topLines++;
+        }
+        line: for (int y = height - 1; y >= 0; y--) {
+
+            for (int x = leftLines; x < width - rightLines; x++) {
+                if (grid[x][y] == 0) {
+                    // grid[x][y] = 0xff0000;
+
+                    break line;
+                }
+            }
+
+            bottomLines++;
+        }
+        // JDUtilities.getLogger().info("top "+topLines);
+        // JDUtilities.getLogger().info("bottom "+bottomLines);
+        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[] { 0, 0 }; }
+        return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
+
     }
 
-    /**
-     * Gibt die Höhe des internen captchagrids zurück
-     * 
-     * @return Höhe
-     */
-    public int getHeight() {
+    public static int[][] getGridCopy(int[][] grid) {
+        if (grid.length == 0) return null;
+        int[][] ret = new int[grid.length][grid[0].length];
+        for (int x = 0; x < grid.length; x++) {
+            for (int y = 0; y < grid[0].length; y++) {
+                ret[x][y] = grid[x][y];
+            }
+        }
+
+        return ret;
+    }
+
+    public static int getGridHeight(int[][] grid) {
         if (grid.length == 0) return 0;
         return grid[0].length;
     }
-
-    /**
-     * Nimmt ein int-array auf und wandelt es in das interne Grid um
-     * 
-     * @param pixel
-     *            Pixel Array
-     */
-    public void setPixel(int[] pixel) {
-        this.pixel = pixel;
-        int i = 0;
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                grid[x][y] = pixel[i++];
-            }
-        }
-
-    }
-
-    /**
-     * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB:
-     * 0xffffff
-     * 
-     * @return Pixelwert je nach Farbbereich
-     */
-    public int getMaxPixelValue() {
-        return getMaxPixelValue(owner);
-    }
-
-    /**
-     * Gibt den maxpixelvalue mit faktor gewichtet zurück
-     * 
-     * @param faktor
-     * @return maxpixelvalue
-     */
-    public int getMaxPixelValue(double faktor) {
-        return (int) ((double) getMaxPixelValue(owner) * faktor);
+    public static int getGridWidth(int[][] grid) {
+        return grid.length;
     }
 
     /**
@@ -244,16 +174,51 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb
-     * kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
-     * 
      * @param x
      * @param y
-     * @param value
+     * @param grid
+     * @param owner
+     * @return Pixelwert bei x,y
      */
+    public static int getPixelValue(int x, int y, int[][] grid, JAntiCaptcha owner) {
+        if (x < 0 || x >= grid.length) return -1;
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
+        return grid[x][y];
 
-    public void setPixelValue(int x, int y, int value) {
-        PixelGrid.setPixelValue(x, y, grid, value, owner);
+    }
+
+    /**
+     * Gibt eine Prozentzahl aus. 0 = super 100= ganz schlimm
+     * 
+     * @param value
+     * @param owner
+     * @return Prozent der Erkennungssicherheit
+     */
+    public static int getValityPercent(int value, JAntiCaptcha owner) {
+        if (value < 0) { return 100; }
+        return (int) ((100.0 * value) / getMaxPixelValue(owner));
+    }
+
+    private static void recFill(PixelObject p, Letter l, int x, int y, int[][] tmp, int i) {
+        i++;
+        if (x >= 0 && y >= 0 && x < l.getWidth() && y < l.getHeight() && l.grid[x][y] > 200 && tmp[x][y] != 1) {
+            if (x == 0 || y == 0 || x == l.getWidth() - 1 || y == l.getHeight() - 1) {
+                p.setBordered(false);
+            }
+            p.add(x, y, 0xff0000);
+            tmp[x][y] = 1;
+
+            recFill(p, l, x - 1, y, tmp, i);
+            // getObject(x - 1, y - 1, tmpGrid, object);
+            recFill(p, l, x, y - 1, tmp, i);
+            // getObject(x + 1, y - 1, tmpGrid, object);
+            recFill(p, l, x + 1, y, tmp, i);
+            // getObject(x + 1, y + 1, tmpGrid, object);
+            recFill(p, l, x, y + 1, tmp, i);
+            // getObject(x - 1, y + 1, tmpGrid, object);
+
+        }
+
     }
 
     /**
@@ -334,27 +299,298 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Gibt den Pixelwert an der stelle x,y zurück.
-     * 
-     * @param x
-     * @param y
-     * @return Pixelwert bei x,y
+     * Internes grid
      */
-    public int getPixelValue(int x, int y) {
-        return PixelGrid.getPixelValue(x, y, grid, owner);
+    public int[][] grid;
+
+    private int[] location = new int[] { 0, 0 };
+
+    /**
+     * Logger
+     */
+    public Logger logger = UTILITIES.getLogger();
+
+    /**
+     * ParameterDump
+     */
+    public JAntiCaptcha owner;
+
+    /**
+     * Pixel Array
+     */
+    public int[] pixel;
+
+    protected int[][] tmpGrid;
+
+    /**
+     * Konstruktor
+     * 
+     * @param width
+     *            Breite des Bildes in pixel
+     * @param height
+     *            Höhe des Bildes in Pixel
+     */
+    public PixelGrid(int width, int height) {
+        grid = new int[width][height];
+
     }
 
     /**
-     * @param x
-     * @param y
-     * @param grid
-     * @param owner
-     * @return Pixelwert bei x,y
+     * Lässt das Bild verschwimmen
+     * 
+     * @param faktor
+     *            Stärke des Effekts
      */
-    public static int getPixelValue(int x, int y, int[][] grid, JAntiCaptcha owner) {
-        if (x < 0 || x >= grid.length) return -1;
-        if (y < 0 || grid.length == 0 || y >= grid[0].length) return -1;
-        return grid[x][y];
+    public void blurIt(int faktor) {
+
+        int[][] newGrid = new int[getWidth()][getHeight()];
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                setPixelValue(x, y, newGrid, getAverage(x, y, faktor, faktor), owner);
+
+                // getAverage(x, y, faktor, faktor)
+            }
+        }
+
+        this.grid = newGrid;
+
+    }
+
+    /**
+     * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der
+     * content übrig ist
+     * 
+     * @return true/False
+     */
+    public boolean clean() {
+
+        int topLines = 0;
+        int bottomLines = 0;
+        int leftLines = 0;
+        int rightLines = 0;
+        int avg = getAverage();
+
+        for (int x = 0; x < getWidth(); x++) {
+            boolean rowIsClear = true;
+            for (int y = 0; y < getHeight(); y++) {
+
+                if (isElement(getPixelValue(x, y), avg)) {
+                    rowIsClear = false;
+                    break;
+                }
+            }
+            if (!rowIsClear) break;
+            leftLines++;
+        }
+
+        for (int x = getWidth() - 1; x >= 0; x--) {
+            boolean rowIsClear = true;
+            for (int y = 0; y < getHeight(); y++) {
+
+                if (isElement(getPixelValue(x, y), avg)) {
+                    rowIsClear = false;
+                    break;
+                }
+            }
+            if (!rowIsClear) break;
+
+            rightLines++;
+        }
+
+        if (leftLines >= getWidth() || (getWidth() - rightLines) > getWidth()) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left1");
+
+            grid = new int[0][0];
+            return false;
+
+        }
+        for (int y = 0; y < getHeight(); y++) {
+            boolean lineIsClear = true;
+            for (int x = leftLines; x < getWidth() - rightLines; x++) {
+                if (isElement(getPixelValue(x, y), avg)) {
+                    lineIsClear = false;
+                    break;
+                }
+            }
+            if (!lineIsClear) break;
+            topLines++;
+        }
+
+        for (int y = getHeight() - 1; y >= 0; y--) {
+            boolean lineIsClear = true;
+            for (int x = leftLines; x < getWidth() - rightLines; x++) {
+                if (isElement(getPixelValue(x, y), avg)) {
+                    lineIsClear = false;
+                    break;
+                }
+            }
+            if (!lineIsClear) break;
+            bottomLines++;
+        }
+
+        if ((getWidth() - leftLines - rightLines) < 0 || (getHeight() - topLines - bottomLines) < 0) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left");
+            grid = new int[0][0];
+            return false;
+        }
+        int[][] ret = new int[getWidth() - leftLines - rightLines][getHeight() - topLines - bottomLines];
+        location[0] += leftLines;
+        location[1] += topLines;
+        for (int y = 0; y < getHeight() - topLines - bottomLines; y++) {
+            for (int x = 0; x < getWidth() - leftLines - rightLines; x++) {
+                ret[x][y] = getPixelValue(x + leftLines, y + topLines);
+            }
+
+        }
+        grid = ret;
+
+        return true;
+
+    }
+
+    /**
+     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
+     * liegen
+     * 
+     * @param avg
+     */
+    public void cleanBackgroundByColor(int avg) {
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                int dif = Math.abs(avg - getPixelValue(x, y));
+                // if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x,
+                // y)+"_");
+                if (dif < (int) (getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
+
+                    this.setPixelValue(x, y, getMaxPixelValue());
+
+                } else {
+
+                }
+
+            }
+        }
+        // grid = newgrid;
+
+    }
+
+    /**
+     * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus
+     * dem ganzen Bild
+     * 
+     * @param px
+     * @param py
+     * @param width
+     * @param height
+     */
+
+    public void cleanBackgroundBySample(int px, int py, int width, int height) {
+        int avg = getAverage(px + width / 2, py + height / 2, width, height);
+        cleanBackgroundByColor(avg);
+
+    }
+
+    /**
+     * Färbt ein objekt im zugehörigem Captcha ein
+     * 
+     * @param object
+     * @param color
+     *            Farbe
+     */
+    public void colorObject(PixelObject object, int color) {
+        for (int i = 0; i < object.getSize(); i++) {
+            setPixelValue(object.elementAt(i)[0], object.elementAt(i)[1], color);
+        }
+
+    }
+
+    /**
+     * factory Funktion um einen Letter zu erstellen
+     * 
+     * @return Neuer letter
+     */
+    public Letter createLetter() {
+        Letter ret = new Letter();
+
+        ret.setOwner(owner);
+        return ret;
+    }
+
+    /**
+     * Schneidet das grid zurecht
+     * 
+     * @param leftPadding
+     * @param topPadding
+     * @param rightPadding
+     * @param bottomPadding
+     */
+    public void crop(int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
+        int newWidth = getWidth() - (leftPadding + rightPadding);
+        int newHeight = getHeight() - (topPadding + bottomPadding);
+
+        int[][] newGrid = new int[newWidth][newHeight];
+        location[0] += leftPadding;
+        location[1] += topPadding;
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                newGrid[x][y] = grid[x + leftPadding][y + topPadding];
+            }
+        }
+
+        this.grid = newGrid;
+
+    }
+
+    public void desinx(double max, double omega, double phi) {
+        omega = 2 * Math.PI / omega;
+
+        int[][] tmp = new int[getWidth()][getHeight()];
+
+        int shift;
+
+        for (int y = 0; y < getHeight(); y++) {
+
+            shift = (int) (max * Math.sin(omega * (y + phi)));
+
+            for (int x = 0; x < getWidth(); x++) {
+
+                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
+            }
+
+        }
+
+        this.setGrid(tmp);
+
+    }
+
+    /**
+     * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel:
+     * 2*PI/geschätzte Wellenlänge in Pixeln
+     * 
+     * @param max
+     * @param omega
+     * @param phi
+     */
+    public void desiny(double max, double omega, double phi) {
+        int shift;
+        omega = 2 * Math.PI / omega;
+
+        int[][] tmp = new int[getWidth()][getHeight()];
+
+        for (int x = 0; x < getWidth(); x++) {
+
+            shift = (int) (max * Math.sin(omega * (x + phi)));
+
+            for (int y = 0; y < getHeight(); y++) {
+
+                tmp[x][y] = (y + shift < getHeight() && y + shift >= 0) ? grid[x][y + shift] : 0xFF;
+            }
+
+        }
+
+        this.setGrid(tmp);
 
     }
 
@@ -473,137 +709,226 @@ public class PixelGrid extends Property {
         return UTILITIES.rgbToHex(avg);
     }
 
-    /**
-     * Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu
-     * erzeugen
-     */
-    public void toBlackAndWhite() {
-        toBlackAndWhite(1);
-    }
+    protected Vector<PixelObject> getColorObjects(int letterNum) {
 
-    /**
-     * Erzeugt ein schwarzweiß bild
-     * 
-     * @param contrast
-     *            Schwellwert für die Kontrasterkennung
-     */
-    public void toBlackAndWhite(double contrast) {
+        // int percent =
+        // owner.getJas().getInteger("colorObjectDetectionPercent");
+        // int running =
+        // owner.getJas().getInteger("colorObjectDetectionRunningAverage");
+        logger.info("Max pixel value: " + this.getMaxPixelValue());
+        // Erstelle Farbverteilungsmap
+        HashMap<Integer[], PixelObject> map = new HashMap<Integer[], PixelObject>();
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
 
+        logger.info("" + UTILITIES.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
+        final int avg = getAverage();
+        int intensivity = 8;
+        int h = getWidth() / letterNum / 4;
+        Integer[] last = null;
+        int d = 0;
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
 
-                setPixelValue(x, y, isElement(getPixelValue(x, y), (int) (getMaxPixelValue() * contrast)) ? 0 : getMaxPixelValue());
+                Integer key = getPixelValue(x, y);
+                int[] rgbA = UTILITIES.hexToRgb(key);
 
-            }
-        }
-    }
+                if (isElement(key, avg) || UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
+                    if (map.get(key) == null) {
+                        if (d++ < getHeight() * 2) {
+                            d = 0;
+                            int[] bv = UTILITIES.hexToRgb(key);
+                            boolean found = false;
+                            if (last != null && UTILITIES.getHsbColorDifference(bv, UTILITIES.hexToRgb(map.get(last).getAverage())) < intensivity) {
+                                map.get(last).add(x, y, key);
+                                found = true;
+                            } else {
+                                Iterator<Integer[]> iterator = map.keySet().iterator();
+                                Iterator<PixelObject> valsiter = map.values().iterator();
+                                Integer[] bestKey = new Integer[] { -1, -1 };
+                                double bestValue = 255;
+                                double dif = 255;
+                                while (iterator.hasNext() && valsiter.hasNext()) {
+                                    Integer[] key2 = iterator.next();
+                                    PixelObject object = valsiter.next();
+                                    if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
+                                        dif = UTILITIES.getHsbColorDifference(bv, UTILITIES
 
-    /**
-     * Schneidet das grid zurecht
-     * 
-     * @param leftPadding
-     * @param topPadding
-     * @param rightPadding
-     * @param bottomPadding
-     */
-    public void crop(int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
-        int newWidth = getWidth() - (leftPadding + rightPadding);
-        int newHeight = getHeight() - (topPadding + bottomPadding);
+                                        .hexToRgb(object.getAverage()));
 
-        int[][] newGrid = new int[newWidth][newHeight];
-        location[0] += leftPadding;
-        location[1] += topPadding;
-        for (int x = 0; x < newWidth; x++) {
-            for (int y = 0; y < newHeight; y++) {
-                newGrid[x][y] = grid[x + leftPadding][y + topPadding];
-            }
-        }
+                                        if (dif < bestValue) {
+                                            bestKey = key2;
+                                            bestValue = dif;
+                                            // map.get(key2).add(x, y,
+                                            // getPixelValue(x,
+                                            // y));
 
-        this.grid = newGrid;
+                                        }
+                                    }
 
-    }
-
-    /**
-     * Macht das Bild gröber
-     * 
-     * @param faktor
-     *            Grobheit
-     */
-    public void sampleDown(int faktor) {
-        int newWidth = (int) Math.ceil(getWidth() / faktor);
-        int newHeight = (int) Math.ceil(getHeight() / faktor);
-
-        int[][] newGrid = new int[getWidth()][getHeight()];
-
-        for (int x = 0; x < newWidth; x++) {
-            for (int y = 0; y < newHeight; y++) {
-                int localAVG = 0;
-                int values = 0;
-                for (int gx = 0; gx < faktor; gx++) {
-                    for (int gy = 0; gy < faktor; gy++) {
-                        int newX = x * faktor + gx;
-                        int newY = y * faktor + gy;
-                        if (newX > getWidth() || newY > getHeight()) {
-                            continue;
+                                }
+                                if (bestValue < intensivity) {
+                                    map.get(bestKey).add(x, y, key);
+                                    found = true;
+                                }
+                            }
+                            if (!found) {
+                                PixelObject object = new PixelObject(this);
+                                object.setColor(key);
+                                object.add(x, y, key);
+                                last = new Integer[] { key, x };
+                                map.put(last, object);
+                            }
+                        } else {
+                            PixelObject object = new PixelObject(this);
+                            object.setColor(key);
+                            object.add(x, y, key);
+                            last = new Integer[] { key, x };
+                            map.put(last, object);
+                            d = 0;
                         }
-                        localAVG = UTILITIES.mixColors(localAVG, getPixelValue(newX, newY), values, 1);
-                        values++;
 
+                    } else {
+                        map.get(key).add(x, y, key);
                     }
+                } else {
+                    d++;
                 }
-
-                for (int gx = 0; gx < faktor; gx++) {
-                    for (int gy = 0; gy < faktor; gy++) {
-                        int newX = x * faktor + gx;
-                        int newY = y * faktor + gy;
-                        setPixelValue(newX, newY, newGrid, localAVG, owner);
-
-                    }
-                }
-
             }
         }
 
-        this.grid = newGrid;
+        // int total = getWidth() * getHeight();
+        ArrayList<Object[]> els = new ArrayList<Object[]>();
 
+        Iterator<PixelObject> vals = map.values().iterator();
+        Iterator<Integer[]> keys = map.keySet().iterator();
+        while (keys.hasNext() && vals.hasNext()) {
+            PixelObject ob = vals.next();
+            els.add(new Object[] { keys.next(), ob });
+
+        }
+        Collections.sort(els, new Comparator<Object[]>() {
+
+            public int compare(Object[] o1, Object[] o2) {
+                Letter letter1 = ((PixelObject) o1[1]).toLetter();
+                Letter letter2 = ((PixelObject) o2[1]).toLetter();
+                if (letter1.getElementPixel() > letter2.getElementPixel())
+                    return 1;
+                else
+                    return 0;
+            }
+        });
+
+        int c = map.size();
+        if (c > letterNum) {
+            Iterator<Object[]> iter = els.iterator();
+
+            double addd = intensivity / 2;
+            while (c > letterNum) {
+                if (!iter.hasNext()) {
+                    iter = els.iterator();
+                    addd++;
+                }
+                Object[] thisel = iter.next();
+                Integer[] integers = (Integer[]) thisel[0];
+                PixelObject object = (PixelObject) thisel[1];
+                Iterator<Object[]> iterator = els.iterator();
+                Integer[] bestKey = null;
+                PixelObject bestobj = null;
+                double bestValue = Double.MAX_VALUE;
+                double dif = Double.MAX_VALUE;
+                double dif2 = Double.MAX_VALUE;
+                while (iterator.hasNext()) {
+                    Object[] it = iterator.next();
+                    PixelObject obj = (PixelObject) it[1];
+                    Integer[] key2 = (Integer[]) it[0];
+                    if (key2 != integers) {
+                        dif = (key2[1] - integers[1]);
+                        dif2 = (Math.abs((double) ((key2[1] + obj.getWidth()) - (integers[1] + object.getWidth()))));
+
+                        if (dif == 0 || dif2 == 0 || (dif < 0 && (dif + obj.getWidth()) > 0)) {
+                            map.get(key2).add(object);
+                            map.remove(integers);
+                            iter.remove();
+                            c--;
+                            bestKey = null;
+                            break;
+                        }
+                        if (Math.abs(dif) < bestValue) {
+                            bestKey = key2;
+                            bestobj = obj;
+                            bestValue = Math.abs(dif);
+                            // map.get(key2).add(x, y, getPixelValue(x, y));
+                        }
+                        if (dif2 < bestValue) {
+                            bestKey = key2;
+                            bestobj = obj;
+                            bestValue = dif2;
+                        }
+                    }
+
+                }
+                if (bestKey != null) {
+                    dif = UTILITIES.getHsbColorDifference(UTILITIES
+
+                    .hexToRgb(bestobj.getAverage()), UTILITIES
+
+                    .hexToRgb(object.getAverage()));
+                    if (dif < addd) {
+                        map.get(bestKey).add(object);
+                        map.remove(integers);
+                        iter.remove();
+                        c--;
+                    }
+                }
+            }
+        }
+
+        ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
+        ar.addAll(map.keySet());
+        Collections.sort(ar, new Comparator<Integer[]>() {
+
+            public int compare(Integer[] o1, Integer[] o2) {
+               
+                return o1[1].compareTo(o2[1]);
+            }
+        });
+        Iterator<Integer[]> iterator2 = ar.iterator();
+        Vector<PixelObject> ret = new Vector<PixelObject>();
+        while (iterator2.hasNext()) {
+            PixelObject it = map.get(iterator2.next());
+            ret.add(it);
+        }
+        return ret;
     }
 
     /**
-     * Lässt das Bild verschwimmen
-     * 
-     * @param faktor
-     *            Stärke des Effekts
+     * @return Dimmensionsstring
      */
-    public void blurIt(int faktor) {
+    public String getDim() {
+        return "(" + getWidth() + "/" + getHeight() + ")";
+    }
 
-        int[][] newGrid = new int[getWidth()][getHeight()];
+    public Image getFullImage() {
+        if (getWidth() <= 0 || getHeight() <= 0) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
+            return null;
+        }
+        BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
 
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-                setPixelValue(x, y, newGrid, getAverage(x, y, faktor, faktor), owner);
-
-                // getAverage(x, y, faktor, faktor)
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                graphics.setColor(new Color(getPixelValue(x, y) == 0 ? 0 : 0xffffff));
+                graphics.fillRect(x, y, 1, 1);
             }
         }
-
-        this.grid = newGrid;
+        return image;
 
     }
 
-    /**
-     * TestFUnktion um farbräume zu testen. Das Bild sollte keine ändeungen
-     * haben wenn alles stimmt
-     * 
-     */
-    public void testColor() {
-
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-                // Einmal um die Farbe und wieder zurück
-                setPixelValue(x, y, getPixelValue(x, y));
-            }
-        }
-
+    public int[][] getGrid() {
+        return grid;
     }
 
     /**
@@ -621,59 +946,14 @@ public class PixelGrid extends Property {
         return ret;
     }
 
-    public static int[][] getGridCopy(int[][] grid) {
-        if (grid.length == 0) return null;
-        int[][] ret = new int[grid.length][grid[0].length];
-        for (int x = 0; x < grid.length; x++) {
-            for (int y = 0; y < grid[0].length; y++) {
-                ret[x][y] = grid[x][y];
-            }
-        }
-
-        return ret;
-    }
-
     /**
-     * Nimmt an der angegebenen Positiond en farbwert auf und entfernt desen aus
-     * dem ganzen Bild
+     * Gibt die Höhe des internen captchagrids zurück
      * 
-     * @param px
-     * @param py
-     * @param width
-     * @param height
+     * @return Höhe
      */
-
-    public void cleanBackgroundBySample(int px, int py, int width, int height) {
-        int avg = getAverage(px + width / 2, py + height / 2, width, height);
-        cleanBackgroundByColor(avg);
-
-    }
-
-    /**
-     * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
-     * liegen
-     * 
-     * @param avg
-     */
-    public void cleanBackgroundByColor(int avg) {
-
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-                int dif = Math.abs(avg - getPixelValue(x, y));
-                // if(JAntiCaptcha.isLoggerActive())logger.info(getPixelValue(x,
-                // y)+"_");
-                if (dif < (int) (getMaxPixelValue() * owner.getJas().getDouble("BackgroundSampleCleanContrast"))) {
-
-                    this.setPixelValue(x, y, getMaxPixelValue());
-
-                } else {
-
-                }
-
-            }
-        }
-        // grid = newgrid;
-
+    public int getHeight() {
+        if (grid.length == 0) return 0;
+        return grid[0].length;
     }
 
     /**
@@ -692,24 +972,6 @@ public class PixelGrid extends Property {
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 graphics.setColor(new Color(getPixelValue(x, y)));
-                graphics.fillRect(x, y, 1, 1);
-            }
-        }
-        return image;
-
-    }
-
-    public Image getFullImage() {
-        if (getWidth() <= 0 || getHeight() <= 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Dimensionen falsch: " + this.getDim());
-            return null;
-        }
-        BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = image.createGraphics();
-
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                graphics.setColor(new Color(getPixelValue(x, y) == 0 ? 0 : 0xffffff));
                 graphics.fillRect(x, y, 1, 1);
             }
         }
@@ -746,404 +1008,68 @@ public class PixelGrid extends Property {
 
     }
 
+    public int[] getLocation() {
+        return location;
+    }
+
     /**
-     * Entfernt weißes Rauschen
+     * Sollte je nach farbmodell den Höchsten pixelwert zurückgeben. RGB:
+     * 0xffffff
+     * 
+     * @return Pixelwert je nach Farbbereich
+     */
+    public int getMaxPixelValue() {
+        return getMaxPixelValue(owner);
+    }
+
+    /**
+     * Gibt den maxpixelvalue mit faktor gewichtet zurück
      * 
      * @param faktor
-     *            Stärke des Effekts
+     * @return maxpixelvalue
      */
-    public void reduceWhiteNoise(int faktor) {
-        reduceWhiteNoise(faktor, 1.0);
+    public int getMaxPixelValue(double faktor) {
+        return (int) (getMaxPixelValue(owner) * faktor);
     }
 
     /**
-     * Entfernt weißes Rauschen
+     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese
+     * rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow
+     * führen. Man sollte sie mal umschreiben!
      * 
-     * @param faktor
-     *            Prüfradius
-     * @param contrast
-     *            Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als
-     *            störung erkannt, hat bei sw bildern kaum auswirkungen
+     * @param x
+     * @param y
+     * @param tmpGrid
+     * @param object
      */
-    public void reduceWhiteNoise(int faktor, double contrast) {
-        int avg = getAverage();
-        int[][] newGrid = new int[getWidth()][getHeight()];
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                // Korrektur weil sonst das linke obere PUxel schwarz wird.
-                if (x == 0 && y == 0 && faktor < 3) {
-                    newGrid[0][0] = grid[0][0];
-                } else {
+    private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
 
-                    if (!isElement(getPixelValue(x, y), (int) (avg * contrast))) {
-                        setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor), this.owner);
-                    }
-                }
-            }
-        }
-        grid = newGrid;
-    }
-
-    /**
-     * Erstellt das negativ
-     */
-    public void invert() {
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                int[] a = UTILITIES.hexToRgb(getMaxPixelValue());
-                int[] b = UTILITIES.hexToRgb(getPixelValue(x, y));
-                a[0] = a[0] - b[0];
-                a[1] = a[1] - b[1];
-                a[2] = a[2] - b[2];
-                setPixelValue(x, y, UTILITIES.rgbToHex(a));
-            }
-        }
-    }
-
-    /**
-     * Entfernt Schwarze Störungen
-     * 
-     * @param faktor
-     *            Stärke
-     */
-    public void reduceBlackNoise(int faktor) {
-        reduceBlackNoise(faktor, 1.0);
-    }
-
-    /**
-     * Entfernt schwarze Störungen
-     * 
-     * @param faktor
-     *            prüfradius
-     * @param contrast
-     *            Kontrasteinstellungen
-     */
-    public void reduceBlackNoise(int faktor, double contrast) {
-        int avg = getAverage();
-        int[][] newGrid = new int[getWidth()][getHeight()];
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-
-                if (x == 0 && y == 0 && faktor < 3) {
-                    newGrid[0][0] = grid[0][0];
-                } else {
-                    int localAVG = getAverageWithoutPoint(x, y, faktor, faktor);
-                    if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= (contrast * getMaxPixelValue())) {
-
-                        setPixelValue(x, y, newGrid, (int) (localAVG), this.owner);
-                    } else {
-                        setPixelValue(x, y, newGrid, getPixelValue(x, y), this.owner);
-                    }
-                }
-            }
-        }
-        grid = newGrid;
-    }
-
-    /**
-     * entfernt moegliche bruecken die zwischen zwei buchstaben sind
-     * 
-     * @param pixels
-     *            Wieviele Pixel Um das Objekt liegen dürfen
-     * @param middel
-     *            ambesten zwischen 2.1-3
-     */
-    public void removeBridges(int pixels, double middel) {
-        int avg = getAverage();
-        int[][] newGrid = new int[getWidth()][getHeight()];
-        int ignorh2 = (int) (getHeight() / middel);
-        int ignorh1 = getHeight() - ignorh2;
-
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                if (x < pixels || y < pixels || y > ignorh1 || y < ignorh2) {
-                    newGrid[x][y] = grid[x][y];
-                } else {
-                    if (isElement(getPixelValue(x, y), avg)) {
-                        int c = 0;
-                        int i = 0;
-                        while (c <= pixels && y + i < getHeight()) {
-                            if (isElement(getPixelValue(x, y + i), avg) || isElement(getPixelValue(x + 1, y + i), avg) || isElement(getPixelValue(x - 1, y + i), avg) || isElement(getPixelValue(x + 1, y + i - 1), avg) || isElement(getPixelValue(x - 1, y + i - 1), avg))
-                                c++;
-
-                            else
-                                break;
-                            i++;
-                        }
-                        i = 0;
-                        while (c <= pixels && y - i > 0) {
-                            if (isElement(getPixelValue(x, y - i), avg) || isElement(getPixelValue(x + 1, y - i), avg) || isElement(getPixelValue(x - 1, y - i), avg) || isElement(getPixelValue(x + 1, y - i - 1), avg) || isElement(getPixelValue(x - 1, y - i - 1), avg))
-                                c++;
-                            else
-                                break;
-                            i++;
-                        }
-                        if (c <= pixels)
-                            setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
-                        else
-                            newGrid[x][y] = grid[x][y];
-
-                    } else
-                        newGrid[x][y] = grid[x][y];
-                }
-            }
-        }
-        grid = newGrid;
-    }
-
-    /**
-     * Speichert das Bild asl JPG ab
-     * 
-     * @param file
-     *            Zielpfad
-     */
-    public void saveImageasJpg(File file) {
-        BufferedImage bimg = null;
-
-        bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
-        bimg.setRGB(0, 0, getWidth(), getHeight(), getPixel(), 0, getWidth());
-
-        // Encode as a JPEG
-        FileOutputStream fos;
+        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) return;
+        int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
+        // UTILITIES.trace(x+"/"+y);
         try {
-            fos = new FileOutputStream(file);
+            if (object.doesColorAverageFit(localValue)) {
 
-            JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
-            jpeg.encode(bimg);
-            fos.close();
-        } catch (FileNotFoundException e) {
+                object.add(x, y, localValue);
+                tmpGrid[x][y] = -1;
 
+                // Achtung!! Algos funktionieren nur auf sw basis richtig
+                //grid[x][y] = 254;
+                getObject(x - 1, y, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
+                getObject(x, y - 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
+                getObject(x + 1, y, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y + 1, tmpGrid, object);
+                getObject(x, y + 1, tmpGrid, object);
+                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y + 1, tmpGrid, object);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (ImageFormatException e) {
-
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Gibt ein Pixelarray des internen Grids zurück
-     * 
-     * @return Pixelarray
-     */
-    public int[] getPixel() {
-        int[] pix = new int[getWidth() * getHeight()];
-        int pixel = 0;
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-                pix[pixel] = getPixelValue(x, y);
-                pixel++;
-            }
-        }
-        return pix;
-    }
-
-    /**
-     * Gibt ein ACSI bild des Captchas aus
-     */
-    public void printGrid() {
-        if (JAntiCaptcha.isLoggerActive()) logger.info("\r\n" + getString());
-    }
-
-    /**
-     * @return Dimmensionsstring
-     */
-    public String getDim() {
-        return "(" + getWidth() + "/" + getHeight() + ")";
-    }
-
-    /**
-     * Kontrasterkennung. Prüft ob der wert über einer Schwelle ist
-     * 
-     * @param value
-     * @param avg
-     *            vergleichswet (meistens durchschnitsswert)
-     * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
-     */
-    public boolean isElement(int value, int avg) {
-        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
-    }
-
-    /**
-     * Setzt das interne Pixelgrid
-     * 
-     * @param letterGrid
-     *            int[][]
-     */
-    public void setGrid(int[][] letterGrid) {
-        grid = letterGrid;
-    }
-
-    /**
-     * Entfernt von allen 4 Seiten die Zeilen und Reihen bis nur noch der
-     * content übrig ist
-     * 
-     * @return true/False
-     */
-    public boolean clean() {
-
-        int topLines = 0;
-        int bottomLines = 0;
-        int leftLines = 0;
-        int rightLines = 0;
-        int avg = getAverage();
-
-        for (int x = 0; x < getWidth(); x++) {
-            boolean rowIsClear = true;
-            for (int y = 0; y < getHeight(); y++) {
-
-                if (isElement(getPixelValue(x, y), avg)) {
-                    rowIsClear = false;
-                    break;
-                }
-            }
-            if (!rowIsClear) break;
-            leftLines++;
         }
 
-        for (int x = getWidth() - 1; x >= 0; x--) {
-            boolean rowIsClear = true;
-            for (int y = 0; y < getHeight(); y++) {
+        return;
 
-                if (isElement(getPixelValue(x, y), avg)) {
-                    rowIsClear = false;
-                    break;
-                }
-            }
-            if (!rowIsClear) break;
-
-            rightLines++;
-        }
-
-        if (leftLines >= getWidth() || (getWidth() - rightLines) > getWidth()) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left1");
-
-            grid = new int[0][0];
-            return false;
-
-        }
-        for (int y = 0; y < getHeight(); y++) {
-            boolean lineIsClear = true;
-            for (int x = leftLines; x < getWidth() - rightLines; x++) {
-                if (isElement(getPixelValue(x, y), avg)) {
-                    lineIsClear = false;
-                    break;
-                }
-            }
-            if (!lineIsClear) break;
-            topLines++;
-        }
-
-        for (int y = getHeight() - 1; y >= 0; y--) {
-            boolean lineIsClear = true;
-            for (int x = leftLines; x < getWidth() - rightLines; x++) {
-                if (isElement(getPixelValue(x, y), avg)) {
-                    lineIsClear = false;
-                    break;
-                }
-            }
-            if (!lineIsClear) break;
-            bottomLines++;
-        }
-
-        if ((getWidth() - leftLines - rightLines) < 0 || (getHeight() - topLines - bottomLines) < 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("cleaning failed. nothing left");
-            grid = new int[0][0];
-            return false;
-        }
-        int[][] ret = new int[getWidth() - leftLines - rightLines][getHeight() - topLines - bottomLines];
-        location[0] += leftLines;
-        location[1] += topLines;
-        for (int y = 0; y < getHeight() - topLines - bottomLines; y++) {
-            for (int x = 0; x < getWidth() - leftLines - rightLines; x++) {
-                ret[x][y] = getPixelValue(x + leftLines, y + topLines);
-            }
-
-        }
-        grid = ret;
-
-        return true;
-
-    }
-
-    /**
-     * 
-     * @return Gibt einen ASCII String des Bildes zurück
-     */
-    public String getString() {
-        int avg = getAverage();
-        String ret = "";
-
-        for (int y = 0; y < getHeight(); y++) {
-            for (int x = 0; x < getWidth(); x++) {
-
-                ret += isElement(getPixelValue(x, y), avg) ? "*" : (int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue()));
-
-            }
-            ret += "\r\n";
-        }
-
-        return ret;
-
-    }
-
-    /**
-     * @param owner
-     *            the owner to set
-     */
-    public void setOwner(JAntiCaptcha owner) {
-        this.owner = owner;
-    }
-
-    /**
-     * factory Funktion um einen Letter zu erstellen
-     * 
-     * @return Neuer letter
-     */
-    public Letter createLetter() {
-        Letter ret = new Letter();
-
-        ret.setOwner(owner);
-        return ret;
-    }
-
-    /**
-     * Entfernt kleine Objekte aus dem Bild
-     * 
-     * @param contrast
-     * @param objectContrast
-     */
-    public void removeSmallObjects(double contrast, double objectContrast) {
-        int tmp = owner.getJas().getInteger("minimumObjectArea");
-
-        owner.getJas().set("minimumObjectArea", 0);
-        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
-        owner.getJas().set("minimumObjectArea", tmp);
-        for (int i = 1; i < ret.size(); i++) {
-
-            this.removeObjectFromGrid(ret.elementAt(i));
-
-        }
-    }
-
-    /**
-     * @param contrast
-     * @param objectContrast
-     * @param maxSize
-     */
-    public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
-        int tmp = owner.getJas().getInteger("minimumObjectArea");
-
-        owner.getJas().set("minimumObjectArea", 0);
-        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
-        owner.getJas().set("minimumObjectArea", tmp);
-
-        for (int i = 1; i < ret.size(); i++) {
-            if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
-
-        }
     }
 
     /**
@@ -1258,374 +1184,294 @@ public class PixelGrid extends Property {
 
     }
 
-    public String toHsbColorString() {
-        String ret = "";
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-                int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
-                float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[2]);
-                ret += "y(" + y + ")x(" + x + ")=" + hsb[0] * 100 + "\n";
-            }
-        }
-        return ret;
-    }
-
-    protected Vector<PixelObject> getColorObjects(int letterNum) {
-
-        // int percent =
-        // owner.getJas().getInteger("colorObjectDetectionPercent");
-        // int running =
-        // owner.getJas().getInteger("colorObjectDetectionRunningAverage");
-        logger.info("Max pixel value: " + this.getMaxPixelValue());
-        // Erstelle Farbverteilungsmap
-        HashMap<Integer[], PixelObject> map = new HashMap<Integer[], PixelObject>();
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 0, 0, 184 }));
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 0, 0, 204 }, new int[] { 60, 10, 240 }));
-
-        logger.info("" + UTILITIES.getColorDifference(new int[] { 255, 255, 255 }, new int[] { 0, 0, 0 }));
-        final int avg = getAverage();
-        int intensivity = 8;
-        int h = getWidth() / letterNum / 4;
-        Integer[] last = null;
-        int d = 0;
-        for (int x = 0; x < getWidth(); x++) {
-            for (int y = 0; y < getHeight(); y++) {
-
-                Integer key = getPixelValue(x, y);
-                int[] rgbA = UTILITIES.hexToRgb(key);
-
-                if (isElement(key, avg) || UTILITIES.rgb2hsb(rgbA[0], rgbA[1], rgbA[2])[0] * 100 > 0) {
-                    if (map.get(key) == null) {
-                        if (d++ < getHeight() * 2) {
-                            d = 0;
-                            int[] bv = UTILITIES.hexToRgb(key);
-                            boolean found = false;
-                            if (last != null && UTILITIES.getHsbColorDifference(bv, UTILITIES.hexToRgb(map.get(last).getAverage())) < intensivity) {
-                                map.get(last).add(x, y, key);
-                                found = true;
-                            } else {
-                                Iterator<Integer[]> iterator = map.keySet().iterator();
-                                Iterator<PixelObject> valsiter = map.values().iterator();
-                                Integer[] bestKey = new Integer[] { -1, -1 };
-                                double bestValue = 255;
-                                double dif = 255;
-                                while (iterator.hasNext() && valsiter.hasNext()) {
-                                    Integer[] key2 = iterator.next();
-                                    PixelObject object = valsiter.next();
-                                    if (Math.abs((double) (x - key2[1] - object.getWidth())) < h) {
-                                        dif = UTILITIES.getHsbColorDifference(bv, UTILITIES
-
-                                        .hexToRgb(object.getAverage()));
-
-                                        if (dif < bestValue) {
-                                            bestKey = key2;
-                                            bestValue = dif;
-                                            // map.get(key2).add(x, y,
-                                            // getPixelValue(x,
-                                            // y));
-
-                                        }
-                                    }
-
-                                }
-                                if (bestValue < intensivity) {
-                                    map.get(bestKey).add(x, y, key);
-                                    found = true;
-                                }
-                            }
-                            if (!found) {
-                                PixelObject object = new PixelObject(this);
-                                object.setColor(key);
-                                object.add(x, y, key);
-                                last = new Integer[] { key, x };
-                                map.put(last, object);
-                            }
-                        } else {
-                            PixelObject object = new PixelObject(this);
-                            object.setColor(key);
-                            object.add(x, y, key);
-                            last = new Integer[] { key, x };
-                            map.put(last, object);
-                            d = 0;
-                        }
-
-                    } else {
-                        map.get(key).add(x, y, key);
-                    }
-                } else {
-                    d++;
-                }
-            }
-        }
-
-        // int total = getWidth() * getHeight();
-        ArrayList<Object[]> els = new ArrayList<Object[]>();
-
-        Iterator<PixelObject> vals = map.values().iterator();
-        Iterator<Integer[]> keys = map.keySet().iterator();
-        while (keys.hasNext() && vals.hasNext()) {
-            PixelObject ob = (PixelObject) vals.next();
-            els.add(new Object[] { (Integer[]) keys.next(), ob });
-
-        }
-        Collections.sort(els, new Comparator<Object[]>() {
-
-            public int compare(Object[] o1, Object[] o2) {
-                Letter letter1 = ((PixelObject) o1[1]).toLetter();
-                Letter letter2 = ((PixelObject) o2[1]).toLetter();
-                if (letter1.getElementPixel() > letter2.getElementPixel())
-                    return 1;
-                else
-                    return 0;
-            }
-        });
-
-        int c = map.size();
-        if (c > letterNum) {
-            Iterator<Object[]> iter = els.iterator();
-
-            double addd = intensivity / 2;
-            while (c > letterNum) {
-                if (!iter.hasNext()) {
-                    iter = els.iterator();
-                    addd++;
-                }
-                Object[] thisel = (Object[]) iter.next();
-                Integer[] integers = (Integer[]) thisel[0];
-                PixelObject object = (PixelObject) thisel[1];
-                Iterator<Object[]> iterator = els.iterator();
-                Integer[] bestKey = null;
-                PixelObject bestobj = null;
-                double bestValue = Double.MAX_VALUE;
-                double dif = Double.MAX_VALUE;
-                double dif2 = Double.MAX_VALUE;
-                while (iterator.hasNext()) {
-                    Object[] it = iterator.next();
-                    PixelObject obj = (PixelObject) it[1];
-                    Integer[] key2 = (Integer[]) it[0];
-                    if (key2 != integers) {
-                        dif = (double) (key2[1] - integers[1]);
-                        dif2 = (Math.abs((double) ((key2[1] + obj.getWidth()) - (integers[1] + object.getWidth()))));
-
-                        if (dif == 0 || dif2 == 0 || (dif < 0 && (dif + obj.getWidth()) > 0)) {
-                            map.get(key2).add(object);
-                            map.remove(integers);
-                            iter.remove();
-                            c--;
-                            bestKey = null;
-                            break;
-                        }
-                        if (Math.abs(dif) < bestValue) {
-                            bestKey = key2;
-                            bestobj = obj;
-                            bestValue = Math.abs(dif);
-                            // map.get(key2).add(x, y, getPixelValue(x, y));
-                        }
-                        if (dif2 < bestValue) {
-                            bestKey = key2;
-                            bestobj = obj;
-                            bestValue = dif2;
-                        }
-                    }
-
-                }
-                if (bestKey != null) {
-                    dif = UTILITIES.getHsbColorDifference(UTILITIES
-
-                    .hexToRgb(bestobj.getAverage()), UTILITIES
-
-                    .hexToRgb(object.getAverage()));
-                    if (dif < addd) {
-                        map.get(bestKey).add(object);
-                        map.remove(integers);
-                        iter.remove();
-                        c--;
-                    }
-                }
-            }
-        }
-
-        ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
-        ar.addAll(map.keySet());
-        Collections.sort(ar, new Comparator<Integer[]>() {
-
-            public int compare(Integer[] o1, Integer[] o2) {
-               
-                return o1[1].compareTo(o2[1]);
-            }
-        });
-        Iterator<Integer[]> iterator2 = ar.iterator();
-        Vector<PixelObject> ret = new Vector<PixelObject>();
-        while (iterator2.hasNext()) {
-            PixelObject it = map.get((Integer[]) iterator2.next());
-            ret.add(it);
-        }
-        return ret;
-    }
-
-    public static int[] getDimension(int[][] grid) {
-
-        int topLines = 0;
-        int bottomLines = 0;
-        int leftLines = 0;
-        int rightLines = 0;
-
-        int width = grid.length;
-        int height = grid[0].length;
-        row: for (int x = 0; x < width; x++) {
-
-            for (int y = 0; y < height; y++) {
-                // JDUtilities.getLogger().info(grid[x][y]+"");
-                if (grid[x][y] == 0) {
-                    // grid[x][y] = 0xff0000;
-                    break row;
-                }
-            }
-
-            leftLines++;
-        }
-        // JDUtilities.getLogger().info("left "+leftLines);
-        row: for (int x = width - 1; x >= 0; x--) {
-
-            for (int y = 0; y < height; y++) {
-
-                if (grid[x][y] == 0) {
-                    // grid[x][y] = 0xff0000;
-                    break row;
-                }
-            }
-
-            rightLines++;
-        }
-        // JDUtilities.getLogger().info("right "+rightLines);
-        if (leftLines >= width || (width - rightLines) > width) { return new int[] { 0, 0 }; }
-        ;
-
-        line: for (int y = 0; y < height; y++) {
-
-            for (int x = leftLines; x < width - rightLines; x++) {
-                if (grid[x][y] == 0) {
-                    // grid[x][y] = 0xff0000;
-
-                    break line;
-                }
-            }
-
-            topLines++;
-        }
-        line: for (int y = height - 1; y >= 0; y--) {
-
-            for (int x = leftLines; x < width - rightLines; x++) {
-                if (grid[x][y] == 0) {
-                    // grid[x][y] = 0xff0000;
-
-                    break line;
-                }
-            }
-
-            bottomLines++;
-        }
-        // JDUtilities.getLogger().info("top "+topLines);
-        // JDUtilities.getLogger().info("bottom "+bottomLines);
-        if ((width - leftLines - rightLines) < 0 || (height - topLines - bottomLines) < 0) { return new int[] { 0, 0 }; }
-        return new int[] { width - leftLines - rightLines, height - topLines - bottomLines };
-
-    }
-
-    public void desinx(double max, double omega, double phi) {
-        omega = 2 * Math.PI / omega;
-
-        int[][] tmp = new int[getWidth()][getHeight()];
-
-        int shift;
-
-        for (int y = 0; y < getHeight(); y++) {
-
-            shift = (int) (max * Math.sin(omega * (y + phi)));
-
-            for (int x = 0; x < getWidth(); x++) {
-
-                tmp[x][y] = (x + shift < getWidth() && x + shift >= 0) ? grid[x + shift][y] : 0xFF;
-            }
-
-        }
-
-        this.setGrid(tmp);
-
-    }
-
     /**
-     * Die Wellenlänge omega kann aus dem captcha ausgemessen werden. Formel:
-     * 2*PI/geschätzte Wellenlänge in Pixeln
+     * Gibt ein Pixelarray des internen Grids zurück
      * 
-     * @param max
-     * @param omega
-     * @param phi
+     * @return Pixelarray
      */
-    public void desiny(double max, double omega, double phi) {
-        int shift;
-        omega = 2 * Math.PI / omega;
-
-        int[][] tmp = new int[getWidth()][getHeight()];
-
-        for (int x = 0; x < getWidth(); x++) {
-
-            shift = (int) (max * Math.sin(omega * (x + phi)));
-
-            for (int y = 0; y < getHeight(); y++) {
-
-                tmp[x][y] = (y + shift < getHeight() && y + shift >= 0) ? grid[x][y + shift] : 0xFF;
+    public int[] getPixel() {
+        int[] pix = new int[getWidth() * getHeight()];
+        int pixel = 0;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                pix[pixel] = getPixelValue(x, y);
+                pixel++;
             }
-
         }
-
-        this.setGrid(tmp);
-
-    }
-
-    public void setOrgGrid(int[][] grid) {
-        this.tmpGrid = grid;
-
+        return pix;
     }
 
     /**
-     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese
-     * rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow
-     * führen. Man sollte sie mal umschreiben!
+     * Gibt den Pixelwert an der stelle x,y zurück.
      * 
      * @param x
      * @param y
-     * @param tmpGrid
-     * @param object
+     * @return Pixelwert bei x,y
      */
-    private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
+    public int getPixelValue(int x, int y) {
+        return PixelGrid.getPixelValue(x, y, grid, owner);
+    }
 
-        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) return;
-        int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
-        // UTILITIES.trace(x+"/"+y);
-        try {
-            if (object.doesColorAverageFit(localValue)) {
+    /**
+     * 
+     * @return Gibt einen ASCII String des Bildes zurück
+     */
+    public String getString() {
+        int avg = getAverage();
+        String ret = "";
 
-                object.add(x, y, localValue);
-                tmpGrid[x][y] = -1;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
 
-                // Achtung!! Algos funktionieren nur auf sw basis richtig
-                //grid[x][y] = 254;
-                getObject(x - 1, y, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y - 1, tmpGrid, object);
-                getObject(x, y - 1, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y - 1, tmpGrid, object);
-                getObject(x + 1, y, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x + 1, y + 1, tmpGrid, object);
-                getObject(x, y + 1, tmpGrid, object);
-                if (owner.getJas().getBoolean("followXLines")) getObject(x - 1, y + 1, tmpGrid, object);
+                ret += isElement(getPixelValue(x, y), avg) ? "*" : (int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue()));
+
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            ret += "\r\n";
         }
 
-        return;
+        return ret;
 
+    }
+
+    /**
+     * Gibt die Breite des internen captchagrids zurück
+     * 
+     * @return breite
+     */
+    public int getWidth() {
+        return grid.length;
+    }
+
+    /**
+     * Erstellt das negativ
+     */
+    public void invert() {
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                int[] a = UTILITIES.hexToRgb(getMaxPixelValue());
+                int[] b = UTILITIES.hexToRgb(getPixelValue(x, y));
+                a[0] = a[0] - b[0];
+                a[1] = a[1] - b[1];
+                a[2] = a[2] - b[2];
+                setPixelValue(x, y, UTILITIES.rgbToHex(a));
+            }
+        }
+    }
+
+    /**
+     * Kontrasterkennung. Prüft ob der wert über einer Schwelle ist
+     * 
+     * @param value
+     * @param avg
+     *            vergleichswet (meistens durchschnitsswert)
+     * @return true, falls Pixel Etwas zum Bild beiträgt, sonst false
+     */
+    public boolean isElement(int value, int avg) {
+        return value < (avg * this.owner.getJas().getDouble("RelativeContrast"));
+    }
+
+    /**
+     * Normalisiert die Pixel und sorgt so für einen höheren Kontrast
+     */
+    public void normalize() {
+        normalize(1);
+
+    }
+
+    /**
+     * Normalisiert Pixel und Multipliziert deren wert mit multi. Der Kontrast
+     * wird dabei künstlich erhöht bzw erniedrigt.
+     * 
+     * @param multi
+     */
+    public void normalize(double multi) {
+        normalize(multi, 0, 0);
+    }
+
+    /**
+     * Normalisiert den Bereich zwischen cutMin und CutMax
+     * 
+     * @param multi
+     * @param cutMax
+     * @param cutMin
+     */
+    public void normalize(double multi, double cutMax, double cutMin) {
+        int max = 0;
+        int min = Integer.MAX_VALUE;
+        int akt;
+        cutMin *= getMaxPixelValue();
+        cutMax *= getMaxPixelValue();
+        cutMax = getMaxPixelValue() - cutMax;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                akt = getPixelValue(x, y);
+                if (akt < min && akt > cutMin) min = akt;
+                if (akt > max && akt < cutMax) max = akt;
+            }
+        }
+
+        Double faktor = (double) (max - min) / (double) getMaxPixelValue();
+        if (JAntiCaptcha.isLoggerActive()) logger.fine(min + " <> " + max + " : " + faktor);
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                akt = getPixelValue(x, y);
+                if (akt <= cutMin) {
+                    setPixelValue(x, y, 0);
+                    continue;
+                }
+                if (akt >= cutMax) {
+                    setPixelValue(x, y, getMaxPixelValue());
+                    continue;
+                }
+
+                akt -= min;
+                akt /= faktor;
+                akt *= multi;
+                // if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y)+"
+                // = "+akt);
+                akt = Math.min(akt, getMaxPixelValue());
+                akt = Math.max(akt, 0);
+                setPixelValue(x, y, akt);
+
+            }
+        }
+
+    }
+
+    /**
+     * Gibt ein ACSI bild des Captchas aus
+     */
+    public void printGrid() {
+        if (JAntiCaptcha.isLoggerActive()) logger.info("\r\n" + getString());
+    }
+
+    /**
+     * Entfernt Schwarze Störungen
+     * 
+     * @param faktor
+     *            Stärke
+     */
+    public void reduceBlackNoise(int faktor) {
+        reduceBlackNoise(faktor, 1.0);
+    }
+
+    /**
+     * Entfernt schwarze Störungen
+     * 
+     * @param faktor
+     *            prüfradius
+     * @param contrast
+     *            Kontrasteinstellungen
+     */
+    public void reduceBlackNoise(int faktor, double contrast) {
+        int avg = getAverage();
+        int[][] newGrid = new int[getWidth()][getHeight()];
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+
+                if (x == 0 && y == 0 && faktor < 3) {
+                    newGrid[0][0] = grid[0][0];
+                } else {
+                    int localAVG = getAverageWithoutPoint(x, y, faktor, faktor);
+                    if (isElement(getPixelValue(x, y), (int) (avg * contrast)) && localAVG >= (contrast * getMaxPixelValue())) {
+
+                        setPixelValue(x, y, newGrid, (localAVG), this.owner);
+                    } else {
+                        setPixelValue(x, y, newGrid, getPixelValue(x, y), this.owner);
+                    }
+                }
+            }
+        }
+        grid = newGrid;
+    }
+
+    /**
+     * Entfernt weißes Rauschen
+     * 
+     * @param faktor
+     *            Stärke des Effekts
+     */
+    public void reduceWhiteNoise(int faktor) {
+        reduceWhiteNoise(faktor, 1.0);
+    }
+
+    /**
+     * Entfernt weißes Rauschen
+     * 
+     * @param faktor
+     *            Prüfradius
+     * @param contrast
+     *            Kontrasteinstellungen.je kleiner, desto mehr Pixel werden als
+     *            störung erkannt, hat bei sw bildern kaum auswirkungen
+     */
+    public void reduceWhiteNoise(int faktor, double contrast) {
+        int avg = getAverage();
+        int[][] newGrid = new int[getWidth()][getHeight()];
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                // Korrektur weil sonst das linke obere PUxel schwarz wird.
+                if (x == 0 && y == 0 && faktor < 3) {
+                    newGrid[0][0] = grid[0][0];
+                } else {
+
+                    if (!isElement(getPixelValue(x, y), (int) (avg * contrast))) {
+                        setPixelValue(x, y, newGrid, getAverageWithoutPoint(x, y, faktor, faktor), this.owner);
+                    }
+                }
+            }
+        }
+        grid = newGrid;
+    }
+
+    /**
+     * entfernt moegliche bruecken die zwischen zwei buchstaben sind
+     * 
+     * @param pixels
+     *            Wieviele Pixel Um das Objekt liegen dürfen
+     * @param middel
+     *            ambesten zwischen 2.1-3
+     */
+    public void removeBridges(int pixels, double middel) {
+        int avg = getAverage();
+        int[][] newGrid = new int[getWidth()][getHeight()];
+        int ignorh2 = (int) (getHeight() / middel);
+        int ignorh1 = getHeight() - ignorh2;
+
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                if (x < pixels || y < pixels || y > ignorh1 || y < ignorh2) {
+                    newGrid[x][y] = grid[x][y];
+                } else {
+                    if (isElement(getPixelValue(x, y), avg)) {
+                        int c = 0;
+                        int i = 0;
+                        while (c <= pixels && y + i < getHeight()) {
+                            if (isElement(getPixelValue(x, y + i), avg) || isElement(getPixelValue(x + 1, y + i), avg) || isElement(getPixelValue(x - 1, y + i), avg) || isElement(getPixelValue(x + 1, y + i - 1), avg) || isElement(getPixelValue(x - 1, y + i - 1), avg))
+                                c++;
+
+                            else
+                                break;
+                            i++;
+                        }
+                        i = 0;
+                        while (c <= pixels && y - i > 0) {
+                            if (isElement(getPixelValue(x, y - i), avg) || isElement(getPixelValue(x + 1, y - i), avg) || isElement(getPixelValue(x - 1, y - i), avg) || isElement(getPixelValue(x + 1, y - i - 1), avg) || isElement(getPixelValue(x - 1, y - i - 1), avg))
+                                c++;
+                            else
+                                break;
+                            i++;
+                        }
+                        if (c <= pixels)
+                            setPixelValue(x, y, newGrid, getMaxPixelValue(), this.owner);
+                        else
+                            newGrid[x][y] = grid[x][y];
+
+                    } else
+                        newGrid[x][y] = grid[x][y];
+                }
+            }
+        }
+        grid = newGrid;
     }
 
     /**
@@ -1639,30 +1485,127 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Färbt ein objekt im zugehörigem Captcha ein
+     * Entfernt kleine Objekte aus dem Bild
      * 
-     * @param object
-     * @param color
-     *            Farbe
+     * @param contrast
+     * @param objectContrast
      */
-    public void colorObject(PixelObject object, int color) {
-        for (int i = 0; i < object.getSize(); i++) {
-            setPixelValue(object.elementAt(i)[0], object.elementAt(i)[1], color);
+    public void removeSmallObjects(double contrast, double objectContrast) {
+        int tmp = owner.getJas().getInteger("minimumObjectArea");
+
+        owner.getJas().set("minimumObjectArea", 0);
+        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
+        owner.getJas().set("minimumObjectArea", tmp);
+        for (int i = 1; i < ret.size(); i++) {
+
+            this.removeObjectFromGrid(ret.elementAt(i));
+
+        }
+    }
+
+    /**
+     * @param contrast
+     * @param objectContrast
+     * @param maxSize
+     */
+    public void removeSmallObjects(double contrast, double objectContrast, int maxSize) {
+        int tmp = owner.getJas().getInteger("minimumObjectArea");
+
+        owner.getJas().set("minimumObjectArea", 0);
+        Vector<PixelObject> ret = getObjects(contrast, objectContrast);
+        owner.getJas().set("minimumObjectArea", tmp);
+
+        for (int i = 1; i < ret.size(); i++) {
+            if (ret.elementAt(i).getSize() < maxSize) this.removeObjectFromGrid(ret.elementAt(i));
+
+        }
+    }
+
+    /**
+     * Macht das Bild gröber
+     * 
+     * @param faktor
+     *            Grobheit
+     */
+    public void sampleDown(int faktor) {
+        int newWidth = (int) Math.ceil(getWidth() / faktor);
+        int newHeight = (int) Math.ceil(getHeight() / faktor);
+
+        int[][] newGrid = new int[getWidth()][getHeight()];
+
+        for (int x = 0; x < newWidth; x++) {
+            for (int y = 0; y < newHeight; y++) {
+                int localAVG = 0;
+                int values = 0;
+                for (int gx = 0; gx < faktor; gx++) {
+                    for (int gy = 0; gy < faktor; gy++) {
+                        int newX = x * faktor + gx;
+                        int newY = y * faktor + gy;
+                        if (newX > getWidth() || newY > getHeight()) {
+                            continue;
+                        }
+                        localAVG = UTILITIES.mixColors(localAVG, getPixelValue(newX, newY), values, 1);
+                        values++;
+
+                    }
+                }
+
+                for (int gx = 0; gx < faktor; gx++) {
+                    for (int gy = 0; gy < faktor; gy++) {
+                        int newX = x * faktor + gx;
+                        int newY = y * faktor + gy;
+                        setPixelValue(newX, newY, newGrid, localAVG, owner);
+
+                    }
+                }
+
+            }
         }
 
+        this.grid = newGrid;
+
     }
 
-    public int[][] getGrid() {
-        return grid;
+    /**
+     * Speichert das Bild asl JPG ab
+     * 
+     * @param file
+     *            Zielpfad
+     */
+    public void saveImageasJpg(File file) {
+        BufferedImage bimg = null;
+
+        bimg = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
+        bimg.setRGB(0, 0, getWidth(), getHeight(), getPixel(), 0, getWidth());
+
+        // Encode as a JPEG
+        FileOutputStream fos;
+        try {
+            fos = new FileOutputStream(file);
+
+            JPEGImageEncoder jpeg = JPEGCodec.createJPEGEncoder(fos);
+            jpeg.encode(bimg);
+            fos.close();
+        } catch (FileNotFoundException e) {
+
+            e.printStackTrace();
+        } catch (ImageFormatException e) {
+
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
     }
 
-    public static int getGridHeight(int[][] grid) {
-        if (grid.length == 0) return 0;
-        return grid[0].length;
-    }
-
-    public static int getGridWidth(int[][] grid) {
-        return grid.length;
+    /**
+     * Setzt das interne Pixelgrid
+     * 
+     * @param letterGrid
+     *            int[][]
+     */
+    public void setGrid(int[][] letterGrid) {
+        grid = letterGrid;
     }
 
     public void setGridCopy(int[][] grid, int leftPadding, int topPadding, int rightPadding, int bottomPadding) {
@@ -1682,46 +1625,103 @@ public class PixelGrid extends Property {
 
     }
 
-    public static void fillLetter(Letter l) {
+    public void setLocation(int[] loc) {
+        this.location = loc;
+    }
 
-        int limit = 200;
-        int[][] tmp = new int[l.getWidth()][l.getHeight()];
+    public void setOrgGrid(int[][] grid) {
+        this.tmpGrid = grid;
 
-        for (int x = 0; x < l.getWidth(); x++) {
-            for (int y = 0; y < l.getHeight(); y++) {
-                if (l.grid[x][y] > limit && tmp[x][y] != 1) {
-                    PixelObject p = new PixelObject(l);
-                    recFill(p, l, x, y, tmp, 0);
-                    if (p.isBordered() && p.getSize() < 60) {
-                        l.fillWithObject(p, 0);
-                    }
-                    // BasicWindow.showImage(l.getImage(2), x+" - "+y);
+    }
 
-                }
+    /**
+     * @param owner
+     *            the owner to set
+     */
+    public void setOwner(JAntiCaptcha owner) {
+        this.owner = owner;
+    }
+
+    /**
+     * Nimmt ein int-array auf und wandelt es in das interne Grid um
+     * 
+     * @param pixel
+     *            Pixel Array
+     */
+    public void setPixel(int[] pixel) {
+        this.pixel = pixel;
+        int i = 0;
+        for (int y = 0; y < getHeight(); y++) {
+            for (int x = 0; x < getWidth(); x++) {
+                grid[x][y] = pixel[i++];
             }
         }
 
     }
 
-    private static void recFill(PixelObject p, Letter l, int x, int y, int[][] tmp, int i) {
-        i++;
-        if (x >= 0 && y >= 0 && x < l.getWidth() && y < l.getHeight() && l.grid[x][y] > 200 && tmp[x][y] != 1) {
-            if (x == 0 || y == 0 || x == l.getWidth() - 1 || y == l.getHeight() - 1) {
-                p.setBordered(false);
+    /**
+     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb
+     * kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
+     * 
+     * @param x
+     * @param y
+     * @param value
+     */
+
+    public void setPixelValue(int x, int y, int value) {
+        PixelGrid.setPixelValue(x, y, grid, value, owner);
+    }
+
+    /**
+     * TestFUnktion um farbräume zu testen. Das Bild sollte keine ändeungen
+     * haben wenn alles stimmt
+     * 
+     */
+    public void testColor() {
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                // Einmal um die Farbe und wieder zurück
+                setPixelValue(x, y, getPixelValue(x, y));
             }
-            p.add(x, y, 0xff0000);
-            tmp[x][y] = 1;
-
-            recFill(p, l, x - 1, y, tmp, i);
-            // getObject(x - 1, y - 1, tmpGrid, object);
-            recFill(p, l, x, y - 1, tmp, i);
-            // getObject(x + 1, y - 1, tmpGrid, object);
-            recFill(p, l, x + 1, y, tmp, i);
-            // getObject(x + 1, y + 1, tmpGrid, object);
-            recFill(p, l, x, y + 1, tmp, i);
-            // getObject(x - 1, y + 1, tmpGrid, object);
-
         }
 
+    }
+
+    /**
+     * Verwendet die SampleDown Methode um ein reines Schwarzweißbild zu
+     * erzeugen
+     */
+    public void toBlackAndWhite() {
+        toBlackAndWhite(1);
+    }
+
+    /**
+     * Erzeugt ein schwarzweiß bild
+     * 
+     * @param contrast
+     *            Schwellwert für die Kontrasterkennung
+     */
+    public void toBlackAndWhite(double contrast) {
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+
+                setPixelValue(x, y, isElement(getPixelValue(x, y), (int) (getMaxPixelValue() * contrast)) ? 0 : getMaxPixelValue());
+
+            }
+        }
+    }
+
+    public String toHsbColorString() {
+        String ret = "";
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
+                float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[2]);
+                ret += "y(" + y + ")x(" + x + ")=" + hsb[0] * 100 + "\n";
+            }
+        }
+        return ret;
     }
 }

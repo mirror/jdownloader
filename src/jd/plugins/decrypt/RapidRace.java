@@ -13,9 +13,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class RapidRace extends PluginForDecrypt {
-    static private final String HOST = "rapidrace.org";
-
     static private final String CODER = "TheBlindProphet";
+
+    static private final String HOST = "rapidrace.org";
 
     static private final String VERSION = "$Revision$";
 
@@ -25,29 +25,7 @@ public class RapidRace extends PluginForDecrypt {
         super();
     }
 
-    public String getCoder() {
-        return CODER;
-    }
-
-    public String getHost() {
-        return HOST;
-    }
-
-    
- 
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -76,7 +54,36 @@ public class RapidRace extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+    
+ 
+
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

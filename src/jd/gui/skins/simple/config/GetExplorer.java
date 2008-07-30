@@ -23,8 +23,6 @@ import jd.config.Configuration;
 import jd.utils.JDUtilities;
 
 public class GetExplorer {
-    Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
-
     /**
      * Versucht den Programmpfad zum Explorer zu finden
      * 
@@ -54,6 +52,8 @@ public class GetExplorer {
         }
         return null;
     }
+
+    Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
 
     /**
      * Object[0] = Browsername Object[1] = Befehl zum Browser Object[2] =

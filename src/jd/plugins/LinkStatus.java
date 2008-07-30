@@ -1,7 +1,6 @@
 package jd.plugins;
 
 import java.io.Serializable;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 import jd.utils.JDLocale;
@@ -9,102 +8,44 @@ import jd.utils.JDUtilities;
 
 public class LinkStatus implements Serializable {
     /**
-     * 
-     */
-    private static final long serialVersionUID = 3885661829491436448L;
-    private DownloadLink downloadLink;
-    private int status = TODO;
-    private transient String statusText = null;
-    private int lastestStatus = TODO;
-    private transient String errorMessage;
-    private int value;
-    private long waitUntil = 0;
-    private int totalWaitTime = 0;
-    /**
-     * Controlling: Link muß noch bearbeitet werden.
-     */
-    public final static int TODO = 1 << 0;
-
-    /**
-     * Controlling & Downloadinterface: Link wurde erfolgreich heruntergeladen
-     */
-    public final static int FINISHED = 1 << 1;
-
-    /**
-     * Plugins: Ein unbekannter Fehler ist aufgetreten
-     */
-    public final static int ERROR_RETRY = 1 << 2;
-
-    /**
-     * PLugins: Captcha Text war falsch
-     */
-    public final static int ERROR_CAPTCHA = 1 << 3;
-
-    /**
-     * Plugins: Download Limit wurde erreicht
-     */
-    public final static int ERROR_IP_BLOCKED = 1 << 4;
-
-    /**
-     * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
-     */
-    public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
-
-    // /**
-    // * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
-    // * werden
-    // */
-
-    /**
-     * Plugins | Controlling zeigt einen Premiumspezifischen fehler an
-     */
-    public static final int ERROR_PREMIUM = 1 << 8;
-
-    /**
-     * Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
-     */
-    public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
-
-    /**
      * Controlling Zeigt an dass der Link gerade heruntergeladen wird
      */
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
-
     /**
-     * PLugins Der download ist zur Zeit nicht möglich
+     * Controlling Die AGB wurde noch nicht unterzeichnet.
      */
-    public static final int ERROR_TEMPORARILY_UNAVAILABLE = 1 << 11;
-
+    public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
     /**
      * Controlling,Downloadinterface Zeigt an dass die Datei auf der festplatte
      * schon existiert
      */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;
     /**
+     * PLugins: Captcha Text war falsch
+     */
+    public final static int ERROR_CAPTCHA = 1 << 3;
+    /**
      * Downloadinterface Zeigt an dass der Eigentliche Download im
      * Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
      */
     public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
     /**
-     * DownloadInterface Zeigt an dass es einen Timeout gab und es scheinbar
-     * keine Verbindung emhr zum internet gibt
+     * Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
      */
-    public static final int ERROR_NO_CONNECTION = 1 << 15;
-    /**
-     * Controlling Die AGB wurde noch nicht unterzeichnet.
-     */
-    public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
-
+    public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
     /**
      * Plugins & Downloadinterface Schwerwiegender fehler. Der Download wird
      * sofort abgebrochen. Es werden keine weiteren versuche mehr gestartet
      */
     public static final int ERROR_FATAL = 1 << 17;
     /**
-     * Controlling Ziegt an, dass das zugehörige Plugin den link gerade
-     * bearbeitet
+     * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
      */
-    public static final int PLUGIN_IN_PROGRESS = 1 << 18;
+    public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
+    /**
+     * Plugins: Download Limit wurde erreicht
+     */
+    public final static int ERROR_IP_BLOCKED = 1 << 4;
     /**
      * Conttrolling, Downloadinterface, Plugins Zeigt an, dass gerade ein
      * anderes Plugin an der Lokalen Datei arbeitet. Wird eingesetzt um dem
@@ -113,25 +54,157 @@ public class LinkStatus implements Serializable {
      * 
      */
     public static final int ERROR_LINK_IN_PROGRESS = 1 << 19;
-    /**
-     * DownloadINterface & Controlling zeigt an dass es zu einem plugintimeout
-     * gekommen ist
-     */
-    public static final int ERROR_TIMEOUT_REACHED = 1 << 20;
+
     /**
      * Downloadinterface LOCAL Input output Fehler. Es kann nicht geschrieben
      * werden etc.
      */
     public static final int ERROR_LOCAL_IO = 1 << 21;
+
+    /**
+     * DownloadInterface Zeigt an dass es einen Timeout gab und es scheinbar
+     * keine Verbindung emhr zum internet gibt
+     */
+    public static final int ERROR_NO_CONNECTION = 1 << 15;
+
     /**
      * Plugins Wird bei Schwerenb Parsing fehler eingesetzt. Über diesen Code
      * kann das Plugin mitteilen dass es defekt ist und aktualisiert werden muss
      */
     public static final int ERROR_PLUGIN_DEFEKT = 1 << 22;
 
+    /**
+     * Plugins | Controlling zeigt einen Premiumspezifischen fehler an
+     */
+    public static final int ERROR_PREMIUM = 1 << 8;
+
+    /**
+     * Plugins: Ein unbekannter Fehler ist aufgetreten
+     */
+    public final static int ERROR_RETRY = 1 << 2;
+
+    // /**
+    // * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
+    // * werden
+    // */
+
+    /**
+     * PLugins Der download ist zur Zeit nicht möglich
+     */
+    public static final int ERROR_TEMPORARILY_UNAVAILABLE = 1 << 11;
+
+    /**
+     * DownloadINterface & Controlling zeigt an dass es zu einem plugintimeout
+     * gekommen ist
+     */
+    public static final int ERROR_TIMEOUT_REACHED = 1 << 20;
+
+    /**
+     * Controlling & Downloadinterface: Link wurde erfolgreich heruntergeladen
+     */
+    public final static int FINISHED = 1 << 1;
+
+    /**
+     * Controlling Ziegt an, dass das zugehörige Plugin den link gerade
+     * bearbeitet
+     */
+    public static final int PLUGIN_IN_PROGRESS = 1 << 18;
+
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 3885661829491436448L;
+    /**
+     * Controlling: Link muß noch bearbeitet werden.
+     */
+    public final static int TODO = 1 << 0;
+    private DownloadLink downloadLink;
+    private transient String errorMessage;
+
+    private int lastestStatus = TODO;
+    private int status = TODO;
+    private transient String statusText = null;
+    private int totalWaitTime = 0;
+    private int value;
+    private long waitUntil = 0;
+
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
 
+    }
+
+    /**
+     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht
+     * gelöscht.
+     * 
+     * @param status
+     */
+    public void addStatus(int status) {
+        this.status |= status;
+        this.lastestStatus = status;
+
+        System.out.println("");
+
+    }
+
+    public void exceptionToErrorMessage(Exception e) {
+        this.setErrorMessage(JDUtilities.convertExceptionReadable(e));
+
+    }
+
+    private String getDefaultErrorMessage() {
+        switch (this.lastestStatus) {
+
+        case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
+            return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
+
+        case LinkStatus.ERROR_AGB_NOT_SIGNED:
+            return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
+        case LinkStatus.ERROR_ALREADYEXISTS:
+            return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
+
+        case LinkStatus.ERROR_CAPTCHA:
+            return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
+        case LinkStatus.ERROR_DOWNLOAD_FAILED:
+            return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
+        case LinkStatus.ERROR_IP_BLOCKED:
+            return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
+
+        case LinkStatus.ERROR_FILE_NOT_FOUND:
+            return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
+
+        case LinkStatus.ERROR_NO_CONNECTION:
+            return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
+
+        case LinkStatus.ERROR_PREMIUM:
+            return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
+
+        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
+            return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
+
+        case LinkStatus.ERROR_FATAL:
+            return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
+
+        }
+        return null;
+
+    }
+
+    private String getErrorMessage() {
+        String ret = errorMessage;
+        if (ret == null) ret = this.getDefaultErrorMessage();
+        if (ret == null) ret = JDLocale.L("downloadlink.status.error_unexpected", "Unexpected Error");
+        return ret;
+    }
+
+    public int getLatestStatus() {
+
+        return this.lastestStatus;
+    }
+
+    public int getRemainingWaittime() {
+
+        return Math.max(0, (int) (waitUntil - System.currentTimeMillis()));
     }
 
     /**
@@ -163,9 +236,9 @@ public class LinkStatus implements Serializable {
         //    
         if (hasStatus(ERROR_IP_BLOCKED) && getRemainingWaittime() > 0) {
             if (statusText == null) {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000)));
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000)));
             } else {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((int) (getRemainingWaittime() / 1000))) + statusText;
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000))) + statusText;
 
             }
             return ret;
@@ -199,11 +272,108 @@ public class LinkStatus implements Serializable {
 
     }
 
-    private String getErrorMessage() {
-        String ret = errorMessage;
-        if (ret == null) ret = this.getDefaultErrorMessage();
-        if (ret == null) ret = JDLocale.L("downloadlink.status.error_unexpected", "Unexpected Error");
-        return ret;
+    public int getTotalWaitTime() {
+
+        return totalWaitTime;
+    }
+    
+    
+    public int getValue() {
+        return value;
+    }
+
+    private boolean hasOnlyStatus(int statusCode) {
+        return  (status&(~statusCode))==0;
+    }
+
+    /**
+     * Gibt zurück ob der zugehörige Link einen bestimmten status hat.
+     * 
+     * @param status
+     * @return
+     */
+    public boolean hasStatus(int status) {
+
+        return (this.status & status) > 0;
+    }
+
+
+
+    public boolean isFailed() {
+
+        return !this.hasOnlyStatus(FINISHED|ERROR_IP_BLOCKED|TODO|PLUGIN_IN_PROGRESS|LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+    }
+
+    public boolean isPluginActive() {
+        return this.hasStatus(PLUGIN_IN_PROGRESS);
+
+    }
+
+    public boolean isStatus(int status) {
+        return this.status == status;
+    }
+
+    /** Entfernt eine Statusid */
+    public void removeStatus(int status) {
+        int mask = 0xffffffff;
+        mask &= ~status;
+        this.status &= mask;
+    }
+
+    public void reset() {
+        setStatus(TODO);
+        waitUntil = 0;
+        this.errorMessage = null;
+        this.statusText = null;
+        totalWaitTime = 0;
+    }
+
+    public void resetWaitTime() {
+        totalWaitTime = 0;
+        waitUntil = 0;
+        ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
+    }
+
+    public void setErrorMessage(String string) {
+        this.errorMessage = string;
+
+    }
+
+    public void setInProgress(boolean b) {
+        if (b) {
+            this.addStatus(PLUGIN_IN_PROGRESS);
+        } else {
+            this.removeStatus(PLUGIN_IN_PROGRESS);
+        }
+
+    }
+
+    /**
+     * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet
+     * werden
+     * 
+     * @param status
+     */
+    public void setStatus(int status) {
+        this.status = status;
+        this.lastestStatus = status;
+        System.out.println("");
+    }
+
+    public void setStatusText(String l) {
+        this.statusText = l;
+
+    }
+
+    public void setValue(int i) {
+        this.value = i;
+
+    }
+
+    public void setWaitTime(int milliSeconds) {
+        this.waitUntil = System.currentTimeMillis() + milliSeconds;
+        this.totalWaitTime = milliSeconds;
+
     }
 
     private String toStatusString() {
@@ -265,147 +435,6 @@ public class LinkStatus implements Serializable {
 
     }
 
-    private String getDefaultErrorMessage() {
-        switch (this.lastestStatus) {
-
-        case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
-            return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
-
-        case LinkStatus.ERROR_AGB_NOT_SIGNED:
-            return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
-        case LinkStatus.ERROR_ALREADYEXISTS:
-            return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
-
-        case LinkStatus.ERROR_CAPTCHA:
-            return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
-        case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
-        case LinkStatus.ERROR_IP_BLOCKED:
-            return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
-
-        case LinkStatus.ERROR_FILE_NOT_FOUND:
-            return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
-
-        case LinkStatus.ERROR_NO_CONNECTION:
-            return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
-
-        case LinkStatus.ERROR_PREMIUM:
-            return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
-
-        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-            return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
-
-        case LinkStatus.ERROR_FATAL:
-            return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
-
-        }
-        return null;
-
-    }
-
-    /**
-     * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet
-     * werden
-     * 
-     * @param status
-     */
-    public void setStatus(int status) {
-        this.status = status;
-        this.lastestStatus = status;
-        System.out.println("");
-    }
-
-    /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht
-     * gelöscht.
-     * 
-     * @param status
-     */
-    public void addStatus(int status) {
-        this.status |= status;
-        this.lastestStatus = status;
-
-        System.out.println("");
-
-    }
-
-    /** Entfernt eine Statusid */
-    public void removeStatus(int status) {
-        int mask = 0xffffffff;
-        mask &= ~status;
-        this.status &= mask;
-    }
-
-    /**
-     * Gibt zurück ob der zugehörige Link einen bestimmten status hat.
-     * 
-     * @param status
-     * @return
-     */
-    public boolean hasStatus(int status) {
-
-        return (this.status & status) > 0;
-    }
-    
-    
-    private boolean hasOnlyStatus(int statusCode) {
-        return  (status&(~statusCode))==0;
-    }
-
-    public void setStatusText(String l) {
-        this.statusText = l;
-
-    }
-
-    public boolean isFailed() {
-
-        return !this.hasOnlyStatus(FINISHED|ERROR_IP_BLOCKED|TODO|PLUGIN_IN_PROGRESS|LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-    }
-
-
-
-    public boolean isPluginActive() {
-        return this.hasStatus(PLUGIN_IN_PROGRESS);
-
-    }
-
-    public void setInProgress(boolean b) {
-        if (b) {
-            this.addStatus(PLUGIN_IN_PROGRESS);
-        } else {
-            this.removeStatus(PLUGIN_IN_PROGRESS);
-        }
-
-    }
-
-    public int getLatestStatus() {
-
-        return this.lastestStatus;
-    }
-
-    public boolean isStatus(int status) {
-        return this.status == status;
-    }
-
-    public void setErrorMessage(String string) {
-        this.errorMessage = string;
-
-    }
-
-    public void setValue(int i) {
-        this.value = i;
-
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public void exceptionToErrorMessage(Exception e) {
-        this.setErrorMessage(JDUtilities.convertExceptionReadable(e));
-
-    }
-
     public String toString() {
         Class<? extends LinkStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
@@ -448,36 +477,6 @@ public class LinkStatus implements Serializable {
             ret+="ErrorMessage: "+errorMessage+"\r\n";
         }
         return ret;
-    }
-
-    public void setWaitTime(int milliSeconds) {
-        this.waitUntil = System.currentTimeMillis() + milliSeconds;
-        this.totalWaitTime = milliSeconds;
-
-    }
-
-    public void reset() {
-        setStatus(TODO);
-        waitUntil = 0;
-        this.errorMessage = null;
-        this.statusText = null;
-        totalWaitTime = 0;
-    }
-
-    public int getRemainingWaittime() {
-
-        return Math.max(0, (int) (waitUntil - System.currentTimeMillis()));
-    }
-
-    public int getTotalWaitTime() {
-
-        return totalWaitTime;
-    }
-
-    public void resetWaitTime() {
-        totalWaitTime = 0;
-        waitUntil = 0;
-        ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
     }
 
 }

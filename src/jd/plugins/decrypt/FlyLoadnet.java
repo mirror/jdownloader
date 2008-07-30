@@ -31,19 +31,21 @@ import jd.plugins.RequestInfo;
 
 public class FlyLoadnet extends PluginForDecrypt {
     static private final String host = "flyload.net";
-    private String version = "1.0.0.0";
     private static final Pattern patternSupported_Download = Pattern.compile("http://[\\w\\.]*?flyload\\.net/download\\.php\\?view\\.(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Request = Pattern.compile("http://[\\w\\.]*?flyload\\.net/request_window\\.php\\?(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Safe = Pattern.compile("http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Safe.pattern() + "|" + patternSupported_Request.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
+    
+    
 
     public FlyLoadnet() {
         super();
     }
 
     
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
@@ -81,34 +83,40 @@ public class FlyLoadnet extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getHost() {
-        return host;
+    @Override
+    public String getCoder() {
+        return "JD-Team";
     }
 
   
 
     
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
     public String getPluginName() {
         return host;
     }
 
     
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
     
+    @Override
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
     }
 }

@@ -36,46 +36,46 @@ import jd.utils.JDUtilities;
 
 public class TrayIconPopup extends JWindow implements MouseListener, MouseMotionListener, ChangeListener {
 
+    private static final int ACTION_ADD = 4;
+	private static final int ACTION_CONFIG = 6;
+    private static final int ACTION_EXIT = 11; 
+    private static final int ACTION_LOAD = 0;
+    private static final int ACTION_LOG = 7;
+    private static final int ACTION_PAUSE = 3;
+private static final int ACTION_RECONNECT = 8;
+    private static final int ACTION_START = 1;
+    private static final int ACTION_STOP = 2;
+    private static final int ACTION_TOGGLE_CLIPBOARD = 9;
+    private static final int ACTION_TOGGLE_RECONNECT = 10;
+    private static final int ACTION_UPDATE = 5;
+    private static final int ANCHOR_NORTH_WEST = GridBagConstraints.NORTHWEST;
+    private static final int ANCHOR_WEST = GridBagConstraints.WEST;
+    private static final Color BACKGROUNDCOLOR = Color.WHITE;
+    private static final Color DISABLED_COLOR = Color.GRAY;
+    private static final int FILL_NONE = GridBagConstraints.NONE;
+    private static final Color HIGHLIGHT_COLOR = Color.BLUE;
+    private static final Insets INSETS = new Insets(1, 1, 1, 1);
+    private static final int MARGIN = 2;
+    //    private static final int FILL_BOTH = GridBagConstraints.BOTH;
+    private static final int MENUENTRY_HEIGHT = 16;
+    private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT+12;
+    private static final int MENUENTRY_LABEL_WIDTH = 220;
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final Color BACKGROUNDCOLOR = Color.WHITE;
-    private static final int MARGIN = 2; 
-    private static final Insets INSETS = new Insets(1, 1, 1, 1);
-    private static final int FILL_NONE = GridBagConstraints.NONE;
-    private static final int ANCHOR_NORTH_WEST = GridBagConstraints.NORTHWEST;
-//    private static final int FILL_BOTH = GridBagConstraints.BOTH;
-    private static final int MENUENTRY_HEIGHT = 16;
-    private static final int MENUENTRY_LABEL_WIDTH = 220;
-    private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT+12;
-    private static final Color HIGHLIGHT_COLOR = Color.BLUE;
-    private static final Color DISABLED_COLOR = Color.GRAY;
-    private static final int ACTION_LOAD = 0;
-    private static final int ACTION_START = 1;
-    private static final int ACTION_STOP = 2;
-    private static final int ACTION_PAUSE = 3;
-    private static final int ACTION_ADD = 4;
-    private static final int ACTION_UPDATE = 5;
-    private static final int ACTION_CONFIG = 6;
-    private static final int ACTION_LOG = 7;
-    private static final int ACTION_RECONNECT = 8;
-    private static final int ACTION_TOGGLE_CLIPBOARD = 9;
-    private static final int ACTION_TOGGLE_RECONNECT = 10;
-    private static final int ACTION_EXIT = 11;
-    private static final int ANCHOR_WEST = GridBagConstraints.WEST;
-    private JPanel topPanel;
-    private JPanel leftPanel;
-    private JPanel rightPanel;
     private JPanel bottomPanel;
     private boolean enteredPopup;
-//    private JDLightTray owner;
-    private int midPanelCounter = 0;
-    private Point point;
-    private int mouseOverRow;
     private ArrayList<Integer> entries = new ArrayList<Integer>();
+    private JPanel leftPanel;
+    //    private JDLightTray owner;
+    private int midPanelCounter = 0;
+private int mouseOverRow;
+    private Point point;
+    private JPanel rightPanel;
     private JSpinner spMax;
     private JSpinner spMaxDls;
+    private JPanel topPanel;
 
     TrayIconPopup(JDLightTray tracIcon) {
 //        this.owner = tracIcon;
@@ -123,62 +123,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     }
 
-    private void initBottomPanel() {
-        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
-
-        spMax = new JSpinner();
-        spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
-        spMax.setPreferredSize(new Dimension(60, 20));
-        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
-        spMax.addChangeListener(this);
-
-        spMaxDls = new JSpinner();
-        spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
-        spMaxDls.setPreferredSize(new Dimension(60, 20));
-        spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
-        spMaxDls.addChangeListener(this);
-
-        JDUtilities.addToGridBag(bottomPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_WEST);
-        JDUtilities.addToGridBag(bottomPanel, spMax, 1, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-        JDUtilities.addToGridBag(bottomPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")), 0, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_WEST);
-        JDUtilities.addToGridBag(bottomPanel, spMaxDls, 1, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-
-    }
-
-    private ImageIcon getClipBoardImage() {
-        if (ClipboardHandler.getClipboard().isEnabled())
-            return JDTheme.II("gui.images.clipboardon");
-        else
-            return JDTheme.II("gui.images.clipboardoff");
-
-    }
-
-    private ImageIcon getReconnectImage() {
-
-        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false))
-            return JDTheme.II("gui.images.reconnect_ok");
-        else
-            return JDTheme.II("gui.images.reconnect_bad");
-
-    }
-
-    private void addMenuEntry(Integer id, ImageIcon i, String l) {
-        JLabel b;
-        JLabel icon;
-        JDUtilities.addToGridBag(leftPanel, icon = new JLabel(new ImageIcon(i.getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH))), 0, midPanelCounter, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-
-        JDUtilities.addToGridBag(rightPanel, b = new JLabel(l), 0, midPanelCounter, 1, 1, 0, 1, new Insets(1, 4, 1, 1), FILL_NONE, ANCHOR_NORTH_WEST);
-        entries.add(id);
-        this.midPanelCounter++;
-        b.setHorizontalAlignment(SwingConstants.LEFT);
-
-        b.setOpaque(false);
-        icon.setOpaque(false);
-        b.setPreferredSize(new Dimension(MENUENTRY_LABEL_WIDTH, MENUENTRY_HEIGHT));
-        icon.setPreferredSize(new Dimension(MENUENTRY_ICON_WIDTH, MENUENTRY_HEIGHT));
-
-    }
-
     private void addDisabledMenuEntry(ImageIcon i, String l) {
         JLabel b;
         JLabel icon;
@@ -200,14 +144,58 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     }
 
-    private void initTopPanel() {
-        ImageIcon logo = new ImageIcon(JDTheme.II("gui.images.jd_logo").getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH));
-        JDUtilities.addToGridBag(topPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision(), logo, SwingConstants.LEFT), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-        // JDUtilities.addToGridBag(topPanel,new JSeparator(), 0, 1, 1, 1, 0,
-        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
-        // JDUtilities.addToGridBag(topPanel,new JLabel(""), 0, 1, 1, 1, 0,
-        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
-        //      
+    private void addMenuEntry(Integer id, ImageIcon i, String l) {
+        JLabel b;
+        JLabel icon;
+        JDUtilities.addToGridBag(leftPanel, icon = new JLabel(new ImageIcon(i.getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH))), 0, midPanelCounter, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
+
+        JDUtilities.addToGridBag(rightPanel, b = new JLabel(l), 0, midPanelCounter, 1, 1, 0, 1, new Insets(1, 4, 1, 1), FILL_NONE, ANCHOR_NORTH_WEST);
+        entries.add(id);
+        this.midPanelCounter++;
+        b.setHorizontalAlignment(SwingConstants.LEFT);
+
+        b.setOpaque(false);
+        icon.setOpaque(false);
+        b.setPreferredSize(new Dimension(MENUENTRY_LABEL_WIDTH, MENUENTRY_HEIGHT));
+        icon.setPreferredSize(new Dimension(MENUENTRY_ICON_WIDTH, MENUENTRY_HEIGHT));
+
+    }
+
+    private boolean checkUpdate(Point p) {
+        if (this.mouseOverRow != getRow(p)) {
+            mouseOverRow = getRow(p);
+            paint();
+            return true;
+        }
+
+        return false;
+    }
+
+    private ImageIcon getClipBoardImage() {
+        if (ClipboardHandler.getClipboard().isEnabled())
+            return JDTheme.II("gui.images.clipboardon");
+        else
+            return JDTheme.II("gui.images.clipboardoff");
+
+    }
+
+    private ImageIcon getReconnectImage() {
+
+        if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false))
+            return JDTheme.II("gui.images.reconnect_ok");
+        else
+            return JDTheme.II("gui.images.reconnect_bad");
+
+    }
+
+    private int getRow(Point e) {
+        int y = e.y;
+        y -= rightPanel.getY();
+        if (y < 0) { return -1; }
+        y /= (rightPanel.getHeight() / midPanelCounter);
+
+        return y;
+
     }
 
     private void init() {
@@ -238,8 +226,48 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         topPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.LIGHT_GRAY));
     }
 
+    private void initBottomPanel() {
+        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
+
+        spMax = new JSpinner();
+        spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
+        spMax.setPreferredSize(new Dimension(60, 20));
+        spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
+        spMax.addChangeListener(this);
+
+        spMaxDls = new JSpinner();
+        spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
+        spMaxDls.setPreferredSize(new Dimension(60, 20));
+        spMaxDls.setToolTipText(JDLocale.L("gui.tooltip.statusbar.simultan_downloads", "Max. gleichzeitige Downloads"));
+        spMaxDls.addChangeListener(this);
+
+        JDUtilities.addToGridBag(bottomPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.speed", "Geschwindigkeitsbegrenzung")), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_WEST);
+        JDUtilities.addToGridBag(bottomPanel, spMax, 1, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
+        JDUtilities.addToGridBag(bottomPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")), 0, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_WEST);
+        JDUtilities.addToGridBag(bottomPanel, spMaxDls, 1, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
+
+    }
+
+    private void initTopPanel() {
+        ImageIcon logo = new ImageIcon(JDTheme.II("gui.images.jd_logo").getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH));
+        JDUtilities.addToGridBag(topPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision(), logo, SwingConstants.LEFT), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
+        // JDUtilities.addToGridBag(topPanel,new JSeparator(), 0, 1, 1, 1, 0,
+        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
+        // JDUtilities.addToGridBag(topPanel,new JLabel(""), 0, 1, 1, 1, 0,
+        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
+        //      
+    }
+
     public void mouseClicked(MouseEvent e) {
        
+
+    }
+
+  
+
+    public void mouseDragged(MouseEvent e) {
+        this.point = e.getPoint();
+        checkUpdate(point);
 
     }
 
@@ -257,7 +285,11 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
 
     }
 
-  
+    public void mouseMoved(MouseEvent e) {
+        this.point = e.getPoint();
+        checkUpdate(point);
+
+    }
 
     public void mousePressed(MouseEvent e) {
         this.point = e.getPoint();
@@ -320,38 +352,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         }
         dispose();
 
-    }
-
-    public void mouseDragged(MouseEvent e) {
-        this.point = e.getPoint();
-        checkUpdate(point);
-
-    }
-
-    public void mouseMoved(MouseEvent e) {
-        this.point = e.getPoint();
-        checkUpdate(point);
-
-    }
-
-    private int getRow(Point e) {
-        int y = e.y;
-        y -= rightPanel.getY();
-        if (y < 0) { return -1; }
-        y /= (rightPanel.getHeight() / midPanelCounter);
-
-        return y;
-
-    }
-
-    private boolean checkUpdate(Point p) {
-        if (this.mouseOverRow != getRow(p)) {
-            mouseOverRow = getRow(p);
-            paint();
-            return true;
-        }
-
-        return false;
     }
 
     private void paint() {

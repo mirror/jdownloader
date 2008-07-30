@@ -31,6 +31,15 @@ import jd.parser.Regex;
  * @author astaldo
  */
 public class RequestInfo {
+    private HTTPConnection connection;
+    /**
+     * Cookie
+     */
+    private String cookie   = null;
+    /**
+     * Die zurückgelieferten Header
+     */
+    private  Map<String,List<String>> headers  = null;
     /**
      * Der Quelltext der Seite
      */
@@ -39,20 +48,11 @@ public class RequestInfo {
      * Die (Soll)Adresse der Seite
      */
     private String location = null;
-    /**
-     * Die zurückgelieferten Header
-     */
-    private  Map<String,List<String>> headers  = null;
+    private Request request;
     /**
      * Der zurückgelieferte Code
      */
     private int responseCode;
-    private HTTPConnection connection;
-    /**
-     * Cookie
-     */
-    private String cookie   = null;
-    private Request request;
 
     public RequestInfo(String htmlCode, String location, String cookie, Map<String,List<String>> headers, int responseCode){
         this.htmlCode = htmlCode;
@@ -62,6 +62,56 @@ public class RequestInfo {
         this.responseCode = responseCode;
         
     }
+    public boolean containsHTML(String pattern){
+        return getHtmlCode().indexOf(pattern)>=0;
+    }
+    /**
+     * @return the connection
+     */
+    public HTTPConnection getConnection() {
+        return connection;
+    }
+    public String getCookie()                    { return cookie;       }
+    /**
+     * gibt den ersten Match aus
+     */
+    public String getFirstMatch(String pattern)
+    {
+    	return getRegexp(pattern).getFirstMatch();
+    }
+    /**
+     * gibt die erste Form der requestInfo aus
+     * @return
+     */
+    public Form getForm()
+    {
+    	return getForms()[0];
+    }
+    /**
+     * gibt die Forms der requestInfo aus
+     * @param pattern
+     * @return
+     */
+    public Form[] getForms()
+    {
+    	return Form.getForms(this);
+    }
+    public Map<String,List<String>> getHeaders() { return headers;      }
+    public String getHtmlCode()                  { return htmlCode;     }
+    public String getLocation()                  { return location;     }
+    /**
+     * Macht einen Regexp auf die requestInfo
+     * @param pattern
+     * @return
+     */
+    public Regex getRegexp(String pattern)
+    {
+    	return new Regex(this, pattern);
+    }
+    public Request getRequest() {
+        return request;
+    }
+    public int getResponseCode()                 { return responseCode; }
     /**
      * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder nicht.
      * HTTP Codes zwischen -2 und 499 gelten als erfolgreich
@@ -76,16 +126,8 @@ public class RequestInfo {
         else
             return false;
     }
-    public Map<String,List<String>> getHeaders() { return headers;      }
-    public String getHtmlCode()                  { return htmlCode;     }
-    public String getLocation()                  { return location;     }
-    public String getCookie()                    { return cookie;       }
-    public int getResponseCode()                 { return responseCode; }
-    /**
-     * @return the connection
-     */
-    public HTTPConnection getConnection() {
-        return connection;
+    public void setConnection(HTTPConnection connection) {
+        this.connection = connection;
     }
     /**
      * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein JavaScript die Form verändert
@@ -95,51 +137,10 @@ public class RequestInfo {
     {
     	this.htmlCode=htmlCode;
     }
-    public boolean containsHTML(String pattern){
-        return getHtmlCode().indexOf(pattern)>=0;
-    }
-    public void setConnection(HTTPConnection connection) {
-        this.connection = connection;
-    }
-    public String toString()	{ return getHtmlCode(); }
-    /**
-     * Macht einen Regexp auf die requestInfo
-     * @param pattern
-     * @return
-     */
-    public Regex getRegexp(String pattern)
-    {
-    	return new Regex(this, pattern);
-    }
-    /**
-     * gibt den ersten Match aus
-     */
-    public String getFirstMatch(String pattern)
-    {
-    	return getRegexp(pattern).getFirstMatch();
-    }
-    /**
-     * gibt die Forms der requestInfo aus
-     * @param pattern
-     * @return
-     */
-    public Form[] getForms()
-    {
-    	return Form.getForms(this);
-    }
-    /**
-     * gibt die erste Form der requestInfo aus
-     * @return
-     */
-    public Form getForm()
-    {
-    	return getForms()[0];
-    }
     public void setRequest(Request request) {
        this.request=request;
         
     }
-    public Request getRequest() {
-        return request;
-    }
+    @Override
+    public String toString()	{ return getHtmlCode(); }
 }

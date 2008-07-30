@@ -24,35 +24,66 @@ public class Freaksharenet extends PluginForHost {
 
     private static final String HOST = "freakshare.net";
    
-    private String url;
-    private String postdata;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
+    private String postdata;
     private RequestInfo requestInfo;
+    private String url;
 
     //
     
+    public Freaksharenet() {
+        super();
+        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
+        // //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://freakshare.net/?x=faq";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
 
-    
-    public String getHost() {
-        return HOST;
-    }
+            if (!requestInfo.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
+                ArrayList<ArrayList<String>> filename = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
+                downloadLink.setName(filename.get(0).get(1));
+                ArrayList<ArrayList<String>> filesize = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
+                if (filesize.get(0).get(3).contains("MB")) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024 * 1024);
+                } else if (filesize.get(0).get(3).contains("KB")) {
+                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024);
+                }
+                return true;
+            }
+        } catch (MalformedURLException e) {
 
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+            e.printStackTrace();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        downloadLink.setAvailable(false);
+        return false;
     }
 
     
@@ -61,17 +92,35 @@ public class Freaksharenet extends PluginForHost {
     
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public Freaksharenet() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -117,49 +166,12 @@ public class Freaksharenet extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-
-            if (!requestInfo.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
-                ArrayList<ArrayList<String>> filename = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
-                downloadLink.setName(filename.get(0).get(1));
-                ArrayList<ArrayList<String>> filesize = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
-                if (filesize.get(0).get(3).contains("MB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024 * 1024);
-                } else if (filesize.get(0).get(3).contains("KB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024);
-                }
-                return true;
-            }
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://freakshare.net/?x=faq";
     }
 }

@@ -55,6 +55,176 @@ import jd.utils.JDUtilities;
  */
 public class ConfigPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
 
+    private class InternalTable extends JTable {
+
+        /**
+		 * 
+		 */
+        private static final long serialVersionUID = 1L;
+
+    }
+
+    private class InternalTableModel extends AbstractTableModel {
+
+        /**
+		 * 
+		 */
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+
+            return getValueAt(0, columnIndex).getClass();
+
+        }
+
+        public int getColumnCount() {
+
+            return 6;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+            case 0:
+                return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
+            case 1:
+                return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
+            case 2:
+                return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
+            case 3:
+                return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
+            case 4:
+                return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
+            case 5:
+                return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
+
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return packageData.size();
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            HashMap<String, String> element = packageData.elementAt(rowIndex);
+
+            switch (columnIndex) {
+            case 0:
+                return element.get("name");
+            case 1:
+                return element.get("category");
+            case 2:
+                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
+            case 3:
+                return element.get("version");
+            case 4:
+                return getInstalledVersion(element);
+
+            case 5:
+                return element.get("selected") != null;
+
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+
+            return true;
+        }
+
+        /*
+         * Don't need to implement this method unless your table's data can
+         * change.
+         */
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            // logger.info("Set value: " + value);
+            // if ((Boolean) value) {
+            // if
+            // (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(
+            // JDLocale.L("gui.config.plugin.abg_confirm",
+            // "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit
+            // einverstanden!"), new String[] {
+            // pluginsForHost.elementAt(row).getHost() })))
+            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+            // }
+            // else {
+            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+            // }
+
+            HashMap<String, String> element = packageData.elementAt(row);
+            boolean v = !(element.get("selected") != null);
+            config.setProperty("PACKAGE_SELECTED_" + element.get("id"), v);
+
+            element.put("selected", v ? "true" : null);
+
+        }
+    }
+
+    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
+
+        private JLinkButton btn;
+
+        private boolean stop = false;
+
+        public void actionPerformed(ActionEvent e) {
+
+            this.stop = true;
+            table.tableChanged(new TableModelEvent(table.getModel()));
+
+        }
+
+        public void addCellEditorListener(CellEditorListener l) {
+
+        }
+
+        public void cancelCellEditing() {
+
+        }
+
+        public Object getCellEditorValue() {
+
+            return null;
+        }
+
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+
+            this.btn = (JLinkButton) value;
+            btn.addActionListener(this);
+            return (JLinkButton) value;
+        }
+
+        public boolean isCellEditable(EventObject anEvent) {
+
+            return true;
+        }
+
+        public void removeCellEditorListener(CellEditorListener l) {
+
+        }
+
+        public boolean shouldSelectCell(EventObject anEvent) {
+
+            return false;
+        }
+
+        public boolean stopCellEditing() {
+
+            return stop;
+        }
+
+    }
+
+    private class JLinkButtonRenderer implements TableCellRenderer {
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            return (JLinkButton) value;
+        }
+
+    }
+
     /**
 	 * 
 	 */
@@ -67,10 +237,12 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
     // private Configuration configuration;
     private SubConfiguration config;
 
-    private InternalTable table;
-
     private Vector<HashMap<String, String>> packageData = new Vector<HashMap<String, String>>();
 
+    
+    private InternalTable table;
+
+    
     public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         // this.configuration = configuration;
@@ -80,13 +252,60 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     }
 
-    public void save() {
-        // logger.info("save");
-        this.saveConfigEntries();
+    // //Nested Classes
+
+    public void actionPerformed(ActionEvent e) {
+        for (int i = 0; i < this.packageData.size(); i++) {
+
+            config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
+        }
+        table.tableChanged(new TableModelEvent(table.getModel()));
+
+        config.setProperty("CURRENT_JDU_LIST", new ArrayList<String>());
         config.save();
-        new PackageManager().interact(this);
     }
 
+    public int getInstalledVersion(HashMap<String, String> element) {
+        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + element.get("id"), 0);
+
+    }
+
+    // private class MarkRenderer extends DefaultTableCellRenderer {
+    // /**
+    // *
+    // */
+    // private static final long serialVersionUID = -448800592517509052L;
+    //
+    // public Component getTableCellRendererComponent(JTable table, Object
+    // value, boolean isSelected, boolean hasFocus, int row, int column) {
+    // Component c = super.getTableCellRendererComponent(table, value,
+    // isSelected, hasFocus, row, column);
+    // if (!isSelected) {
+    //
+    // PluginForHost plugin = pluginsForHost.get(row);
+    // if (plugin.getConfig().getEntries().size() == 0) {
+    // c.setBackground(new Color(0, 0, 0, 10));
+    // c.setForeground(new Color(0, 0, 0, 70));
+    // }
+    // else {
+    // c.setBackground(Color.WHITE);
+    // c.setForeground(Color.BLACK);
+    // }
+    //
+    // }
+    // // logger.info("jj");
+    // return c;
+    // }
+    //
+    // }
+
+    @Override
+    public String getName() {
+
+        return JDLocale.L("gui.config.packagemanager.name", "Paketmanager");
+    }
+
+    @Override
     public void initPanel() {
         this.setPreferredSize(new Dimension(650, 350));
         config = JDUtilities.getSubConfig("PACKAGEMANAGER");
@@ -172,223 +391,15 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         add(panel, BorderLayout.CENTER);
     }
 
-    
-    public void load() {
-        this.loadConfigEntries();
-
-    }
-
-    
-    public String getName() {
-
-        return JDLocale.L("gui.config.packagemanager.name", "Paketmanager");
-    }
-
-    // //Nested Classes
-
-    private class InternalTableModel extends AbstractTableModel {
-
-        /**
-		 * 
-		 */
-        private static final long serialVersionUID = 1L;
-
-        public Class<?> getColumnClass(int columnIndex) {
-
-            return getValueAt(0, columnIndex).getClass();
-
-        }
-
-        public boolean isCellEditable(int rowIndex, int columnIndex) {
-
-            return true;
-        }
-
-        public int getColumnCount() {
-
-            return 6;
-        }
-
-        public int getRowCount() {
-            return packageData.size();
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            HashMap<String, String> element = packageData.elementAt(rowIndex);
-
-            switch (columnIndex) {
-            case 0:
-                return element.get("name");
-            case 1:
-                return element.get("category");
-            case 2:
-                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
-            case 3:
-                return element.get("version");
-            case 4:
-                return getInstalledVersion(element);
-
-            case 5:
-                return element.get("selected") != null;
-
-            }
-            return null;
-        }
-
-        /*
-         * Don't need to implement this method unless your table's data can
-         * change.
-         */
-        public void setValueAt(Object value, int row, int col) {
-            // logger.info("Set value: " + value);
-            // if ((Boolean) value) {
-            // if
-            // (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(
-            // JDLocale.L("gui.config.plugin.abg_confirm",
-            // "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit
-            // einverstanden!"), new String[] {
-            // pluginsForHost.elementAt(row).getHost() })))
-            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            // }
-            // else {
-            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            // }
-
-            HashMap<String, String> element = packageData.elementAt(row);
-            boolean v = !(element.get("selected") != null);
-            config.setProperty("PACKAGE_SELECTED_" + element.get("id"), v);
-
-            element.put("selected", v ? "true" : null);
-
-        }
-
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return JDLocale.L("gui.config.packagemanager.column_name", "Paket");
-            case 1:
-                return JDLocale.L("gui.config.packagemanager.column_category", "Kategorie");
-            case 2:
-                return JDLocale.L("gui.config.packagemanager.column_info", "Info.");
-            case 3:
-                return JDLocale.L("gui.config.packagemanager.column_latestVersion", "Akt. Version");
-            case 4:
-                return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
-            case 5:
-                return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
-
-            }
-            return super.getColumnName(column);
-        }
-    }
-
-    private class InternalTable extends JTable {
-
-        /**
-		 * 
-		 */
-        private static final long serialVersionUID = 1L;
-
-    }
-
-    // private class MarkRenderer extends DefaultTableCellRenderer {
-    // /**
-    // *
-    // */
-    // private static final long serialVersionUID = -448800592517509052L;
-    //
-    // public Component getTableCellRendererComponent(JTable table, Object
-    // value, boolean isSelected, boolean hasFocus, int row, int column) {
-    // Component c = super.getTableCellRendererComponent(table, value,
-    // isSelected, hasFocus, row, column);
-    // if (!isSelected) {
-    //
-    // PluginForHost plugin = pluginsForHost.get(row);
-    // if (plugin.getConfig().getEntries().size() == 0) {
-    // c.setBackground(new Color(0, 0, 0, 10));
-    // c.setForeground(new Color(0, 0, 0, 70));
-    // }
-    // else {
-    // c.setBackground(Color.WHITE);
-    // c.setForeground(Color.BLACK);
-    // }
-    //
-    // }
-    // // logger.info("jj");
-    // return c;
-    // }
-    //
-    // }
-
-    private class JLinkButtonRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JLinkButton) value;
-        }
-
-    }
-
-    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
-
-        private JLinkButton btn;
-
-        private boolean stop = false;
-
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-
-            this.btn = (JLinkButton) value;
-            btn.addActionListener(this);
-            return (JLinkButton) value;
-        }
-
-        public void addCellEditorListener(CellEditorListener l) {
-
-        }
-
-        public void cancelCellEditing() {
-
-        }
-
-        public Object getCellEditorValue() {
-
-            return null;
-        }
-
-        public boolean isCellEditable(EventObject anEvent) {
-
-            return true;
-        }
-
-        public void removeCellEditorListener(CellEditorListener l) {
-
-        }
-
-        public boolean shouldSelectCell(EventObject anEvent) {
-
-            return false;
-        }
-
-        public boolean stopCellEditing() {
-
-            return stop;
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            this.stop = true;
-            table.tableChanged(new TableModelEvent(table.getModel()));
-
-        }
-
-    }
-
-    public int getInstalledVersion(HashMap<String, String> element) {
-        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + element.get("id"), 0);
-
-    }
-
     public boolean isSelectedByUser(HashMap<String, String> elementAt) {
 
         return false;
+    }
+
+    @Override
+    public void load() {
+        this.loadConfigEntries();
+
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -416,15 +427,12 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     }
 
-    public void actionPerformed(ActionEvent e) {
-        for (int i = 0; i < this.packageData.size(); i++) {
-
-            config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
-        }
-        table.tableChanged(new TableModelEvent(table.getModel()));
-
-        config.setProperty("CURRENT_JDU_LIST", new ArrayList<String>());
+    @Override
+    public void save() {
+        // logger.info("save");
+        this.saveConfigEntries();
         config.save();
+        new PackageManager().interact(this);
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

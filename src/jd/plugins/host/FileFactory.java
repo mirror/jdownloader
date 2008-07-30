@@ -44,74 +44,40 @@ import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
 
-    static private final String host = "filefactory.com";
-    private String version = "1.5.6";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
+    private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
+    private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
+    private static final String DOWNLOAD_LIMIT = "exceeded the download limit";
 
+    private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
+    private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
+    static private final String host = "filefactory.com";
+
+    private static final String NO_SLOT = "no free download slots";
+    private static final String NOT_AVAILABLE = "class=\"box error\"";
+    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "downloading too many files";
     // src=
     // "/securimage/securimage_show.php?f=044a7b&amp;h=c5b0bfa214ecf57d7f5250582c8004a3"
     // alt="Verification code
     private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
-    private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
-
-    private static final String NOT_AVAILABLE = "class=\"box error\"";
-    private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
-    private static final String NO_SLOT = "no free download slots";
-    private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
-    private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
     // <p style="margin:30px 0 20px"><a
     // href="http://dl054.filefactory.com/dlp/6a1dad/"><img
     // src="/images/begin_download.gif"
     private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/.*?)\"";
+    private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
-    private static final String DOWNLOAD_LIMIT = "exceeded the download limit";
-    private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
-    private static final String PATTERN_DOWNLOADING_TOO_MANY_FILES = "downloading too many files";
+    private String actionString;
 
     private String captchaAddress;
-    private String postTarget;
-    private String actionString;
-    private RequestInfo requestInfo;
-    private int wait;
     private File captchaFile;
+    private String postTarget;
+    private RequestInfo requestInfo;
+    // private String version = "1.5.6";
+    private int wait;
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-       
-    
-
-    
-    public void init() {
-        // currentStep = null;
-    }
-
     public FileFactory() {
 
         super();
@@ -124,30 +90,18 @@ public class FileFactory extends PluginForHost {
     }
 
     
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
-
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
-            this.doPremium(downloadLink);
-
-        } else {
-
-            this.doFree(downloadLink);
-
-        }
-
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
+    
     public void doFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
         DownloadLink downloadLink = null;
 
-        downloadLink = (DownloadLink) parameter;
+        downloadLink = parameter;
         logger.info(downloadLink.getDownloadURL());
         // switch (step.getStep()) {
 
@@ -314,6 +268,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
+    
     // by eXecuTe
     public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -389,49 +344,21 @@ public class FileFactory extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
+    public String getAGBLink() {
+        return "http://www.filefactory.com/info/terms.php";
     }
 
     
-    public void reset() {
-
-        captchaAddress = null;
-        postTarget = null;
-        actionString = null;
-        requestInfo = null;
-        wait = 0;
-
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-
-    }
-
-    public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
-    }
-
-    // codierung ist nicht standardkonform
-    // http%3A%2F%2Fwww.filefactory.com%2Ffile%2Fd0b032%2F
-    /*
-     * private static String fileFactoryUrlEncode(String str) {
-     * 
-     * String allowed =
-     * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.\\&=;";
-     * String ret = ""; int i;
-     * 
-     * for (i = 0; i < str.length(); i++) {
-     * 
-     * char letter = str.charAt(i);
-     * 
-     * if (allowed.indexOf(letter) >= 0) { ret += letter; } else { ret += "%" +
-     * Integer.toString(letter, 16).toUpperCase(); } }
-     * 
-     * return ret; }
-     */
     
+       
+    
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -491,25 +418,98 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private void setConfigElements() {
-
-        ConfigEntry cfg;
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue(JDLocale.L("plugins.host.premium.email", "Email"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
-
+    
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
-    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
             return 1;
         }
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    // codierung ist nicht standardkonform
+    // http%3A%2F%2Fwww.filefactory.com%2Ffile%2Fd0b032%2F
+    /*
+     * private static String fileFactoryUrlEncode(String str) {
+     * 
+     * String allowed =
+     * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.\\&=;";
+     * String ret = ""; int i;
+     * 
+     * for (i = 0; i < str.length(); i++) {
+     * 
+     * char letter = str.charAt(i);
+     * 
+     * if (allowed.indexOf(letter) >= 0) { ret += letter; } else { ret += "%" +
+     * Integer.toString(letter, 16).toUpperCase(); } }
+     * 
+     * return ret; }
+     */
+    
+    @Override
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
+
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+
+            this.doPremium(downloadLink);
+
+        } else {
+
+            this.doFree(downloadLink);
+
+        }
+
+    }
+
+    @Override
+    public void init() {
+        // currentStep = null;
+    }
+
+    
+    public void reset() {
+
+        captchaAddress = null;
+        postTarget = null;
+        actionString = null;
+        requestInfo = null;
+        wait = 0;
+
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+
     }
 
     
@@ -524,8 +524,16 @@ public class FileFactory extends PluginForHost {
     }
 
     
-    public String getAGBLink() {
-        return "http://www.filefactory.com/info/terms.php";
+    private void setConfigElements() {
+
+        ConfigEntry cfg;
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
+        cfg.setDefaultValue(JDLocale.L("plugins.host.premium.email", "Email"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
+        cfg.setDefaultValue(false);
+
     }
 
 }

@@ -19,18 +19,18 @@ public class FileUploadnet extends PluginForHost {
 
     private static final String HOST = "file-upload.net";
 
-    private static final String PLUGIN_NAME = HOST;
+    static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
 
     //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
 
     //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
-
+    static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
+    
     static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_View = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_SUPPORTED = Pattern.compile(PAT_Download.pattern() + "|" + PAT_View.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
+    static private final Pattern PAT_SUPPORTED = Pattern.compile(PAT_Download.pattern() + "|" + PAT_VIEW.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE);
+   private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
+    private RequestInfo requestInfo;
 
     public FileUploadnet() {
         super();
@@ -38,50 +38,25 @@ public class FileUploadnet extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://www.file-upload.net/to-agb.html";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
@@ -97,7 +72,7 @@ public class FileUploadnet extends PluginForHost {
                     downloadLink.setName(filename);
                     return true;
                 }
-            } else if (new Regex(downloadLink.getDownloadURL(), PAT_View).matches()) {
+            } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* LinkCheck für DownloadFiles */
                 downloadurl = downloadLink.getDownloadURL();
                 requestInfo = HTTP.getRequest(new URL(downloadurl));
@@ -119,7 +94,43 @@ public class FileUploadnet extends PluginForHost {
         return false;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+     @Override
+    public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
         
    
             /* Nochmals das File überprüfen */
@@ -135,7 +146,7 @@ public class FileUploadnet extends PluginForHost {
                 Form form = requestInfo.getForms()[0];
                 form.withHtmlCode = false;
                 requestInfo = form.getRequestInfo(false);
-            } else if (new Regex(downloadLink.getDownloadURL(), PAT_View).matches()) {
+            } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* DownloadFiles */
                 downloadurl = requestInfo.getRegexp("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getFirstMatch();
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
@@ -164,12 +175,13 @@ public class FileUploadnet extends PluginForHost {
     }
 
     
-    public void resetPluginGlobals() {
-       
+    @Override
+    public void reset() {
     }
 
     
-    public String getAGBLink() {
-        return "http://www.file-upload.net/to-agb.html";
+    @Override
+    public void resetPluginGlobals() {
+       
     }
 }

@@ -34,15 +34,16 @@ import java.util.logging.SimpleFormatter;
  */
 public class LogFormatter extends SimpleFormatter{
 
-    Date dat = new Date();
-    private MessageFormat formatter;
     private final static String format = "{0,date} {0,time}";
     private Object args[] = new Object[1];
+    Date dat = new Date();
+    private MessageFormat formatter;
     // Line separator string.  This is the value of the line.separator
     // property at the moment that the SimpleFormatter was created.
     private String lineSeparator = System.getProperty("line.separator");
 
     
+    @Override
     public synchronized String format(LogRecord record) {
 
         StringBuffer sb = new StringBuffer();

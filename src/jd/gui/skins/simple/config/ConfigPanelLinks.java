@@ -48,12 +48,12 @@ public class ConfigPanelLinks extends ConfigPanel {
         initPanel();
         load();
     }
-    public void save() {
-        this.saveConfigEntries();
-if(guiConfig!=null)
-        guiConfig.save();
+    @Override
+    public String getName() {
+        return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
     }
     
+    @Override
     public void initPanel() {
         GUIConfigEntry ce;
         ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL,  JDLocale.L("gui.config.links.message", "Hier finden Sie einige wichtige Links bezogen auf jDownloader")));
@@ -116,11 +116,15 @@ ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_LINK,  JDLocale.L("
         add(new JScrollPane(panel), BorderLayout.CENTER);
     }
     
+    @Override
     public void load() {
         this.loadConfigEntries();
     }
     
-    public String getName() {
-        return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
+    @Override
+    public void save() {
+        this.saveConfigEntries();
+if(guiConfig!=null)
+        guiConfig.save();
     }
 }

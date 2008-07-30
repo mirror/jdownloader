@@ -24,14 +24,14 @@ public class ScheduleControl extends JDialog implements ActionListener {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	Choice list = new Choice();
-    JButton add = new JButton(JDLocale.L("addons.schedule.menu.add","Add"));
-    JButton remove = new JButton(JDLocale.L("addons.schedule.menu.remove","Remove"));
-    JButton show = new JButton(JDLocale.L("addons.schedule.menu.edit","Edit"));    
-    Timer status = new Timer(1,this);
-       
+	JButton add = new JButton(JDLocale.L("addons.schedule.menu.add","Add"));
+    Choice list = new Choice();
     JPanel menu = new JPanel();
-    JPanel panel = new JPanel();
+    JPanel panel = new JPanel();    
+    JButton remove = new JButton(JDLocale.L("addons.schedule.menu.remove","Remove"));
+       
+    JButton show = new JButton(JDLocale.L("addons.schedule.menu.edit","Edit"));
+    Timer status = new Timer(1,this);
 
     Vector<ScheduleFrame> v = new Vector<ScheduleFrame>();
     
@@ -39,6 +39,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
     
     public ScheduleControl(){
             addWindowListener(new WindowAdapter() {
+                @Override
                 public void windowClosing(WindowEvent e) {                
                     setVisible(false);
                     status.stop();
@@ -100,7 +101,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
                 if(visible == false){
                     this.status.stop();
                     this.panel.removeAll();
-                    sched = (ScheduleFrame) v.elementAt(item);
+                    sched = v.elementAt(item);
                     visible = true;
                     this.panel.add(sched);
                     this.show.setText(JDLocale.L("addons.schedule.menu.close","Close"));
@@ -124,7 +125,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
             this.panel.removeAll();
             this.panel.setLayout(new GridLayout(size,1));
             for(int i = 0; i < size; ++i){
-                ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
+                ScheduleFrame s = v.elementAt(i);
                 int a = i+1;
                 this.panel.add(new JLabel("Schedule "+a+" Status: "+s.status.getText()));
             }
@@ -134,6 +135,13 @@ public class ScheduleControl extends JDialog implements ActionListener {
         }
     
     
+    public void controls(boolean b){
+
+            this.add.setEnabled(b);
+            this.remove.setEnabled(b);
+            this.list.setEnabled(b);
+
+    }
     public void reloadList(){
         
         this.list.removeAll();
@@ -153,16 +161,9 @@ public class ScheduleControl extends JDialog implements ActionListener {
     public void renameLabels(){
         int size = v.size();
         for(int i = 0; i < size; ++i){
-            ScheduleFrame s = (ScheduleFrame) v.elementAt(i);
+            ScheduleFrame s = v.elementAt(i);
             s.label.setText(list.getItem(i));
         }
         
-    }
-    public void controls(boolean b){
-
-            this.add.setEnabled(b);
-            this.remove.setEnabled(b);
-            this.list.setEnabled(b);
-
     }
 }

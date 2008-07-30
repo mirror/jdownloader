@@ -36,22 +36,26 @@ import jd.utils.JDUtilities;
  */
 public class JACScript {
     /**
-     * Logger
-     */
-    private Logger logger = UTILITIES.getLogger();
-
-    /**
      * Vector für die Befehle die für die Vorverarbeitung des Captchas verwendet
      * werden. (script.jas)
      */
     private Vector<String[]> captchaPrepareCommands;
 
     /**
-     * Vector für die Befehle die für die Ekennung allgemein gelten (script.jas)
+     * Farbwert für den verwendeten Farbraum. 0: hsb 1: RGB
      */
-    private Vector<String[]> jacCommands;
+    private int color;
 
-    private Vector<String[]> letterCommands;
+    /**
+     * nternes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
+     */
+    private int[] colorComponents = { 3, 3, 3 };
+
+    /**
+     * Internet Umrechnungsfaktor. Jenach verwendetem farbmodell. Wird
+     * automatisch gesetzt
+     */
+    private int colorFaktor;
 
     /**
      * Werte-Array Wird gaps != null, so werden die Werte als Trennpositionen
@@ -61,35 +65,31 @@ public class JACScript {
     private int[] gaps;
 
     /**
-     * nternes Farbarray. Hier werden die Eingaben über setColorFormat abgelegt
+     * Vector für die Befehle die für die Ekennung allgemein gelten (script.jas)
      */
-    private int[] colorComponents = { 3, 3, 3 };
+    private Vector<String[]> jacCommands;
+    private Vector<String[]> letterCommands;
     /**
-     * Internet Umrechnungsfaktor. Jenach verwendetem farbmodell. Wird
-     * automatisch gesetzt
+     * Logger
      */
-    private int colorFaktor;
+    private Logger logger = UTILITIES.getLogger();
     /**
-     * Farbwert für den verwendeten Farbraum. 0: hsb 1: RGB
+     * Methodenname
      */
-    private int color;
+    private String method;
     /**
      * owner
      */
     private JAntiCaptcha owner;
     /**
-     * Adresse zum Jacscript
-     */
-    private String scriptFile;
-    /**
-     * Methodenname
-     */
-    private String method;
-
-    /**
      * Hashtable für die parameter
      */
     private Hashtable<String, Object> parameter = new Hashtable<String, Object>();
+
+    /**
+     * Adresse zum Jacscript
+     */
+    private String scriptFile;
 
     /**
      * @param owner
@@ -115,6 +115,517 @@ public class JACScript {
             e.printStackTrace();
         }
 
+    }
+
+    /**
+     * @param letter
+     */
+    @SuppressWarnings("unchecked")
+	public void executeLetterPrepareCommands(Letter letter) {
+
+        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Letter Prepare scripts");
+
+        String[] params;
+        try {
+            for (int i = 0; i < this.letterCommands.size(); i++) {
+                String[] cmd = letterCommands.elementAt(i);
+                if (JAntiCaptcha.isLoggerActive()) logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+
+                if (cmd[0].equals("parameter")) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas(letter)");
+                    // captchaPrepareCommands
+
+                } else if (cmd[0].equals("function") && cmd[2] == null) {
+                    if (cmd[1].equalsIgnoreCase("normalize")) {
+                        letter.normalize();
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("clean")) {
+                        letter.clean();
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                        letter.toBlackAndWhite();
+                        continue;
+                    
+                        
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
+
+                    if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                        letter.toBlackAndWhite(Double.parseDouble(params[0].trim()));
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
+                        letter.resizetoHeight(Integer.parseInt(params[0].trim()));
+
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("turn")) {
+                        Letter tmp = letter.turn(Integer.parseInt(params[0].trim()));
+                        letter.grid = tmp.grid;
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        letter.normalize(Double.parseDouble(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("blurIt")) {
+                        letter.blurIt(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
+                        letter.sampleDown(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
+                        String[] ref = params[0].trim().split("\\.");
+                        if (ref.length != 2) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            continue;
+                        }
+                        String cl = ref[0];
+                        String methodname = ref[1];
+                        Class newClass;
+                        try {
+                            newClass = Class.forName("jd.captcha.specials." + cl);
+
+                            Class[] parameterTypes = new Class[] { letter.getClass() };
+                            Method method = newClass.getMethod(methodname, parameterTypes);
+                            Object[] arguments = new Object[] { letter };
+                            Object instance = null;
+                            method.invoke(instance, arguments);
+
+                        } catch (Exception e) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+
+                     
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
+                        letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else {
+                        
+                        
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
+                    if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
+
+                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
+                        letter.resizetoHeight(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("align")) {
+                        Letter tmp = letter.align(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));
+
+                        letter.grid = tmp.grid;
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("betterAlign")) {
+                        Letter tmp = letter.betterAlign(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));
+                        if (tmp != null && tmp.grid != null) letter.grid = tmp.grid;
+                        continue;
+
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
+                    if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
+
+                        letter.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("align")) {
+
+                        letter.align(Double.parseDouble(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
+                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
+                        letter.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
+                        letter.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        letter.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
+
+                }
+
+            }
+        } catch (Exception e) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas");
+            e.printStackTrace();
+
+        }
+        // BasicWindow.showImage(captcha.getImage(),120,80);
+    }
+
+    /**
+     * Diese Methode führt die zuvor eingelesenen JAC Script Befehle aus
+     */
+    private void executeParameterCommands() {
+        if (jacCommands == null || jacCommands.size() == 0) {
+            if (JAntiCaptcha.isLoggerActive()) logger.warning("KEINE JAC COMMANDS");
+            return;
+        }
+        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Parameter scripts");
+        try {
+            for (int i = 0; i < jacCommands.size(); i++) {
+                String[] cmd = jacCommands.elementAt(i);
+
+                if (cmd[0].equals("parameter")) {
+
+                    if (cmd[1].equalsIgnoreCase("gaps")) {
+
+                        cmd[2] = cmd[2].substring(1, cmd[2].length() - 1);
+                        String[] gaps = cmd[2].split("\\,");
+                        int[] newGaps = new int[gaps.length];
+                        for (int ii = 0; ii < gaps.length; ii++) {
+                            newGaps[ii] = Integer.parseInt(gaps[ii]);
+                        }
+                        this.setGaps(newGaps);
+                    } else if (cmd[1].equalsIgnoreCase("colortype")) {
+                        this.setColorType(cmd[2]);
+
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.info(cmd[1] + " - " + cmd[2]);
+                        this.set(cmd[1].toLowerCase(), this.toType(cmd[2], cmd[1]));
+                    }
+
+                } else {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas (" + cmd[0] + ")");
+                }
+            }
+        } catch (Exception e) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * Diese Methode führt die zuvor eingelesenen JAc Script Prepare Befehle aus
+     * 
+     * @param captcha
+     */
+    @SuppressWarnings("unchecked")
+    public void executePrepareCommands(Captcha captcha) {
+        if (captcha == null || captcha.isPrepared()) {
+            // ISt schon prepared
+            return;
+        }
+
+        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Prepare scripts");
+        captcha.setPrepared(true);
+        String[] params;
+        try {
+            for (int i = 0; i < this.captchaPrepareCommands.size(); i++) {
+                String[] cmd = captchaPrepareCommands.elementAt(i);
+                if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
+
+                if (cmd[0].equals("parameter")) {
+                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
+                    // captchaPrepareCommands
+
+                } else if (cmd[0].equals("function") && cmd[2] == null) {
+
+                    if (cmd[1].equalsIgnoreCase("invert")) {
+                        captcha.invert();
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                        captcha.toBlackAndWhite();
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        captcha.normalize();
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("clean")) {
+                        captcha.clean();
+                        continue;
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
+
+                    if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
+                        captcha.toBlackAndWhite(Double.parseDouble(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        captcha.normalize(Double.parseDouble(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
+                        captcha.convertPixel(params[0].trim());
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("blurIt")) {
+                        captcha.blurIt(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
+                        captcha.sampleDown(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
+                        captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
+                        String[] ref = params[0].trim().split("\\.");
+                        if (ref.length != 2) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
+                            continue;
+                        }
+                        String cl = ref[0];
+                        String methodname = ref[1];
+                        Class newClass;
+                        try {
+                            newClass = Class.forName("jd.captcha.specials." + cl);
+
+                            Class[] parameterTypes = new Class[] { captcha.getClass() };
+                            Method method = newClass.getMethod(methodname, parameterTypes);
+                            Object[] arguments = new Object[] { captcha };
+                            Object instance = null;
+                            method.invoke(instance, arguments);
+
+                        } catch (Exception e) {
+                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
+                            e.printStackTrace();
+                        }
+
+                    } else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
+
+                        captcha.saveImageasJpg(new File(params[0].trim()));
+                        continue;
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
+                    if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
+                        captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
+                        captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
+                        captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
+                        continue;
+
+                    } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
+                        captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
+                        continue;
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
+                    if (cmd[1].equalsIgnoreCase("cleanWithMask")) {
+                        logger.info("" + owner.getResourceFile(params[0].trim()));
+                        captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
+                        captcha.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
+                        captcha.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
+                        captcha.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
+                        captcha.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
+                        continue;
+
+                    } else {
+                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
+
+                    if (cmd[1].equalsIgnoreCase("cleanBackgroundBySample")) {
+                        captcha.cleanBackgroundBySample(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("crop")) {
+                        captcha.crop(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
+
+                        continue;
+                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByHorizontalSampleLine")) {
+                        captcha.cleanBackgroundByHorizontalSampleLine(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
+
+                        continue;
+                    }
+
+                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
+
+                } 
+
+            }
+        } catch (Exception e) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
+            e.printStackTrace();
+
+        }
+        // BasicWindow.showImage(captcha.getImage(),120,80);
+    }
+
+    /**
+     * 
+     * @param key
+     * @return Wert passend zu key. casting nötig!
+     */
+    public Object get(String key) {
+        key = key.toLowerCase();
+        return parameter.get(key);
+    }
+
+    /**
+     * @param key
+     * @return Boolean Wert
+     */
+    public boolean getBoolean(String key) {
+
+        Object ret = get(key);
+        if (!(ret instanceof Boolean)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein boolean Parameter für " + key);
+            return false;
+        }
+        return (Boolean) ret;
+    }
+
+    /**
+     * @return the captchaPrepareCommands
+     */
+    public Vector<String[]> getCaptchaPrepareCommands() {
+        return captchaPrepareCommands;
+    }
+
+    /**
+     * Gibt die Farbkomponente für die 255^i Gewcihtung zurück
+     * 
+     * @param i
+     * @return FarbKomponente an i
+     */
+    public int getColorComponent(int i) {
+
+        return colorComponents[i];
+    }
+
+    /**
+     * @return Aktueller Colorfaktor (255^verwendete farbkomponenten)
+     */
+    public int getColorFaktor() {
+        return colorFaktor;
+    }
+
+    /**
+     * @return the color
+     */
+    public int getColorFormat() {
+        return color;
+    }
+
+    /**
+     * @param key
+     * @return Double Value
+     */
+    public double getDouble(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Double)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein double Parameter für " + key);
+            return 0;
+        }
+        return (Double) ret;
+    }
+
+    /**
+     * @param key
+     * @return Float Value
+     */
+    public float getFloat(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Float)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein float Parameter für " + key);
+            return 0;
+        }
+        return (Float) ret;
+    }
+
+    /**
+     * @return the gaps
+     */
+    public int[] getGaps() {
+        return gaps;
+    }
+
+    /**
+     * @param key
+     * @return IntegerValue
+     */
+    public int getInteger(String key) {
+
+        Object ret = get(key);
+        if (!(ret instanceof Integer)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Integer Parameter für " + key);
+            return 0;
+        }
+        return (Integer) ret;
+    }
+
+    /**
+     * @return the jacCommands
+     */
+    public Vector<String[]> getJacCommands() {
+        return jacCommands;
+    }
+
+    /**
+     * @param key
+     * @return Long Value
+     */
+    public long getLong(String key) {
+        Object ret = get(key);
+        if (!(ret instanceof Integer)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Long Parameter für " + key);
+            return 0;
+        }
+        return (Long) ret;
+    }
+
+    /**
+     * @param key
+     * @return StringValue
+     */
+    public String getString(String key) {
+
+        Object ret = get(key);
+        if (!(ret instanceof String)) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein String Parameter für " + key);
+            return null;
+        }
+        return (String) ret;
     }
 
     private void init() {
@@ -395,515 +906,33 @@ public class JACScript {
     }
 
     /**
-     * Setzt einen neuen parameter
+     * Diese methode nimmt eine zeile der script.jas entgegen und parsed sie
      * 
-     * @param key
-     * @param value
+     * @param cmd
+     *            Zeile eines *.jas scripts
+     * @return Array:{Befehltyp, befehl,parameter}
      */
-    public void set(String key, Object value) {
-        try {
-            key = key.toLowerCase();
-            if (get(key) == null) {
-                // if(JAntiCaptcha.isLoggerActive())logger.finer("INIT
-                // Parameter: "+key+" =
-                // "+value+"("+value.getClass().getName()+")");
-            } else {
-                // if(JAntiCaptcha.isLoggerActive())logger.finer("Update
-                // Parameter: "+key+" =
-                // "+value+"("+value.getClass().getName()+")");
-            }
+    private String[] parseCommand(String cmd) {
+        String[] ret = new String[3];
+        String[] matches;
+        cmd = "#" + cmd + "#";
+        if ((matches = UTILITIES.getMatches(cmd, "#°=°#")) != null) {
 
-            parameter.put(key, value);
-        } catch (Exception e) {
+            ret[0] = "parameter";
+            ret[1] = matches[0].trim();
+            ret[2] = matches[1].replaceAll("\\\"", "").trim();
 
+        } else if ((matches = UTILITIES.getMatches(cmd, "#°(°)#")) != null) {
+            ret[0] = "function";
+            ret[1] = matches[0].trim();
+            ret[2] = matches[1].replaceAll("\\\"", "").trim();
+            if (ret[2].length() == 0) ret[2] = null;
+        } else if ((matches = UTILITIES.getMatches(cmd, "#°()#")) != null) {
+            ret[0] = "function";
+            ret[1] = matches[0].trim();
+            ret[2] = null;
         }
-    }
-
-    /**
-     * 
-     * @param key
-     * @return Wert passend zu key. casting nötig!
-     */
-    public Object get(String key) {
-        key = key.toLowerCase();
-        return parameter.get(key);
-    }
-
-    /**
-     * @param key
-     * @return Boolean Wert
-     */
-    public boolean getBoolean(String key) {
-
-        Object ret = get(key);
-        if (!(ret instanceof Boolean)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein boolean Parameter für " + key);
-            return false;
-        }
-        return (Boolean) ret;
-    }
-
-    /**
-     * @param key
-     * @return StringValue
-     */
-    public String getString(String key) {
-
-        Object ret = get(key);
-        if (!(ret instanceof String)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein String Parameter für " + key);
-            return null;
-        }
-        return (String) ret;
-    }
-
-    /**
-     * @param key
-     * @return IntegerValue
-     */
-    public int getInteger(String key) {
-
-        Object ret = get(key);
-        if (!(ret instanceof Integer)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Integer Parameter für " + key);
-            return 0;
-        }
-        return (Integer) ret;
-    }
-
-    /**
-     * @param key
-     * @return Long Value
-     */
-    public long getLong(String key) {
-        Object ret = get(key);
-        if (!(ret instanceof Integer)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein Long Parameter für " + key);
-            return 0;
-        }
-        return (Long) ret;
-    }
-
-    /**
-     * @param key
-     * @return Double Value
-     */
-    public double getDouble(String key) {
-        Object ret = get(key);
-        if (!(ret instanceof Double)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein double Parameter für " + key);
-            return 0;
-        }
-        return (Double) ret;
-    }
-
-    /**
-     * @param key
-     * @return Float Value
-     */
-    public float getFloat(String key) {
-        Object ret = get(key);
-        if (!(ret instanceof Float)) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Kein float Parameter für " + key);
-            return 0;
-        }
-        return (Float) ret;
-    }
-
-    /**
-     * Wandelt einen String in den Passenden datentyp um
-     * 
-     * @param arg
-     * @param key
-     * @return neuer datentyp
-     */
-    private Object toType(String arg, String key) {
-        Object current = get(key);
-        if (current instanceof String) { return arg; }
-        if (current instanceof Integer) { return Integer.parseInt(arg); }
-        if (current instanceof Float) { return Float.parseFloat(arg); }
-        if (current instanceof Double) { return Double.parseDouble(arg); }
-        if (current instanceof Boolean) { return arg.equalsIgnoreCase("true"); }
-        if (current == null) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
-        } else {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe(current + "Typ " + current.getClass() + " wird nicht unterstützt");
-        }
-        return null;
-    }
-
-    /**
-     * Diese Methode führt die zuvor eingelesenen JAC Script Befehle aus
-     */
-    private void executeParameterCommands() {
-        if (jacCommands == null || jacCommands.size() == 0) {
-            if (JAntiCaptcha.isLoggerActive()) logger.warning("KEINE JAC COMMANDS");
-            return;
-        }
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Parameter scripts");
-        try {
-            for (int i = 0; i < jacCommands.size(); i++) {
-                String[] cmd = jacCommands.elementAt(i);
-
-                if (cmd[0].equals("parameter")) {
-
-                    if (cmd[1].equalsIgnoreCase("gaps")) {
-
-                        cmd[2] = cmd[2].substring(1, cmd[2].length() - 1);
-                        String[] gaps = cmd[2].split("\\,");
-                        int[] newGaps = new int[gaps.length];
-                        for (int ii = 0; ii < gaps.length; ii++) {
-                            newGaps[ii] = Integer.parseInt(gaps[ii]);
-                        }
-                        this.setGaps(newGaps);
-                    } else if (cmd[1].equalsIgnoreCase("colortype")) {
-                        this.setColorType(cmd[2]);
-
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.info(cmd[1] + " - " + cmd[2]);
-                        this.set(cmd[1].toLowerCase(), this.toType(cmd[2], cmd[1]));
-                    }
-
-                } else {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas (" + cmd[0] + ")");
-                }
-            }
-        } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
-            e.printStackTrace();
-        }
-
-    }
-
-    /**
-     * Diese Methode führt die zuvor eingelesenen JAc Script Prepare Befehle aus
-     * 
-     * @param captcha
-     */
-    @SuppressWarnings("unchecked")
-    public void executePrepareCommands(Captcha captcha) {
-        if (captcha == null || captcha.isPrepared()) {
-            // ISt schon prepared
-            return;
-        }
-
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Prepare scripts");
-        captcha.setPrepared(true);
-        String[] params;
-        try {
-            for (int i = 0; i < this.captchaPrepareCommands.size(); i++) {
-                String[] cmd = captchaPrepareCommands.elementAt(i);
-                if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
-
-                if (cmd[0].equals("parameter")) {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas");
-                    // captchaPrepareCommands
-
-                } else if (cmd[0].equals("function") && cmd[2] == null) {
-
-                    if (cmd[1].equalsIgnoreCase("invert")) {
-                        captcha.invert();
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
-                        captcha.toBlackAndWhite();
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
-                        captcha.normalize();
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("clean")) {
-                        captcha.clean();
-                        continue;
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
-
-                    if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
-                        captcha.toBlackAndWhite(Double.parseDouble(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
-                        captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
-                        captcha.normalize(Double.parseDouble(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("convertPixel")) {
-                        captcha.convertPixel(params[0].trim());
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
-                        captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("blurIt")) {
-                        captcha.blurIt(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
-                        captcha.sampleDown(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
-                        captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
-                        String[] ref = params[0].trim().split("\\.");
-                        if (ref.length != 2) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
-                            continue;
-                        }
-                        String cl = ref[0];
-                        String methodname = ref[1];
-                        Class newClass;
-                        try {
-                            newClass = Class.forName("jd.captcha.specials." + cl);
-
-                            Class[] parameterTypes = new Class[] { captcha.getClass() };
-                            Method method = newClass.getMethod(methodname, parameterTypes);
-                            Object[] arguments = new Object[] { captcha };
-                            Object instance = null;
-                            method.invoke(instance, arguments);
-
-                        } catch (Exception e) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
-                            e.printStackTrace();
-                        }
-
-                    } else if (cmd[1].equalsIgnoreCase("saveImageasJpg")) {
-
-                        captcha.saveImageasJpg(new File(params[0].trim()));
-                        continue;
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
-                    if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
-                        captcha.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
-                        captcha.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
-                        captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
-                        captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
-                        continue;
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
-                    if (cmd[1].equalsIgnoreCase("cleanWithMask")) {
-                        logger.info("" + owner.getResourceFile(params[0].trim()));
-                        captcha.cleanWithMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
-                        captcha.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
-                        captcha.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
-                        captcha.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
-                        captcha.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
-
-                    if (cmd[1].equalsIgnoreCase("cleanBackgroundBySample")) {
-                        captcha.cleanBackgroundBySample(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("crop")) {
-                        captcha.crop(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
-
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByHorizontalSampleLine")) {
-                        captcha.cleanBackgroundByHorizontalSampleLine(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()), Integer.parseInt(params[3].trim()));
-
-                        continue;
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
-
-                } 
-
-            }
-        } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas (captcha)");
-            e.printStackTrace();
-
-        }
-        // BasicWindow.showImage(captcha.getImage(),120,80);
-    }
-
-    /**
-     * @param letter
-     */
-    @SuppressWarnings("unchecked")
-	public void executeLetterPrepareCommands(Letter letter) {
-
-        if (JAntiCaptcha.isLoggerActive()) logger.fine("Execute Script.jas Letter Prepare scripts");
-
-        String[] params;
-        try {
-            for (int i = 0; i < this.letterCommands.size(); i++) {
-                String[] cmd = letterCommands.elementAt(i);
-                if (JAntiCaptcha.isLoggerActive()) logger.info("Execute Function: " + cmd[1] + "(" + cmd[2] + ")");
-
-                if (cmd[0].equals("parameter")) {
-                    if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/+script.jas(letter)");
-                    // captchaPrepareCommands
-
-                } else if (cmd[0].equals("function") && cmd[2] == null) {
-                    if (cmd[1].equalsIgnoreCase("normalize")) {
-                        letter.normalize();
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("clean")) {
-                        letter.clean();
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
-                        letter.toBlackAndWhite();
-                        continue;
-                    
-                        
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 1) {
-
-                    if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
-                        letter.toBlackAndWhite(Double.parseDouble(params[0].trim()));
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
-                        letter.resizetoHeight(Integer.parseInt(params[0].trim()));
-
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("turn")) {
-                        Letter tmp = letter.turn(Integer.parseInt(params[0].trim()));
-                        letter.grid = tmp.grid;
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
-                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
-                        letter.normalize(Double.parseDouble(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
-                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("blurIt")) {
-                        letter.blurIt(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("sampleDown")) {
-                        letter.sampleDown(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
-                        String[] ref = params[0].trim().split("\\.");
-                        if (ref.length != 2) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("dpSpecial-Parameter should have the format Class.Method");
-                            continue;
-                        }
-                        String cl = ref[0];
-                        String methodname = ref[1];
-                        Class newClass;
-                        try {
-                            newClass = Class.forName("jd.captcha.specials." + cl);
-
-                            Class[] parameterTypes = new Class[] { letter.getClass() };
-                            Method method = newClass.getMethod(methodname, parameterTypes);
-                            Object[] arguments = new Object[] { letter };
-                            Object instance = null;
-                            method.invoke(instance, arguments);
-
-                        } catch (Exception e) {
-                            if (JAntiCaptcha.isLoggerActive()) logger.severe("Fehler in doSpecial:" + e.getLocalizedMessage());
-                            e.printStackTrace();
-                        }
-
-                     
-                    } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
-                        letter.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
-                        continue;
-                    } else {
-                        
-                        
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 2) {
-                    if (cmd[1].equalsIgnoreCase("reduceWhiteNoise")) {
-                        letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
-
-                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
-                        letter.resizetoHeight(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("reduceBlackNoise")) {
-                        letter.reduceBlackNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("align")) {
-                        Letter tmp = letter.align(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));
-
-                        letter.grid = tmp.grid;
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("betterAlign")) {
-                        Letter tmp = letter.betterAlign(Integer.parseInt(params[0].trim()), Integer.parseInt(params[1].trim()));
-                        if (tmp != null && tmp.grid != null) letter.grid = tmp.grid;
-                        continue;
-
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 3) {
-                    if (cmd[1].equalsIgnoreCase("removeSmallObjects")) {
-
-                        letter.removeSmallObjects(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Integer.parseInt(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("align")) {
-
-                        letter.align(Double.parseDouble(params[0].trim()), Integer.parseInt(params[1].trim()), Integer.parseInt(params[2].trim()));
-                    } else if (cmd[1].equalsIgnoreCase("desinx")) {
-                        letter.desinx(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-                    } else if (cmd[1].equalsIgnoreCase("desiny")) {
-                        letter.desiny(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-
-                    } else if (cmd[1].equalsIgnoreCase("normalize")) {
-                        letter.normalize(Double.parseDouble(params[0].trim()), Double.parseDouble(params[1].trim()), Double.parseDouble(params[2].trim()));
-                        continue;
-
-                    } else {
-                        if (JAntiCaptcha.isLoggerActive()) logger.severe("Error in " + method + "/+script.jas : Function not valid: " + cmd[1] + "(" + cmd[2] + ")");
-                    }
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 4) {
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 5) {
-
-                } else if (cmd[0].equals("function") && (params = cmd[2].split("\\,")).length == 6) {
-
-                }
-
-            }
-        } catch (Exception e) {
-            if (JAntiCaptcha.isLoggerActive()) logger.severe("Syntax Error in " + method + "/script.jas");
-            e.printStackTrace();
-
-        }
-        // BasicWindow.showImage(captcha.getImage(),120,80);
+        return ret;
     }
 
     /**
@@ -970,64 +999,28 @@ public class JACScript {
     }
 
     /**
-     * Diese methode nimmt eine zeile der script.jas entgegen und parsed sie
+     * Setzt einen neuen parameter
      * 
-     * @param cmd
-     *            Zeile eines *.jas scripts
-     * @return Array:{Befehltyp, befehl,parameter}
+     * @param key
+     * @param value
      */
-    private String[] parseCommand(String cmd) {
-        String[] ret = new String[3];
-        String[] matches;
-        cmd = "#" + cmd + "#";
-        if ((matches = UTILITIES.getMatches(cmd, "#°=°#")) != null) {
+    public void set(String key, Object value) {
+        try {
+            key = key.toLowerCase();
+            if (get(key) == null) {
+                // if(JAntiCaptcha.isLoggerActive())logger.finer("INIT
+                // Parameter: "+key+" =
+                // "+value+"("+value.getClass().getName()+")");
+            } else {
+                // if(JAntiCaptcha.isLoggerActive())logger.finer("Update
+                // Parameter: "+key+" =
+                // "+value+"("+value.getClass().getName()+")");
+            }
 
-            ret[0] = "parameter";
-            ret[1] = matches[0].trim();
-            ret[2] = matches[1].replaceAll("\\\"", "").trim();
+            parameter.put(key, value);
+        } catch (Exception e) {
 
-        } else if ((matches = UTILITIES.getMatches(cmd, "#°(°)#")) != null) {
-            ret[0] = "function";
-            ret[1] = matches[0].trim();
-            ret[2] = matches[1].replaceAll("\\\"", "").trim();
-            if (ret[2].length() == 0) ret[2] = null;
-        } else if ((matches = UTILITIES.getMatches(cmd, "#°()#")) != null) {
-            ret[0] = "function";
-            ret[1] = matches[0].trim();
-            ret[2] = null;
         }
-        return ret;
-    }
-
-    /**
-     * @return the captchaPrepareCommands
-     */
-    public Vector<String[]> getCaptchaPrepareCommands() {
-        return captchaPrepareCommands;
-    }
-
-    /**
-     * @return the jacCommands
-     */
-    public Vector<String[]> getJacCommands() {
-        return jacCommands;
-    }
-
-    /**
-     * @return the gaps
-     */
-    public int[] getGaps() {
-        return gaps;
-    }
-
-    /**
-     * @param gaps
-     *            the gaps to set
-     */
-    public void setGaps(int[] gaps) {
-        if (JAntiCaptcha.isLoggerActive()) logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
-
-        this.gaps = gaps;
     }
 
     /**
@@ -1076,28 +1069,35 @@ public class JACScript {
     }
 
     /**
-     * @return Aktueller Colorfaktor (255^verwendete farbkomponenten)
+     * @param gaps
+     *            the gaps to set
      */
-    public int getColorFaktor() {
-        return colorFaktor;
+    public void setGaps(int[] gaps) {
+        if (JAntiCaptcha.isLoggerActive()) logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
+
+        this.gaps = gaps;
     }
 
     /**
-     * Gibt die Farbkomponente für die 255^i Gewcihtung zurück
+     * Wandelt einen String in den Passenden datentyp um
      * 
-     * @param i
-     * @return FarbKomponente an i
+     * @param arg
+     * @param key
+     * @return neuer datentyp
      */
-    public int getColorComponent(int i) {
-
-        return colorComponents[i];
-    }
-
-    /**
-     * @return the color
-     */
-    public int getColorFormat() {
-        return color;
+    private Object toType(String arg, String key) {
+        Object current = get(key);
+        if (current instanceof String) { return arg; }
+        if (current instanceof Integer) { return Integer.parseInt(arg); }
+        if (current instanceof Float) { return Float.parseFloat(arg); }
+        if (current instanceof Double) { return Double.parseDouble(arg); }
+        if (current instanceof Boolean) { return arg.equalsIgnoreCase("true"); }
+        if (current == null) {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe("Parameter " + key + " ist nicht initialisiert worden!");
+        } else {
+            if (JAntiCaptcha.isLoggerActive()) logger.severe(current + "Typ " + current.getClass() + " wird nicht unterstützt");
+        }
+        return null;
     }
 
 }

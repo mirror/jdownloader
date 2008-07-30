@@ -31,6 +31,18 @@ import jd.utils.JDUtilities;
  * @author astaldo/JD-Team
  */
 public class ClipboardHandler extends Thread {
+    private static ClipboardHandler INSTANCE = null;
+
+    public static ClipboardHandler getClipboard() {
+        if (INSTANCE == null) new ClipboardHandler();
+        return INSTANCE;
+
+    }
+
+    private Clipboard clipboard;
+
+    // private Logger logger;
+
     /**
      * Der Thread, der den Inhalt der Zwischenablage verteilt
      */
@@ -38,17 +50,11 @@ public class ClipboardHandler extends Thread {
 
     private boolean enabled = true;
 
-    private Clipboard clipboard;
-
-    // private Logger logger;
+    private String olddata;
 
     private List<?> oldList;
 
     private Thread saveConfig = null;
-
-    private String olddata;
-
-    private static ClipboardHandler INSTANCE = null;
 
     /**
      */
@@ -60,12 +66,6 @@ public class ClipboardHandler extends Thread {
         this.start();
     }
 
-    public static ClipboardHandler getClipboard() {
-        if (INSTANCE == null) new ClipboardHandler();
-        return INSTANCE;
-
-    }
-
     /**
      * Gibt an ob die clipboard überwachung aktiv ist
      * 
@@ -75,39 +75,7 @@ public class ClipboardHandler extends Thread {
         return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
     }
 
-    public void toggleActivation() {
-        setEnabled(!isEnabled());
-    }
-
-    /**
-     * Schaltet die clipboardüberwachung an/aus
-     * 
-     * @param enabled
-     */
-    private void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled);
-        if (saveConfig != null) {
-            while (saveConfig.isAlive()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    
-                    e.printStackTrace();
-                }
-            }
-        }
-        saveConfig = new Thread(new Runnable() {
-
-            public void run() {
-                JDUtilities.saveConfig();
-            }
-        });
-        saveConfig.start();
-
-        if (enabled && !this.isAlive()) new ClipboardHandler();
-    }
-
+    @Override
     @SuppressWarnings("unchecked")
     public void run() {
         enabled = isEnabled();
@@ -162,6 +130,39 @@ public class ClipboardHandler extends Thread {
                 // e2.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Schaltet die clipboardüberwachung an/aus
+     * 
+     * @param enabled
+     */
+    private void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled);
+        if (saveConfig != null) {
+            while (saveConfig.isAlive()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    
+                    e.printStackTrace();
+                }
+            }
+        }
+        saveConfig = new Thread(new Runnable() {
+
+            public void run() {
+                JDUtilities.saveConfig();
+            }
+        });
+        saveConfig.start();
+
+        if (enabled && !this.isAlive()) new ClipboardHandler();
+    }
+
+    public void toggleActivation() {
+        setEnabled(!isEnabled());
     }
 
 }

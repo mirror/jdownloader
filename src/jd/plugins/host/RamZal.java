@@ -36,28 +36,44 @@ public class RamZal extends PluginForHost {
 
     //
     
+    public RamZal() {
+        super();
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
     
+    @Override
+    public String getAGBLink() {
+
+        return "http://ramzal.com/";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
+            HTTPConnection urlConnection = requestInfo.getConnection();
+            downloadLink.setName(getFileNameFormHeader(urlConnection));
+            downloadLink.setDownloadMax(urlConnection.getContentLength());
+            return true;
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        return false;
     }
 
     
@@ -66,15 +82,35 @@ public class RamZal extends PluginForHost {
     
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public RamZal() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -117,38 +153,14 @@ public class RamZal extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            downloadLink.setName(getFileNameFormHeader(urlConnection));
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
-            return true;
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
     
+    @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
-    }
-
-    
-    public String getAGBLink() {
-
-        return "http://ramzal.com/";
     }
 }

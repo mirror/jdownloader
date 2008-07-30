@@ -33,7 +33,7 @@ import java.util.Properties;
 import java.util.TreeSet;
 import java.util.Vector;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.Logger; 
 
 import javax.swing.JFrame;
 
@@ -59,9 +59,79 @@ import jd.utils.JDUtilities;
 
 public class Main {
 
+    private static boolean debug = false;
     private static Logger logger = JDUtilities.getLogger();
     private static SplashScreen splashScreen;
-    private static boolean debug = false;
+
+    public static String getCaptcha(String path, String host) {
+
+        boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
+
+        if (hasMethod) {
+
+            File file;
+
+            if (path.contains("http://")) {
+
+                HTTPConnection httpConnection;
+
+                try {
+                    httpConnection = new HTTPConnection(new URL(path).openConnection());
+                } catch (MalformedURLException e) {
+                    return e.getStackTrace().toString();
+                } catch (IOException e) {
+                    return e.getStackTrace().toString();
+                }
+
+                if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {
+
+                return "Could not download captcha image";
+
+                }
+
+                String seperator = "/";
+
+                if (System.getProperty("os.name").toLowerCase().contains("win") || System.getProperty("os.name").toLowerCase().contains("nt")) {
+                    seperator = "\\";
+                }
+
+                String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
+                file = new File(filepath);
+                JDUtilities.download(file, path);
+
+            } else {
+
+                file = new File(path);
+                if (!file.exists()) return "File does not exist";
+
+            }
+
+            JFrame jf = new JFrame();
+            Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
+            MediaTracker mediaTracker = new MediaTracker(jf);
+            mediaTracker.addImage(captchaImage, 0);
+
+            try {
+                mediaTracker.waitForID(0);
+            } catch (InterruptedException e) {
+                return e.getStackTrace().toString();
+            }
+
+            mediaTracker.removeImage(captchaImage);
+            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
+            Captcha captcha = jac.createCaptcha(captchaImage);
+            String captchaCode = jac.checkCaptcha(captcha);
+            file.delete();
+
+            return captchaCode;
+
+        } else {
+
+            return "jDownloader has no method for " + host;
+
+        }
+
+    }
 
     public static void main(String args[]) {
 
@@ -97,7 +167,7 @@ public class Main {
                 } else if (extractTime == -1) {
 
                     if (args[i].matches("[\\d]+")) {
-                        extractTime = (int) Integer.parseInt(args[i]);
+                        extractTime = Integer.parseInt(args[i]);
                     } else
                         extractTime = 0;
 
@@ -253,6 +323,37 @@ public class Main {
 
     }
 
+    private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
+        // System.out.println(l);
+        if (splashScreen == null) return;
+        try {
+            splashScreen.setText(l);
+            splashScreen.setValue(splashScreen.getValue() + i);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
+    }
+
+    private static Boolean tryConnectToServer(String args[]) {
+
+        String url = "//127.0.0.1/jDownloader";
+
+        try {
+            Properties p = System.getProperties();
+            p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "100");
+            ServerInterface server = (ServerInterface) Naming.lookup(url);
+            server.processParameters(args);
+            return true;
+
+        } catch (Exception ex) {
+
+            return false;
+
+        }
+
+    }
+
     @SuppressWarnings("unchecked")
     private void go() {
         JDInit init = new JDInit(splashScreen);
@@ -363,107 +464,6 @@ public class Main {
             if (!debug) {
                 JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"));
             }
-        }
-
-    }
-
-    private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
-        // System.out.println(l);
-        if (splashScreen == null) return;
-        try {
-            splashScreen.setText(l);
-            splashScreen.setValue(splashScreen.getValue() + i);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
-    }
-
-    private static Boolean tryConnectToServer(String args[]) {
-
-        String url = "//127.0.0.1/jDownloader";
-
-        try {
-            Properties p = System.getProperties();
-            p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "100");
-            ServerInterface server = (ServerInterface) Naming.lookup(url);
-            server.processParameters(args);
-            return true;
-
-        } catch (Exception ex) {
-
-            return false;
-
-        }
-
-    }
-
-    public static String getCaptcha(String path, String host) {
-
-        boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
-
-        if (hasMethod) {
-
-            File file;
-
-            if (path.contains("http://")) {
-
-                HTTPConnection httpConnection;
-
-                try {
-                    httpConnection = new HTTPConnection(new URL(path).openConnection());
-                } catch (MalformedURLException e) {
-                    return e.getStackTrace().toString();
-                } catch (IOException e) {
-                    return e.getStackTrace().toString();
-                }
-
-                if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {
-
-                return "Could not download captcha image";
-
-                }
-
-                String seperator = "/";
-
-                if (System.getProperty("os.name").toLowerCase().contains("win") || System.getProperty("os.name").toLowerCase().contains("nt")) {
-                    seperator = "\\";
-                }
-
-                String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
-                file = new File(filepath);
-                JDUtilities.download(file, path);
-
-            } else {
-
-                file = new File(path);
-                if (!file.exists()) return "File does not exist";
-
-            }
-
-            JFrame jf = new JFrame();
-            Image captchaImage = new JFrame().getToolkit().getImage(file.getAbsolutePath());
-            MediaTracker mediaTracker = new MediaTracker(jf);
-            mediaTracker.addImage(captchaImage, 0);
-
-            try {
-                mediaTracker.waitForID(0);
-            } catch (InterruptedException e) {
-                return e.getStackTrace().toString();
-            }
-
-            mediaTracker.removeImage(captchaImage);
-            JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
-            Captcha captcha = jac.createCaptcha(captchaImage);
-            String captchaCode = jac.checkCaptcha(captcha);
-            file.delete();
-
-            return captchaCode;
-
-        } else {
-
-            return "jDownloader has no method for " + host;
-
         }
 
     }

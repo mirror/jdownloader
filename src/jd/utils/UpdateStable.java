@@ -20,8 +20,21 @@ import jd.unrar.Zip;
 
 public class UpdateStable {
     private static Logger logger = JDUtilities.getLogger();
-    private ArrayList<File> filelist;
+    public static void main(String args[]) {
+
+        new UpdateStable();
+
+        // MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message",
+        // Thread.currentThread(), true, true);
+        // String tmp[] = new String[args.length - 1];
+        // for(int i = 1; i < args.length; i++)
+        // tmp[i - 1] = args[i];
+        //
+        // runCommand(args[0], tmp, null);
+    }
     private File dir;
+
+    private ArrayList<File> filelist;
 
     public UpdateStable() {
         dir = new File("D:\\jd_gc_update_stable\\bin");
@@ -129,18 +142,5 @@ public class UpdateStable {
     }
     
 }
-
-    public static void main(String args[]) {
-
-        new UpdateStable();
-
-        // MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message",
-        // Thread.currentThread(), true, true);
-        // String tmp[] = new String[args.length - 1];
-        // for(int i = 1; i < args.length; i++)
-        // tmp[i - 1] = args[i];
-        //
-        // runCommand(args[0], tmp, null);
-    }
 
 }

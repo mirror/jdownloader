@@ -20,15 +20,15 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
 
     private static final long serialVersionUID = 1L;
 
-    private JLabel lbl_link;
+    private Color FONT_COLOR;
+
+    private Color FONT_COLOR_SELECTED;
 
     private JLabel lbl_fp_closed;
 
     private JLabel lbl_fp_opened;
 
-    private Color FONT_COLOR;
-
-    private Color FONT_COLOR_SELECTED;
+    private JLabel lbl_link;
 
     public TreeTableCellRenderer() {
         super();
@@ -44,6 +44,7 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
         lbl_fp_opened.setOpaque(false);
     }
 
+    @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 
         if (value instanceof DownloadLink) {

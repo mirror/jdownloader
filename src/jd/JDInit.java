@@ -67,9 +67,37 @@ public class JDInit {
 
     private static Logger logger = JDUtilities.getLogger();
 
+    public static void setupProxy() {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            //für evtl authentifizierung: http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
+            //nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
+            System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
+            System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
+            logger.info("http-proxy: enabled");           
+        } else {
+            System.setProperty("http.proxyHost", "");            
+            logger.info("http-proxy: disabled");
+        }
+    }
+
+    public static void setupSocks() {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
+            System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
+            System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
+            logger.info("socks-proxy: enabled");           
+        } else {
+            System.setProperty("socksProxyHost", "");            
+            logger.info("socks-proxy: disabled");
+        }
+    }
+    private int cid = -1;
+
     private boolean installerVisible = false;
 
-    private int cid = -1;
     private SplashScreen splashScreen;
 
     public JDInit() {
@@ -80,394 +108,44 @@ public class JDInit {
         this.splashScreen = splashScreen;
     }
 
-    void init() {
-        CookieHandler.setDefault(null);
-
-    }
-
-    /**
-     * Bilder werden dynamisch aus dem Homedir geladen.
-     */
-    public void loadImages() {
-        ClassLoader cl = JDUtilities.getJDClassLoader();
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
-        // try {
-        // splashScreen.increase();
-        // splashScreen.setText("Load images");
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        File dir = JDUtilities.getResourceFile("jd/img/");
-
-        String[] images = dir.list();
-        if (images == null || images.length == 0) {
-            logger.severe("Could not find the img directory");
-            return;
-        }
-        for (int i = 0; i < images.length; i++) {
-            if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
-                File f = new File(images[i]);
-                // try {
-                // splashScreen.increase(2);
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
-                logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
-                JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
-            }
-
-        }
-
-    }
-
-    public Configuration loadConfiguration() {
-        File fileInput = null;
-        try {
-            fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-        }
-        boolean allOK = true;
-        try {
-
-            if (fileInput != null && fileInput.exists()) {
-                // try {
-                // splashScreen.increase();
-                // splashScreen.setText("Load Configuration");
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
-                Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
-                if (obj instanceof Configuration) {
-                    Configuration configuration = (Configuration) obj;
-                    JDUtilities.setConfiguration(configuration);
-                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                    JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
-                    JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
-
-                } else {
-                    // log += "\r\n" + ("Configuration error: " + obj);
-                    // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
-                    // einstellungen");
-                    allOK = false;
-                    if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
-                }
-            } else {
-                logger.info("no configuration loaded");
-                logger.info("Konfigurationskonflikt. Lade Default einstellungen");
-
-                allOK = false;
-                if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
-            }
-        } catch (Exception e) {
-            logger.info("Konfigurationskonflikt. Lade Default einstellungen");
-            e.printStackTrace();
-            allOK = false;
-            if (JDUtilities.getConfiguration() == null) JDUtilities.setConfiguration(new Configuration());
-            JDUtilities.getConfiguration().setDefaultValues();
-        }
-
-        if (!allOK) {
-
-            installerVisible = true;
-            try {
-                splashScreen.finish();
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
-            SimpleGUI.setUIManager();
-            Installer inst = new Installer();
-
-            if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
-
-                String newHome = inst.getHomeDir();
-                logger.info("Home Dir: " + newHome);
-                File homeDirectoryFile = new File(newHome);
-                boolean createSuccessfull = true;
-                if (!homeDirectoryFile.exists()) createSuccessfull = homeDirectoryFile.mkdirs();
-                if (createSuccessfull && homeDirectoryFile.canWrite()) {
-                    System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
-                    String dlDir = inst.getDownloadDir();
-
-                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
-
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
-
-                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-
-                    JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
-
-                    JDUtilities.saveConfig();
-                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, homeDirectoryFile.getAbsolutePath(), 0));
-                    System.exit(0);
-
-                }
-                logger.info("INSTALL abgebrochen");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Fehler. Bitte wähle Pfade mit Schreibrechten!"));
-
-                System.exit(1);
-                inst.dispose();
-            } else {
-                logger.info("INSTALL abgebrochen2");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Fehler. Installation abgebrochen"));
-                System.exit(0);
-                inst.dispose();
-            }
-        }
-        // try {
-        // splashScreen.setText("Configuration loaded");
-        // splashScreen.increase(5);
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        this.afterConfigIsLoaded();
-        return JDUtilities.getConfiguration();
-    }
-
     private void afterConfigIsLoaded() {
 
     }
 
-    public JDController initController() {
-        // try {
-        // splashScreen.setText("init Controller");
-        // splashScreen.increase(2);
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        return new JDController();
-    }
-
-    public UIInterface initGUI(JDController controller) {
-
-        UIInterface uiInterface = new SimpleGUI();
-        controller.setUiInterface(uiInterface);
-        controller.addControlListener(uiInterface);
-        return uiInterface;
-    }
-
-    @SuppressWarnings("unchecked")
-    public Vector<PluginForDecrypt> loadPluginForDecrypt() {
-        Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
-
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Decrypt Plugins");
-        Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-
-        while (iterator.hasNext()) {
-            try {
-                PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
-                logger.info("caught");
-                e.printStackTrace();
+    public void checkUpdate() {
+        File updater = JDUtilities.getResourceFile("webupdater.jar");
+        if (updater.exists()) {
+            if (!updater.delete()) {
+                logger.severe("Webupdater.jar could not be deleted. PLease remove JDHOME/webupdater.jar to ensure a proper update");
             }
         }
-        return plugins;
-    }
+        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
+            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
+            JDUtilities.getResourceFile("webcheck.tmp").delete();
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
+        } else {
 
-    @SuppressWarnings("unchecked")
-    public Vector<PluginForHost> loadPluginForHost() {
-        Vector<PluginForHost> plugins = new Vector<PluginForHost>();
-
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Host Plugins");
-        Iterator iterator = Service.providers(PluginForHost.class, jdClassLoader);
-
-        while (iterator.hasNext()) {
-            try {
-                PluginForHost p = (PluginForHost) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
-                logger.info("caught");
-                e.printStackTrace();
-            }
-        }
-        return plugins;
-    }
-
-    public void loadModules() {
-        logger.finer("create Module: Unrar");
-        JDUtilities.getController().setUnrarModule(Unrar.getInstance());
-        logger.finer("create Module: InfoFileWriter");
-     
-    }
-
-    @SuppressWarnings("unchecked")
-    public Vector<PluginForContainer> loadPluginForContainer() {
-        Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
-
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Container Plugins");
-        Iterator iterator = Service.providers(PluginForContainer.class, jdClassLoader);
-
-        while (iterator.hasNext()) {
-            try {
-                PluginForContainer p = (PluginForContainer) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
-                e.printStackTrace();
-                logger.info("caught");
-            }
-        }
-        return plugins;
-    }
-
-    @SuppressWarnings("unchecked")
-    public HashMap<String, PluginOptional> loadPluginOptional() {
-        // try {
-        // splashScreen.setText("Load Optional Plugins");
-        // splashScreen.increase();
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
-        class optionalPluginsVersions {
-            public String name;
-            public double version;
-
-            public optionalPluginsVersions(String name, double version) {
-                this.name = name;
-                this.version = version;
-            }
-
-            public String toString() {
-                return name;
-            }
-        }
-        ArrayList<optionalPluginsVersions> optionalPluginsVersionsArray = new ArrayList<optionalPluginsVersions>();
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDTrayIcon", 1.6));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLightTray", 1.6));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("webinterface.JDWebinterface", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDFolderWatch", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDShutdown", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLowSpeed", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("jdchat.JDChat", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
-        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
-
-        
-        
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-
-        Double version = JDUtilities.getJavaVersion();
-        Iterator<optionalPluginsVersions> iter = optionalPluginsVersionsArray.iterator();
-        while (iter.hasNext()) {
-            optionalPluginsVersions cl = (optionalPluginsVersions) iter.next();
-            if (version < cl.version) {
-                logger.finer("Plugin " + cl + " requires Java Version " + cl.version + " your Version is: " + version);
-                continue;
-            }
-            logger.finer("Try to initialize " + cl);
-            try {
-
-                Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
-                if (plgClass == null) {
-                    logger.info("PLUGIN NOT FOUND!");
-                    continue;
-                }
-                Class[] classes = new Class[] {};
-                Constructor con = plgClass.getConstructor(classes);
-
-                try {
-
-                    Method f = plgClass.getMethod("getAddonInterfaceVersion", new Class[] {});
-
-                    int id = (Integer) f.invoke(null, new Object[] {});
-
-                    if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
-                        logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
-
-                    } else {
-
-                        PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
-                        pluginsOptional.put(p.getPluginName(), p);
-                        // try {
-                        // splashScreen.setText(p.getPluginName());
-                        // splashScreen.increase(2);
-                        // } catch (Exception e) {
-                        // // TODO: handle exception
-                        // }
-                        logger.finer("Successfull!. Loaded " + cl);
-                    }
-                } catch (Exception e) {
-                    logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
-
-                }
-
-            } catch (Throwable e) {
-                logger.info("Plugin Exception!");
-                e.printStackTrace();
-            }
+            Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
         }
 
-        return pluginsOptional;
+        String hash = "";
 
-    }
-
-    public void loadDownloadQueue() {
-        if (!JDUtilities.getController().initDownloadLinks()) {
-            File links = JDUtilities.getResourceFile("links.dat");
-
-            if (links != null && links.exists()) {
-                File newFile = new File(links.getAbsolutePath() + ".bup");
-                newFile.delete();
-                links.renameTo(newFile);
-                JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("sys.warning.linklist.incompatible", "Linkliste inkompatibel. \r\nBackup angelegt."));
-            }
+        if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
+            hash = JDUtilities.getLocalHash(JDUtilities.getResourceFile("updatemessage.html"));
         }
 
-    }
-
-    public void initPlugins() {
-        try {
-            logger.info("Lade Plugins");
-            // try {
-            // splashScreen.setText("Load Plugins");
-            // splashScreen.increase(3);
-            // } catch (Exception e) {
-            // // TODO: handle exception
-            // }
-            // JDController controller = JDUtilities.getController();
-            JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
-            JDUtilities.setPluginForHostList(this.loadPluginForHost());
-            JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
-            try {
-                JDUtilities.setPluginOptionalList(this.loadPluginOptional());
-            } catch (Exception e1) {
-                e1.printStackTrace();
+        JDUtilities.getRunType();
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
+            logger.info("Returned from Update");
+            String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
+            if (lastLog.trim().length() > 5) {
+                if (splashScreen != null) splashScreen.finish();
+                JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
             }
 
-            HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
-
-            Iterator<String> iterator = pluginsOptional.keySet().iterator();
-            String key;
-
-            while (iterator.hasNext()) {
-                key = iterator.next();
-                PluginOptional plg = pluginsOptional.get(key);
-                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
-                    try {
-                        if (!pluginsOptional.get(key).initAddon()) {
-                            logger.severe("Error loading Optional Plugin: FALSE");
-                        }
-
-                    } catch (Throwable e2) {
-                        logger.severe("Error loading Optional Plugin: " + e2.getMessage());
-                        e2.printStackTrace();
-                    }
-                }
-            }
-        } catch (Throwable e2) {
-            logger.severe("Error loading Optional Plugin: " + e2.getMessage());
-            e2.printStackTrace();
         }
+        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
+        JDUtilities.saveConfig();
     }
 
     public void checkWebstartFile() {
@@ -628,40 +306,76 @@ public class JDInit {
         }.start();
     }
 
-    public void checkUpdate() {
-        File updater = JDUtilities.getResourceFile("webupdater.jar");
-        if (updater.exists()) {
-            if (!updater.delete()) {
-                logger.severe("Webupdater.jar could not be deleted. PLease remove JDHOME/webupdater.jar to ensure a proper update");
+    public int getCid() {
+        return cid;
+    }
+
+    void init() {
+        CookieHandler.setDefault(null);
+
+    }
+
+    public JDController initController() {
+        // try {
+        // splashScreen.setText("init Controller");
+        // splashScreen.increase(2);
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
+        return new JDController();
+    }
+
+    public UIInterface initGUI(JDController controller) {
+
+        UIInterface uiInterface = new SimpleGUI();
+        controller.setUiInterface(uiInterface);
+        controller.addControlListener(uiInterface);
+        return uiInterface;
+    }
+
+    public void initPlugins() {
+        try {
+            logger.info("Lade Plugins");
+            // try {
+            // splashScreen.setText("Load Plugins");
+            // splashScreen.increase(3);
+            // } catch (Exception e) {
+            // // TODO: handle exception
+            // }
+            // JDController controller = JDUtilities.getController();
+            JDUtilities.setPluginForDecryptList(this.loadPluginForDecrypt());
+            JDUtilities.setPluginForHostList(this.loadPluginForHost());
+            JDUtilities.setPluginForContainerList(this.loadPluginForContainer());
+            try {
+                JDUtilities.setPluginOptionalList(this.loadPluginOptional());
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
-        }
-        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
-            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
-            JDUtilities.getResourceFile("webcheck.tmp").delete();
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
-        } else {
 
-            Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
-        }
+            HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
 
-        String hash = "";
+            Iterator<String> iterator = pluginsOptional.keySet().iterator();
+            String key;
 
-        if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
-            hash = JDUtilities.getLocalHash(JDUtilities.getResourceFile("updatemessage.html"));
-        }
+            while (iterator.hasNext()) {
+                key = iterator.next();
+                PluginOptional plg = pluginsOptional.get(key);
+                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
+                    try {
+                        if (!pluginsOptional.get(key).initAddon()) {
+                            logger.severe("Error loading Optional Plugin: FALSE");
+                        }
 
-        JDUtilities.getRunType();
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
-            logger.info("Returned from Update");
-            String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
-            if (lastLog.trim().length() > 5) {
-                if (splashScreen != null) splashScreen.finish();
-                JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
+                    } catch (Throwable e2) {
+                        logger.severe("Error loading Optional Plugin: " + e2.getMessage());
+                        e2.printStackTrace();
+                    }
+                }
             }
-
+        } catch (Throwable e2) {
+            logger.severe("Error loading Optional Plugin: " + e2.getMessage());
+            e2.printStackTrace();
         }
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
-        JDUtilities.saveConfig();
     }
 
     public boolean installerWasVisible() {
@@ -669,10 +383,324 @@ public class JDInit {
         return installerVisible;
     }
 
-    public int getCid() {
-        return cid;
+    public Configuration loadConfiguration() {
+        File fileInput = null;
+        try {
+            fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+        }
+        boolean allOK = true;
+        try {
+
+            if (fileInput != null && fileInput.exists()) {
+                // try {
+                // splashScreen.increase();
+                // splashScreen.setText("Load Configuration");
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
+                Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
+                if (obj instanceof Configuration) {
+                    Configuration configuration = (Configuration) obj;
+                    JDUtilities.setConfiguration(configuration);
+                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+                    JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
+                    JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
+
+                } else {
+                    // log += "\r\n" + ("Configuration error: " + obj);
+                    // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
+                    // einstellungen");
+                    allOK = false;
+                    if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
+                }
+            } else {
+                logger.info("no configuration loaded");
+                logger.info("Konfigurationskonflikt. Lade Default einstellungen");
+
+                allOK = false;
+                if (JDUtilities.getConfiguration() == null) JDUtilities.getConfiguration().setDefaultValues();
+            }
+        } catch (Exception e) {
+            logger.info("Konfigurationskonflikt. Lade Default einstellungen");
+            e.printStackTrace();
+            allOK = false;
+            if (JDUtilities.getConfiguration() == null) JDUtilities.setConfiguration(new Configuration());
+            JDUtilities.getConfiguration().setDefaultValues();
+        }
+
+        if (!allOK) {
+
+            installerVisible = true;
+            try {
+                splashScreen.finish();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+            SimpleGUI.setUIManager();
+            Installer inst = new Installer();
+
+            if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
+
+                String newHome = inst.getHomeDir();
+                logger.info("Home Dir: " + newHome);
+                File homeDirectoryFile = new File(newHome);
+                boolean createSuccessfull = true;
+                if (!homeDirectoryFile.exists()) createSuccessfull = homeDirectoryFile.mkdirs();
+                if (createSuccessfull && homeDirectoryFile.canWrite()) {
+                    System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
+                    String dlDir = inst.getDownloadDir();
+
+                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
+
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
+
+                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+
+                    JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
+
+                    JDUtilities.saveConfig();
+                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, homeDirectoryFile.getAbsolutePath(), 0));
+                    System.exit(0);
+
+                }
+                logger.info("INSTALL abgebrochen");
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Fehler. Bitte wähle Pfade mit Schreibrechten!"));
+
+                System.exit(1);
+                inst.dispose();
+            } else {
+                logger.info("INSTALL abgebrochen2");
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Fehler. Installation abgebrochen"));
+                System.exit(0);
+                inst.dispose();
+            }
+        }
+        // try {
+        // splashScreen.setText("Configuration loaded");
+        // splashScreen.increase(5);
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
+        this.afterConfigIsLoaded();
+        return JDUtilities.getConfiguration();
     }
 
+    public void loadDownloadQueue() {
+        if (!JDUtilities.getController().initDownloadLinks()) {
+            File links = JDUtilities.getResourceFile("links.dat");
+
+            if (links != null && links.exists()) {
+                File newFile = new File(links.getAbsolutePath() + ".bup");
+                newFile.delete();
+                links.renameTo(newFile);
+                JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("sys.warning.linklist.incompatible", "Linkliste inkompatibel. \r\nBackup angelegt."));
+            }
+        }
+
+    }
+
+    /**
+     * Bilder werden dynamisch aus dem Homedir geladen.
+     */
+    public void loadImages() {
+        ClassLoader cl = JDUtilities.getJDClassLoader();
+        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        // try {
+        // splashScreen.increase();
+        // splashScreen.setText("Load images");
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
+        File dir = JDUtilities.getResourceFile("jd/img/");
+
+        String[] images = dir.list();
+        if (images == null || images.length == 0) {
+            logger.severe("Could not find the img directory");
+            return;
+        }
+        for (int i = 0; i < images.length; i++) {
+            if (images[i].toLowerCase().endsWith(".png") || images[i].toLowerCase().endsWith(".gif")) {
+                File f = new File(images[i]);
+                // try {
+                // splashScreen.increase(2);
+                // } catch (Exception e) {
+                // // TODO: handle exception
+                // }
+                logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
+                JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
+            }
+
+        }
+
+    }
+
+    public void loadModules() {
+        logger.finer("create Module: Unrar");
+        JDUtilities.getController().setUnrarModule(Unrar.getInstance());
+        logger.finer("create Module: InfoFileWriter");
+     
+    }
+
+    @SuppressWarnings("unchecked")
+    public Vector<PluginForContainer> loadPluginForContainer() {
+        Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        logger.finer("Load Container Plugins");
+        Iterator iterator = Service.providers(PluginForContainer.class, jdClassLoader);
+
+        while (iterator.hasNext()) {
+            try {
+                PluginForContainer p = (PluginForContainer) iterator.next();
+                logger.finer("Load " + p);
+                plugins.add(p);
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.info("caught");
+            }
+        }
+        return plugins;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Vector<PluginForDecrypt> loadPluginForDecrypt() {
+        Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        logger.finer("Load Decrypt Plugins");
+        Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
+
+        while (iterator.hasNext()) {
+            try {
+                PluginForDecrypt p = (PluginForDecrypt) iterator.next();
+                logger.finer("Load " + p);
+                plugins.add(p);
+            } catch (Exception e) {
+                logger.info("caught");
+                e.printStackTrace();
+            }
+        }
+        return plugins;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Vector<PluginForHost> loadPluginForHost() {
+        Vector<PluginForHost> plugins = new Vector<PluginForHost>();
+
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+        logger.finer("Load Host Plugins");
+        Iterator iterator = Service.providers(PluginForHost.class, jdClassLoader);
+
+        while (iterator.hasNext()) {
+            try {
+                PluginForHost p = (PluginForHost) iterator.next();
+                logger.finer("Load " + p);
+                plugins.add(p);
+            } catch (Exception e) {
+                logger.info("caught");
+                e.printStackTrace();
+            }
+        }
+        return plugins;
+    }
+
+    @SuppressWarnings("unchecked")
+    public HashMap<String, PluginOptional> loadPluginOptional() {
+        // try {
+        // splashScreen.setText("Load Optional Plugins");
+        // splashScreen.increase();
+        // } catch (Exception e) {
+        // // TODO: handle exception
+        // }
+        HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
+        class optionalPluginsVersions {
+            public String name;
+            public double version;
+
+            public optionalPluginsVersions(String name, double version) {
+                this.name = name;
+                this.version = version;
+            }
+
+            public String toString() {
+                return name;
+            }
+        }
+        ArrayList<optionalPluginsVersions> optionalPluginsVersionsArray = new ArrayList<optionalPluginsVersions>();
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDTrayIcon", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLightTray", 1.6));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("webinterface.JDWebinterface", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("schedule.Schedule", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDFolderWatch", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDShutdown", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDRemoteControl", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDLowSpeed", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("HTTPLiveHeaderScripter", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("jdchat.JDChat", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
+
+        
+        
+        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
+
+        Double version = JDUtilities.getJavaVersion();
+        Iterator<optionalPluginsVersions> iter = optionalPluginsVersionsArray.iterator();
+        while (iter.hasNext()) {
+            optionalPluginsVersions cl = (optionalPluginsVersions) iter.next();
+            if (version < cl.version) {
+                logger.finer("Plugin " + cl + " requires Java Version " + cl.version + " your Version is: " + version);
+                continue;
+            }
+            logger.finer("Try to initialize " + cl);
+            try {
+
+                Class plgClass = jdClassLoader.loadClass("jd.plugins.optional." + cl);
+                if (plgClass == null) {
+                    logger.info("PLUGIN NOT FOUND!");
+                    continue;
+                }
+                Class[] classes = new Class[] {};
+                Constructor con = plgClass.getConstructor(classes);
+
+                try {
+
+                    Method f = plgClass.getMethod("getAddonInterfaceVersion", new Class[] {});
+
+                    int id = (Integer) f.invoke(null, new Object[] {});
+
+                    if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
+                        logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
+
+                    } else {
+
+                        PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
+                        pluginsOptional.put(p.getPluginName(), p);
+                        // try {
+                        // splashScreen.setText(p.getPluginName());
+                        // splashScreen.increase(2);
+                        // } catch (Exception e) {
+                        // // TODO: handle exception
+                        // }
+                        logger.finer("Successfull!. Loaded " + cl);
+                    }
+                } catch (Exception e) {
+                    logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
+
+                }
+
+            } catch (Throwable e) {
+                logger.info("Plugin Exception!");
+                e.printStackTrace();
+            }
+        }
+
+        return pluginsOptional;
+
+    }
+    
     public void removeFiles() {
         String[] remove = null;
         remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
@@ -684,34 +712,6 @@ public class JDInit {
 
         }
 
-    }
-
-    public static void setupProxy() {
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            //für evtl authentifizierung: http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
-            //nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
-            System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
-            System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
-            logger.info("http-proxy: enabled");           
-        } else {
-            System.setProperty("http.proxyHost", "");            
-            logger.info("http-proxy: disabled");
-        }
-    }
-    
-    public static void setupSocks() {
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
-            //http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
-            System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
-            logger.info("socks-proxy: enabled");           
-        } else {
-            System.setProperty("socksProxyHost", "");            
-            logger.info("socks-proxy: disabled");
-        }
     }
 
 }

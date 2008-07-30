@@ -30,14 +30,14 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
-    // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", Pattern.CASE_INSENSITIVE);
-
-    static private final String HOST = "qshare.com";
-    static private final String PLUGIN_NAME = HOST;
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
+
+    static private final String HOST = "qshare.com";
+    // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", Pattern.CASE_INSENSITIVE);
+    static private final String PLUGIN_NAME = HOST;
 
     public QshareCom() {
         super();
@@ -47,59 +47,12 @@ public class QshareCom extends PluginForHost {
     }
 
     
-    public String getCoder() {
-        return CODER;
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-
-            this.doPremium(downloadLink);
-
-        } else {
-
-            this.doFree(downloadLink);
-
-        }
-        return;
-    }
-
-    public void doPremium(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return;
-
-    }
-
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -160,21 +113,31 @@ public class QshareCom extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
-    public void reset() {
-
-    }
-
-    public String getFileInformationString(DownloadLink downloadLink) {
+    public void doPremium(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return;
+
     }
 
     
+    @Override
+    public String getAGBLink() {
+       
+        return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    
+        
+   
+
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
@@ -193,7 +156,19 @@ public class QshareCom extends PluginForHost {
         return false;
     }
 
+    @Override
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    }
+
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
     
+    @Override
     public int getMaxSimultanDownloadNum() {
         // if
         // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
@@ -204,6 +179,43 @@ public class QshareCom extends PluginForHost {
         // } else {
         return 1;
         // }
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+
+            this.doPremium(downloadLink);
+
+        } else {
+
+            this.doFree(downloadLink);
+
+        }
+        return;
     }
 
     // private void setConfigElements() {
@@ -225,14 +237,15 @@ public class QshareCom extends PluginForHost {
     // }
 
     
-    public void resetPluginGlobals() {
-       
+    @Override
+    public void reset() {
 
     }
 
     
-    public String getAGBLink() {
+    @Override
+    public void resetPluginGlobals() {
        
-        return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
+
     }
 }

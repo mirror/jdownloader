@@ -30,41 +30,41 @@ import jd.utils.JDUtilities;
  */
 public class InteractionTrigger implements Serializable {
     /**
+     * Vector mit allen bisher angelegten triggern
+     */
+    
+        private static Vector<InteractionTrigger> events           = new Vector<InteractionTrigger>();
+
+ 
+protected static Logger                   logger           = JDUtilities.getLogger();
+
+    /**
      * serialVersionUID
      */
     private static final long                 serialVersionUID = 8656898503474841842L;
 
- 
-/**
- * Vector mit allen bisher angelegten triggern
- */
-
-    private static Vector<InteractionTrigger> events           = new Vector<InteractionTrigger>();
-
-    protected static Logger                   logger           = JDUtilities.getLogger();
-
     /**
-     * EventiD
+     * Gibt alle bisher angelegten Trigger zurück
+     * @return
      */
-    private int                               eventID;
-/**
- * Trigger Name
- */
-    private String                            name;
+        public static InteractionTrigger[] getAllTrigger() {
+            InteractionTrigger[] ret = new InteractionTrigger[events.size()];
+            for (int i = 0; i < events.size(); i++)
+                ret[i] = events.elementAt(i);
+            return ret;
+        }
 /**
  * Triggerbeschreibung
  */
     private String                            description;
 /**
- * Gibt alle bisher angelegten Trigger zurück
- * @return
+ * EventiD
  */
-    public static InteractionTrigger[] getAllTrigger() {
-        InteractionTrigger[] ret = new InteractionTrigger[events.size()];
-        for (int i = 0; i < events.size(); i++)
-            ret[i] = events.elementAt(i);
-        return ret;
-    }
+private int                               eventID;
+/**
+ * Trigger Name
+ */
+    private String                            name;
     
 
 /**
@@ -81,26 +81,23 @@ public class InteractionTrigger implements Serializable {
         this.description = description;
     }
 
-    public String toString() {
-        return name+" ("+description+")";
-    }
-    public String getName(){
-        return name;
-    }
-/**
- * Gibt die EventID zurück. Es gibt keine setID!
- * @return
- */
-    public int getID() {
-        return eventID;
-    }
-/**
- * Gibt die Triggerbeschreibung zurück
- * @return
- */
-    public String getDescription() {
-        return description;
-    }
+    /**
+     * Gibt die Triggerbeschreibung zurück
+     * @return
+     */
+        public String getDescription() {
+            return description;
+        }
+    /**
+     * Gibt die EventID zurück. Es gibt keine setID!
+     * @return
+     */
+        public int getID() {
+            return eventID;
+        }
+public String getName(){
+    return name;
+}
 /**
  * Setzt die TRiggerbeschreibung
  * @param description
@@ -108,5 +105,9 @@ public class InteractionTrigger implements Serializable {
     public void setDescription(String description) {
         this.description = description;
     }
+@Override
+public String toString() {
+    return name+" ("+description+")";
+}
 
 }

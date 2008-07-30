@@ -50,34 +50,88 @@ import jd.utils.JDUtilities;
 
 public class ConfigPanelEventmanager extends ConfigPanel implements ActionListener, MouseListener {
 
+    private class InternalTableModel extends AbstractTableModel{
+
+      
+   
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1155282457354673850L;
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            switch(columnIndex){
+                case 0: return String.class;
+                case 1: return String.class;
+               
+          
+            }
+            return String.class;
+        }
+        public int getColumnCount() {
+            return 3;
+        }
+        @Override
+        public String getColumnName(int column) {
+            switch(column){
+                case 0: return JDLocale.L("gui.config.eventmanager.column.action","Aktion");
+                case 1: return JDLocale.L("gui.config.eventmanager.column.trigger","Trigger");
+                case 2: return JDLocale.L("gui.config.eventmanager.column.triggerDesc","Triggerbeschreibung");
+           
+            }
+            return super.getColumnName(column);
+        }
+        public int getRowCount() {
+            return interactions.size();
+        }
+        public Object getValueAt(int rowIndex, int columnIndex) {
+           
+
+           
+            switch(columnIndex){
+                case 0: return interactions.elementAt(rowIndex).getInteractionName();
+                case 1: 
+                    return interactions.elementAt(rowIndex).getTrigger().getName();
+                case 2: 
+                    return interactions.elementAt(rowIndex).getTrigger().getDescription();
+                  
+                    
+                 
+               
+              
+            }
+            return null;
+        }
+    }
+
     /**
      * serialVersionUID
      */
     private static final long   serialVersionUID = 7055395315659682282L;
 
-    private Vector<Interaction> interactions;
-
 //    private JList               list;
 
     private JButton             btnAdd;
 
-    private JButton             btnRemove;
+    private JButton btnBottom;
 
     private JButton             btnEdit;
 
-    private Interaction         currentInteraction;
-
-    //private JLabel           cboTrigger;
-private Configuration configuration;
-    private JTable table;
+    private JButton             btnRemove;
 
     private JButton btnTop;
-
-    private JButton btnBottom;
-
     private JButton btnTrigger;
 
+    //private JLabel           cboTrigger;
+    private Configuration configuration;
+
+    private Interaction         currentInteraction;
+
+    private Vector<Interaction> interactions;
+
     private JLabel lblTrigger;
+
+    private JTable table;
 
     public ConfigPanelEventmanager(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -88,14 +142,6 @@ private Configuration configuration;
     
     }
 
-    /**
-     * Lädt alle Informationen
-     */
-    public void load() {
-//        setListData();
-
-    }
-
 //    private void setListData() {
 //        DefaultListModel model = new DefaultListModel();
 //
@@ -104,165 +150,6 @@ private Configuration configuration;
 //        }
 //        list.setModel(model);
 //    }
-
-    /**
-     * Speichert alle Änderungen auf der Maske
-     */
-    public void save() {
-        // Interaction[] tmp= new Interaction[interactions.size()];
-        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS,interactions);
-        
-        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).save();
-
-    }
-
-    @SuppressWarnings("unchecked")
-	
-    public void initPanel() {
-        setLayout(new BorderLayout());
-        table = new JTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
-        InternalTableModel internalTableModel=new InternalTableModel();
-        table.setModel(new InternalTableModel());
-        this.setPreferredSize(new Dimension(700,350));
- // table.getColumn(table.getColumnName(1)).setCellRenderer(new ComboBoxRenderer());
-        TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch(c){
-               
-                case 0:     column.setPreferredWidth(150); break;
-                case 1:    column.setPreferredWidth(150);  break;
-                case 2:    column.setPreferredWidth(450);  break;
-               
-                
-            }
-        }
-    
-     
-        this.interactions = new Vector<Interaction>();
-       
-        Vector<Interaction> tmp = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
-        
-        if (tmp != null) {
-            for (int i = 0; i < tmp.size(); i++) {
-
-                if (tmp.get(i) != null) {
-                    interactions.add(tmp.get(i));
-                }
-            }
-        }
-        
-       
-       
-       
-//         add(scrollPane);
-//        list = new JList();
-        table.addMouseListener(this);
-        JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400,200));
-        btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add","+"));
-        btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove","-"));
-        btnEdit = new JButton(JDLocale.L("gui.config.eventmanager.btn_settings","Einstellungen"));
-        btnTop = new JButton(JDLocale.L("gui.config.eventmanager.btn_up","nach oben!"));
-        btnBottom = new JButton(JDLocale.L("gui.config.eventmanager.btn_down","nach unten!"));
-        btnTop.addActionListener(this);
-        btnBottom.addActionListener(this);
-        btnAdd.addActionListener(this);
-        btnRemove.addActionListener(this);
-        btnEdit.addActionListener(this);
-//        JDUtilities.ahddToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-
-//        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-//
-//        JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, btnRemove, 1, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, btnEdit, 2, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, btnTop, 3, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, btnBottom, 4, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-
-        JPanel contentPanel = new JPanel(new BorderLayout(5,5));
-        int n = 5;
-        contentPanel.setBorder(new EmptyBorder(0,n,0,n));
-        contentPanel.add(scrollpane, BorderLayout.CENTER);
-        
-        JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnRemove);
-        buttonPanel.add(btnEdit);
-        buttonPanel.add(btnTop);
-        buttonPanel.add(btnBottom);
-        
-        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
-        add(contentPanel, BorderLayout.CENTER);
-//        add(buttonPanel, BorderLayout.SOUTH);
-        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
-        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-    }
-
-    private int getSelectedInteractionIndex() {
-return table.getSelectedRow();
-    }
-
-    
-    public String getName() {
-
-        return JDLocale.L("gui.config.eventmanager.name","Eventmanager");
-    }
-
-    private Interaction[] getInteractionArray() {
-        Interaction[] interacts =Interaction.getInteractionList();
-        return interacts;
-    }
-
-    private void openPopupPanel(ConfigPanel config) {
-        JPanel panel = new JPanel(new GridBagLayout());
-
-        InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
-
-        Interaction interaction = this.getSelectedInteraction();
-        currentInteraction = interaction;
-        if (interaction == null) return;
-        InteractionTrigger trigger = interaction.getTrigger();
-
-        int i;
-
-        for (i = 0; i < triggers.length; i++) {
-            if (triggers[i].getID() == trigger.getID()) {
-                break;
-            }
-        }
-
-        lblTrigger = new JLabel();
-        btnTrigger= new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn","Trigger ändern"));
-        btnTrigger.addActionListener(this);
-        lblTrigger.setText(trigger+"");
-       // cboTrigger.setSelectedIndex(indexT);
-        //JPanel topPanel = new JPanel();
-        //topPanel.add(new JLabel(JDLocale.L("gui.config.eventmanager.trigger","Trigger Event")));
-       //topPanel.add(cboTrigger);
-        JDUtilities.addToGridBag(panel, btnTrigger, 0, 0, 1, 1, 0, 0, new Insets(5,10,5,5),  GridBagConstraints.NONE, GridBagConstraints.WEST);
-        
-       JDUtilities.addToGridBag(panel, lblTrigger, 1, 0, 1, 1, 1, 0, new Insets(5,0,5,5),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-       JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 2, 1, 1, 0, new Insets(0,0,0,0),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-       
-       //panel.add(topPanel, BorderLayout.WEST);
-       if(config!=null) {
-           JDUtilities.addToGridBag(panel, config, 0, 2, 2, 1, 1, 1, null,  GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-           
-           //panel.add(config, BorderLayout.CENTER);
-       }
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-        pop.setVisible(true);
-    }
-
-    private Interaction getSelectedInteraction() {
-        int index = getSelectedInteractionIndex();
-        if (index < 0) return null;
-        return interactions.elementAt(index);
-    }
 
     public void actionPerformed(ActionEvent e) {
         
@@ -351,6 +238,123 @@ return table.getSelectedRow();
 
     }
 
+    private Interaction[] getInteractionArray() {
+        Interaction[] interacts =Interaction.getInteractionList();
+        return interacts;
+    }
+
+    
+    @Override
+    public String getName() {
+
+        return JDLocale.L("gui.config.eventmanager.name","Eventmanager");
+    }
+
+    private Interaction getSelectedInteraction() {
+        int index = getSelectedInteractionIndex();
+        if (index < 0) return null;
+        return interactions.elementAt(index);
+    }
+
+    private int getSelectedInteractionIndex() {
+return table.getSelectedRow();
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+	
+    public void initPanel() {
+        setLayout(new BorderLayout());
+        table = new JTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1,25));
+        InternalTableModel internalTableModel=new InternalTableModel();
+        table.setModel(new InternalTableModel());
+        this.setPreferredSize(new Dimension(700,350));
+ // table.getColumn(table.getColumnName(1)).setCellRenderer(new ComboBoxRenderer());
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch(c){
+               
+                case 0:     column.setPreferredWidth(150); break;
+                case 1:    column.setPreferredWidth(150);  break;
+                case 2:    column.setPreferredWidth(450);  break;
+               
+                
+            }
+        }
+    
+     
+        this.interactions = new Vector<Interaction>();
+       
+        Vector<Interaction> tmp = (Vector<Interaction>)JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS,new Vector<Interaction>());
+        
+        if (tmp != null) {
+            for (int i = 0; i < tmp.size(); i++) {
+
+                if (tmp.get(i) != null) {
+                    interactions.add(tmp.get(i));
+                }
+            }
+        }
+        
+       
+       
+       
+//         add(scrollPane);
+//        list = new JList();
+        table.addMouseListener(this);
+        JScrollPane scrollpane = new JScrollPane(table);
+        scrollpane.setPreferredSize(new Dimension(400,200));
+        btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add","+"));
+        btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove","-"));
+        btnEdit = new JButton(JDLocale.L("gui.config.eventmanager.btn_settings","Einstellungen"));
+        btnTop = new JButton(JDLocale.L("gui.config.eventmanager.btn_up","nach oben!"));
+        btnBottom = new JButton(JDLocale.L("gui.config.eventmanager.btn_down","nach unten!"));
+        btnTop.addActionListener(this);
+        btnBottom.addActionListener(this);
+        btnAdd.addActionListener(this);
+        btnRemove.addActionListener(this);
+        btnEdit.addActionListener(this);
+//        JDUtilities.ahddToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+
+//        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+//
+//        JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnRemove, 1, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnEdit, 2, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnTop, 3, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+//        JDUtilities.addToGridBag(panel, btnBottom, 4, 1, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
+        JPanel contentPanel = new JPanel(new BorderLayout(5,5));
+        int n = 5;
+        contentPanel.setBorder(new EmptyBorder(0,n,0,n));
+        contentPanel.add(scrollpane, BorderLayout.CENTER);
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(5,5, FlowLayout.LEFT));
+        buttonPanel.add(btnAdd);
+        buttonPanel.add(btnRemove);
+        buttonPanel.add(btnEdit);
+        buttonPanel.add(btnTop);
+        buttonPanel.add(btnBottom);
+        
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+        add(contentPanel, BorderLayout.CENTER);
+//        add(buttonPanel, BorderLayout.SOUTH);
+        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+    }
+
+    /**
+     * Lädt alle Informationen
+     */
+    @Override
+    public void load() {
+//        setListData();
+
+    }
+
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             editEntry();
@@ -373,56 +377,58 @@ return table.getSelectedRow();
     public void mouseReleased(MouseEvent e) {
 
     }
-    private class InternalTableModel extends AbstractTableModel{
 
-      
-   
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1155282457354673850L;
-        public Class<?> getColumnClass(int columnIndex) {
-            switch(columnIndex){
-                case 0: return String.class;
-                case 1: return String.class;
-               
-          
-            }
-            return String.class;
-        }
-        public int getColumnCount() {
-            return 3;
-        }
-        public int getRowCount() {
-            return interactions.size();
-        }
-        public Object getValueAt(int rowIndex, int columnIndex) {
-           
+    private void openPopupPanel(ConfigPanel config) {
+        JPanel panel = new JPanel(new GridBagLayout());
 
-           
-            switch(columnIndex){
-                case 0: return interactions.elementAt(rowIndex).getInteractionName();
-                case 1: 
-                    return interactions.elementAt(rowIndex).getTrigger().getName();
-                case 2: 
-                    return interactions.elementAt(rowIndex).getTrigger().getDescription();
-                  
-                    
-                 
-               
-              
+        InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+
+        Interaction interaction = this.getSelectedInteraction();
+        currentInteraction = interaction;
+        if (interaction == null) return;
+        InteractionTrigger trigger = interaction.getTrigger();
+
+        int i;
+
+        for (i = 0; i < triggers.length; i++) {
+            if (triggers[i].getID() == trigger.getID()) {
+                break;
             }
-            return null;
         }
-        public String getColumnName(int column) {
-            switch(column){
-                case 0: return JDLocale.L("gui.config.eventmanager.column.action","Aktion");
-                case 1: return JDLocale.L("gui.config.eventmanager.column.trigger","Trigger");
-                case 2: return JDLocale.L("gui.config.eventmanager.column.triggerDesc","Triggerbeschreibung");
+
+        lblTrigger = new JLabel();
+        btnTrigger= new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn","Trigger ändern"));
+        btnTrigger.addActionListener(this);
+        lblTrigger.setText(trigger+"");
+       // cboTrigger.setSelectedIndex(indexT);
+        //JPanel topPanel = new JPanel();
+        //topPanel.add(new JLabel(JDLocale.L("gui.config.eventmanager.trigger","Trigger Event")));
+       //topPanel.add(cboTrigger);
+        JDUtilities.addToGridBag(panel, btnTrigger, 0, 0, 1, 1, 0, 0, new Insets(5,10,5,5),  GridBagConstraints.NONE, GridBagConstraints.WEST);
+        
+       JDUtilities.addToGridBag(panel, lblTrigger, 1, 0, 1, 1, 1, 0, new Insets(5,0,5,5),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+       JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 2, 1, 1, 0, new Insets(0,0,0,0),  GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+       
+       //panel.add(topPanel, BorderLayout.WEST);
+       if(config!=null) {
+           JDUtilities.addToGridBag(panel, config, 0, 2, 2, 1, 1, 1, null,  GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
            
-            }
-            return super.getColumnName(column);
-        }
+           //panel.add(config, BorderLayout.CENTER);
+       }
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
+        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
+        pop.setVisible(true);
+    }
+    /**
+     * Speichert alle Änderungen auf der Maske
+     */
+    @Override
+    public void save() {
+        // Interaction[] tmp= new Interaction[interactions.size()];
+        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS,interactions);
+        
+        JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).save();
+
     }
   
     

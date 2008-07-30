@@ -22,6 +22,46 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class UpdateRegex {
+    public static String[] getLines(String arg) {
+        if (arg == null) return new String[] {};
+        return arg.split("[\r|\n]{1,2}");
+    }
+    /**
+     * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in bytes zurück.
+     * @param sizestring
+     * @return
+     */
+    public static long getSize(String string) {
+
+   
+        String[][] matches = new UpdateRegex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+
+        if (matches == null || matches.length == 0) {
+            matches = new UpdateRegex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+
+        }
+        if (matches == null || matches.length == 0) return -1;
+
+        double res = 0;
+        if (matches[0].length == 1) res = Double.parseDouble(matches[0][0]);
+        if (matches[0].length == 2) res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
+
+        if (UpdateRegex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024;
+        } else if (UpdateRegex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024;
+        }
+
+        return Math.round(res);
+    }
+    public static boolean matches(Object str, Pattern pat) {
+       
+        return new UpdateRegex(str,pat).matches();
+    }
+    public static boolean matches(Object page, String string) {
+       
+        return new UpdateRegex(page,string).matches();
+    }
     private Matcher matcher;
     public UpdateRegex(Matcher matcher) {
         if (matcher == null) return;
@@ -34,10 +74,6 @@ public class UpdateRegex {
      */
     public UpdateRegex(Object data, Pattern pattern) {
         this(data.toString(), pattern);
-    }
-    public UpdateRegex(String data, Pattern pattern) {
-        if (data == null || pattern == null) return;
-        this.matcher = pattern.matcher(data);
     }
     /**
      * Regexp auf ein Objekt (Beim Objekt wird toString aufgerufen)
@@ -56,14 +92,43 @@ public class UpdateRegex {
     public UpdateRegex(Object data, String pattern, int flags) {
         this(data.toString(), pattern, flags);
     }
+    public UpdateRegex(String data, Pattern pattern) {
+        if (data == null || pattern == null) return;
+        this.matcher = pattern.matcher(data);
+    }
     public UpdateRegex(String data, String pattern) {
         if (data == null || pattern == null) return;
         this.matcher = Pattern.compile(pattern,
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
     }
+    
+   /*
+    public static void main(String args[]) {
+       String txt="http://oxygen-warez.com/category/XVID/10'000_BC_DVD_Rip_AC3_104902.html";
+//        //
+   
+       new Regex(txt,"(http://.*filefox.in/\\?id=.+)|(http://.*alphawarez.us/\\?id=.+)|(http://.*pirate-loads.com/\\?id=.+)|(http://.*fettrap.com/\\?id=.+)|(http://.*omega-music.com(/\\?id=.+|/download/.+/.+.html))|(http://.*hardcoremetal.biz/\\?id=.+)|(http://.*flashload.org/\\?id=.+)|(http://.*twin-warez.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*steelwarez.com/\\?id=.+)|(http://.*fullstreams.info/\\?id=.+)|(http://.*lionwarez.com/\\?id=.+)|(http://.*1dl.in/\\?id=.+)|(http://.*chrome-database.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*youwarez.biz/\\?id=.+)|(http://.*saugking.net/\\?id=.+)|(http://.*leetpornz.com/\\?id=.+)|(http://.*freefiles4u.com/\\?id=.+)|(http://.*dark-load.net/\\?id=.+)|(http://.*wrzunlimited.1gb.in/\\?id=.+)|(http://.*crimeland.de/\\?id=.+)|(http://.*get-warez.in/\\?id=.+)|(http://.*meinsound.com/\\?id=.+)|(http://.*projekt-tempel-news.de.vu/\\?id=.+)|(http://.*datensau.org/\\?id=.+)|(http://.*musik.am(/\\?id=.+|/download/.+/.+.html))|(http://.*spreaded.net(/\\?id=.+|/download/.+/.+.html))|(http://.*relfreaks.com(/\\?id=.+|/download/.+/.+.html))|(http://.*babevidz.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serien24.com(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-4-free.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-reactor.net(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-traffic.net(/\\?id=.+|/category/.+/.+.html))|(http://.*chili-warez.net(/\\?id=.+|/.+/.+.html))|(http://.*game-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*isos.at(/\\?id=.+|/download/.+/.+.html))|(http://.*your-load.com(/\\?id=.+|/download/.+/.+.html))|(http://.*mov-world.net(/\\?id=.+|/category/.+/.+.html))|(http://.*xtreme-warez.net(/\\?id=.+|/category/.+/.+.html))|(http://.*sceneload.to(/\\?id=.+|/download/.+/.+.html))|(http://.*oxygen-warez.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.to(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.in(/\\?id=.+|/category/.+/.+.html))|(http://.*warez-load.com(/\\?id=.+|/category/.+/.+.html))|(http://.*ddl-scene.com(/\\?id=.+|/category/.+/.+.html))|(http://.*mp3king.cinipac-hosting.biz/\\?id=.+)").matches();
+//        String[] matchs2 = new Regex(txt,"ich .*? (.*?) und").getMatches(0);
+        System.out.println("II");
+        
+        
+    }
+     */
+
     public UpdateRegex(String data, String pattern, int flags) {
         if (data == null || pattern == null) return;
         this.matcher = Pattern.compile(pattern, flags).matcher(data);
+    }
+    /**
+     * gibt die Anzahl der Treffer zurück
+     */
+    public int count() {
+        if (matcher == null) return 0;
+        int c = 0;
+        Matcher matchertmp = matcher;
+        while (matchertmp.find())
+            c++;
+        return c;
     }
     /**
      * 
@@ -84,6 +149,12 @@ public class UpdateRegex {
         Matcher matchertmp = matcher;
         if (matchertmp.find()) return matchertmp.group(group);
         return null;
+    }
+    /**
+     * gibt den matcher aus
+     */
+    public Matcher getMatcher() {
+        return this.matcher;
     }
     /**
      * Gibt alle Treffer eines Matches in einem 2D array aus
@@ -113,20 +184,6 @@ public class UpdateRegex {
         }
         return ar.toArray(new String[][]{});
     }
-    
-   /*
-    public static void main(String args[]) {
-       String txt="http://oxygen-warez.com/category/XVID/10'000_BC_DVD_Rip_AC3_104902.html";
-//        //
-   
-       new Regex(txt,"(http://.*filefox.in/\\?id=.+)|(http://.*alphawarez.us/\\?id=.+)|(http://.*pirate-loads.com/\\?id=.+)|(http://.*fettrap.com/\\?id=.+)|(http://.*omega-music.com(/\\?id=.+|/download/.+/.+.html))|(http://.*hardcoremetal.biz/\\?id=.+)|(http://.*flashload.org/\\?id=.+)|(http://.*twin-warez.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*steelwarez.com/\\?id=.+)|(http://.*fullstreams.info/\\?id=.+)|(http://.*lionwarez.com/\\?id=.+)|(http://.*1dl.in/\\?id=.+)|(http://.*chrome-database.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*youwarez.biz/\\?id=.+)|(http://.*saugking.net/\\?id=.+)|(http://.*leetpornz.com/\\?id=.+)|(http://.*freefiles4u.com/\\?id=.+)|(http://.*dark-load.net/\\?id=.+)|(http://.*wrzunlimited.1gb.in/\\?id=.+)|(http://.*crimeland.de/\\?id=.+)|(http://.*get-warez.in/\\?id=.+)|(http://.*meinsound.com/\\?id=.+)|(http://.*projekt-tempel-news.de.vu/\\?id=.+)|(http://.*datensau.org/\\?id=.+)|(http://.*musik.am(/\\?id=.+|/download/.+/.+.html))|(http://.*spreaded.net(/\\?id=.+|/download/.+/.+.html))|(http://.*relfreaks.com(/\\?id=.+|/download/.+/.+.html))|(http://.*babevidz.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serien24.com(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-4-free.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-reactor.net(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-traffic.net(/\\?id=.+|/category/.+/.+.html))|(http://.*chili-warez.net(/\\?id=.+|/.+/.+.html))|(http://.*game-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*isos.at(/\\?id=.+|/download/.+/.+.html))|(http://.*your-load.com(/\\?id=.+|/download/.+/.+.html))|(http://.*mov-world.net(/\\?id=.+|/category/.+/.+.html))|(http://.*xtreme-warez.net(/\\?id=.+|/category/.+/.+.html))|(http://.*sceneload.to(/\\?id=.+|/download/.+/.+.html))|(http://.*oxygen-warez.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.to(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.in(/\\?id=.+|/category/.+/.+.html))|(http://.*warez-load.com(/\\?id=.+|/category/.+/.+.html))|(http://.*ddl-scene.com(/\\?id=.+|/category/.+/.+.html))|(http://.*mp3king.cinipac-hosting.biz/\\?id=.+)").matches();
-//        String[] matchs2 = new Regex(txt,"ich .*? (.*?) und").getMatches(0);
-        System.out.println("II");
-        
-        
-    }
-     */
-
     /**
      * gibt alle Treffer in einer group als Array aus
      */
@@ -140,17 +197,6 @@ public class UpdateRegex {
         }
         return ar.toArray(new String[ar.size()]);
     }
-    /**
-     * gibt die Anzahl der Treffer zurück
-     */
-    public int count() {
-        if (matcher == null) return 0;
-        int c = 0;
-        Matcher matchertmp = matcher;
-        while (matchertmp.find())
-            c++;
-        return c;
-    }
     public boolean matches()
     {
         try {
@@ -162,17 +208,12 @@ public class UpdateRegex {
         return false;
     }
     /**
-     * gibt den matcher aus
-     */
-    public Matcher getMatcher() {
-        return this.matcher;
-    }
-    /**
      * setzt den matcher
      */
     public void setMatcher(Matcher matcher) {
         this.matcher = matcher;
     }
+    @Override
     public String toString() {
     	String ret = "";
     	String[][] match = getMatches();
@@ -183,45 +224,5 @@ public class UpdateRegex {
 		}
     	 matcher.reset();
     	return ret;
-    }
-    public static String[] getLines(String arg) {
-        if (arg == null) return new String[] {};
-        return arg.split("[\r|\n]{1,2}");
-    }
-    public static boolean matches(Object str, Pattern pat) {
-       
-        return new UpdateRegex(str,pat).matches();
-    }
-    public static boolean matches(Object page, String string) {
-       
-        return new UpdateRegex(page,string).matches();
-    }
-    /**
-     * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in bytes zurück.
-     * @param sizestring
-     * @return
-     */
-    public static long getSize(String string) {
-
-   
-        String[][] matches = new UpdateRegex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
-
-        if (matches == null || matches.length == 0) {
-            matches = new UpdateRegex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
-
-        }
-        if (matches == null || matches.length == 0) return -1;
-
-        double res = 0;
-        if (matches[0].length == 1) res = Double.parseDouble(matches[0][0]);
-        if (matches[0].length == 2) res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
-
-        if (UpdateRegex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024 * 1024;
-        } else if (UpdateRegex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024;
-        }
-
-        return Math.round(res);
     }
 }

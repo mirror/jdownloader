@@ -27,26 +27,14 @@ import javax.swing.filechooser.FileFilter;
 
 public class SplitFileFilter extends FileFilter
 {
-	private boolean bIESafe;
-
-	public SplitFileFilter()
+	public static String getJoinedFileName (String s)
 	{
-		this (true);
-	}
+		int i = s.lastIndexOf (".001");
 
-	public SplitFileFilter (boolean b)
-	{
-		bIESafe = true;
-	}
-
-	public boolean accept (File f)
-	{
-		return (isSplitFile (f.getName(), bIESafe) || f.isDirectory() || isZippedSplitFile (f.getName()));
-	}
-
-	public String getDescription()
-	{
-		return "Files split using JAxe/HJSplit";
+		if (i == -1)
+			return s;
+		else
+			return s.substring (0, i);
 	}
 
 	public static boolean isSplitFile (String s)
@@ -72,14 +60,28 @@ public class SplitFileFilter extends FileFilter
 		return s.toLowerCase().endsWith (".001.zip");
 	}
 
-	public static String getJoinedFileName (String s)
-	{
-		int i = s.lastIndexOf (".001");
+	private boolean bIESafe;
 
-		if (i == -1)
-			return s;
-		else
-			return s.substring (0, i);
+	public SplitFileFilter()
+	{
+		this (true);
+	}
+
+	public SplitFileFilter (boolean b)
+	{
+		bIESafe = true;
+	}
+
+	@Override
+    public boolean accept (File f)
+	{
+		return (isSplitFile (f.getName(), bIESafe) || f.isDirectory() || isZippedSplitFile (f.getName()));
+	}
+
+	@Override
+    public String getDescription()
+	{
+		return "Files split using JAxe/HJSplit";
 	}
 }
 

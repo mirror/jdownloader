@@ -36,24 +36,24 @@ import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
-    static private final String HOST = "files.to";
+    static private final String AGB_LINK = "http://www.files.to/content/aup";
+    static private final String CAPTCHA_WRONG = "Der eingegebene code ist falsch";
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.2";
     static private final String CODER = "JD-Team";
-    static private final String AGB_LINK = "http://www.files.to/content/aup";
+    static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
+
+    static private final String HOST = "files.to";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
+    private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
+    private String captchaAddress;
+    private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
 
     private Pattern FILE_INFO_NAME = Pattern.compile("<p>Name: <span id=\"downloadname\">(.*?)</span></p>");
     private Pattern FILE_INFO_SIZE = Pattern.compile("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B)<)/p>");
-    private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
-    private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
-    private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
 
-    static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
-    static private final String CAPTCHA_WRONG = "Der eingegebene code ist falsch";
-
-    private String captchaAddress;
     private String finalURL;
     private String session;
+    private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
     private HTTPConnection urlConnection;
 
     public FilesTo() {
@@ -64,28 +64,69 @@ public class FilesTo extends PluginForHost {
     }
 
     
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+        return AGB_LINK;
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return HOST;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        RequestInfo requestInfo;
+
+        try {
+
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().toString()));
+
+            if (requestInfo.getHtmlCode() == null) {
+                return false;
+            } else {
+
+                // Datei gelöscht?
+                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
+
+                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch());
+                int fileSize = getFileSize(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch()));
+                downloadLink.setName(fileName);
+
+                try {
+
+                    downloadLink.setDownloadMax(fileSize);
+
+                } catch (Exception e) {
+                }
+
+            }
+
+            return true;
+
+        } catch (MalformedURLException e) {
+        } catch (IOException e) {
+        }
+
+        return false;
+
     }
 
     
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
     
@@ -93,6 +134,53 @@ public class FilesTo extends PluginForHost {
         
    
 
+    private int getFileSize(String source) {
+
+        int size = 0;
+
+        if (source.contains("KB")) {
+            source = new Regex(source, "(.*?) KB").getFirstMatch();
+            size = Integer.parseInt(source) * 1024;
+        } else if (source.contains("MB")) {
+            source = new Regex(source, "(.*?) MB").getFirstMatch();
+            size = (Integer.parseInt(source) * 1024 * 1024);
+        }
+
+        return size;
+
+    }
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -198,89 +286,14 @@ public class FilesTo extends PluginForHost {
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    
+    @Override
     public void reset() {
         this.finalURL = null;
         this.urlConnection = null;
     }
 
-    public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
-    }
-
-    
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        RequestInfo requestInfo;
-
-        try {
-
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().toString()));
-
-            if (requestInfo.getHtmlCode() == null) {
-                return false;
-            } else {
-
-                // Datei gelöscht?
-                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
-
-                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch());
-                int fileSize = getFileSize(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch()));
-                downloadLink.setName(fileName);
-
-                try {
-
-                    downloadLink.setDownloadMax(fileSize);
-
-                } catch (Exception e) {
-                }
-
-            }
-
-            return true;
-
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-
-        return false;
-
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return AGB_LINK;
-    }
-
-    private int getFileSize(String source) {
-
-        int size = 0;
-
-        if (source.contains("KB")) {
-            source = new Regex(source, "(.*?) KB").getFirstMatch();
-            size = Integer.parseInt(source) * 1024;
-        } else if (source.contains("MB")) {
-            source = new Regex(source, "(.*?) MB").getFirstMatch();
-            size = (int) (Integer.parseInt(source) * 1024 * 1024);
-        }
-
-        return size;
-
     }
 
 }

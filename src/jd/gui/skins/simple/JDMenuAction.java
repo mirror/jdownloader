@@ -49,10 +49,11 @@ public class JDMenuAction extends AbstractAction {
         }
         menuItem.getActionListener().actionPerformed(new ActionEvent(menuItem, menuItem.getActionID(), menuItem.getTitle()));
     }
-public boolean isEnabled(){
-    return menuItem.isEnabled();
+public int getActionID() {
+    return menuItem.getActionID();
 }
-    public int getActionID() {
-        return menuItem.getActionID();
+    @Override
+    public boolean isEnabled(){
+        return menuItem.isEnabled();
     }
 }

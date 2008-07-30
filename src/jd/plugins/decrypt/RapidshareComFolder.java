@@ -31,45 +31,19 @@ import jd.utils.JDUtilities;
 
 public class RapidshareComFolder extends PluginForDecrypt {
     static private final String host = "rapidshare.com";
-    private String version = "1.0.0.0";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
-    private String password = "";
+    private String cookie = "";
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private String para = "";
-    private String cookie = "";
+    private String password = "";
+    // private String version = "1.0.0.0";
 
     public RapidshareComFolder() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-  
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         try {
             URL url = new URL(parameter);
@@ -100,10 +74,26 @@ public class RapidshareComFolder extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
+  
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
     private void getLinks(String source) {
         RequestInfo reqhelp;
         String links[][] = new Regex(source, "<div style=\"text-align:right;\">(.*?)</div>", Pattern.CASE_INSENSITIVE).getMatches();
@@ -119,5 +109,22 @@ public class RapidshareComFolder extends PluginForDecrypt {
                 decryptedLinks.add(this.createDownloadlink(new Regex(links[i][0], Pattern.compile("href=\"(.*?)\" ", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
             }
         }
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

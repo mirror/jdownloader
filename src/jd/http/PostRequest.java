@@ -27,29 +27,20 @@ import jd.plugins.HTTPConnection;
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
 
-    public PostRequest(String url) {
-        super(url);
-
-    }
-
     public PostRequest(Form form) {
       super(form.getAction());
       
       this.postData=form.vars;
     }
 
-    public void setPostVariable(String key, String value) {
-        postData.put(key, value);
+    public PostRequest(String url) {
+        super(url);
 
-    }
-    public void setPostVariableString(String vars){
-        postData.putAll(parseQuery(vars));
     }
 
     public HashMap<String, String> getPostData() {
         return postData;
     }
-
     public String getPostDataString() {
         if (postData.isEmpty()) return null;
 
@@ -64,7 +55,7 @@ public class PostRequest extends Request {
         return buffer.toString().substring(1);
     }
 
-    
+    @Override
     public void postRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
         String parameter = getPostDataString();
@@ -79,10 +70,21 @@ public class PostRequest extends Request {
         }
     }
 
-    
+    @Override
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
         
+    }
+
+    
+    public void setPostVariable(String key, String value) {
+        postData.put(key, value);
+
+    }
+
+    
+    public void setPostVariableString(String vars){
+        postData.putAll(parseQuery(vars));
     }
 
   

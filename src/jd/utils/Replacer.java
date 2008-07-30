@@ -55,18 +55,6 @@ public class Replacer {
 
                                   };
 
-    public static String insertVariables(String str) {
-        if(str==null)return "";
-        for (int i = 0; i < KEYS.length; i++) {
-       
-            if(str.indexOf("%" + KEYS[i][0] + "%")>=0){
-                JDUtilities.getLogger().finer("%" + KEYS[i][0] + "%"+" --> *****");
-            str = replace(str,"%" + KEYS[i][0] + "%", getReplacement(KEYS[i][0]));
-            }
-        }
-        return str;
-    }
-
     public static String getReplacement(String key) {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
@@ -182,6 +170,18 @@ public class Replacer {
   }
   return "";
 
+    }
+
+    public static String insertVariables(String str) {
+        if(str==null)return "";
+        for (int i = 0; i < KEYS.length; i++) {
+       
+            if(str.indexOf("%" + KEYS[i][0] + "%")>=0){
+                JDUtilities.getLogger().finer("%" + KEYS[i][0] + "%"+" --> *****");
+            str = replace(str,"%" + KEYS[i][0] + "%", getReplacement(KEYS[i][0]));
+            }
+        }
+        return str;
     }
     
     private static String replace(String in,String remove, String replace) {

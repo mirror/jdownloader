@@ -47,14 +47,63 @@ import jd.utils.JDUtilities;
 public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		ActionListener, MouseListener {
 
-    /**
+    private class InternalTableModel extends AbstractTableModel {
+
+		private static final long serialVersionUID = 1155282457354673850L;
+
+		@Override
+        public Class<?> getColumnClass(int columnIndex) {
+			return String.class;
+		}
+
+		public int getColumnCount() {
+			return 3;
+		}
+
+		@Override
+        public String getColumnName(int column) {
+			switch (column) {
+			case 0:
+				return JDLocale.L("gui.config.plugin.container.column_host",
+						"Host");
+			case 1:
+				return JDLocale.L("gui.config.plugin.container.column_version",
+						"Version");
+			case 2:
+				return JDLocale.L("gui.config.plugin.container.column_author",
+						"Ersteller");
+
+			}
+			return super.getColumnName(column);
+		}
+
+		public int getRowCount() {
+			return pluginsForDecrypt.size();
+		}
+
+		public Object getValueAt(int rowIndex, int columnIndex) {
+
+			switch (columnIndex) {
+			case 0:
+				return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
+			case 1:
+				return pluginsForDecrypt.elementAt(rowIndex).getVersion();
+			case 2:
+				return pluginsForDecrypt.elementAt(rowIndex).getCoder();
+
+			}
+			return null;
+		}
+	}
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5308908915544580923L;
 	private JButton btnEdit;
-	private JTable table;
-	private Vector<PluginForDecrypt> pluginsForDecrypt;
 	private Configuration configuration;
+	private Vector<PluginForDecrypt> pluginsForDecrypt;
+
+	private JTable table;
 
 	// private PluginForDecrypt currentPlugin;
 	@SuppressWarnings("unchecked")
@@ -69,7 +118,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		Vector<PluginForDecrypt> pltmp = new Vector<PluginForDecrypt>();
 		Vector<PluginForDecrypt> pltmp2 = new Vector<PluginForDecrypt>();
 		while (iter.hasNext()) {
-			PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) iter.next();
+			PluginForDecrypt pluginForDecrypt = iter.next();
 			if (pluginForDecrypt.getConfig().getEntries().size() != 0) {
 				pltmp.add(pluginForDecrypt);
 			}
@@ -85,32 +134,41 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		load();
 	}
 
-	/**
-	 * Lädt alle Informationen
-	 */
-	public void load() {
-
-	}
-
-	/**
-	 * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
-	 * noch keinen properties laoder.
-	 */
-	public void save() {
-		// Interaction[] tmp= new Interaction[interactions.size()];
-		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
-		while (iter.hasNext()) {
-			PluginForDecrypt plg = (PluginForDecrypt) iter.next();
-			if (plg.getProperties() != null)
-				configuration.setProperty(
-						"PluginConfig_" + plg.getPluginName(), plg
-								.getProperties());
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == btnEdit) {
+			editEntry();
 		}
-
 	}
 
 	
-	public void initPanel() {
+	private void editEntry() {
+		PluginForDecrypt plugin = getSelectedPlugin();
+		if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
+			openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface,
+					plugin));
+		}
+	}
+
+
+	@Override
+    public String getName() {
+		return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
+	}
+
+	
+	private int getSelectedInteractionIndex() {
+		return table.getSelectedRow();
+	}
+
+	private PluginForDecrypt getSelectedPlugin() {
+		int index = getSelectedInteractionIndex();
+		if (index < 0)
+			return null;
+		return this.pluginsForDecrypt.elementAt(index);
+	}
+
+	@Override
+    public void initPanel() {
 		setLayout(new BorderLayout());
 		table = new JTable(); // new InternalTable();
 		InternalTableModel internalTableModel = new InternalTableModel();
@@ -165,17 +223,26 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		add(panel, BorderLayout.CENTER);
 	}
 
+	/**
+	 * Lädt alle Informationen
+	 */
+	@Override
+    public void load() {
 
-	private int getSelectedInteractionIndex() {
-		return table.getSelectedRow();
 	}
 
-	
-	public String getName() {
-		return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
+	public void mouseClicked(MouseEvent e) {
+		if (e.getClickCount() > 1) {
+			editEntry();
+		}
 	}
 
-	private void openPopupPanel(ConfigPanel config) {
+	public void mouseEntered(MouseEvent e)  { }
+
+    public void mouseExited(MouseEvent e)   { }
+    public void mousePressed(MouseEvent e)  { }
+    public void mouseReleased(MouseEvent e) { }
+    private void openPopupPanel(ConfigPanel config) {
 		JPanel panel = new JPanel(new BorderLayout());
 
 		// InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
@@ -195,82 +262,21 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		pop.setVisible(true);
 	}
 
-	private PluginForDecrypt getSelectedPlugin() {
-		int index = getSelectedInteractionIndex();
-		if (index < 0)
-			return null;
-		return this.pluginsForDecrypt.elementAt(index);
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		if (e.getSource() == btnEdit) {
-			editEntry();
-		}
-	}
-
-	private void editEntry() {
-		PluginForDecrypt plugin = getSelectedPlugin();
-		if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-			openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface,
-					plugin));
-		}
-	}
-
-	public void mouseClicked(MouseEvent e) {
-		if (e.getClickCount() > 1) {
-			editEntry();
-		}
-	}
-
-    public void mouseEntered(MouseEvent e)  { }
-    public void mouseExited(MouseEvent e)   { }
-    public void mousePressed(MouseEvent e)  { }
-    public void mouseReleased(MouseEvent e) { }
-
-	private class InternalTableModel extends AbstractTableModel {
-
-		private static final long serialVersionUID = 1155282457354673850L;
-
-		public Class<?> getColumnClass(int columnIndex) {
-			return String.class;
+	/**
+	 * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
+	 * noch keinen properties laoder.
+	 */
+	@Override
+    public void save() {
+		// Interaction[] tmp= new Interaction[interactions.size()];
+		Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
+		while (iter.hasNext()) {
+			PluginForDecrypt plg = iter.next();
+			if (plg.getProperties() != null)
+				configuration.setProperty(
+						"PluginConfig_" + plg.getPluginName(), plg
+								.getProperties());
 		}
 
-		public int getColumnCount() {
-			return 3;
-		}
-
-		public int getRowCount() {
-			return pluginsForDecrypt.size();
-		}
-
-		public Object getValueAt(int rowIndex, int columnIndex) {
-
-			switch (columnIndex) {
-			case 0:
-				return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
-			case 1:
-				return pluginsForDecrypt.elementAt(rowIndex).getVersion();
-			case 2:
-				return pluginsForDecrypt.elementAt(rowIndex).getCoder();
-
-			}
-			return null;
-		}
-
-		public String getColumnName(int column) {
-			switch (column) {
-			case 0:
-				return JDLocale.L("gui.config.plugin.container.column_host",
-						"Host");
-			case 1:
-				return JDLocale.L("gui.config.plugin.container.column_version",
-						"Version");
-			case 2:
-				return JDLocale.L("gui.config.plugin.container.column_author",
-						"Ersteller");
-
-			}
-			return super.getColumnName(column);
-		}
 	}
 }

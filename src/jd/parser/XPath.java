@@ -31,11 +31,11 @@ import javax.xml.parsers.*;
 import javax.xml.xpath.*;
 
 public class XPath {
-    private javax.xml.xpath.XPath xpath;
-    private String query;
-    private Document doc;
-    private String source;
     HtmlCleaner cleaner;
+    private Document doc;
+    private String query;
+    private String source;
+    private javax.xml.xpath.XPath xpath;
     
     public XPath(String source, String query) {
         this(source, query, true);
@@ -71,15 +71,76 @@ public class XPath {
     }
     
     /**
-     * Gibt den Transformierten HTML Code zurück
+     * Gibt von einen bestimmten Treffer mit einem bestimmten Attribut zurück
      */
-    public String showTransformation() {
+    public String getAttributeMatch(String attribute, int group) {
         try {
-            cleaner = new HtmlCleaner();
-            CleanerProperties props = cleaner.getProperties();
-            return (new SimpleXmlSerializer(props).getXmlAsString(cleaner.clean(source)));
+            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
+            int attr = 0;
+            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
+                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+                    attr = j;
+            }
+            
+            return result.item(group).getAttributes().item(attr).getNodeValue();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        catch(IOException e) {
+        return "";
+    }
+    
+    /**
+     * Gibt von allen Treffern ein bestimmtes Attribut zurück
+     */
+    public ArrayList<String> getAttributeMatches(String attribute) {
+        ArrayList<String> erg = new ArrayList<String>();
+        try {
+            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
+            int attr = 0;
+            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
+                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+                    attr = j;
+            }
+            for(int i=0; i<result.getLength(); i++) {
+                erg.add(result.item(i).getAttributes().item(attr).getNodeValue());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return erg;
+    }
+    
+    /**
+     * Gibt die Anzahl der Treffer zurück
+     */
+    public int getCount() {
+        try {
+            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
+            
+            return result.getLength();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
+    /**
+     * Gibt den ersten Treffer mit einem bestimmten Attribut zurück
+     */
+    public String getFirstAttributeMatch(String attribute) {
+        try {
+            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
+            int attr = 0;
+            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
+                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
+                    attr = j;
+            }
+            
+            return result.item(0).getAttributes().item(attr).getNodeValue();
+            
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return "";
@@ -128,78 +189,17 @@ public class XPath {
     }
     
     /**
-     * Gibt von allen Treffern ein bestimmtes Attribut zurück
+     * Gibt den Transformierten HTML Code zurück
      */
-    public ArrayList<String> getAttributeMatches(String attribute) {
-        ArrayList<String> erg = new ArrayList<String>();
+    public String showTransformation() {
         try {
-            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
-            int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
-                    attr = j;
-            }
-            for(int i=0; i<result.getLength(); i++) {
-                erg.add(result.item(i).getAttributes().item(attr).getNodeValue());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            cleaner = new HtmlCleaner();
+            CleanerProperties props = cleaner.getProperties();
+            return (new SimpleXmlSerializer(props).getXmlAsString(cleaner.clean(source)));
         }
-        return erg;
-    }
-    
-    /**
-     * Gibt den ersten Treffer mit einem bestimmten Attribut zurück
-     */
-    public String getFirstAttributeMatch(String attribute) {
-        try {
-            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
-            int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
-                    attr = j;
-            }
-            
-            return result.item(0).getAttributes().item(attr).getNodeValue();
-            
-        } catch (Exception e) {
+        catch(IOException e) {
             e.printStackTrace();
         }
         return "";
-    }
-    
-    /**
-     * Gibt von einen bestimmten Treffer mit einem bestimmten Attribut zurück
-     */
-    public String getAttributeMatch(String attribute, int group) {
-        try {
-            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
-            int attr = 0;
-            for(int j=0; j<result.item(0).getAttributes().getLength();j++) {
-                if(result.item(0).getAttributes().item(j).getNodeValue().equals(attribute))
-                    attr = j;
-            }
-            
-            return result.item(group).getAttributes().item(attr).getNodeValue();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
-    
-    /**
-     * Gibt die Anzahl der Treffer zurück
-     */
-    public int getCount() {
-        try {
-            NodeList result = (NodeList) xpath.compile(query).evaluate(doc, XPathConstants.NODESET);
-            
-            return result.getLength();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
     }
 }

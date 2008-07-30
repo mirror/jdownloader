@@ -43,14 +43,14 @@ public class ConfigurationSubPanel extends JPanel implements ActionListener {
      */
     private static final long serialVersionUID = 3815946152967454931L;
 
+    private JButton       btnCancel;
+
+    private JButton       btnSave;
+
     @SuppressWarnings("unused")
     private Configuration configuration;
 
     private ConfigPanel   panel;
-
-    private JButton       btnSave;
-
-    private JButton       btnCancel;
 
     @SuppressWarnings("unused")
     private UIInterface   uiinterface;

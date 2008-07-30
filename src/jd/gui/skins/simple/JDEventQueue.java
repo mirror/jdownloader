@@ -23,6 +23,33 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
 public class JDEventQueue extends EventQueue {
+    abstract class MenuAbstractAction extends AbstractAction {
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		JTextComponent c;
+       
+
+        public MenuAbstractAction(JTextComponent c, String text,ImageIcon icon, String acc) {
+            super(text);
+            this.c = c;
+            if(icon!=null)putValue(Action.SMALL_ICON, icon);  
+           
+         
+                putValue(Action.ACCELERATOR_KEY,KeyStroke.getKeyStroke(acc));
+       
+          
+            
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
+        }
+    }
+
+    @Override
     protected void dispatchEvent(AWTEvent ev) {
         super.dispatchEvent(ev);
         if (!(ev instanceof MouseEvent)) return;
@@ -53,6 +80,7 @@ public class JDEventQueue extends EventQueue {
                 c.copy();
             }
 
+            @Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getSelectedText() != null;
             }
@@ -67,6 +95,7 @@ public class JDEventQueue extends EventQueue {
                 c.paste();
             }
 
+            @Override
             public boolean isEnabled() {
                 if (c.isEditable() && c.isEnabled()) {
                     Transferable contents = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(this);
@@ -96,6 +125,7 @@ public class JDEventQueue extends EventQueue {
                 c.selectAll();
             }
 
+            @Override
             public boolean isEnabled() {
                 return c.isEnabled() && c.getText().length() > 0;
             }
@@ -103,30 +133,5 @@ public class JDEventQueue extends EventQueue {
 
         Point pt = SwingUtilities.convertPoint(e.getComponent(), e.getPoint(), t);
         menu.show(t, pt.x, pt.y);
-    }
-
-    abstract class MenuAbstractAction extends AbstractAction {
-        /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		JTextComponent c;
-       
-
-        public MenuAbstractAction(JTextComponent c, String text,ImageIcon icon, String acc) {
-            super(text);
-            this.c = c;
-            if(icon!=null)putValue(Action.SMALL_ICON, icon);  
-           
-         
-                putValue(Action.ACCELERATOR_KEY,KeyStroke.getKeyStroke(acc));
-       
-          
-            
-        }
-
-        public boolean isEnabled() {
-            return c.isEditable() && c.isEnabled() && c.getSelectedText() != null;
-        }
     }
 }

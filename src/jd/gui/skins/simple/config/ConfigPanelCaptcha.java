@@ -50,24 +50,74 @@ import jd.utils.JDUtilities;
 
 public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, ActionListener {
 
+    private class InternalTableModel extends AbstractTableModel {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1155282457354673850L;
+
+        public Class<?> getColumnClass(int columnIndex) {
+            switch (columnIndex) {
+            case 0:
+                return Boolean.class;
+            case 1:
+                return String.class;
+
+            }
+            return String.class;
+        }
+
+        public int getColumnCount() {
+            return 2;
+        }
+
+        public String getColumnName(int column) {
+            switch (column) {
+            case 0:
+                return JDLocale.L("gui.config.jac.column.use", "Verwenden");
+            case 1:
+                return JDLocale.L("gui.config.jac.column.method", "Methode");
+
+            }
+            return super.getColumnName(column);
+        }
+
+        public int getRowCount() {
+            return methods.length;
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+
+            switch (columnIndex) {
+            case 0:
+                return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true);
+            case 1:
+                return methods[rowIndex].getName() + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
+
+            }
+            return null;
+        }
+    }
+
     /**
      * 
      */
     private static final long serialVersionUID = 1592765387324291781L;
+
+    private ConfigEntriesPanel cep;
+
+    private Configuration configuration;
+
+    private ConfigContainer container;
+
+    private File[] methods;
 
     /**
      * 
      */
 
     private JTable table;
-
-    private Configuration configuration;
-
-    private File[] methods;
-
-    private ConfigContainer container;
-
-    private ConfigEntriesPanel cep;
 
     public ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -81,11 +131,174 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     }
 
+    @SuppressWarnings("unchecked")
+	public void actionPerformed(ActionEvent e) {
+        logger.info(e.getActionCommand());
+        if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))) {
+            JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"))) {
+            String user = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("gui.config.captcha.ces.register", "Gewünschter Benutzername?"));
+
+            if (user != null) {
+                CESClient ces = new CESClient();
+                String pass = ces.register(user);
+                if (pass == null) {
+                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.error", "Fehler aufgetreten"), ces.getStatusText());
+                } else {
+                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.success", "Erfolgreich"), JDLocale.L("gui.config.captcha.ces.register.success.logins", "Deine neuen C.E.S Logins<br><font color='RED'>Logins unbedingt aufschreiben!</font> Verlorene Logins können nicht ersetzt werden") + "<hr><p>" + user + ":" + pass + "</p>");
+                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_USER, user);
+                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_PASS, pass);
+                    JDUtilities.getSubConfig("JAC").save();
+                    JDUtilities.saveConfig();
+                    ConfigurationDialog.DIALOG.dispose();
+                    ConfigurationDialog.DIALOG.setVisible(false);
+
+                }
+            }
+
+        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"))) {
+            CESClient ces = new CESClient();
+            ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
+           String nick=JOptionPane.showInputDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askUser","Wer soll die Nachricht erhalten?"));
+           String message=TextAreaDialog.showDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), "");
+            
+           
+           
+           if(nick==null || message==null ||nick.trim().length()==0 ||message.trim().length()==0 ||!ces.sendMessage(nick, message)){
+               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.error","Fehler! Nachricht nicht verschickt."));
+           }else{
+               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success","Nachricht an %s verschickt"),nick));
+           }
+        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"))) {
+
+               
+            
+            
+            try {
+                save();
+                JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
+            } catch (MalformedURLException e1) {
+                
+                e1.printStackTrace();
+            }
+        }else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {
+            Object oldMessages =  JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
+            HashMap<Integer, ArrayList<String>> savedMessages = null;
+            if (oldMessages != null) {
+                savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
+            }else{
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages","C.E.S. Keine Nachrichten für dich!"));  
+            return;
+            }
+            String html="<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
+           
+            ArrayList<String> message;
+            int i=0;
+            for(Iterator<Entry<Integer, ArrayList<String>>> it = savedMessages.entrySet().iterator();it.hasNext();){
+                Entry<Integer, ArrayList<String>> next = it.next();
+                message=next.getValue();
+                html+="<br"+String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle","<div><p>%s Nachricht von %s<hr>%s</p></div>"),JDUtilities.htmlDecode(message.get(0)),JDUtilities.htmlDecode(message.get(1)),JDUtilities.htmlDecode(message.get(2)));
+            i++;
+            }
+            String title= String.format(JDLocale.L("captcha.ces.message.titleoverview","C.E.S. %s Nachrichten"),i+"");
+            JDUtilities.getGUI().showHTMLDialog(title, html);
+        } else {
+            JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-s" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
+
+        }
+
+    }
+
+    public String getName() {
+
+        return JDLocale.L("gui.config.jac.name", "jAntiCaptcha");
+    }
+
+    public void initPanel() {
+        setupContainer();
+        this.setLayout(new GridBagLayout());
+
+        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Captcha"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
+        table = new JTable();
+        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
+        InternalTableModel internalTableModel = new InternalTableModel();
+        table.setModel(internalTableModel);
+        table.setEditingRow(0);
+        table.addMouseListener(this);
+        this.setPreferredSize(new Dimension(700, 350));
+
+        TableColumn column = null;
+        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+            column = table.getColumnModel().getColumn(c);
+            switch (c) {
+
+            case 0:
+                column.setPreferredWidth(50);
+                break;
+            case 1:
+                column.setPreferredWidth(600);
+                break;
+
+            }
+        }
+
+        // add(scrollPane);
+        // list = new JList();
+
+        JScrollPane scrollpane = new JScrollPane(table);
+        scrollpane.setPreferredSize(new Dimension(400, 200));
+
+        JDUtilities.addToGridBag(cep.getSubPanels().get(1).panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+
+        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
+        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        // add(panel, BorderLayout.CENTER);
+
+    }
+
+    
     /**
      * Lädt alle Informationen
      */
     public void load() {
         this.loadConfigEntries();
+    }
+
+    /*
+     * private int getSelectedIndex() { return table.getSelectedRow(); }
+     */
+    
+    public void mouseClicked(MouseEvent e) {
+
+        configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
+        table.tableChanged(new TableModelEvent(table.getModel()));
+    }
+
+    /*
+     * private File getSelectedMethod() { int index = getSelectedIndex(); if
+     * (index < 0) return null; return this.methods[index]; }
+     */
+
+    public void mouseEntered(MouseEvent e) {
+       
+
+    }
+
+    public void mouseExited(MouseEvent e) {
+       
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+       
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+       
+
     }
 
     /**
@@ -103,12 +316,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         cep.save();
         this.saveConfigEntries();
 
-    }
-
-    public void mouseClicked(MouseEvent e) {
-
-        configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
-        table.tableChanged(new TableModelEvent(table.getModel()));
     }
 
     public void setupContainer() {
@@ -196,213 +403,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ces.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-
-    }
-
-    
-    public void initPanel() {
-        setupContainer();
-        this.setLayout(new GridBagLayout());
-
-        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(this.container, "Captcha"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
-        table = new JTable();
-        table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
-        table.setEditingRow(0);
-        table.addMouseListener(this);
-        this.setPreferredSize(new Dimension(700, 350));
-
-        TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
-            column = table.getColumnModel().getColumn(c);
-            switch (c) {
-
-            case 0:
-                column.setPreferredWidth(50);
-                break;
-            case 1:
-                column.setPreferredWidth(600);
-                break;
-
-            }
-        }
-
-        // add(scrollPane);
-        // list = new JList();
-
-        JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
-
-        JDUtilities.addToGridBag(cep.getSubPanels().get(1).panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-
-        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
-        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        // add(panel, BorderLayout.CENTER);
-
-    }
-
-    /*
-     * private int getSelectedIndex() { return table.getSelectedRow(); }
-     */
-    
-    public String getName() {
-
-        return JDLocale.L("gui.config.jac.name", "jAntiCaptcha");
-    }
-
-    /*
-     * private File getSelectedMethod() { int index = getSelectedIndex(); if
-     * (index < 0) return null; return this.methods[index]; }
-     */
-
-    private class InternalTableModel extends AbstractTableModel {
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1155282457354673850L;
-
-        public Class<?> getColumnClass(int columnIndex) {
-            switch (columnIndex) {
-            case 0:
-                return Boolean.class;
-            case 1:
-                return String.class;
-
-            }
-            return String.class;
-        }
-
-        public int getColumnCount() {
-            return 2;
-        }
-
-        public int getRowCount() {
-            return methods.length;
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-
-            switch (columnIndex) {
-            case 0:
-                return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true);
-            case 1:
-                return methods[rowIndex].getName() + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
-
-            }
-            return null;
-        }
-
-        public String getColumnName(int column) {
-            switch (column) {
-            case 0:
-                return JDLocale.L("gui.config.jac.column.use", "Verwenden");
-            case 1:
-                return JDLocale.L("gui.config.jac.column.method", "Methode");
-
-            }
-            return super.getColumnName(column);
-        }
-    }
-
-    public void mouseEntered(MouseEvent e) {
-       
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-       
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-       
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-       
-
-    }
-
-    @SuppressWarnings("unchecked")
-	public void actionPerformed(ActionEvent e) {
-        logger.info(e.getActionCommand());
-        if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))) {
-            JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
-
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"))) {
-            String user = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("gui.config.captcha.ces.register", "Gewünschter Benutzername?"));
-
-            if (user != null) {
-                CESClient ces = new CESClient();
-                String pass = ces.register(user);
-                if (pass == null) {
-                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.error", "Fehler aufgetreten"), ces.getStatusText());
-                } else {
-                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.success", "Erfolgreich"), JDLocale.L("gui.config.captcha.ces.register.success.logins", "Deine neuen C.E.S Logins<br><font color='RED'>Logins unbedingt aufschreiben!</font> Verlorene Logins können nicht ersetzt werden") + "<hr><p>" + user + ":" + pass + "</p>");
-                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_USER, user);
-                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_PASS, pass);
-                    JDUtilities.getSubConfig("JAC").save();
-                    JDUtilities.saveConfig();
-                    ConfigurationDialog.DIALOG.dispose();
-                    ConfigurationDialog.DIALOG.setVisible(false);
-
-                }
-            }
-
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"))) {
-            CESClient ces = new CESClient();
-            ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-           String nick=JOptionPane.showInputDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askUser","Wer soll die Nachricht erhalten?"));
-           String message=TextAreaDialog.showDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage","Nachricht eingeben"), "");
-            
-           
-           
-           if(nick==null || message==null ||nick.trim().length()==0 ||message.trim().length()==0 ||!ces.sendMessage(nick, message)){
-               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.error","Fehler! Nachricht nicht verschickt."));
-           }else{
-               JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success","Nachricht an %s verschickt"),nick));
-           }
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"))) {
-
-               
-            
-            
-            try {
-                save();
-                JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-            } catch (MalformedURLException e1) {
-                
-                e1.printStackTrace();
-            }
-        }else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {
-            Object oldMessages =  JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
-            HashMap<Integer, ArrayList<String>> savedMessages = null;
-            if (oldMessages != null) {
-                savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
-            }else{
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages","C.E.S. Keine Nachrichten für dich!"));  
-            return;
-            }
-            String html="<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
-           
-            ArrayList<String> message;
-            int i=0;
-            for(Iterator<Entry<Integer, ArrayList<String>>> it = savedMessages.entrySet().iterator();it.hasNext();){
-                Entry<Integer, ArrayList<String>> next = it.next();
-                message=next.getValue();
-                html+="<br"+String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle","<div><p>%s Nachricht von %s<hr>%s</p></div>"),JDUtilities.htmlDecode(message.get(0)),JDUtilities.htmlDecode(message.get(1)),JDUtilities.htmlDecode(message.get(2)));
-            i++;
-            }
-            String title= String.format(JDLocale.L("captcha.ces.message.titleoverview","C.E.S. %s Nachrichten"),i+"");
-            JDUtilities.getGUI().showHTMLDialog(title, html);
-        } else {
-            JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-s" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
-
-        }
 
     }
 

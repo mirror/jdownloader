@@ -40,33 +40,20 @@ public class LinkProtectorCom extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
+    private String decryptCode(String decryptedLink, int charCode) {
+        String result = "";
+        try {
+            for (int i = 0; i * 4 < decryptedLink.length(); i++) {
+                result = (char) (Integer.parseInt(decryptedLink.substring(i * 4, i * 4 + 4)) - charCode) + result;
+            }
+        } catch (Exception e) {
+            result = "";
+        }
+        return result;
     }
 
     
-    public String getHost() {
-        return host;
-    }
-
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -106,20 +93,40 @@ public class LinkProtectorCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String decryptCode(String decryptedLink, int charCode) {
-        String result = "";
-        try {
-            for (int i = 0; i * 4 < decryptedLink.length(); i++) {
-                result = (char) (Integer.parseInt(decryptedLink.substring(i * 4, i * 4 + 4)) - charCode) + result;
-            }
-        } catch (Exception e) {
-            result = "";
-        }
-        return result;
+   
+
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public boolean doBotCheck(File file) {
-        return false;
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

@@ -8,6 +8,18 @@ import jd.plugins.DownloadLink;
 
 public class SpaceManager {
 
+    public static boolean checkDownloadLink(DownloadLink downloadLink) {
+        return checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadMax());
+    }
+
+    public static boolean checkPath(File Path, long size) {
+        if (size > 0) {
+            long space = getUsableSpace(Path);
+            if (space > 0 && (space - size) < 1) return false;
+        }
+        return true;
+    }
+
     public static long getUsableSpace(File f) {
         Method reflectOnUsableSpace;
 
@@ -29,17 +41,5 @@ public class SpaceManager {
             e.printStackTrace();
         }
         return -1;
-    }
-
-    public static boolean checkPath(File Path, long size) {
-        if (size > 0) {
-            long space = getUsableSpace(Path);
-            if (space > 0 && (space - size) < 1) return false;
-        }
-        return true;
-    }
-
-    public static boolean checkDownloadLink(DownloadLink downloadLink) {
-        return checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadMax());
     }
 }

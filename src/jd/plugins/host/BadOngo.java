@@ -40,40 +40,76 @@ public class BadOngo extends PluginForHost {
 
     private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)/[\\d]{4,10}", Pattern.CASE_INSENSITIVE);
 
-    private Form form;
-
     private File captchaFile;
-
-    private String cookie = null;
-
-    private long rsrnd = 0;
 
     private String code = null;
 
+    private String cookie = null;
+
+    private Form form;
+
+    private long rsrnd = 0;
+
     //
     
+    public BadOngo() {
+        super();
+        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
+        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
+        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
     
+    @Override
+    public String getAGBLink() {
+
+        return "http://www.badongo.com/toc";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        try {
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
+            String[] fileInfo = new Regex(requestInfo.getHtmlCode(), "<td valign=\"top\"><b>Datei.</b></td>.*?<td>.nbsp.(.*?)</td>.*?<td valign=\"top\"><b>Dateigr.sse.</b></td>.*?<td>.nbsp.([0-9\\.]*)(.*?)</td>").getMatches()[0];
+            // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
+            downloadLink.setName(fileInfo[0]);
+            try {
+                double length = Double.parseDouble(fileInfo[1].trim());
+                int bytes;
+                String type = fileInfo[2].toLowerCase();
+                if (type.equalsIgnoreCase("kb")) {
+                    bytes = (int) (length * 1024);
+                } else if (type.equalsIgnoreCase("mb")) {
+                    bytes = (int) (length * 1024 * 1024);
+                } else {
+                    bytes = (int) length;
+                }
+                downloadLink.setDownloadMax(bytes);
+            } catch (Exception e) {
+            }
+            // Datei ist noch verfuegbar
+            return true;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // Datei scheinbar nicht mehr verfuegbar, Fehler?
+        return false;
     }
 
     
@@ -82,17 +118,35 @@ public class BadOngo extends PluginForHost {
    
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 1;
+    }
+
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    public BadOngo() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
+    
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -245,56 +299,14 @@ public class BadOngo extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}file", "http://www.badongo.com/de/file").replaceFirst("http://.*?badongo\\.com/[a-zA-Z/]{0,5}vid", "http://www.badongo.com/de/vid")));
-            String[] fileInfo = new Regex(requestInfo.getHtmlCode(), "<td valign=\"top\"><b>Datei.</b></td>.*?<td>.nbsp.(.*?)</td>.*?<td valign=\"top\"><b>Dateigr.sse.</b></td>.*?<td>.nbsp.([0-9\\.]*)(.*?)</td>").getMatches()[0];
-            // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
-            downloadLink.setName(fileInfo[0]);
-            try {
-                double length = Double.parseDouble(fileInfo[1].trim());
-                int bytes;
-                String type = fileInfo[2].toLowerCase();
-                if (type.equalsIgnoreCase("kb")) {
-                    bytes = (int) (length * 1024);
-                } else if (type.equalsIgnoreCase("mb")) {
-                    bytes = (int) (length * 1024 * 1024);
-                } else {
-                    bytes = (int) length;
-                }
-                downloadLink.setDownloadMax(bytes);
-            } catch (Exception e) {
-            }
-            // Datei ist noch verfuegbar
-            return true;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        // Datei scheinbar nicht mehr verfuegbar, Fehler?
-        return false;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    
+    @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
     
+    @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
-    }
-
-    
-    public String getAGBLink() {
-
-        return "http://www.badongo.com/toc";
     }
 }

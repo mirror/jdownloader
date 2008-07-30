@@ -29,10 +29,6 @@ import jd.utils.JDLocale;
 public class JDExit extends Interaction implements Serializable {
 
     /**
-     * 
-     */
-    private static final long serialVersionUID = -4825002404662625527L;
-    /**
      * serialVersionUID
      */
     private static final String NAME              = JDLocale.L("interaction.jdexit.name","JD Beenden");
@@ -41,27 +37,37 @@ public class JDExit extends Interaction implements Serializable {
      * läuft der Download wie geowhnt weiter.
      */
     public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
+    /**
+     * 
+     */
+    private static final long serialVersionUID = -4825002404662625527L;
     public JDExit() {
      }
     
+    @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
       System.exit(0);
       return true;
     }
-    /**
-     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-     */
-    public void run() {}
-    public String toString() {
-        return NAME;
-    }
-    
+    @Override
     public String getInteractionName() {
         return NAME;
     }
-    
+    @Override
     public void initConfig() {}
     
+    @Override
     public void resetInteraction() {}
+    
+    /**
+     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
+     */
+    @Override
+    public void run() {}
+    
+    @Override
+    public String toString() {
+        return NAME;
+    }
 }

@@ -5,22 +5,22 @@ import java.io.OutputStream;
 
 public class JDSimpleWebserverResponseCreator {
         /**
-         * The headers
-         */
-        private StringBuilder headers;
-
-        /**
          * The body
          */
         private StringBuilder body;
-
-        
-        private String contentType;
 
         /**
          * Binary body
          */
         private byte[] bytes;
+
+        
+        private String contentType;
+
+        /**
+         * The headers
+         */
+        private StringBuilder headers;
 
         /**
          * Create new response
@@ -32,17 +32,6 @@ public class JDSimpleWebserverResponseCreator {
         }
 
         /**
-         * Set a redirect
-         * 
-         * @param url
-         *            url to redirect to
-         */
-        public void setRedirect(String url) {
-            headers.append("HTTP/1.1 307 Temporary Redirect\n");
-            headers.append("Location: /\n");
-        }
-
-        /**
          * Append the given string to the body so far
          * 
          * @param content
@@ -51,46 +40,32 @@ public class JDSimpleWebserverResponseCreator {
         public void addContent(String content) {
             this.body.append(content);
         }
-//leg die lib ins home_dir gibt ja noch keine lib, nur java und class f
-        /**
-         * Mark the response as 200 OK. This also sets the content length, so
-         * the method should not be called until all content has been appended
-         */
-        public void setOk() {
-            headers.append("HTTP/1.1 200 OK\r\n");
-            headers.append("Connection: close\r\n");
-            headers.append("Content-Type: ");            
-            headers.append(this.contentType);
-            headers.append("\r\n");
-          try{
-                headers.append("Content-Length: ");
-                if (this.bytes != null) {
-                    headers.append(bytes.length);
-                } else {
-                    headers.append(body.toString().getBytes("iso-8859-1").length);
-                }
-                headers.append("\r\n");
-          }catch(Exception e){}
-          
-            
+
+        public void setAuth_failed() {
+            headers.append("HTTP/1.1 403 Forbidden\r\n");           
+            body.append("<html><body><h1><p>403 Forbidden</p></h1></body></html>");
+        }
+public void setAuth_needed() {
+            headers.append("HTTP/1.1 401 Unauthorized\r\n");
+            headers.append("WWW-Authenticate: Basic realm=\"JDownloader\"\r\n");
         }
 
         /**
-         * Write the complete response to the given output stream
+         * Set binary content
          * 
-         * @param outputStream
-         *            stream
-         * @throws IOException
-         *             on error
+         * @param bytes
          */
-        public void writeToStream(OutputStream outputStream) throws IOException {
-            headers.append("\r\n");
-            outputStream.write(headers.toString().getBytes("iso-8859-1"));
-            if (this.bytes != null) {
-                outputStream.write(this.bytes);
-            } else {
-                outputStream.write(body.toString().getBytes("iso-8859-1"));
-            }
+        public void setBinaryContent(byte[] bytes) {
+            this.bytes = bytes;
+        }
+
+        /**
+         * Set the content type (defaults to text/html utf-8)
+         * 
+         * @param contentType
+         */
+        public void setContentType(String contentType) {
+            this.contentType = contentType;
         }
 
         /**
@@ -120,33 +95,58 @@ public class JDSimpleWebserverResponseCreator {
             body.append(url);
             body.append("</body></html>");
         }
-
-        public void setAuth_needed() {
-            headers.append("HTTP/1.1 401 Unauthorized\r\n");
-            headers.append("WWW-Authenticate: Basic realm=\"JDownloader\"\r\n");
-        }
         
         
-        public void setAuth_failed() {
-            headers.append("HTTP/1.1 403 Forbidden\r\n");           
-            body.append("<html><body><h1><p>403 Forbidden</p></h1></body></html>");
+        //leg die lib ins home_dir gibt ja noch keine lib, nur java und class f
+        /**
+         * Mark the response as 200 OK. This also sets the content length, so
+         * the method should not be called until all content has been appended
+         */
+        public void setOk() {
+            headers.append("HTTP/1.1 200 OK\r\n");
+            headers.append("Connection: close\r\n");
+            headers.append("Content-Type: ");            
+            headers.append(this.contentType);
+            headers.append("\r\n");
+          try{
+                headers.append("Content-Length: ");
+                if (this.bytes != null) {
+                    headers.append(bytes.length);
+                } else {
+                    headers.append(body.toString().getBytes("iso-8859-1").length);
+                }
+                headers.append("\r\n");
+          }catch(Exception e){}
+          
+            
         }
         /**
-         * Set the content type (defaults to text/html utf-8)
+         * Set a redirect
          * 
-         * @param contentType
+         * @param url
+         *            url to redirect to
          */
-        public void setContentType(String contentType) {
-            this.contentType = contentType;
+        public void setRedirect(String url) {
+            headers.append("HTTP/1.1 307 Temporary Redirect\n");
+            headers.append("Location: /\n");
         }
 
         /**
-         * Set binary content
+         * Write the complete response to the given output stream
          * 
-         * @param bytes
+         * @param outputStream
+         *            stream
+         * @throws IOException
+         *             on error
          */
-        public void setBinaryContent(byte[] bytes) {
-            this.bytes = bytes;
+        public void writeToStream(OutputStream outputStream) throws IOException {
+            headers.append("\r\n");
+            outputStream.write(headers.toString().getBytes("iso-8859-1"));
+            if (this.bytes != null) {
+                outputStream.write(this.bytes);
+            } else {
+                outputStream.write(body.toString().getBytes("iso-8859-1"));
+            }
         }
     }
 

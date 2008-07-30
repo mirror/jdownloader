@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 
 import jd.utils.JDLocale;
@@ -36,30 +37,22 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     private static final long serialVersionUID = 1L;
 
-    private JComboBox cmboInput;
+    private String approveButtonText = "OK";
 
     private JButton btnBrowse;
 
+    private JComboBox cmboInput;
+
     private File currentPath;
-
-    private int fileSelectionMode = JDFileChooser.FILES_ONLY;
-
-    private String approveButtonText = "OK";
 
     private boolean editable = false;
 
-    @SuppressWarnings("unused")
-    private Logger logger = JDUtilities.getLogger();
-
     private Vector<String> files;
 
-    public ComboBrowseFile(Vector<String> files) {
+    private int fileSelectionMode = JFileChooser.FILES_ONLY;
 
-        super();
-        if (files == null) files = new Vector<String>();
-        this.files = files;
-        initGUI();
-    }
+    @SuppressWarnings("unused")
+    private Logger logger = JDUtilities.getLogger();
 
     @SuppressWarnings("unchecked")
     public ComboBrowseFile(String string) {
@@ -76,36 +69,45 @@ e.printStackTrace();
         initGUI();
     }
 
-    private void initGUI() {
-        int n = 5;
-        setLayout(new BorderLayout(n, n));
-        cmboInput = new JComboBox(files);
+    public ComboBrowseFile(Vector<String> files) {
 
-        cmboInput.setEditable(editable);
-        cmboInput.addActionListener(this);
-
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "auswählen"));
-        btnBrowse.addActionListener(this);
-
-        // JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new
-        // Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL,
-        // GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new
-        // Insets(0, 0, 0, 0), GridBagConstraints.NONE,
-        // GridBagConstraints.EAST);
-
-        add(cmboInput, BorderLayout.CENTER);
-        add(btnBrowse, BorderLayout.EAST);
+        super();
+        if (files == null) files = new Vector<String>();
+        this.files = files;
+        initGUI();
     }
 
-    public void setButtonText(String text) {
-        btnBrowse.setText(text);
+    public void actionPerformed(ActionEvent e) {
+        File newPath;
+        ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
+
+        if (e.getSource() == cmboInput) {
+            Object sel = cmboInput.getSelectedItem();
+            if (sel != null) {
+                newPath = new File(sel.toString());
+                setCurrentPath(newPath);
+                this.dispatchEvent(event);
+            }
+        } else if (e.getSource() == btnBrowse) {
+            newPath = getPath();
+            setCurrentPath(newPath);
+            this.dispatchEvent(event);
+        }
+
     }
 
-    public void setEnabled(boolean value) {
-        cmboInput.setEnabled(value);
-        btnBrowse.setEnabled(value);
+    /**
+     * @return the approveButtonText
+     */
+    public String getApproveButtonText() {
+        return approveButtonText;
+    }
 
+    /**
+     * @return the currentPath
+     */
+    public File getCurrentPath() {
+        return currentPath;
     }
 
     /**
@@ -130,40 +132,6 @@ e.printStackTrace();
         return directory;
     }
 
-    private File getPath() {
-        JDFileChooser fc = new JDFileChooser();
-        fc.setApproveButtonText(approveButtonText);
-        fc.setFileSelectionMode(fileSelectionMode);
-        fc.setCurrentDirectory(getDirectoryFromTxtInput());
-        fc.showOpenDialog(this);
-        File ret = fc.getSelectedFile();
-        return ret;
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        File newPath;
-        ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
-
-        if (e.getSource() == cmboInput) {
-            Object sel = cmboInput.getSelectedItem();
-            if (sel != null) {
-                newPath = new File(sel.toString());
-                setCurrentPath(newPath);
-                this.dispatchEvent(event);
-            }
-        } else if (e.getSource() == btnBrowse) {
-            newPath = getPath();
-            setCurrentPath(newPath);
-            this.dispatchEvent(event);
-        }
-
-    }
-
-    public void setEditable(boolean value) {
-        cmboInput.setEditable(value);
-        editable = value;
-    }
-
     public boolean getEditable() {
         return editable;
     }
@@ -175,28 +143,52 @@ e.printStackTrace();
         return fileSelectionMode;
     }
 
-    /**
-     * @param fileSelectionMode
-     *            the fileSelectionMode to set
-     */
-    public void setFileSelectionMode(int fileSelectionMode) {
-        this.fileSelectionMode = fileSelectionMode;
-    }
-
-    /**
-     * @return the currentPath
-     */
-    public File getCurrentPath() {
-        return currentPath;
+    private File getPath() {
+        JDFileChooser fc = new JDFileChooser();
+        fc.setApproveButtonText(approveButtonText);
+        fc.setFileSelectionMode(fileSelectionMode);
+        fc.setCurrentDirectory(getDirectoryFromTxtInput());
+        fc.showOpenDialog(this);
+        File ret = fc.getSelectedFile();
+        return ret;
     }
 
     public String getText() {
         return cmboInput.getSelectedItem().toString();
     }
 
-    public void setText(String text) {
-        if (text == null) text = "";
-        setCurrentPath(new File(text));
+    private void initGUI() {
+        int n = 5;
+        setLayout(new BorderLayout(n, n));
+        cmboInput = new JComboBox(files);
+
+        cmboInput.setEditable(editable);
+        cmboInput.addActionListener(this);
+
+        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "auswählen"));
+        btnBrowse.addActionListener(this);
+
+        // JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new
+        // Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL,
+        // GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(this, btnBrowse, 1, 0, 1, 1, 0, 0, new
+        // Insets(0, 0, 0, 0), GridBagConstraints.NONE,
+        // GridBagConstraints.EAST);
+
+        add(cmboInput, BorderLayout.CENTER);
+        add(btnBrowse, BorderLayout.EAST);
+    }
+
+    /**
+     * @param approveButtonText
+     *            the approveButtonText to set
+     */
+    public void setApproveButtonText(String approveButtonText) {
+        this.approveButtonText = approveButtonText;
+    }
+
+    public void setButtonText(String text) {
+        btnBrowse.setText(text);
     }
 
     /**
@@ -224,19 +216,29 @@ e.printStackTrace();
 
     }
 
-    /**
-     * @return the approveButtonText
-     */
-    public String getApproveButtonText() {
-        return approveButtonText;
+    public void setEditable(boolean value) {
+        cmboInput.setEditable(value);
+        editable = value;
+    }
+
+    @Override
+    public void setEnabled(boolean value) {
+        cmboInput.setEnabled(value);
+        btnBrowse.setEnabled(value);
+
     }
 
     /**
-     * @param approveButtonText
-     *            the approveButtonText to set
+     * @param fileSelectionMode
+     *            the fileSelectionMode to set
      */
-    public void setApproveButtonText(String approveButtonText) {
-        this.approveButtonText = approveButtonText;
+    public void setFileSelectionMode(int fileSelectionMode) {
+        this.fileSelectionMode = fileSelectionMode;
+    }
+
+    public void setText(String text) {
+        if (text == null) text = "";
+        setCurrentPath(new File(text));
     }
 
 }

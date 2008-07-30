@@ -52,13 +52,14 @@ public ConfigPanelTweak(Configuration configuration, UIInterface uiinterface){
         load();
     
     }
-    public void save(){
-        logger.info("save");
-        this.saveConfigEntries();
-       
-     }
+    @Override
+    public String getName() {
+        
+        return JDLocale.L("gui.config.tweak.name","Rechen- und Speicherverbrauch verringern");
+    }
    
 
+    @Override
     public void initPanel() {
       
         GUIConfigEntry ce;
@@ -87,15 +88,18 @@ public ConfigPanelTweak(Configuration configuration, UIInterface uiinterface){
         add(panel, BorderLayout.NORTH);
     }
     
+    @Override
     public void load() {
   this.loadConfigEntries();
         
     }
     
     
-    public String getName() {
-        
-        return JDLocale.L("gui.config.tweak.name","Rechen- und Speicherverbrauch verringern");
-    }
+    @Override
+    public void save(){
+        logger.info("save");
+        this.saveConfigEntries();
+       
+     }
     
 }

@@ -29,39 +29,39 @@ import jd.config.Property;
 public class TreeTableAction extends AbstractAction{
 
 
+    public static final int DOWNLOAD_ABORT = 18;
+	public static final int DOWNLOAD_BROWSE_LINK = 7;
+    public static final int DOWNLOAD_DELETE = 2;
+    public static final int DOWNLOAD_DISABLE = 6;
+    public static final int DOWNLOAD_DLC = 20;
+    public static final int DOWNLOAD_DOWNLOAD_DIR = 1;
+    public static final int DOWNLOAD_ENABLE = 5;
+    public static final int DOWNLOAD_FORCE = 3;
+    public static final int DOWNLOAD_INFO = 0;
+    public static final int DOWNLOAD_NEW_PACKAGE = 8;
+    public static final int DOWNLOAD_RESET = 4;
+    public static final int DOWNLOAD_RESUME = 22;
+    public static final int PACKAGE_ABORT = 19;
+    public static final int PACKAGE_DELETE = 13;
+    public static final int PACKAGE_DISABLE = 15;
+    public static final int PACKAGE_DLC = 21;
+    public static final int PACKAGE_DOWNLOAD_DIR = 12;
+    public static final int PACKAGE_EDIT_DIR = 10;
+    public static final int PACKAGE_EDIT_NAME = 11;
+    public static final int PACKAGE_ENABLE = 14;
+    public static final int PACKAGE_INFO = 9;
+    public static final int PACKAGE_RESET = 16;
+    public static final int PACKAGE_SORT = 17;
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	public static final int DOWNLOAD_INFO = 0;
-    public static final int DOWNLOAD_DOWNLOAD_DIR = 1;
-    public static final int DOWNLOAD_DELETE = 2;
-    public static final int DOWNLOAD_FORCE = 3;
-    public static final int DOWNLOAD_RESET = 4;
-    public static final int DOWNLOAD_ENABLE = 5;
-    public static final int DOWNLOAD_DISABLE = 6;
-    public static final int DOWNLOAD_BROWSE_LINK = 7;
-    public static final int DOWNLOAD_NEW_PACKAGE = 8;
-    public static final int PACKAGE_INFO = 9;
-    public static final int PACKAGE_EDIT_DIR = 10;
-    public static final int PACKAGE_EDIT_NAME = 11;
-    public static final int PACKAGE_DOWNLOAD_DIR = 12;
-    public static final int PACKAGE_DELETE = 13;
-    public static final int PACKAGE_ENABLE = 14;
-    public static final int PACKAGE_DISABLE = 15;
-    public static final int PACKAGE_RESET = 16;
-    public static final int PACKAGE_SORT = 17;
-    public static final int DOWNLOAD_ABORT = 18;
-    public static final int PACKAGE_ABORT = 19;
-    public static final int DOWNLOAD_DLC = 20;
-    public static final int PACKAGE_DLC = 21;
-    public static final int DOWNLOAD_RESUME = 22;
    
-    private ActionListener actionListener;
     private int actionID;
+    private ActionListener actionListener;
 
-    private String ressourceName;
     private Property property;
+    private String ressourceName;
 
     public TreeTableAction(ActionListener actionListener, String ressourceName, int actionID){      
         this(actionListener, ressourceName, actionID, null);

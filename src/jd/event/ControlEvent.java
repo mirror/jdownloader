@@ -25,9 +25,9 @@ import java.awt.AWTEvent;
  */
 public class ControlEvent extends AWTEvent {
     /**
-     * serialVersionUID
+     * Die Daten von einem oder mehreren Downloadlinks wurden verändert. Dazu zählen auch Statusids,Fortschritt usw..
      */
-    private static final long serialVersionUID                                    = 1639354503246054870L;
+    public final static int   CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED                     = 2;
 
     /**
      * Alle Downloads wurden bearbeitet. Und der download wird angehalten
@@ -35,9 +35,10 @@ public class ControlEvent extends AWTEvent {
     public final static int   CONTROL_ALL_DOWNLOADS_FINISHED                      = 1;
 
     /**
-     * Die Daten von einem oder mehreren Downloadlinks wurden verändert. Dazu zählen auch Statusids,Fortschritt usw..
+     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
+     * parameter erwartet. Source ist das ausführende Plugin
      */
-    public final static int   CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED                     = 2;
+    public static final int   CONTROL_CAPTCHA_LOADED                              = 12;
 
     /**
      * Das Verteilen des Inhalts der Zwischenablage ist abgeschlossen Als
@@ -64,69 +65,39 @@ public class ControlEvent extends AWTEvent {
     public final static int   CONTROL_DISTRIBUTE_FINISHED_HIDEGRABBER_START        = 20;
     
     /**
-     * Ein PLugin wird beendet. 
-     * Source: ist jeweils das PLugin
-     * Parameter: Decrypter: decrypted Links Vector
-     * 
+     * Gibt an, dass der Downloadvorgang gestartet wurde
      */
-  
-    public final static int   CONTROL_PLUGIN_INACTIVE                     = 4;
+    public static final int   CONTROL_DOWNLOAD_START                          = 13;
 
-    /**
-     * Ein Plugin fängt an zu arbeiten.
-     * Source ist das PLugin selbst
-     * Parameter: Decrypter: encryptedLinks
-     */
-    public final static int   CONTROL_PLUGIN_ACTIVE                       = 5;
-    
     /**
      * Wird aufgerufen sobald der Downloadvorgang komplett gestoppt ist
      */
     public static final int CONTROL_DOWNLOAD_STOP = 6;
     
     /**
-     * Es wird eine ArrayList mit den veränderten DownloadLinks als parameter erwartet
-     */
-    public final static int   CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED                    = 7;
-    /**
-     * Gibt an dass ein captcha geladen wurde. der Fiel-Pfad zum captcha wir als
-     * parameter erwartet. Source ist das ausführende Plugin
-     */
-    public static final int   CONTROL_CAPTCHA_LOADED                              = 12;
-
-    /**
-     * Gibt an, dass der Downloadvorgang gestartet wurde
-     */
-    public static final int   CONTROL_DOWNLOAD_START                          = 13;
-
-
-
-    /**
      * Gibt an dass das Abbrechen der Downloads eingeleitet wurde
      */
     public static final int   CONTROL_DOWNLOAD_TERMINATION_ACTIVE                 = 17;
-
+    
     /**
      * Gibt an dass der Download nun komplett abgebrochen wurde.
      */
     public static final int   CONTROL_DOWNLOAD_TERMINATION_INACTIVE               = 18;
+    public static final int CONTROL_INTERACTION_CALL = 28;
 
     /**
-     * Startet/Stoppt den Download
+     * 
      */
-    public static final int   CONTROL_STARTSTOP_DOWNLOAD               = 21;
-    
-    
+        public static final int CONTROL_JDPROPERTY_CHANGED = 27;
 
 
 
+    /**
+     * Wird bei Strukturänderungen der Linkliste aufgerufen
+     */
+        public static final int   CONTROL_LINKLIST_STRUCTURE_CHANGED                            = 25;
 
-
-
-
-  
-
-
+    public static final int CONTROL_LOG_OCCURED = 29;
 
     /**
      * Gibt an dass ein plugin, eine INteraction etc. einen Forschritt gemacht
@@ -134,23 +105,52 @@ public class ControlEvent extends AWTEvent {
      * ausgelöst
      */
     public static final int   CONTROL_ON_PROGRESS                                 = 24;
-/**
- * Wird bei Strukturänderungen der Linkliste aufgerufen
- */
-    public static final int   CONTROL_LINKLIST_STRUCTURE_CHANGED                            = 25;
+    
+    
+
+
+
+
+
+
+
+  
+
+
 
     /**
-     * Wird vom Controller vor dem beeenden des Programms aufgerufen
+     * Ein Plugin fängt an zu arbeiten.
+     * Source ist das PLugin selbst
+     * Parameter: Decrypter: encryptedLinks
      */
-    public static final int CONTROL_SYSTEM_EXIT = 26;
+    public final static int   CONTROL_PLUGIN_ACTIVE                       = 5;
 /**
+ * Ein PLugin wird beendet. 
+ * Source: ist jeweils das PLugin
+ * Parameter: Decrypter: decrypted Links Vector
  * 
  */
-    public static final int CONTROL_JDPROPERTY_CHANGED = 27;
+  
+public final static int   CONTROL_PLUGIN_INACTIVE                     = 4;
 
-public static final int CONTROL_INTERACTION_CALL = 28;
+    /**
+     * Es wird eine ArrayList mit den veränderten DownloadLinks als parameter erwartet
+     */
+    public final static int   CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED                    = 7;
+/**
+ * Startet/Stoppt den Download
+ */
+public static final int   CONTROL_STARTSTOP_DOWNLOAD               = 21;
 
-public static final int CONTROL_LOG_OCCURED = 29;
+/**
+ * Wird vom Controller vor dem beeenden des Programms aufgerufen
+ */
+public static final int CONTROL_SYSTEM_EXIT = 26;
+
+/**
+ * serialVersionUID
+ */
+private static final long serialVersionUID                                    = 1639354503246054870L;
 
     
 
@@ -174,6 +174,7 @@ public static final int CONTROL_LOG_OCCURED = 29;
         this.parameter = parameter;
     }
 
+    @Override
     public int getID() {
         return controlID;
     }
@@ -181,6 +182,7 @@ public static final int CONTROL_LOG_OCCURED = 29;
     public Object getParameter() {
         return parameter;
     }
+    @Override
     public String toString(){
         return "[source:"+source+", controlID:"+controlID+", parameter:"+parameter+"]";
     }

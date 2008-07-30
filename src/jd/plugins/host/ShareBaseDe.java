@@ -37,25 +37,25 @@ import jd.utils.JDUtilities;
 public class ShareBaseDe extends PluginForHost {
 
     private static final String CODER = "JD-Team";
-    private static final String HOST = "sharebase.de";
-    private static final String PLUGIN_NAME = HOST;
-    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
-    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
+    private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
     
     
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
-
-    private String cookies = "";
-
     /*
      * Suchmasken
      */
     private static final String FILENAME = "<title>(.*?)</title>";
+
     private static final String FILESIZE = "<span class=\"f1\">.*?\\((.*?)\\)</span></td>";
-    private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
+
+    private static final String HOST = "sharebase.de";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
+    private static final String PLUGIN_NAME = HOST;
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
+    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     private static final String SIM_DL = "Das gleichzeitige Downloaden";
     private static final String WAIT = "Du musst noch °:°:° warten!";
-    private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
+    private String cookies = "";
 
     /*
      * Konstruktor
@@ -69,51 +69,26 @@ public class ShareBaseDe extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
     
+    @Override
+    public String getAGBLink() {
+       
+        return "http://sharebase.de/pp.html";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-        this.cookies = "";
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -159,6 +134,42 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return 1;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -248,15 +259,16 @@ public class ShareBaseDe extends PluginForHost {
     }
 
     
-    public void resetPluginGlobals() {
-       
-
+    @Override
+    public void reset() {
+        this.cookies = "";
     }
 
     
-    public String getAGBLink() {
+    @Override
+    public void resetPluginGlobals() {
        
-        return "http://sharebase.de/pp.html";
+
     }
 
 }

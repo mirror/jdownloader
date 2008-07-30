@@ -43,28 +43,52 @@ public class FileBaseTo extends PluginForHost {
 
     //
     
+    public FileBaseTo() {
+        super();
+        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    }
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://filebase.to/tos/";
+    }
+
+    
+    @Override
     public String getCoder() {
         return "JD-Team";
     }
 
     
-    public String getPluginName() {
-        return HOST;
-    }
+    @Override
+    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
+        try {
+            String url = downloadLink.getDownloadURL();
+            requestInfo = HTTP.getRequest(new URL(url));
+            String[] helpurl = url.split("/");
+            downloadLink.setName(helpurl[helpurl.length - 1]);
+            if (requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
+                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
+            }
 
-    
-    public String getHost() {
-        return HOST;
-    }
+            if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
+                downloadLink.setAvailable(false);
+                return false;
+            }
+            downloadLink.setDownloadMax(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
 
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     
@@ -73,16 +97,62 @@ public class FileBaseTo extends PluginForHost {
    
 
     
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+     @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    private int getSize(String size) {
+        if (size == null) return 0;
+        String[] help = size.split(" ");
+        int loops = 0;
+        Double s = Double.parseDouble(help[0]);
+
+        if (help[1].equals("KB")) {
+            loops = 1;
+        }
+        if (help[1].equals("MB")) {
+            loops = 2;
+        }
+        if (help[1].equals("GB")) {
+            loops = 3;
+        }
+        if (help[1].equals("TB")) {
+            loops = 4;
+        }
+
+        for (int i = 0; i < loops; i++) {
+            s = s * 1024;
+        }
+
+        return (int) Math.round(s);
+    }
+
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    public FileBaseTo() {
-        super();
-        //steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
-     public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
+    
+    @Override
+    public void handle(DownloadLink downloadLink) throws Exception{ LinkStatus linkStatus=downloadLink.getLinkStatus();
     
             if (!getFileInformation(downloadLink)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -114,70 +184,12 @@ public class FileBaseTo extends PluginForHost {
     }
 
     
-    public boolean getFileInformation(DownloadLink downloadLink) { LinkStatus linkStatus=downloadLink.getLinkStatus();
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            String[] helpurl = url.split("/");
-            downloadLink.setName(helpurl[helpurl.length - 1]);
-            if (requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
-                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
-            }
-
-            if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
-                downloadLink.setAvailable(false);
-                return false;
-            }
-            downloadLink.setDownloadMax(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private int getSize(String size) {
-        if (size == null) return 0;
-        String[] help = size.split(" ");
-        int loops = 0;
-        Double s = Double.parseDouble(help[0]);
-
-        if (help[1].equals("KB")) {
-            loops = 1;
-        }
-        if (help[1].equals("MB")) {
-            loops = 2;
-        }
-        if (help[1].equals("GB")) {
-            loops = 3;
-        }
-        if (help[1].equals("TB")) {
-            loops = 4;
-        }
-
-        for (int i = 0; i < loops; i++) {
-            s = s * 1024;
-        }
-
-        return (int) Math.round(s);
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public void reset() {
     }
 
     
+    @Override
     public void resetPluginGlobals() {
-    }
-
-    
-    public String getAGBLink() {
-        return "http://filebase.to/tos/";
     }
 }

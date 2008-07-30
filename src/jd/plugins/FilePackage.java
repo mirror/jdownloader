@@ -40,40 +40,40 @@ public class FilePackage extends Property implements Serializable {
      */
     private static int counter = 0;
 
-    /**
-     * Eindeutige PaketID
-     */
-    private String id;
-
     private static final long serialVersionUID = -8859842964299890820L;
 
     private static final long UPDATE_INTERVAL = 1000;
 
     private String comment;
 
-    private String password;
-
-    private String name;
-
     private String downloadDirectory;
 
     private Vector<DownloadLink> downloadLinks;
 
-    private int totalEstimatedPackageSize;
+    /**
+     * Eindeutige PaketID
+     */
+    private String id;
 
-    private int totalDownloadSpeed;
+    private boolean lastSort = false;
+
+    private int linksFailed;
 
     private int linksFinished;
 
     private int linksInProgress;
 
-    private int linksFailed;
+    private String name;
+
+    private String password;
 
     private int totalBytesLoaded;
 
-    private long updateTime;
+    private int totalDownloadSpeed;
 
-    private boolean lastSort = false;
+    private int totalEstimatedPackageSize;
+
+    private long updateTime;
 
     public FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
@@ -88,11 +88,41 @@ public class FilePackage extends Property implements Serializable {
      * bereits besteht)
      */
 
-    /**
-     * Alles undokumentiert, da selbsterklärend
-     */
-    public String toString() {
-        return id;
+    public void add(DownloadLink link) {
+
+        if (!downloadLinks.contains(link)) downloadLinks.add(link);
+        link.setFilePackage(this);
+    }
+
+    public void add(int index, DownloadLink link) {
+
+        link.setFilePackage(this);
+        if (downloadLinks.contains(link)) {
+            downloadLinks.remove(link);
+        }
+        downloadLinks.add(index, link);
+        JDUtilities.getLogger().info("");
+    }
+
+    public void addAll(Vector<DownloadLink> links) {
+        for (int i = 0; i < links.size(); i++) {
+            add(links.get(i));
+        }
+    }
+
+    public void addAllAt(Vector<DownloadLink> links, int index) {
+        for (int i = 0; i < links.size(); i++) {
+            add(index + i, links.get(i));
+        }
+
+    }
+
+    public boolean contains(DownloadLink link) {
+        return downloadLinks.contains(link);
+    }
+
+    public DownloadLink get(int index) {
+        return downloadLinks.get(index);
     }
 
     /**
@@ -104,23 +134,6 @@ public class FilePackage extends Property implements Serializable {
         return comment==null?"":comment;
     }
 
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    /**
-     * 
-     * @return Gibt das Archivpasswort zurück das der User für dieses paket
-     *         angegeben hat
-     */
-    public String getPassword() {
-        return password==null?"":password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
     /**
      * 
      * @return Gibt den Downloadpfad zurück den der user für dieses paket
@@ -128,10 +141,6 @@ public class FilePackage extends Property implements Serializable {
      */
     public String getDownloadDirectory() {
         return downloadDirectory==null?JDUtilities.getConfiguration().getDefaultDownloadDirectory():downloadDirectory;
-    }
-
-    public void setDownloadDirectory(String subFolder) {
-        this.downloadDirectory = subFolder;
     }
 
     /**
@@ -144,6 +153,163 @@ public class FilePackage extends Property implements Serializable {
         return new File(downloadDirectory).getName();
     }
 
+    public Vector<DownloadLink> getDownloadLinks() {
+        return downloadLinks;
+    }
+
+    /**
+     * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
+     * zurück
+     * 
+     * @return
+     */
+    public int getETA() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        if ((totalDownloadSpeed / 1024) == 0) return -1;
+        return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
+
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * Gibt die Anzahl der fehlerhaften Links zurück
+     * 
+     * @return
+     */
+    public int getLinksFailed() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksFailed;
+    }
+
+    /**
+     * Gibt die Anzahl der fertiggestellten Links zurück
+     * 
+     * @return
+     */
+    public int getLinksFinished() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksFinished;
+    }
+
+    /**
+     * Gibt zurück wieviele Links gerade in Bearbeitung sind
+     * 
+     * @return
+     */
+    public int getLinksInProgress() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return linksInProgress;
+    }
+
+    public String getName() {
+        if (name == null) return "";
+        return name;
+    }
+
+    /**
+     * 
+     * @return Gibt das Archivpasswort zurück das der User für dieses paket
+     *         angegeben hat
+     */
+    public String getPassword() {
+        return password==null?"":password;
+    }
+
+    /**
+     * Diese Werte werden durch itterieren durch die downloadListe ermittelt. Um
+     * dies nicht zu oft machen zu müssen geschiet das intervalartig
+     * 
+     * @return
+     */
+    /**
+     * Gibt den Fortschritt des pakets in prozent zurück
+     */
+    public double getPercent() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return (100.0 * totalBytesLoaded) / Math.max(1, Math.max(totalBytesLoaded, totalEstimatedPackageSize));
+    }
+
+    /**
+     * Gibt die Anzahl der Verbleibenden Links zurück. Wurden alle Links bereits
+     * abgearbeitet gibt diese Methode 0 zurück Da die Methode alle Links
+     * durchläuft sollte sie aus Performancegründen mit bedacht eingesetzt
+     * werden
+     */
+    public int getRemainingLinks() {
+        this.updateCollectives();
+        return this.size() - linksFinished;
+
+    }
+
+    /*
+     * Gibt die erste gefundene sfv datei im Paket zurück
+     */
+    public DownloadLink getSFV() {
+        DownloadLink next;
+        synchronized (downloadLinks) {
+            for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
+                next = it.next();
+                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) return next;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gibt die aktuelle Downloadgeschwinigkeit des pakets zurück
+     * 
+     * @return
+     */
+    public int getTotalDownloadSpeed() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return totalDownloadSpeed;
+    }
+
+    /**
+     * Gibt die geschätzte Gesamtgröße des Pakets zurück
+     * 
+     * @return
+     */
+    public int getTotalEstimatedPackageSize() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+
+        return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
+    }
+
+    /**
+     * Gibt zurück wieviele Bytes ingesamt schon in diesem Paket geladen wurden
+     * 
+     * @return
+     */
+    public int getTotalKBLoaded() {
+        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
+        return totalBytesLoaded;
+    }
+
+    /**
+     * 
+     * @return True/false, je nach dem ob ein Kommentar gespeichert ist
+     */
+    public boolean hasComment() {
+        return comment != null && comment.length() > 0;
+    }
+
+    /**
+     * 
+     * @return True/false, je nach dem ob ein downloadirectory festgelegt wurde
+     */
+    public boolean hasDownloadDirectory() {
+        return downloadDirectory != null && downloadDirectory.length() > 0;
+    }
+
     /**
      * 
      * @return true/false, je nachdem ob ein Passwort festgelegt wurde
@@ -153,12 +319,85 @@ public class FilePackage extends Property implements Serializable {
         return password != null && password.length() > 0;
     }
 
+    public int indexOf(DownloadLink link) {
+
+        return downloadLinks.indexOf(link);
+    }
+
+    public DownloadLink lastElement() {
+       
+        return downloadLinks.lastElement();
+    }
+
+    public boolean remove(DownloadLink link) {
+        boolean ret = downloadLinks.remove(link);
+        if (ret) link.setFilePackage(null);
+        return ret;
+    }
+
+    public DownloadLink remove(int index) {
+        DownloadLink link = downloadLinks.remove(index);
+        link.setFilePackage(null);
+        return link;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public void setDownloadDirectory(String subFolder) {
+        this.downloadDirectory = subFolder;
+    }
+
+    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
+        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public int size() {
+
+        return downloadLinks.size();
+    }
+
+    public void sort(final String string) {
+        if (string == null) {
+            this.lastSort = !this.lastSort;
+        } else {
+            this.lastSort = string.equalsIgnoreCase("ASC");
+        }
+        synchronized (downloadLinks) {
+
+            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
+
+                public int compare(DownloadLink a, DownloadLink b) {
+                    if (a.getName().endsWith(".sfv")) { return -1; }
+                    if (b.getName().endsWith(".sfv")) { return 1; }
+                    if (lastSort) {
+
+                        return a.getName().compareToIgnoreCase(b.getName());
+                    } else {
+
+                        return b.getName().compareToIgnoreCase(a.getName());
+                    }
+                }
+            });
+        }
+
+    }
+
     /**
-     * 
-     * @return True/false, je nach dem ob ein downloadirectory festgelegt wurde
+     * Alles undokumentiert, da selbsterklärend
      */
-    public boolean hasDownloadDirectory() {
-        return downloadDirectory != null && downloadDirectory.length() > 0;
+    @Override
+    public String toString() {
+        return id;
     }
 
     public void updateCollectives() {
@@ -212,244 +451,6 @@ public class FilePackage extends Property implements Serializable {
 
         }
 
-    }
-
-    /**
-     * 
-     * @return True/false, je nach dem ob ein Kommentar gespeichert ist
-     */
-    public boolean hasComment() {
-        return comment != null && comment.length() > 0;
-    }
-
-    public String getName() {
-        if (name == null) return "";
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void add(DownloadLink link) {
-
-        if (!downloadLinks.contains(link)) downloadLinks.add(link);
-        link.setFilePackage(this);
-    }
-
-    public void add(int index, DownloadLink link) {
-
-        link.setFilePackage(this);
-        if (downloadLinks.contains(link)) {
-            downloadLinks.remove(link);
-        }
-        downloadLinks.add(index, link);
-        JDUtilities.getLogger().info("");
-    }
-
-    public void addAllAt(Vector<DownloadLink> links, int index) {
-        for (int i = 0; i < links.size(); i++) {
-            add(index + i, links.get(i));
-        }
-
-    }
-
-    public void addAll(Vector<DownloadLink> links) {
-        for (int i = 0; i < links.size(); i++) {
-            add(links.get(i));
-        }
-    }
-
-    public boolean remove(DownloadLink link) {
-        boolean ret = downloadLinks.remove(link);
-        if (ret) link.setFilePackage(null);
-        return ret;
-    }
-
-    public DownloadLink remove(int index) {
-        DownloadLink link = downloadLinks.remove(index);
-        link.setFilePackage(null);
-        return link;
-    }
-
-    public boolean contains(DownloadLink link) {
-        return downloadLinks.contains(link);
-    }
-
-    public int indexOf(DownloadLink link) {
-
-        return downloadLinks.indexOf(link);
-    }
-
-    public DownloadLink get(int index) {
-        return downloadLinks.get(index);
-    }
-
-    public Vector<DownloadLink> getDownloadLinks() {
-        return downloadLinks;
-    }
-
-    public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
-        this.downloadLinks = new Vector<DownloadLink>(downloadLinks);
-    }
-
-    public int size() {
-
-        return downloadLinks.size();
-    }
-
-    public void sort(final String string) {
-        if (string == null) {
-            this.lastSort = !this.lastSort;
-        } else {
-            this.lastSort = string.equalsIgnoreCase("ASC");
-        }
-        synchronized (downloadLinks) {
-
-            Collections.sort(downloadLinks, new Comparator<DownloadLink>() {
-
-                public int compare(DownloadLink a, DownloadLink b) {
-                    if (a.getName().endsWith(".sfv")) { return -1; }
-                    if (b.getName().endsWith(".sfv")) { return 1; }
-                    if (lastSort) {
-
-                        return a.getName().compareToIgnoreCase(b.getName());
-                    } else {
-
-                        return b.getName().compareToIgnoreCase(a.getName());
-                    }
-                }
-            });
-        }
-
-    }
-
-    /**
-     * Diese Werte werden durch itterieren durch die downloadListe ermittelt. Um
-     * dies nicht zu oft machen zu müssen geschiet das intervalartig
-     * 
-     * @return
-     */
-    /**
-     * Gibt den Fortschritt des pakets in prozent zurück
-     */
-    public double getPercent() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return (100.0 * totalBytesLoaded) / Math.max(1, Math.max(totalBytesLoaded, totalEstimatedPackageSize));
-    }
-
-    /**
-     * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
-     * zurück
-     * 
-     * @return
-     */
-    public int getETA() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-        if ((totalDownloadSpeed / 1024) == 0) return -1;
-        return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
-
-    }
-
-    /**
-     * Gibt die geschätzte Gesamtgröße des Pakets zurück
-     * 
-     * @return
-     */
-    public int getTotalEstimatedPackageSize() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
-    }
-
-    /**
-     * Gibt die aktuelle Downloadgeschwinigkeit des pakets zurück
-     * 
-     * @return
-     */
-    public int getTotalDownloadSpeed() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return totalDownloadSpeed;
-    }
-
-    /**
-     * Gibt die Anzahl der fertiggestellten Links zurück
-     * 
-     * @return
-     */
-    public int getLinksFinished() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return linksFinished;
-    }
-
-    /**
-     * Gibt zurück wieviele Links gerade in Bearbeitung sind
-     * 
-     * @return
-     */
-    public int getLinksInProgress() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return linksInProgress;
-    }
-
-    /**
-     * Gibt die Anzahl der fehlerhaften Links zurück
-     * 
-     * @return
-     */
-    public int getLinksFailed() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-
-        return linksFailed;
-    }
-
-    /**
-     * Gibt zurück wieviele Bytes ingesamt schon in diesem Paket geladen wurden
-     * 
-     * @return
-     */
-    public int getTotalKBLoaded() {
-        if ((System.currentTimeMillis() - this.updateTime) > UPDATE_INTERVAL) this.updateCollectives();
-        return totalBytesLoaded;
-    }
-
-    /**
-     * Gibt die Anzahl der Verbleibenden Links zurück. Wurden alle Links bereits
-     * abgearbeitet gibt diese Methode 0 zurück Da die Methode alle Links
-     * durchläuft sollte sie aus Performancegründen mit bedacht eingesetzt
-     * werden
-     */
-    public int getRemainingLinks() {
-        this.updateCollectives();
-        return this.size() - linksFinished;
-
-    }
-
-    /*
-     * Gibt die erste gefundene sfv datei im Paket zurück
-     */
-    public DownloadLink getSFV() {
-        DownloadLink next;
-        synchronized (downloadLinks) {
-            for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
-                next = it.next();
-                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) return next;
-            }
-        }
-        return null;
-    }
-
-    public DownloadLink lastElement() {
-       
-        return downloadLinks.lastElement();
     }
 
 

@@ -21,17 +21,17 @@ public class ShareNownet extends PluginForHost {
 
     private static final String HOST = "share-now.net";
 
-    private static final String PLUGIN_NAME = HOST;
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", Pattern.CASE_INSENSITIVE);
 
     //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
 
     //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
-    private String downloadurl;
-    private File captchaFile;
+    private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
+    private File captchaFile;
+    private String downloadurl;
+    private RequestInfo requestInfo;
 
     public ShareNownet() {
         super();
@@ -39,50 +39,25 @@ public class ShareNownet extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://share-now.net/agb.php";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadurl = downloadLink.getDownloadURL();
@@ -108,6 +83,42 @@ public class ShareNownet extends PluginForHost {
         return false;
     }
 
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+   
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -167,13 +178,14 @@ public class ShareNownet extends PluginForHost {
     }
 
     
-    public void resetPluginGlobals() {
-       
+    @Override
+    public void reset() {
     }
 
     
-    public String getAGBLink() {
-        return "http://share-now.net/agb.php";
+    @Override
+    public void resetPluginGlobals() {
+       
     }
 
 }

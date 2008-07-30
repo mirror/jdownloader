@@ -41,15 +41,15 @@ import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
     static private final String host = "gwarez.cc";
-    private String version = "1.0.0.0";
+    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
+    // private String version = "1.0.0.0";
 
     public Gwarezcc() {
         super();
@@ -142,6 +142,37 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+    
+    public String getCoder() {
+        return "JD-Team,Scikes";
+    }
+
+    
+    public String getHost() {
+        return host;
+    }
+
+    
+
+    
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
     private String gwarezdecrypt(String link) {
         HashMap<String, String> replace = new HashMap<String, String>();
         replace.put("JA\\|", "1");
@@ -195,39 +226,8 @@ public class Gwarezcc extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team,Scikes";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
     private void setConfigEelements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PREFER_DLC, JDLocale.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
 }

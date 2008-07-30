@@ -39,12 +39,12 @@ import jd.utils.JDUtilities;
  */
 public class ContainerReloader extends Interaction implements Serializable {
 
+    private static final String NAME = "ContainerLoader";
+
     /**
 	 * 
 	 */
     private static final long serialVersionUID = -9071890385850062424L;
-
-    private static final String NAME = "ContainerLoader";
 
     private Vector<String>    lastAllFiles;
 
@@ -53,9 +53,19 @@ public class ContainerReloader extends Interaction implements Serializable {
         
         getNewFiles();
     }
-    public void  initInteraction(){
-        getNewFiles();
+    @Override
+    public boolean doInteraction(Object arg) {
+       Vector<String> newFiles = getNewFiles();
+        for( int i=0; i<newFiles.size();i++){
+            JDUtilities.getController().loadContainerFile(new File(newFiles.get(i)));
+        }
+        return true;
     }
+    @Override
+    public String getInteractionName() {
+        return NAME;
+    }
+
     private Vector<String> getNewFiles() {
         JUnrar unrar = new JUnrar(false);
         if(lastAllFiles==null)lastAllFiles= new Vector<String>();
@@ -68,7 +78,7 @@ public class ContainerReloader extends Interaction implements Serializable {
         LinkedList<String> folders = new LinkedList<String>();
         Iterator<DownloadLink> iter = finishedLinks.iterator();
         while (iter.hasNext()) {
-        	DownloadLink element = (DownloadLink) iter.next();
+        	DownloadLink element = iter.next();
 			  File folder = new File(element.getFileOutput()).getParentFile();
 	           
 	            if (folder.exists()) {
@@ -96,29 +106,7 @@ public class ContainerReloader extends Interaction implements Serializable {
         return newFiles;
     }
 
-    public boolean doInteraction(Object arg) {
-       Vector<String> newFiles = getNewFiles();
-        for( int i=0; i<newFiles.size();i++){
-            JDUtilities.getController().loadContainerFile(new File(newFiles.get(i)));
-        }
-        return true;
-    }
-
-    /**
-	 * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-	 */
-    public void run() {}
-
-    public String toString() {
-        return "ContainerLoader: Lädt geladene Container";
-    }
-
-    
-    public String getInteractionName() {
-        return NAME;
-    }
-
-    
+    @Override
     public void initConfig() {
        // ConfigEntry cfg;
         // int type, Property propertyInstance, String propertyName, Object[]
@@ -127,6 +115,25 @@ public class ContainerReloader extends Interaction implements Serializable {
         
     }
 
+    @Override
+    public void  initInteraction(){
+        getNewFiles();
+    }
+
     
+    @Override
     public void resetInteraction() {}
+
+    
+    /**
+	 * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
+	 */
+    @Override
+    public void run() {}
+
+    
+    @Override
+    public String toString() {
+        return "ContainerLoader: Lädt geladene Container";
+    }
 }

@@ -24,20 +24,15 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 
 public class TreeTableTransferHandler extends TransferHandler {
-    private TreePath[] draggingPathes;
-
     private static final long serialVersionUID = 2560352681437669412L;
 
-    private DownloadTreeTable treeTable;
+    private TreePath[] draggingPathes;
+
     public boolean isDragging = false;
+    private DownloadTreeTable treeTable;
 
     public TreeTableTransferHandler(DownloadTreeTable downloadTreeTable) {
         this.treeTable = downloadTreeTable;
-    }
-
-    public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
-        return true;
-
     }
 
     public boolean canDrop(JComponent comp, DataFlavor[] transferFlavors) {
@@ -61,20 +56,60 @@ public class TreeTableTransferHandler extends TransferHandler {
 
     }
 
-    public boolean importData(JComponent comp, Transferable t) {
-        isDragging = false;
-        if (!canDrop(null, null)) {
-            Point p = treeTable.getMousePosition();
-            p.x += treeTable.getLocationOnScreen().x;
-            p.y += treeTable.getLocationOnScreen().y;
-            HTMLTooltip.show("<div>Cannot drop here<div>", p);
-            return false;
+    @Override
+    public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+        return true;
+
+    }
+
+    @Override
+    public boolean canImport(TreeTableTransferHandler.TransferSupport info) {
+
+        if (draggingPathes == null || draggingPathes.length <= 0) return false;
+        // logger.info("KKK "+info.getDropLocation()+" -
+        // "+((JTable.DropLocation)info.getDropLocation()).getRow());
+        int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
+
+        TreePath current = treeTable.getPathForRow(row);
+        if(current==null)return false;
+        for (TreePath path : draggingPathes) {
+            if (path.getLastPathComponent() == current.getLastPathComponent()) return false;
         }
 
-        int row = treeTable.rowAtPoint(treeTable.getMousePosition());
+        if (draggingPathes[0].getLastPathComponent() instanceof FilePackage) {
+            if (current.getLastPathComponent() instanceof FilePackage) return true;
+            return false;
+        } else {
+            return true;
+        }
 
-        return drop(row, treeTable.getMousePosition());
+    }
 
+    @Override
+    protected Transferable createTransferable(JComponent c) {
+        isDragging = true;
+
+        int[] rows = treeTable.getSelectedRows();
+
+        Vector<TreePath> packages = new Vector<TreePath>();
+        Vector<TreePath> downloadLinks = new Vector<TreePath>();
+
+        for (int i = 0; i < rows.length; i++) {
+            if (treeTable.getPathForRow(rows[i]).getLastPathComponent() instanceof DownloadLink) {
+                downloadLinks.add(treeTable.getPathForRow(rows[i]));
+            } else {
+                packages.add(treeTable.getPathForRow(rows[i]));
+            }
+
+            // draggingPathes[i]=getPathForRow(rows[i]);
+        }
+        if (downloadLinks.size() > packages.size()) {
+            draggingPathes = downloadLinks.toArray(new TreePath[] {});
+        } else {
+            draggingPathes = packages.toArray(new TreePath[] {});
+        }
+
+        return new StringSelection("AFFE");
     }
 
     private boolean drop(int row, Point point) {
@@ -159,7 +194,7 @@ public class TreeTableTransferHandler extends TransferHandler {
 
                         public void actionPerformed(ActionEvent e) {
 
-                            wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, (FilePackage) current.getLastPathComponent()));
+                            wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, current.getLastPathComponent()));
 
                         }
 
@@ -170,19 +205,19 @@ public class TreeTableTransferHandler extends TransferHandler {
 
                         public void actionPerformed(ActionEvent e) {
 
-                            wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, (FilePackage) current.getLastPathComponent(), null));
+                            wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, current.getLastPathComponent(), null));
 
                         }
 
                     });
 
                     if (post != null && post.getLastPathComponent() == this.draggingPathes[0].getLastPathComponent()) {
-                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, (FilePackage) current.getLastPathComponent()));
+                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, null, current.getLastPathComponent()));
 
                    
                     }
                     if (pre != null && pre.getLastPathComponent() == this.draggingPathes[draggingPathes.length - 1].getLastPathComponent()) { 
-                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, (FilePackage) current.getLastPathComponent(), null));
+                        return wishSound(treeTable.getDownladTreeTableModel().move(draggingPathes, current.getLastPathComponent(), null));
 
                     }
 
@@ -208,28 +243,30 @@ public class TreeTableTransferHandler extends TransferHandler {
         return false;
     }
 
-    public boolean canImport(TreeTableTransferHandler.TransferSupport info) {
+    @Override
+    public int getSourceActions(JComponent c) {
 
-        if (draggingPathes == null || draggingPathes.length <= 0) return false;
-        // logger.info("KKK "+info.getDropLocation()+" -
-        // "+((JTable.DropLocation)info.getDropLocation()).getRow());
-        int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
+        return MOVE;
+    }
 
-        TreePath current = treeTable.getPathForRow(row);
-        if(current==null)return false;
-        for (TreePath path : draggingPathes) {
-            if (path.getLastPathComponent() == current.getLastPathComponent()) return false;
-        }
-
-        if (draggingPathes[0].getLastPathComponent() instanceof FilePackage) {
-            if (current.getLastPathComponent() instanceof FilePackage) return true;
+    @Override
+    public boolean importData(JComponent comp, Transferable t) {
+        isDragging = false;
+        if (!canDrop(null, null)) {
+            Point p = treeTable.getMousePosition();
+            p.x += treeTable.getLocationOnScreen().x;
+            p.y += treeTable.getLocationOnScreen().y;
+            HTMLTooltip.show("<div>Cannot drop here<div>", p);
             return false;
-        } else {
-            return true;
         }
+
+        int row = treeTable.rowAtPoint(treeTable.getMousePosition());
+
+        return drop(row, treeTable.getMousePosition());
 
     }
 
+    @Override
     public boolean importData(TreeTableTransferHandler.TransferSupport info) {
 
         int row = ((JTable.DropLocation) info.getDropLocation()).getRow();
@@ -243,36 +280,5 @@ public class TreeTableTransferHandler extends TransferHandler {
        
         
         return doit;
-    }
-
-    public int getSourceActions(JComponent c) {
-
-        return MOVE;
-    }
-
-    protected Transferable createTransferable(JComponent c) {
-        isDragging = true;
-
-        int[] rows = treeTable.getSelectedRows();
-
-        Vector<TreePath> packages = new Vector<TreePath>();
-        Vector<TreePath> downloadLinks = new Vector<TreePath>();
-
-        for (int i = 0; i < rows.length; i++) {
-            if (treeTable.getPathForRow(rows[i]).getLastPathComponent() instanceof DownloadLink) {
-                downloadLinks.add(treeTable.getPathForRow(rows[i]));
-            } else {
-                packages.add(treeTable.getPathForRow(rows[i]));
-            }
-
-            // draggingPathes[i]=getPathForRow(rows[i]);
-        }
-        if (downloadLinks.size() > packages.size()) {
-            draggingPathes = downloadLinks.toArray(new TreePath[] {});
-        } else {
-            draggingPathes = packages.toArray(new TreePath[] {});
-        }
-
-        return new StringSelection("AFFE");
     }
 }

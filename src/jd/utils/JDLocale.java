@@ -39,6 +39,76 @@ import jd.parser.SimpleMatches;
  */
 public class JDLocale {
 
+    private static HashMap<String, String> data = new HashMap<String, String>();
+
+    private static HashMap<String, String> defaultData = new HashMap<String, String>();
+
+    private static final String DEFAULTLANGUAGE = isGerman() ? "german" : "english";
+
+    private static String LANGUAGES_DIR = "jd/languages/";
+
+    /*
+     * private static Vector<String[]> send = new Vector<String[]>(); private
+     * static Vector<String> sent = new Vector<String>(); private static Thread
+     * sender;
+     */
+    private static String lID;
+
+    public static final String LOCALE_EDIT_MODE = "LOCALE_EDIT_MODE";
+    private static File localeFile;
+    private static Logger logger = JDUtilities.getLogger();
+
+    private static HashMap<String, String> missingData = new HashMap<String, String>();;
+
+    public static String getLocale() {
+        return lID;
+    }
+
+    public static Vector<String> getLocaleIDs() {
+        File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
+        if (!dir.exists()) return null;
+        File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
+        Vector<String> ret = new Vector<String>();
+        for (int i = 0; i < files.length; i++) {
+            ret.add(files[i].getName().split("\\.")[0]);
+        }
+        return ret;
+    }
+
+    public static String getLocaleString(String key, String def) {
+        if (data == null || localeFile == null) {
+            // logger.severe("Use setLocale() first!");
+            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, isGerman() ? "german" : "english"));
+
+        }
+
+        if (def == null) def = key;
+        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
+        logger.info("Key not found: " + key);
+        if (defaultData.containsKey(key)) {
+            def = JDUtilities.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
+        }
+        data.put(key, JDUtilities.UTF8Encode(def));
+        missingData.put(key, JDUtilities.UTF8Encode(def));
+
+        saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
+        saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
+        return def;
+
+    }
+
+    private static boolean isGerman() {
+        return System.getProperty("user.country") != null && System.getProperty("user.country").equalsIgnoreCase("DE");
+    }
+
+    public static String L(String key) {
+        return getLocaleString(key, null);
+    }
+
+    public static String L(String key, String def) {
+        return getLocaleString(key, def);
+    }
+
     public static void main(String[] argv) {
         logger = JDUtilities.getLogger();
         File code = new File("G:/jdworkspace/JD/src");
@@ -94,70 +164,36 @@ public class JDLocale {
         logger.info(sb.toString());
     }
 
-    private static final String DEFAULTLANGUAGE = isGerman() ? "german" : "english";
+    private static HashMap<String, String> parseLanguageFile(File file) {
+        HashMap<String, String> dat = new HashMap<String, String>();
+        if (!file.exists()) {
 
-    public static final String LOCALE_EDIT_MODE = "LOCALE_EDIT_MODE";
-
-    private static String LANGUAGES_DIR = "jd/languages/";
-
-    private static Logger logger = JDUtilities.getLogger();
-
-    private static HashMap<String, String> data = new HashMap<String, String>();
-    private static HashMap<String, String> missingData = new HashMap<String, String>();
-    private static HashMap<String, String> defaultData = new HashMap<String, String>();
-
-    private static File localeFile;;
-
-    public static Vector<String> getLocaleIDs() {
-        File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
-        if (!dir.exists()) return null;
-        File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
-        Vector<String> ret = new Vector<String>();
-        for (int i = 0; i < files.length; i++) {
-            ret.add(files[i].getName().split("\\.")[0]);
+            logger.severe("JDLocale: " + file + " not found");
+            return dat;
         }
-        return ret;
-    }
-
-    private static boolean isGerman() {
-        return System.getProperty("user.country") != null && System.getProperty("user.country").equalsIgnoreCase("DE");
-    }
-
-    public static String getLocaleString(String key, String def) {
-        if (data == null || localeFile == null) {
-            // logger.severe("Use setLocale() first!");
-            JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, isGerman() ? "german" : "english"));
+        String str = JDUtilities.getLocalFile(file);
+        String[] lines = Regex.getLines(str);
+        boolean dupes = false;
+        for (int i = 0; i < lines.length; i++) {
+            int split = lines[i].indexOf("=");
+            if (split <= 0 || lines[i].startsWith("#")) continue;
+            String key = lines[i].substring(0, split).trim();
+            String value = lines[i].substring(split + 1).trim() + ((lines[i].endsWith(" ")) ? " " : "");
+            if (dat.containsKey(key)) {
+                logger.severe("Dupe found: " + key);
+                dat.put(key, value);
+                dupes = true;
+            } else {
+                dat.put(key, value);
+            }
 
         }
+        if (dupes) {
+            logger.warning("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
+            saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
 
-        if (def == null) def = key;
-        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
-        logger.info("Key not found: " + key);
-        if (defaultData.containsKey(key)) {
-            def = JDUtilities.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         }
-        data.put(key, JDUtilities.UTF8Encode(def));
-        missingData.put(key, JDUtilities.UTF8Encode(def));
-
-        saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
-        saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
-        return def;
-
-    }
-
-    /*
-     * private static Vector<String[]> send = new Vector<String[]>(); private
-     * static Vector<String> sent = new Vector<String>(); private static Thread
-     * sender;
-     */
-    private static String lID;
-
-    public static String L(String key) {
-        return getLocaleString(key, null);
-    }
-
-    public static String L(String key, String def) {
-        return getLocaleString(key, def);
+        return dat;
     }
 
     private static void saveData(File lc, HashMap<String, String> dat) {
@@ -294,42 +330,6 @@ public class JDLocale {
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
 
-    }
-
-    private static HashMap<String, String> parseLanguageFile(File file) {
-        HashMap<String, String> dat = new HashMap<String, String>();
-        if (!file.exists()) {
-
-            logger.severe("JDLocale: " + file + " not found");
-            return dat;
-        }
-        String str = JDUtilities.getLocalFile(file);
-        String[] lines = Regex.getLines(str);
-        boolean dupes = false;
-        for (int i = 0; i < lines.length; i++) {
-            int split = lines[i].indexOf("=");
-            if (split <= 0 || lines[i].startsWith("#")) continue;
-            String key = lines[i].substring(0, split).trim();
-            String value = lines[i].substring(split + 1).trim() + ((lines[i].endsWith(" ")) ? " " : "");
-            if (dat.containsKey(key)) {
-                logger.severe("Dupe found: " + key);
-                dat.put(key, value);
-                dupes = true;
-            } else {
-                dat.put(key, value);
-            }
-
-        }
-        if (dupes) {
-            logger.warning("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
-            saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
-
-        }
-        return dat;
-    }
-
-    public static String getLocale() {
-        return lID;
     }
 
     public static void translate(String from, String afrom, String ato, String to) {

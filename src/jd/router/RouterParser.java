@@ -40,6 +40,46 @@ public class RouterParser {
     private static Logger logger         = JDUtilities.getLogger();
     int                   positionInFile = 0;
 
+    private byte readBuffer[] = new byte[8];
+    private String getPlainURL(String string) {
+        int index;
+        if (string.startsWith("POST")) {
+            string = string.substring("POST".length());
+        
+           if((index=string.indexOf("?"))>0){        
+            
+               string=string.substring(0,index);
+           }
+        } else if (string.startsWith("<POST>")) {
+            string = string.substring("<POST>".length());
+         
+            if((index=string.indexOf("?"))>0){               
+               
+                string=string.substring(0,index);
+            }
+        } else if (string.startsWith("GET")) {
+            string = string.substring("GET".length());
+        } else if (string.startsWith("<GET>")) {
+            string = string.substring("<GET>".length());
+        }
+        return string;
+        
+    }
+    private String getPostParams(String string) {
+        int index;
+        if (!string.startsWith("POST")&&!string.startsWith("<POST>"))return null;
+        if((index=string.indexOf("?"))>0){               
+            return string.substring(index+1);         
+        }
+        return null;
+        
+    }
+    private int getRequestType(String string) {
+        if (string.startsWith("POST")||string.startsWith("<POST>"))return RouterData.TYPE_WEB_POST;
+        return RouterData.TYPE_WEB_GET;
+        
+    }
+
     /**
      * Mit dieser Methode wird eine Routers.dat in einzelne RouterData Objekte
      * zerteilt
@@ -67,30 +107,7 @@ public class RouterParser {
         }
         return null;
     }
-    /**
-     * Mit dieser Methode wird eine routerdata.xml in einzelne RouterData Objekte
-     * zerteilt
-     * 
-     * @param file
-     *            Die XML Datei, die importiert werden soll
-     * @return Ein Vector mit eingelesen RouterData Objekten
-     */
-    @SuppressWarnings("unchecked")
-    public Vector<RouterData> parseXMLFile(File file) {
-     
-        Vector<RouterData> routerData = (Vector<RouterData>)JDUtilities.loadObject(new JFrame(), file, true);
-        return routerData;
-    }
-    /**
-     * konvertiert die routers.dat in eine xml Datei
-     * @param dat
-     * @param xml
-     */
-    public void routerDatToXML(File dat, File xml){
-        RouterParser parser = new RouterParser();       
-       JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
-        
-    }
+
     /**
      * Hier wird ein einzelnes RouterData Objekt eingelesen
      * 
@@ -184,66 +201,20 @@ public class RouterParser {
         return routerData;
     }
 
-    private String getPlainURL(String string) {
-        int index;
-        if (string.startsWith("POST")) {
-            string = string.substring("POST".length());
-        
-           if((index=string.indexOf("?"))>0){        
-            
-               string=string.substring(0,index);
-           }
-        } else if (string.startsWith("<POST>")) {
-            string = string.substring("<POST>".length());
-         
-            if((index=string.indexOf("?"))>0){               
-               
-                string=string.substring(0,index);
-            }
-        } else if (string.startsWith("GET")) {
-            string = string.substring("GET".length());
-        } else if (string.startsWith("<GET>")) {
-            string = string.substring("<GET>".length());
-        }
-        return string;
-        
-    }
-
-    private String getPostParams(String string) {
-        int index;
-        if (!string.startsWith("POST")&&!string.startsWith("<POST>"))return null;
-        if((index=string.indexOf("?"))>0){               
-            return string.substring(index+1);         
-        }
-        return null;
-        
-    }
-
-    private int getRequestType(String string) {
-        if (string.startsWith("POST")||string.startsWith("<POST>"))return RouterData.TYPE_WEB_POST;
-        return RouterData.TYPE_WEB_GET;
-        
-    }
-
     /**
-     * Es wird der nächste Text ausgelesen. Dazu wird zuerst die Länge als Short
-     * ausgelesen und dann der Text
+     * Mit dieser Methode wird eine routerdata.xml in einzelne RouterData Objekte
+     * zerteilt
      * 
-     * @param is
-     *            Der InputStream, der zum Import genutzt werden soll
-     * @return Der eingelesene Text
-     * @throws IOException
+     * @param file
+     *            Die XML Datei, die importiert werden soll
+     * @return Ein Vector mit eingelesen RouterData Objekten
      */
-    private String readNextString(InputStream is) throws IOException {
-        int length = readShort(is);
-        byte b[] = new byte[length];
-        is.read(b);
-        positionInFile += length;
-        // System.out.println(new String(b));
-        return new String(b);
+    @SuppressWarnings("unchecked")
+    public Vector<RouterData> parseXMLFile(File file) {
+     
+        Vector<RouterData> routerData = (Vector<RouterData>)JDUtilities.loadObject(new JFrame(), file, true);
+        return routerData;
     }
-
-    private byte readBuffer[] = new byte[8];
 
     /**
      * Liest das nächste Byte ein
@@ -259,24 +230,6 @@ public class RouterParser {
         if (ch < 0)
             throw new EOFException();
         return (byte) (ch);
-    }
-
-    /**
-     * Liest ein Short ein.
-     * 
-     * @param is
-     *            Der InputStream, der zum Import genutzt werden soll
-     * @return Die ausgelesene Zahl
-     * @throws IOException
-     */
-    public short readShort(InputStream is) throws IOException {
-        int ch1 = is.read();
-        positionInFile++;
-        int ch2 = is.read();
-        positionInFile++;
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (short) ((ch2 << 8) + (ch1 << 0));
     }
 
     /**
@@ -313,5 +266,52 @@ public class RouterParser {
         is.read(readBuffer, 0, 8);
         positionInFile += 8;
         return (((long) readBuffer[0] << 56) + ((long) (readBuffer[1] & 255) << 48) + ((long) (readBuffer[2] & 255) << 40) + ((long) (readBuffer[3] & 255) << 32) + ((long) (readBuffer[4] & 255) << 24) + ((readBuffer[5] & 255) << 16) + ((readBuffer[6] & 255) << 8) + ((readBuffer[7] & 255) << 0));
+    }
+
+    /**
+     * Es wird der nächste Text ausgelesen. Dazu wird zuerst die Länge als Short
+     * ausgelesen und dann der Text
+     * 
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
+     * @return Der eingelesene Text
+     * @throws IOException
+     */
+    private String readNextString(InputStream is) throws IOException {
+        int length = readShort(is);
+        byte b[] = new byte[length];
+        is.read(b);
+        positionInFile += length;
+        // System.out.println(new String(b));
+        return new String(b);
+    }
+
+    /**
+     * Liest ein Short ein.
+     * 
+     * @param is
+     *            Der InputStream, der zum Import genutzt werden soll
+     * @return Die ausgelesene Zahl
+     * @throws IOException
+     */
+    public short readShort(InputStream is) throws IOException {
+        int ch1 = is.read();
+        positionInFile++;
+        int ch2 = is.read();
+        positionInFile++;
+        if ((ch1 | ch2) < 0)
+            throw new EOFException();
+        return (short) ((ch2 << 8) + (ch1 << 0));
+    }
+
+    /**
+     * konvertiert die routers.dat in eine xml Datei
+     * @param dat
+     * @param xml
+     */
+    public void routerDatToXML(File dat, File xml){
+        RouterParser parser = new RouterParser();       
+       JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
+        
     }
 }

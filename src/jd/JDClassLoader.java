@@ -53,12 +53,12 @@ import jd.utils.JDUtilities;
  * 
  */
 public class JDClassLoader extends java.lang.ClassLoader {
-    private String rootDir;
     private ClassLoader classLoaderParent;
-    private URLClassLoader rootClassLoader;
-    private JarFile jars[];
     private Vector<File> jarFile;
+    private JarFile jars[];
     private Logger logger = JDUtilities.getLogger();
+    private URLClassLoader rootClassLoader;
+    private String rootDir;
 
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
         if (rootDir == null) throw new IllegalArgumentException("Null root directory");
@@ -122,6 +122,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
 
     
+    @Override
     protected URL findResource(String name) {
 
         URL url;
@@ -132,6 +133,47 @@ public class JDClassLoader extends java.lang.ClassLoader {
     }
 
     
+    public Vector<File> getJars() {
+        Vector<File> ret = new Vector<File>();
+        ret.addAll(this.jarFile);
+        return ret;
+    }
+
+    
+    public URL getResource(byte[] key) {
+       
+        if (jars != null) {
+            // An dieser Stelle werden die JAR Dateien überprüft
+            JarEntry entry;
+            for (int i = 0; i < jars.length; i++) {
+
+                if (jars[i] != null && (entry = jars[i].getJarEntry(new String(key))) != null) try {
+                    System.out.println("getResource:" + entry.getName());
+                    return new URL(entry.getName());
+                } catch (MalformedURLException e) {
+                }
+            }
+        }
+        URL url = rootClassLoader.getResource(new String(key));
+
+        if (url != null) { return url; }
+        url = super.getResource(new String(key));
+
+        if (url != null) return url;
+        url = this.classLoaderParent.getResource(new String(key));
+        if (url != null) return url;
+        try {
+            // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
+            // Objekt zurückgegeben
+            // Ist für das Abspeichern der Captcha notwendig
+
+            return new File(new File(rootDir), new String(key)).toURI().toURL();
+        } catch (MalformedURLException e) {
+        }
+        return null;
+    }
+
+    @Override
     public URL getResource(String name) {
 
         if (jars != null) {
@@ -165,7 +207,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    
+    @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
 
@@ -207,6 +249,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * System-Classloader geladen werden kann. Erst zum Schluß wird versucht,
      * diese Klasse selbst zu laden.
      */
+    @Override
     @SuppressWarnings("unchecked")
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class c = findLoadedClass(name);
@@ -261,44 +304,5 @@ public class JDClassLoader extends java.lang.ClassLoader {
         dis.readFully(buff);
         dis.close();
         return buff;
-    }
-
-    public Vector<File> getJars() {
-        Vector<File> ret = new Vector<File>();
-        ret.addAll(this.jarFile);
-        return ret;
-    }
-
-    public URL getResource(byte[] key) {
-       
-        if (jars != null) {
-            // An dieser Stelle werden die JAR Dateien überprüft
-            JarEntry entry;
-            for (int i = 0; i < jars.length; i++) {
-
-                if (jars[i] != null && (entry = jars[i].getJarEntry(new String(key))) != null) try {
-                    System.out.println("getResource:" + entry.getName());
-                    return new URL(entry.getName());
-                } catch (MalformedURLException e) {
-                }
-            }
-        }
-        URL url = rootClassLoader.getResource(new String(key));
-
-        if (url != null) { return url; }
-        url = super.getResource(new String(key));
-
-        if (url != null) return url;
-        url = this.classLoaderParent.getResource(new String(key));
-        if (url != null) return url;
-        try {
-            // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
-            // Objekt zurückgegeben
-            // Ist für das Abspeichern der Captcha notwendig
-
-            return new File(new File(rootDir), new String(key)).toURI().toURL();
-        } catch (MalformedURLException e) {
-        }
-        return null;
     }
 }

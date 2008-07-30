@@ -35,15 +35,11 @@ import java.util.NoSuchElementException;
 
 public abstract class Element
 {
-	protected String type;
 	protected String name="";
+	protected String type;
 
-	public abstract String parse(Hashtable<?, ?> params);
-	public abstract String typeOfParam(String param)
-			throws NoSuchElementException;
-
-	public void add(String data){}
 	public void add(Element node){}
+	public void add(String data){}
 
 	public boolean contains(String param)
 	{
@@ -53,14 +49,18 @@ public abstract class Element
 			return false;
 		}
 	}
+	public final String Name()
+	{
+		return name;
+	}
+
+	public abstract String parse(Hashtable<?, ?> params);
 
 	public final String Type()
 	{
 		return type;
 	}
 
-	public final String Name()
-	{
-		return name;
-	}
+	public abstract String typeOfParam(String param)
+			throws NoSuchElementException;
 }

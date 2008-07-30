@@ -21,10 +21,8 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -54,9 +52,8 @@ import jd.utils.JDUtilities;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
-    public static void main(String args[]) {
-
-    }
+    // protected static final String END_OF_LINK = "[^\"]*";
+    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
     // public static final int DOWNLOAD_ERROR_INVALID_OUTPUTFILE = 0;
     //
@@ -78,11 +75,289 @@ public abstract class Plugin implements ActionListener {
     //
     // // private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
 
-    // protected static final String END_OF_LINK = "[^\"]*";
-    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
+    public static final int CAPTCHA_JAC = 0;
+
+    public static final int CAPTCHA_USER_INPUT = 1;
+
+    public static SubConfiguration CONFIGS = null;
+
+    /**
+     * Ein Logger, um Meldungen darzustellen
+     */
+    public static Logger logger = JDUtilities.getLogger();
+
+    // /**
+    // * Versionsinformationen
+    // */
+    // public static final String VERSION = "$Revision$";
+
+    /**
+     * Property name für die Config. Diese sollten möglichst einheitlich sein.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
+     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
+     * wenn er fehler feststellt
+     */
+    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
+
+    /**
+     * Property name für die Config. Diese sollten möglichst einheitlich sein.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
+     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
+     * wenn er fehler feststellt
+     */
+    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
+
+    /**
+     * Property name für die Config. Diese sollten möglichst einheitlich sein.
+     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
+     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
+     * wenn er fehler feststellt
+     */
+    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
+
+    // public boolean aborted = false;
+
+    /**
+     * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
+     * 
+     * @param data
+     * @return
+     */
+    public static String findPassword(String data) {
+        Vector<String> passwords = HTMLParser.findPasswords(data);
+        return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
+    }
+
+    /**
+     * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
+     * 
+     * @param file
+     * @param plugin
+     * @return captchacode
+     */
+    public static String getCaptchaCode(File file, Plugin plugin) {
+        String captchaText = null;
+        captchaText = JDUtilities.getCaptcha(plugin, null, file, false);
+        return captchaText;
+    }
+
+    /**
+     * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
+     * 
+     * @param plugin
+     * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
+     *         ist
+     */
+    public static File getLocalCaptchaFile(Plugin plugin, String extension) {
+        if (extension == null) extension = ".jpg";
+        Calendar calendar = Calendar.getInstance();
+        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
+        // File dest = JDUtilities.getResourceFile("captchas/" +
+        // plugin.getPluginName() + "/captcha_" + (new Date().getTime()) +
+        // ".jpg");
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
+        return dest;
+    }
+
+    /**
+     * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
+     *         auslagern
+     * @param map
+     *            Map
+     * @param delPair
+     *            Trennzeichen zwischen Key und Value
+     * @param delMap
+     *            Trennzeichen zwischen Map-Einträgen
+     * @return Key-value pairs
+     */
+    public static String joinMap(Map<String, String> map, String delPair, String delMap) {
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (first)
+                first = false;
+            else
+                buffer.append(delMap);
+            buffer.append(entry.getKey());
+            buffer.append(delPair);
+            buffer.append(entry.getValue());
+        }
+        return buffer.toString();
+    }
+
+    public static void main(String args[]) {
+
+    }
+
+    /**
+     * Gibt einen Cookie mit Hilfe der cookies.txt von Mozilla bzw. FireFox aus
+     * 
+     * @param link
+     * @param cookiefile
+     * @return
+     */
+    public static String parseMozillaCookie(URL link, File cookiefile) {
+        if (cookiefile.isFile()) {
+            try {
+                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s]+/(.*?)[\\s]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
+                HashMap<String, String> inp = new HashMap<String, String>();
+                String thisLine;
+                FileInputStream fin = new FileInputStream(cookiefile);
+                BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
+                String hostname = link.getHost().toLowerCase();
+                String hostname2 = hostname + ".*";
+                if (hostname.matches(".*?\\..*?\\..*?")) hostname = hostname.replaceFirst(".*?\\.", ".");
+                hostname = "\\.?" + hostname + ".*";
+                String path = link.getPath();
+                while ((thisLine = myInput.readLine()) != null) {
+                    if (thisLine.toLowerCase().matches(hostname) || thisLine.toLowerCase().matches(hostname2)) {
+                        Matcher matcher = cookiePattern.matcher(thisLine);
+                        if (matcher.find()) {
+                            String path2 = matcher.group(2);
+                            if (!path2.matches("[\\s]*")) {
+                                path2 = "/?" + path2 + ".*";
+                                if (path.matches(path2)) inp.put(matcher.group(4), matcher.group(5));
+                            } else
+                                inp.put(matcher.group(4), matcher.group(5));
+                        }
+                    }
+                }
+                return joinMap(inp, "=", "; ");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    private int captchaDetectionID = -1;
+
+    /**
+     * Zeigt an, ob das Plugin abgebrochen werden soll
+     */
+    public ConfigContainer config;
+
+    private long initTime;
+
+    private Captcha lastCaptcha;
+
+    protected CRequest request = new CRequest();
+
+    protected RequestInfo requestInfo;
+
+    /**
+     * Properties zum abspeichern der einstellungen
+     */
+    // private Property properties;
+    private String statusText;
+
+    protected Plugin() {
+
+        this.initTime = System.currentTimeMillis();
+        // steps = new Vector<PluginStep>();
+        config = new ConfigContainer(this);
+        // Lädt die Konfigurationseinstellungen aus der Konfig
+        if (this.getPluginName() == null) {
+            logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
+        }
+
+    }
 
     public void actionPerformed(ActionEvent e) {
         return;
+    }
+
+    /**
+     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon
+     * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
+     * vorhanden ist.
+     * 
+     * @param data
+     *            der zu prüfende Text
+     * @return wahr, falls ein Treffer gefunden wurde.
+     */
+    public synchronized boolean canHandle(String data) {
+        if (data == null) return false;
+        Pattern pattern = getSupportedLinks();
+        if (pattern != null) {
+            Matcher matcher = pattern.matcher(data);
+            if (matcher.find()) { return true; }
+        }
+        return false;
+    }
+
+    public void clean() {
+        this.lastCaptcha = null;
+        this.requestInfo = null;
+        System.gc();
+        System.runFinalization();
+
+    }
+
+    public boolean collectCaptchas() {
+        return true;
+    }
+
+    // /**
+    // * Führt den aktuellen Schritt aus
+    // *
+    // * @param step
+    // * @param parameter
+    // * @return der gerade ausgeführte Schritt
+    // */
+    // public abstract PluginStep doStep( Object parameter);
+
+    // /**
+    // * Hier werden alle notwendigen Schritte des Plugins hinterlegt
+    // */
+    // protected Vector<PluginStep> steps;
+
+    // /**
+    // * Enthält den aktuellen Schritt des Plugins
+    // */
+    // protected PluginStep //currentStep = null;
+
+    // private void firePluginDataChanged() {
+    // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
+    // ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
+    // }
+    /**
+     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
+     * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
+     * jedem zugriff neu aufbauen, weil sich das MenuItem Array geändert haben
+     * kann. MenuItems sind Datenmodelle für ein TreeMenü.
+     */
+    public abstract ArrayList<MenuItem> createMenuitems();
+
+    /**
+     * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
+     * Pattern aus
+     * 
+     * @param data
+     *            Text, aus dem das Pattern ausgeschnitter werden soll
+     * @return Der resultierende String
+     */
+    public String cutMatches(String data) {
+        return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
+    }
+
+    /**
+     * Führt einen Botcheck für den captcha file aus
+     * 
+     * @param file
+     * @return true:istBot; false: keinBot
+     */
+    public abstract boolean doBotCheck(File file);
+
+    /**
+     * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
+     * 
+     * @param controlID
+     * @param param
+     */
+    public void fireControlEvent(int controlID, Object param) {
+
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
     public String getCaptchaCode(File file) {
@@ -107,51 +382,8 @@ public abstract class Plugin implements ActionListener {
         return this.getCaptchaCode(file);
     }
 
-    // /**
-    // * Versionsinformationen
-    // */
-    // public static final String VERSION = "$Revision$";
-
-    /**
-     * Zeigt an, ob das Plugin abgebrochen werden soll
-     */
-    public ConfigContainer config;
-
-    protected RequestInfo requestInfo;
-
-    protected CRequest request = new CRequest();
-
-    // public boolean aborted = false;
-
-    public boolean collectCaptchas() {
-        return true;
-    }
-
-    /**
-     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu
-     * Captchaeingabe gezeigt ist useUserinputIfCaptchaUnknown wird dieser
-     * dialog nicht gezeigt
-     * 
-     * @return
-     */
-    public boolean useUserinputIfCaptchaUnknown() {
-        return true;
-    }
-
-    /**
-     * Liefert den Namen des Plugins zurück
-     * 
-     * @return Der Name des Plugins
-     */
-    public abstract String getPluginName();
-
-    /**
-     * Liefert eine einmalige ID des Plugins zurück
-     * 
-     * @return Plugin ID
-     */
-    public String getPluginID() {
-        return getPluginName() + "-" + getVersion();
+    public int getCaptchaDetectionID() {
+        return captchaDetectionID;
     }
 
     /**
@@ -160,180 +392,6 @@ public abstract class Plugin implements ActionListener {
      * @return Der Author des Plugins
      */
     public abstract String getCoder();
-
-    /**
-     * Liefert die Versionsbezeichnung dieses Plugins zurück
-     * 
-     * @return Versionsbezeichnung
-     */
-    public abstract String getVersion();
-
-    /**
-     * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin
-     * unterstützt werden
-     * 
-     * @return Ein regulärer Ausdruck
-     * @see Pattern
-     */
-    public abstract Pattern getSupportedLinks();
-
-    /**
-     * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
-     * 
-     * @param controlID
-     * @param param
-     */
-    public void fireControlEvent(int controlID, Object param) {
-
-        JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
-    }
-
-    /**
-     * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
-     * 
-     * @return Der unterstützte Anbieter
-     */
-    public abstract String getHost();
-
-    /**
-     * Führt einen Botcheck für den captcha file aus
-     * 
-     * @param file
-     * @return true:istBot; false: keinBot
-     */
-    public abstract boolean doBotCheck(File file);
-
-    protected File getLocalCaptchaFile(Plugin plugin) {
-        return getLocalCaptchaFile(plugin, ".jpg");
-    }
-
-    /**
-     * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
-     * 
-     * @param plugin
-     * @return Gibt einen Pfadzurück der für die nächste Captchadatei reserviert
-     *         ist
-     */
-    public static File getLocalCaptchaFile(Plugin plugin, String extension) {
-        if (extension == null) extension = ".jpg";
-        Calendar calendar = Calendar.getInstance();
-        String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
-        // File dest = JDUtilities.getResourceFile("captchas/" +
-        // plugin.getPluginName() + "/captcha_" + (new Date().getTime()) +
-        // ".jpg");
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
-        return dest;
-    }
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
-
-    public static final int CAPTCHA_JAC = 0;
-
-    public static final int CAPTCHA_USER_INPUT = 1;
-
-    public static SubConfiguration CONFIGS = null;
-
-    // /**
-    // * Führt den aktuellen Schritt aus
-    // *
-    // * @param step
-    // * @param parameter
-    // * @return der gerade ausgeführte Schritt
-    // */
-    // public abstract PluginStep doStep( Object parameter);
-
-    // /**
-    // * Hier werden alle notwendigen Schritte des Plugins hinterlegt
-    // */
-    // protected Vector<PluginStep> steps;
-
-    // /**
-    // * Enthält den aktuellen Schritt des Plugins
-    // */
-    // protected PluginStep //currentStep = null;
-
-    /**
-     * Properties zum abspeichern der einstellungen
-     */
-    // private Property properties;
-    private String statusText;
-
-    private long initTime;
-
-    private Captcha lastCaptcha;
-
-    private int captchaDetectionID = -1;
-
-    /**
-     * Ein Logger, um Meldungen darzustellen
-     */
-    public static Logger logger = JDUtilities.getLogger();
-
-    protected Plugin() {
-
-        this.initTime = System.currentTimeMillis();
-        // steps = new Vector<PluginStep>();
-        config = new ConfigContainer(this);
-        // Lädt die Konfigurationseinstellungen aus der Konfig
-        if (this.getPluginName() == null) {
-            logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
-        }
-
-    }
-
-    /**
-     * Zeigt, daß diese Plugin gestoppt werden soll
-     */
-    // public void abort() {
-    // aborted = true;
-    //
-    // }
-    // public boolean hasBeenInterrupted(){
-    //    
-    // if(Thread.currentThread().isInterrupted()){
-    // Thread.currentThread().interrupt();
-    // return true;
-    // }
-    // return false;
-    // }
-    /**
-     * Initialisiert das Plugin vor dem ersten Gebrauch
-     */
-    public void init() {
-        // //currentStep = null;
-    }
-
-    /**
-     * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus
-     * Dialogelement zaubern
-     * 
-     * @return gibt die aktuelle Configuration INstanz zurück
-     */
-    public ConfigContainer getConfig() {
-        return config;
-    }
 
     // /**
     // * Gibt ausgehend vom aktuellen step den nächsten zurück
@@ -437,81 +495,14 @@ public abstract class Plugin implements ActionListener {
     // // firePluginDataChanged();
     // }
 
-    // private void firePluginDataChanged() {
-    // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
-    // }
     /**
-     * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
-     * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
-     * jedem zugriff neu aufbauen, weil sich das MenuItem Array geändert haben
-     * kann. MenuItems sind Datenmodelle für ein TreeMenü.
-     */
-    public abstract ArrayList<MenuItem> createMenuitems();
-
-    /**
-     * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
-     *         auslagern
-     * @param map
-     *            Map
-     * @param delPair
-     *            Trennzeichen zwischen Key und Value
-     * @param delMap
-     *            Trennzeichen zwischen Map-Einträgen
-     * @return Key-value pairs
-     */
-    public static String joinMap(Map<String, String> map, String delPair, String delMap) {
-        StringBuffer buffer = new StringBuffer();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (first)
-                first = false;
-            else
-                buffer.append(delMap);
-            buffer.append(entry.getKey());
-            buffer.append(delPair);
-            buffer.append(entry.getValue());
-        }
-        return buffer.toString();
-    }
-
-    // /**
-    // * @author JD-Team
-    // * @return Gibt den aktuellen Schritt oder null zurück
-    // */
-    // public void getCurrentStep() {
-    // return currentStep;
-    // }
-
-    /**
-     * Hier wird geprüft, ob das Plugin diesen Text oder einen Teil davon
-     * handhaben kann. Dazu wird einfach geprüft, ob ein Treffer des Patterns
-     * vorhanden ist.
+     * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus
+     * Dialogelement zaubern
      * 
-     * @param data
-     *            der zu prüfende Text
-     * @return wahr, falls ein Treffer gefunden wurde.
+     * @return gibt die aktuelle Configuration INstanz zurück
      */
-    public synchronized boolean canHandle(String data) {
-        if (data == null) return false;
-        Pattern pattern = getSupportedLinks();
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) { return true; }
-        }
-        return false;
-    }
-
-    /**
-     * Diese Funktion schneidet alle Vorkommnisse des vom Plugin unterstützten
-     * Pattern aus
-     * 
-     * @param data
-     *            Text, aus dem das Pattern ausgeschnitter werden soll
-     * @return Der resultierende String
-     */
-    public String cutMatches(String data) {
-        return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
+    public ConfigContainer getConfig() {
+        return config;
     }
 
     /**
@@ -539,9 +530,32 @@ public abstract class Plugin implements ActionListener {
         return ret;
     }
 
+    // /**
+    // * @author JD-Team
+    // * @return Gibt den aktuellen Schritt oder null zurück
+    // */
+    // public void getCurrentStep() {
+    // return currentStep;
+    // }
+
     protected String getFileNameFormURL(URL url) {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
         return url.getFile().substring(index + 1);
+    }
+
+    /**
+     * Liefert den Anbieter zurück, für den dieses Plugin geschrieben wurde
+     * 
+     * @return Der unterstützte Anbieter
+     */
+    public abstract String getHost();
+
+    public String getInitID() {
+        return this.initTime + "<ID";
+    }
+
+    public Captcha getLastCaptcha() {
+        return lastCaptcha;
     }
 
     //
@@ -576,17 +590,30 @@ public abstract class Plugin implements ActionListener {
     // }
 
     /**
-     * verwendet die erste Acaptcha Interaction um den captcha auszuwerten
      * 
-     * @param file
-     * @param plugin
-     * @return captchacode
+     * @return gibt den namen des Links an der gerade verarbeitet wird
      */
-    public static String getCaptchaCode(File file, Plugin plugin) {
-        String captchaText = null;
-        captchaText = JDUtilities.getCaptcha(plugin, null, file, false);
-        return captchaText;
+    public abstract String getLinkName();
+
+    protected File getLocalCaptchaFile(Plugin plugin) {
+        return getLocalCaptchaFile(plugin, ".jpg");
     }
+
+    /**
+     * Liefert eine einmalige ID des Plugins zurück
+     * 
+     * @return Plugin ID
+     */
+    public String getPluginID() {
+        return getPluginName() + "-" + getVersion();
+    }
+
+    /**
+     * Liefert den Namen des Plugins zurück
+     * 
+     * @return Der Name des Plugins
+     */
+    public abstract String getPluginName();
 
     /**
      * gibt das interne properties objekt zurück indem die Plugineinstellungen
@@ -611,12 +638,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * 
-     * @return gibt den namen des Links an der gerade verarbeitet wird
-     */
-    public abstract String getLinkName();
-
-    /**
      * Gibt den Statustext des Plugins zurück. kann von der GUI aufgerufen
      * werden
      * 
@@ -628,6 +649,58 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
+     * Ein regulärer Ausdruck, der anzeigt, welche Links von diesem Plugin
+     * unterstützt werden
+     * 
+     * @return Ein regulärer Ausdruck
+     * @see Pattern
+     */
+    public abstract Pattern getSupportedLinks();
+
+    /**
+     * Liefert die Versionsbezeichnung dieses Plugins zurück
+     * 
+     * @return Versionsbezeichnung
+     */
+    public abstract String getVersion();
+
+    /**
+     * Zeigt, daß diese Plugin gestoppt werden soll
+     */
+    // public void abort() {
+    // aborted = true;
+    //
+    // }
+    // public boolean hasBeenInterrupted(){
+    //    
+    // if(Thread.currentThread().isInterrupted()){
+    // Thread.currentThread().interrupt();
+    // return true;
+    // }
+    // return false;
+    // }
+    /**
+     * Initialisiert das Plugin vor dem ersten Gebrauch
+     */
+    public void init() {
+        // //currentStep = null;
+    }
+
+    public void setCaptchaDetectID(int captchaJac) {
+        captchaDetectionID = captchaJac;
+
+    }
+
+    public void setCaptchaDetectionID(int captchaDetectionID) {
+        this.captchaDetectionID = captchaDetectionID;
+    }
+
+    public void setLastCaptcha(Captcha captcha) {
+        this.lastCaptcha = captcha;
+
+    }
+
+    /**
      * Setzte den Statustext des Plugins.
      * 
      * @param value
@@ -636,90 +709,15 @@ public abstract class Plugin implements ActionListener {
         statusText = value;
     }
 
-    public String getInitID() {
-        return this.initTime + "<ID";
-    }
-
     /**
-     * Gibt einen Cookie mit Hilfe der cookies.txt von Mozilla bzw. FireFox aus
+     * Wenn das Captcha nicht richtig erkannt wurde kann wird ein Dialog zu
+     * Captchaeingabe gezeigt ist useUserinputIfCaptchaUnknown wird dieser
+     * dialog nicht gezeigt
      * 
-     * @param link
-     * @param cookiefile
      * @return
      */
-    public static String parseMozillaCookie(URL link, File cookiefile) {
-        if (cookiefile.isFile()) {
-            try {
-                Pattern cookiePattern = Pattern.compile(".*?[\\s]+(TRUE|FALSE)[\\s]+/(.*?)[\\s]+(TRUE|FALSE)[\\s]+[0-9]{10}[\\s]+(.*?)[\\s]+(.*)", Pattern.CASE_INSENSITIVE);
-                HashMap<String, String> inp = new HashMap<String, String>();
-                String thisLine;
-                FileInputStream fin = new FileInputStream(cookiefile);
-                BufferedReader myInput = new BufferedReader(new InputStreamReader(fin));
-                String hostname = link.getHost().toLowerCase();
-                String hostname2 = hostname + ".*";
-                if (hostname.matches(".*?\\..*?\\..*?")) hostname = hostname.replaceFirst(".*?\\.", ".");
-                hostname = "\\.?" + hostname + ".*";
-                String path = link.getPath();
-                while ((thisLine = myInput.readLine()) != null) {
-                    if (thisLine.toLowerCase().matches(hostname) || thisLine.toLowerCase().matches(hostname2)) {
-                        Matcher matcher = cookiePattern.matcher(thisLine);
-                        if (matcher.find()) {
-                            String path2 = matcher.group(2);
-                            if (!path2.matches("[\\s]*")) {
-                                path2 = "/?" + path2 + ".*";
-                                if (path.matches(path2)) inp.put(matcher.group(4), matcher.group(5));
-                            } else
-                                inp.put(matcher.group(4), matcher.group(5));
-                        }
-                    }
-                }
-                return joinMap(inp, "=", "; ");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
-     * 
-     * @param data
-     * @return
-     */
-    public static String findPassword(String data) {
-        Vector<String> passwords = HTMLParser.findPasswords(data);
-        return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
-    }
-
-    public void setLastCaptcha(Captcha captcha) {
-        this.lastCaptcha = captcha;
-
-    }
-
-    public Captcha getLastCaptcha() {
-        return lastCaptcha;
-    }
-
-    public void setCaptchaDetectID(int captchaJac) {
-        captchaDetectionID = captchaJac;
-
-    }
-
-    public int getCaptchaDetectionID() {
-        return captchaDetectionID;
-    }
-
-    public void setCaptchaDetectionID(int captchaDetectionID) {
-        this.captchaDetectionID = captchaDetectionID;
-    }
-
-    public void clean() {
-        this.lastCaptcha = null;
-        this.requestInfo = null;
-        System.gc();
-        System.runFinalization();
-
+    public boolean useUserinputIfCaptchaUnknown() {
+        return true;
     }
 
     // public Vector<PluginStep> getSteps() {

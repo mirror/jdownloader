@@ -46,50 +46,16 @@ public class RapidShareDe extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
-    private Form form;
-
     private File captchaFile;
-
-    private long waittime = 0;
 
     private String code = null;
 
+    private Form form;
+
+    private long waittime = 0;
+
     //
     
-    public boolean doBotCheck(File file) {
-        return false;
-    } // kein BotCheck
-
-    
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-    
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
     public RapidShareDe() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
@@ -101,121 +67,13 @@ public class RapidShareDe extends PluginForHost {
         setConfigElements();
     }
 
-    private void setConfigElements() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.hoster.rapidshare.de.premiumPass", "Premium Pass")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    } // kein BotCheck
 
-    }
-
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-
-            this.doPremium(downloadLink);
-
-        } else {
-
-            this.doFree(downloadLink);
-
-        }
-        return;
-    }
-
-    public void doPremium(DownloadLink downloadLink) throws Exception {
-
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        String formatPass = "";
-        for (int i = 0; i < pass.length(); i++) {
-            formatPass += "%" + Integer.toString(pass.charAt(i), 16);
-
-        }
-
-        String path = new URI(downloadLink.getDownloadURL()).getPath();
-        PostRequest r = new PostRequest("http://rapidshare.de");
-        r.setPostVariable("uri", JDUtilities.urlEncode(path));
-        r.setPostVariable("dl.start", "PREMIUM");
-        r.getCookies().put("user", user + "-" + formatPass);
-
-        String page = r.load();
-        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
-        if (error != null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-         linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-
-        }
-        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getFirstMatch();
-
-        HTTPConnection urlConnection;
-        GetRequest req = new GetRequest(url);
-        r.getCookies().put("user", user + "-" + formatPass);
-        req.connect();
-        urlConnection = req.getHttpConnection();
-        if (urlConnection.getHeaderField("content-disposition") == null) {
-
-            page = req.read();
-
-            // if ((error = this.findError(page)) != null) {
-            // new File(downloadLink.getFileOutput()).delete();
-            //
-            // logger.warning(error);
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
-            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            // //step.setParameter(premium);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // } else if (Regex.matches(error,
-            // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
-            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            // //step.setParameter(premium);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // } else {
-            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // //step.setParameter(error);
-            // }
-            //
-            // return;
-            // } else {
-            // new File(downloadLink.getFileOutput()).delete();
-            //
-            // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            //
-            // this.reportUnknownError(page, 6);
-            //
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // return;
-            // }
-
-        }
-
-        int length = urlConnection.getContentLength();
-
-        downloadLink.setDownloadMax(length);
-        String name = getFileNameFormHeader(urlConnection);
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
-        downloadLink.setName(name);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.startDownload();
-
-    }
-
+    
     public void doFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
@@ -305,6 +163,111 @@ public class RapidShareDe extends PluginForHost {
     }
 
     
+    public void doPremium(DownloadLink downloadLink) throws Exception {
+
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        String formatPass = "";
+        for (int i = 0; i < pass.length(); i++) {
+            formatPass += "%" + Integer.toString(pass.charAt(i), 16);
+
+        }
+
+        String path = new URI(downloadLink.getDownloadURL()).getPath();
+        PostRequest r = new PostRequest("http://rapidshare.de");
+        r.setPostVariable("uri", JDUtilities.urlEncode(path));
+        r.setPostVariable("dl.start", "PREMIUM");
+        r.getCookies().put("user", user + "-" + formatPass);
+
+        String page = r.load();
+        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
+        if (error != null) {
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+         linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getFirstMatch();
+
+        HTTPConnection urlConnection;
+        GetRequest req = new GetRequest(url);
+        r.getCookies().put("user", user + "-" + formatPass);
+        req.connect();
+        urlConnection = req.getHttpConnection();
+        if (urlConnection.getHeaderField("content-disposition") == null) {
+
+            page = req.read();
+
+            // if ((error = this.findError(page)) != null) {
+            // new File(downloadLink.getFileOutput()).delete();
+            //
+            // logger.warning(error);
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
+            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            // //step.setParameter(premium);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // } else if (Regex.matches(error,
+            // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
+            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            // //step.setParameter(premium);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // } else {
+            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
+            // downloadLink.getLinkStatus().setStatusText(error);
+            // //step.setParameter(error);
+            // }
+            //
+            // return;
+            // } else {
+            // new File(downloadLink.getFileOutput()).delete();
+            //
+            // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            //
+            // this.reportUnknownError(page, 6);
+            //
+            // //step.setStatus(PluginStep.STATUS_ERROR);
+            // return;
+            // }
+
+        }
+
+        int length = urlConnection.getContentLength();
+
+        downloadLink.setDownloadMax(length);
+        String name = getFileNameFormHeader(urlConnection);
+        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
+        downloadLink.setName(name);
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.startDownload();
+
+    }
+
+    
+    @Override
+    public String getAGBLink() {
+
+        return "http://rapidshare.de/de/faq.html";
+    }
+
+    
+    
+        
+    
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Form[] forms = Form.getForms(downloadLink.getDownloadURL());
@@ -321,7 +284,12 @@ public class RapidShareDe extends PluginForHost {
         return false;
     }
 
-    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    @Override
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -330,19 +298,63 @@ public class RapidShareDe extends PluginForHost {
         }
     }
 
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
     
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
+    public void handle(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        String user = this.getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = this.getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
+        if (user != null && pass != null && this.getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
+
+            this.doPremium(downloadLink);
+
+        } else {
+
+            this.doFree(downloadLink);
+
+        }
+        return;
+    }
+
+    
+    @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
     
+    @Override
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
     
-    public String getAGBLink() {
+    private void setConfigElements() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.hoster.rapidshare.de.premiumPass", "Premium Pass")));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account verwenden")));
+        cfg.setDefaultValue(false);
 
-        return "http://rapidshare.de/de/faq.html";
     }
 }

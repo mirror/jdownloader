@@ -29,6 +29,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
+import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -49,28 +50,33 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
 	 */
 	private static final long serialVersionUID = -7741748123426268439L;
 
-	/**
+	public static boolean showDialog(JFrame frame, String title, String question){
+        HTMLDialog  tda= new HTMLDialog( frame,  title,  question);
+        return tda.success;
+        
+    }
+
+    private JButton     btnCancel;
+
+    private JButton     btnOk;
+
+    private JTextPane   htmlArea;
+
+    /**
      * 
      */
 
     protected Insets    insets = new Insets(0, 0, 0, 0);
 
-    protected Logger    logger = JDUtilities.getLogger();
-
-    private JButton     btnOk;
-
-    private JButton     btnCancel;
-
-    private JTextPane   htmlArea;
-
    // private JLabel      lblText;
 
-    private JScrollPane scrollPane;
+    protected Logger    logger = JDUtilities.getLogger();
 
    // private String text=null;
 
-    private boolean success=false;
+    private JScrollPane scrollPane;
 
+    private boolean success=false;
     private HTMLDialog(JFrame frame, String title, String html) {
         super(frame);
         
@@ -100,7 +106,7 @@ this.setName(title);
       
         //setLocation(JDUtilities.getCenterOfComponent(null, this));
         getRootPane().setDefaultButton(btnOk);
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
        // this.setLocationRelativeTo(null);
         this.setVisible(true);
         LocationListener list = new LocationListener();
@@ -113,11 +119,6 @@ this.setName(title);
         setModal(true);
         this.setVisible(true);
       
-    }
-    public static boolean showDialog(JFrame frame, String title, String question){
-        HTMLDialog  tda= new HTMLDialog( frame,  title,  question);
-        return tda.success;
-        
     }
 
     public void actionPerformed(ActionEvent e) {

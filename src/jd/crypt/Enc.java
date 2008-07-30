@@ -24,9 +24,9 @@ public class Enc {
    private final int Nb = 4; // words in a block, always 4 for now
    private int Nk; // key length in words
    private int Nr; // number of rounds, = Nk + 6
-   private int wCount; // position in w for RoundKey (= 0 each encrypt)
    private AEStables tab; // all the tables needed for AES
    private byte[] w; // the expanded key
+   private int wCount; // position in w for RoundKey (= 0 each encrypt)
 
    // AESencrypt: constructor for class.  Mainly expands key
    public Enc(byte[] key, int NkIn) {
@@ -37,6 +37,14 @@ public class Enc {
       KeyExpansion(key, w); // length of w depends on Nr
    }
    
+   // AddRoundKey: xor a portion of expanded key with state
+   private void AddRoundKey(byte[][] state) {
+      for (int c = 0; c < Nb; c++)
+         for (int r = 0; r < 4; r++)
+            state[r][c] = (byte)(state[r][c] ^ w[wCount++]);
+   }
+
+
    // Cipher: actual AES encrytion
    public void Cipher(byte[] in, byte[] out) {
       wCount = 0; // count bytes in expanded key throughout encryption
@@ -56,7 +64,6 @@ public class Enc {
       AddRoundKey(state); // xor with expanded key
       Copy.copy(out, state);
    }
-
 
    // KeyExpansion: expand key, byte-oriented code, but tracks words
    private void KeyExpansion(byte[] key, byte[] w) {
@@ -95,24 +102,6 @@ public class Enc {
       }
    }
 
-   // SubBytes: apply Sbox substitution to each byte of state
-   private void SubBytes(byte[][] state) {
-      for (int row = 0; row < 4; row++)
-         for (int col = 0; col < Nb; col++)
-            state[row][col] = tab.SBox(state[row][col]);
-   }
-
-   // ShiftRows: simple circular shift of rows 1, 2, 3 by 1, 2, 3
-   private void ShiftRows(byte[][] state) {
-      byte[] t = new byte[4];
-       for (int r = 1; r < 4; r++) {
-         for (int c = 0; c < Nb; c++)
-            t[c] = state[r][(c + r)%Nb];
-         for (int c = 0; c < Nb; c++)
-            state[r][c] = t[c];
-      }
-   }
-
    // MixColumns: complex and sophisticated mixing of columns
    private void MixColumns(byte[][] s) {
       int[] sp = new int[4];
@@ -130,10 +119,21 @@ public class Enc {
       }
    }
 
-   // AddRoundKey: xor a portion of expanded key with state
-   private void AddRoundKey(byte[][] state) {
-      for (int c = 0; c < Nb; c++)
-         for (int r = 0; r < 4; r++)
-            state[r][c] = (byte)(state[r][c] ^ w[wCount++]);
+   // ShiftRows: simple circular shift of rows 1, 2, 3 by 1, 2, 3
+   private void ShiftRows(byte[][] state) {
+      byte[] t = new byte[4];
+       for (int r = 1; r < 4; r++) {
+         for (int c = 0; c < Nb; c++)
+            t[c] = state[r][(c + r)%Nb];
+         for (int c = 0; c < Nb; c++)
+            state[r][c] = t[c];
+      }
+   }
+
+   // SubBytes: apply Sbox substitution to each byte of state
+   private void SubBytes(byte[][] state) {
+      for (int row = 0; row < 4; row++)
+         for (int col = 0; col < Nb; col++)
+            state[row][col] = tab.SBox(state[row][col]);
    }
 }

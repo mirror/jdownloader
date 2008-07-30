@@ -36,19 +36,20 @@ public class TempEmail {
 	public TempEmail() {
 	}
 	/**
-	 * new String[][] {{"From", "TargetURL", "Subject"}};
+	 * Die aktuelle Emailadresse
 	 * @return
-	 * @throws IOException 
-	 * @throws MalformedURLException 
-	 * @throws IOException 
-	 * @throws MalformedURLException 
 	 */
-	public String[][] getMailInfos() throws MalformedURLException, IOException  {
-		if(emails!=null)
-		return emails;
-		RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com/maildir.jsp?email="+emailname));
-		emails = new Regex(requestInfo.getHtmlCode(), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
-		return emails;
+	public String getEmailAdress()
+	{
+		return emailname+"@mailinator.com";
+	}
+	public String getFilteredMail(MailFilter mailFilter) throws MalformedURLException, IOException
+	{
+		if(getEmailAdress()==null)return null;
+		for (int i = 0; i < emails.length; i++) {
+			if(mailFilter.fromAdress(emails[i]))return getMail(i);
+		}
+		return null;
 	}
 	/**
 	 * Gibt den Inhalt der mail i zurück
@@ -67,19 +68,18 @@ public class TempEmail {
 		return requestInfo.getHtmlCode();
 	}
 	/**
-	 * Die aktuelle Emailadresse
+	 * new String[][] {{"From", "TargetURL", "Subject"}};
 	 * @return
+	 * @throws IOException 
+	 * @throws MalformedURLException 
+	 * @throws IOException 
+	 * @throws MalformedURLException 
 	 */
-	public String getEmailAdress()
-	{
-		return emailname+"@mailinator.com";
-	}
-	public String getFilteredMail(MailFilter mailFilter) throws MalformedURLException, IOException
-	{
-		if(getEmailAdress()==null)return null;
-		for (int i = 0; i < emails.length; i++) {
-			if(mailFilter.fromAdress(emails[i]))return getMail(i);
-		}
-		return null;
+	public String[][] getMailInfos() throws MalformedURLException, IOException  {
+		if(emails!=null)
+		return emails;
+		RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com/maildir.jsp?email="+emailname));
+		emails = new Regex(requestInfo.getHtmlCode(), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
+		return emails;
 	}
 }

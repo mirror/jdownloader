@@ -34,56 +34,23 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDWebinterface extends PluginOptional {
+    static public JDWebinterface instance;
+    static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
+    static public int page_refresh_interval = 0;
+    static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
+    static final String PROPERTY_HTTPS = "PARAM_HTTPS";
+    static final String PROPERTY_LOGIN = "PARAM_LOGIN";
+    static final String PROPERTY_PASS = "PARAM_PASS";
+    static final String PROPERTY_PORT = "PARAM_PORT";
+    static final String PROPERTY_REFRESH = "PARAM_REFRESH";
+    static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
+
+    static final String PROPERTY_USER = "PARAM_USER";
     public static int getAddonInterfaceVersion(){
         return 0;
     }
-    static final String PROPERTY_PORT = "PARAM_PORT";
-    static final String PROPERTY_USER = "PARAM_USER";
-    static final String PROPERTY_PASS = "PARAM_PASS";
-    static final String PROPERTY_HTTPS = "PARAM_HTTPS";
-    static final String PROPERTY_LOGIN = "PARAM_LOGIN";
-    static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
-    static final String PROPERTY_REFRESH_INTERVAL = "PARAM_REFRESH_INTERVAL";
-    static final String PROPERTY_REFRESH = "PARAM_REFRESH";
-    static public JDWebinterface instance;
-
-    static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
-    static public int page_refresh_interval = 0;
 
     
-    public String getCoder() {
-        return "jiaz";
-    }
-
-    
-    
-   
-
-    
-    public String getPluginName() {
-        return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
-    }
-
-    
-    public String getVersion() {
-        return "0.0.2.0";
-    }
-
-    
-    public boolean initAddon() {
-        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
-        if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
-            page_refresh_interval = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
-        } else
-            page_refresh_interval = 0;
-
-        @SuppressWarnings("unused")
-        JDSimpleWebserver server = new JDSimpleWebserver();
-        logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
-        return true;
-
-    }
-
     public JDWebinterface() {
         instance = this;
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
@@ -112,22 +79,63 @@ public class JDWebinterface extends PluginOptional {
     }
 
     
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
+    
+   
 
     
-    public ArrayList<MenuItem> createMenuitems() {
-       
-        return null;
-    }
-
+    @Override
     public void actionPerformed(ActionEvent e) {
        
 
     }
 
     
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+       
+        return null;
+    }
+
+    
+    @Override
+    public String getCoder() {
+        return "jiaz";
+    }
+
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
+    }
+
+    
+    @Override
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    
+    @Override
+    public String getVersion() {
+        return "0.0.2.0";
+    }
+
+    @Override
+    public boolean initAddon() {
+        SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
+        if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
+            page_refresh_interval = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
+        } else
+            page_refresh_interval = 0;
+
+        @SuppressWarnings("unused")
+        JDSimpleWebserver server = new JDSimpleWebserver();
+        logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
+        return true;
+
+    }
+
+    
+    @Override
     public void onExit() {
        
 

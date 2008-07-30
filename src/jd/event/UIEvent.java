@@ -28,33 +28,18 @@ public class UIEvent extends AWTEvent{
      */
     private static final long serialVersionUID = -5178146758475854235L;
     
-    private UIInterface uiInterface;
-    private int actionID;
-    private Object parameter;
     /**
-     * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
+     * DragAndDrop Event
      */
-    public static final int UI_UPDATED_LINKLIST      = 1;
+    public static final int UI_DRAG_AND_DROP      = 12;
     /**
-     * Der Download sol gestartet werden
+     * Die Anwendung soll geschlossen werden
      */
-    public static final int UI_START_DOWNLOADS    = 2;
+    public static final int UI_EXIT               = 11;
     /**
-     * Der Download soll angehalten werden
+     * Ein Reconnect soll gemacht werden
      */
-    public static final int UI_STOP_DOWNLOADS     = 3;
-    /**
-     * Alle Links sollen geladen werden
-     */
-    public static final int UI_LOAD_LINKS         = 4;
-    /**
-     * Alle Links sollen gespeichert werden
-     */
-    public static final int UI_SAVE_LINKS         = 5;
-    /**
-     * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
-     */
-    public static final int UI_LINKS_TO_PROCESS   = 6;
+    public static final int UI_INTERACT_RECONNECT = 10;
     /**
      * Die Konfiguration soll gespeichtert werden
      */
@@ -64,18 +49,13 @@ public class UIEvent extends AWTEvent{
      */
     public static final int UI_INTERACT_UPDATE    = 9;
     /**
-     * Ein Reconnect soll gemacht werden
+     * Es sollen Daten überprüft und ggf als DownloadLinks hinzugefügt werden
      */
-    public static final int UI_INTERACT_RECONNECT = 10;
+    public static final int UI_LINKS_TO_PROCESS   = 6;
     /**
-     * Die Anwendung soll geschlossen werden
+     * Alle Links sollen geladen werden
      */
-    public static final int UI_EXIT               = 11;
-    /**
-     * DragAndDrop Event
-     */
-    public static final int UI_DRAG_AND_DROP      = 12;
-
+    public static final int UI_LOAD_LINKS         = 4;
     /**
      * Der Linkgrabber hat Links zurückgegeben
      */
@@ -86,11 +66,27 @@ public class UIEvent extends AWTEvent{
   //  public static final int UI_LOAD_CONTAINER     = 15;
 
     public static final int UI_PAUSE_DOWNLOADS = 16;
+    /**
+     * Alle Links sollen gespeichert werden
+     */
+    public static final int UI_SAVE_LINKS         = 5;
+    /**
+     * Der Download sol gestartet werden
+     */
+    public static final int UI_START_DOWNLOADS    = 2;
+    /**
+     * Der Download soll angehalten werden
+     */
+    public static final int UI_STOP_DOWNLOADS     = 3;
+    /**
+     * Die DownloadLinks wurden verändert (zB in der Reihenfolge)
+     */
+    public static final int UI_UPDATED_LINKLIST      = 1;
+    private int actionID;
 
-    
-    public UIEvent(UIInterface uiInterface, int actionID){
-        this(uiInterface,actionID,null);
-    }
+    private Object parameter;
+    private UIInterface uiInterface;
+
     
     public UIEvent(Object uiInterface, int actionID, Object parameter){
         super(uiInterface, actionID);
@@ -100,9 +96,13 @@ public class UIEvent extends AWTEvent{
         this.actionID = actionID;
         this.parameter = parameter;
     }
+    
+    public UIEvent(UIInterface uiInterface, int actionID){
+        this(uiInterface,actionID,null);
+    }
 
-    public UIInterface getUiInterface() { return uiInterface; }
     public int getActionID()            { return actionID;    }
     public Object getParameter()        { return parameter;   }
+    public UIInterface getUiInterface() { return uiInterface; }
     
 }

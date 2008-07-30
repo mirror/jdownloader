@@ -30,44 +30,90 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class DDLWarez extends PluginForDecrypt {
-    private static final String host = "ddl-warez.org";
+    static class DDLWarez_Linkgrabber extends Thread {
+        public final static int THREADFAIL = 1;
+        public final static int THREADPASS = 0;
+        int _status;
+        private String downloadlink;
+        private Form form;
+        private boolean gotjob;
+        private String parameter;
+        private int Worker_ID;
+
+        public DDLWarez_Linkgrabber(int id) {
+            this.downloadlink = null;
+            this.gotjob = false;
+            this._status = THREADFAIL;
+            this.Worker_ID = id;
+        }
+
+        public String getlink() {
+            return this.downloadlink;
+        }
+
+        @Override
+        public void run() {
+            if (this.gotjob == true) {
+                logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " started!");
+                String action = form.getAction();
+                if (action.contains("get_file")) {
+                    PostRequest r = new PostRequest(action);
+                    r.setPostVariable("dont", form.vars.get("dont"));
+                    r.setPostVariable("do", form.vars.get("do"));
+                    r.setPostVariable("this", form.vars.get("this"));
+                    r.setPostVariable("now", form.vars.get("now"));
+                    r.getHeaders().put("Referer", parameter);
+                    for (int retry = 1; retry <= 10; retry++) {
+                        try {
+                            r.load();
+                            RequestInfo formInfo = r.getRequestInfo();
+                            downloadlink = new Regex(formInfo.getHtmlCode(), Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                            break;
+                        } catch (Exception e) {
+                            logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " PostRequest-Error, try again!");
+                            synchronized (DDLWarez.Worker_Delay) {
+                                DDLWarez.Worker_Delay = 1000;
+                            }
+                        }
+                        try {
+                            Thread.sleep(1500);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                } else {
+                    logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished! (NO DOWNLOAD FORM!)");
+                    this._status = THREADFAIL;
+                    return;
+                }
+            }
+            logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished!");
+            this._status = THREADPASS;
+        }
+
+        public void setjob(Form form, String parameter) {
+            this.form = form;
+            this.parameter = parameter;
+            this.gotjob = true;
+        }
+
+        public int status() {
+            return this._status;
+        }
+    }
    
+    private static final String host = "ddl-warez.org";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+", Pattern.CASE_INSENSITIVE);
+
     public static Integer Worker_Delay = 250;
 
+    
     public DDLWarez() {
         super();
         default_password.add("ddl-warez");
     }
 
     
-    public String getCoder() {
-        return "Jiaz";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-    
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (int retry = 1; retry <= 10; retry++) {
@@ -113,77 +159,39 @@ public class DDLWarez extends PluginForDecrypt {
     }
 
     
+
+    
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    static class DDLWarez_Linkgrabber extends Thread {
-        public final static int THREADPASS = 0;
-        public final static int THREADFAIL = 1;
-        int _status;
-        private Form form;
-        private String parameter;
-        private String downloadlink;
-        private boolean gotjob;
-        private int Worker_ID;
+    
+    @Override
+    public String getCoder() {
+        return "Jiaz";
+    }
 
-        public int status() {
-            return this._status;
-        }
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
 
-        public String getlink() {
-            return this.downloadlink;
-        }
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
 
-        public DDLWarez_Linkgrabber(int id) {
-            this.downloadlink = null;
-            this.gotjob = false;
-            this._status = THREADFAIL;
-            this.Worker_ID = id;
-        }
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
 
-        public void setjob(Form form, String parameter) {
-            this.form = form;
-            this.parameter = parameter;
-            this.gotjob = true;
-        }
-
-        public void run() {
-            if (this.gotjob == true) {
-                logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " started!");
-                String action = form.getAction();
-                if (action.contains("get_file")) {
-                    PostRequest r = new PostRequest(action);
-                    r.setPostVariable("dont", form.vars.get("dont"));
-                    r.setPostVariable("do", form.vars.get("do"));
-                    r.setPostVariable("this", form.vars.get("this"));
-                    r.setPostVariable("now", form.vars.get("now"));
-                    r.getHeaders().put("Referer", parameter);
-                    for (int retry = 1; retry <= 10; retry++) {
-                        try {
-                            r.load();
-                            RequestInfo formInfo = r.getRequestInfo();
-                            downloadlink = new Regex(formInfo.getHtmlCode(), Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                            break;
-                        } catch (Exception e) {
-                            logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " PostRequest-Error, try again!");
-                            synchronized (DDLWarez.Worker_Delay) {
-                                DDLWarez.Worker_Delay = 1000;
-                            }
-                        }
-                        try {
-                            Thread.sleep(1500);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                } else {
-                    logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished! (NO DOWNLOAD FORM!)");
-                    this._status = THREADFAIL;
-                    return;
-                }
-            }
-            logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(this.Worker_ID) + " finished!");
-            this._status = THREADPASS;
-        }
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

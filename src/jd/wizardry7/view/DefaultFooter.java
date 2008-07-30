@@ -9,21 +9,6 @@ import com.jgoodies.forms.layout.FormLayout;
 
 public class DefaultFooter extends JPanel {
 	
-	public static JPanel createFooter(JButton[] leftAlignedButtons,
-			JButton back, JButton next, JButton overlayedFinish,
-			JButton... rightAlignedButtons) {
-		
-        FormLayout layout = new FormLayout("p:g", "");
-		DefaultFormBuilder builder = new DefaultFormBuilder(layout); //, new FormDebugPanel());
-		builder.setDefaultDialogBorder();
-		builder.appendSeparator();
-		builder.append(buildWizardBar(leftAlignedButtons, back, next, overlayedFinish, rightAlignedButtons));
-		
-		return builder.getPanel();
-	}
-	
-	
-
 	public static JPanel buildWizardBar(JButton[] leftAlignedButtons,
 			JButton back, JButton next, JButton overlayedFinish,
 			JButton[] rightAlignedButtons) {
@@ -52,6 +37,21 @@ public class DefaultFooter extends JPanel {
 			builder.addRelatedGap();
 			builder.addGriddedButtons(rightAlignedButtons);
 		}
+		return builder.getPanel();
+	}
+	
+	
+
+	public static JPanel createFooter(JButton[] leftAlignedButtons,
+			JButton back, JButton next, JButton overlayedFinish,
+			JButton... rightAlignedButtons) {
+		
+        FormLayout layout = new FormLayout("p:g", "");
+		DefaultFormBuilder builder = new DefaultFormBuilder(layout); //, new FormDebugPanel());
+		builder.setDefaultDialogBorder();
+		builder.appendSeparator();
+		builder.append(buildWizardBar(leftAlignedButtons, back, next, overlayedFinish, rightAlignedButtons));
+		
 		return builder.getPanel();
 	}
 

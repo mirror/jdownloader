@@ -36,16 +36,20 @@ import jd.plugins.optional.webinterface.template.Tmpl.Util;
 
 public class Var extends Element
 {
-	public static final int ESCAPE_NONE  = 0;
-	public static final int ESCAPE_URL   = 1;
 	public static final int ESCAPE_HTML  = 2;
+	public static final int ESCAPE_NONE  = 0;
 	public static final int ESCAPE_QUOTE = 4;
+	public static final int ESCAPE_URL   = 1;
 	
-	public Var(String name, int escape, Object default_value)
+	private String default_value=null;
+
+	// Private data starts here
+	private int escape=ESCAPE_NONE;
+
+	public Var(String name, boolean escape) 
 			throws IllegalArgumentException
 	{
-		this(name, escape);
-		this.default_value = stringify(default_value);
+		this(name, escape?ESCAPE_HTML:ESCAPE_NONE);
 	}
 
 	public Var(String name, int escape) 
@@ -57,6 +61,13 @@ public class Var extends Element
 		this.name = name;
 		this.escape = escape;
 		
+	}
+
+	public Var(String name, int escape, Object default_value)
+			throws IllegalArgumentException
+	{
+		this(name, escape);
+		this.default_value = stringify(default_value);
 	}
 
 	public Var(String name, String escape)
@@ -78,13 +89,8 @@ public class Var extends Element
 			this.escape = ESCAPE_QUOTE;
 	}
 
-	public Var(String name, boolean escape) 
-			throws IllegalArgumentException
-	{
-		this(name, escape?ESCAPE_HTML:ESCAPE_NONE);
-	}
-
-	public String parse(Hashtable<?, ?> params)
+	@Override
+    public String parse(Hashtable<?, ?> params)
 	{
 		String value = null;
 
@@ -106,12 +112,6 @@ public class Var extends Element
 			return value;
 	}
 
-	public String typeOfParam(String param)
-			throws NoSuchElementException
-	{
-		throw new NoSuchElementException(param);
-	}
-
 	private String stringify(Object o)
 	{
 		if(o == null)
@@ -131,9 +131,11 @@ public class Var extends Element
 		else
 			throw new ClassCastException("Unknown object type: " + cname);
 	}
-
-	// Private data starts here
-	private int escape=ESCAPE_NONE;
-	private String default_value=null;
+	@Override
+    public String typeOfParam(String param)
+			throws NoSuchElementException
+	{
+		throw new NoSuchElementException(param);
+	}
 
 }

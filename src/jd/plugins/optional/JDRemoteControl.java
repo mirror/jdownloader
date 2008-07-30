@@ -63,94 +63,6 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
-    public static int getAddonInterfaceVersion() {
-        return 0;
-    }
-
-    private String version = "0.5.0.5";
-    private DecimalFormat f = new DecimalFormat("#0.00");
-
-    private Server server;
-    @SuppressWarnings("unused")
-    private AbstractHandler serverHandler;
-
-    
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    
- 
-
-    
-    public String getPluginName() {
-        return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean initAddon() {
-        if (JDUtilities.getJavaVersion() >= 1.5) {
-
-            logger.info("RemoteControl OK");
-            initRemoteControl();
-            JDUtilities.getController().addControlListener(this);
-            return true;
-        } else {
-            logger.severe("Error initializing RemoteControl");
-            return false;
-        }
-    }
-
-    public void initRemoteControl() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
-        cfg.setDefaultValue(10025);
-
-        try {
-            server = new Server(this.getProperties().getIntegerProperty("PORT", 10025));
-            server.setHandler(new Serverhandler());
-            server.start();
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        if (server == null) return;
-        try {
-            if (this.server.isStarted() || this.server.isStarting()) {
-                server.stop();
-                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " stopped");
-            } else {
-                server = new Server(this.getProperties().getIntegerProperty("PORT", 10025));
-                server.setHandler(new Serverhandler());
-                server.start();
-                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " started on port " + this.getProperties().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + this.getProperties().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Toggle Start/Stop", 0).setActionListener(this));
-        return menu;
-    }
-
     class Serverhandler extends AbstractHandler {
 
         public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException, ServletException {
@@ -297,7 +209,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 infovector.add("Open OpenContainer Dialog");
 
                 response.getWriter().println(
-                        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" + "\"http://www.w3.org/TR/html4/strict.dtd\">" + "<html>" + "<head>" + "<title>JDRemoteControl Help</title>" + "<style type=\"text/css\">" + "a {" + "    font-size: 14px;" + "    text-decoration: none;" + "    background: none;" + "    color: #599ad6;" + "}" + "a:hover {" + "    text-decoration: underline;" + "    color:#333333;" + "}" + "body {" + "    color: #333333;" + "    background:#f0f0f0;" + "    font-family: Verdana, Arial, Helvetica, sans-serif;" + "    font-size: 14px;" + "    vertical-align: top;" + "  }" + "</style>" + "</head>" + "<body><p><br />" + "<b>JDRemoteControl " + version + "<br />" + "<br />" + "Usage:</b><br />&nbsp;<br />" + "1)Replace %X% with your value<br />" + "Sample: /action/save/container/C:\\backup.dlc <br />" + "2)Replace (true|false) with true or false<br />"
+                        "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" + "\"http://www.w3.org/TR/html4/strict.dtd\">" + "<html>" + "<head>" + "<title>JDRemoteControl Help</title>" + "<style type=\"text/css\">" + "a {" + "    font-size: 14px;" + "    text-decoration: none;" + "    background: none;" + "    color: #599ad6;" + "}" + "a:hover {" + "    text-decoration: underline;" + "    color:#333333;" + "}" + "body {" + "    color: #333333;" + "    background:#f0f0f0;" + "    font-family: Verdana, Arial, Helvetica, sans-serif;" + "    font-size: 14px;" + "    vertical-align: top;" + "  }" + "</style>" + "</head>" + "<body><p><br />" + "<b>JDRemoteControl " + getVersion() + "<br />" + "<br />" + "Usage:</b><br />&nbsp;<br />" + "1)Replace %X% with your value<br />" + "Sample: /action/save/container/C:\\backup.dlc <br />" + "2)Replace (true|false) with true or false<br />"
                                 + "Sample: /action/set/clipboard/true" + "<br />" + "<table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
 
@@ -396,7 +308,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Get RemoteControlVersion
             else if (request.getRequestURI().equals("/get/rcversion")) {
-                response.getWriter().println(version);
+                response.getWriter().println(getVersion());
             }
 
             // Get SpeedLimit
@@ -930,6 +842,94 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
 
             ((Request) request).setHandled(true);
+        }
+    }
+
+    public static int getAddonInterfaceVersion() {
+        return 0;
+    }
+    private DecimalFormat f = new DecimalFormat("#0.00");
+
+    private Server server;
+    @SuppressWarnings("unused")
+    private AbstractHandler serverHandler;
+
+    
+    // private String version = "0.5.0.5";
+
+    
+    
+ 
+
+    
+    public void actionPerformed(ActionEvent e) {
+        if (server == null) return;
+        try {
+            if (this.server.isStarted() || this.server.isStarting()) {
+                server.stop();
+                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " stopped");
+            } else {
+                server = new Server(this.getProperties().getIntegerProperty("PORT", 10025));
+                server.setHandler(new Serverhandler());
+                server.start();
+                JDUtilities.getGUI().showMessageDialog(this.getPluginName() + " started on port " + this.getProperties().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + this.getProperties().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        menu.add(new MenuItem("Toggle Start/Stop", 0).setActionListener(this));
+        return menu;
+    }
+
+    
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
+    }
+
+    
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    public boolean initAddon() {
+        if (JDUtilities.getJavaVersion() >= 1.5) {
+
+            logger.info("RemoteControl OK");
+            initRemoteControl();
+            JDUtilities.getController().addControlListener(this);
+            return true;
+        } else {
+            logger.severe("Error initializing RemoteControl");
+            return false;
+        }
+    }
+
+    public void initRemoteControl() {
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
+        cfg.setDefaultValue(10025);
+
+        try {
+            server = new Server(this.getProperties().getIntegerProperty("PORT", 10025));
+            server.setHandler(new Serverhandler());
+            server.start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

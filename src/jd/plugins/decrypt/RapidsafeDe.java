@@ -37,41 +37,15 @@ import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
     final static String host = "rapidsafe.de";
-    private String version = "0.1";
     private Pattern patternSupported = Pattern.compile("http://.+rapidsafe\\.de", Pattern.CASE_INSENSITIVE);
+    // private String version = "0.1";
 
     public RapidsafeDe() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-  
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (!parameter.endsWith("/")) parameter += "/";
@@ -121,7 +95,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                         // liest alles ein und legt alle daten hexcodiert
                         // ab. Das ermöglicht ascii regex suche
                         while (input.read(b) != -1) {
-                            String s = Integer.toHexString((byte) b[0] & 0x000000ff);
+                            String s = Integer.toHexString(b[0] & 0x000000ff);
                             sb.append((s.length() == 1 ? "0" : "") + s + "");
                         }
                         input.close();
@@ -204,15 +178,48 @@ public class RapidsafeDe extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
+    }
+
+  
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
     private String spin(String string) {
         String ret = "";
         for (int i = string.length(); i >= 2; i -= 2)
             ret += string.substring(i - 2, i);
         return ret;
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
     }
 }

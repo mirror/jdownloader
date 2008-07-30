@@ -34,49 +34,55 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    private static final String CONFIGNAME = "pluginsForHost";
     private static final String AGB_CHECKED = "AGB_CHECKED";
+    private static final String CONFIGNAME = "pluginsForHost";
+    private static int currentConnections = 0;
+
+    private static HashMap<Class,Integer>HOSTER_WAIT_TIMES = new HashMap<Class,Integer>();
+    private static HashMap<Class,Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class,Long>();
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     // public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
     // private static long END_OF_DOWNLOAD_LIMIT = 0;
     // public abstract URLConnection getURLConnection();
-
-    private int retryCount = 0;
+    protected DownloadInterface dl = null;
     // private int retryOnErrorCount = 0;
     private int maxConnections = 50;
-    private static int currentConnections = 0;
-    protected DownloadInterface dl = null;
-    private static HashMap<Class,Integer>HOSTER_WAIT_TIMES = new HashMap<Class,Integer>();
-    private static HashMap<Class,Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class,Long>();
+    private int retryCount = 0;
 
-    /**
-     * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
-     * etc)
-     */
-    public abstract void reset();
+    public boolean[] checkLinks(DownloadLink[] urls) {
+        return null;
 
-    public abstract void handle(DownloadLink link) throws Exception;
+    }
 
+    @Override
+    public void clean() {
+        this.requestInfo = null;
+        this.request = null;
+        this.dl = null;
+
+        super.clean();
+    }
+
+    @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    public String getPluginNameExtension(DownloadLink link) {
-        return "";
-    }
+    public abstract String getAGBLink();
 
     /**
-     * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
-     * Neustart vor. Sollte nicht überschrieben werden
+     * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei
+     * -1 wird ein reconnect durchgeführt
+     * 
+     * @return
      */
-    public final void resetPlugin() {
-        // this.resetSteps();
-        this.reset();
-        // this.aborted = false;
+    public long getBotWaittime() {
+
+        return -1;
     }
 
-    public void resetPluginGlobals() {
-        resetHosterWaitTime();
+    public int getChunksPerFile() {
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
     }
 
     // /**
@@ -113,9 +119,8 @@ public abstract class PluginForHost extends Plugin {
     // return true;
     // }
 
-    public boolean[] checkLinks(DownloadLink[] urls) {
-        return null;
-
+    public int getCurrentConnections() {
+        return currentConnections;
     }
 
     /**
@@ -193,21 +198,22 @@ public abstract class PluginForHost extends Plugin {
     // public abstract PluginStep doStep( DownloadLink parameter) throws
     // Exception;
 
-    public abstract int getMaxSimultanDownloadNum();
-
-    public abstract String getAGBLink();
-
-    public boolean isAGBChecked() {
-        if (!this.getProperties().hasProperty(AGB_CHECKED)) {
-            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + this.getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + this.getHost(), false));
-            getProperties().save();
-        }
-        return getProperties().getBooleanProperty(AGB_CHECKED, false);
+    public int getFreeConnections() {
+        return Math.max(1, maxConnections - currentConnections);
     }
 
-    public void setAGBChecked(boolean value) {
-        getProperties().setProperty(AGB_CHECKED, value);
-        getProperties().save();
+    /**
+     * Wird nicht gebraucht muss aber implementiert werden.
+     */
+    
+    @Override
+    public String getLinkName() {
+
+        return null;
+    }
+
+    public int getMaxConnections() {
+        return maxConnections;
     }
 
     // public void abort(){
@@ -224,6 +230,8 @@ public abstract class PluginForHost extends Plugin {
     public int getMaxRetries() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
     }
+
+    public abstract int getMaxSimultanDownloadNum();
 
     // public int getMaxRetriesOnError() {
     // return
@@ -309,64 +317,63 @@ public abstract class PluginForHost extends Plugin {
     //
     // }
 
-    /**
-     * Wird nicht gebraucht muss aber implementiert werden.
-     */
-    
-    public String getLinkName() {
-
-        return null;
+    public String getPluginNameExtension(DownloadLink link) {
+        return "";
     }
 
-    /**
-     * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei
-     * -1 wird ein reconnect durchgeführt
-     * 
-     * @return
-     */
-    public long getBotWaittime() {
-
-        return -1;
-    }
-
-    public void clean() {
-        this.requestInfo = null;
-        this.request = null;
-        this.dl = null;
-
-        super.clean();
-    }
-
-    public int getMaxConnections() {
-        return maxConnections;
-    }
-
-    public void setMaxConnections(int maxConnections) {
-        this.maxConnections = maxConnections;
-    }
-
-    public int getCurrentConnections() {
-        return currentConnections;
-    }
-
-    public synchronized void setCurrentConnections(int CurrentConnections) {
-        currentConnections = CurrentConnections;
-    }
-
-    public int getChunksPerFile() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
-    }
-
-    public int getFreeConnections() {
-        return Math.max(1, maxConnections - currentConnections);
+    public int getRemainingHosterWaittime() {
+        // TODO Auto-generated method stub
+        if(!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass()))return 0;
+        return Math.max(0,(int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
 
     public int getRetryCount() {
         return retryCount;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
+    public abstract void handle(DownloadLink link) throws Exception;
+
+    public boolean isAGBChecked() {
+        if (!this.getProperties().hasProperty(AGB_CHECKED)) {
+            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + this.getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + this.getHost(), false));
+            getProperties().save();
+        }
+        return getProperties().getBooleanProperty(AGB_CHECKED, false);
+    }
+
+    /**
+     * Stellt das Plugin in den Ausgangszustand zurück (variablen intialisieren
+     * etc)
+     */
+    public abstract void reset();
+
+    public void resetHosterWaitTime() {
+        HOSTER_WAIT_TIMES.put(this.getClass(), 0);
+        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
+
+    }
+
+    /**
+     * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
+     * Neustart vor. Sollte nicht überschrieben werden
+     */
+    public final void resetPlugin() {
+        // this.resetSteps();
+        this.reset();
+        // this.aborted = false;
+    }
+
+    public void resetPluginGlobals() {
+        resetHosterWaitTime();
+    }
+
+    public void setAGBChecked(boolean value) {
+        getProperties().setProperty(AGB_CHECKED, value);
+        getProperties().save();
+    }
+
+    public synchronized void setCurrentConnections(int CurrentConnections) {
+        currentConnections = CurrentConnections;
     }
 
     //
@@ -390,6 +397,22 @@ public abstract class PluginForHost extends Plugin {
     // return Math.max(0, END_OF_DOWNLOAD_LIMIT - System.currentTimeMillis());
     // }
 
+    public void setHosterWaittime(int milliSeconds) {
+        
+        
+        HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
+        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
+
+    }
+
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
     protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
         while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
@@ -401,26 +424,6 @@ public abstract class PluginForHost extends Plugin {
         }
 
         downloadLink.getLinkStatus().setStatusText(null);
-    }
-
-    public void setHosterWaittime(int milliSeconds) {
-        
-        
-        HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
-        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
-
-    }
-
-    public int getRemainingHosterWaittime() {
-        // TODO Auto-generated method stub
-        if(!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass()))return 0;
-        return Math.max(0,(int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
-    }
-
-    public void resetHosterWaitTime() {
-        HOSTER_WAIT_TIMES.put(this.getClass(), 0);
-        HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
-
     }
 
     // public void handleDownloadLimit( DownloadLink downloadLink) {

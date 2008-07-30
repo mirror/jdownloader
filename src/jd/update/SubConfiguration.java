@@ -31,14 +31,23 @@ public class SubConfiguration extends Property implements Serializable {
 
 
 
-    /**
+    private static final long serialVersionUID = 7803718581558607222L;
+	/**
 	 * 
 	 */
     private static HashMap<String,SubConfiguration> subConfigs=new HashMap<String,SubConfiguration>();
-	private static final long serialVersionUID = 7803718581558607222L;
-	//private transient Logger        logger;
-    private String name;
+	public static SubConfiguration getSubConfig(String name){
+        if(subConfigs.containsKey(name))return subConfigs.get(name);
+        
+        SubConfiguration cfg = new SubConfiguration(name);
+        subConfigs.put(name, cfg);
+        return cfg;
+        
+    
+    }
 
+    //private transient Logger        logger;
+    private String name;
     /**
      * 
      */
@@ -56,15 +65,6 @@ public class SubConfiguration extends Property implements Serializable {
     }
     public void save(){
         utils.saveObject(this.getProperties(),  new File("config/"+name+".cfg"));
-    }
-    public static SubConfiguration getSubConfig(String name){
-        if(subConfigs.containsKey(name))return subConfigs.get(name);
-        
-        SubConfiguration cfg = new SubConfiguration(name);
-        subConfigs.put(name, cfg);
-        return cfg;
-        
-    
     }
 
 }

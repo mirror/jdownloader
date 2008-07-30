@@ -30,6 +30,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     }
 
     
+    @Override
     public void fireTableChanged(int id, Object param) {
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
         internalTreeTable.fireTableChanged(id, param);
@@ -43,6 +44,10 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         }
     }
 
+    public void moveSelectedItems(int id) {
+        internalTreeTable.moveSelectedItems(id);
+    }
+
     public void removeSelectedLinks() {
         Vector<DownloadLink> links = internalTreeTable.getSelectedDownloadLinks();
         Vector<FilePackage> fps = internalTreeTable.getSelectedFilePackages();
@@ -50,10 +55,6 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
             links.addAll(it.next().getDownloadLinks());
         JDUtilities.getController().removeDownloadLinks(links);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
-    }
-
-    public void moveSelectedItems(int id) {
-        internalTreeTable.moveSelectedItems(id);
     }
 
 }

@@ -30,47 +30,10 @@ import org.xml.sax.InputSource;
 
 public class CLRLoader {
 
-    public CLRLoader() {
-    }
+    private static Vector<String> IDS;
 
     static Logger logger = JDUtilities.getLogger();
     private static Vector<String> MANUES;
-    private static Vector<String> IDS;
-
-    public static void main(String args[]) {
-        MANUES = new Vector<String>();
-        IDS = new Vector<String>();
-        Vector<String[]> res = new Vector<String[]>();
-        try {
-            RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
-
-            logger.info("" + ri);
-            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
-
-            for (int i=matches.size()-1;i>=0;i--) {
-                ArrayList<String> next = matches.get(i);
-                if (IDS.contains(next.get(0))) continue;
-                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
-
-                String[] ret = createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
-                if (ret != null) {
-                    res.add(ret);
-                    IDS.add(next.get(0));
-                }
-            }
-        } catch (MalformedURLException e) {
-            
-            e.printStackTrace();
-        } catch (IOException e) {
-            
-            e.printStackTrace();
-        }
-        
-        
-        saveTolist(res, new File("c:/clrList.xml"));
-
-    }
-
     private static String[] createLiveHeader(String htmlCode, String string, String string2) {
         logger.info(htmlCode);
 
@@ -213,6 +176,40 @@ if(router.trim().length()==0){
         System.out.println(arg);
     }
 
+    public static void main(String args[]) {
+        MANUES = new Vector<String>();
+        IDS = new Vector<String>();
+        Vector<String[]> res = new Vector<String[]>();
+        try {
+            RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
+
+            logger.info("" + ri);
+            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
+
+            for (int i=matches.size()-1;i>=0;i--) {
+                ArrayList<String> next = matches.get(i);
+                if (IDS.contains(next.get(0))) continue;
+                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
+
+                String[] ret = createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
+                if (ret != null) {
+                    res.add(ret);
+                    IDS.add(next.get(0));
+                }
+            }
+        } catch (MalformedURLException e) {
+            
+            e.printStackTrace();
+        } catch (IOException e) {
+            
+            e.printStackTrace();
+        }
+        
+        
+        saveTolist(res, new File("c:/clrList.xml"));
+
+    }
+
     @SuppressWarnings("unchecked")
 	private static void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
@@ -236,5 +233,8 @@ if(router.trim().length()==0){
 
         }
         JDUtilities.saveObject(null, list, file, null, null, true);
+    }
+
+    public CLRLoader() {
     }
 }

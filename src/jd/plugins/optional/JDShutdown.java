@@ -35,39 +35,15 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
+    private static final int count = 60;
+
+    private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
     public static int getAddonInterfaceVersion() {
         return 0;
     }
 
-    private static final int count = 60;
-    private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
-
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-  
-
-    
-    public String getPluginName() {
-        return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean initAddon() {
-
-        JDUtilities.getController().addControlListener(this);
-        logger.info("Shutdown OK");
-        return true;
-
-    }
-
+    @Override
     public void actionPerformed(ActionEvent e) {
         SubConfiguration cfg = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
         MenuItem mi = (MenuItem) e.getSource();
@@ -83,12 +59,24 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
+  
+
     
-    public String getRequirements() {
-        return "JRE 1.5+";
+    @Override
+    public void controlEvent(ControlEvent event) {
+        super.controlEvent(event);
+        if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
+            if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
+                if (((InteractionTrigger) event.getSource()) == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
+                    JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").setProperty(PROPERTY_ENABLED, false);
+                    shutDown();
+                }
+            }
+        }
     }
 
     
+    @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -103,19 +91,40 @@ public class JDShutdown extends PluginOptional {
     }
 
     
-    public void onExit() {
+    @Override
+    public String getCoder() {
+        return "JD-Team";
     }
 
-    public void controlEvent(ControlEvent event) {
-        super.controlEvent(event);
-        if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
-            if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
-                if (((InteractionTrigger) event.getSource()) == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
-                    JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").setProperty(PROPERTY_ENABLED, false);
-                    shutDown();
-                }
-            }
-        }
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
+    }
+
+    
+    @Override
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    
+    @Override
+    public boolean initAddon() {
+
+        JDUtilities.getController().addControlListener(this);
+        logger.info("Shutdown OK");
+        return true;
+
+    }
+
+    @Override
+    public void onExit() {
     }
 
     public void shutDown() {

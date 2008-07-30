@@ -9,13 +9,38 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
-    private Logger logger = JDUtilities.getLogger();
+    class StreamObserver extends Thread {
+
+        private BufferedReader reader;
+        private StringBuffer sb;
+
+        public StreamObserver(InputStream stream, StringBuffer sb) {
+            this.reader = new BufferedReader(new InputStreamReader(stream));
+            this.sb = sb;
+        }
+
+        @Override
+        public void run() {
+            String line;
+            try {
+                while ((line = reader.readLine()) != null) {
+                    System.out.println(line);
+                    sb.append(line + "\r\n");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
     private String command;
-    private String runIn;
+    private Logger logger = JDUtilities.getLogger();
     private ArrayList<String> parameter;
-    private int waitTimeout = 60;
+    private String runIn;
     private StringBuffer sb;
     private StringBuffer sbe;
+
+    private int waitTimeout = 60;
 
     public Executer(String command) {
         this.command = command;
@@ -35,6 +60,31 @@ public class Executer extends Thread {
             parameter.add(p);
     }
 
+    public String getCommand() {
+        return command;
+    }
+
+    public String getErrorStream() {
+        return sbe.toString();
+    }
+
+    public ArrayList<String> getParameter() {
+        return parameter;
+    }
+
+    public String getRunin() {
+        return runIn;
+    }
+
+    public String getStream() {
+        return sb.toString();
+    }
+
+    public int getWaitTimeout() {
+        return waitTimeout;
+    }
+
+    @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
             logger.severe("Execute Parameter error: No Command");
@@ -101,6 +151,22 @@ public class Executer extends Thread {
         }
     }
 
+    public void setCommand(String command) {
+        this.command = command;
+    }
+
+    public void setParameter(ArrayList<String> parameter) {
+        this.parameter = parameter;
+    }
+
+    public void setRunin(String runin) {
+        this.runIn = runin;
+    }
+
+    public void setWaitTimeout(int waitTimeout) {
+        this.waitTimeout = waitTimeout;
+    }
+
     public void waitTimeout() {
         while (isAlive()) {
             try {
@@ -111,69 +177,5 @@ public class Executer extends Thread {
             }
 
         }
-    }
-
-    public String getErrorStream() {
-        return sbe.toString();
-    }
-
-    public String getStream() {
-        return sb.toString();
-    }
-
-    public String getCommand() {
-        return command;
-    }
-
-    public void setCommand(String command) {
-        this.command = command;
-    }
-
-    public String getRunin() {
-        return runIn;
-    }
-
-    public void setRunin(String runin) {
-        this.runIn = runin;
-    }
-
-    public ArrayList<String> getParameter() {
-        return parameter;
-    }
-
-    public void setParameter(ArrayList<String> parameter) {
-        this.parameter = parameter;
-    }
-
-    public int getWaitTimeout() {
-        return waitTimeout;
-    }
-
-    public void setWaitTimeout(int waitTimeout) {
-        this.waitTimeout = waitTimeout;
-    }
-
-    class StreamObserver extends Thread {
-
-        private BufferedReader reader;
-        private StringBuffer sb;
-
-        public StreamObserver(InputStream stream, StringBuffer sb) {
-            this.reader = new BufferedReader(new InputStreamReader(stream));
-            this.sb = sb;
-        }
-
-        public void run() {
-            String line;
-            try {
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                    sb.append(line + "\r\n");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
     }
 }

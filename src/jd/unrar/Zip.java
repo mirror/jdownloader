@@ -27,17 +27,17 @@ import java.util.zip.ZipOutputStream;
 import jd.parser.Regex;
 
 public class Zip {
-    private File[] srcFiles;
     private File destinationFile;
-    /**
-     * Füllt die zipDatei auf die gewünschte größe auf
-     */
-    public int fillSize = 0;
     /**
      * Dateien/Ordner die nicht hinzugefügt werden sollen
      */
     public LinkedList<File> excludeFiles = new LinkedList<File>();
     private Pattern excludeFilter;
+    /**
+     * Füllt die zipDatei auf die gewünschte größe auf
+     */
+    public int fillSize = 0;
+    private File[] srcFiles;
 
     /**
      * 
@@ -61,6 +61,48 @@ public class Zip {
     public Zip(File[] srcFiles, File destinationFile) {
         this.srcFiles = srcFiles;
         this.destinationFile = destinationFile;
+
+    }
+
+    private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
+        if (srcFile.endsWith("Thumbs.db")) return;
+        if (Regex.matches(srcFile, excludeFilter)) {
+            System.out.println("Filtered: " + srcFile);
+            return;
+        }
+        File folder = new File(srcFile);
+        if (excludeFiles.contains(folder)) return;
+        if (folder.isDirectory()) {
+            addFolderToZip(path, srcFile, zip);
+        } else {
+            byte[] buf = new byte[1024];
+            int len;
+            FileInputStream in = new FileInputStream(srcFile);
+            zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
+            while ((len = in.read(buf)) > 0) {
+                zip.write(buf, 0, len);
+            }
+        }
+    }
+
+    private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
+        File folder = new File(srcFolder);
+        if (excludeFiles.contains(folder)) return;
+        for (String fileName : folder.list()) {
+            if (Regex.matches(fileName, excludeFilter)) {
+                System.out.println("Filtered: " + fileName);
+                continue;
+            }
+            if (path.equals("")) {
+                addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
+            } else {
+                addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
+            }
+        }
+    }
+
+    public void setExcludeFilter(Pattern compile) {
+        excludeFilter = compile;
 
     }
 
@@ -104,48 +146,6 @@ public class Zip {
             destinationFile.delete();
             newTarget.renameTo(destinationFile);
         }
-
-    }
-
-    private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
-        if (srcFile.endsWith("Thumbs.db")) return;
-        if (Regex.matches(srcFile, excludeFilter)) {
-            System.out.println("Filtered: " + srcFile);
-            return;
-        }
-        File folder = new File(srcFile);
-        if (excludeFiles.contains(folder)) return;
-        if (folder.isDirectory()) {
-            addFolderToZip(path, srcFile, zip);
-        } else {
-            byte[] buf = new byte[1024];
-            int len;
-            FileInputStream in = new FileInputStream(srcFile);
-            zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
-            while ((len = in.read(buf)) > 0) {
-                zip.write(buf, 0, len);
-            }
-        }
-    }
-
-    private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
-        File folder = new File(srcFolder);
-        if (excludeFiles.contains(folder)) return;
-        for (String fileName : folder.list()) {
-            if (Regex.matches(fileName, excludeFilter)) {
-                System.out.println("Filtered: " + fileName);
-                continue;
-            }
-            if (path.equals("")) {
-                addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
-            } else {
-                addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
-            }
-        }
-    }
-
-    public void setExcludeFilter(Pattern compile) {
-        excludeFilter = compile;
 
     }
 }

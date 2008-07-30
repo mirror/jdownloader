@@ -25,30 +25,55 @@ import jd.utils.JDTheme;
 
 public class TreeTablePaneUI extends BasicTableUI {
 
-    public static Color EVEN_ROW_COLOR;
+    class OpaqueRenderPane extends CellRendererPane {
 
-    public static Color ODD_ROW_COLOR;
+        /**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 
-    public static Color SELECTED_ROW_COLOR;
+		@Override
+        public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
+            if (c instanceof JComponent) {
+                JComponent vComponent = (JComponent) c;
+                vComponent.setOpaque(false);
+            }
+            try {
+                super.paintComponent(g, c, p, x, y, w, h, shouldValidate);
+            } catch (Exception e) {
+            }
+        }
+    }
 
-    public static Color GRID_COLOR;
-
-    public static Color PACKAGE_ROW_COLOR;
-
-    public static Color SELECTED_ROW_BORDER_COLOR;
+    private static Color COLOR_DISABLED;
 
     private static Color COLOR_DONE;
 
     private static Color COLOR_ERROR;
 
-    private static Color COLOR_DISABLED;
-
     private static Color COLOR_WAIT;
+
+    public static Color EVEN_ROW_COLOR;
+
+    public static Color GRID_COLOR;
+
+    public static Color ODD_ROW_COLOR;
+
+    public static Color PACKAGE_ROW_COLOR;
+
+    public static Color SELECTED_ROW_BORDER_COLOR;
 
     // ------------------------------------------------------------------------------------------------------------------
     // Custom installation methods
     // ------------------------------------------------------------------------------------------------------------------
 
+    public static Color SELECTED_ROW_COLOR;
+
+    // ------------------------------------------------------------------------------------------------------------------
+    // Custom painting methods
+    // ------------------------------------------------------------------------------------------------------------------
+
+    @Override
     protected void installDefaults() {
 
         /* Ist für Nimbus LAF auskommentiert */
@@ -96,10 +121,19 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     }
 
-    // ------------------------------------------------------------------------------------------------------------------
-    // Custom painting methods
-    // ------------------------------------------------------------------------------------------------------------------
+    @Override
+    public void installUI(JComponent c) {
+        super.installUI(c);
 
+        table.remove(rendererPane);
+
+        rendererPane = new OpaqueRenderPane();
+        table.add(rendererPane);
+
+        ((DownloadTreeTable) table).setTreeCellRenderer(new TreeTableCellRenderer());
+    }
+
+    @Override
     public void paint(Graphics g, JComponent c) {
 
         int vRowHeight = c.getFont().getSize() + 6;
@@ -204,36 +238,6 @@ public class TreeTablePaneUI extends BasicTableUI {
             x += vColumn.getWidth();
             if ((x >= clip.x) && (x <= clip.x + clip.width)) {
                 g.drawLine(x - 1, clip.y, x - 1, clip.y + clip.height);
-            }
-        }
-    }
-
-    public void installUI(JComponent c) {
-        super.installUI(c);
-
-        table.remove(rendererPane);
-
-        rendererPane = new OpaqueRenderPane();
-        table.add(rendererPane);
-
-        ((DownloadTreeTable) table).setTreeCellRenderer(new TreeTableCellRenderer());
-    }
-
-    class OpaqueRenderPane extends CellRendererPane {
-
-        /**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-
-		public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
-            if (c instanceof JComponent) {
-                JComponent vComponent = (JComponent) c;
-                vComponent.setOpaque(false);
-            }
-            try {
-                super.paintComponent(g, c, p, x, y, w, h, shouldValidate);
-            } catch (Exception e) {
             }
         }
     }

@@ -18,43 +18,21 @@ public class Reconnecter {
 
 
     private static String CURRENT_IP = "";
-    private static long lastIPUpdate = 0;
-    private static boolean LAST_RECONNECT_SUCCESS = false;
     private static boolean IS_RECONNECTING = false;
-    private static int RECONNECT_REQUESTS = 0;
+    private static boolean LAST_RECONNECT_SUCCESS = false;
+    private static long lastIPUpdate = 0;
     private static Logger logger = JDUtilities.getLogger();
+    private static int RECONNECT_REQUESTS = 0;
 
-    /**
-     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
-     * 
-     * @return
-     */
-    public static void requestReconnect() {
-        RECONNECT_REQUESTS++;
-
-    }
-
-    public static boolean waitForReconnect() {
-        requestReconnect();
-        return true;
-    }
-
-    private static int waitForRunningRequests() {
-        int wait = 0;
-        while (IS_RECONNECTING) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-            }
-            wait += 500;
-
+    private static boolean checkExternalIPChange() {
+        lastIPUpdate = System.currentTimeMillis();
+        String tmp = CURRENT_IP;
+        CURRENT_IP = JDUtilities.getIPAddress();
+        if (CURRENT_IP != null &&tmp.length()>0&& !tmp.equals(CURRENT_IP)) {
+            logger.info("Detected external IP Change.");
+            return true;
         }
-        return wait;
-
-    }
-
-    public static boolean isGlobalDisabled() {
-        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+        return false;
     }
 
     public static boolean doReconnect() {
@@ -115,6 +93,25 @@ public class Reconnecter {
         return ipChangeSuccess;
     }
 
+    public static boolean doReconnectIfRequested() {
+        if (RECONNECT_REQUESTS > 0) { return doReconnect(); }
+        return false;
+    }
+
+    public static boolean isGlobalDisabled() {
+        return JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
+    }
+
+    /**
+     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
+     * 
+     * @return
+     */
+    public static void requestReconnect() {
+        RECONNECT_REQUESTS++;
+
+    }
+
     private static void resetAllLinks() {
         Vector<FilePackage> packages = JDUtilities.getController().getPackages();
         synchronized (packages) {
@@ -128,7 +125,7 @@ public class Reconnecter {
                   nextDownloadLink = it2.next();
                   if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0) {
                       nextDownloadLink.getLinkStatus().resetWaitTime();
-                      logger.finer("REset GLOBALS: " + ((PluginForHost) nextDownloadLink.getPlugin()));
+                      logger.finer("REset GLOBALS: " + (nextDownloadLink.getPlugin()));
                       ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
                       nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
 
@@ -137,22 +134,6 @@ public class Reconnecter {
           }
       }
         
-    }
-
-    private static boolean checkExternalIPChange() {
-        lastIPUpdate = System.currentTimeMillis();
-        String tmp = CURRENT_IP;
-        CURRENT_IP = JDUtilities.getIPAddress();
-        if (CURRENT_IP != null &&tmp.length()>0&& !tmp.equals(CURRENT_IP)) {
-            logger.info("Detected external IP Change.");
-            return true;
-        }
-        return false;
-    }
-
-    public static boolean doReconnectIfRequested() {
-        if (RECONNECT_REQUESTS > 0) { return doReconnect(); }
-        return false;
     }
 
     public static boolean waitForNewIP(long i) {
@@ -171,6 +152,25 @@ public class Reconnecter {
         }
 
         return ret;
+    }
+
+    public static boolean waitForReconnect() {
+        requestReconnect();
+        return true;
+    }
+
+    private static int waitForRunningRequests() {
+        int wait = 0;
+        while (IS_RECONNECTING) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+            }
+            wait += 500;
+
+        }
+        return wait;
+
     }
 
 }

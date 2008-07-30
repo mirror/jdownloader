@@ -25,6 +25,8 @@ import java.io.File;
 
 public abstract class AxeWriterWorker extends AxeWorker
 {
+    protected abstract boolean checkNoOverwrite (File f);
+
     protected String formatWidth (int n, int nWidth)
     {
         String s = Integer.toString(n);
@@ -33,6 +35,4 @@ public abstract class AxeWriterWorker extends AxeWorker
 
         return s;
     }
-
-    protected abstract boolean checkNoOverwrite (File f);
 }

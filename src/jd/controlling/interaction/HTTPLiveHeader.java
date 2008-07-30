@@ -66,10 +66,18 @@ import sun.misc.BASE64Encoder;
 public class HTTPLiveHeader extends Interaction {
 
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = 5388179522151088255L;
+    private class InternalAuthenticator extends Authenticator {
+        private String username, password;
+
+        public InternalAuthenticator(String user, String pass) {
+            username = user;
+            password = pass;
+        }
+
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+        }
+    }
 
 	/**
      * serialVersionUID
@@ -79,20 +87,204 @@ public class HTTPLiveHeader extends Interaction {
    // private static final String      SEPARATOR   = System.getProperty("line.separator");
 
     /**
-     * Maximal 10 versuche
+	 * 
+	 */
+	private static final long serialVersionUID = 5388179522151088255L;
+
+    /**
+     * Gibt das Attribut zu key in childNode zurück
+     * 
+     * @param childNode
+     * @param key
+     * @return String Atribut
      */
-   // private static final int         MAX_RETRIES = 10;
+    public static String getAttribute(Node childNode, String key) {
+        NamedNodeMap att = childNode.getAttributes();
+        if (att == null || att.getNamedItem(key) == null) {
+            logger.severe("ERROR: XML Attribute missing: " + key);
+            return null;
+        }
+        return att.getNamedItem(key).getNodeValue();
+    }
 
-    private int
+    public static void getDatabase() {
+        Vector<String[]> db = new Vector<String[]>();
+        String[] cScript = null;
+        try {
 
-                                     retries     = 0;
+            RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
+//            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
+            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getMatches(1);
+            for (int i = 0; i < cats.length; i++) {
+                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats[i]));
+//                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
+                String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
+                for (int t = 0; t < router.length; t++) {
+                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router[t][0] + "&show=" + router[t][1];
+                    requestInfo = HTTP.getRequest(new URL(endURL));
+                    // s logger.info(requestInfo.getHtmlCode() + "");
 
-    private HashMap<String, String>  variables;
+                    String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getFirstMatch();
+                    
+                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router[t][2]));
+                    if (script == null) {
 
-    private HashMap<String, String>  headerProperties;
+                        cScript = new String[] { router[t][0], router[t][2], code };
+                    }
+                    else {
+                        cScript = new String[] { router[t][0], router[t][2], script };
+                    }
+                    db.add(cScript);
 
-    public static String[] splitLines(String source) {
-        return source.split("\r\n|\r|\n");
+                }
+
+            }
+
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
+        for (int i = db.size() - 1; i >= 0; i--) {
+            if (ch.containsKey(db.get(i)[0] + db.get(i)[1] + db.get(i)[2])) {
+                db.remove(i);
+            }
+            else {
+
+                ch.put(db.get(i)[0] + db.get(i)[1] + db.get(i)[2], true);
+            }
+        }
+        ch.clear();
+        JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
+    }
+
+    public static String[] getParameter(String code) {
+        logger.info("st " + code);
+        //boolean qOpen = false;
+        Vector<String> ret = new Vector<String>();
+        int c = 0;
+        int last = 0;
+        int url = -1;
+        while (true) {
+
+            int l = code.indexOf(" ", c);
+            int s = l;
+
+            if (s == -1) s = code.length();
+            String param = " " + code.substring(last, s).trim() + " ";
+            // logger.info(param);
+            if ((param.split("\"").length + 1) % 2 != 0) {
+                // logger.info("ERROR " + param.split("\"").length);
+                c = s + 1;
+                if (s == code.length()) break;
+                continue;
+            }
+            param = param.trim();
+            if (param.startsWith("\"")) param = param.substring(1, param.length());
+            if (param.endsWith("\"")) param = param.substring(0, param.length() - 1);
+            ret.add(param);
+            if (url < 0) {
+                try {
+                    new URL(param);
+                    url = ret.size();
+                }
+                catch (Exception e) {
+
+                }
+            }
+            c = s + 1;
+            last = c;
+            if (s == code.length()) break;
+
+        }
+        logger.info("" + ret);
+        if (url != 2 && url > 0) {
+            String u = ret.remove(url - 1);
+            ret.add(1, u);
+
+        }
+        return ret.toArray(new String[] {});
+
+    }
+
+    public static String getScriptFromCURL(String code, String name) {
+        String SEPARATOR="\r\n";
+        String ret = "[[[HSRC]]]" + SEPARATOR + "";
+        try {
+            ret += "    [[[STEP]]]" + SEPARATOR + "";
+            ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
+            ret += "    [[[/STEP]]]" + SEPARATOR;
+            String[] lines = Regex.getLines(code);
+            for (int i = 0; i < lines.length; i++) {
+                if (lines[i].trim().toLowerCase().startsWith("curl")) {
+                    try {
+                        String[] params = getParameter(lines[i]);
+                        if (params.length < 2) continue;
+                        String url = params[1];
+                        logger.info(lines[i] + " : " + url);
+//                        String host = new URL(url).getHost();
+                        String path = new URL(url).getFile();
+
+                        // String[] login=new URL(url).getUserInfo().split(":");
+
+                        ret += "    [[[STEP]]]" + SEPARATOR + "";
+                        ret += "        [[[REQUEST]]]" + SEPARATOR + "";
+                        if (lines[i].indexOf("-d ") >= 0) {
+                            ret += "            POST " + path + " HTTP/1.1" + SEPARATOR + "";
+                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+
+                        }
+                        else {
+                            ret += "            GET " + path + " HTTP/1.1" + SEPARATOR + "";
+                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+                        }
+                        for (int t = 2; t < params.length; t++) {
+                            if (params[t].equalsIgnoreCase("-H")) {
+                                t++;
+                                ret += "            "+params[t] + SEPARATOR;
+                            }
+                            else if (params[t].equalsIgnoreCase("-d")) {
+                                t++;
+                                ret += SEPARATOR +  "            "+params[t];
+                            }
+                            else if (params[t].equalsIgnoreCase("-u")) {
+                                t++;
+                                ret +=  "            "+"Authorization: Basic %%%basicauth%%%" + SEPARATOR;
+                            }
+
+                            else if (params[t].equalsIgnoreCase("-b")) {
+                                t++;
+                                ret +=  "            "+"Cookie: %%%Set-Cookie%%%" + SEPARATOR;
+                            }
+                            else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
+                                t++;
+                                ret +=  "            "+"Referer: " + params[t] + SEPARATOR;
+                            }
+                            else {
+                                logger.info("Unknown flag: " + params[t] + " - ");
+                            }
+
+                        }
+                        ret += SEPARATOR + "        [[[/REQUEST]]]" + SEPARATOR;
+                        ret += "    [[[/STEP]]]" + SEPARATOR;
+
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+
+        }
+        ret += "[[[/HSRC]]]" + SEPARATOR;
+        return ret;
     }
 
     /**
@@ -118,35 +310,23 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
-    /**
-     * Gibt das Attribut zu key in childNode zurück
-     * 
-     * @param childNode
-     * @param key
-     * @return String Atribut
-     */
-    public static String getAttribute(Node childNode, String key) {
-        NamedNodeMap att = childNode.getAttributes();
-        if (att == null || att.getNamedItem(key) == null) {
-            logger.severe("ERROR: XML Attribute missing: " + key);
-            return null;
-        }
-        return att.getNamedItem(key).getNodeValue();
-    }
-
-    @SuppressWarnings("unchecked")
-	public Vector<String[]> getLHScripts() {
-        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
-        Vector<String[]> ret = new Vector<String[]>();
-        for (int i = 0; i < list.length; i++) {
-            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"))
-            ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), list[i], true));
-        }
-
-        return ret;
+    public static String[] splitLines(String source) {
+        return source.split("\r\n|\r|\n");
     }
 
     
+    private HashMap<String, String>  headerProperties;
+
+    /**
+     * Maximal 10 versuche
+     */
+   // private static final int         MAX_RETRIES = 10;
+
+    private int
+
+                                     retries     = 0;
+    private HashMap<String, String>  variables;
+
     public boolean doInteraction(Object arg) {
    
         // Hole die Config parameter. Über die Parameterkeys wird in der
@@ -384,206 +564,6 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    public static void getDatabase() {
-        Vector<String[]> db = new Vector<String[]>();
-        String[] cScript = null;
-        try {
-
-            RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
-//            ArrayList<ArrayList<String>> cats = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a href=?cat_select=°>");
-            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getMatches(1);
-            for (int i = 0; i < cats.length; i++) {
-                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + cats[i]));
-//                ArrayList<ArrayList<String>> router = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a class=\"link\" href=?cat_select=°&show=°>°</a>");
-                String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
-                for (int t = 0; t < router.length; t++) {
-                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + router[t][0] + "&show=" + router[t][1];
-                    requestInfo = HTTP.getRequest(new URL(endURL));
-                    // s logger.info(requestInfo.getHtmlCode() + "");
-
-                    String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getFirstMatch();
-                    
-                    String script = getScriptFromCURL(code,JDUtilities.htmlDecode(router[t][2]));
-                    if (script == null) {
-
-                        cScript = new String[] { router[t][0], router[t][2], code };
-                    }
-                    else {
-                        cScript = new String[] { router[t][0], router[t][2], script };
-                    }
-                    db.add(cScript);
-
-                }
-
-            }
-
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-        for (int i = db.size() - 1; i >= 0; i--) {
-            if (ch.containsKey(db.get(i)[0] + db.get(i)[1] + db.get(i)[2])) {
-                db.remove(i);
-            }
-            else {
-
-                ch.put(db.get(i)[0] + db.get(i)[1] + db.get(i)[2], true);
-            }
-        }
-        ch.clear();
-        JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
-    }
-    public static String[] getParameter(String code) {
-        logger.info("st " + code);
-        //boolean qOpen = false;
-        Vector<String> ret = new Vector<String>();
-        int c = 0;
-        int last = 0;
-        int url = -1;
-        while (true) {
-
-            int l = code.indexOf(" ", c);
-            int s = l;
-
-            if (s == -1) s = code.length();
-            String param = " " + code.substring(last, s).trim() + " ";
-            // logger.info(param);
-            if ((param.split("\"").length + 1) % 2 != 0) {
-                // logger.info("ERROR " + param.split("\"").length);
-                c = s + 1;
-                if (s == code.length()) break;
-                continue;
-            }
-            param = param.trim();
-            if (param.startsWith("\"")) param = param.substring(1, param.length());
-            if (param.endsWith("\"")) param = param.substring(0, param.length() - 1);
-            ret.add(param);
-            if (url < 0) {
-                try {
-                    new URL(param);
-                    url = ret.size();
-                }
-                catch (Exception e) {
-
-                }
-            }
-            c = s + 1;
-            last = c;
-            if (s == code.length()) break;
-
-        }
-        logger.info("" + ret);
-        if (url != 2 && url > 0) {
-            String u = ret.remove(url - 1);
-            ret.add(1, u);
-
-        }
-        return ret.toArray(new String[] {});
-
-    }
-
-    public static String getScriptFromCURL(String code, String name) {
-        String SEPARATOR="\r\n";
-        String ret = "[[[HSRC]]]" + SEPARATOR + "";
-        try {
-            ret += "    [[[STEP]]]" + SEPARATOR + "";
-            ret += "        [[[DEFINE routername=\""+name+"\"/]]]" + SEPARATOR + "";
-            ret += "    [[[/STEP]]]" + SEPARATOR;
-            String[] lines = Regex.getLines(code);
-            for (int i = 0; i < lines.length; i++) {
-                if (lines[i].trim().toLowerCase().startsWith("curl")) {
-                    try {
-                        String[] params = getParameter(lines[i]);
-                        if (params.length < 2) continue;
-                        String url = params[1];
-                        logger.info(lines[i] + " : " + url);
-//                        String host = new URL(url).getHost();
-                        String path = new URL(url).getFile();
-
-                        // String[] login=new URL(url).getUserInfo().split(":");
-
-                        ret += "    [[[STEP]]]" + SEPARATOR + "";
-                        ret += "        [[[REQUEST]]]" + SEPARATOR + "";
-                        if (lines[i].indexOf("-d ") >= 0) {
-                            ret += "            POST " + path + " HTTP/1.1" + SEPARATOR + "";
-                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
-
-                        }
-                        else {
-                            ret += "            GET " + path + " HTTP/1.1" + SEPARATOR + "";
-                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
-                        }
-                        for (int t = 2; t < params.length; t++) {
-                            if (params[t].equalsIgnoreCase("-H")) {
-                                t++;
-                                ret += "            "+params[t] + SEPARATOR;
-                            }
-                            else if (params[t].equalsIgnoreCase("-d")) {
-                                t++;
-                                ret += SEPARATOR +  "            "+params[t];
-                            }
-                            else if (params[t].equalsIgnoreCase("-u")) {
-                                t++;
-                                ret +=  "            "+"Authorization: Basic %%%basicauth%%%" + SEPARATOR;
-                            }
-
-                            else if (params[t].equalsIgnoreCase("-b")) {
-                                t++;
-                                ret +=  "            "+"Cookie: %%%Set-Cookie%%%" + SEPARATOR;
-                            }
-                            else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
-                                t++;
-                                ret +=  "            "+"Referer: " + params[t] + SEPARATOR;
-                            }
-                            else {
-                                logger.info("Unknown flag: " + params[t] + " - ");
-                            }
-
-                        }
-                        ret += SEPARATOR + "        [[[/REQUEST]]]" + SEPARATOR;
-                        ret += "    [[[/STEP]]]" + SEPARATOR;
-
-                    }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
-
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
-
-        }
-        ret += "[[[/HSRC]]]" + SEPARATOR;
-        return ret;
-    }
-
-    private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
-        if (requestInfo == null) return;
-
-        // patStr="<title>(.*?)</title>";
-        Pattern pattern = Pattern.compile(patStr);
-
-        // logger.info(requestInfo.getHtmlCode());
-        Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
-        logger.info("Matches: " + matcher.groupCount());
-        if (matcher.find() && matcher.groupCount() > 0) {
-            for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
-                variables.put(keys[i], matcher.group(i + 1));
-                logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
-            }
-        }
-        else {
-            logger.severe("Regular Expression without matches: " + patStr);
-        }
-
-    }
-
     private RequestInfo doRequest(String request) throws MalformedURLException {
         String requestType;
         String path;
@@ -741,6 +721,22 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
+    public String getInteractionName() {
+        return NAME;
+    }
+
+    @SuppressWarnings("unchecked")
+	public Vector<String[]> getLHScripts() {
+        File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"),"router").listFiles();
+        Vector<String[]> ret = new Vector<String[]>();
+        for (int i = 0; i < list.length; i++) {
+            if(list[i].isFile() && list[i].getName().toLowerCase().matches(".*\\.xml$"))
+            ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), list[i], true));
+        }
+
+        return ret;
+    }
+
     private String getModifiedVariable(String key) {
 
         if (key.indexOf(":::") == -1 && headerProperties.containsKey(key)) return headerProperties.get(key);
@@ -778,40 +774,26 @@ public class HTTPLiveHeader extends Interaction {
         return ret;
     }
 
-    private boolean parseError(String string) {
-        this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
-        logger.severe(string);
-        return false;
-    }
-
     
-    public String toString() {
-        return NAME;
-    }
+    private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
+        if (requestInfo == null) return;
 
-    
-    public String getInteractionName() {
-        return NAME;
-    }
+        // patStr="<title>(.*?)</title>";
+        Pattern pattern = Pattern.compile(patStr);
 
-    private class InternalAuthenticator extends Authenticator {
-        private String username, password;
-
-        public InternalAuthenticator(String user, String pass) {
-            username = user;
-            password = pass;
+        // logger.info(requestInfo.getHtmlCode());
+        Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
+        logger.info("Matches: " + matcher.groupCount());
+        if (matcher.find() && matcher.groupCount() > 0) {
+            for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
+                variables.put(keys[i], matcher.group(i + 1));
+                logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
+            }
+        }
+        else {
+            logger.severe("Regular Expression without matches: " + patStr);
         }
 
-        protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password.toCharArray());
-        }
-    }
-
-
-
-    
-    public void run() {
-    // Nichts zu tun. Interaction braucht keinen Thread
     }
 
     
@@ -821,9 +803,27 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
+    private boolean parseError(String string) {
+        this.setCallCode(Interaction.INTERACTION_CALL_ERROR);
+        logger.severe(string);
+        return false;
+    }
+
+
+
     
     public void resetInteraction() {
         retries = 0;
+    }
+
+    
+    public void run() {
+    // Nichts zu tun. Interaction braucht keinen Thread
+    }
+
+    
+    public String toString() {
+        return NAME;
     }
 
 }

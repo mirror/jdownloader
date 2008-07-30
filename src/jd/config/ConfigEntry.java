@@ -28,42 +28,51 @@ import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
 
+    @SuppressWarnings("unused")
+    private static Logger logger = JDUtilities.getLogger();
+
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 7422046260361380162L;
-
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
-    private int type;
-
-    private String label;
     private ActionListener actionListener;
-    private String propertyName;
-    private Property propertyInstance;
-    private Object[] list;
-    private Object defaultValue;
-    private int step = 1;
-    private int start;
-    private int end;
-
-    private boolean enabled = true;    
-
-    private String instantHelp;
-
-    private ConfigContainer container;
-
-    private ConfigEntry conditionEntry;
 
     private String compareOperator;
-
+    private ConfigEntry conditionEntry;
     private Object conditionValue;
+    private ConfigContainer container;
+    private Object defaultValue;
+    private boolean enabled = true;
+    private int end;
+    private PropertyChangeListener guiListener;
+    private String instantHelp;
 
-    // private Object newValue;
+    private String label;    
+
+    private Object[] list;
 
     private Vector<ConfigEntry> listener = new Vector<ConfigEntry>();
 
-    private PropertyChangeListener guiListener;;
+    private Property propertyInstance;
+
+    private String propertyName;
+
+    private int start;
+
+    // private Object newValue;
+
+    private int step = 1;
+
+    private int type;;
+
+    /**
+     * KOnstruktor für Komponenten die nix brauchen. z.B. JSpearator
+     * 
+     * @param type
+     */
+    public ConfigEntry(int type) {
+        this.type = type;
+    }
 
     /**
      * Konstruktor für z.B. Buttons (Label+ Actionlistener)
@@ -84,64 +93,10 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         enabled = true;
     }
 
-    /**
-     * Konstruktor für ein einfaches Label
-     * 
-     * @param type
-     * @param label
-     */
-    public ConfigEntry(int type, String label) {
-        this.type = type;
-        this.label = label;
-        enabled = true;
-    }
-
     public ConfigEntry(int type, ConfigContainer premiumConfig) {
         this.type = type;
         this.container = premiumConfig;
         enabled = true;
-    }
-
-    /**
-     * Konstruktor für z.B. einen Link (label& url
-     * 
-     * 
-     * public ConfigEntry(int type, String label, String link) {
-     */
-
-    public ConfigEntry(int type, String label, String link) {
-        this.type = type;
-        this.propertyName = link;
-        this.label = label;
-        enabled = true;
-    }
-
-    /**
-     * Konstruktor für z.B. ein Textfeld (label& ein eingabefeld
-     * 
-     * @param type
-     *            TYP ID
-     * @param propertyInstance
-     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
-     *            hilfe von propertyName werden Informationen aus ihr gelesen
-     *            und wieder in ihr abgelegt
-     * @param propertyName
-     *            propertyname über den auf einen wert in der propertyInstanz
-     *            zugegriffen wird
-     * @param label
-     *            angezeigtes label
-     */
-    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
-        this.type = type;
-        this.propertyName = propertyName;
-        this.propertyInstance = propertyInstance;
-        this.label = label;
-        enabled = true;
-    }
-
-    public ConfigEntry setEnabled(boolean value) {
-        this.enabled = value;
-        return this;
     }
 
     /**
@@ -167,6 +122,29 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
         this.list = list;
         this.label = label;
+    }
+
+    /**
+     * Konstruktor für z.B. ein Textfeld (label& ein eingabefeld
+     * 
+     * @param type
+     *            TYP ID
+     * @param propertyInstance
+     *            EINE Instanz die von der propertyklasse abgeleitet wurde. mit
+     *            hilfe von propertyName werden Informationen aus ihr gelesen
+     *            und wieder in ihr abgelegt
+     * @param propertyName
+     *            propertyname über den auf einen wert in der propertyInstanz
+     *            zugegriffen wird
+     * @param label
+     *            angezeigtes label
+     */
+    public ConfigEntry(int type, Property propertyInstance, String propertyName, String label) {
+        this.type = type;
+        this.propertyName = propertyName;
+        this.propertyInstance = propertyInstance;
+        this.label = label;
+        enabled = true;
     }
 
     /**
@@ -197,168 +175,29 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
     }
 
     /**
-     * KOnstruktor für Komponenten die nix brauchen. z.B. JSpearator
+     * Konstruktor für ein einfaches Label
      * 
      * @param type
+     * @param label
      */
-    public ConfigEntry(int type) {
+    public ConfigEntry(int type, String label) {
         this.type = type;
-    }
-
-    /**
-     * Gibt den Typ zurück
-     * 
-     * @return Typ des Eintrages
-     */
-    public int getType() {
-        return type;
-    }
-
-    public ConfigEntry setType(int type) {
-        this.type = type;
-        return this;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public ConfigEntry setLabel(String label) {
         this.label = label;
-        return this;
-    }
-
-    public ActionListener getActionListener() {
-        return actionListener;
-    }
-
-    public ConfigEntry setActionListener(ActionListener actionListener) {
-        this.actionListener = actionListener;
-        return this;
-    }
-
-    public String getPropertyName() {
-        return propertyName;
-    }
-
-    public ConfigEntry setPropertyName(String propertyName) {
-        this.propertyName = propertyName;
-        return this;
-    }
-
-    public Property getPropertyInstance() {
-        return propertyInstance;
-    }
-
-    public ConfigEntry setPropertyInstance(Property propertyInstance) {
-        this.propertyInstance = propertyInstance;
-        return this;
-    }
-
-    public Object[] getList() {
-        return list;
-    }
-
-    public ConfigEntry setList(Object[] list) {
-        this.list = list;
-        return this;
-    }
-
-    public Object getDefaultValue() {
-        return defaultValue;
-
+        enabled = true;
     }
 
     /**
-     * Legtd en defaultwert fest, falls in der propertyinstanz keiner gefunden
-     * wurde.
+     * Konstruktor für z.B. einen Link (label& url
      * 
-     * @param value
-     * @return this. damit ist eine Struktur new
-     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
-     *         möglich
+     * 
+     * public ConfigEntry(int type, String label, String link) {
      */
-    public ConfigEntry setDefaultValue(Object value) {
-        defaultValue = value;
-        return this;
 
-    }
-
-    public int getEnd() {
-        return end;
-    }
-
-    public int getStart() {
-        return start;
-    }
-
-    public int getStep() {
-        return step;
-    }
-
-    /**
-     * Setzt die Schrittbreite für alle Komponenten die mit Schritten arbeiten.
-     * z.B. JSpiner
-     * 
-     * @param step
-     * @return this. damit ist eine Struktur new
-     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
-     *         möglich
-     * 
-     */
-    public ConfigEntry setStep(int step) {
-        this.step = step;
-        return this;
-    }
-
-    public ConfigEntry setStart(int start) {
-        this.start = start;
-        return this;
-    }
-
-    public ConfigEntry setEnd(int end) {
-        this.end = end;
-        return this;
-    }
-
-    public boolean isEnabled() {
-
-        return enabled;
-    }
-
-    public ConfigEntry setInstantHelp(String l) {
-        this.instantHelp = l;
-        return this;
-
-    }
-
-    public String getInstantHelp() {
-        return instantHelp;
-    }
-
-    public ConfigContainer getContainer() {
-        return container;
-    }
-
-    public void setContainer(ConfigContainer container) {
-        this.container = container;
-    }
-
-    public ConfigEntry setEnabledCondidtion(ConfigEntry old, String comp, Object value) {
-        setConditionEntry(old);
-        setCompareOperator(comp);
-        setConditionValue(value);
-        return this;
-
-    }
-
-    public ConfigEntry getConditionEntry() {
-        return conditionEntry;
-    }
-
-    public void setConditionEntry(ConfigEntry conditionEntry) {
-        this.conditionEntry = conditionEntry;
-        conditionEntry.addConditionListener(this);
+    public ConfigEntry(int type, String label, String link) {
+        this.type = type;
+        this.propertyName = link;
+        this.label = label;
+        enabled = true;
     }
 
     private void addConditionListener(ConfigEntry configEntry) {
@@ -377,45 +216,78 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
     }
 
+    public ActionListener getActionListener() {
+        return actionListener;
+    }
+
     public String getCompareOperator() {
         return compareOperator;
     }
 
-    public void setCompareOperator(String compareOperator) {
-        this.compareOperator = compareOperator;
+    public ConfigEntry getConditionEntry() {
+        return conditionEntry;
     }
 
     public Object getConditionValue() {
         return conditionValue;
     }
 
-    public void setConditionValue(Object conditionValue) {
-        this.conditionValue = conditionValue;
+    public ConfigContainer getContainer() {
+        return container;
+    }
+
+    public Object getDefaultValue() {
+        return defaultValue;
+
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
+    public PropertyChangeListener getGuiListener() {
+        return guiListener;
+    }
+
+    public String getInstantHelp() {
+        return instantHelp;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Object[] getList() {
+        return list;
     }
 
     public Vector<ConfigEntry> getListener() {
         return listener;
     }
 
-    public void propertyChange(PropertyChangeEvent evt) {
-
+    public Property getPropertyInstance() {
+        return propertyInstance;
     }
 
-    public void valueChanged(Object newValue) {
-        ConfigEntry next;
-        for (Iterator<ConfigEntry> it = listener.iterator(); it.hasNext();) {
-            next = it.next();
-            if (next.getGuiListener() != null) next.getGuiListener().propertyChange(new PropertyChangeEvent(this, this.getPropertyName(), null, newValue));
-        }
+    public String getPropertyName() {
+        return propertyName;
     }
 
-    public void setGuiListener(PropertyChangeListener gce) {
-        if (guiListener == null) this.guiListener = gce;
-
+    public int getStart() {
+        return start;
     }
 
-    public PropertyChangeListener getGuiListener() {
-        return guiListener;
+    public int getStep() {
+        return step;
+    }
+
+    /**
+     * Gibt den Typ zurück
+     * 
+     * @return Typ des Eintrages
+     */
+    public int getType() {
+        return type;
     }
 
     @SuppressWarnings("unchecked")
@@ -423,7 +295,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         if (evt.getSource() == conditionEntry) {
             if (compareOperator.equals("<")) {
                 if (conditionValue instanceof Comparable) {
-                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) < 0;
+                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) < 0;
                 } else if (conditionValue instanceof Integer) {
                     return (Integer) conditionValue < (Integer) evt.getNewValue();
                 } else {
@@ -432,7 +304,7 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
             } else if (compareOperator.equals(">")) {
                 if (conditionValue instanceof Comparable) {
-                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) > 0;
+                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) > 0;
                 } else if (conditionValue instanceof Integer) {
                     return (Integer) conditionValue > (Integer) evt.getNewValue();
                 } else {
@@ -440,17 +312,17 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
                 }
             } else if (compareOperator.equals("!=")) {
                 if (conditionValue instanceof Comparable) {
-                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) != 0;
+                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) != 0;
                 } else if (conditionValue instanceof Integer) {
-                    return !((Integer) conditionValue).equals((Integer) evt.getNewValue());
+                    return !((Integer) conditionValue).equals(evt.getNewValue());
                 } else {
                     return true;
                 }
             } else {
                 if (conditionValue instanceof Comparable) {
-                    return ((Comparable) evt.getNewValue()).compareTo((Comparable) conditionValue) == 0;
+                    return ((Comparable) evt.getNewValue()).compareTo(conditionValue) == 0;
                 } else if (conditionValue instanceof Integer) {
-                    return ((Integer) conditionValue).equals((Integer) evt.getNewValue());
+                    return ((Integer) conditionValue).equals(evt.getNewValue());
                 } else {
                     return true;
                 }
@@ -459,6 +331,134 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
 
         }
         return true;
+    }
+
+    public boolean isEnabled() {
+
+        return enabled;
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+
+    }
+
+    public ConfigEntry setActionListener(ActionListener actionListener) {
+        this.actionListener = actionListener;
+        return this;
+    }
+
+    public void setCompareOperator(String compareOperator) {
+        this.compareOperator = compareOperator;
+    }
+
+    public void setConditionEntry(ConfigEntry conditionEntry) {
+        this.conditionEntry = conditionEntry;
+        conditionEntry.addConditionListener(this);
+    }
+
+    public void setConditionValue(Object conditionValue) {
+        this.conditionValue = conditionValue;
+    }
+
+    public void setContainer(ConfigContainer container) {
+        this.container = container;
+    }
+
+    /**
+     * Legtd en defaultwert fest, falls in der propertyinstanz keiner gefunden
+     * wurde.
+     * 
+     * @param value
+     * @return this. damit ist eine Struktur new
+     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
+     *         möglich
+     */
+    public ConfigEntry setDefaultValue(Object value) {
+        defaultValue = value;
+        return this;
+
+    }
+
+    public ConfigEntry setEnabled(boolean value) {
+        this.enabled = value;
+        return this;
+    }
+
+    public ConfigEntry setEnabledCondidtion(ConfigEntry old, String comp, Object value) {
+        setConditionEntry(old);
+        setCompareOperator(comp);
+        setConditionValue(value);
+        return this;
+
+    }
+
+    public ConfigEntry setEnd(int end) {
+        this.end = end;
+        return this;
+    }
+
+    public void setGuiListener(PropertyChangeListener gce) {
+        if (guiListener == null) this.guiListener = gce;
+
+    }
+
+    public ConfigEntry setInstantHelp(String l) {
+        this.instantHelp = l;
+        return this;
+
+    }
+
+    public ConfigEntry setLabel(String label) {
+        this.label = label;
+        return this;
+    }
+
+    public ConfigEntry setList(Object[] list) {
+        this.list = list;
+        return this;
+    }
+
+    public ConfigEntry setPropertyInstance(Property propertyInstance) {
+        this.propertyInstance = propertyInstance;
+        return this;
+    }
+
+    public ConfigEntry setPropertyName(String propertyName) {
+        this.propertyName = propertyName;
+        return this;
+    }
+
+    public ConfigEntry setStart(int start) {
+        this.start = start;
+        return this;
+    }
+
+    /**
+     * Setzt die Schrittbreite für alle Komponenten die mit Schritten arbeiten.
+     * z.B. JSpiner
+     * 
+     * @param step
+     * @return this. damit ist eine Struktur new
+     *         ConfigEntry(...).setdefaultValue(...).setStep(...).setBla...
+     *         möglich
+     * 
+     */
+    public ConfigEntry setStep(int step) {
+        this.step = step;
+        return this;
+    }
+
+    public ConfigEntry setType(int type) {
+        this.type = type;
+        return this;
+    }
+
+    public void valueChanged(Object newValue) {
+        ConfigEntry next;
+        for (Iterator<ConfigEntry> it = listener.iterator(); it.hasNext();) {
+            next = it.next();
+            if (next.getGuiListener() != null) next.getGuiListener().propertyChange(new PropertyChangeEvent(this, this.getPropertyName(), null, newValue));
+        }
     }
 
 }

@@ -17,29 +17,29 @@ import jd.utils.JDUtilities;
 
 public abstract class DownloadLinksView extends JPanel implements ControlListener {
 
+    public final static int REFRESH_ALL_DATA_CHANGED = 1;
+	public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
+    public static final int REFRESH_SPECIFIED_LINKS = 2;
     /**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	protected SimpleGUI parent;
-    protected JPopupMenu popup;
-    public final static int REFRESH_DATA_AND_STRUCTURE_CHANGED = 0;
-    public final static int REFRESH_ALL_DATA_CHANGED = 1;
-    public static final int REFRESH_SPECIFIED_LINKS = 2;
     /**
      * Dieser Vector enthält alle Downloadlinks
      */
     protected Vector<DownloadLink> allLinks = new Vector<DownloadLink>();
-
+    /**
+     * Der Logger für Meldungen
+     */
+    protected Logger logger = JDUtilities.getLogger();
     /**
      * contains all packages we have downloadlinks for
      */
     protected Vector<FilePackage> packages = new Vector<FilePackage>();
 
-    /**
-     * Der Logger für Meldungen
-     */
-    protected Logger logger = JDUtilities.getLogger();
+    protected SimpleGUI parent;
+
+    protected JPopupMenu popup;
 
     protected DownloadLinksView(SimpleGUI parent, LayoutManager layout) {
         super(layout);
@@ -77,9 +77,7 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
         });
     }
 
-    private void setPackages(Vector<FilePackage> packages) {
-        this.packages = packages;// new Vector<FilePackage>(packages);
-    }
+    abstract public void fireTableChanged(int id, Object object);
 
     // /**
     // * Hier werden Links zu dieser Tabelle hinzugefügt.
@@ -127,13 +125,15 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
 
     // abstract protected void checkColumnSize();
 
-    abstract public void fireTableChanged(int id, Object object);
+    public Vector<FilePackage> getPackages() {
+        return packages;
+    }
 
     // abstract public void moveSelectedItems(int direction);
     // abstract public void removeSelectedLinks();
 
-    public Vector<FilePackage> getPackages() {
-        return packages;
+    private void setPackages(Vector<FilePackage> packages) {
+        this.packages = packages;// new Vector<FilePackage>(packages);
     }
 
 }

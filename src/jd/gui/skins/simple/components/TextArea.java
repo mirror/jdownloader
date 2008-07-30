@@ -44,138 +44,6 @@ import jd.utils.JDUtilities;
 
 public class TextArea extends JScrollPane implements MouseListener,ClipboardOwner {
 
-    /**
-	 * 
-	 */
-	private static final long serialVersionUID = -3642394448923083114L;
-
-	private static JTextArea txt;
-
-    private int              maxHeight;
-    protected Logger logger=JDUtilities.getLogger();
-    private int              minHeight;
-
-    protected  TextArea _this;
-
-    public TextArea() {
-        super(txt = new JTextArea());
-        init();
-        _this=this;
-
-
-    }
-
-    private void onChanged() {
-        int height=this.getHeight();
-        int lines = txt.getLineCount();
-       // if (lines < minHeight) lines = minHeight;
-       // if (lines > maxHeight) lines = maxHeight;
-        txt.setPreferredSize(new Dimension(-1,1));
-       
-     txt.setRows(lines);
-   
-       // logger.info("Set size: "+lines+" - "+txt.getHeight());
-        
-        if(txt.getHeight()<maxHeight && txt.getHeight()>minHeight){     
-   
-            this.setPreferredSize(new Dimension(-1,txt.getHeight()));
-        }
-      
-        
-       
-     
-        this.firePropertyChange("HEIGHT", height, this.getHeight()+1);
-
-    }
-
-    @SuppressWarnings("static-access")
-	public void setText(String text) {
-        this.txt.setText(text);
-        onChanged();
-    }
-
-    public String getText() {
-        return txt.getText();
-    }
-
-    private void init() {
-        txt.addMouseListener(this);
-        this.maxHeight = 200;
-        this.minHeight = 35;
-    
-        PlainDocument doc = (PlainDocument) txt.getDocument();
-        doc.addDocumentListener(new DocumentListener() {
-            public void changedUpdate(DocumentEvent e) {
-                onChanged();
-            }
-
-            public void insertUpdate(DocumentEvent e) {
-           
-                onChanged();
-            }
-
-            public void removeUpdate(DocumentEvent e) {
-
-                onChanged();
-            }
-        });
-    }
-
-    public int getMaxHeight() {
-        return maxHeight;
-    }
-
-    public void setMaxHeight(int maxLines) {
-        this.maxHeight = maxLines;
-        onChanged();
-    }
-
-    public int getMinHeight() {
-        return minHeight;
-    }
-
-    public void setMinHeight(int minLines) {
-        this.minHeight = minLines;
-        onChanged();
-    }
-
-
-    public void mouseClicked(MouseEvent e) {
-   
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-   
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-   
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-logger.info("PRESSED");
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-           // Point point = e.getPoint();
-            int x = e.getX();
-            int y = e.getY();
-            new InternalPopup(this, x, y);
-        }
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-   
-
-    }
-
-    public void lostOwnership(Clipboard clipboard, Transferable contents) {
-       
-        
-    }
-
     private class InternalPopup extends JPopupMenu implements ActionListener {
 
         /**
@@ -185,11 +53,11 @@ logger.info("PRESSED");
 
 		private JMenuItem  copy;
 
+        private JMenuItem  delete;
+
         private JMenuItem  paste;
 
         private JPopupMenu popup;
-
-        private JMenuItem  delete;
 
       //  private int[]      indeces;
 
@@ -252,5 +120,137 @@ logger.info("PRESSED");
             }
 
         }
+    }
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3642394448923083114L;
+
+    private static JTextArea txt;
+    protected  TextArea _this;
+    protected Logger logger=JDUtilities.getLogger();
+
+    private int              maxHeight;
+
+    private int              minHeight;
+
+    public TextArea() {
+        super(txt = new JTextArea());
+        init();
+        _this=this;
+
+
+    }
+
+    public int getMaxHeight() {
+        return maxHeight;
+    }
+
+    public int getMinHeight() {
+        return minHeight;
+    }
+
+    public String getText() {
+        return txt.getText();
+    }
+
+    private void init() {
+        txt.addMouseListener(this);
+        this.maxHeight = 200;
+        this.minHeight = 35;
+    
+        PlainDocument doc = (PlainDocument) txt.getDocument();
+        doc.addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+                onChanged();
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+           
+                onChanged();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+
+                onChanged();
+            }
+        });
+    }
+
+    public void lostOwnership(Clipboard clipboard, Transferable contents) {
+       
+        
+    }
+
+    public void mouseClicked(MouseEvent e) {
+   
+
+    }
+
+    public void mouseEntered(MouseEvent e) {
+   
+
+    }
+
+
+    public void mouseExited(MouseEvent e) {
+   
+
+    }
+
+    public void mousePressed(MouseEvent e) {
+logger.info("PRESSED");
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+           // Point point = e.getPoint();
+            int x = e.getX();
+            int y = e.getY();
+            new InternalPopup(this, x, y);
+        }
+
+    }
+
+    public void mouseReleased(MouseEvent e) {
+   
+
+    }
+
+    private void onChanged() {
+        int height=this.getHeight();
+        int lines = txt.getLineCount();
+       // if (lines < minHeight) lines = minHeight;
+       // if (lines > maxHeight) lines = maxHeight;
+        txt.setPreferredSize(new Dimension(-1,1));
+       
+     txt.setRows(lines);
+   
+       // logger.info("Set size: "+lines+" - "+txt.getHeight());
+        
+        if(txt.getHeight()<maxHeight && txt.getHeight()>minHeight){     
+   
+            this.setPreferredSize(new Dimension(-1,txt.getHeight()));
+        }
+      
+        
+       
+     
+        this.firePropertyChange("HEIGHT", height, this.getHeight()+1);
+
+    }
+
+    public void setMaxHeight(int maxLines) {
+        this.maxHeight = maxLines;
+        onChanged();
+    }
+
+    public void setMinHeight(int minLines) {
+        this.minHeight = minLines;
+        onChanged();
+    }
+
+    @SuppressWarnings("static-access")
+	public void setText(String text) {
+        this.txt.setText(text);
+        onChanged();
     }
 }

@@ -48,74 +48,28 @@ public class SplashScreen implements ActionListener
         // desktop
         private final BufferedImage background;
 
-        // Your logo
-        private final BufferedImage image;
-
         // actual image
         private BufferedImage currentImage;
-
-        private SplashPainter label;
-
-        private final int speed = 1000 / 20; 
 
         /**
         * Duration in Time Mills
         */
-        private float duration = 1000.0f; 
+        private float duration = 1000.0f;
 
+        // Your logo
+        private final BufferedImage image;
+
+        private boolean isBlendIn = true, isBlendOut = false; 
+
+        private SplashPainter label; 
+
+        private JProgressBar progressBar;
+
+        private final int speed = 1000 / 20;
         private long startTime = 0;
 
-        private boolean isBlendIn = true, isBlendOut = false;
-        private JWindow window;
-
         private final Timer timer;
-        private JProgressBar progressBar;
-        public void setText(final String text)
-        {
-            
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    progressBar.setString(text);}
-            });
-          
-        }
-        public void setVisible(boolean b)
-        {
-            window.setVisible(b);
-        }
-        public void increase()
-        {
-            increase(1);
-        }
-        public void increase(int i)
-        {
-            setValue(getValue()+i);
-        }
-        public int getValue()
-        {
-            return progressBar.getValue();
-        }
-        public void setValue(final int perc)
-        {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    progressBar.setValue(Math.min(100,perc));
-                }
-            });
-          
-          
-//            if(perc>70)
-//               
-//            if(perc>99)
-//                
-            
-        }
-        public void finish()
-        {
-           // blendOut();
-            timer.stop();
-            window.dispose();
-        }
+        private JWindow window;
         public SplashScreen(String path) throws IOException, AWTException
         {
                 //final URL url = this.getClass().getClassLoader().getResource(path);
@@ -156,16 +110,6 @@ public class SplashScreen implements ActionListener
                 timer.start();
                 startTime = System.currentTimeMillis();
         }
-
-        public void blendOut()
-        {
-            if(isBlendOut) return;
-                isBlendOut = true;
-                isBlendIn = false;
-                startTime = System.currentTimeMillis();
-                timer.start();
-        }
-
         public void actionPerformed(ActionEvent e)
         {
                 float percent;
@@ -204,7 +148,14 @@ public class SplashScreen implements ActionListener
                 }
                 
         }
-
+        public void blendOut()
+        {
+            if(isBlendOut) return;
+                isBlendOut = true;
+                isBlendIn = false;
+                startTime = System.currentTimeMillis();
+                timer.start();
+        }
         /**
         * Draws Background, then draws image over it
         *
@@ -217,5 +168,54 @@ public class SplashScreen implements ActionListener
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alphaValue));
                 g2d.drawImage(image, 0, 0, null);
                 g2d.dispose();
+        }
+        public void finish()
+        {
+           // blendOut();
+            timer.stop();
+            window.dispose();
+        }
+        public int getValue()
+        {
+            return progressBar.getValue();
+        }
+        public void increase()
+        {
+            increase(1);
+        }
+        public void increase(int i)
+        {
+            setValue(getValue()+i);
+        }
+
+        public void setText(final String text)
+        {
+            
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    progressBar.setString(text);}
+            });
+          
+        }
+
+        public void setValue(final int perc)
+        {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    progressBar.setValue(Math.min(100,perc));
+                }
+            });
+          
+          
+//            if(perc>70)
+//               
+//            if(perc>99)
+//                
+            
+        }
+
+        public void setVisible(boolean b)
+        {
+            window.setVisible(b);
         }
 } 

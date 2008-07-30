@@ -42,18 +42,30 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
-    // http://www.megaupload.com/de/?d=0XOSKVY9
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}", Pattern.CASE_INSENSITIVE);
+    static private final String CODER = "JD-Team";
 
-    static private final String HOST = "megaupload.com";
+    static private final String COOKIE = "l=de; v=1; ve_view=1";
 
-    static private final String PLUGIN_NAME = HOST;
+    static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
     //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
 
     //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final String CODER = "JD-Team";
+    static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
+
+    static private final String HOST = "megaupload.com";
+
+    // http://www.megaupload.com/de/?d=0XOSKVY9
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}", Pattern.CASE_INSENSITIVE);
+
+    private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
+
+    static private final int PENDING_WAITTIME = 45000;
+
+    static private final String PLUGIN_NAME = HOST;
+
+    static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"°\" target";
 
     static private final String SIMPLEPATTERN_CAPTCHA_URl = " <img src=\"/capgen.php?°\">";
 
@@ -61,30 +73,18 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String SIMPLEPATTERN_FILE_SIZE = "Dateigr°</b>°</div>";
 
-    static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"°\" target";
-
-    static private final String COOKIE = "l=de; v=1; ve_view=1";
-
     static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK = "var ° = String.fromCharCode(Math.abs(°));°var ° = '°' + String.fromCharCode(Math.sqrt(°));";
 
     static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "Math.sqrt(°));°document.getElementById(\"°\").innerHTML = '<a href=\"°' ° '°\"°onclick=\"loadingdownload()";
 
-    static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
-
-    static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
-
-    static private final int PENDING_WAITTIME = 45000;
-
-    private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
-
     // /Simplepattern
     // private String finalURL;
+
+    private String captchaPost;
 
     private String captchaURL;
 
     private HashMap<String, String> fields;
-
-    private String captchaPost;
 
     private boolean tempUnavailable = false;
 
@@ -98,25 +98,136 @@ public class Megauploadcom extends PluginForHost {
         setConfigElements();
     }
 
-    private void setConfigElements() {
+    public boolean doBotCheck(File file) {
+        return false;
+    }
 
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+    
+    private void doPremium(DownloadLink parameter) throws Exception {
+        LinkStatus linkStatus = parameter.getLinkStatus();
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
+        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
+        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+        String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
+        logger.info("PREMOIM");
+        String url = "http://www.megaupload.com/de/";
+        if (!countryID.equals("-")) {
+            logger.info("Use Country trick");
+            // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
+            link = link.replace(".com/", ".com/" + countryID + "/");
+            url = url.replaceAll("/de/", "/" + countryID + "/");
 
+        }
+
+        downloadLink.getLinkStatus().setStatusText("Login");
+        Browser br = new Browser();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
+        br.getHeaders().put("X-MUTB", link);
+        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+        br.postPage(url, "login=" + user + "&password=" + pass);
+        if (Browser.getCookie(url, "user") == null || Browser.getCookie(url, "user").length() == 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+        }
+
+        String id = Request.parseQuery(link).get("d");
+        br.getHeaders().clear();
+        br.getHeaders().put("TE", "trailers");
+        br.getHeaders().put("Connection", "TE");
+        br.setFollowRedirects(false);
+        br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + Browser.getCookie(url, "user"));
+
+        HTTPConnection urlConnection;
+        downloadLink.getLinkStatus().setStatusText("Premium");
+
+        // requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl),
+        // Browser.getCookie(url,"user"), link, false);
+        urlConnection = br.openGetConnection(br.getRedirectLocation());
+        String name = getFileNameFormHeader(urlConnection);
+        downloadLink.setName(name);
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setResume(true);
+        dl.startDownload();
+
+    }
+
+    
+    public String getAGBLink() {
+       
+        return "http://www.megaupload.com/terms/";
     }
 
     
     public String getCoder() {
         return CODER;
     }
+
+    
+    public boolean getFileInformation(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        RequestInfo requestInfo;
+
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));
+        try {
+            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
+            if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
+                downloadLink.getLinkStatus().setStatusText("Temp. not available");
+                logger.info("Temp. unavailable");
+                this.tempUnavailable = true;
+                return false;
+            }
+            if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
+                downloadLink.getLinkStatus().setStatusText("File Not Found");
+                return false;
+            }
+
+            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
+            String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
+            if (fileName == null || fileSize == null) { return false; }
+            downloadLink.setName(fileName.trim());
+            if (fileSize.indexOf("KB") > 0) {
+                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024));
+            }
+            if (fileSize.indexOf("MB") > 0) {
+                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024 * 1024));
+            }
+        } catch (MalformedURLException e) {
+            return false;
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
+
+    
+    public String getFileInformationString(DownloadLink downloadLink) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+    }
+
+    
+    
+        
+    
+
+    public String getHost() {
+        return HOST;
+    }
+
+    public int getMaxSimultanDownloadNum() {
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+            return 20;
+        } else {
+            return 1;
+        }
+    }
+
+    // Retry-After
 
     
     public String getPluginName() {
@@ -128,21 +239,11 @@ public class Megauploadcom extends PluginForHost {
         return PAT_SUPPORTED;
     }
 
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
     
-    
-        
-    
-
     // 
     // public URLConnection getURLConnection() {
     // // XXX: ???
@@ -281,123 +382,12 @@ public class Megauploadcom extends PluginForHost {
 
     }
 
-    private void doPremium(DownloadLink parameter) throws Exception {
-        LinkStatus linkStatus = parameter.getLinkStatus();
-        DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-        String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
-        logger.info("PREMOIM");
-        String url = "http://www.megaupload.com/de/";
-        if (!countryID.equals("-")) {
-            logger.info("Use Country trick");
-            // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
-
-            link = link.replace(".com/", ".com/" + countryID + "/");
-            url = url.replaceAll("/de/", "/" + countryID + "/");
-
-        }
-
-        downloadLink.getLinkStatus().setStatusText("Login");
-        Browser br = new Browser();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
-        br.getHeaders().put("X-MUTB", link);
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage(url, "login=" + user + "&password=" + pass);
-        if (Browser.getCookie(url, "user") == null || Browser.getCookie(url, "user").length() == 0) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-        }
-
-        String id = Request.parseQuery(link).get("d");
-        br.getHeaders().clear();
-        br.getHeaders().put("TE", "trailers");
-        br.getHeaders().put("Connection", "TE");
-        br.setFollowRedirects(false);
-        br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + Browser.getCookie(url, "user"));
-
-        HTTPConnection urlConnection;
-        downloadLink.getLinkStatus().setStatusText("Premium");
-
-        // requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl),
-        // Browser.getCookie(url,"user"), link, false);
-        urlConnection = br.openGetConnection(br.getRedirectLocation());
-        String name = getFileNameFormHeader(urlConnection);
-        downloadLink.setName(name);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
-        dl.startDownload();
-
-    }
-
-    // Retry-After
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     
     public void reset() {
         // this.finalURL = null;
         this.captchaPost = null;
         this.captchaURL = null;
         this.fields = null;
-    }
-
-    public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
-    }
-
-    
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        RequestInfo requestInfo;
-
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
-            if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
-                downloadLink.getLinkStatus().setStatusText("Temp. not available");
-                logger.info("Temp. unavailable");
-                this.tempUnavailable = true;
-                return false;
-            }
-            if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
-                downloadLink.getLinkStatus().setStatusText("File Not Found");
-                return false;
-            }
-
-            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
-            String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
-            if (fileName == null || fileSize == null) { return false; }
-            downloadLink.setName(fileName.trim());
-            if (fileSize.indexOf("KB") > 0) {
-                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024));
-            }
-            if (fileSize.indexOf("MB") > 0) {
-                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024 * 1024));
-            }
-        } catch (MalformedURLException e) {
-            return false;
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
     }
 
     
@@ -407,8 +397,18 @@ public class Megauploadcom extends PluginForHost {
     }
 
     
-    public String getAGBLink() {
-       
-        return "http://www.megaupload.com/terms/";
+    private void setConfigElements() {
+
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
+        cfg.setDefaultValue("Kundennummer");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
+        cfg.setDefaultValue("Passwort");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
+        cfg.setDefaultValue(false);
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
+
     }
 }

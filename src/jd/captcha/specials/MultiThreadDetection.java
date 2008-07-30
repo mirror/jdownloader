@@ -10,11 +10,40 @@ import jd.captcha.pixelgrid.Letter;
 import jd.utils.JDUtilities;
 
 public class MultiThreadDetection {
-    private int maxThreads;
-    private JAntiCaptcha jac;
-    private Logger logger = JDUtilities.getLogger();
-    private static ArrayList<DetectionThread> DETECTION_THREADS = new ArrayList<DetectionThread>();
+    class DetectionThread extends Thread {
+        public Letter letter;
+
+        public DetectionThread(Letter l) {
+            this.letter = l;
+        }
+
+        @Override
+        public void run() {
+            letter.detected = jac.getLetter(letter);
+            startDetection(this);
+        }
+    }
     private static ArrayList<Letter> DETECTION_QUEUE = new ArrayList<Letter>();
+    private static ArrayList<DetectionThread> DETECTION_THREADS = new ArrayList<DetectionThread>();
+    public static Letter[] multiCore(Letter[] org, JAntiCaptcha jac) {
+       
+        int ths = Runtime.getRuntime().availableProcessors();
+        MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
+  
+
+//        jac.getJas().getInteger("borderVarianceX");
+
+        for (Letter l : org) {
+            mtd.queueDetection(l);
+        }
+        mtd.waitFor(null);
+        return org;
+    }
+    private JAntiCaptcha jac;
+
+    private Logger logger = JDUtilities.getLogger();
+
+    private int maxThreads;
 
     public MultiThreadDetection(int threads, JAntiCaptcha jac) {
         logger.info("Run Detection on " + threads + " CPU Cores");
@@ -44,6 +73,14 @@ public class MultiThreadDetection {
 
     }
 
+    private void startThread(Letter l) {
+        DetectionThread th = new DetectionThread(l);
+        th.start();
+        DETECTION_THREADS.add(th);
+
+    };
+    
+    
     public void waitFor(Vector<Letter> list) {
 
         while (true) {
@@ -66,42 +103,6 @@ public class MultiThreadDetection {
                 e.printStackTrace();
             }
         }
-    }
-
-    private void startThread(Letter l) {
-        DetectionThread th = new DetectionThread(l);
-        th.start();
-        DETECTION_THREADS.add(th);
-
-    }
-
-    class DetectionThread extends Thread {
-        public Letter letter;
-
-        public DetectionThread(Letter l) {
-            this.letter = l;
-        }
-
-        public void run() {
-            letter.detected = jac.getLetter(letter);
-            startDetection(this);
-        }
-    };
-    
-    
-    public static Letter[] multiCore(Letter[] org, JAntiCaptcha jac) {
-       
-        int ths = Runtime.getRuntime().availableProcessors();
-        MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
-  
-
-//        jac.getJas().getInteger("borderVarianceX");
-
-        for (Letter l : org) {
-            mtd.queueDetection(l);
-        }
-        mtd.waitFor(null);
-        return org;
     }
 
 }

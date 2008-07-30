@@ -22,20 +22,16 @@ public class Reconnect extends DefaultWizardPage {
 		return INSTANCE;
 	}
 	
+	JCheckBox checkbox;
+	
 	private Reconnect() {
 		super();
 		setPreferredSize(new Dimension(700,800));
 	}
-	
-	JCheckBox checkbox;
 
 	
-	protected void initComponents() {
-		checkbox = new JCheckBox();
-		checkbox.setText(" I want to continue without setting up a Reconnect method.");
-	}
-	
-	protected Component createBody() {
+	@Override
+    protected Component createBody() {
 		initComponents();
 
 		int n = 10;
@@ -47,10 +43,16 @@ public class Reconnect extends DefaultWizardPage {
 		return panel;
 	}
 	
+	@Override
+    public void enterWizardPageAfterForward() {
+		this.checkbox.setSelected(false);
+	}
+	
 	
 	// Validation ##########################################################
 
-	public String forwardValidation() {
+	@Override
+    public String forwardValidation() {
 		if (checkbox.isSelected()) {
 			checkbox.setSelected(false);
 			return "";
@@ -59,8 +61,10 @@ public class Reconnect extends DefaultWizardPage {
 	}
 	
 	
-	public void enterWizardPageAfterForward() {
-		this.checkbox.setSelected(false);
+	@Override
+    protected void initComponents() {
+		checkbox = new JCheckBox();
+		checkbox.setText(" I want to continue without setting up a Reconnect method.");
 	}
 }
 

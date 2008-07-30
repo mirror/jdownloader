@@ -34,46 +34,20 @@ public class LinksaveIn extends PluginForDecrypt {
 
     static private final String HOST = "Linksave.in";
 
-    private String VERSION = "1.0.0";
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     private String CODER = "JD-Team";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0";
 
     public LinksaveIn() {
         super();        
     }
 
     
-    public String getCoder() {
-        return CODER;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-   
-
-    
-    public String getPluginName() {
-        return HOST;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;        
+        String cryptedLink = parameter;        
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             URL url;
             try {
@@ -97,7 +71,40 @@ public class LinksaveIn extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+   
+
+    
+    @Override
+    public String getCoder() {
+        return CODER;
+    }
+
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return HOST;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

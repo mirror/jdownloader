@@ -36,11 +36,11 @@ import java.util.Vector;
 
 public class Loop extends Element
 {
-	private boolean loop_context_vars=false;
-	private boolean global_vars=false;
-
 	private Vector<?> control_val = null;
 	private Vector<Object> data;
+
+	private boolean global_vars=false;
+	private boolean loop_context_vars=false;
 
 	public Loop(String name)
 	{
@@ -62,23 +62,20 @@ public class Loop extends Element
 		this.global_vars=global_vars;
 	}
 
-	public void add(String text)
-	{
-		this.data.addElement(text);
-	}
-
-	public void add(Element node)
+	@Override
+    public void add(Element node)
 	{
 		data.addElement(node);
 	}
 
-	public void setControlValue(Vector<?> control_val)
-			throws IllegalArgumentException
+	@Override
+    public void add(String text)
 	{
-		this.control_val = process_var(control_val);
+		this.data.addElement(text);
 	}
 
-	@SuppressWarnings("unchecked")
+	@Override
+    @SuppressWarnings("unchecked")
 	public String parse(Hashtable<?, ?> p)
 	{
 		if(!p.containsKey(this.name))
@@ -146,20 +143,6 @@ public class Loop extends Element
 		return output.toString();
 	}
 
-	public String typeOfParam(String param)
-			throws NoSuchElementException
-	{
-		for(Enumeration<?> e = data.elements(); e.hasMoreElements();)
-		{
-			Object o = e.nextElement();
-			if(o.getClass().getName().endsWith(".String"))
-				continue;
-			if(((Element)o).Name().equals(param))
-				return ((Element)o).Type();
-		}
-		throw new NoSuchElementException(param);
-	}
-
 	private Vector<?> process_var(Vector<?> control_val) 
 			throws IllegalArgumentException 
 	{
@@ -178,6 +161,27 @@ public class Loop extends Element
 		}
 
 		return control_val;
+	}
+
+	public void setControlValue(Vector<?> control_val)
+			throws IllegalArgumentException
+	{
+		this.control_val = process_var(control_val);
+	}
+
+	@Override
+    public String typeOfParam(String param)
+			throws NoSuchElementException
+	{
+		for(Enumeration<?> e = data.elements(); e.hasMoreElements();)
+		{
+			Object o = e.nextElement();
+			if(o.getClass().getName().endsWith(".String"))
+				continue;
+			if(((Element)o).Name().equals(param))
+				return ((Element)o).Type();
+		}
+		throw new NoSuchElementException(param);
 	}
 
 }

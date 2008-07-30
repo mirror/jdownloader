@@ -37,26 +37,26 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String CODER = "eXecuTe";
 
-    private static final String HOST = "fast-load.net";
+    // Suchmasken
+    private static final String DOWNLOAD_INFO = "<th.*?><b>Datei</b></th>[\\s]*?<th.*?><b>Gr&ouml;sse</b></th>[\\s]*?</tr>[\\s]*?<tr>[\\s]*?<td.*?><font.*?>(.*?)</font></td>[\\s]*?<td.*?><font.*?>(.*?) MB</font></td>";
 
-    private static final String PLUGIN_NAME = HOST;
+    private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
     //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
 
     //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+    private static final String HOST = "fast-load.net";
 
     private static final int MAX_SIMULTAN_DOWNLOADS = 8;
 
-    private String cookie = "";
-
-    // Suchmasken
-    private static final String DOWNLOAD_INFO = "<th.*?><b>Datei</b></th>[\\s]*?<th.*?><b>Gr&ouml;sse</b></th>[\\s]*?</tr>[\\s]*?<tr>[\\s]*?<td.*?><font.*?>(.*?)</font></td>[\\s]*?<td.*?><font.*?>(.*?) MB</font></td>";
-
     private static final String NOT_FOUND = "Datei existiert nicht";
 
-    private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+
+    private static final String PLUGIN_NAME = HOST;
+
+    private String cookie = "";
 
     public FastLoadNet() {
 
@@ -68,51 +68,25 @@ public class FastLoadNet extends PluginForHost {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
 
     
+    @Override
+    public String getAGBLink() {
+        return "http://www.fast-load.net/infos.php";
+    }
+
+    
+    @Override
     public String getCoder() {
         return CODER;
     }
 
     
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    
-    public String getHost() {
-        return HOST;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    
-        
-   
-
-    
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
-    
-    public void reset() {
-        this.cookie = "";
-    }
-
-    
-    public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    
+    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -168,6 +142,42 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
+    
+    @Override
+    public String getHost() {
+        return HOST;
+    }
+
+    
+    
+        
+   
+
+    
+    @Override
+    public int getMaxSimultanDownloadNum() {
+        return MAX_SIMULTAN_DOWNLOADS;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return PLUGIN_NAME;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return PAT_SUPPORTED;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
+    }
+
+    @Override
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -294,12 +304,14 @@ public class FastLoadNet extends PluginForHost {
     }
 
     
-    public void resetPluginGlobals() {
+    @Override
+    public void reset() {
+        this.cookie = "";
     }
 
     
-    public String getAGBLink() {
-        return "http://www.fast-load.net/infos.php";
+    @Override
+    public void resetPluginGlobals() {
     }
 
 }

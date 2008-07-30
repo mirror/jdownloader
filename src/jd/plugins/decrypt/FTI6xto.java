@@ -31,42 +31,16 @@ import jd.utils.JDUtilities;
 
 public class FTI6xto extends PluginForDecrypt {
     static private final String host = "fucktheindustry.ru";
-    private String version = "1.0.0.0";
-
     private static final Pattern patternSupported = Pattern.compile("http://92\\.241\\.164\\.148/(file\\.php\\?id=\\d+|store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc)", Pattern.CASE_INSENSITIVE);
+
+    // private String version = "1.0.0.0";
 
     public FTI6xto() {
         super();
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    
-    public String getHost() {
-        return host;
-    }
-
-   
-
-    
-    public String getPluginName() {
-        return host;
-    }
-
-    
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    
-    public String getVersion() {
-       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         try {
             if (!parameter.endsWith(".dlc")) {
@@ -86,7 +60,40 @@ public class FTI6xto extends PluginForDecrypt {
     }
 
     
+    @Override
     public boolean doBotCheck(File file) {
         return false;
+    }
+
+   
+
+    
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
+    public String getPluginName() {
+        return host;
+    }
+
+    
+    @Override
+    public Pattern getSupportedLinks() {
+        return patternSupported;
+    }
+
+    
+    @Override
+    public String getVersion() {
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 }

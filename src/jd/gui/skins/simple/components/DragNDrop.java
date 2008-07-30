@@ -51,16 +51,16 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     private static final long serialVersionUID = -3280613281656283625L;
 
-    /**
-     * 
-     */
-    private Logger            logger           = JDUtilities.getLogger();
+    private boolean           filled           = false;
 
     private Image             imageEmpty;
 
     private Image             imageFilled;
 
-    private boolean           filled           = false;
+    /**
+     * 
+     */
+    private Logger            logger           = JDUtilities.getLogger();
 
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
@@ -83,34 +83,14 @@ public class DragNDrop extends JComponent implements DropTargetListener {
     }
 
     /**
-     * Liefert die Höhe des Bildes zurück
+     * UI Add LIstener Funktion. Fügt einen Listener hinzu
      * 
-     * @return Höhe des Bildes
+     * @param listener
      */
-    public int getImageHeight() {
-        return imageEmpty.getHeight(this);
-
-    }
-
-    /**
-     * Liefert die Breite des Bildes zurück
-     * 
-     * @return Breite des Bildes
-     */
-    public int getImageWidth() {
-        return imageEmpty.getWidth(this);
-    }
-
-    /**
-     * Zeichnet die Komponente neu
-     * 
-     * @param g Graphicobjekt
-     */
-    public void paintComponent(Graphics g) {
-        if (filled)
-            g.drawImage(imageFilled, 0, 0, null);
-        else
-            g.drawImage(imageEmpty, 0, 0, null);
+    public void addUIListener(UIListener listener) {
+        synchronized (uiListener) {
+            uiListener.add(listener);
+        }
     }
 
     public void dragEnter(DropTargetDragEvent arg0) {}
@@ -145,7 +125,7 @@ public class DragNDrop extends JComponent implements DropTargetListener {
                 for (int t = 0; t < list.size(); t++) {
                     // JDUtilities.getController().loadContainerFile((File)
                     // list.get(t));
-                    fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, (File) list.get(t)));
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, list.get(t)));
                   
                 }
 
@@ -162,15 +142,53 @@ public class DragNDrop extends JComponent implements DropTargetListener {
         repaint();
     }
 
+    public void dropActionChanged(DropTargetDragEvent dtde) {}
+
     /**
-     * UI Add LIstener Funktion. Fügt einen Listener hinzu
+     * Benachrichtigt alle Listener über ein Event
      * 
-     * @param listener
+     * @param uiEvent
      */
-    public void addUIListener(UIListener listener) {
+    public void fireUIEvent(UIEvent uiEvent) {
         synchronized (uiListener) {
-            uiListener.add(listener);
+            Iterator<UIListener> recIt = uiListener.iterator();
+
+            while (recIt.hasNext()) {
+                (recIt.next()).uiEvent(uiEvent);
+            }
         }
+    }
+
+    /**
+     * Liefert die Höhe des Bildes zurück
+     * 
+     * @return Höhe des Bildes
+     */
+    public int getImageHeight() {
+        return imageEmpty.getHeight(this);
+
+    }
+
+    /**
+     * Liefert die Breite des Bildes zurück
+     * 
+     * @return Breite des Bildes
+     */
+    public int getImageWidth() {
+        return imageEmpty.getWidth(this);
+    }
+
+    /**
+     * Zeichnet die Komponente neu
+     * 
+     * @param g Graphicobjekt
+     */
+    @Override
+    public void paintComponent(Graphics g) {
+        if (filled)
+            g.drawImage(imageFilled, 0, 0, null);
+        else
+            g.drawImage(imageEmpty, 0, 0, null);
     }
 
     /**
@@ -183,21 +201,4 @@ public class DragNDrop extends JComponent implements DropTargetListener {
             uiListener.remove(listener);
         }
     }
-
-    /**
-     * Benachrichtigt alle Listener über ein Event
-     * 
-     * @param uiEvent
-     */
-    public void fireUIEvent(UIEvent uiEvent) {
-        synchronized (uiListener) {
-            Iterator<UIListener> recIt = uiListener.iterator();
-
-            while (recIt.hasNext()) {
-                ((UIListener) recIt.next()).uiEvent(uiEvent);
-            }
-        }
-    }
-
-    public void dropActionChanged(DropTargetDragEvent dtde) {}
 }

@@ -32,16 +32,17 @@ import jd.utils.JDUtilities;
 
 public class Gamezam extends PluginForDecrypt {
     static private final String host = "Gamez.am";
-    private String version = "1.0.0.0";
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
+    // private String version = "1.0.0.0";
 
     public Gamezam() {
         super();
     }
 
     
+    @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -117,34 +118,40 @@ public class Gamezam extends PluginForDecrypt {
     }
 
     
-    public String getCoder() {
-        return "JD-Team";
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     
-    public String getHost() {
-        return host;
+    @Override
+    public String getCoder() {
+        return "JD-Team";
     }
 
    
 
     
+    @Override
+    public String getHost() {
+        return host;
+    }
+
+    
+    @Override
     public String getPluginName() {
         return host;
     }
 
     
+    @Override
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
     
+    @Override
     public String getVersion() {
        String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
-    }
-
-    
-    public boolean doBotCheck(File file) {
-        return false;
     }
 }
