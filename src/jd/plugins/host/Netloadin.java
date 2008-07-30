@@ -249,7 +249,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
         File file = this.getLocalCaptchaFile(this);
-        this.sleep(20000, downloadLink);
+        
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), this.sessionID, requestInfo.getLocation(), false);
         if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
             logger.severe("Captcha donwload failed: " + captchaURL);
@@ -299,7 +299,7 @@ public class Netloadin extends PluginForHost {
         this.finalURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), NEW_HOST_URL, 0);
 
         // case PluginStep.STEP_PENDING:
-
+        this.sleep(20000, downloadLink);
         // case PluginStep.STEP_DOWNLOAD:
         logger.info("Download " + finalURL);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
@@ -498,7 +498,7 @@ public class Netloadin extends PluginForHost {
                 // eine datei zu laden
                 return 1;
             } else {
-                return 2;
+                return 1;
             }
 
         }

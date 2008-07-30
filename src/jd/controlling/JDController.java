@@ -844,6 +844,9 @@ public class JDController implements ControlListener, UIListener {
                         while (it.hasNext()) {
 
                             localLink = it.next();
+                            if(!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)){
+                                localLink.getLinkStatus().reset();
+                            }
                             if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
                                 it.remove();
                                 if (fp.getDownloadLinks().size() == 0) {
@@ -1364,8 +1367,8 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
                     if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-//                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-//                        nextDownloadLink.getLinkStatus().setStatusText("");
+                        nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                        nextDownloadLink.getLinkStatus().setStatusText("");
                         nextDownloadLink.getLinkStatus().reset();
 //                        nextDownloadLink.setEndOfWaittime(0);
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
@@ -1864,7 +1867,7 @@ public class JDController implements ControlListener, UIListener {
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    //e.printStackTrace();
                     eventStart = 0;
                 }
             }

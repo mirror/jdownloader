@@ -148,7 +148,9 @@ public class LinkStatus implements Serializable {
         }
 
         // + "sek)"; }
-
+if(downloadLink.getDownloadInstance()==null&&hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)){
+    removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
+}
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             int speed = Math.max(0, downloadLink.getDownloadSpeed());
             String chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
@@ -159,7 +161,7 @@ public class LinkStatus implements Serializable {
 
                     long remainingBytes = downloadLink.getDownloadMax() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
-                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed) + "/s " + chunkString;
+                    return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed/1024) + "/s " + chunkString;
                 } else {
                     return JDUtilities.formatKbReadable(speed) + "/s " + chunkString;
 
@@ -412,6 +414,7 @@ public class LinkStatus implements Serializable {
     public void resetWaitTime() {
         totalWaitTime = 0;
         waitUntil = 0;
+       ((PluginForHost)downloadLink.getPlugin()).resetHosterWaitTime();
     }
 
 }

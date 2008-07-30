@@ -434,6 +434,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                                 }
                             }
                         }
+                        link.isAvailable();
 //                        if (link.isAvailable() ) {
 
                             attachLinkToPackage(link);

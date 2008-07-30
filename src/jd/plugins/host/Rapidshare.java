@@ -806,7 +806,7 @@ public class Rapidshare extends PluginForHost {
             waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
             logger.info("DownloadLimit reached. Wait " + JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
             linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-            setDownloadLimitTime(waitTime);
+         
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(waitTime);
 

@@ -92,21 +92,21 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             currentTotalSpeed = 0;
             inProgress = 0;
             updates.clear();
-//            boolean rr = false;
+            // boolean rr = false;
             try {
                 for (Iterator<FilePackage> fpsIt = fps.iterator(); fpsIt.hasNext();) {
                     links = fpsIt.next().getDownloadLinks();
 
                     for (int i = 0; i < links.size(); i++) {
                         link = links.elementAt(i);
-                        linkStatus=link.getLinkStatus();
+                        linkStatus = link.getLinkStatus();
                         if (!link.isEnabled()) continue;
                         // Link mit Wartezeit in der queue
-                        if (linkStatus.hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT)&&!linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                        if (linkStatus.hasStatus(LinkStatus.ERROR_TRAFFIC_LIMIT) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             if (linkStatus.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
                                 linkStatus.reset();
-                               
+
                             }
 
                         }
@@ -183,7 +183,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                 }
             } catch (Exception e) {
-e.printStackTrace();
+                e.printStackTrace();
             }
             try {
                 Thread.sleep(1000);
@@ -359,7 +359,8 @@ e.printStackTrace();
     private void clearDownloadListStatus() {
 
         activeDownloadControllers.removeAllElements();
-        //logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS ZURÜCKGESETZT!");
+        // logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS
+        // ZURÜCKGESETZT!");
         Vector<FilePackage> fps;
         Vector<DownloadLink> links;
         fps = controller.getPackages();
@@ -367,10 +368,10 @@ e.printStackTrace();
             links = fpsIt.next().getDownloadLinks();
             for (int i = 0; i < links.size(); i++) {
                 if (!links.elementAt(i).getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                   
+
                     links.elementAt(i).getLinkStatus().setStatusText(null);
                     links.elementAt(i).setAborted(false);
-                    //links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                    links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
                     links.elementAt(i).getLinkStatus().resetWaitTime();
                 }
 
@@ -454,18 +455,21 @@ e.printStackTrace();
                     }
 
                     if (!this.isDownloadLinkActive(nextDownloadLink)) {
-                       // if (!nextDownloadLink.isAborted()) {
-                            if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                                if (nextDownloadLink.isEnabled()) {
-                                    if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                        if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
+                        // if (!nextDownloadLink.isAborted()) {
+                        if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
+                            if (nextDownloadLink.isEnabled()) {
+                                if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
+                                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
+                                        int rw = ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime();
+                                        if (nextDownloadLink.getPlugin() != null && ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime() <= 0) {
                                             if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
 
                                             return nextDownloadLink; }
                                         }
                                     }
                                 }
-                            //}
+                            }
+                            // }
                         }
                     }
                 }

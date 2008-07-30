@@ -141,7 +141,7 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
-            linkStatus.setStatusText(JDLocale.L("controller.status.active", "aktiv"));
+            //linkStatus.setStatusText(JDLocale.L("controller.status.active", "aktiv"));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
@@ -149,12 +149,13 @@ public class SingleDownloadController extends Thread {
             try {
                 currentPlugin.handle(downloadLink);
             } catch (Exception e) {
-                logger.severe("Plugin error: " + e.getMessage());
-                e.printStackTrace();
+                logger.severe("Plugin interrupt: " + e.getMessage());
+                if (!(e instanceof InterruptedException)) {
+                    e.printStackTrace();
 
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.plugindefekterror", "The Plugin seems to be defekt"));
-
+                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.plugindefekterror", "The Plugin seems to be defekt"));
+                }
             }
 
             if (this.isAborted()) {
@@ -206,10 +207,12 @@ public class SingleDownloadController extends Thread {
                 break;
             }
 
-//            if (linkStatus.isStatus(LinkStatus.TODO) && currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() && !downloadLink.isWaitingForReconnect()) {
-//
-//                onErrorRetry(downloadLink, currentPlugin);
-//            }
+            // if (linkStatus.isStatus(LinkStatus.TODO) &&
+            // currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() &&
+            // !downloadLink.isWaitingForReconnect()) {
+            //
+            // onErrorRetry(downloadLink, currentPlugin);
+            // }
 
             // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.finished",
             // "Fertig"));
@@ -710,21 +713,23 @@ public class SingleDownloadController extends Thread {
             return;
         }
         status.setWaitTime(milliSeconds);
+        plugin.setHosterWaittime(milliSeconds);
 
         // blockiert bis zu einem erfolgreichem recionnect
-        if (Reconnecter.waitForNewIP(0)) {
-            linkStatus.reset();
-        }
+        // if (Reconnecter.waitForNewIP(0)) {
+        // linkStatus.reset();
+        // }
         Reconnecter.requestReconnect();
-        while (status.getRemainingWaittime() > 0) {
-
-            fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
+        // while (status.getRemainingWaittime() > 0) {
+        //
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // downloadLink);
+        // try {
+        // Thread.sleep(1000);
+        // } catch (InterruptedException e) {
+        // break;
+        // }
+        // }
 
     }
 
