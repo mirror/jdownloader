@@ -62,7 +62,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     
     public String getVersion() {
-        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+       String ret=new Regex("$Revision$","\\$Revision: ([\\d]*?) \\$").getFirstMatch();return ret==null?"0.0":ret;
     }
 
     
