@@ -29,7 +29,7 @@ import jd.plugins.download.RAFDownload;
 
 public class RamZal extends PluginForHost {
     private static final String HOST = "ramzal.com";
-    private static final String VERSION = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
     // http://ramzal.com//upload_files/1280838337_wallpaper-1280x1024-007.jpg
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ramzal\\.com//?upload_files/.*", Pattern.CASE_INSENSITIVE);
 

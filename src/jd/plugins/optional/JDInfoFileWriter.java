@@ -37,7 +37,7 @@ import jd.utils.Replacer;
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     public static final String CODER = "JD-Team";
-    public static final String VERSION = "0.0.0.1";
+    public static final String VERSION = "$Revision$";
 
     /**
      * 

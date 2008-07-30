@@ -110,7 +110,7 @@ public abstract class Plugin implements ActionListener {
     // /**
     // * Versionsinformationen
     // */
-    // public static final String VERSION = "jDownloader_20070830_0";
+    // public static final String VERSION = "$Revision$";
 
     /**
      * Zeigt an, ob das Plugin abgebrochen werden soll

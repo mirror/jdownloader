@@ -48,7 +48,7 @@ import jd.utils.Reconnecter;
 public class Serienjunkies extends PluginForHost {
     private final static String HOST = "Serienjunkies.org";
 
-    private static final String VERSION = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
     private Pattern patternCaptcha = null;

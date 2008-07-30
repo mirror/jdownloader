@@ -180,6 +180,10 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 this.onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
+                
+            case LinkStatus.ERROR_FATAL:
+                this.onErrorFatal(downloadLink, currentPlugin);
+                break;   
             case LinkStatus.ERROR_CAPTCHA:
                 this.onErrorCaptcha(downloadLink, currentPlugin);
                 break;
@@ -226,6 +230,13 @@ public class SingleDownloadController extends Thread {
             e.printStackTrace();
 
         }
+    }
+
+    private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
+        
+        logger.severe("\r\nFatal Download error occured: "+downloadLink.getLinkStatus());
+       
+        downloadLink.requestGuiUpdate();
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {

@@ -33,7 +33,7 @@ public class MediafireCom extends PluginForHost {
 
     private static final String HOST = "mediafire.com";
 
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "$Revision$";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)", Pattern.CASE_INSENSITIVE);
 

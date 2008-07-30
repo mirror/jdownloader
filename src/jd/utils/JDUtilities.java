@@ -2488,4 +2488,12 @@ public class JDUtilities {
         return getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
+    public static String fillString(String binaryString, String pre, String post,int length) {
+        while(binaryString.length()<length){
+            if(binaryString.length()<length)binaryString=pre+binaryString;
+            if(binaryString.length()<length)binaryString=binaryString+post;
+        }
+        return binaryString;
+    }
+
 }

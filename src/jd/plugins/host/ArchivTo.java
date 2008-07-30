@@ -37,7 +37,7 @@ public class ArchivTo extends PluginForHost {
 
     private static final String HOST = "archiv.to";
 
-    private static final String VERSION = "1.2.0";
+    private static final String VERSION = "$Revision$";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 

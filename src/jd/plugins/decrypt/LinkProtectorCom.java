@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 
 public class LinkProtectorCom extends PluginForDecrypt {
     private static final String host = "link-protector.com";
-    private static final String version = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
@@ -50,7 +50,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host + "-" + version;
+        return host + "-" + VERSION;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     @Override

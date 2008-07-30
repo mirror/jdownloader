@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 public class Przeslijnet extends PluginForHost {
 
     private static final String HOST = "przeslij.net";
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "$Revision$";
     static private final Pattern patternSupported = Pattern.compile("http://www2\\.przeslij\\.net/download.php\\?file=(.*)", Pattern.CASE_INSENSITIVE);
     private String url;
     private RequestInfo requestInfo;

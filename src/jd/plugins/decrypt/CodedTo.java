@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 
 public class CodedTo extends PluginForDecrypt {
     private static final String host = "coded.to";
-    private static final String version = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?coded\\.to/.*?\\?jump\\=[a-zA-Z0-9]{32}", Pattern.CASE_INSENSITIVE);
 
     /*
@@ -56,7 +56,7 @@ public class CodedTo extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host + "-" + version;
+        return host + "-" + VERSION;
     }
 
     @Override
@@ -71,7 +71,7 @@ public class CodedTo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     @Override

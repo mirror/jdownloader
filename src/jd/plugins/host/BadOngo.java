@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 public class BadOngo extends PluginForHost {
     private static final String HOST = "badongo.com";
 
-    private static final String VERSION = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
 
     private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)/[\\d]{4,10}", Pattern.CASE_INSENSITIVE);
 

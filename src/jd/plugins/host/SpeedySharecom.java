@@ -22,7 +22,7 @@ import jd.utils.JDUtilities;
 public class SpeedySharecom extends PluginForHost {
 
     private static final String HOST = "speedy-share.com";
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "$Revision$";
     private String url;
     private String postdata;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);

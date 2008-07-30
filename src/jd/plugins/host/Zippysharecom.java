@@ -19,7 +19,7 @@ import jd.utils.JDUtilities;
 public class Zippysharecom extends PluginForHost {
 
     private static final String HOST = "zippyshare.com";
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "$Revision$";
     static private final Pattern patternSupported = Pattern.compile("http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html", Pattern.CASE_INSENSITIVE);
     private String url;
     private RequestInfo requestInfo;

@@ -33,9 +33,10 @@ public class Browser {
     private int limit = 500 * 1024 * 1025;
     private boolean doRedirects = true;
     private HashMap<String, String> headers;
-    private int connectTimeout=-1;
-    private int readTimeout=-1;
+    private int connectTimeout = -1;
+    private int readTimeout = -1;
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
+    private String acceptLanguage = "de, en-gb;q=0.9, en;q=0.8";
 
     public Browser() {
 
@@ -50,9 +51,10 @@ public class Browser {
         try {
             if (currentURL == null) this.currentURL = new URL(url);
             PostRequest request = new PostRequest(url);
+            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-            if(connectTimeout>0)request.setConnectTimeout(connectTimeout);
-            if(readTimeout>0)request.setReadTimeout(readTimeout);
+            if (connectTimeout > 0) request.setConnectTimeout(connectTimeout);
+            if (readTimeout > 0) request.setReadTimeout(readTimeout);
             forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             request.getPostData().putAll(post);
@@ -77,15 +79,17 @@ public class Browser {
         return null;
 
     }
-    
+
     public HTTPConnection openPostConnection(String url, String post) {
 
         return openPostConnection(url, Request.parseQuery(post));
     }
+
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
         try {
             if (currentURL == null) this.currentURL = new URL(url);
             PostRequest request = new PostRequest(url);
+            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
 
             forwardCookies(request);
@@ -93,7 +97,7 @@ public class Browser {
             request.getPostData().putAll(post);
             if (headers != null) request.getHeaders().putAll(this.headers);
             request.connect();
-          
+
             this.request = request;
             this.currentURL = new URL(url);
             return request.getHttpConnection();
@@ -111,6 +115,7 @@ public class Browser {
         try {
             if (currentURL == null) this.currentURL = new URL(string);
             GetRequest request = new GetRequest(string);
+            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
             forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
@@ -133,10 +138,11 @@ public class Browser {
 
     public String getPage(String string) {
         try {
-            if(string.equals("http://bluehost.to/fetchinfo"))string="http://bluehost.to/image/head.gif";
-           
+            if (string.equals("http://bluehost.to/fetchinfo")) string = "http://bluehost.to/image/head.gif";
+
             if (currentURL == null) this.currentURL = new URL(string);
             GetRequest request = new GetRequest(string);
+            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
             forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
@@ -180,7 +186,7 @@ public class Browser {
             }
             return ret;
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         }
         return null;
@@ -200,7 +206,7 @@ public class Browser {
     }
 
     public Request getRequest() {
-       
+
         return request;
     }
 
@@ -208,7 +214,7 @@ public class Browser {
         try {
             currentURL = new URL(string);
         } catch (MalformedURLException e) {
-            
+
             e.printStackTrace();
         }
 
@@ -293,12 +299,14 @@ public class Browser {
     }
 
     public String getPage(DownloadLink downloadLink) {
-       return getPage(downloadLink.getDownloadURL());
+        return getPage(downloadLink.getDownloadURL());
     }
-public String toString(){
-    if(request==null)return "Browser. no rquest yet";
-    return request.toString();
-}
+
+    public String toString() {
+        if (request == null) return "Browser. no rquest yet";
+        return request.toString();
+    }
+
     public HTTPConnection openFormConnection(Form form) {
         String action = form.getAction();
         switch (form.method) {
@@ -329,12 +337,12 @@ public String toString(){
             return this.openPostConnection(action, form.vars);
         }
         return null;
-        
+
     }
 
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
-        
+
     }
 
     public int getConnectTimeout() {
@@ -353,5 +361,12 @@ public String toString(){
         this.readTimeout = readTimeout;
     }
 
- 
+    public String getAcceptLanguage() {
+        return acceptLanguage;
+    }
+
+    public void setAcceptLanguage(String acceptLanguage) {
+        this.acceptLanguage = acceptLanguage;
+    }
+
 }

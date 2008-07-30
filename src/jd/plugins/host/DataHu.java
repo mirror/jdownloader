@@ -32,7 +32,7 @@ public class DataHu extends PluginForHost {
 
     private static final String HOST = "data.hu";
 
-    private static final String VERSION = "1.0.0";
+    private static final String VERSION = "$Revision$";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?data.hu/get/.+/.+", Pattern.CASE_INSENSITIVE);
 

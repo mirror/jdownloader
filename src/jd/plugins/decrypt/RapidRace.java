@@ -15,7 +15,7 @@ public class RapidRace extends PluginForDecrypt {
 
     static private final String CODER = "TheBlindProphet";
 
-    static private final String VERSION = "1.2";
+    static private final String VERSION = "$Revision$";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
 

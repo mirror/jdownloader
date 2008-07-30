@@ -30,7 +30,7 @@ import jd.plugins.RequestInfo;
 
 public class DDLWarez extends PluginForDecrypt {
     private static final String host = "ddl-warez.org";
-    private static final String version = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+", Pattern.CASE_INSENSITIVE);
     public static Integer Worker_Delay = 250;
 
@@ -51,7 +51,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host + "-" + version;
+        return host + "-" + VERSION;
     }
 
     @Override
@@ -66,7 +66,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     @Override

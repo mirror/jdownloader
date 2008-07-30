@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 
 public class LinkSafeWs extends PluginForDecrypt {
     private static final String host = "linksafe.ws";
-    private static final String version = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksafe\\.ws/files/[a-zA-Z0-9]{4}-[\\d]{5}-[\\d]", Pattern.CASE_INSENSITIVE);
 
     /*
@@ -55,7 +55,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
     @Override
     public String getPluginID() {
-        return host + "-" + version;
+        return host + "-" + VERSION;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     @Override

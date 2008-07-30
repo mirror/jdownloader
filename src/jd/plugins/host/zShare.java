@@ -30,7 +30,7 @@ import jd.plugins.download.RAFDownload;
 public class zShare extends PluginForHost {
     private static final String HOST = "zshare.net";
 
-    private static final String VERSION = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
 

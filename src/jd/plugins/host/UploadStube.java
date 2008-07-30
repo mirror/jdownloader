@@ -30,7 +30,7 @@ import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
     private static final String HOST = "uploadstube.de";
-    private static final String VERSION = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
     static private final Pattern patternSupported = Pattern.compile("http://.*?uploadstube\\.de/download.php\\?file=.*", Pattern.CASE_INSENSITIVE);
 
     //

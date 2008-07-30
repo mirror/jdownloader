@@ -41,10 +41,12 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.http.Request;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -63,8 +65,8 @@ import org.mozilla.javascript.Scriptable;
 public class Rapidshare extends PluginForHost {
     static private final String host = "rapidshare.com";
 
-    private String version = "1.3.0.1";
-
+    private String version = "1.4";
+private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
@@ -83,11 +85,11 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
-    private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
-    private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(bereits eine Datei runter)", Pattern.CASE_INSENSITIVE);
+//    private static final Pattern PATTERN_MATCHER_CAPTCHA_WRONG = Pattern.compile("(wrong [acces ]*?code|Zugriffscode)");
+    private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Please wait until the download is completed)", Pattern.CASE_INSENSITIVE);
     // private static final Pattern PATTERN_MATCHER_HAPPY_HOUR =
     // Pattern.compile("(Happy hour)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
+//    private static final Pattern PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME = Pattern.compile("Alternativ k&ouml;nnen Sie ([\\d]{1,4}) Minuten warten.", Pattern.CASE_INSENSITIVE);
     // <form name="dl"
     // action="http://rs363cg.rapidshare.com/files/119944363/814136/NG_-_001_-_TaN.part2.rar"
     // method="post">
@@ -96,7 +98,7 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
     // private static final Pattern PATTERN_MATCHER_ACCOUNT_EXPIRED=
     // Pattern.compile("(Dieses Konto ist am)");
-    private static final Pattern PATTERN_MATCHER_BOT = Pattern.compile("(Too many wrong codes)");
+//    private static final Pattern PATTERN_MATCHER_BOT = Pattern.compile("(Too many wrong codes)");
 
     private static final Pattern PATTERN_MATCHER_DOWNLOAD_ERRORPAGE = Pattern.compile("(RapidShare)", Pattern.CASE_INSENSITIVE);
     // private static final Pattern PATTERN_FIND_ERROR_CODES =
@@ -104,8 +106,8 @@ public class Rapidshare extends PluginForHost {
     // private static final Pattern PATTERN_MATCHER_FIND_ERROR =
     // Pattern.compile("(<h1>Fehler</h1>)");
 
-    private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(Bitte versuchen Sie es in 2 Minuten)");
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?folgende Datei herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minutes)");
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?download the following file:.*?<p>(.*?)<", Pattern.DOTALL);
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p>(.*?)<", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
@@ -756,30 +758,34 @@ public class Rapidshare extends PluginForHost {
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
-        Request req;
+        Browser br= new Browser();
+        br.setAcceptLanguage(ACCEPT_LANGUAGE);
+        br.setFollowRedirects(false);
+      
         if (!checkDestFile(downloadLink)) { return; }
         String link = downloadLink.getDownloadURL();
 
         // RS URL wird aufgerufen
-        req = new GetRequest(link);
-        req.load();
-        if (req.getLocation() != null) {
+//        req = new GetRequest(link);
+//        req.load();
+        br.getPage(link);
+        if (br.getRedirectLocation() != null) {
             logger.info("Direct Download");
-            doDirectDownload(downloadLink, req.getLocation());
+            doDirectDownload(downloadLink, br.getRedirectLocation());
             return;
         }
         // posturl für auswahl free7premium wird gesucht
-        freeOrPremiumSelectPostURL = new Regex(req, PATTERN_FIND_MIRROR_URL).getFirstMatch();
+        freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getFirstMatch();
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
             String error = null;
-            if ((error = findError(req + "")) != null) {
+            if ((error = findError(br + "")) != null) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(error);
                 return;
             }
-            reportUnknownError(req, 1);
+            reportUnknownError(br, 1);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.warning("could not get newURL");
@@ -787,62 +793,65 @@ public class Rapidshare extends PluginForHost {
         }
 
         // Post um freedownload auszuwählen
-        PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
-        pReq.setPostVariable("dl.start", "free");
-        pReq.load();
+      Form[] forms = br.getForms();
+    
+      br.submitForm(forms[0]);
+//        PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
+//        pReq.setPostVariable("dl.start", "free");
+//        pReq.load();
         String error = null;
 
-        if ((error = findError(req + "")) != null) {
+        if ((error = findError(br + "")) != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(error);
             return;
         }
 
         // Wartezeit (Downloadlimit) wird gesucht
-        String strWaitTime = new Regex(pReq, PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
-        int waitTime;
-        if (strWaitTime != null) {
-            waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
-            logger.info("DownloadLimit reached. Wait " + JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-         
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.setValue(waitTime);
-
-            return;
-        }
+//        String strWaitTime = new Regex(br, PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
+//        int waitTime;
+//        if (strWaitTime != null) {
+//            waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
+//            logger.info("DownloadLimit reached. Wait " + JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
+//            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+//         
+//            // step.setStatus(PluginStep.STATUS_ERROR);
+//            linkStatus.setValue(waitTime);
+//
+//            return;
+//        }
 
         // Fehlersuche
-        if (Regex.matches(pReq, PATTERN_MATCHER_TOO_MANY_USERS)) {
+        if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
             logger.warning("Too many users are currently downloading this file. Wait 2 Minutes and try again");
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
-        } else if (new Regex(pReq, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
+        } else if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
 
-            waitTime = 120 * 1000;
+           // waitTime = 120 * 1000;
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             // step.setStatus(PluginStep.STATUS_ERROR);
             // setDownloadLimitTime(waitTime);
 
-            linkStatus.setValue(waitTime);
+            linkStatus.setValue(120 * 1000);
             return;
-        } else if ((error = findError(pReq + "")) != null) {
+        } else if ((error = findError(br + "")) != null) {
 
-            reportUnknownError(pReq, 2);
+            reportUnknownError(br, 2);
 
             // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(error);
             return;
         }
         // Ticketwartezeit wird gesucht
-        String ticketTime = new Regex(pReq, PATTERN_FIND_TICKET_WAITTIME).getFirstMatch();
+        String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getFirstMatch();
         if (ticketTime != null && ticketTime.equals("0")) ticketTime = null;
 
-        String ticketCode = pReq.getHtmlCode();
+        String ticketCode = br+"";
 
         String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getFirstMatch();
 
@@ -934,16 +943,16 @@ public class Rapidshare extends PluginForHost {
 
         // Falls Serverauswahl fehlerhaft war
         if (linkStatus.isFailed()) { return; }
+//       pReq = new PostRequest(postTarget);
+//        pReq.setPostVariable("mirror", "on");
+//        // if (captchaCode == null) captchaCode = "";
+//        // pReq.setPostVariable("accesscode", captchaCode);
+//        pReq.setPostVariable("x", (int) (Math.random() * 40) + "");
+//        pReq.setPostVariable("y", (int) (Math.random() * 40) + "");
+//        pReq.connect();
 
-        pReq = new PostRequest(postTarget);
-        pReq.setPostVariable("mirror", "on");
-        // if (captchaCode == null) captchaCode = "";
-        // pReq.setPostVariable("accesscode", captchaCode);
-        pReq.setPostVariable("x", (int) (Math.random() * 40) + "");
-        pReq.setPostVariable("y", (int) (Math.random() * 40) + "");
-        pReq.connect();
-
-        HTTPConnection urlConnection = pReq.getHttpConnection();
+        HTTPConnection urlConnection =  br.openPostConnection(postTarget, "mirror=on&x="+(Math.random() * 40)+"&y="+(Math.random() * 40));
+        
         String name = getFileNameFormHeader(urlConnection);
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) name = name.replaceFirst("\\.html$", "");
         downloadLink.setName(name);
@@ -959,44 +968,44 @@ public class Rapidshare extends PluginForHost {
             if (new File(downloadLink.getFileOutput()).length() < 8000) {
                 String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
                 error = findError(page + "");
-                if (new Regex(page, PATTERN_MATCHER_CAPTCHA_WRONG).matches()) {
-
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-
-                    // if (hashFound) {
-
-                    // new
-                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code="
-                    // + captchaCode + "&hash=" +
-                    // JDUtilities.getLocalHash(captchaFile)).load();
-
-                    // }
-                    // JDUtilities.appendInfoToFilename(this, captchaFile,
-                    // captchaCode, false);
-                    // if (ces != null) ces.sendCaptchaWrong();
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-                if (new Regex(page, PATTERN_MATCHER_BOT).matches()) {
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                    linkStatus.setValue(Math.max((int)getBotWaittime(), 60000));
-                    logger.info("Error detected. Bot detected");
-
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-
-                    // new
-                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash="
-                    // + JDUtilities.getLocalHash(captchaFile)).load();
-
-                    return;
-                }
+//                if (new Regex(page, PATTERN_MATCHER_CAPTCHA_WRONG).matches()) {
+//
+//                    new File(downloadLink.getFileOutput()).delete();
+//
+//                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+//
+//                    // if (hashFound) {
+//
+//                    // new
+//                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code="
+//                    // + captchaCode + "&hash=" +
+//                    // JDUtilities.getLocalHash(captchaFile)).load();
+//
+//                    // }
+//                    // JDUtilities.appendInfoToFilename(this, captchaFile,
+//                    // captchaCode, false);
+//                    // if (ces != null) ces.sendCaptchaWrong();
+//                    // step.setStatus(PluginStep.STATUS_ERROR);
+//                    return;
+//                }
+//                if (new Regex(page, PATTERN_MATCHER_BOT).matches()) {
+//                    new File(downloadLink.getFileOutput()).delete();
+//
+//                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+//                    linkStatus.setValue(Math.max((int)getBotWaittime(), 60000));
+//                    logger.info("Error detected. Bot detected");
+//
+//                    // step.setStatus(PluginStep.STATUS_ERROR);
+//
+//                    // new
+//                    // GetRequest("http://jdservice.ath.cx/rs/hw.php?loader=jd&code=BOT!&hash="
+//                    // + JDUtilities.getLocalHash(captchaFile)).load();
+//
+//                    return;
+//                }
                 if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
 
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
                     linkStatus.setErrorMessage(error);
                     logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
@@ -1322,7 +1331,7 @@ public class Rapidshare extends PluginForHost {
                     logger.warning(error);
                     // step.setStatus(PluginStep.STATUS_ERROR);
 
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                     downloadLink.getLinkStatus().setStatusText(error);
                     linkStatus.setErrorMessage(error);
 
@@ -1355,7 +1364,7 @@ public class Rapidshare extends PluginForHost {
                 if (new File(downloadLink.getFileOutput()).length() < 6000 && Regex.matches(JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())), PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
                     new File(downloadLink.getFileOutput()).delete();
 
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
                     // step.setParameter("Download error(>log)");
                     logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
@@ -1690,7 +1699,7 @@ public class Rapidshare extends PluginForHost {
                     // step.setParameter(premium);
                     downloadLink.getLinkStatus().setStatusText(error);
                 } else {
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                     downloadLink.getLinkStatus().setStatusText(error);
                     linkStatus.setErrorMessage(error);
                 }

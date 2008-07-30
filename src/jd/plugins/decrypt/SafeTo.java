@@ -32,7 +32,7 @@ public class SafeTo extends PluginForDecrypt {
 
     private static final String host = "safe.to";
 
-    private static final String version = "1.0.0.0";
+    private static final String VERSION = "$Revision$";
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?safe\\.to/get\\.php\\?i=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
@@ -69,12 +69,12 @@ public class SafeTo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return version;
+        return VERSION;
     }
 
     @Override
     public String getPluginID() {
-        return host + "-" + version;
+        return host + "-" + VERSION;
     }
 
     @Override
