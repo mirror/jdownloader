@@ -27,6 +27,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.parser.Regex;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -105,7 +106,8 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public String getVersion() {
-        return "0.0.2.0";
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     @Override

@@ -818,8 +818,10 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     }
 
+    @Override
     public String getVersion() {
-        return "0.1";
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
     }
 
     public boolean initAddon() {
