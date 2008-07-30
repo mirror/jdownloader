@@ -35,10 +35,10 @@ public class RAFDownload extends DownloadInterface {
     class ChunkBuffer {
         public ByteBuffer buffer;
         public int chunkID;
-        public int chunkPosition;
+        public long chunkPosition;
         public long position;
 
-        public ChunkBuffer(ByteBuffer buffer, long position, int chunkposition, int chunkid) {
+        public ChunkBuffer(ByteBuffer buffer, long position, long chunkposition, int chunkid) {
             this.buffer = buffer;
             this.position = position;
             chunkPosition = chunkposition;
@@ -131,10 +131,10 @@ public class RAFDownload extends DownloadInterface {
 
         if (!isResume() || downloadLink.getChunksProgress() == null) { return false; }
 
-        int loaded = 0;
-        int fileSize = (int) getFileSize();
+        long loaded = 0;
+        long fileSize = getFileSize();
         int chunks = downloadLink.getChunksProgress().length;
-        int part = fileSize / chunks;
+        long part = fileSize / chunks;
 
         for (int i = 0; i < chunks; i++) {
             loaded += downloadLink.getChunksProgress()[i] - i * part;
@@ -222,9 +222,11 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            // downloadLink.getLinkStatus().addStatus(LinkStatus.CRC_STATUS_OK);
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            // CRC_STATUS_OK);
                         } else {
-                            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_CRC_STATUS_BAD);
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            // ERROR_CRC_STATUS_BAD);
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
 
                         }
@@ -256,7 +258,7 @@ public class RAFDownload extends DownloadInterface {
             }
 
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            downloadLink.setDownloadMax((int) fileSize);
+            downloadLink.setDownloadMax(fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
             if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
                 logger.info("Resume: " + fileSize);
@@ -271,10 +273,10 @@ public class RAFDownload extends DownloadInterface {
                 for (int i = 0; i < getChunkNum(); i++) {
                     if (i == getChunkNum() - 1) {
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
-                        chunk.setLoaded((int) (downloadLink.getChunksProgress()[i] - i * parts + 1));
+                        chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     } else {
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
-                        chunk.setLoaded((int) (downloadLink.getChunksProgress()[i] - i * parts + 1));
+                        chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     }
 
                     addChunk(chunk);
@@ -300,7 +302,7 @@ public class RAFDownload extends DownloadInterface {
                 outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
 
                 outputChannel = outputFile.getChannel();
-                downloadLink.setChunksProgress(new int[chunkNum]);
+                downloadLink.setChunksProgress(new long[chunkNum]);
                 logger.info("Filesize = " + fileSize);
                 logger.info("Partsize = " + parts);
                 // int total=0;
@@ -340,19 +342,17 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
     protected boolean writeChunkBytes(Chunk chunk) {
-
         if (writeType) {
             ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
             buffer.put(chunk.buffer);
             buffer.flip();
             synchronized (bufferList) {
-                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(), (int) chunk.getCurrentBytesPosition() - 1, chunk.getID()));
+                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),chunk.getCurrentBytesPosition() - 1, chunk.getID()));
                 // logger.info("new buffer. size: " + bufferList.size());
             }
 
-            if (writer == null) {
+            if (this.writer == null) {
                 writer = new WriterWorker();
 
             }
@@ -364,50 +364,24 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             }
-            // } else {
-            // try {
-            // synchronized (outputChannel) {
-            // outputFile.seek(chunk.getWritePosition());
-            // outputChannel.write(chunk.buffer);
-            // if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] =
-            // (int) chunk.getCurrentBytesPosition() - 1;
-            //                        
-            // return true;
-            // }
-            //
-            // } catch (Exception e) {
-            //
-            // // e.printStackTrace();
-            // error(ERROR_LOCAL_IO);
-            // addException(e);
-            // return false;
-            // }
-            //
-            // }
-
         } else {
-            chunk.buffer.clear();
+            try {
+                synchronized (outputChannel) {
+                    outputFile.seek(chunk.getWritePosition());
+                    outputChannel.write(chunk.buffer);
+                    if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
+
+                    return true;
+                }
+
+            } catch (Exception e) {
+                error(LinkStatus.ERROR_LOCAL_IO, JDUtilities.convertExceptionReadable(e));
+                addException(e);
+                return false;
+            }
+
         }
         return true;
-        // try {
-        // // int limit = chunk.buffer.limit()-chunk.buffer.position();
-        //
-        // if (maxBytes < 0) {
-        // synchronized (outputChannel) {
-        // outputFile.seek(chunk.getWritePosition());
-        // outputChannel.write(chunk.buffer);
-        // }
-        // } else {
-        // chunk.buffer.clear();
-        // }
-        //
-        // } catch (Exception e) {
-        //
-        // e.printStackTrace();
-        // error(ERROR_LOCAL_IO);
-        // addException(e);
-        // }
 
     }
-
 }

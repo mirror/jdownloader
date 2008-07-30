@@ -74,7 +74,7 @@ public class FileFactory extends PluginForHost {
     private File captchaFile;
     private String postTarget;
     private RequestInfo requestInfo;
-    // private String version = "1.5.6";
+    
     private int wait;
 
     public FileFactory() {
@@ -236,8 +236,7 @@ public class FileFactory extends PluginForHost {
 
         }
 
-        int length = urlConnection.getContentLength();
-        downloadLink.setDownloadMax(length);
+        
         downloadLink.setName(getFileNameFormHeader(urlConnection));
 
         if (requestInfo.getConnection().getHeaderField("Location") != null) {
@@ -328,9 +327,7 @@ public class FileFactory extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        int length = urlConnection.getContentLength();
-        downloadLink.setDownloadMax(length);
+        HTTPConnection urlConnection = requestInfo.getConnection();       
         downloadLink.setName(getFileNameFormHeader(urlConnection));
 
         dl = new RAFDownload(this, downloadLink, urlConnection);

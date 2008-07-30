@@ -83,8 +83,7 @@ public class MeinUpload extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-        int length = r.getHttpConnection().getContentLength();
-        downloadLink.setDownloadMax(length);
+        
         dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
         dl.startDownload();
     }
@@ -139,8 +138,7 @@ public class MeinUpload extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
-            int length = r.getHttpConnection().getContentLength();
-            downloadLink.setDownloadMax(length);
+           
             dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
             dl.setChunkNum(1);
             dl.setResume(false);

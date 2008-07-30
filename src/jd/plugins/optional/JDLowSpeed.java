@@ -33,7 +33,7 @@ public class JDLowSpeed extends PluginOptional {
     private Thread pluginThread = null;
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
 
-    // private String version = "0.1";
+    
 
     public JDLowSpeed() {
         ConfigEntry cfg;

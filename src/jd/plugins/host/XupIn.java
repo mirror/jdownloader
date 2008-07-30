@@ -265,8 +265,7 @@ public class XupIn extends PluginForHost {
         }
 
         HTTPConnection urlConnection = requestInfo.getConnection();
-        int length = urlConnection.getContentLength();
-
+        
         if (urlConnection.getContentType().contains("text/html")) {
 
             logger.severe("Captcha code or password wrong");
@@ -276,14 +275,7 @@ public class XupIn extends PluginForHost {
 
         }
 
-        if (Math.abs(length - downloadLink.getDownloadMax()) > 1024 * 1024) {
-
-            logger.severe("Filesize Error");
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-
-        }
+        
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);

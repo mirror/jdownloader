@@ -239,7 +239,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     private JList subscribedList;
 
-    // private String version = "0.1.0";
+    
 
     public Newsfeeds() {
     }

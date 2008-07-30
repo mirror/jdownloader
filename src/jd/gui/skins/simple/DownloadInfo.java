@@ -198,9 +198,9 @@ public class DownloadInfo extends JFrame {
                 JProgressBar p;
                 Chunk next = it.next();
                 addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
-                p.setValue(next.getBytesLoaded() * 100 / Math.max(1, next.getChunkSize()));
+                p.setValue((int)(next.getBytesLoaded() * 100 / Math.max(1, next.getChunkSize())));
                 p.setStringPainted(true);
-                p.setString(JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
+                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
             }
 
         }

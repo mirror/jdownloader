@@ -60,8 +60,11 @@ public class HTTPConnection {
 
     }
 
-    public int getContentLength() {
-        return connection.getContentLength();
+    public long getContentLength() {
+        if (connection.getHeaderField("content-length")==null){
+            return -1;
+        }
+        return new Long(connection.getHeaderField("content-length"));
     }
 
     public String getContentType() {

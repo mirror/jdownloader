@@ -359,10 +359,7 @@ public class Megauploadcom extends PluginForHost {
             return;
 
         }
-        int length = requestInfo.getConnection().getContentLength();
-        downloadLink.setDownloadMax(length);
-        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
-
+        
         downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());

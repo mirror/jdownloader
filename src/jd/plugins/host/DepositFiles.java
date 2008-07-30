@@ -267,8 +267,7 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
+        
         logger.info("Filename: " + getFileNameFormHeader(con));
 
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {

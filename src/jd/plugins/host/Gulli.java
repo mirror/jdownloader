@@ -293,9 +293,7 @@ public class Gulli extends PluginForHost {
         }
 
         // case PluginStep.STEP_DOWNLOAD:
-        logger.info("dl " + finalDownloadURL);
-        int length = finalDownloadConnection.getContentLength();
-        downloadLink.setDownloadMax(length);
+        logger.info("dl " + finalDownloadURL);        
 
         dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
         dl.startDownload();

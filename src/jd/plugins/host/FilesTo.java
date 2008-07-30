@@ -260,8 +260,7 @@ public class FilesTo extends PluginForHost {
 
         // Download vorbereiten
         urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
-        int fileSize = urlConnection.getContentLength();
-        downloadLink.setDownloadMax(fileSize);
+        
         String filename = getFileNameFormHeader(urlConnection);
         downloadLink.setName(filename);
 

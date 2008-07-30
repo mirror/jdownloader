@@ -230,10 +230,7 @@ public class RapidShareDe extends PluginForHost {
 
         }
 
-        int length = urlConnection.getContentLength();
-
-        downloadLink.setDownloadMax(length);
-        String name = getFileNameFormHeader(urlConnection);
+         String name = getFileNameFormHeader(urlConnection);
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
             name = name.replaceFirst("\\.html$", "");
         }

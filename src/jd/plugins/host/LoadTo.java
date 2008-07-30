@@ -196,14 +196,8 @@ public class LoadTo extends PluginForHost {
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
         urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-        int length = urlConnection.getContentLength();
-        if (Math.abs(length - downloadLink.getDownloadMax()) > 1024) {
-            logger.warning("Filesize Check fehler. Neustart");
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
-        downloadLink.setDownloadMax(length);
+        
+       
 
         // case PluginStep.STEP_DOWNLOAD:
 

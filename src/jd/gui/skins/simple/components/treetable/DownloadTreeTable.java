@@ -1003,14 +1003,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 DownloadInterface dl = link.getDownloadInstance();
                 String table = "<p><table>";
                 for (Chunk chunk : dl.getChunks()) {
-                    int loaded = chunk.getBytesLoaded();
-                    int total = chunk.getChunkSize();
+                    long loaded = chunk.getBytesLoaded();
+                    long total = chunk.getChunkSize();
                     table += "<tr>";
                     table += "<td> Verbindung " + chunk.getID() + "</td>";
-                    table += "<td>" + JDUtilities.formatKbReadable((int) chunk.getBytesPerSecond() / 1024) + "/s" + "</td>";
+                    table += "<td>" + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s" + "</td>";
                     table += "<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>";
 
-                    int r = 0;
+                    long r = 0;
                     if (total > 0) {
                         r = loaded * 100 / total;
                     }

@@ -236,8 +236,6 @@ public class Uploadedto extends PluginForHost {
         }
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
-        int length = requestInfo.getConnection().getContentLength();
-        downloadLink.setDownloadMax(length);
         logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
         if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -516,10 +514,7 @@ public class Uploadedto extends PluginForHost {
                 sleep(20000, downloadLink);
                 return;
             }
-            int length = requestInfo.getConnection().getContentLength();
-            downloadLink.setDownloadMax(length);
-            logger.info("Filenam1e: " + getFileNameFormHeader(requestInfo.getConnection()));
-
+            
             if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
@@ -547,9 +542,7 @@ public class Uploadedto extends PluginForHost {
                 sleep(20000, downloadLink);
                 return;
             }
-            int length = requestInfo.getConnection().getContentLength();
-            downloadLink.setDownloadMax(length);
-
+            
             int w = 0;
             while (requestInfo.getHeaders().size() < 2) {
                 w++;

@@ -66,7 +66,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // private transient String statusText = "";
     private transient Boolean available = null;
 
-    private int[] chunksProgress = null;
+    private long[] chunksProgress = null;
 
     /**
      * Containername
@@ -281,7 +281,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return
      */
-    public int[] getChunksProgress() {
+    public long[] getChunksProgress() {
         return chunksProgress;
     }
 
@@ -771,7 +771,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @param is
      */
-    public void setChunksProgress(int[] is) {
+    public void setChunksProgress(long[] is) {
         chunksProgress = is;
 
     }
@@ -811,7 +811,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param downloadMax
      *            Die Größe der Datei
      */
-    public void setDownloadMax(int downloadMax) {
+    public void setDownloadMax(long downloadMax) {
 
         this.downloadMax = downloadMax;
     }

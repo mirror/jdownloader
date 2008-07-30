@@ -232,7 +232,7 @@ public class Rapidshare extends PluginForHost {
 
     private String[] serverList2;
 
-    // private String version = "1.4";
+    
 
     public Rapidshare() {
         super();
@@ -634,9 +634,6 @@ public class Rapidshare extends PluginForHost {
 
             }
 
-            int length = urlConnection.getContentLength();
-
-            downloadLink.setDownloadMax(length);
             String name = getFileNameFormHeader(urlConnection);
             if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
                 name = name.replaceFirst("\\.html$", "");
@@ -888,11 +885,7 @@ public class Rapidshare extends PluginForHost {
             name = name.replaceFirst("\\.html$", "");
         }
         downloadLink.setName(name);
-        int length = urlConnection.getContentLength();
-        downloadLink.setDownloadMax(length);
-
-        logger.info("link: " + postTarget.substring(0, 30) + " ");
-
+        
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         if (dl.startDownload()) {
@@ -1284,9 +1277,6 @@ public class Rapidshare extends PluginForHost {
 
         }
 
-        int length = urlConnection.getContentLength();
-
-        downloadLink.setDownloadMax(length);
         String name = getFileNameFormHeader(urlConnection);
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
             name = name.replaceFirst("\\.html$", "");

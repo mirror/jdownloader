@@ -92,9 +92,6 @@ public class QshareCom extends PluginForHost {
             return;
         }
         HTTPConnection con = br.openGetConnection(link);
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
-        logger.info("Filename: " + getFileNameFormHeader(con));
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);

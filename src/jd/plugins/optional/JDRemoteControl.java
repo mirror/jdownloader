@@ -855,7 +855,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     @SuppressWarnings("unused")
     private AbstractHandler serverHandler;
 
-    // private String version = "0.5.0.5";
+    
 
     public void actionPerformed(ActionEvent e) {
         if (server == null) {

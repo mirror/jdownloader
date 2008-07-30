@@ -96,7 +96,7 @@ abstract public class DownloadInterface {
         // sehr niedrig geregelte chunks haben einen kleinen buffer und eine
         // sehr hohe intervalzeit.
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
-        public static final int MIN_CHUNKSIZE = 1 * 1024 * 1024;
+        public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
         private static final int TIME_BASE = 2000;
 
@@ -108,7 +108,7 @@ abstract public class DownloadInterface {
 
         private long bytesPerSecond = -1;
 
-        private int chunkBytesLoaded = 0;
+        private long chunkBytesLoaded = 0;
 
         private HTTPConnection connection;
 
@@ -130,7 +130,7 @@ abstract public class DownloadInterface {
 
         private long startByte;
 
-        private int totalPartBytes = 0;
+        private long totalPartBytes = 0;
 
         /**
          * die connection wird entsprechend der start und endbytes neu
@@ -145,11 +145,11 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
+            MAX_BUFFERSIZE = (long)JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
 
         }
 
-        private void addChunkBytesLoaded(int limit) {
+        private void addChunkBytesLoaded(long limit) {
             chunkBytesLoaded += limit;
 
         }
@@ -159,7 +159,7 @@ abstract public class DownloadInterface {
          * 
          * @param bytes
          */
-        private void addPartBytes(int bytes) {
+        private void addPartBytes(long bytes) {
             totalPartBytes += bytes;
 
         }
@@ -208,7 +208,7 @@ abstract public class DownloadInterface {
          */
         private HTTPConnection copyConnection(HTTPConnection connection) {
 
-            int start = (int) startByte + getPreBytes(this);
+            long start = startByte + getPreBytes(this);
             String end = (endByte > 0 ? endByte + 1 : "") + "";
             if (start == 0) {
                 return connection;
@@ -270,7 +270,7 @@ abstract public class DownloadInterface {
          */
 
         private void download() {
-            int bufferSize = 1;
+            long bufferSize = 1;
 
             if (speedDebug) {
                 logger.finer("resume Chunk with " + totalPartBytes + "/" + getChunkSize() + " at " + getCurrentBytesPosition());
@@ -281,7 +281,8 @@ abstract public class DownloadInterface {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
-                buffer = ByteBuffer.allocateDirect(bufferSize);
+                /*max 2gb buffer*/
+                buffer = ByteBuffer.allocateDirect((int)bufferSize);
 
             } catch (OutOfMemoryError e) {
                 error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
@@ -306,9 +307,9 @@ abstract public class DownloadInterface {
                 long deltaTime;
                 long timer;
 
-                int bytes;
-                int block = 0;
-                int tempBuff = 0;
+                long bytes;
+                long block = 0;
+                long tempBuff = 0;
                 long addWait;
                 ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 128);
                 int ti = 0;
@@ -379,7 +380,7 @@ abstract public class DownloadInterface {
                     }
                     // if(bytes==0)continue;
                     deltaTime = Math.max(System.currentTimeMillis() - timer, 1);
-                    desiredBps = 1000 * (long) bytes / deltaTime;
+                    desiredBps = 1000 * bytes / deltaTime;
                     if (speedDebug) {
                         logger.finer("desired: " + desiredBps + " - loaded: " + (System.currentTimeMillis() - timer) + " - " + bytes);
                     }
@@ -424,7 +425,8 @@ abstract public class DownloadInterface {
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
                         try {
-                            buffer = ByteBuffer.allocateDirect(Math.max(128, bufferSize));
+                            /*max 2gb buffer*/
+                            buffer = ByteBuffer.allocateDirect((int)Math.max(128, bufferSize));
 
                         } catch (Exception e) {
                             error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
@@ -451,7 +453,7 @@ abstract public class DownloadInterface {
                     }
                     deltaTime = System.currentTimeMillis() - timer;
 
-                    bytesPerSecond = 1000 * (long) bytes / deltaTime;
+                    bytesPerSecond = 1000 *  bytes / deltaTime;
                     updateSpeed();
 
                     if (speedDebug) {
@@ -530,7 +532,7 @@ abstract public class DownloadInterface {
          * @param maxspeed
          * @return
          */
-        private int getBufferSize(long maxspeed) {
+        private long getBufferSize(long maxspeed) {
             if (speedDebug) {
                 logger.finer("speed " + maxspeed);
             }
@@ -539,7 +541,7 @@ abstract public class DownloadInterface {
             }
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
-            int bufferSize = (int) Math.min(MAX_BUFFERSIZE, max);
+            long bufferSize = Math.min(MAX_BUFFERSIZE, max);
             // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -553,8 +555,8 @@ abstract public class DownloadInterface {
          * 
          * @return
          */
-        public int getBytesLoaded() {
-            return (int) (getCurrentBytesPosition() - startByte);
+        public long getBytesLoaded() {
+            return  (getCurrentBytesPosition() - startByte);
         }
 
         /**
@@ -566,8 +568,8 @@ abstract public class DownloadInterface {
             return bytesPerSecond;
         }
 
-        public int getChunkSize() {
-            return (int) (endByte - startByte + 1);
+        public long getChunkSize() {
+            return  (endByte - startByte + 1);
         }
 
         /**
@@ -662,7 +664,7 @@ abstract public class DownloadInterface {
          * 
          * @return
          */
-        public int getTotalPartBytesLoaded() {
+        public long getTotalPartBytesLoaded() {
             return totalPartBytes;
         }
 
@@ -670,8 +672,8 @@ abstract public class DownloadInterface {
          * Gibt die Schreibposition des Chunks in der gesamtfile zurück
          */
         public long getWritePosition() {
-            int c = (int) getCurrentBytesPosition();
-            int l = buffer.limit();
+            long c = getCurrentBytesPosition();
+            long l = buffer.limit();
             return c - l;
         }
 
@@ -693,7 +695,7 @@ abstract public class DownloadInterface {
          * 
          * @param preBytes
          */
-        public int loadPreBytes() {
+        public long loadPreBytes() {
 
             try {
 
@@ -703,7 +705,8 @@ abstract public class DownloadInterface {
                     preBytes = inputStream.available();
                 }
                 ReadableByteChannel channel = Channels.newChannel(inputStream);
-                buffer = ByteBuffer.allocateDirect(preBytes);
+                /*max 2 gb buffer*/
+                buffer = ByteBuffer.allocateDirect((int)preBytes);
 
                 while (buffer.hasRemaining()) {
 
@@ -849,8 +852,8 @@ abstract public class DownloadInterface {
                     return;
 
                 } else if (range != null) {
-                    int gotSB = JDUtilities.filterInt(range[0]);
-                    int gotEB = JDUtilities.filterInt(range[1]);
+                    long gotSB = JDUtilities.filterLong(range[0]);
+                    long gotEB = JDUtilities.filterLong(range[1]);
                     if (gotSB != startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)) {
                         logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + (startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)));
                     }
@@ -920,7 +923,7 @@ abstract public class DownloadInterface {
          * 
          * @param loaded
          */
-        public void setLoaded(int loaded) {
+        public void setLoaded(long loaded) {
             totalPartBytes = loaded;
             addToTotalLinkBytesLoaded(loaded);
         }
@@ -974,7 +977,7 @@ abstract public class DownloadInterface {
 
     // private boolean abortByError = false;
 
-    private int preBytes = 0;
+    private long preBytes = 0;
 
     private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
@@ -988,12 +991,13 @@ abstract public class DownloadInterface {
 
     protected boolean speedDebug = false;
 
-    protected int totaleLinkBytesLoaded = 0;
+    protected long totaleLinkBytesLoaded = 0;
 
     private boolean waitFlag = true;
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
+        this.downloadLink.setDownloadMax(urlConnection.getContentLength());
         linkStatus = downloadLink.getLinkStatus();
         downloadLink.setDownloadInstance(this);
         connection = urlConnection;
@@ -1016,7 +1020,7 @@ abstract public class DownloadInterface {
 
     }
 
-    protected synchronized void addChunksDownloading(int i) {
+    protected synchronized void addChunksDownloading(long i) {
 
         chunksDownloading += i;
 
@@ -1029,12 +1033,12 @@ abstract public class DownloadInterface {
         exceptions.add(e);
     }
 
-    public synchronized void addToChunksInProgress(int i) {
+    public synchronized void addToChunksInProgress(long i) {
         chunksInProgress += i;
 
     }
 
-    protected synchronized void addToTotalLinkBytesLoaded(int block) {
+    protected synchronized void addToTotalLinkBytesLoaded(long block) {
         totaleLinkBytesLoaded += block;
 
     }
@@ -1185,7 +1189,7 @@ abstract public class DownloadInterface {
         return -1;
     }
 
-    private int getPreBytes(Chunk chunk) {
+    private long getPreBytes(Chunk chunk) {
         if (chunk.getID() != 0 || chunk.startByte > 0) {
             return 0;
         }
@@ -1462,7 +1466,7 @@ abstract public class DownloadInterface {
      * 
      * @param i
      */
-    public void setLoadPreBytes(int i) {
+    public void setLoadPreBytes(long i) {
         preBytes = i;
 
     }

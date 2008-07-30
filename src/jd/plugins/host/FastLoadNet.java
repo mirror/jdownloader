@@ -241,7 +241,7 @@ public class FastLoadNet extends PluginForHost {
 
         // Download vorbereiten
         HTTPConnection urlConnection = requestInfo.getConnection();
-        int length = urlConnection.getContentLength();
+        long length = urlConnection.getContentLength();
 
         if (urlConnection.getContentType() != null) {
 

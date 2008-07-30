@@ -673,6 +673,13 @@ public class JDUtilities {
             return 0;
         }
     }
+    public static long filterLong(String src) {
+        try {
+            return Long.parseLong(JDUtilities.filterString(src, "1234567890"));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
 
     /**
      * Filtert alle nicht lesbaren zeichen aus str
@@ -725,6 +732,19 @@ public class JDUtilities {
     }
 
     public static String formatKbReadable(int value) {
+
+        DecimalFormat c = new DecimalFormat("0.00");
+        ;
+        if (value >= 1024 * 1024) {
+
+        return c.format(value / (1024 * 1024.0)) + " GB"; }
+        if (value >= 1024) {
+
+        return c.format(value / 1024.0) + " MB"; }
+        return value + " KB";
+
+    }
+    public static String formatKbReadable(long value) {
 
         DecimalFormat c = new DecimalFormat("0.00");
         ;

@@ -102,10 +102,7 @@ public class BluehostTo extends PluginForHost {
             return;
         }
         Form[] forms = br.getForms();
-        HTTPConnection con = br.openFormConnection(forms[2]);
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
-        logger.info("Filename: " + getFileNameFormHeader(con));
+        HTTPConnection con = br.openFormConnection(forms[2]);        
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

@@ -165,8 +165,7 @@ public class Filer extends PluginForHost {
         sleep(61000, downloadLink);
 
         HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
+        
         logger.info("Filename: " + getFileNameFormHeader(con));
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -197,8 +196,7 @@ public class Filer extends PluginForHost {
         br.getPage("http://www.filer.net/dl/" + id);
 
         HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-        int length = con.getContentLength();
-        downloadLink.setDownloadMax(length);
+        
         logger.info("Filename: " + getFileNameFormHeader(con));
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);

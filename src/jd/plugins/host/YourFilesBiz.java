@@ -210,16 +210,7 @@ public class YourFilesBiz extends PluginForHost {
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
         urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-        int length = urlConnection.getContentLength();
-
-        // if ( Math.abs(length - downloadLink.getDownloadMax()) > 1024*1024 ) {
-        // logger.warning("Dateigrößenfehler -> Neustart");
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        // return;
-        // }
-
-        downloadLink.setDownloadMax(length);
+       
 
         // case PluginStep.STEP_DOWNLOAD:
 
