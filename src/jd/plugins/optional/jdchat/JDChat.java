@@ -597,27 +597,24 @@ public class JDChat extends PluginOptional implements ControlListener {
     private String lastCommand;
     private HashMap<String, String> map;
 
-    @Override
+    
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + " " + getVersion();
-    }
+ 
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
     }
 
-    @Override
+    
     public String getVersion() {
         return "0.1";
     }
 
-    @Override
+    
     public boolean initAddon() {
         this.NAMES = new ArrayList<User>();
         this.sb = new StringBuffer();
@@ -1118,12 +1115,12 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -1147,7 +1144,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public void onExit() {
         conn.close();
     }

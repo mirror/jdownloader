@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
@@ -50,37 +51,34 @@ public class RelinkUs extends PluginForDecrypt {
         this.setConfigEelements();
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + version;
-    }
 
-    @Override
+
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -149,7 +147,7 @@ public class RelinkUs extends PluginForDecrypt {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

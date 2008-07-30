@@ -117,7 +117,7 @@ private Configuration configuration;
     }
 
     @SuppressWarnings("unchecked")
-	@Override
+	
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable();
@@ -205,7 +205,7 @@ private Configuration configuration;
 return table.getSelectedRow();
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.eventmanager.name","Eventmanager");

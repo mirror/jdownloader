@@ -312,7 +312,7 @@ public abstract class PluginForHost extends Plugin {
     /**
      * Wird nicht gebraucht muss aber implementiert werden.
      */
-    @Override
+    
     public String getLinkName() {
 
         return null;

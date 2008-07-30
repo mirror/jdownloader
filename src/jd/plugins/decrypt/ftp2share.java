@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -41,7 +42,7 @@ public class ftp2share extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -79,37 +80,37 @@ public class ftp2share extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + version;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -22,44 +23,44 @@ import jd.utils.JDUtilities;
 public class Freaksharenet extends PluginForHost {
 
     private static final String HOST = "freakshare.net";
-    private static final String VERSION = "$Revision$";
+   
     private String url;
     private String postdata;
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
 
     //
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
@@ -115,7 +116,7 @@ public class Freaksharenet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
@@ -144,20 +145,20 @@ public class Freaksharenet extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
-    @Override
+    
     public void reset() {
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://freakshare.net/?x=faq";
     }

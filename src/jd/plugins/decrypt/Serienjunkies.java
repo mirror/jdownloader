@@ -79,22 +79,22 @@ public class Serienjunkies extends PluginForDecrypt {
 
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + version;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
@@ -125,7 +125,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         this.var = var;
                     }
 
-                    @Override
+                    
                     public String toString() {
                        
                         return name;
@@ -221,24 +221,24 @@ public class Serienjunkies extends PluginForDecrypt {
 
     }
 
-    @Override
+    
     public boolean collectCaptchas() {
        
         return false;
     }
 
-    @Override
+    
     public boolean useUserinputIfCaptchaUnknown() {
        
         return false;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return null;
     }
 
-    @Override
+    
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         data = data.replaceAll("http://vote.serienjunkies.org/?", "");
@@ -286,7 +286,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return false;
     }
 
-    @Override
+    
     public String[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
         Vector<String> ret = new Vector<String>();
@@ -297,22 +297,22 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret.toArray(new String[ret.size()]);
     }
 
-    @Override
+    
     public String cutMatches(String data) {
         return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         request.redirect = true;
         request.withHtmlCode = false;

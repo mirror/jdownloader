@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Regex {
+public class UpdateRegex {
     private Matcher matcher;
-    public Regex(Matcher matcher) {
+    public UpdateRegex(Matcher matcher) {
         if (matcher == null) return;
         this.matcher = matcher;
     }
@@ -32,10 +32,10 @@ public class Regex {
      * @param data
      * @param pattern
      */
-    public Regex(Object data, Pattern pattern) {
+    public UpdateRegex(Object data, Pattern pattern) {
         this(data.toString(), pattern);
     }
-    public Regex(String data, Pattern pattern) {
+    public UpdateRegex(String data, Pattern pattern) {
         if (data == null || pattern == null) return;
         this.matcher = pattern.matcher(data);
     }
@@ -44,7 +44,7 @@ public class Regex {
      * @param data
      * @param pattern
      */
-    public Regex(Object data, String pattern) {
+    public UpdateRegex(Object data, String pattern) {
         this(data.toString(), pattern);
     }
     /**
@@ -53,15 +53,15 @@ public class Regex {
      * @param pattern
      * @param flags flags für den Pattern z.B. Pattern.CASE_INSENSITIVE
      */
-    public Regex(Object data, String pattern, int flags) {
+    public UpdateRegex(Object data, String pattern, int flags) {
         this(data.toString(), pattern, flags);
     }
-    public Regex(String data, String pattern) {
+    public UpdateRegex(String data, String pattern) {
         if (data == null || pattern == null) return;
         this.matcher = Pattern.compile(pattern,
                 Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
     }
-    public Regex(String data, String pattern, int flags) {
+    public UpdateRegex(String data, String pattern, int flags) {
         if (data == null || pattern == null) return;
         this.matcher = Pattern.compile(pattern, flags).matcher(data);
     }
@@ -190,11 +190,11 @@ public class Regex {
     }
     public static boolean matches(Object str, Pattern pat) {
        
-        return new Regex(str,pat).matches();
+        return new UpdateRegex(str,pat).matches();
     }
     public static boolean matches(Object page, String string) {
        
-        return new Regex(page,string).matches();
+        return new UpdateRegex(page,string).matches();
     }
     /**
      * Gibt zu einem typischem Sizestring (12,34kb , 45 mb etc) die größe in bytes zurück.
@@ -204,10 +204,10 @@ public class Regex {
     public static long getSize(String string) {
 
    
-        String[][] matches = new Regex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+        String[][] matches = new UpdateRegex(string, Pattern.compile("([\\d]+)[\\.|\\,|\\:]([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
 
         if (matches == null || matches.length == 0) {
-            matches = new Regex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+            matches = new UpdateRegex(string, Pattern.compile("([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
 
         }
         if (matches == null || matches.length == 0) return -1;
@@ -216,9 +216,9 @@ public class Regex {
         if (matches[0].length == 1) res = Double.parseDouble(matches[0][0]);
         if (matches[0].length == 2) res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
 
-        if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+        if (UpdateRegex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024 * 1024;
-        } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
+        } else if (UpdateRegex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024;
         }
 

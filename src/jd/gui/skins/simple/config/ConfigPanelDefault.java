@@ -94,7 +94,7 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
       }
     }
 
-    @Override
+    
     public void initPanel() {
         if (container.getContainerNum() == 0) {
             Vector<ConfigEntry> entries = container.getEntries();
@@ -145,13 +145,13 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
         
     }
 
-    @Override
+    
     public String getName() {
 
         return "defaultconfigpanel";
     }
 
-    @Override
+    
     public void load() {
         loadConfigEntries();
 
@@ -197,7 +197,7 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
 //        }
 //    }
 //
-//    @Override
+//    
 //    public void initPanel() {
 //
 //        ConfigContainer container = interaction.getConfig();
@@ -248,13 +248,13 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
 //
 //    }
 //
-//    @Override
+//    
 //    public String getName() {
 //        if (interaction == null) { return JDLocale.L("gui.config.interaction.noAction", "no Action"); }
 //        return JDLocale.L("gui.config.interaction.getName", "Interaction Konfiguration: ") + interaction.getInteractionName();
 //    }
 //
-//    @Override
+//    
 //    public void load() {
 //        loadConfigEntries();
 //

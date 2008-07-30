@@ -77,37 +77,37 @@ public class FileFactory extends PluginForHost {
     private int wait;
     private File captchaFile;
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return host + " - " + version;
-    }
+    
+    
+       
+    
 
-    @Override
+    
     public void init() {
         // currentStep = null;
     }
@@ -123,7 +123,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    @Override
+    
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -388,12 +388,12 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public void reset() {
 
         captchaAddress = null;
@@ -431,7 +431,7 @@ public class FileFactory extends PluginForHost {
      * 
      * return ret; }
      */
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -503,7 +503,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -512,7 +512,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
 
         captchaAddress = null;
@@ -523,7 +523,7 @@ public class FileFactory extends PluginForHost {
 
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://www.filefactory.com/info/terms.php";
     }

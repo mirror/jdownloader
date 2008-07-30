@@ -78,7 +78,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         if (er != null) er.saveConfigEntries();
     }
 
-    @Override
+    
     public void initPanel() {
         String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
         JPanel p = new JPanel();
@@ -130,12 +130,12 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         this.validate();
     }
 
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
     }
 
-    @Override
+    
     public String getName() {
         return JDLocale.L("gui.config.reconnect.name", "Reconnect");
     }

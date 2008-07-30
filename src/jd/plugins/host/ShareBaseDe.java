@@ -39,8 +39,10 @@ public class ShareBaseDe extends PluginForHost {
     private static final String CODER = "JD-Team";
     private static final String HOST = "sharebase.de";
     private static final String PLUGIN_NAME = HOST;
-    private static final String PLUGIN_VERSION = "1.0.1";
-    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
+    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    
+    
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
 
     private String cookies = "";
@@ -66,52 +68,52 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public void reset() {
         this.cookies = "";
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -245,13 +247,13 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
        
 
     }
 
-    @Override
+    
     public String getAGBLink() {
        
         return "http://sharebase.de/pp.html";

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -30,7 +31,7 @@ import jd.utils.JDUtilities;
 
 public class CodedTo extends PluginForDecrypt {
     private static final String host = "coded.to";
-    private static final String VERSION = "$Revision$";
+   
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?coded\\.to/.*?\\?jump\\=[a-zA-Z0-9]{32}", Pattern.CASE_INSENSITIVE);
 
     /*
@@ -44,37 +45,34 @@ public class CodedTo extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + VERSION;
-    }
+ 
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -115,7 +113,7 @@ public class CodedTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

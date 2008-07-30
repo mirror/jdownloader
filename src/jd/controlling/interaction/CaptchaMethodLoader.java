@@ -39,7 +39,7 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
 
     public CaptchaMethodLoader() {}
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
        if(true) return false;
        // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.USE_CAPTCHA_EXCHANGE_SERVER, false))return false;
@@ -102,16 +102,16 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
         return NAME;
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void initConfig() {
 
     }
 
-    @Override
+    
     public void resetInteraction() {}
 }

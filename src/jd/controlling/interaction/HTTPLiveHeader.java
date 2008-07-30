@@ -146,7 +146,7 @@ public class HTTPLiveHeader extends Interaction {
         return ret;
     }
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
    
         // Hole die Config parameter. Über die Parameterkeys wird in der
@@ -784,12 +784,12 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    @Override
+    
     public String toString() {
         return NAME;
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
@@ -809,19 +809,19 @@ public class HTTPLiveHeader extends Interaction {
 
 
 
-    @Override
+    
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
 
-    @Override
+    
     public void initConfig() {
 
 
 
     }
 
-    @Override
+    
     public void resetInteraction() {
         retries = 0;
     }

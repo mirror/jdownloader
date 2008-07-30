@@ -120,7 +120,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     }
 
-    @Override
+    
     public void initPanel() {
         // int n = 10;
         // setBorder(new EmptyBorder(n,n,n,n));
@@ -209,7 +209,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
         // GridBagConstraints.BOTH, GridBagConstraints.WEST);
     }
 
-    @Override
+    
     public String getName() {
         return JDLocale.L("gui.config.plugin.optional.name", "Optional Plugins");
     }

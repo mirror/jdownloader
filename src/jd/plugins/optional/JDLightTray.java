@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 
 import jd.config.MenuItem;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -43,27 +44,24 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     private TrayIconPopup popup;
 
-    @Override
+    
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + " " + getVersion();
-    }
+  
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }
 
-    @Override
+    
     public String getVersion() {
-        return "0.1";
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try{
@@ -99,12 +97,12 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.6+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
@@ -172,7 +170,7 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     }
 
-    @Override
+    
     public void onExit() {
         if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
         

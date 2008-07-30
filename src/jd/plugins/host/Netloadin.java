@@ -44,8 +44,8 @@ public class Netloadin extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
     static private final String HOST = "netload.in";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "1.1.0";
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "1.1.0";
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
     static private final String AGB_LINK = "http://netload.in/index.php?id=13";
     // /Simplepattern
@@ -94,37 +94,37 @@ public class Netloadin extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+   
 
-    // @Override
+    // 
     // public URLConnection getURLConnection() {
     // // XXX: ???
     // return null;
@@ -416,7 +416,7 @@ public class Netloadin extends PluginForHost {
      * 
      * @see jd.plugins.Plugin#doBotCheck(java.io.File)
      */
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
@@ -426,7 +426,7 @@ public class Netloadin extends PluginForHost {
      * 
      * @see jd.plugins.PluginForHost#reset()
      */
-    @Override
+    
     public void reset() {
         requestInfo = null;
         this.sessionID = null;
@@ -441,7 +441,7 @@ public class Netloadin extends PluginForHost {
      * 
      * @see jd.plugins.PluginForHost#checkAvailability(jd.plugins.DownloadLink)
      */
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         //
@@ -487,7 +487,7 @@ public class Netloadin extends PluginForHost {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -520,12 +520,12 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         END_OF_DOWNLOAD_LIMIT = 0l;
     }
 
-    @Override
+    
     public String getAGBLink() {
         return AGB_LINK;
     }

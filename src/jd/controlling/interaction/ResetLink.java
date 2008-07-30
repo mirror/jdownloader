@@ -48,7 +48,7 @@ public class ResetLink extends Interaction implements Serializable {
     public ResetLink() {
     }
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
         logger.info("Starting Rest Link");
         String type = this.getStringProperty(PARAM_LAST_OR_ALL, (String) OPTIONS[1]);
@@ -81,12 +81,12 @@ public class ResetLink extends Interaction implements Serializable {
         return NAME;
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void initConfig() {
         // int type, Property propertyInstance, String propertyName, Object[]
         // list, String label
@@ -94,7 +94,7 @@ public class ResetLink extends Interaction implements Serializable {
 
     }
 
-    @Override
+    
     public void resetInteraction() {
     }
 }

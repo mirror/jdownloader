@@ -199,7 +199,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     }
 
-    @Override
+    
     public void initPanel() {
         setupContainer();
         this.setLayout(new GridBagLayout());
@@ -246,7 +246,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
     /*
      * private int getSelectedIndex() { return table.getSelectedRow(); }
      */
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.jac.name", "jAntiCaptcha");

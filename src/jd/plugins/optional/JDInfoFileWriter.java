@@ -26,6 +26,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
@@ -63,27 +64,23 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + VERSION;
-    }
-
-    @Override
+ 
+    
     public String getPluginName() {
         return NAME;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
@@ -94,17 +91,17 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         initConfig();
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    
     public void onExit() {
      JDUtilities.getController().removeControlListener(this);
     }

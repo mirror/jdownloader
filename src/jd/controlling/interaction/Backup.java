@@ -46,7 +46,7 @@ public class Backup extends Interaction implements Serializable {
     
     private static final String		backuppath		= JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/backup/";
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
         try {
         	int size = 0;
@@ -153,20 +153,20 @@ public class Backup extends Interaction implements Serializable {
         return true;
     }
 
-	@Override
+	
     public String toString() {
         return JDLocale.L("interaction.backup.toString","Backup der wichtigesten Datein");
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void run() {}
 
-    @Override
+    
     public void initConfig() {
     	config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, "LINK_DAT_COPY", new String[] {""}, JDLocale.L("interaction.backup.linkcopy", "links.dat kopieren")));
     	config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, "LINK_DAT_NUMBER_COPY", JDLocale.L("interaction.backup.linkcopy.number", "Anzahl der Kopien"),1,50).setDefaultValue(5));
@@ -177,7 +177,7 @@ public class Backup extends Interaction implements Serializable {
     	config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this, "CONFIG", new String[] {""}, JDLocale.L("interaction.backup.config", "Konfig speichern")));
     }
 
-    @Override
+    
     public void resetInteraction() {
         
     }

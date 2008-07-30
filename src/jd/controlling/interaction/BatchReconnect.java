@@ -53,7 +53,7 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     private int                 retries                           = 0;
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
 
         retries++;
@@ -144,22 +144,22 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     }
 
-    @Override
+    
     public String toString() {
         return JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen");
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
 
-    @Override
+    
     public void initConfig() {
        SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
         ConfigEntry cfg;
@@ -185,7 +185,7 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     }
 
-    @Override
+    
     public void resetInteraction() {
         retries = 0;
     }

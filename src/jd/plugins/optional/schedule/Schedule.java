@@ -16,7 +16,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     
     ScheduleControl sControl = new ScheduleControl();
     
-    @Override
+    
     public boolean initAddon() {
       
                logger.info("Schedule OK");
@@ -26,29 +26,27 @@ public class Schedule extends PluginOptional implements ControlListener {
      
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem(JDLocale.L("addons.schedule.menu.settings","Settings"),0).setActionListener(this));
         return menu;
     }
 
-    @Override
+    
     public String getCoder() {
         return "Tudels";
     }
 
-    @Override
-    public String getPluginID() {
-        return "0.5";
-    }
+    
+   
 
-    @Override
+    
     public String getVersion() {
         return "0.5";
     }
@@ -63,7 +61,7 @@ public class Schedule extends PluginOptional implements ControlListener {
         this.sControl.setVisible(true);
     }
 
-    @Override
+    
     public void onExit() {
        
         

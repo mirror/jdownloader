@@ -121,7 +121,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     jars=jarFiles.toArray(new JarFile[]{});
     }
 
-    @Override
+    
     protected URL findResource(String name) {
 
         URL url;
@@ -131,7 +131,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return super.findResource(name);
     }
 
-    @Override
+    
     public URL getResource(String name) {
 
         if (jars != null) {
@@ -165,7 +165,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
         return null;
     }
 
-    @Override
+    
     public Enumeration<URL> getResources(String name) throws IOException {
         Vector<URL> urls = new Vector<URL>();
 

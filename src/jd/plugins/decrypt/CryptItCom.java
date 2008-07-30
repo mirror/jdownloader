@@ -27,8 +27,10 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
 import jd.crypt.AESdecrypt;
 import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -61,37 +63,34 @@ public class CryptItCom extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+   
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -274,7 +273,7 @@ public class CryptItCom extends PluginForDecrypt {
         return requestInfo;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

@@ -74,27 +74,26 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     @SuppressWarnings("unused")
     private AbstractHandler serverHandler;
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return version;
-    }
+    
+    
+ 
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
 
@@ -123,7 +122,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
@@ -145,7 +144,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem("Toggle Start/Stop", 0).setActionListener(this));
@@ -934,7 +933,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public void onExit() {
        
 

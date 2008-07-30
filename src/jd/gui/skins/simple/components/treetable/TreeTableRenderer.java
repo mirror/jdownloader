@@ -216,7 +216,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         private static final long serialVersionUID = -3508403269097752259L;
         private double p;
 
-        @Override
+        
         protected void paintComponent(Graphics g) {
             if (p != 0) {
                 int n = 3;

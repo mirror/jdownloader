@@ -33,7 +33,7 @@ public class MediafireCom extends PluginForHost {
 
     private static final String HOST = "mediafire.com";
 
-    private static final String VERSION = "$Revision$";
+   
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)", Pattern.CASE_INSENSITIVE);
 
@@ -41,37 +41,37 @@ public class MediafireCom extends PluginForHost {
 
     private String url;
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
@@ -109,7 +109,7 @@ public class MediafireCom extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
@@ -126,20 +126,20 @@ public class MediafireCom extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
-    @Override
+    
     public void reset() {
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://www.mediafire.com/terms_of_service.php";
     }

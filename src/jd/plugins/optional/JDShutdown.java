@@ -29,6 +29,7 @@ import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -41,27 +42,24 @@ public class JDShutdown extends PluginOptional {
     private static final int count = 60;
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + " " + getVersion();
-    }
+  
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 
-    @Override
+    
     public String getVersion() {
-        return "0.3";
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
 
         JDUtilities.getController().addControlListener(this);
@@ -85,12 +83,12 @@ public class JDShutdown extends PluginOptional {
         }
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -104,7 +102,7 @@ public class JDShutdown extends PluginOptional {
         return menu;
     }
 
-    @Override
+    
     public void onExit() {
     }
 

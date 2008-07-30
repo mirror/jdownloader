@@ -48,7 +48,7 @@ import jd.utils.Reconnecter;
 public class Serienjunkies extends PluginForHost {
     private final static String HOST = "Serienjunkies.org";
 
-    private static final String VERSION = "$Revision$";
+   
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
     private Pattern patternCaptcha = null;
@@ -56,37 +56,37 @@ public class Serienjunkies extends PluginForHost {
     private String subdomain = "download.";
 
     //
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
@@ -96,13 +96,13 @@ public class Serienjunkies extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DECRYPT, null));
     }
 
-    @Override
+    
     public boolean collectCaptchas() {
        
         return false;
     }
 
-    @Override
+    
     public boolean useUserinputIfCaptchaUnknown() {
        
         return false;
@@ -507,28 +507,28 @@ public class Serienjunkies extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return true;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    @Override
+    
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public String getAGBLink() {
 
         return null;

@@ -22,6 +22,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -43,37 +44,33 @@ public class ScumIn extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + version;
-    }
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -114,7 +111,7 @@ public class ScumIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

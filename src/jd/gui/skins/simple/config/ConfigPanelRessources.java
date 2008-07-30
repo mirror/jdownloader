@@ -172,13 +172,13 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
         add(panel, BorderLayout.CENTER);
     }
 
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
 
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.packagemanager.name", "Paketmanager");

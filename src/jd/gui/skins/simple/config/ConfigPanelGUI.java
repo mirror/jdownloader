@@ -69,7 +69,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         guiConfig.save();
     }
 
-    @Override
+    
     public void initPanel() {
         setupConfiguration();
          
@@ -171,12 +171,12 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     }
 
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
     }
 
-    @Override
+    
     public String getName() {
         return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
     }

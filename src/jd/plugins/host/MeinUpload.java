@@ -42,7 +42,7 @@ public class MeinUpload extends PluginForHost {
     // 
     private static final String CODER = "jD-Team";
     private static final String HOST = "meinupload.com";
-    private static final String PLUGIN_VERSION = "0.1.0";
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
     static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?meinupload.com/{1,}dl/.+/.+", Pattern.CASE_INSENSITIVE);
@@ -56,47 +56,47 @@ public class MeinUpload extends PluginForHost {
         setConfigElements();
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + PLUGIN_VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PATTERN_SUPPORTED;
     }
 
-    @Override
+    
     public void reset() {
 
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -105,16 +105,16 @@ public class MeinUpload extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
     }
 
-    @Override
+    
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 

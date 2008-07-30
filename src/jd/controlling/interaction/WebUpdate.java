@@ -47,7 +47,7 @@ public class WebUpdate extends Interaction implements Serializable {
 
     private WebUpdater          updater;
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
         logger.info("Starting WebUpdate");
         updater = new WebUpdater(null);
@@ -68,12 +68,12 @@ public class WebUpdate extends Interaction implements Serializable {
         return JDLocale.L("interaction.webupdate.toString","WebUpdate durchführen");
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     /**
      * Der eigentlich UpdaterVorgang läuft in einem eigenem Thread ab
      */
@@ -139,9 +139,9 @@ logger.info(updater.getLogger().toString());
         // }
     }
 
-    @Override
+    
     public void initConfig() {}
 
-    @Override
+    
     public void resetInteraction() {}
 }

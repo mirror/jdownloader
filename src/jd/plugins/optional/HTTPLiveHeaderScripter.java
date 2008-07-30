@@ -80,8 +80,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return 0;
     }
 
-
-
     private JFrame frame;
 
     private JTextArea textArea;
@@ -98,7 +96,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private JMenuItem menEditValidate;
 
-//    private JMenuItem menEditTest;
+    // private JMenuItem menEditTest;
 
     private JMenuItem menEditAddRequest;
 
@@ -108,27 +106,18 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private JMenuItem menEditAddVariable;
 
-    @Override
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + " " + getVersion();
-    }
-
-    @Override
     public String getPluginName() {
         return JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter");
     }
 
-    @Override
     public String getVersion() {
-        return "0.1";
+        return new Regex("$Revision$", "\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
     public boolean initAddon() {
 
         return true;
@@ -149,7 +138,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         textArea = new JTextArea();
         JScrollPane scrollPane = new JScrollPane(textArea);
         // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
+        textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
         frame.setResizable(true);
         textArea.setEditable(true);
         textArea.requestFocusInWindow();
@@ -202,7 +191,7 @@ textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
         this.menEditAddVariable = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable", "Add variable"));
 
         menEditValidate.addActionListener(this);
-        //menEditTest.addActionListener(this);
+        // menEditTest.addActionListener(this);
         menEditAddRequest.addActionListener(this);
         menEditAddDefine.addActionListener(this);
         menEditAddWait.addActionListener(this);
@@ -216,12 +205,12 @@ textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
         menEdit.add(menEditAddDefine);
 
         menEdit.add(menEditAddWait);
-       // menEdit.add(menEditAddVariable);
+        // menEdit.add(menEditAddVariable);
 
     }
 
     @SuppressWarnings("unchecked")
-	public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) {
         if (e.getSource() == this.menImportHTTPLive) {
             this.importFF();
             return;
@@ -287,51 +276,50 @@ textArea.setText("[[[HSRC]]]\r\n\r\n\r\n[[[/HSRC]]]");
         if (e.getSource() == this.menEditAddRequest) {
 
             if (!validate()) return;
-String script=this.textArea.getText();
-int id=Math.max(script.lastIndexOf("[[[/STEP]]]")+11,script.lastIndexOf("[[[HSRC]]]")+9);
-StringBuffer sb= new StringBuffer();
-sb.append(script.substring(0,id).trim());
-sb.append("\r\n");
-sb.append("     [[[STEP]]]" + "\r\n");
-sb.append("          [[[REQUEST]]]" + "\r\n\r\n");
-sb.append("          [[[/REQUEST]]]" + "\r\n");
-sb.append("     [[[/STEP]]]" + "\r\n");
+            String script = this.textArea.getText();
+            int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
+            StringBuffer sb = new StringBuffer();
+            sb.append(script.substring(0, id).trim());
+            sb.append("\r\n");
+            sb.append("     [[[STEP]]]" + "\r\n");
+            sb.append("          [[[REQUEST]]]" + "\r\n\r\n");
+            sb.append("          [[[/REQUEST]]]" + "\r\n");
+            sb.append("     [[[/STEP]]]" + "\r\n");
 
-sb.append(script.substring(id).trim());
-textArea.setText(sb+"");
+            sb.append(script.substring(id).trim());
+            textArea.setText(sb + "");
             return;
         }
         if (e.getSource() == this.menEditAddDefine) {
             if (!validate()) return;
-            String script=this.textArea.getText();
-            int id=Math.max(script.indexOf("[[[STEP]]]"),script.indexOf("[[[HSRC]]]")+9);
-            StringBuffer sb= new StringBuffer();
-            sb.append(script.substring(0,id).trim());
+            String script = this.textArea.getText();
+            int id = Math.max(script.indexOf("[[[STEP]]]"), script.indexOf("[[[HSRC]]]") + 9);
+            StringBuffer sb = new StringBuffer();
+            sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
             sb.append("     [[[STEP]]]" + "\r\n");
             sb.append("          [[[DEFINE variablename=\"VALUE\"/]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
 
             sb.append(script.substring(id).trim());
-            textArea.setText(sb+"");
+            textArea.setText(sb + "");
             return;
         }
         if (e.getSource() == this.menEditAddWait) {
             if (!validate()) return;
-            String script=this.textArea.getText();
-            int id=Math.max(script.lastIndexOf("[[[/STEP]]]")+11,script.lastIndexOf("[[[HSRC]]]")+9);
-            StringBuffer sb= new StringBuffer();
-            sb.append(script.substring(0,id).trim());
+            String script = this.textArea.getText();
+            int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
+            StringBuffer sb = new StringBuffer();
+            sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
             sb.append("     [[[STEP]]]" + "\r\n");
             sb.append("          [[[WAIT seconds=\"3\"/]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
 
             sb.append(script.substring(id).trim());
-            textArea.setText(sb+"");
+            textArea.setText(sb + "");
             return;
         }
-  
 
         if (frame == null || !frame.isVisible()) {
             initGUI();
@@ -381,7 +369,7 @@ textArea.setText(sb+"");
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                 return false;
             }
-//            RequestInfo requestInfo = null;
+            // RequestInfo requestInfo = null;
             NodeList steps = root.getChildNodes();
 
             for (int step = 0; step < steps.getLength(); step++) {
@@ -398,7 +386,7 @@ textArea.setText(sb+"");
                     JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
                     return false;
                 }
-//                NodeList toDos = current.getChildNodes();
+                // NodeList toDos = current.getChildNodes();
 
             }
 
@@ -426,10 +414,10 @@ textArea.setText(sb+"");
         String[] forbiddenHeaders = new String[] { "accept", "user-agent", "If-Modified-Since", "Cache-Control" };
 
         ArrayList<String> ips = new ArrayList<String>();
-//        ArrayList<String> vars = new ArrayList<String>();
+        // ArrayList<String> vars = new ArrayList<String>();
         String[] requests = script.split("----------------------------------------------------------");
         StringBuffer sb = new StringBuffer();
-         for (String request : requests) {
+        for (String request : requests) {
 
             String[] lines = Regex.getLines(request.trim());
             if (lines.length < 3) continue;
@@ -670,12 +658,10 @@ textArea.setText(sb+"");
 
     }
 
-    @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         if (frame == null || !frame.isVisible()) {
@@ -687,7 +673,6 @@ textArea.setText(sb+"");
         return menu;
     }
 
-    @Override
     public void onExit() {
 
     }

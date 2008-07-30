@@ -39,7 +39,7 @@ public class XupIn extends PluginForHost {
 
     private static final String CODER = "jD-Team";
     private static final String HOST = "xup.in";
-    private static final String PLUGIN_VERSION = "0.2.0";
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
     private static final String AGB_LINK = "http://www.xup.in/terms/";
 
     static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?", Pattern.CASE_INSENSITIVE);
@@ -70,42 +70,42 @@ public class XupIn extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + PLUGIN_VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PATTERN_SUPPORTED;
     }
 
-    @Override
+    
     public void reset() {
 
         vid = "";
@@ -116,21 +116,21 @@ public class XupIn extends PluginForHost {
 
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
     }
 
-    @Override
+    
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 

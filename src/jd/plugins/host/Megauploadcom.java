@@ -29,6 +29,7 @@ import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -48,9 +49,9 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String PLUGIN_NAME = HOST;
 
-    static private final String PLUGIN_VERSION = "0.1";
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
 
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String CODER = "JD-Team";
 
@@ -112,37 +113,37 @@ public class Megauploadcom extends PluginForHost {
 
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
-    // @Override
+    // 
     // public URLConnection getURLConnection() {
     // // XXX: ???
     // return null;
@@ -334,12 +335,12 @@ public class Megauploadcom extends PluginForHost {
 
     // Retry-After
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public void reset() {
         // this.finalURL = null;
         this.captchaPost = null;
@@ -353,7 +354,7 @@ public class Megauploadcom extends PluginForHost {
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
@@ -390,7 +391,7 @@ public class Megauploadcom extends PluginForHost {
         return true;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -399,13 +400,13 @@ public class Megauploadcom extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
        
 
     }
 
-    @Override
+    
     public String getAGBLink() {
        
         return "http://www.megaupload.com/terms/";

@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 public class RapidShareDe extends PluginForHost {
     private static final String HOST = "rapidshare.de";
 
-    private static final String VERSION = "$Revision$";
+   
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
@@ -55,37 +55,37 @@ public class RapidShareDe extends PluginForHost {
     private String code = null;
 
     //
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
@@ -304,7 +304,7 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Form[] forms = Form.getForms(downloadLink.getDownloadURL());
@@ -321,7 +321,7 @@ public class RapidShareDe extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -330,17 +330,17 @@ public class RapidShareDe extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public String getAGBLink() {
 
         return "http://rapidshare.de/de/faq.html";

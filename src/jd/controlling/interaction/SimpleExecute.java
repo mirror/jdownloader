@@ -48,7 +48,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
     private static final String PROPERTY_WAITTIME = "PROPERTY_WAITTIME";
     private static final String PROPERTY_USE_EXECUTE_IN = "PROPERTY_USE_EXECUTE_IN";
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
 
         String command = Replacer.insertVariables(getStringProperty(PROPERTY_COMMAND));
@@ -74,22 +74,22 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     }
 
-    @Override
+    
     public String toString() {
         return NAME;
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void run() {
         // Nichts zu tun. Interaction braucht keinen Thread
     }
 
-    @Override
+    
     public void initConfig() {
        
         ConfigEntry cfg;
@@ -118,7 +118,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
        cfg.setEnabledCondidtion(conditionEntry, "==", true);
     }
 
-    @Override
+    
     public void resetInteraction() {
     }
 

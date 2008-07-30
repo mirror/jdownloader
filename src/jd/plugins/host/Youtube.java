@@ -40,8 +40,8 @@ public class Youtube extends PluginForHost {
 
     static private final String HOST = "youtube.com";
     static private final String PLUGIN_NAME = HOST;
-    static private final String PLUGIN_VERSION = "0.1";
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
 
     public static final int CONVERT_ID_AUDIO = 0;
@@ -61,35 +61,35 @@ public class Youtube extends PluginForHost {
 
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
     public String getPluginNameExtension(DownloadLink link) {
         int convert = Integer.parseInt(new Regex(link.getDownloadURL(), CONVERT).getFirstMatch());
@@ -202,12 +202,12 @@ public class Youtube extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public void reset() {
         // this.url = null;
     }
@@ -217,7 +217,7 @@ public class Youtube extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
@@ -236,17 +236,17 @@ public class Youtube extends PluginForHost {
         return true;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return 50;
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
 
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://youtube.com/t/terms";
     }

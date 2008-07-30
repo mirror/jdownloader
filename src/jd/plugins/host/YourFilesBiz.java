@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -37,8 +38,8 @@ public class YourFilesBiz extends PluginForHost {
     private static final String CODER = "eXecuTe";
     private static final String HOST = "yourfiles.biz";
     private static final String PLUGIN_NAME = HOST;
-    private static final String PLUGIN_VERSION = "0.1.0";
-    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
     private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
@@ -61,42 +62,42 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public void reset() {
 
         this.downloadURL = "";
@@ -104,12 +105,12 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -210,11 +211,11 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://yourfiles.biz/rules.php";
     }

@@ -1295,12 +1295,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * @author Tom
      */
     private final class LogDialogWindowAdapter extends WindowAdapter {
-        @Override
+        
         public void windowOpened(WindowEvent e) {
             if (menViewLog != null) menViewLog.setSelected(true);
         }
 
-        @Override
+        
         public void windowClosed(WindowEvent e) {
             if (menViewLog != null) menViewLog.setSelected(false);
         }
@@ -1984,7 +1984,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (warningWorker != null) warningWorker.interrupt();
             warningWorker = new Thread() {
 
-                @Override
+                
                 public void run() {
                     for (int i = 0; i < 5; i++) {
                         try {

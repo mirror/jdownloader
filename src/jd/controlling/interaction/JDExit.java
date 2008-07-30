@@ -43,7 +43,7 @@ public class JDExit extends Interaction implements Serializable {
     public static String        PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
     public JDExit() {
      }
-    @Override
+    
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");
       System.exit(0);
@@ -56,12 +56,12 @@ public class JDExit extends Interaction implements Serializable {
     public String toString() {
         return NAME;
     }
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
-    @Override
+    
     public void initConfig() {}
-    @Override
+    
     public void resetInteraction() {}
 }

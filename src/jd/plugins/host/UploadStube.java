@@ -30,41 +30,41 @@ import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
     private static final String HOST = "uploadstube.de";
-    private static final String VERSION = "$Revision$";
+   
     static private final Pattern patternSupported = Pattern.compile("http://.*?uploadstube\\.de/download.php\\?file=.*", Pattern.CASE_INSENSITIVE);
 
     //
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+   
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
@@ -101,7 +101,7 @@ public class UploadStube extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
@@ -130,22 +130,22 @@ public class UploadStube extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
-    @Override
+    
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public String getAGBLink() {
 
         return "http://www.uploadstube.de/regeln.php";

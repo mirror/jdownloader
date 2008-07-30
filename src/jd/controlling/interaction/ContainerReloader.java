@@ -113,12 +113,12 @@ public class ContainerReloader extends Interaction implements Serializable {
         return "ContainerLoader: Lädt geladene Container";
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void initConfig() {
        // ConfigEntry cfg;
         // int type, Property propertyInstance, String propertyName, Object[]
@@ -127,6 +127,6 @@ public class ContainerReloader extends Interaction implements Serializable {
         
     }
 
-    @Override
+    
     public void resetInteraction() {}
 }

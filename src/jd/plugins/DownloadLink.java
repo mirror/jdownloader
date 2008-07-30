@@ -504,7 +504,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // *
     // * @see java.lang.Object#equals(java.lang.Object)
     // */
-    // @Override
+    // 
     // public boolean equals(Object obj) {
     //
     // if (obj instanceof DownloadLink && this.getName() != null &&

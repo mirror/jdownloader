@@ -150,7 +150,9 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return Plugin ID
      */
-    public abstract String getPluginID();
+    public String getPluginID() {
+        return getPluginName() + "-" + getVersion();
+    }
 
     /**
      * Hier wird der Author des Plugins ausgelesen

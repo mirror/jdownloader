@@ -39,7 +39,7 @@ public class SplashPainter
                 setPreferredSize(new Dimension(image.getWidth(null),image.getHeight(null)));
         }
        
-        @Override
+        
         public void paintComponent(Graphics g)
         {
                 super.paintComponents(g);

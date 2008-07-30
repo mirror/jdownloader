@@ -17,7 +17,7 @@ public class UserInfo {
 	public String channels = "";
 	public boolean identified = false;
 
-	@Override
+	
 	public String toString() {
 		// TODO Auto-generated method stub
 		return hostname + "\r\n" + channels + "\r\n" + "Identified:"

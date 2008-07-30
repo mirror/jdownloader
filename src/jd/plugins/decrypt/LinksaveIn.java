@@ -22,6 +22,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
@@ -42,37 +44,34 @@ public class LinksaveIn extends PluginForDecrypt {
         super();        
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+   
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;        
             ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -97,7 +96,7 @@ public class LinksaveIn extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

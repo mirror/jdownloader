@@ -74,7 +74,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         return Object.class;
     }
 
-    @Override
+    
     public String getColumnName(int column) {
         return COLUMN_NAMES[column];
     }

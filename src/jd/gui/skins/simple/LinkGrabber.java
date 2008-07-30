@@ -1583,7 +1583,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
 
-            @Override
+            
             public TableCellRenderer getCellRenderer(int arg0, int arg1) {
                 return internalTableCellRenderer;
             }

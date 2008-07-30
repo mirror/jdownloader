@@ -77,7 +77,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private int                 retries                           = 0;
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
 
         retries++;
@@ -155,22 +155,22 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     }
 
-    @Override
+    
     public String toString() {
         return JDLocale.L("interaction.externreconnect.toString", "Externes Reconnectprogramm aufrufen");
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
 
-    @Override
+    
     public void initConfig() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_COMMAND, JDLocale.L("interaction.externreconnect.command", "Befehl (absolute Pfade verwenden)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), PROPERTY_RECONNECT_PARAMETER, JDLocale.L("interaction.externreconnect.parameter", "Parameter (1 Parameter/Zeile)")));
@@ -183,7 +183,7 @@ public class ExternReconnect extends Interaction implements Serializable {
      
     }
 
-    @Override
+    
     public void resetInteraction() {
         retries = 0;
     }

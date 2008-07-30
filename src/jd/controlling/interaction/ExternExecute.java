@@ -57,7 +57,7 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
     private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
     private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";
     private static final String PROPERTY_WAIT_FOR_RETURN = "PROPERTY_WAIT_FOR_RETURN";
-    @Override
+    
     public boolean doInteraction(Object arg) {
         
         if (getBooleanProperty(PROPERTY_DISABLED, false)) {
@@ -77,19 +77,19 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
        return true;
     
     }
-    @Override
+    
     public String toString() {
         return JDLocale.L("interaction.externExecute.toString","Externes Programm aufrufen");
     }
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
-    @Override
+    
     public void run() {
     // Nichts zu tun. Interaction braucht keinen Thread
     }
-    @Override
+    
     public void initConfig() {
         
        // ConfigEntry cfg;
@@ -114,7 +114,7 @@ public class ExternExecute extends Interaction implements Serializable,ActionLis
         
       
     }
-    @Override
+    
     public void resetInteraction() {
     }
     public void actionPerformed(ActionEvent e) {

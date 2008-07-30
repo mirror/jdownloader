@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -48,11 +49,11 @@ public class Secured extends PluginForDecrypt {
 
     static private final String HOST = "secured.in";
 
-    static private final String PLUGIN_NAME = "secured.in";
+//    static private final String PLUGIN_NAME = "secured.in";
 
-    static private final String PLUGIN_VERSION = "2.0";
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "2.0";
 
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String CODER = "olimex|JD-Team";
 
@@ -68,35 +69,35 @@ public class Secured extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
     public String decryptId(String id) throws IOException {
 
@@ -117,12 +118,12 @@ public class Secured extends PluginForDecrypt {
         return new Cypher().cypher(info.getHtmlCode());
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

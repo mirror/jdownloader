@@ -415,7 +415,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
     }
 
-    @Override
+    
     public void initPanel() {
 
         this.setLayout(new BorderLayout());
@@ -575,7 +575,7 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.httpreconnect.name","Router");

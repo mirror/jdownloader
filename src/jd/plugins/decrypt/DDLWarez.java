@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
 import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
@@ -30,7 +31,7 @@ import jd.plugins.RequestInfo;
 
 public class DDLWarez extends PluginForDecrypt {
     private static final String host = "ddl-warez.org";
-    private static final String VERSION = "$Revision$";
+   
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+", Pattern.CASE_INSENSITIVE);
     public static Integer Worker_Delay = 250;
 
@@ -39,37 +40,34 @@ public class DDLWarez extends PluginForDecrypt {
         default_password.add("ddl-warez");
     }
 
-    @Override
+    
     public String getCoder() {
         return "Jiaz";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + VERSION;
-    }
+    
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (int retry = 1; retry <= 10; retry++) {
@@ -114,7 +112,7 @@ public class DDLWarez extends PluginForDecrypt {
         return null;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

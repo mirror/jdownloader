@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -31,9 +33,8 @@ public class RapidRace extends PluginForDecrypt {
         return HOST;
     }
 
-    public String getPluginID() {
-        return HOST + " " + VERSION;
-    }
+    
+ 
 
     public String getPluginName() {
         return HOST;
@@ -44,7 +45,7 @@ public class RapidRace extends PluginForDecrypt {
     }
 
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {

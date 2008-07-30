@@ -26,6 +26,7 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlListener;
+import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -43,27 +44,26 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
     private ArrayList<String> added =  (ArrayList<String>) subConfig.getProperty("ADDED");
 
-    @Override
+    
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return "0.0.0.1";
-    }
+    
+    
+ 
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.folderwatch.name", "FolderWatch");
     }
 
-    @Override
+    
     public String getVersion() {
-        return "0.0.0.1";
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.5) {
             logger.info("FolderWatch OK");
@@ -90,12 +90,12 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         cfg.setDefaultValue("5");
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals("Check")) {
             checkFolder();
@@ -119,7 +119,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         menu.add(new MenuItem("Start/Stop", 0).setActionListener(this));
@@ -179,7 +179,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
         }
     }
 
-    @Override
+    
     public void onExit() {
        
 

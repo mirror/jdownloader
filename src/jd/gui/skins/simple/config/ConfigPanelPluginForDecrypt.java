@@ -109,7 +109,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 
 	}
 
-	@Override
+	
 	public void initPanel() {
 		setLayout(new BorderLayout());
 		table = new JTable(); // new InternalTable();
@@ -170,7 +170,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements
 		return table.getSelectedRow();
 	}
 
-	@Override
+	
 	public String getName() {
 		return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
 	}

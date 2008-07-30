@@ -84,7 +84,7 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
 
     }
 
-    @Override
+    
     public void initPanel() {
         if (container.getContainerNum() == 0) {
             Vector<ConfigEntry> entries = container.getEntries();
@@ -135,13 +135,13 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
         
     }
 
-    @Override
+    
     public String getName() {
 
         return title;
     }
 
-    @Override
+    
     public void load() {
         loadConfigEntries();
 

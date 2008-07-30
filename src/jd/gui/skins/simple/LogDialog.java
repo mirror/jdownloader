@@ -256,7 +256,7 @@ public class LogDialog extends JFrame implements ActionListener {
      */
     private class LogStream extends OutputStream {
 
-        @Override
+        
         public void write(final int b) throws IOException {
             // Another example where some non-EDT Thread accesses calls a Swing
             // method. This is forbidden and might bring the whole app down.

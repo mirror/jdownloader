@@ -29,7 +29,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         this.add(scrollPane);
     }
 
-    @Override
+    
     public void fireTableChanged(int id, Object param) {
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) this.setVisible(false);
         internalTreeTable.fireTableChanged(id, param);

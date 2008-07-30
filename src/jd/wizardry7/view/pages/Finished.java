@@ -43,7 +43,7 @@ public class Finished extends DefaultWizardPage {
 		return panel;
 	}
 	
-	@Override
+	
 	public void exitWizardPage() {
 	    JOptionPane.showMessageDialog(null, "You finsished the Wizard!");
 	}

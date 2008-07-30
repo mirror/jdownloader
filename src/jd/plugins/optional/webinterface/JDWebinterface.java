@@ -50,27 +50,26 @@ public class JDWebinterface extends PluginOptional {
     static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
     static public int page_refresh_interval = 0;
 
-    @Override
+    
     public String getCoder() {
         return "jiaz";
     }
 
-    @Override
-    public String getPluginID() {
-        return "0.0.2.0";
-    }
+    
+    
+   
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
     }
 
-    @Override
+    
     public String getVersion() {
         return "0.0.2.0";
     }
 
-    @Override
+    
     public boolean initAddon() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
         if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
@@ -112,12 +111,12 @@ public class JDWebinterface extends PluginOptional {
         cfg.setDefaultValue("JD");
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
        
         return null;
@@ -128,7 +127,7 @@ public class JDWebinterface extends PluginOptional {
 
     }
 
-    @Override
+    
     public void onExit() {
        
 

@@ -64,7 +64,7 @@ public class PostRequest extends Request {
         return buffer.toString().substring(1);
     }
 
-    @Override
+    
     public void postRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
         String parameter = getPostDataString();
@@ -79,7 +79,7 @@ public class PostRequest extends Request {
         }
     }
 
-    @Override
+    
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
         

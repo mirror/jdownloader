@@ -72,7 +72,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         this.loadConfigEntries();
     }
 
-    @Override
+    
     public void initPanel() {
         GUIConfigEntry ce;
         configuration = JDUtilities.getConfiguration();
@@ -136,7 +136,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("modules.unrar.name");

@@ -74,7 +74,7 @@ public class Unrar extends Interaction implements Serializable {
 
     public transient static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD", PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE", PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES", PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED", PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION", PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER", PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER", PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE", PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE", PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
 
-    @Override
+    
     public boolean doInteraction(Object arg) {
         lastFinishedDownload = (DownloadLink) arg;
         start();
@@ -86,12 +86,12 @@ public class Unrar extends Interaction implements Serializable {
         return JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_WAIT_FOR_TERMINATION, false);
     }
 
-    @Override
+    
     public String toString() {
         return JDLocale.L("interaction.unrar.name");
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
@@ -133,7 +133,7 @@ public class Unrar extends Interaction implements Serializable {
         return unrar;
     }
 
-    @Override
+    
     public void run() {
         int c = 0;
         if (IS_RUNNING) logger.warning("Process is in queue, there is already an unrar process running");
@@ -206,12 +206,12 @@ public class Unrar extends Interaction implements Serializable {
         Interaction.handleInteraction(Interaction.INTERACTION_AFTER_UNRAR, null);
     }
 
-    @Override
+    
     public void initConfig() {
 
     }
 
-    @Override
+    
     public void resetInteraction() {
     }
 }
@@ -227,7 +227,7 @@ class mergeFile extends File {
         // TODO Auto-generated constructor stub
     }
 
-    @Override
+    
     public boolean equals(Object obj) {
         if (obj instanceof File) {
             File file = (File) obj;

@@ -46,6 +46,7 @@ import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -78,27 +79,26 @@ public class JDTrayIcon extends PluginOptional {
     private JMenuItem speed5;
     private int counter = 0;
 
-    @Override
+    
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return "0.0.0.2";
-    }
+    
+    
+     
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }
 
-    @Override
+    
     public String getVersion() {
-        return "0.0.0.2";
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try {
@@ -293,7 +293,7 @@ public class JDTrayIcon extends PluginOptional {
         popupMenu.setVisible(false);
 
         trayIcon.addMouseListener(new MouseAdapter() {
-            @Override
+            
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
 
@@ -410,7 +410,7 @@ public class JDTrayIcon extends PluginOptional {
         }
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.6+";
     }
@@ -465,12 +465,12 @@ public class JDTrayIcon extends PluginOptional {
         }
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         return null;
     }
 
-    @Override
+    
     public void onExit() {
         if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
 

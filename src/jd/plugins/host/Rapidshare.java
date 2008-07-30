@@ -45,7 +45,6 @@ import jd.http.Browser;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
-import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -214,37 +213,37 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
 
     // private static boolean FORCE_FREE_USER = true;
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return host + " - " + version;
-    }
+    
+    
+       
+   
 
-    @Override
+    
     public void init() {
         // currentStep = null;
     }
@@ -1809,7 +1808,7 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
      * Integer.toString(letter, 16); } return ret; } catch
      * (UnsupportedEncodingException e) { e.printStackTrace(); } return str; }
      */
-    @Override
+    
     public boolean doBotCheck(File file) {
 
         String hash = JDUtilities.getLocalHash(file);
@@ -1817,7 +1816,7 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
 
     }
 
-    @Override
+    
     public void reset() {
         // waitTime = 500;
         // captchaAddress = null;
@@ -1840,7 +1839,7 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
         // }
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         if ((System.currentTimeMillis() - LAST_FILE_CHECK) < 250) {
@@ -1872,7 +1871,7 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         // if
         // (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS,
@@ -1970,7 +1969,7 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
 
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://rapidshare.com/faq.html";
     }

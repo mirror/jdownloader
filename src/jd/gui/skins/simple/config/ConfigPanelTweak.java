@@ -86,13 +86,13 @@ public ConfigPanelTweak(Configuration configuration, UIInterface uiinterface){
         
         add(panel, BorderLayout.NORTH);
     }
-    @Override
+    
     public void load() {
   this.loadConfigEntries();
         
     }
     
-    @Override
+    
     public String getName() {
         
         return JDLocale.L("gui.config.tweak.name","Rechen- und Speicherverbrauch verringern");

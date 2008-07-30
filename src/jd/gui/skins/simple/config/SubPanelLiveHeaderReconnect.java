@@ -102,7 +102,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     }
 
-    @Override
+    
     public void initPanel() {
         GUIConfigEntry ce;
 
@@ -141,12 +141,12 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     }
 
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
     }
 
-    @Override
+    
     public String getName() {
         return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
     }

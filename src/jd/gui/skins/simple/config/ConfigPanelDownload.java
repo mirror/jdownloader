@@ -216,13 +216,13 @@ public class ConfigPanelDownload extends ConfigPanel {
 
     }
 
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
 
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.download.name", "Netzwerk/Download");

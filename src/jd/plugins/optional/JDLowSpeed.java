@@ -11,6 +11,7 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
@@ -41,25 +42,25 @@ public class JDLowSpeed extends PluginOptional {
         cfg.setDefaultValue("40");
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         logger.info("JDLowSpeed detection ok");
         return true;
     }
 
-    @Override
+    
     public void onExit() {
        
 
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
@@ -208,26 +209,21 @@ public class JDLowSpeed extends PluginOptional {
         }
     }
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-       
-        return getPluginName() + " " + version;
-    }
-
-    @Override
+  
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
     }
 
-    @Override
+    
     public String getVersion() {
        
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
 }

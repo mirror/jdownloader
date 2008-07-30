@@ -73,42 +73,39 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         return 0;
     }
 
-    @Override
+    
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
-    @Override
+    
     public boolean initAddon() {
         subConfig = JDUtilities.getSubConfig("ADDONS_NEWSFEEDS");
         return true;
     }
 
-    @Override
+    
     public void onExit() {
     }
 
-    @Override
+    
     public String getCoder() {
         return "jD-Team";
     }
 
-    @Override
-    public String getPluginID() {
-        return getPluginName() + " " + version;
-    }
+  
 
-    @Override
+    
     public String getPluginName() {
         return JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
+    
     public ArrayList<MenuItem> createMenuitems() {
 
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();

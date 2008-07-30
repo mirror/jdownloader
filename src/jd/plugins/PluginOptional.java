@@ -26,14 +26,14 @@ import jd.event.ControlListener;
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 0;
-    @Override
+    
     public boolean doBotCheck(File file) { return false; }
     public static int VERSION_ID=0;
   
-    @Override public String getHost()            { return null; }
-    @Override public String getLinkName()        { return null; }
-    @Override public Pattern getSupportedLinks() { return null; }
-    @Override
+     public String getHost()            { return null; }
+     public String getLinkName()        { return null; }
+     public Pattern getSupportedLinks() { return null; }
+    
     public String getPluginName() {
         return "Unnamend Optional Plugin";
     }

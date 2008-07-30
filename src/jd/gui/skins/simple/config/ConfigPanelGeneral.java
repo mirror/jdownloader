@@ -55,7 +55,7 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
         }
     }
-    @Override
+    
     public void initPanel() {
         GUIConfigEntry ce;
    
@@ -97,11 +97,11 @@ public class ConfigPanelGeneral extends ConfigPanel {
         }
         add(panel, BorderLayout.NORTH);
     }
-    @Override
+    
     public void load() {
         this.loadConfigEntries();
     }
-    @Override
+    
     public String getName() {
         return JDLocale.L("gui.config.general.name", "Allgemein");
     }

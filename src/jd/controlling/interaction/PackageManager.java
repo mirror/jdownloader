@@ -63,7 +63,7 @@ public class PackageManager extends Interaction implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+    
     public boolean doInteraction(Object arg) {
 
         checkNewInstalled();
@@ -215,17 +215,17 @@ public class PackageManager extends Interaction implements Serializable {
         return NAME;
     }
 
-    @Override
+    
     public String getInteractionName() {
         return NAME;
     }
 
-    @Override
+    
     public void initConfig() {
 
     }
 
-    @Override
+    
     public void resetInteraction() {
     }
 

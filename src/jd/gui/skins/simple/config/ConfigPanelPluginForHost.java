@@ -112,7 +112,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     }
 
-    @Override
+    
     public void initPanel() {
         setLayout(new BorderLayout());
         table = new JTable(); // new InternalTable();
@@ -209,7 +209,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         return table.getSelectedRow();
     }
 
-    @Override
+    
     public String getName() {
 
         return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");

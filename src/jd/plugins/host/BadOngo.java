@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 public class BadOngo extends PluginForHost {
     private static final String HOST = "badongo.com";
 
-    private static final String VERSION = "$Revision$";
+   
 
     private static final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?badongo\\.com/[a-zA-Z/]{0,5}(vid|file)/[\\d]{4,10}", Pattern.CASE_INSENSITIVE);
 
@@ -51,37 +51,37 @@ public class BadOngo extends PluginForHost {
     private String code = null;
 
     //
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     } // kein BotCheck
 
-    @Override
+    
     public String getCoder() {
         return "JD-Team";
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return HOST + "-" + VERSION;
-    }
+    
+    
+        
+   
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
@@ -244,7 +244,7 @@ public class BadOngo extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
@@ -277,22 +277,22 @@ public class BadOngo extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    @Override
+    
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         // TODO Automatisch erstellter Methoden-Stub
     }
 
-    @Override
+    
     public String getAGBLink() {
 
         return "http://www.badongo.com/toc";

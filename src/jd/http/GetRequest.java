@@ -28,12 +28,12 @@ public class GetRequest extends Request {
 
     }
 
-    @Override
+    
     public void postRequest(HTTPConnection httpConnection)throws IOException {
 
     }
 
-    @Override
+    
     public void preRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setRequestMethod("GET");
         

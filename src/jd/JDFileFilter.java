@@ -91,7 +91,7 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Gibt die Filefilter beschreibung zurück
      */
-    @Override
+    
     public String getDescription() {
         return "Containerfiles";
     }

@@ -41,9 +41,9 @@ public class ShareOnlineBiz extends PluginForHost {
 
     private static final String PLUGIN_NAME = HOST;
 
-    private static final String PLUGIN_VERSION = "2.0.0.0";
+    //private static final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "2.0.0.0";
 
-    private static final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
@@ -57,51 +57,51 @@ public class ShareOnlineBiz extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return PLUGIN_NAME;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public void reset() {
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         url = downloadLink.getDownloadURL();
@@ -232,12 +232,12 @@ public class ShareOnlineBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
        
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
     }

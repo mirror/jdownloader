@@ -21,7 +21,7 @@ public class BotMessage implements Serializable {
 		if(!users.contains(user))
 		this.users.add(user);
 	}
-	@Override
+	
 	public boolean equals(Object obj) {
 		if(obj instanceof BotMessage) 
 		{
@@ -40,7 +40,7 @@ public class BotMessage implements Serializable {
 		}
 		return false;
 	}
-	@Override
+	
 	public String toString() {
 		// TODO Auto-generated method stub
 		return "(\""+regExp +"\") "+message;

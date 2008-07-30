@@ -46,9 +46,9 @@ public class DepositFiles extends PluginForHost {
 
     static private final String PLUGIN_NAME = HOST;
 
-    static private final String PLUGIN_VERSION = "0.1.3";
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0.1.3";
 
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String CODER = "JD-Team";
 
@@ -102,35 +102,35 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+   
 
     public void handle(DownloadLink parameter) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
@@ -459,12 +459,12 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public void reset() {
         this.finalURL = null;
     }
@@ -474,7 +474,7 @@ public class DepositFiles extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -518,7 +518,7 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -527,12 +527,12 @@ public class DepositFiles extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
         this.finalURL = "";
     }
 
-    @Override
+    
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
     }

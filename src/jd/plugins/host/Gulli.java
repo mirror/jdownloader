@@ -64,9 +64,9 @@ public class Gulli extends PluginForHost {
 
     static private final String PLUGIN_NAME = HOST;
 
-    static private final String PLUGIN_VERSION = "0";
+    //static private final String new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch().*= "0";
 
-    static private final String PLUGIN_ID = PLUGIN_NAME + "-" + PLUGIN_VERSION;
+    //static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     static private final String CODER = "JD-Team";
 
@@ -89,37 +89,37 @@ public class Gulli extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
-    @Override
+    
     public String getCoder() {
         return CODER;
     }
 
-    @Override
+    
     public String getPluginName() {
         return HOST;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return PAT_SUPPORTED;
     }
 
-    @Override
+    
     public String getHost() {
         return HOST;
     }
 
-    @Override
+    
     public String getVersion() {
-        return PLUGIN_VERSION;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
-    @Override
-    public String getPluginID() {
-        return PLUGIN_ID;
-    }
+    
+    
+        
+    
 
-    // @Override
+    // 
     // public URLConnection getURLConnection() {
     // // XXX: ???
     // return null;
@@ -234,12 +234,12 @@ public class Gulli extends PluginForHost {
 
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }
 
-    @Override
+    
     public void reset() {
         fileId = null;
         cookie = null;
@@ -248,7 +248,7 @@ public class Gulli extends PluginForHost {
         // serverIPChecked = false;
     }
 
-    @Override
+    
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
@@ -287,7 +287,7 @@ public class Gulli extends PluginForHost {
         return false;
     }
 
-    @Override
+    
     public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
@@ -296,13 +296,13 @@ public class Gulli extends PluginForHost {
         }
     }
 
-    @Override
+    
     public void resetPluginGlobals() {
        
 
     }
 
-    @Override
+    
     public String getAGBLink() {
        
         return "http://share.gulli.com/faq";

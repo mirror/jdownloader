@@ -125,7 +125,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
+    
     protected void setupChunks() {
         try {
 
@@ -250,7 +250,7 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    @Override
+    
     protected void onChunksReady() {
         if (writer != null) {
             synchronized (writer) {

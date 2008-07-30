@@ -36,7 +36,7 @@ public class MyBot extends PircBot {
     public Vector<BotMessage> messages = new Vector<BotMessage>();
     public boolean delayedMsg = false, delayedUserMsg = false;
 
-    // @Override
+    // 
     // protected void onServerPing(String response) {
    
     // lastping = System.currentTimeMillis();
@@ -87,7 +87,7 @@ public class MyBot extends PircBot {
 
     }
 
-    @Override
+    
     protected void onDisconnect() {
         while (!isConnected()) {
             try {

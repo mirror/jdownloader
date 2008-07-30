@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -68,34 +69,34 @@ public class YouTubeCom extends PluginForDecrypt {
         super();
     }
 
-    @Override
+    
     public String getCoder() {
         return "b0ffed";
     }
 
-    @Override
+    
     public String getHost() {
         return host;
     }
 
-    @Override
-    public String getPluginID() {
-        return host + "-" + version;
-    }
+    
+    
+        
+   
 
-    @Override
+    
     public String getPluginName() {
         return host;
     }
 
-    @Override
+    
     public Pattern getSupportedLinks() {
         return patternSupported;
     }
 
-    @Override
+    
     public String getVersion() {
-        return version;
+        return new Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     }
 
     private static int[] useyConvert = new int[] { 0, 0 };
@@ -135,7 +136,7 @@ public class YouTubeCom extends PluginForDecrypt {
                         this.var = var;
                     }
 
-                    @Override
+                    
                     public String toString() {
                        
                         return name;
@@ -238,7 +239,7 @@ public class YouTubeCom extends PluginForDecrypt {
         return s;
     }
 
-    @Override
+    
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
@@ -292,7 +293,7 @@ public class YouTubeCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
+    
     public boolean doBotCheck(File file) {
         return false;
     }

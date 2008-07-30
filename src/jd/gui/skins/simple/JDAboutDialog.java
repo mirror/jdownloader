@@ -96,7 +96,7 @@ public class JDAboutDialog {
         dialog.setLocationRelativeTo(null);
         
         Thread t = new Thread() {
-            @Override
+            
             public void run() {
                 try {
                     final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl","http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
