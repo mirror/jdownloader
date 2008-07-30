@@ -28,7 +28,7 @@ public class FileUploadnet extends PluginForDecrypt {
     static private final String host = "File-Upload.net";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public FileUploadnet() {
         super();

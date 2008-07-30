@@ -34,7 +34,7 @@ public class Rlslog extends PluginForDecrypt {
     static private final String host = "rlslog.net";
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public Rlslog() {
         super();

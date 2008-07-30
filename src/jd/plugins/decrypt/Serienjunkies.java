@@ -69,7 +69,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private boolean scatChecked = false;
 
-    // private String version = "5.0.0.0";
+    
 
     public Serienjunkies() {
         super();

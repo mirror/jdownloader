@@ -35,7 +35,7 @@ public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.5";
+    
 
     public Stealth() {
         super();

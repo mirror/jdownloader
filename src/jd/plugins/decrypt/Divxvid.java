@@ -45,7 +45,7 @@ public class Divxvid extends PluginForDecrypt {
      */
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public Divxvid() {
         super();

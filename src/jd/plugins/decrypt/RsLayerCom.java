@@ -38,7 +38,7 @@ public class RsLayerCom extends PluginForDecrypt {
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/.+\\.html", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.3";
+    
 
     public RsLayerCom() {
         super();

@@ -34,7 +34,7 @@ public class Tinyurl extends PluginForDecrypt {
     private Pattern patternLink = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/.*");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "2.0.0.0";
+    
 
     public Tinyurl() {
         super();

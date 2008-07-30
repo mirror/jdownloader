@@ -38,7 +38,7 @@ public class RapidsafeDe extends PluginForDecrypt {
     final static String host = "rapidsafe.de";
     private Pattern patternSupported = Pattern.compile("http://.+rapidsafe\\.de", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1";
+    
 
     public RapidsafeDe() {
         super();

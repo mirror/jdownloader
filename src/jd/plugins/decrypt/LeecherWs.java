@@ -35,7 +35,7 @@ public class LeecherWs extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1.0";
+    
 
     public LeecherWs() {
         super();

@@ -34,7 +34,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
     final static String host = "up.picoasis.net";
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public UpPicoasisNet() {
         super();

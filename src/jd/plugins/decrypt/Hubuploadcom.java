@@ -35,7 +35,7 @@ public class Hubuploadcom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hubupload\\.com/files/[a-zA-Z0-9]+/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public Hubuploadcom() {
         super();

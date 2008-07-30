@@ -34,7 +34,7 @@ public class Filer extends PluginForDecrypt {
     static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/(.*)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1";
+    
 
     public Filer() {
         super();

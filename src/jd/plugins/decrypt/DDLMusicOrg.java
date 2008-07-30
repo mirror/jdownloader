@@ -33,7 +33,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
     final static String host = "ddl-music.org";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/(music_crypth\\.php\\?.+|index\\.php\\?site=view_download.+)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1.0";
+    
 
     public DDLMusicOrg() {
         super();

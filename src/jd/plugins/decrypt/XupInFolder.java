@@ -35,7 +35,7 @@ public class XupInFolder extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1.0";
+    
 
     public XupInFolder() {
         super();

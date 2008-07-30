@@ -42,7 +42,7 @@ public class UCMS extends PluginForDecrypt {
             + "|(http://[\\w\\.]*?porn-freaks\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-4-free\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-reactor\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?porn-traffic\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?chili-warez\\.net(/\\?id=.+|/.+/.+\\.html))" + "|(http://[\\w\\.]*?game-freaks\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?isos\\.at(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?your-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?mov-world\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xtreme-warez\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?sceneload\\.to(/\\?id=.+|/download/.+/.+\\.html))"
             + "|(http://[\\w\\.]*?oxygen-warez\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?epicspeedload\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?serienfreaks\\.to(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serienfreaks\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?warez-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?ddl-scene\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/\\?id=.+)", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public UCMS() {
         super();

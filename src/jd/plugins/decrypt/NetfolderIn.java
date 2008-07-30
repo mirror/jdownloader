@@ -37,7 +37,7 @@ public class NetfolderIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public NetfolderIn() {
         super();

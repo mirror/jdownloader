@@ -35,7 +35,7 @@ public class NewzFindCom extends PluginForDecrypt {
     final static String host = "newzfind.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1.0";
+    
 
     public NewzFindCom() {
         super();

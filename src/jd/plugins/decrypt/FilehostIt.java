@@ -34,7 +34,7 @@ public class FilehostIt extends PluginForDecrypt {
     final static String host = "filehost.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filehost\\.it/(multi|live)link/checklinks\\.php\\?links=[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public FilehostIt() {
         super();

@@ -32,7 +32,7 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     static private final String host = "crypt.get-movies.org";
     private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public CryptGetMoviesOrg() {
         super();

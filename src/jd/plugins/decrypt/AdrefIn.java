@@ -28,7 +28,7 @@ public class AdrefIn extends PluginForDecrypt {
     final static String host = "adref.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?adref\\.in/\\?.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "2.0.0.0";
+    
 
     public AdrefIn() {
         super();

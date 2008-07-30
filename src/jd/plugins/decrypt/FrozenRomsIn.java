@@ -32,7 +32,7 @@ public class FrozenRomsIn extends PluginForDecrypt {
     final static String host = "frozen-roms.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.2.0";
+    
 
     public FrozenRomsIn() {
         super();

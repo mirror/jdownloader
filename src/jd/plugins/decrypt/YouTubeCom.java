@@ -73,7 +73,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     private boolean yConvertChecked = false;
 

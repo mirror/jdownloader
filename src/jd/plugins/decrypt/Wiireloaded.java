@@ -35,7 +35,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public Wiireloaded() {
         super();

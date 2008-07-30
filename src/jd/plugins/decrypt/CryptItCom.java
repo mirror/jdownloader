@@ -91,7 +91,7 @@ public class CryptItCom extends PluginForDecrypt {
 
     private String CODER = "jD-Team";
 
-    // private String version = "0.2.0";
+    
 
     public CryptItCom() {
         super();

@@ -33,7 +33,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
     final static String host = "stacheldraht.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stacheldraht\\.to/index\\.php\\?folder=.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1";
+    
 
     public StacheldrahtTo() {
         super();

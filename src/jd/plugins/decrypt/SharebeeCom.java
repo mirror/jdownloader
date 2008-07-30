@@ -34,7 +34,7 @@ public class SharebeeCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public SharebeeCom() {
         super();

@@ -56,7 +56,7 @@ public class YoumirrorBiz extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youmirror\\.biz/(.*/)?(file|folder)/.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "4.0.2";
+    
 
     public YoumirrorBiz() {
         super();

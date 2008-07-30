@@ -29,7 +29,7 @@ public class Safelink extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(safelink\\.in|85\\.17\\.177\\.195)/r[cs]\\-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "2.0.0.0";
+    
 
     public Safelink() {
         super();

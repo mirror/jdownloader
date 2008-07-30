@@ -38,7 +38,7 @@ public class LinkBankeu extends PluginForDecrypt {
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public LinkBankeu() {
         super();

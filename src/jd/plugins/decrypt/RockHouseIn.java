@@ -32,7 +32,7 @@ public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public RockHouseIn() {
         super();

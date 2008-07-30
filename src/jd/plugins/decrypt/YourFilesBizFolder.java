@@ -36,7 +36,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     final static String host = "yourfiles.biz";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "0.1.0";
+    
 
     public YourFilesBizFolder() {
         super();

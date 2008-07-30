@@ -32,7 +32,7 @@ public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public MediafireFolder() {
         super();

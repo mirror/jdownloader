@@ -37,7 +37,7 @@ public class EinsKhDe extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public EinsKhDe() {
         super();

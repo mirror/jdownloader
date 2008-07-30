@@ -34,7 +34,7 @@ public class ImagefapCom extends PluginForDecrypt {
 
     private URL url;
 
-    // private String version = "1.0.0.0";
+    
 
     public ImagefapCom() {
         super();

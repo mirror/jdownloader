@@ -34,7 +34,7 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidads\\.ath\\.cx/crypter/.+", Pattern.CASE_INSENSITIVE);
 
-    // private String version = "1.0.0.0";
+    
 
     public RapidAdsAthCx() {
         super();
