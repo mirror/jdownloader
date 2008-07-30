@@ -1033,5 +1033,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
 
     }
+    /**
+     * Gibt Fortschritt in % an (10000 entspricht 100%))
+     * @return
+     */
+    public int getPercent() {
+        return (int)(10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
+    }
 
 }

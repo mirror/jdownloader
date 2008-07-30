@@ -172,20 +172,20 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                             ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
                         }
                     }
-                    progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
+                    progress.setMaximum(10000);
                     progress.setStringPainted(true);
-                    progress.setValue((int) dLink.getDownloadCurrent());
+                    progress.setValue(dLink.getPercent());
 
                 } else {
-                    progress.setMaximum(Math.max(1, (int) dLink.getDownloadMax()));
+                    progress.setMaximum(10000);
                     progress.setStringPainted(true);
                     progress.setForeground(ACTIVE_PROGRESS_COLOR);
                     if (ui != null) {
                         ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
                         ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
                     }
-                    progress.setValue((int) dLink.getDownloadCurrent());
-                    progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + JDUtilities.formatBytesToMB(progress.getValue()) + "/" + JDUtilities.formatBytesToMB(progress.getMaximum()) + ")");
+                    progress.setValue(dLink.getPercent());
+                    progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadMax())) + ")");
 
                 }
 

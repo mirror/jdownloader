@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -53,6 +54,7 @@ public class PackageInfo extends JFrame {
     private int i = 0;
     private JPanel panel;
     private JScrollPane sp;
+    private DecimalFormat c = new DecimalFormat("0.00");
 
     /**
      * @param frame
@@ -99,8 +101,10 @@ public class PackageInfo extends JFrame {
         JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
         JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        // key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        // value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        // key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
+        // Color.GRAY));
+        // value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
+        // Color.GRAY));
         key.setBorder(new EmptyBorder(0, 0, 0, 5));
         value.setBorder(new EmptyBorder(0, 5, 0, 0));
 
@@ -112,10 +116,12 @@ public class PackageInfo extends JFrame {
     // private void addEntry2(String label, String data) {
     //     
     // JLabel key;
-    // JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1,
+    // JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0,
+    // 1,
     // null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
     // JLabel value;
-    // JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0,
+    // JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1,
+    // 0,
     // null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
     // key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
     // value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
@@ -166,14 +172,17 @@ public class PackageInfo extends JFrame {
         for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
             next = it.next();
             // addEntry2(i+".
-            // "+next.getName(),"("+JDUtilities.getPercent(next.getDownloadCurrent(),next.getDownloadMax())+")
+            // "+next.getName(),"(
+            // "+JDUtilities.getPercent(next.getDownloadCurrent(),next.getDownloadMax())+"
+            // )
             // "+next.getDownloadCurrent()+"/"+next.getDownloadMax()+" bytes");
             JProgressBar p;
 
             addEntry(i + ". " + next.getName(), p = new JProgressBar(0, 100));
-            p.setValue((int) (next.getDownloadCurrent() * 100 / Math.max(1, next.getDownloadMax())));
+            p.setMaximum(10000);
+            p.setValue(next.getPercent());
             p.setStringPainted(true);
-            p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + JDUtilities.getPercent((int) next.getDownloadCurrent(), (int) next.getDownloadMax()) + " | " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
+            p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
 
         }
 

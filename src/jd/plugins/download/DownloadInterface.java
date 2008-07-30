@@ -153,6 +153,14 @@ abstract public class DownloadInterface {
             chunkBytesLoaded += limit;
 
         }
+        
+        /**
+         * Gibt Fortschritt in % an (10000 entspricht 100%))
+         * @return
+         */
+        public int getPercent() {
+            return (int)(10000 * (chunkBytesLoaded) / Math.max(1, Math.max((chunkBytesLoaded), (this.endByte-this.startByte))));
+        }
 
         /**
          * Darf NUR von Interface.addBytes() aufgerufen werden. Zählt die Bytes

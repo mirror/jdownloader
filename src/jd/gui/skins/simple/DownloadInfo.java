@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -56,6 +57,7 @@ public class DownloadInfo extends JFrame {
     private int i = 0;
     private JPanel panel;
     private JScrollPane sp = null;
+    private DecimalFormat c = new DecimalFormat("0.00");
 
     /**
      * @param frame
@@ -192,15 +194,16 @@ public class DownloadInfo extends JFrame {
 
         DownloadInterface dl;
         if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {
-            addEntry("download.chunks.label", "");
+            addEntry(JDLocale.L("download.chunks.label","Chunks"), "");
             int i = 1;
             for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
                 JProgressBar p;
                 Chunk next = it.next();
                 addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
-                p.setValue((int)(next.getBytesLoaded() * 100 / Math.max(1, next.getChunkSize())));
+                p.setMaximum(10000);
+                p.setValue(next.getPercent());
                 p.setStringPainted(true);
-                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + JDUtilities.getPercent(next.getBytesLoaded(), next.getChunkSize()));
+                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + c.format(next.getPercent()/100.0)+ " %");
             }
 
         }
