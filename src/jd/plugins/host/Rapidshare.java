@@ -1523,23 +1523,27 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
         // }
         // if (step == this.steps.firstElement()) this.downloadType =
         // PREMIUM;
+        
+        Browser br= new Browser();
+        br.setAcceptLanguage(ACCEPT_LANGUAGE);
+        br.setFollowRedirects(false);
         this.setMaxConnections(35);
 
         String user = null;
         String pass = null;
-        String premium = null;
+      
         if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            premium = PROPERTY_USE_PREMIUM;
+          
             user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER);
             pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS);
         } else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
             user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
             pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
-            premium = PROPERTY_USE_PREMIUM_2;
+           
         } else if (this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
             user = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
             pass = (String) this.getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
-            premium = PROPERTY_USE_PREMIUM_3;
+           
         } else {
             doFree(downloadLink);
             return;
@@ -1668,13 +1672,10 @@ private final String ACCEPT_LANGUAGE="en-gb, en;q=0.8";
         // pass));
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(link);
-
-        req.getHeaders().put("Authorization", "Basic " + JDUtilities.Base64Encode(user + ":" + pass));
-        req.setFollowRedirects(true);
-        // requestInfo = HTTP.getRequestWithoutHtmlCode(new
-        // URL(finalURL), finalCookie, finalURL, ranger, true);
-        req.connect();
-        urlConnection = req.getHttpConnection();
+        br.getHeaders().put("Authorization", "Basic " + JDUtilities.Base64Encode(user + ":" + pass));
+      br.setFollowRedirects(true);        
+      
+        urlConnection =   br.openGetConnection(link);
         if (urlConnection.getHeaderField("content-disposition") == null || (Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength)) {
 
             String page = req.read();
