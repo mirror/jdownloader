@@ -98,6 +98,7 @@ public abstract class Plugin implements ActionListener {
      * wenn er fehler feststellt
      */
     public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
+    public static final String PROPERTY_PREMIUM_MESSAGE = "PREMIUM_MESSAGE";
 
     /**
      * Property name für die Config. Diese sollten möglichst einheitlich sein.

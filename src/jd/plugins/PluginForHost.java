@@ -40,8 +40,11 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    private static HashMap<Class, Integer> HOSTER_WAIT_TIMES = new HashMap<Class, Integer>();
-    private static HashMap<Class, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class, Long>();
+    private static HashMap<Class<? extends PluginForHost>, Integer> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
+    private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
+    private static HashMap<Class<? extends PluginForHost>, boolean[]> HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class<? extends PluginForHost>, boolean[]>();
+
+    
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     // public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
     // private static long END_OF_DOWNLOAD_LIMIT = 0;
@@ -51,9 +54,9 @@ public abstract class PluginForHost extends Plugin {
     private int maxConnections = 50;
     private int retryCount = 0;
     private static final int ACCOUNT_NUM = 5;
-    private boolean enablePremium = false;
-    private static HashMap<Class, boolean[]> HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class, boolean[]>();
 
+    private boolean enablePremium = false;
+  
     // private boolean[] tmpAccountDisabled = new boolean[ACCOUNT_NUM];
 
     public boolean[] checkLinks(DownloadLink[] urls) {
@@ -95,6 +98,7 @@ public abstract class PluginForHost extends Plugin {
             premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS + "_" + i, JDLocale.L("plugins.hoster.premiumPass", "Premium Pass")));
             cfg.setDefaultValue(JDLocale.L("plugins.hoster.pass", "Passwort"));
             cfg.setEnabledCondidtion(conditionEntry, "==", true);
+            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_MESSAGE + "_" + i, JDLocale.L("plugins.hoster.premiumMessage", "Last account status")));
 
             conditionEntry.setDefaultValue(false);
 
@@ -373,7 +377,7 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+       
         // RequestInfo requestInfo;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             handleFree(downloadLink);
@@ -400,24 +404,31 @@ public abstract class PluginForHost extends Plugin {
                 if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                     logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                     tmpAccountStatus[account.getId()] = true;
+                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
+                    getProperties().save();
                 } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
 
                     getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
+                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
                     getProperties().save();
                     logger.severe("Premium Account " + account.getUser() + ": expired");
-                }else{
+                } else {
                     getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
+                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
                     getProperties().save();
-                    logger.severe("Premium Account " + account.getUser() + ":"+downloadLink.getLinkStatus().getErrorMessage());
+                    logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getErrorMessage());
                 }
 
+            } else {
+                getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                getProperties().save();
             }
 
         } else {
             handleFree(downloadLink);
             if (disabled.size() > 0) {
                 int randId = (int) (Math.random() * disabled.size());
-                tmpAccountStatus[disabled.get(randId).getId()] = false;                
+                tmpAccountStatus[disabled.get(randId).getId()] = false;
             }
         }
 
