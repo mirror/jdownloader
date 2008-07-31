@@ -147,7 +147,7 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    public void handle(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
 

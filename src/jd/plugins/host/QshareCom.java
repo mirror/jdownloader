@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
@@ -52,7 +53,7 @@ public class QshareCom extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         String page = null;
@@ -108,7 +109,7 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    public void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return;
 
@@ -184,24 +185,7 @@ public class QshareCom extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-
-            doPremium(downloadLink);
-
-        } else {
-
-            doFree(downloadLink);
-
-        }
-        return;
-    }
 
     // private void setConfigElements() {
     // ConfigEntry cfg;

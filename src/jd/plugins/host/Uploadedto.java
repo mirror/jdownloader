@@ -341,7 +341,7 @@ public class Uploadedto extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    public void handle(DownloadLink parameter) throws Exception {
+    public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
 

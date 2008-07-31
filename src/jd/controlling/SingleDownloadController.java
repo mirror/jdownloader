@@ -512,19 +512,10 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin) {
-        // logger.warning("disable PREMIUM for: " + plugin + " Reason: " +
-        // step.getParameter());
-        // String str = (String) step.getParameter();
-        // //this.sleep(nul,downloadLink);
-        // if (str == null) {
-        // plugin.getProperties().setProperty(Plugin.PROPERTY_USE_PREMIUM,
-        // false);
-        // } else {
-        // plugin.getProperties().setProperty(str, false);
-        // downloadLink.getLinkStatus().setStatusText(str);
-        // }
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // downloadLink.setEndOfWaittime(0);
+       
+     
+         linkStatus.reset();
+         
     }
 
     /**

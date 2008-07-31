@@ -27,6 +27,7 @@ import jd.http.Browser;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -110,9 +111,10 @@ public class Netloadin extends PluginForHost {
         return false;
     }
 
-    private void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
+        downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
+        
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
 
@@ -257,11 +259,10 @@ public class Netloadin extends PluginForHost {
         dl.startDownload();
 
     }
-
-    private void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String user = (String) getProperties().getProperty("PREMIUM_USER");
-        String pass = (String) getProperties().getProperty("PREMIUM_PASS");
+        downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
+        
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
         // Login
@@ -473,29 +474,7 @@ public class Netloadin extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    @Override
-    public void handle(DownloadLink parameter) throws Exception {
-        DownloadLink downloadLink = parameter;
-        // Download-URL aktualisieren
-        downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-        // RequestInfo requestInfo;
 
-        // if (aborted) {
-        // // häufige Abbruchstellen sorgen für einen zügigen Downloadstop
-        // logger.warning("Plugin aborted");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
-
-        // premium
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            doPremium(downloadLink);
-        } else {
-            doFree(downloadLink);
-        }
-
-    }
 
     @Override
     public void reset() {

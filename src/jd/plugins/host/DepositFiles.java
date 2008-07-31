@@ -28,6 +28,7 @@ import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -95,7 +96,7 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink parameter) throws Exception {
+    public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
         RequestInfo requestInfo;
@@ -287,12 +288,12 @@ public class DepositFiles extends PluginForHost {
 
     }
 
-    private void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         RequestInfo requestInfo;
-        String user = (String) getProperties().getProperty("PREMIUM_USER");
-        String pass = (String) getProperties().getProperty("PREMIUM_PASS");
 
         // switch (step.getStep()) {
 
@@ -497,19 +498,6 @@ public class DepositFiles extends PluginForHost {
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
-    }
-
-    @Override
-    public void handle(DownloadLink parameter) throws Exception {
-        DownloadLink downloadLink = parameter;
-
-        // premium
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            doPremium(downloadLink);
-        } else {
-            doFree(downloadLink);
-        }
-
     }
 
     @Override

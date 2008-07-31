@@ -29,6 +29,7 @@ import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -62,7 +63,7 @@ public class MeinUpload extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         PostRequest r = new PostRequest(downloadLink.getDownloadURL());
@@ -88,10 +89,9 @@ public class MeinUpload extends PluginForHost {
         dl.startDownload();
     }
 
-    private void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
         downloadLink.requestGuiUpdate();
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
@@ -238,18 +238,7 @@ public class MeinUpload extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
-            doPremium(downloadLink);
-        } else {
-            doFree(downloadLink);
-        }
-
-    }
+ 
 
     @Override
     public void reset() {

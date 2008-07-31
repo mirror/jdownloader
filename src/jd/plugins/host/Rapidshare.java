@@ -47,6 +47,7 @@ import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -62,13 +63,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 public class Rapidshare extends PluginForHost {
-    private static final int ACTION_INFO_PREMIUM_1 = 4;
 
-    private static final int ACTION_INFO_PREMIUM_2 = 5;
-    private static final int ACTION_INFO_PREMIUM_3 = 6;
-    private static final int ACTION_TOGGLE_PREMIUM_1 = 1;
-
-    private static final int ACTION_TOGGLE_PREMIUM_2 = 2;
 
     //    
     // '<form name="dlf"
@@ -80,7 +75,7 @@ public class Rapidshare extends PluginForHost {
     // private static final Pattern PATTERN_FIND_CAPTCHA_IMAGE_URL =
     // Pattern.compile("<center><table><tr><td><img src\\=\"(.*?)\"></td>");
 
-    private static final int ACTION_TOGGLE_PREMIUM_3 = 3;
+
 
     static private final String host = "rapidshare.com";
     private static long LAST_FILE_CHECK = 0;
@@ -140,26 +135,14 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
 
-    private static final String PROPERTY_PREMIUM_PASS_2 = "PREMIUM_PASS_2";
 
-    private static final String PROPERTY_PREMIUM_PASS_3 = "PREMIUM_PASS_3";
-
-    private static final String PROPERTY_PREMIUM_USER_2 = "PREMIUM_USER_2";
-
-    private static final String PROPERTY_PREMIUM_USER_3 = "PREMIUM_USER_3";
 
     private static final String PROPERTY_SELECTED_SERVER = "SELECTED_SERVER";
 
     private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#2";
 
-    private static final String PROPERTY_USE_PREMIUM_2 = "USE_PREMIUM_2";
 
-    // private static final String PROPERTY_FREE_IF_LIMIT_NOT_REACHED =
-    // "FREE_IF_LIMIT_NOT_REACHED";
-    // private static final String PARAM_FORRCEFREE_WHILE_HAPPYHOURS =
-    // "FORRCEFREE_WHILE_HAPPYHOURS";
 
-    private static final String PROPERTY_USE_PREMIUM_3 = "USE_PREMIUM_3";
 
     private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
@@ -256,33 +239,35 @@ public class Rapidshare extends PluginForHost {
         serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         setConfigElements();
+        this.enablePremium();
     }
 
+ 
     public void actionPerformed(ActionEvent e) {
         MenuItem mi = (MenuItem) e.getSource();
 
-        switch (mi.getActionID()) {
-        case Rapidshare.ACTION_TOGGLE_PREMIUM_1:
-            getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
-            getProperties().save();
-            break;
-        case Rapidshare.ACTION_TOGGLE_PREMIUM_2:
-            getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
-            getProperties().save();
-            break;
-        case Rapidshare.ACTION_TOGGLE_PREMIUM_3:
-            getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
-            getProperties().save();
-            break;
-        case Rapidshare.ACTION_INFO_PREMIUM_1:
-            showInfo(1);
-            break;
-        case Rapidshare.ACTION_INFO_PREMIUM_2:
-            showInfo(2);
-            break;
-        case Rapidshare.ACTION_INFO_PREMIUM_3:
-            showInfo(3);
-            break;
+//        switch (mi.getActionID()) {
+//        case Rapidshare.ACTION_TOGGLE_PREMIUM_1:
+//            getProperties().setProperty(PROPERTY_USE_PREMIUM, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false));
+//            getProperties().save();
+//            break;
+//        case Rapidshare.ACTION_TOGGLE_PREMIUM_2:
+//            getProperties().setProperty(PROPERTY_USE_PREMIUM_2, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false));
+//            getProperties().save();
+//            break;
+//        case Rapidshare.ACTION_TOGGLE_PREMIUM_3:
+//            getProperties().setProperty(PROPERTY_USE_PREMIUM_3, !getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false));
+//            getProperties().save();
+//            break;
+//        case Rapidshare.ACTION_INFO_PREMIUM_1:
+//            showInfo(1);
+//            break;
+//        case Rapidshare.ACTION_INFO_PREMIUM_2:
+//            showInfo(2);
+//            break;
+//        case Rapidshare.ACTION_INFO_PREMIUM_3:
+//            showInfo(3);
+//            break;
         /*
          * case Rapidshare.ACTION_HAPPY_HOURS_TOGGLE_WAIT:
          * getProperties().setProperty(PARAM_WAIT_FOR_HAPPYHOURS,
@@ -348,7 +333,7 @@ public class Rapidshare extends PluginForHost {
          * 
          * progress.finalize(); } }.start(); break;
          */
-        }
+//        }
         return;
     }
 
@@ -488,6 +473,7 @@ public class Rapidshare extends PluginForHost {
 
         MenuItem account;
         MenuItem m;
+        return null;
 
         // m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.happyHours",
         // "Happy Hours Abfrage"), ACTION_HAPPY_HOURS);
@@ -510,71 +496,71 @@ public class Rapidshare extends PluginForHost {
         // false));
         // hh.addMenuItem(m);
         // menuList.add(hh);
-        menuList.add(premium);
-        // account1
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
-
-        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_1);
-            m.setSelected(false);
-
-        } else {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_1);
-            m.setSelected(true);
-
-        }
-        m.setActionListener(this);
-
-        account.addMenuItem(m);
-        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_1);
-        m.setActionListener(this);
-
-        account.addMenuItem(m);
-        premium.addMenuItem(account);
-
-        // Account 2
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
-
-        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_2);
-            m.setSelected(false);
-
-        } else {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_2);
-            m.setSelected(true);
-
-        }
-        m.setActionListener(this);
-
-        account.addMenuItem(m);
-        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_2);
-        m.setActionListener(this);
-
-        account.addMenuItem(m);
-        premium.addMenuItem(account);
-        // Account 3
-        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
-
-        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_3);
-            m.setSelected(false);
-
-        } else {
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
-            m.setSelected(true);
-            logger.info("TRUE");
-
-        }
-        m.setActionListener(this);
-        m.setProperty("id", 3);
-        account.addMenuItem(m);
-        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_3);
-        m.setActionListener(this);
-
-        account.addMenuItem(m);
-        premium.addMenuItem(account);
-
-        return menuList;
+//        menuList.add(premium);
+//        // account1
+//        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium1", "1. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER) + ")", 0);
+//
+//        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_1);
+//            m.setSelected(false);
+//
+//        } else {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_1);
+//            m.setSelected(true);
+//
+//        }
+//        m.setActionListener(this);
+//
+//        account.addMenuItem(m);
+//        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_1);
+//        m.setActionListener(this);
+//
+//        account.addMenuItem(m);
+//        premium.addMenuItem(account);
+//
+//        // Account 2
+//        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
+//
+//        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_2);
+//            m.setSelected(false);
+//
+//        } else {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_2);
+//            m.setSelected(true);
+//
+//        }
+//        m.setActionListener(this);
+//
+//        account.addMenuItem(m);
+//        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_2);
+//        m.setActionListener(this);
+//
+//        account.addMenuItem(m);
+//        premium.addMenuItem(account);
+//        // Account 3
+//        account = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") + getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
+//
+//        if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"), ACTION_TOGGLE_PREMIUM_3);
+//            m.setSelected(false);
+//
+//        } else {
+//            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.rapidshare.menu.disable_premium", "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
+//            m.setSelected(true);
+//            logger.info("TRUE");
+//
+//        }
+//        m.setActionListener(this);
+//        m.setProperty("id", 3);
+//        account.addMenuItem(m);
+//        m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo", "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_3);
+//        m.setActionListener(this);
+//
+//        account.addMenuItem(m);
+//        premium.addMenuItem(account);
+//
+//        return menuList;
     }
 
     public boolean doBotCheck(File file) {
@@ -672,10 +658,10 @@ public class Rapidshare extends PluginForHost {
         return;
     }
 
-    private void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (ddl)this.doPremium(downloadLink);
-
+        Rapidshare.correctURL(downloadLink);
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
@@ -955,8 +941,9 @@ public class Rapidshare extends PluginForHost {
      * @return
      */
 
-    private void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Rapidshare.correctURL(downloadLink);
         /*
          * try {
          * 
@@ -1088,25 +1075,7 @@ public class Rapidshare extends PluginForHost {
         br.setFollowRedirects(false);
         setMaxConnections(35);
 
-        String user = null;
-        String pass = null;
-
-        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
-            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER);
-            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS);
-        } else if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false)) {
-            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
-            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
-
-        } else if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false)) {
-            user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
-            pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
-
-        } else {
-            doFree(downloadLink);
-            return;
-        }
+       
         user = JDUtilities.urlEncode(user.trim());
         pass = JDUtilities.urlEncode(pass.trim());
         // String encodePass = rawUrlEncode(pass);
@@ -1247,19 +1216,23 @@ public class Rapidshare extends PluginForHost {
                 if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
                     linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                     // step.setParameter(premium);
-                    downloadLink.getLinkStatus().setStatusText(error);
+                    downloadLink.getLinkStatus().setErrorMessage(error);
+                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
                     linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                     // step.setParameter(premium);
-                    downloadLink.getLinkStatus().setStatusText(error);
+                    downloadLink.getLinkStatus().setErrorMessage(error);
+                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
 
                 } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_OVERLAP)) {
                     linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                     // step.setParameter(premium);
-                    downloadLink.getLinkStatus().setStatusText(error);
+                    downloadLink.getLinkStatus().setErrorMessage(error);
+                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else {
-                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                    downloadLink.getLinkStatus().setStatusText(error);
+                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                 
                     linkStatus.setErrorMessage(error);
                 }
 
@@ -1574,7 +1547,7 @@ public class Rapidshare extends PluginForHost {
         // false) && FORCE_FREE_USER) { return 1; }
         int ret = 0;
 
-        if ((getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3)) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM) ) {
             ret = getMaxConnections() / getChunksPerFile();
         } else {
             ret = 1;
@@ -1695,21 +1668,7 @@ public class Rapidshare extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // RequestInfo requestInfo;
-
-        Rapidshare.correctURL(downloadLink);
-
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2, false) || getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3, false))) {
-
-            doPremium(downloadLink);
-        } else {
-            doFree(downloadLink);
-        }
-
-        return;
-    }
+ 
 
     public void init() {
         // currentStep = null;
@@ -1742,7 +1701,7 @@ public class Rapidshare extends PluginForHost {
      * Erzeugtd en Configcontainer für die Gui
      */
     private void setConfigElements() {
-        ConfigEntry conditionEntry;
+     
         Vector<String> m1 = new Vector<String>();
         Vector<String> m2 = new Vector<String>();
         for (String element : serverList1) {
@@ -1764,42 +1723,6 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")));
         cfg.setDefaultValue(true);
 
-        ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.rapidshare.com.premiumtab", "Premium Einstellungen"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "1. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
-        conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.hoster.rapidshare.com.usePremium", "Premium Account verwenden"));
-
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser", "Premium User")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.userid", "Kundennummer"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.hoster.rapidshare.com.premiumPass", "Premium Pass")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.pass", "Passwort"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(conditionEntry);
-        conditionEntry.setDefaultValue(false);
-
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "2. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
-
-        conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_2, JDLocale.L("plugins.hoster.rapidshare.com.usePremium2", "2. Premium Account verwenden"));
-
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER_2, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser2", "Premium User(alternativ)")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.userid", "Kundennummer"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS_2, JDLocale.L("plugins.hoster.rapidshare.com.premiumPass2", "Premium Pass(alternativ)")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.pass", "Passwort"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(conditionEntry);
-        conditionEntry.setDefaultValue(false);
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, "3. " + JDLocale.L("plugins.hoster.rapidshare.com.premiumAccount", "Premium Account")));
-        conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM_3, JDLocale.L("plugins.hoster.rapidshare.com.usePremium3", "3. Premium Account verwenden"));
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER_3, JDLocale.L("plugins.hoster.rapidshare.com.premiumUser3", "Premium User(alternativ)")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.userid", "Kundennummer"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS_3, JDLocale.L("plugins.hoster.rapidshare.com.premiumPass3", "Premium Pass(alternativ)")));
-        cfg.setDefaultValue(JDLocale.L("plugins.rapidshare.pass", "Passwort"));
-        cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        premiumConfig.addEntry(conditionEntry);
-        conditionEntry.setDefaultValue(false);
 
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
@@ -1863,20 +1786,20 @@ public class Rapidshare extends PluginForHost {
 
                 String user = null;
                 String pass = null;
-                switch (i) {
-                case 1:
-                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER);
-                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS);
-                    break;
-                case 2:
-                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
-                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
-                    break;
-                case 3:
-                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
-                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
-                    break;
-                }
+//                switch (i) {
+//                case 1:
+//                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER);
+//                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS);
+//                    break;
+//                case 2:
+//                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
+//                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
+//                    break;
+//                case 3:
+//                    user = (String) getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
+//                    pass = (String) getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
+//                    break;
+//                }
                 user = JDUtilities.urlEncode(user.trim());
                 pass = JDUtilities.urlEncode(pass.trim());
                 String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + user + "&password=" + pass;

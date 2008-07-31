@@ -419,7 +419,7 @@ public class Serienjunkies extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    public void handle(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         handle0(downloadLink);

@@ -29,6 +29,7 @@ import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -93,8 +94,10 @@ public class FileFactory extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink parameter) throws Exception {
+    public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
+        parameter.setUrlDownload(parameter.getDownloadURL().replaceAll(".com//", ".com/"));
+        parameter.setUrlDownload(parameter.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
         DownloadLink downloadLink = null;
 
@@ -265,11 +268,11 @@ public class FileFactory extends PluginForHost {
     }
 
     // by eXecuTe
-    public void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         if (user == null || pass == null) {
 
@@ -467,24 +470,8 @@ public class FileFactory extends PluginForHost {
      * return ret; }
      */
 
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
-            doPremium(downloadLink);
-
-        } else {
-
-            doFree(downloadLink);
-
-        }
-
-    }
 
     @Override
     public void init() {

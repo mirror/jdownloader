@@ -26,6 +26,7 @@ import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
@@ -79,7 +80,7 @@ public class Filer extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
         String code;
@@ -181,11 +182,9 @@ public class Filer extends PluginForHost {
 
     }
 
-    public void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         String page = null;
         Browser br = new Browser();
@@ -296,30 +295,7 @@ public class Filer extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false) && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
-            try {
-                doPremium(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                doFree(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        }
-        return;
-    }
+   
 
     @Override
     public void reset() {

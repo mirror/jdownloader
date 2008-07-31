@@ -28,6 +28,7 @@ import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -70,7 +71,7 @@ public class RapidShareDe extends PluginForHost {
         return false;
     } // kein BotCheck
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
@@ -158,11 +159,11 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
-    public void doPremium(DownloadLink downloadLink) throws Exception {
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
 
         String formatPass = "";
         for (int i = 0; i < pass.length(); i++) {
@@ -299,25 +300,6 @@ public class RapidShareDe extends PluginForHost {
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
-    }
-
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-
-            doPremium(downloadLink);
-
-        } else {
-
-            doFree(downloadLink);
-
-        }
-        return;
     }
 
     @Override

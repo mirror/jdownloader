@@ -110,7 +110,7 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */

@@ -190,7 +190,7 @@ public class Gulli extends PluginForHost {
     // return null;
     // }
     @Override
-    public void handle(DownloadLink parameter) throws Exception {
+    public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         RequestInfo requestInfo = null;
         String dlUrl = null;

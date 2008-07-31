@@ -67,7 +67,7 @@ public class BluehostTo extends PluginForHost {
         return false;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         String page = null;
@@ -119,11 +119,7 @@ public class BluehostTo extends PluginForHost {
 
     }
 
-    public void doPremium(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return;
 
-    }
 
     @Override
     public String getAGBLink() {
@@ -196,30 +192,7 @@ public class BluehostTo extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-
-        if (user != null && pass != null && getProperties().getBooleanProperty(PROPERTY_PREMIUM_USER, false)) {
-            try {
-                doPremium(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                doFree(downloadLink);
-            } catch (Exception e) {
-
-                e.printStackTrace();
-            }
-        }
-        return;
-    }
 
     // private void setConfigElements() {
     // ConfigEntry cfg;

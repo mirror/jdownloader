@@ -118,6 +118,8 @@ public class LinkStatus implements Serializable {
      * Controlling: Link muß noch bearbeitet werden.
      */
     public final static int TODO = 1 << 0;
+    public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
+    public static final int VALUE_ID_PREMIUM_DISABLE = 1;
     private DownloadLink downloadLink;
     private transient String errorMessage;
 
@@ -190,7 +192,7 @@ public class LinkStatus implements Serializable {
 
     }
 
-    private String getErrorMessage() {
+    String getErrorMessage() {
         String ret = errorMessage;
         if (ret == null) {
             ret = getDefaultErrorMessage();

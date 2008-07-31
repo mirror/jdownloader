@@ -103,12 +103,11 @@ public class Megauploadcom extends PluginForHost {
         return false;
     }
 
-    private void doPremium(DownloadLink parameter) throws Exception {
+    public void handlePremium(DownloadLink parameter,String user, String pass) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
+  
         String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
         logger.info("PREMOIM");
         String url = "http://www.megaupload.com/de/";
@@ -238,13 +237,9 @@ public class Megauploadcom extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-    public void handle(DownloadLink parameter) throws Exception {
+    public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-
-            doPremium(parameter);
-            return;
-        }
+    
 
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
