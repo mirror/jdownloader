@@ -1,10 +1,12 @@
 package jd.wizardry7.view.pages;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -36,11 +38,8 @@ public class DownloadFolder extends DefaultWizardPage {
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-
         // Geht jetzt. Das ganze ging nur nicht, weil das configpanel intern auf den Controller zugreifen will, der noch nicht initialisiert war.
         panel.add(cpanel);
-
-        //panel.add(new ConfigPanelDownload(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
 
         return panel;
     }
@@ -67,5 +66,9 @@ public class DownloadFolder extends DefaultWizardPage {
          configContainer.addEntry(ce);
         
          cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
+         for (Component c : cpanel.getComponents()) {
+            System.out.println(c);
+        }
+         cpanel.setBorder(new LineBorder(Color.red, 1));
     }
 }

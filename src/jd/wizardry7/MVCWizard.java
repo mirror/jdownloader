@@ -34,7 +34,7 @@ public class MVCWizard {
         int aspectWidth = maxHeight * 3 / 4;
         maxWidth = maxWidth < aspectWidth ? aspectWidth : maxWidth;
 
-        System.out.println("maxWidth : maxHeight : " + maxWidth + " : " + maxHeight);
+//        System.out.println("maxWidth : maxHeight : " + maxWidth + " : " + maxHeight);
     }
 
     public static MVCWizard getInstance() {
