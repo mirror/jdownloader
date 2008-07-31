@@ -136,7 +136,7 @@ public abstract class Request {
         postRequest(httpConnection);
 
         collectCookiesFromConnection();
-        while (followRedirects && httpConnection.getHeaderField("Location") != null) {
+        while (followRedirects && httpConnection.getHeaderField("Location") != null && httpConnection.getHeaderField("Location").length()>8) {
             followCounter++;
             if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
 
