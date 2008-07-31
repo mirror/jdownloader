@@ -7,7 +7,6 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanelDownload;
 import jd.utils.JDUtilities;
 import jd.wizardry7.view.DefaultWizardPage;
@@ -19,8 +18,6 @@ public class DownloadFolder extends DefaultWizardPage {
     public static DownloadFolder getInstance() {
         return INSTANCE;
     }
-
-    private ConfigEntriesPanel cpanel;
 
     private DownloadFolder() {
         super();
@@ -34,8 +31,6 @@ public class DownloadFolder extends DefaultWizardPage {
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-        // Geht nicht
-        panel.add(cpanel);
         // Geht auch nicht
         panel.add(new ConfigPanelDownload(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
 
