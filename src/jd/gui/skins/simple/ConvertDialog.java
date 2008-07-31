@@ -16,10 +16,18 @@
 
 package jd.gui.skins.simple;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.util.logging.Logger;
 
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -38,6 +46,38 @@ public class ConvertDialog extends JFrame {
     public static final int CONVERT_ID_AUDIO_MP3_AND_VIDEO_FLV = 2;
     public static final int CONVERT_ID_MP4 = 3;
     public static final int CONVERT_ID_3GP = 4;
+    
+    
+    
+    // benutze keine int constanten sondern lieber ein Enum!
+    public static enum ConversionMode {AudioMp3("Audio (MP3)"), Video_Flv("Video (FLV)"), AudioMp3andVideoFlv("Audio und Video (MP3 & FLV)"), Mp4("Video (MP4)"), ThreeGP("Video (3GP)");
+
+    String text;
+    
+    ConversionMode(String text) {
+        this.text = text;
+    }
+    
+    @Override
+    public String toString() {
+        return this.text;
+    }
+        
+    };
+    
+
+    public static void main(String[] args) {
+        JCheckBox checkBox = new JCheckBox("Format für diese Sitzung beibehalten");
+        Object selectedValue = JOptionPane.showInputDialog(null, checkBox, "Waehle das Dateiformat?", JOptionPane.QUESTION_MESSAGE, null, ConversionMode.values(), ConversionMode.values()[0]);
+        if      (selectedValue == ConversionMode.AudioMp3); // do something
+        else if (selectedValue == ConversionMode.Mp4); // do something
+        else if (selectedValue == ConversionMode.ThreeGP); // do something
+        else if (selectedValue == ConversionMode.Video_Flv); // do something
+        else if (selectedValue == ConversionMode.AudioMp3andVideoFlv); // do something
+        else ; // User pressed cancel       
+        
+        System.out.println("selectedValue: " + selectedValue);
+    }
     
     
 
