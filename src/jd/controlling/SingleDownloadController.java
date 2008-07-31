@@ -248,22 +248,21 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) {
 
-         downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos","AGB nicht akzeptiert"));
-        
-         new AgbDialog(downloadLink2);
-        
-         /*
-         *
-         if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
+
+        new AgbDialog(downloadLink2);
+
+        /*
+         * 
+         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
          * 0)==0){
-         *
-         JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+         * 
+         * JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
          * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
          * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
          * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
          * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
-         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen
-         (AGB)</font></strong><font
+         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
          * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
          * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
          * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
@@ -271,9 +270,8 @@ public class SingleDownloadController extends Thread {
          * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
          * JDUtilities.getGUI().showHelpMessage(title, message, url); }
          */
-        
-         
-         fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
@@ -512,10 +510,9 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin) {
-       
-     
-         linkStatus.reset();
-         
+
+        linkStatus.reset();
+
     }
 
     /**
@@ -527,21 +524,26 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-         logger.severe("Error occurred: Temporarily unavailably");
-         // long milliSeconds = (Long) step.getParameter();
-         // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
-         // milliSeconds);
-         downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.tempUnavailable",
-         "kurzzeitig nicht verfügbar"));
-         try {
-         Thread.sleep(1000);
-         } catch (InterruptedException e) {
-         return;
-         }
-         linkStatus.addStatus(LinkStatus.TODO);
-         downloadLink.setEnabled(false);
-         fireControlEvent(new ControlEvent(this,
-         ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        logger.severe("Error occurred: Temporarily unavailably: " + downloadLink.getLinkStatus().getValue() + " ms");
+        // long milliSeconds = (Long) step.getParameter();
+        // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
+        // milliSeconds);
+        LinkStatus status=downloadLink.getLinkStatus();
+        status.setErrorMessage(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
+
+        /*
+         * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
+         * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
+         * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         */
+        if (status.getValue() > 0) {
+            status.setWaitTime((int)status.getValue());
+        }else{
+            status.resetWaitTime();
+        }
+
+        downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
 
     /**
@@ -555,7 +557,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorWaittime(DownloadLink downloadLink, PluginForHost plugin) {
         logger.finer("Error occurred: Wait Time ");
         LinkStatus status = downloadLink.getLinkStatus();
-        int milliSeconds = downloadLink.getLinkStatus().getValue();
+        long milliSeconds = downloadLink.getLinkStatus().getValue();
 
         if (milliSeconds <= 0) {
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
@@ -563,8 +565,8 @@ public class SingleDownloadController extends Thread {
             status.setErrorMessage(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
             return;
         }
-        status.setWaitTime(milliSeconds);
-        plugin.setHosterWaittime(milliSeconds);
+        status.setWaitTime((int)milliSeconds);
+        plugin.setHosterWaittime((int)milliSeconds);
 
         // blockiert bis zu einem erfolgreichem recionnect
         // if (Reconnecter.waitForNewIP(0)) {

@@ -707,6 +707,7 @@ public class JDController implements ControlListener, UIListener {
      * Beendet das Programm
      */
     public void exit() {
+        stopDownloads();
         saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);

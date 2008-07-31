@@ -127,7 +127,7 @@ public class LinkStatus implements Serializable {
     private int status = TODO;
     private transient String statusText = null;
     private int totalWaitTime = 0;
-    private int value;
+    private long value=0;
     private long waitUntil = 0;
 
     public LinkStatus(DownloadLink downloadLink) {
@@ -209,8 +209,9 @@ public class LinkStatus implements Serializable {
     }
 
     public int getRemainingWaittime() {
-
-        return Math.max(0, (int) (waitUntil - System.currentTimeMillis()));
+long now = System.currentTimeMillis();
+long ab=waitUntil-now;
+        return Math.max(0, (int) ab);
     }
 
     /**
@@ -228,10 +229,11 @@ public class LinkStatus implements Serializable {
 
         if (!downloadLink.isEnabled() && hasStatus(LinkStatus.FINISHED)) {
             ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+           
             if (errorMessage != null) {
-                ;
+
+                ret += ": " + errorMessage;
             }
-            ret += ": " + errorMessage;
             return errorMessage;
 
         }
@@ -284,7 +286,7 @@ public class LinkStatus implements Serializable {
         return totalWaitTime;
     }
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 
@@ -326,15 +328,22 @@ public class LinkStatus implements Serializable {
 
     public void reset() {
         setStatus(TODO);
-        waitUntil = 0;
+     
         errorMessage = null;
         statusText = null;
-        totalWaitTime = 0;
+       
+        resetWaitTime();
+        
     }
 
     public void resetWaitTime() {
+ 
+        if(totalWaitTime>0&&!downloadLink.isEnabled()){
+            downloadLink.setEnabled(true);
+        }
         totalWaitTime = 0;
         waitUntil = 0;
+        if(downloadLink.getPlugin()!=null)
         ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
     }
 
@@ -369,12 +378,13 @@ public class LinkStatus implements Serializable {
 
     }
 
-    public void setValue(int i) {
+    public void setValue(long i) {
         value = i;
 
     }
 
     public void setWaitTime(int milliSeconds) {
+        long now = System.currentTimeMillis();
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;
 

@@ -387,10 +387,10 @@ public abstract class PluginForHost extends Plugin {
          
          if(true){
              
-             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
-             downloadLink.getLinkStatus().setErrorMessage("bla und so");
-             downloadLink.getLinkStatus().setValue(60000);
-             return;
+//             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+//             downloadLink.getLinkStatus().setErrorMessage("bla und so");
+//             downloadLink.getLinkStatus().setValue(0);
+//             return;
          }
          
          

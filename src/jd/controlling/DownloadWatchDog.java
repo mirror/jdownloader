@@ -170,9 +170,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         switch (event.getID()) {
 
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) {
-                return;
-            }
+            if (!(event.getSource() instanceof PluginForHost)) { return; }
             removeDownloadLinkFromActiveList(((SingleDownloadController) event.getParameter()).getDownloadLink());
             // Wenn ein Download beendet wurde wird überprüft ob gerade ein
             // Download in der Warteschleife steckt. Wenn ja wird ein
@@ -409,6 +407,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         LinkStatus linkStatus;
         boolean hasWaittimeLinks;
         boolean hasInProgressLinks;
+        boolean hasTempDisabledLinks;
         aborted = false;
 
         int currentTotalSpeed = 0;
@@ -417,6 +416,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
             hasWaittimeLinks = false;
             hasInProgressLinks = false;
+            hasTempDisabledLinks = false;
 
             // deligateFireControlEvent(new ControlEvent(this,
             // ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
@@ -432,11 +432,23 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     for (int i = 0; i < links.size(); i++) {
                         link = links.elementAt(i);
                         linkStatus = link.getLinkStatus();
-                        if (!link.isEnabled()) {
-                            continue;
+
+                        if (!link.isEnabled() && linkStatus.getTotalWaitTime() > 0) {
+
+                            if (linkStatus.getRemainingWaittime() == 0) {
+                                link.setEnabled(true);
+                                linkStatus.reset();
+                                updates.add(link);
+                            }
+                            hasTempDisabledLinks = true;
+
                         }
+
+//                        if (!link.isEnabled()) {
+//                            continue;
+//                        }
                         // Link mit Wartezeit in der queue
-                        if (linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                        if (link.isEnabled()&&linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             if (linkStatus.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
                                 linkStatus.reset();
@@ -444,20 +456,23 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                             }
 
                         }
+                        
+                        
                         if (linkStatus.getRemainingWaittime() > 0) {
                             hasWaittimeLinks = true;
                             updates.add(link);
 
                         }
-                        if (linkStatus.isPluginActive()) {
+                        if (link.isEnabled()&&linkStatus.isPluginActive()) {
                             // logger.info("ip: "+link);
                             hasInProgressLinks = true;
 
                         }
-                        if (linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        if (link.isEnabled()&&linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                             inProgress++;
                             currentTotalSpeed += link.getDownloadSpeed();
                         }
+
                         // if (!rr&&link.isWaitingForReconnect()) {
                         //
                         // controller.requestReconnect();
@@ -504,19 +519,19 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
 
                 }
-                if (Interaction.getInteractionsRunning() == 0) {
-                    if (activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
-                        setDownloadActive();
-                        // logger.info("Started " + started + "Downloads");
+                if (Interaction.getInteractionsRunning() == 0 && (activeDownloadControllers.size() < getSimultanDownloadNum() && !pause)) {
+
+                    setDownloadActive();
+
+                } else {
+
+                    if (pause && !hasInProgressLinks || !hasTempDisabledLinks || !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {
+                        totalSpeed = 0;
+                        logger.info("Alle Downloads beendet");
+
+                        break;
+
                     }
-                }
-
-                if (pause && !hasInProgressLinks || !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {
-                    totalSpeed = 0;
-                    logger.info("Alle Downloads beendet");
-
-                    break;
-
                 }
             } catch (Exception e) {
                 e.printStackTrace();
