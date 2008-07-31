@@ -131,7 +131,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
             plugin.setAGBChecked(checkAgbAccepted.isSelected());
             if (checkAgbAccepted.isSelected()) {
-                downloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
+                downloadLink.getLinkStatus().reset();
             }
             dispose();
 

@@ -24,6 +24,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -247,33 +248,32 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) {
 
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos",
-        // "AGB nicht akzeptiert"));
-        //
-        // new AgbDialog(downloadLink2);
-        //
-        // /*
-        // *
-        // if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-        // * 0)==0){
-        // *
-        // JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-        // * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
-        // * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
-        // * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
-        // * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
-        // * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen
-        // (AGB)</font></strong><font
-        // * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-        // * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
-        // * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-        // * Anbieter: </font></p>")+plugin.getHost(); String
-        // * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
-        // * JDUtilities.getGUI().showHelpMessage(title, message, url); }
-        // */
-        //
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+         downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos","AGB nicht akzeptiert"));
+        
+         new AgbDialog(downloadLink2);
+        
+         /*
+         *
+         if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+         * 0)==0){
+         *
+         JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
+         * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
+         * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
+         * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
+         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
+         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen
+         (AGB)</font></strong><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+         * Anbieter: </font></p>")+plugin.getHost(); String
+         * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
+         * JDUtilities.getGUI().showHelpMessage(title, message, url); }
+         */
+        
+         
+         fireControlEvent(new ControlEvent(this,ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
 
@@ -527,21 +527,21 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
-        // logger.severe("Error occurred: Temporarily unavailably");
-        // // long milliSeconds = (Long) step.getParameter();
-        // // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
-        // // milliSeconds);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.tempUnavailable",
-        // "kurzzeitig nicht verfügbar"));
-        // try {
-        // Thread.sleep(1000);
-        // } catch (InterruptedException e) {
-        // return;
-        // }
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // downloadLink.setEnabled(false);
-        // fireControlEvent(new ControlEvent(this,
-        // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+         logger.severe("Error occurred: Temporarily unavailably");
+         // long milliSeconds = (Long) step.getParameter();
+         // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
+         // milliSeconds);
+         downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.tempUnavailable",
+         "kurzzeitig nicht verfügbar"));
+         try {
+         Thread.sleep(1000);
+         } catch (InterruptedException e) {
+         return;
+         }
+         linkStatus.addStatus(LinkStatus.TODO);
+         downloadLink.setEnabled(false);
+         fireControlEvent(new ControlEvent(this,
+         ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
 
     /**

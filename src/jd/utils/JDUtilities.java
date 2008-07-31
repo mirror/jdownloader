@@ -1015,6 +1015,7 @@ public class JDUtilities {
     }
 
     public static UIInterface getGUI() {
+        if( JDUtilities.getController()==null)return null;
         return JDUtilities.getController().getUiInterface();
     }
 

@@ -377,7 +377,23 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
-       
+         if (!this.isAGBChecked()) {
+         
+         logger.severe("AGB not signed : " + this.getPluginID());
+         downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
+         downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.error.agb", "TOC not signed"));
+         return;
+         }
+         
+         if(true){
+             
+             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+             downloadLink.getLinkStatus().setErrorMessage("bla und so");
+             downloadLink.getLinkStatus().setValue(60000);
+             return;
+         }
+         
+         
         // RequestInfo requestInfo;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             handleFree(downloadLink);

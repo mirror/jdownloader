@@ -6,8 +6,11 @@ import java.awt.Component;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.config.ConfigPanelDownload;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.config.Configuration;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.wizardry7.view.DefaultWizardPage;
 
@@ -18,6 +21,8 @@ public class DownloadFolder extends DefaultWizardPage {
     public static DownloadFolder getInstance() {
         return INSTANCE;
     }
+
+    private ConfigEntriesPanel cpanel;
 
     private DownloadFolder() {
         super();
@@ -31,8 +36,11 @@ public class DownloadFolder extends DefaultWizardPage {
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-        // Geht auch nicht
-        panel.add(new ConfigPanelDownload(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
+
+        // Geht jetzt. Das ganze ging nur nicht, weil das configpanel intern auf den Controller zugreifen will, der noch nicht initialisiert war.
+        panel.add(cpanel);
+
+        //panel.add(new ConfigPanelDownload(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
 
         return panel;
     }
@@ -54,14 +62,10 @@ public class DownloadFolder extends DefaultWizardPage {
 
     @Override
     protected void initComponents() {
-        // ConfigContainer configContainer = new ConfigContainer(this, "Titel");
-        // ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER,
-        // JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY,
-        // JDLocale.L("gui.config.general.downloadDirectory",
-        // "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-        // configContainer.addEntry(ce);
-        //
-        // cpanel = new ConfigEntriesPanel(configContainer, "Select where files
-        // downloaded with JDownloader should be stored.");
+         ConfigContainer configContainer = new ConfigContainer(this, "Titel");
+         ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER,  JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory","Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+         configContainer.addEntry(ce);
+        
+         cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
     }
 }
