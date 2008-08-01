@@ -17,7 +17,9 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Logger;
@@ -51,8 +53,14 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
 
     public static boolean showDialog(JFrame frame, String title, String question) {
         HTMLDialog tda = new HTMLDialog(frame, title, question);
-        return tda.success;
 
+        Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+        int minWidth = Math.min(tda.getPreferredSize().width, (int)(size.width*.75));
+        int minHeight = Math.min(tda.getPreferredSize().height, (int)(size.height*.75));
+        tda.setPreferredSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 480)));
+        tda.pack();
+        
+        return tda.success;
     }
 
     private JButton btnCancel;
