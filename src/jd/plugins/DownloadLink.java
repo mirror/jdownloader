@@ -220,7 +220,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.urlDownload = null;
         }
         if (name == null && urlDownload != null) {
-            this.name = extractFileNameFromURL();
+            this.name = Plugin.extractFileNameFromURL(this.getDownloadURL());
         }
     }
 
@@ -261,19 +261,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return getDownloadURL().compareTo(o.getDownloadURL());
         // return
         // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
-    }
-
-    /**
-     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
-     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
-     * DownloadLink.getName() verwendet werden
-     * 
-     * @return Datename des Downloads.
-     */
-    public String extractFileNameFromURL() {
-        int index = Math.max(getDownloadURL().lastIndexOf("/"), getDownloadURL().lastIndexOf("\\"));
-        return getDownloadURL().substring(index + 1);
-    }
+    }    
 
     /**
      * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von

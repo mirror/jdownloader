@@ -195,12 +195,7 @@ public class Gulli extends PluginForHost {
         RequestInfo requestInfo = null;
         String dlUrl = null;
 
-        DownloadLink downloadLink = parameter;
-        String name = downloadLink.getName();
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
-            name = name.replaceFirst("\\.html$", "");
-        }
-        downloadLink.setName(name);
+        DownloadLink downloadLink = parameter;        
         // switch (step.getStep()) {
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
         // con.setRequestProperty("Cookie",

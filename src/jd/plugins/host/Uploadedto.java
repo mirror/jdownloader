@@ -236,7 +236,7 @@ public class Uploadedto extends PluginForHost {
         }
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
-        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+        
         if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
@@ -244,8 +244,6 @@ public class Uploadedto extends PluginForHost {
 
             return;
         }
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
@@ -522,8 +520,6 @@ public class Uploadedto extends PluginForHost {
                 sleep(20000, downloadLink);
                 return;
             }
-            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
             dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
             dl.startDownload();
@@ -565,17 +561,7 @@ public class Uploadedto extends PluginForHost {
             // requestInfo.getConnection());
             // logger.info("Code: \r\n" + requestInfo.getHtmlCode());
 
-            if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                sleep(20000, downloadLink);
-                return;
-            }
-            downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
             dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-
             dl.startDownload();
 
         }

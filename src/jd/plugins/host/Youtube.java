@@ -172,16 +172,14 @@ public class Youtube extends PluginForHost {
 
         switch (convert) {
         case CONVERT_ID_MP4:
-            downloadLink.setName(name + ".mp4");
+            downloadLink.setStaticFileName(name + ".mp4");
             break;
         case CONVERT_ID_3GP:
-            downloadLink.setName(name + ".3gp");
+            downloadLink.setStaticFileName(name + ".3gp");
             break;
         default:
-            downloadLink.setName(name + ".flv");
-        }
-
-        logger.info(downloadfile);
+            downloadLink.setStaticFileName(name + ".flv");
+        }        
 
         HTTPConnection urlConnection;
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);

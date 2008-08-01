@@ -126,11 +126,7 @@ public class DataHu extends PluginForHost {
             return;
         }
 
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-        final long length = downloadLink.getDownloadMax();
-
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setFilesize(length);
+        dl = new RAFDownload(this, downloadLink, urlConnection);        
         // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
         // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();

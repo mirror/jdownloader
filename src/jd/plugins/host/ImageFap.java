@@ -187,7 +187,7 @@ public class ImageFap extends PluginForHost {
         }
         /* Downloaden */
         String filename = getFileNameFormHeader(requestInfo.getConnection()).replaceAll("getimg\\.php\\?img=", "");
-        downloadLink.setName(gallery_name + File.separator + filename);
+        downloadLink.setStaticFileName(gallery_name + File.separator + filename);
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.setResume(false);
         dl.setChunkNum(1);

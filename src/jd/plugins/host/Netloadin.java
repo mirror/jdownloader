@@ -250,11 +250,9 @@ public class Netloadin extends PluginForHost {
         // case PluginStep.STEP_PENDING:
         sleep(20000, downloadLink);
         // case PluginStep.STEP_DOWNLOAD:
-        logger.info("Download " + finalURL);
+        
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
         
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.startDownload();
 
@@ -343,7 +341,7 @@ public class Netloadin extends PluginForHost {
         // logger.info("Download " + finalURL);
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
+        
 
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.setResume(true);

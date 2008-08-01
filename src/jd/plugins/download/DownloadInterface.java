@@ -38,6 +38,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -1006,6 +1007,7 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
         this.downloadLink.setDownloadMax(urlConnection.getContentLength());
+        this.downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
         linkStatus = downloadLink.getLinkStatus();
         downloadLink.setDownloadInstance(this);
         connection = urlConnection;

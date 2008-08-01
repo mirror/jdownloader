@@ -174,8 +174,7 @@ public class Filer extends PluginForHost {
             // step.setParameter(20000l);
             return;
         }
-        downloadLink.setName(getFileNameFormHeader(con));
-
+        
         dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(1);
         dl.startDownload();
@@ -203,8 +202,6 @@ public class Filer extends PluginForHost {
             // step.setParameter(20000l);
             return;
         }
-        downloadLink.setName(getFileNameFormHeader(con));
-
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));

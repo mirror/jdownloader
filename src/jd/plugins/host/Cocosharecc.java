@@ -145,18 +145,13 @@ public class Cocosharecc extends PluginForHost {
         }
 
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        String filename = getFileNameFormHeader(urlConnection);
+        HTTPConnection urlConnection = requestInfo.getConnection();        
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-        downloadLink.setName(filename);
-        long length = downloadLink.getDownloadMax();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setFilesize(length);
+        dl = new RAFDownload(this, downloadLink, urlConnection);        
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();

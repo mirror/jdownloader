@@ -71,7 +71,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     private JComboBox methods;
 
-    private Pattern patternSupported = Pattern.compile("http://.*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     
 

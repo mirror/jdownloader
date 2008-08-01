@@ -128,9 +128,6 @@ public class zShare extends PluginForHost {
         String url = reg.getMatches()[0][0];
         request.withHtmlCode = false;
         HTTPConnection urlConnection = request.getRequest(url).getConnection();
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();

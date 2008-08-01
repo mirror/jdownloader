@@ -151,11 +151,7 @@ public class SpeedySharecom extends PluginForHost {
             // step.setParameter("Wrong Password");
             return;
         }
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-        downloadLink.setName(filename);
-        long length = downloadLink.getDownloadMax();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setFilesize(length);
+        dl = new RAFDownload(this, downloadLink, urlConnection);        
         dl.startDownload();
     }
 

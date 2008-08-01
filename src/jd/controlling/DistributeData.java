@@ -258,6 +258,24 @@ public class DistributeData extends ControlBroadcaster {
                 data = pHost.cutMatches(data);
             }
         }
+        
+        data=data.replaceAll("http://", "httpviajd://");
+        iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            PluginForHost pHost = iteratorHost.next();
+            if (pHost.canHandle(data)) {
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(data, null);
+                if (foundpassword.size() > 0) {
+                    Iterator<DownloadLink> iter = dl.iterator();
+                    while (iter.hasNext()) {
+                        iter.next().addSourcePluginPasswords(foundpassword);
+                    }
+                }
+                links.addAll(dl);
+                data = pHost.cutMatches(data);
+            }
+        }
+        data=data.replaceAll("httpviajd://", "http://");
 
         return links;
     }

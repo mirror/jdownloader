@@ -240,8 +240,7 @@ public class FileFactory extends PluginForHost {
         }
 
         
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-
+        
         if (requestInfo.getConnection().getHeaderField("Location") != null) {
             requestInfo = HTTP.getRequest(new URL(requestInfo.getConnection().getHeaderField("Location")));
 
@@ -331,8 +330,6 @@ public class FileFactory extends PluginForHost {
         // case PluginStep.STEP_DOWNLOAD:
 
         HTTPConnection urlConnection = requestInfo.getConnection();       
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));

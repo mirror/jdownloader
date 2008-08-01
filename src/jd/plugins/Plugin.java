@@ -523,7 +523,7 @@ public abstract class Plugin implements ActionListener {
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
      */
-    public String getFileNameFormHeader(HTTPConnection urlConnection) {
+    static public String getFileNameFormHeader(HTTPConnection urlConnection) {
 
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return getFileNameFormURL(urlConnection.getURL()); }
 
@@ -543,17 +543,21 @@ public abstract class Plugin implements ActionListener {
         return ret;
     }
 
-    // /**
-    // * @author JD-Team
-    // * @return Gibt den aktuellen Schritt oder null zurück
-    // */
-    // public void getCurrentStep() {
-    // return currentStep;
-    // }
-
-    protected String getFileNameFormURL(URL url) {
+    static public String getFileNameFormURL(URL url) {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
         return url.getFile().substring(index + 1);
+    }
+    
+    /**
+     * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
+     * dateinamen zuzugreifen sollte bis auf Ausnamen immer
+     * DownloadLink.getName() verwendet werden
+     * 
+     * @return Datename des Downloads.
+     */
+    static public String extractFileNameFromURL(String url) {
+        int index = Math.max(url.lastIndexOf("/"), url.lastIndexOf("\\"));
+        return url.substring(index + 1);
     }
 
     /**

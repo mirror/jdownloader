@@ -131,9 +131,6 @@ public class UploadStube extends PluginForHost {
         }
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink.getDownloadURL(), true);
         HTTPConnection urlConnection = requestInfo.getConnection();
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();

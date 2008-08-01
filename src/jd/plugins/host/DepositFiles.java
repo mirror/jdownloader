@@ -269,7 +269,7 @@ public class DepositFiles extends PluginForHost {
         }
 
         
-        logger.info("Filename: " + getFileNameFormHeader(con));
+        
 
         if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
 
@@ -279,8 +279,6 @@ public class DepositFiles extends PluginForHost {
             return;
 
         }
-
-        downloadLink.setName(getFileNameFormHeader(con));
 
         dl = new RAFDownload(this, downloadLink, con);
 
@@ -399,8 +397,6 @@ public class DepositFiles extends PluginForHost {
             return;
 
         }
-
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
 
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.setResume(true);

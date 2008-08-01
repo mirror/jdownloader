@@ -151,9 +151,6 @@ public class RapidShareDe extends PluginForHost {
         // return;
         // }
         HTTPConnection urlConnection = form.getConnection();
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();
@@ -231,11 +228,6 @@ public class RapidShareDe extends PluginForHost {
 
         }
 
-         String name = getFileNameFormHeader(urlConnection);
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
-            name = name.replaceFirst("\\.html$", "");
-        }
-        downloadLink.setName(name);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.setResume(true);

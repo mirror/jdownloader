@@ -234,9 +234,7 @@ public class ShareBaseDe extends PluginForHost {
 
         // Download vorbereiten
         HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
-        String filename = URLDecoder.decode(getFileNameFormHeader(urlConnection), "UTF-8");
-        downloadLink.setName(filename);
-
+        
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
 

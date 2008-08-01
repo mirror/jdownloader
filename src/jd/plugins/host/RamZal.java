@@ -112,9 +112,6 @@ public class RamZal extends PluginForHost {
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
 
         HTTPConnection urlConnection = requestInfo.getConnection();
-        downloadLink.setName(getFileNameFormHeader(urlConnection));
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
-
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();

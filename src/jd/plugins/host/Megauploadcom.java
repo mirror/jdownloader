@@ -143,9 +143,7 @@ public class Megauploadcom extends PluginForHost {
 
         // requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl),
         // Browser.getCookie(url,"user"), link, false);
-        urlConnection = br.openGetConnection(br.getRedirectLocation());
-        String name = getFileNameFormHeader(urlConnection);
-        downloadLink.setName(name);
+        urlConnection = br.openGetConnection(br.getRedirectLocation());        
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
@@ -355,8 +353,6 @@ public class Megauploadcom extends PluginForHost {
 
         }
         
-        downloadLink.setName(getFileNameFormHeader(requestInfo.getConnection()));
-
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
         dl.startDownload();

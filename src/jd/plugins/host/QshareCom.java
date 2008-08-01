@@ -99,8 +99,6 @@ public class QshareCom extends PluginForHost {
             sleep(20000, downloadLink);
             return;
         }
-        downloadLink.setName(getFileNameFormHeader(con));
-
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
         dl.setChunkNum(1);

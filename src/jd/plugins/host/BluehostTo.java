@@ -109,8 +109,7 @@ public class BluehostTo extends PluginForHost {
             // step.setParameter(60*60*1000l);
 
             return;
-        }
-        downloadLink.setName(getFileNameFormHeader(con));
+        }       
 
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);

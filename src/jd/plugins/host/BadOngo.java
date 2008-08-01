@@ -264,8 +264,7 @@ public class BadOngo extends PluginForHost {
         while (fileOutput.exists()) {
             downloadLink.setName(downloadLink.getName().replaceFirst("\\.[\\d]+$", "") + "." + c++);
             fileOutput = new File(downloadLink.getFileOutput());
-        }
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        }       
 
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
