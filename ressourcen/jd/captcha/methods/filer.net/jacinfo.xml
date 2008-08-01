@@ -1,4 +1,4 @@
 <jDownloader>
   <method name="JAC_filer.net" author="DwD" />
-  <format type="jpg" letterNum="5"/>
+  <format type="jpg" letterNum="5" minLetterNum="1" maxLetterNum="5"/>
 </jDownloader>
