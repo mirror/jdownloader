@@ -122,7 +122,7 @@ public class Reconnecter {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0) {
+                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() > 0 && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                         nextDownloadLink.getLinkStatus().resetWaitTime();
                         logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();

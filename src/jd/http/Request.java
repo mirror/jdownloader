@@ -49,6 +49,7 @@ public abstract class Request {
      * @return
      */
     public static HashMap<String, String> parseQuery(String query) {
+        if(query==null)return null;
         HashMap<String, String> ret = new HashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
             try {

@@ -231,6 +231,12 @@ public class Browser {
                 currentURL = new URL(string);
             }
             GetRequest request = new GetRequest(string);
+            if (connectTimeout > 0) {
+                request.setConnectTimeout(connectTimeout);
+            }
+            if (readTimeout > 0) {
+                request.setReadTimeout(readTimeout);
+            }
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
             Browser.forwardCookies(request);
@@ -262,10 +268,15 @@ public class Browser {
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-
+            if (connectTimeout > 0) {
+                request.setConnectTimeout(connectTimeout);
+            }
+            if (readTimeout > 0) {
+                request.setReadTimeout(readTimeout);
+            }
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
-            request.getPostData().putAll(post);
+           if(post!=null) request.getPostData().putAll(post);
             if (headers != null) {
                 request.getHeaders().putAll(headers);
             }

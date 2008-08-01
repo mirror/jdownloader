@@ -234,7 +234,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 case 2:
                     return linkList.get(rowIndex).getName();
                 case 3:
-                    return linkList.get(rowIndex).isAvailabilityChecked() ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "*";
+                    return (linkList.get(rowIndex).isAvailabilityChecked()&&linkList.get(rowIndex).getDownloadMax()>0) ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "~";
                 case 4:
                     return getInfoString(linkList.get(rowIndex));
 

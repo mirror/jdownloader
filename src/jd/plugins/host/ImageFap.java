@@ -22,10 +22,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -41,10 +43,6 @@ public class ImageFap extends PluginForHost {
 
     static private final String HOST = "imagefap.com";
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", Pattern.CASE_INSENSITIVE);
-    private String gallery_name;
-    private String picture_name;
-    private RequestInfo requestInfo;
-    private String uploader_name;
 
     public ImageFap() {
         super();
@@ -101,47 +99,63 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
-            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            logger.info("GeT page");
+            Browser br = new Browser();
+            br.getPage(downloadLink.getDownloadURL());
+            logger.info("GOT page");
+            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+            String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (gallery_name != null) {
                 gallery_name = gallery_name.trim();
             }
-            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
 
             if (picture_name != null) {
+                String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                br.setConnectTimeout(1000);
+                HTTPConnection con = br.openGetConnection(imagelink);
+                logger.info("GOT connection");
                 FilePackage fp = new FilePackage();
                 fp.setName(uploader_name);
+                if(con!=null)downloadLink.setDownloadMax(con.getContentLength());
                 downloadLink.setName(gallery_name + File.separator + picture_name);
                 downloadLink.setFilePackage(fp);
                 return true;
             }
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         downloadLink.setAvailable(false);
         return false;
     }
 
-    private boolean getFileInformation2(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
-            gallery_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (gallery_name != null) {
-                gallery_name = gallery_name.trim();
-            }
-            uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (picture_name != null) { return true; }
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        downloadLink.setAvailable(false);
-        return false;
-    }
+    // private boolean getFileInformation2(DownloadLink downloadLink) {
+    // LinkStatus linkStatus = downloadLink.getLinkStatus();
+    // try {
+    // requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+    // picture_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td
+    // bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td
+    // bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE |
+    // Pattern.DOTALL)).getFirstMatch();
+    // gallery_name = new Regex(requestInfo.getHtmlCode(),
+    // Pattern.compile("size=4>(.*?)</font>",
+    // Pattern.CASE_INSENSITIVE)).getFirstMatch();
+    // if (gallery_name != null) {
+    // gallery_name = gallery_name.trim();
+    // }
+    // uploader_name = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a
+    // href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"",
+    // Pattern.CASE_INSENSITIVE)).getFirstMatch();
+    // if (picture_name != null) { return true; }
+    // } catch (MalformedURLException e) {
+    // } catch (IOException e) {
+    // }
+    // downloadLink.setAvailable(false);
+    // return false;
+    // }
 
     @Override
     public String getHost() {
@@ -173,22 +187,32 @@ public class ImageFap extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        /* Nochmals das File überprüfen */
-        if (!getFileInformation2(downloadLink)) {
+        Browser br = new Browser();
+        // br.setFollowRedirects(ture);
+        br.getPage(downloadLink.getDownloadURL());
+        String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+        if (picture_name == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        /* DownloadLink holen */
-        String Imagelink = DecryptLink(new Regex(requestInfo.getHtmlCode(), Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(Imagelink), requestInfo.getCookie(), null, null, false);
-        if (requestInfo.getLocation() != null) {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), null, false);
+        String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        if (gallery_name != null) {
+            gallery_name = gallery_name.trim();
         }
+
+        /* DownloadLink holen */
+        String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        HTTPConnection con = br.openGetConnection(imagelink);
+        // if (br.getRedirectLocation() != null) {
+        // br.
+        // requestInfo = HTTP.getRequestWithoutHtmlCode(new
+        // URL(requestInfo.getLocation()), requestInfo.getCookie(), null,
+        // false);
+        // }
         /* Downloaden */
-        String filename = getFileNameFormHeader(requestInfo.getConnection()).replaceAll("getimg\\.php\\?img=", "");
+        String filename = getFileNameFormHeader(con).replaceAll("getimg\\.php\\?img=", "");
         downloadLink.setStaticFileName(gallery_name + File.separator + filename);
-        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+        dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
         dl.setChunkNum(1);
         dl.startDownload();

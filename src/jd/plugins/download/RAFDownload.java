@@ -257,7 +257,7 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
 
-            linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            //linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             downloadLink.setDownloadMax(fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
             if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {

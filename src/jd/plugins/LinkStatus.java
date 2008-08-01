@@ -127,8 +127,9 @@ public class LinkStatus implements Serializable {
     private int status = TODO;
     private transient String statusText = null;
     private int totalWaitTime = 0;
-    private long value=0;
+    private long value = 0;
     private long waitUntil = 0;
+    private int retryCount = 0;
 
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
@@ -209,8 +210,8 @@ public class LinkStatus implements Serializable {
     }
 
     public int getRemainingWaittime() {
-long now = System.currentTimeMillis();
-long ab=waitUntil-now;
+        long now = System.currentTimeMillis();
+        long ab = waitUntil - now;
         return Math.max(0, (int) ab);
     }
 
@@ -229,12 +230,12 @@ long ab=waitUntil-now;
 
         if (!downloadLink.isEnabled() && hasStatus(LinkStatus.FINISHED)) {
             ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
-           
+
             if (errorMessage != null) {
 
                 ret += ": " + errorMessage;
             }
-            return errorMessage;
+            return ret;
 
         }
 
@@ -307,7 +308,7 @@ long ab=waitUntil-now;
 
     public boolean isFailed() {
 
-        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS);
     }
 
     public boolean isPluginActive() {
@@ -328,23 +329,22 @@ long ab=waitUntil-now;
 
     public void reset() {
         setStatus(TODO);
-     
+
         errorMessage = null;
         statusText = null;
-       
+        this.retryCount = 0;
         resetWaitTime();
-        
+
     }
 
     public void resetWaitTime() {
- 
-        if(totalWaitTime>0&&!downloadLink.isEnabled()){
+
+        if (totalWaitTime > 0 && !downloadLink.isEnabled()) {
             downloadLink.setEnabled(true);
         }
         totalWaitTime = 0;
         waitUntil = 0;
-        if(downloadLink.getPlugin()!=null)
-        ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
+        if (downloadLink.getPlugin() != null) ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
     }
 
     public void setErrorMessage(String string) {
@@ -433,6 +433,20 @@ long ab=waitUntil-now;
             ret += "ErrorMessage: " + errorMessage + "\r\n";
         }
         return ret;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
+    }
+
+    public int getRetryCount() {
+        return this.retryCount;
+
+    }
+
+    public Object getErrorMesage() {
+
+        return errorMessage;
     }
 
 }

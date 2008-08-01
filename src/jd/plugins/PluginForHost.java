@@ -52,7 +52,7 @@ public abstract class PluginForHost extends Plugin {
     protected DownloadInterface dl = null;
     // private int retryOnErrorCount = 0;
     private int maxConnections = 50;
-    private int retryCount = 0;
+
     private static final int ACCOUNT_NUM = 5;
 
     private boolean enablePremium = false;
@@ -365,9 +365,6 @@ public abstract class PluginForHost extends Plugin {
         return Math.max(0, (int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
 
-    public int getRetryCount() {
-        return retryCount;
-    }
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -527,11 +524,9 @@ public abstract class PluginForHost extends Plugin {
         this.maxConnections = maxConnections;
     }
 
-    public void setRetryCount(int retryCount) {
-        this.retryCount = retryCount;
-    }
 
-    protected void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
+
+    public void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
         while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
 
             i -= 1000;

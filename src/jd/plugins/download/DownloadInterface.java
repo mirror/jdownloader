@@ -1004,6 +1004,8 @@ abstract public class DownloadInterface {
 
     private boolean waitFlag = true;
 
+    private boolean fatalErrorOccured=false;
+
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
         this.downloadLink.setDownloadMax(urlConnection.getContentLength());
@@ -1114,10 +1116,12 @@ abstract public class DownloadInterface {
     // * @param id
     // */
     protected void error(int id, String string) {
+    
         logger.severe("Error occured: " + id);
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
+        if(fatalErrorOccured)return;
         linkStatus.addStatus(id);
         linkStatus.setErrorMessage(string);
         switch (id) {
@@ -1129,7 +1133,7 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_NO_CONNECTION:
 
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
-
+            this.fatalErrorOccured = true;
             terminate(id);
 
         }
@@ -1578,11 +1582,12 @@ abstract public class DownloadInterface {
         // chunkNum = 1;
         // }
         try {
+            linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             setupChunks();
             waitForChunks();
 
             onChunksReady();
-
+            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             if (!handleErrors()) {
 
                 return false;
@@ -1603,6 +1608,7 @@ abstract public class DownloadInterface {
             // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             //
             // }
+            linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             return false;
         }
 
@@ -1616,7 +1622,7 @@ abstract public class DownloadInterface {
     private void terminate(int id) {
 
         logger.severe("A critical Downloaderror occured. Terminate...");
-        // this.abortByError = true;
+       
 
         Iterator<Chunk> it = chunks.iterator();
         while (it.hasNext()) {

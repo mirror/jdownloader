@@ -409,7 +409,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         boolean hasInProgressLinks;
         boolean hasTempDisabledLinks;
         aborted = false;
-
+int stopCounter=5;
         int currentTotalSpeed = 0;
         int inProgress = 0;
         while (aborted != true) {
@@ -519,17 +519,22 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
 
                 }
+                int ret=0;
                 if (Interaction.getInteractionsRunning() == 0 && (activeDownloadControllers.size() < getSimultanDownloadNum() && !pause)) {
 
-                    setDownloadActive();
+                    ret= setDownloadActive();
 
-                } else {
+                } 
+                if(ret==0) {
 
-                    if (pause && !hasInProgressLinks || !hasTempDisabledLinks || !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {
+                    if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {
+                        stopCounter--;
+                        if(stopCounter==0){
                         totalSpeed = 0;
                         logger.info("Alle Downloads beendet");
 
                         break;
+                        }
 
                     }
                 }

@@ -831,12 +831,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Soll dieser DownloadLink aktiviert sein oder nicht
      */
     public void setEnabled(boolean isEnabled) {
+        this.isEnabled = isEnabled;
+        
         if (!isEnabled) {
             setAborted(true);
         } else {
             setAborted(false);
+           
         }
         if (isEnabled == true) {
+            getLinkStatus().resetWaitTime();
             setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
@@ -847,7 +851,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 return;
             }
         }
-        this.isEnabled = isEnabled;
     }
 
     /**
