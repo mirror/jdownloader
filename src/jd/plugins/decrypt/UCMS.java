@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,19 +32,26 @@ import jd.utils.JDUtilities;
 
 public class UCMS extends PluginForDecrypt {
     static private final String host = "Underground CMS";
-    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\"/gfx/secure/", Pattern.CASE_INSENSITIVE);
+    private Pattern PAT_CAPTCHA = Pattern.compile("<IMG SRC=\".*?/gfx/secure/", Pattern.CASE_INSENSITIVE);
 
-    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Zum Download\" onClick=\"if)|(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\"Download\" onClick=\"if)", Pattern.CASE_INSENSITIVE);
+    private Pattern PAT_NO_CAPTCHA = Pattern.compile("(<INPUT TYPE=\"SUBMIT\" CLASS=\"BUTTON\" VALUE=\".*?Download.*?\".*?Click=\"if)", Pattern.CASE_INSENSITIVE);
 
-    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?filefox\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?alphawarez\\.us/\\?id=.+)" + "|(http://[\\w\\.]*?pirate-loads\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fettrap\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?omega-music\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?hardcoremetal\\.biz/\\?id=.+)" + "|(http://[\\w\\.]*?flashload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?twin-warez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?steelwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?fullstreams\\.info/\\?id=.+)" + "|(http://[\\w\\.]*?lionwarez\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?1dl\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?chrome-database\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?oneload\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?youwarez\\.biz/\\?id=.+)"
-            + "|(http://[\\w\\.]*?saugking\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?leetpornz\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?freefiles4u\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?dark-load\\.net/\\?id=.+)" + "|(http://[\\w\\.]*?crimeland\\.de/\\?id=.+)" + "|(http://[\\w\\.]*?get-warez\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?meinsound\\.com/\\?id=.+)" + "|(http://[\\w\\.]*?projekt-tempel-news\\.de.vu/\\?id=.+)" + "|(http://[\\w\\.]*?datensau\\.org/\\?id=.+)" + "|(http://[\\w\\.]*?musik\\.am(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?spreaded\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?relfreaks\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?babevidz\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serien24\\.com(/\\?id=.+|/download/.+/.+\\.html))"
-            + "|(http://[\\w\\.]*?porn-freaks\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-4-free\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xxx-reactor\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?porn-traffic\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?chili-warez\\.net(/\\?id=.+|/.+/.+\\.html))" + "|(http://[\\w\\.]*?game-freaks\\.net(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?isos\\.at(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?your-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?mov-world\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?xtreme-warez\\.net(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?sceneload\\.to(/\\?id=.+|/download/.+/.+\\.html))"
-            + "|(http://[\\w\\.]*?oxygen-warez\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?epicspeedload\\.in/\\?id=.+)" + "|(http://[\\w\\.]*?serienfreaks\\.to(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?serienfreaks\\.in(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?warez-load\\.com(/\\?id=.+|/download/.+/.+\\.html))" + "|(http://[\\w\\.]*?ddl-scene\\.com(/\\?id=.+|/category/.+/.+\\.html))" + "|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/\\?id=.+)", Pattern.CASE_INSENSITIVE);
-
-    
+    final static private Pattern patternSupported = create_patternSupported();
 
     public UCMS() {
         super();
+    }
+
+    static private Pattern create_patternSupported() {
+        String Complete_Pattern = "";
+        String[] List = { "saugking.net", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "oxygen-warez.com", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz",
+                "xwebb.extra.hu/1dl", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "lister.hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms" };
+        for (String Pattern : List) {
+            if (Complete_Pattern.length() > 0) Complete_Pattern += "|";
+            Complete_Pattern += "(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|category/.+/.+\\.html|download/.+/.+\\.html))";
+        }
+        logger.finest("UCMS: " + List.length + " Pattern added!");
+        return Pattern.compile(Complete_Pattern, Pattern.CASE_INSENSITIVE);
     }
 
     @Override
@@ -65,8 +71,8 @@ public class UCMS extends PluginForDecrypt {
 
             String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (pass != null) {
-                if (!pass.equals("n/a") && !pass.equals("-") && !pass.equals("-kein Passwort-")) {
-                    default_password.add(pass);
+                if (pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-")) {
+                    pass = null;
                 }
             }
             String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
@@ -125,7 +131,9 @@ public class UCMS extends PluginForDecrypt {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
                 for (String[] element2 : links) {
-                    decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(element2[0])));
+                    DownloadLink link = createDownloadlink(JDUtilities.htmlDecode(element2[0]));
+                    link.addSourcePluginPassword(pass);
+                    decryptedLinks.add(link);
                 }
             }
         } catch (IOException e) {
