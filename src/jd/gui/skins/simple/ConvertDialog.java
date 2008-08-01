@@ -22,35 +22,34 @@ import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse zeigt dem Nutzer Auswahldialoge beim Konvertieren von FLVs an
  */
 public class ConvertDialog extends JFrame {
-    @SuppressWarnings("unused")
+
     private static Logger logger = JDUtilities.getLogger();
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
     
-    public static final int CONVERT_ID_AUDIO_MP3 = 0; 
-    public static final int CONVERT_ID_VIDEO_FLV = 1;
-    public static final int CONVERT_ID_AUDIO_MP3_AND_VIDEO_FLV = 2;
-    public static final int CONVERT_ID_MP4 = 3;
-    public static final int CONVERT_ID_3GP = 4;
     
-    
-    
-    // benutze keine int constanten sondern lieber ein Enum!
-    public static enum ConversionMode {AudioMp3("Audio (MP3)"), Video_Flv("Video (FLV)"), AudioMp3andVideoFlv("Audio und Video (MP3 & FLV)"), Mp4("Video (MP4)"), ThreeGP("Video (3GP)");
+    public static enum ConversionMode { 
+    	AUDIOMP3("Audio (MP3)"), 
+    	VIDEOFLV("Video (FLV)"), 
+    	AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)"), 
+    	VIDEOMP4("Video (MP4)"), 
+    	VIDEO3GP("Video (3GP)");
 
     String text;
     
     ConversionMode(String text) {
         this.text = text;
     }
+    
     
     @Override
     public String toString() {
@@ -59,19 +58,59 @@ public class ConvertDialog extends JFrame {
         
     };
     
-
-    public static void main(String[] args) {
-        JCheckBox checkBox = new JCheckBox("Format für diese Sitzung beibehalten");
-        Object selectedValue = JOptionPane.showInputDialog(null, checkBox, "Waehle das Dateiformat?", JOptionPane.QUESTION_MESSAGE, null, ConversionMode.values(), ConversionMode.values()[0]);
-        if      (selectedValue == ConversionMode.AudioMp3); // do something
-        else if (selectedValue == ConversionMode.Mp4); // do something
-        else if (selectedValue == ConversionMode.ThreeGP); // do something
-        else if (selectedValue == ConversionMode.Video_Flv); // do something
-        else if (selectedValue == ConversionMode.AudioMp3andVideoFlv); // do something
-        else ; // User pressed cancel       
+    private static boolean keepformat = false;
+    private static ConversionMode keeped;
+    
+    public static ConversionMode DisplayDialog(Object[] displaymodes) {
+    	logger.fine(displaymodes.length + " Convertmodi zur Auswahl.");
+    	if(keepformat)
+    	{
+    		//Es muss überprüft werden, ob das Format überhaupt zur Auswahl steht.	
+    		for(int i=0;i<displaymodes.length;i++)
+    		{
+    			if(displaymodes[i].equals(keeped))
+    			{
+    				return keeped;
+    				
+    			}
+    		}
+    	}
+    	
+    	
+        JCheckBox checkBox = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
+        checkBox.setSelected(false);
+        ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, checkBox, JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:"), JOptionPane.QUESTION_MESSAGE, null, displaymodes, displaymodes[0]);
         
         System.out.println("selectedValue: " + selectedValue);
+        if(checkBox.isSelected())
+        {
+        	keepformat = true;
+        	keeped = selectedValue;
+        }
+        else
+        {
+        	keepformat = false;
+        }
+        return selectedValue;
+        
+        /*
+        if      (selectedValue == ConversionMode.AUDIOMP3); // do something
+        else if (selectedValue == ConversionMode.VIDEOMP4); // do something
+        else if (selectedValue == ConversionMode.THREEGP); // do something
+        else if (selectedValue == ConversionMode.VIDEOFLV); // do something
+        else if (selectedValue == ConversionMode.AUDIOMP3_AND_VIDEOFLV); // do something
+        else ; // User pressed cancel       
+        */
+       
     }
+    
+    /*public static void main(String[] args)
+    {
+    	//ConversionMode[] mode = {ConversionMode.AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
+    	DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
+        DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
+        DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
+    }*/
     
     
 

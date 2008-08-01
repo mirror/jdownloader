@@ -16,66 +16,34 @@
 
 package jd.plugins.decrypt;
 
-import java.awt.BorderLayout;
-import java.awt.Dialog;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.ConvertDialog;
+import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class YouTubeCom extends PluginForDecrypt {
+	
 
-    public static final int CONVERT_ID_3GP = 4;
-
-    public static final int CONVERT_ID_AUDIO = 0;
-    public static final int CONVERT_ID_AUDIO_AND_VIDEO = 2;
-    public static final int CONVERT_ID_MP4 = 3;
-
-    public static final int CONVERT_ID_VIDEO = 1;
     static private String host = "youtube.com";
     static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
     private static final String PLAYER = "get_video";
-    private static final int saveyConvert = 1;
-
     private static final String T = "\"t\"";
-
-    private static int[] useyConvert = new int[] { 0, 0 };
     private static final String VIDEO_ID = "video_id";
-
-    private JButton btnOK;
-
-    private JCheckBox checkyConvert;
-
-    private JComboBox methods;
-
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
     
+    static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    private boolean yConvertChecked = false;
 
     public YouTubeCom() {
         super();
@@ -118,29 +86,39 @@ public class YouTubeCom extends PluginForDecrypt {
             }
 
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-
-            boolean hasMp4 = false;
-            boolean has3gp = false;
-
+            
+            Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+            
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
-                hasMp4 = true;
+            	possibleconverts.add(ConversionMode.VIDEOMP4);
             }
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) {
-                has3gp = true;
+            	possibleconverts.add(ConversionMode.VIDEO3GP);
             }
+            
+            possibleconverts.add(ConversionMode.AUDIOMP3);
+            possibleconverts.add(ConversionMode.VIDEOFLV);
+            possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
+            
+            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray());
+            if (ConvertTo != null) {
 
-            int convertId = getYoutubeConvertTo(hasMp4, has3gp);
-            if (convertId != -1) {
-
-                if (convertId == CONVERT_ID_MP4) {
+                if (ConvertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     link += "&fmt=18";
-                } else if (convertId == CONVERT_ID_3GP) {
+                } else if (ConvertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
                     link += "&fmt=13";
                 }
 
-                link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + convertId + "\" >";
-
-                decryptedLinks.add(createDownloadlink(link));
+                link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + ConvertTo + "\" >";
+                //logger.info(link);
+                FilePackage fp = new FilePackage();
+                String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch();
+                fp.setName(name);
+                DownloadLink thislink = createDownloadlink(link);
+                thislink.setName(name);
+                thislink.setSourcePluginComment("Convert to "+ConvertTo.toString());
+                fp.add(thislink);
+                decryptedLinks.add(thislink);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -180,6 +158,7 @@ public class YouTubeCom extends PluginForDecrypt {
         return ret == null ? "0.0" : ret;
     }
 
+    /*
     private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
         yConvertDialog(hasMp4, has3gp);
         return useyConvert[0];
@@ -192,9 +171,6 @@ public class YouTubeCom extends PluginForDecrypt {
         }
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
-            /**
-             * 
-             */
             private static final long serialVersionUID = -4282205277016215186L;
 
             void init() {
@@ -304,4 +280,5 @@ public class YouTubeCom extends PluginForDecrypt {
 
         }.init();
     }
+    */
 }

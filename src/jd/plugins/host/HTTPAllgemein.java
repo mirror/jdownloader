@@ -21,7 +21,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     private static final String HOST = "HTTP Links";
 
-    static private final Pattern patternSupported = Pattern.compile("httpviajd://[\\w\\.]*/.*?(zip|mp3|mp4|avi|iso|mov|wmv|mpg|rar|mp2|7z|pdf|flv|jpg)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("httpviajd://[\\w\\.]*/.*?(zip|mp3|mp4|avi|iso|mov|wmv|mpg|rar|mp2|7z|pdf|flv|jpg|exe|3gp|wav|mkv)", Pattern.CASE_INSENSITIVE);
     private RequestInfo requestInfo;
     private String linkurl;
     private LinkStatus linkStatus;

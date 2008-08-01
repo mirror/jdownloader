@@ -355,9 +355,6 @@ public abstract class PluginForHost extends Plugin {
     //
     // }
 
-    public String getPluginNameExtension(DownloadLink link) {
-        return "";
-    }
 
     public int getRemainingHosterWaittime() {
         // TODO Auto-generated method stub
