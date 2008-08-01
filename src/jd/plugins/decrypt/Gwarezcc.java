@@ -22,13 +22,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -80,8 +77,8 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (getProperties().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    ArrayList<String> dlc = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE), 0);
-                    if (dlc.size() == 1) {
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getMatches(0);
+                    if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
                     } else {
@@ -91,10 +88,10 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (dlc_found == false) {
                     /* Mirrors suchen (Verschlüsselt) */
-                    ArrayList<String> mirror_pages = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE), 1);
-                    for (int i = 0; i < mirror_pages.size(); i++) {
+                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                    for (int i = 0; i < mirror_pages.length; i++) {
                         /* Mirror Page zur weiteren Verarbeitung adden */
-                        decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages.get(i) + "/"));
+                        decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
                     }
                 }
 
@@ -103,24 +100,20 @@ public class Gwarezcc extends PluginForDecrypt {
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                 String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getFirstMatch();
                 /* Parts suchen */
-                ArrayList<String> parts = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE), 1);
+                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getMatches(1);
                 /* Passwort suchen */
-                url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                Vector<String> link_passwds = new Vector<String>();
+                url = new URL("http://gwarez.cc/" + downloadid + "#details");                
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                ArrayList<String> password = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE), 1);
-                if (password.size() == 1) {
-                    /* Passwort gefunden */
-                    link_passwds.add(JDUtilities.htmlDecode(password.get(0)));
-                } else {
+                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();                
+                if (password==null) {                    
                     logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-                }
+                }else password=password.trim();
 
-                for (int ii = 0; ii < parts.size(); ii++) {
+                for (int ii = 0; ii < parts.length; ii++) {
                     /* Parts decrypten und adden */
-                    DownloadLink link = createDownloadlink(gwarezdecrypt(parts.get(ii)));
+                    DownloadLink link = createDownloadlink(gwarezdecrypt(parts[ii]));
                     link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
-                    link.setSourcePluginPasswords(link_passwds);
+                    link.addSourcePluginPassword(password);
                     decryptedLinks.add(link);
                 }
             } else if (cryptedLink.matches(patternLink_Download_DLC.pattern())) {
@@ -169,47 +162,49 @@ public class Gwarezcc extends PluginForDecrypt {
 
     private String gwarezdecrypt(String link) {
         HashMap<String, String> replace = new HashMap<String, String>();
-        replace.put("JA\\|", "1");
-        replace.put("IB\\|", "2");
-        replace.put("HC\\|", "3");
-        replace.put("GD\\|", "4");
-        replace.put("FE\\|", "5");
-        replace.put("EF\\|", "6");
-        replace.put("DG\\|", "7");
-        replace.put("CH\\|", "8");
-        replace.put("BI\\|", "9");
-        replace.put("AJ\\|", "0");
+        replace.put("JAC\\|", "1");
+        replace.put("IBD\\|", "2");
+        replace.put("HCE\\|", "3");
+        replace.put("GDF\\|", "4");
+        replace.put("FEG\\|", "5");
+        replace.put("EFH\\|", "6");
+        replace.put("DGI\\|", "7");
+        replace.put("CHJ\\|", "8");
+        replace.put("BIK\\|", "9");
+        replace.put("AJL\\|", "0");
+        
+        
 
-        replace.put("\\|JQ\\|", "a");
-        replace.put("\\|GR\\|", "b");
-        replace.put("\\|JK\\|", "c");
-        replace.put("\\|VH\\|", "d");
-        replace.put("\\|ND\\|", "e");
-        replace.put("\\|YK\\|", "f");
-        replace.put("\\|ZB\\|", "g");
-        replace.put("\\|FJ\\|", "h");
-        replace.put("\\|FK\\|", "i");
-        replace.put("\\|ZD\\|", "j");
-        replace.put("\\|ZS\\|", "k");
-        replace.put("\\|KI\\|", "l");
-        replace.put("\\|GI\\|", "m");
-        replace.put("\\|SI\\|", "n");
-        replace.put("\\|KA\\|", "o");
-        replace.put("\\|SU\\|", "p");
-        replace.put("\\|PO\\|", "q");
-        replace.put("\\|OP\\|", "r");
-        replace.put("\\|YX\\|", "s");
-        replace.put("\\|SX\\|", "t");
-        replace.put("\\|UY\\|", "u");
-        replace.put("\\|UM\\|", "v");
-        replace.put("\\|QS\\|", "w");
-        replace.put("\\|AK\\|", "x");
-        replace.put("\\|VP\\|", "y");
-        replace.put("\\|YY\\|", "z");
+        replace.put("\\|JQD\\|", "a");
+        replace.put("\\|GRE\\|", "b");
+        replace.put("\\|JKF\\|", "c");
+        replace.put("\\|VHG\\|", "d");
+        replace.put("\\|NDH\\|", "e");
+        replace.put("\\|YKI\\|", "f");
+        replace.put("\\|ZBJ\\|", "g");
+        replace.put("\\|FJK\\|", "h");
+        replace.put("\\|FKL\\|", "i");
+        replace.put("\\|ZDM\\|", "j");
+        replace.put("\\|ZSN\\|", "k");
+        replace.put("\\|KIO\\|", "l");
+        replace.put("\\|GIP\\|", "m");
+        replace.put("\\|SIQ\\|", "n");
+        replace.put("\\|KAR\\|", "o");
+        replace.put("\\|SUS\\|", "p");
+        replace.put("\\|POT\\|", "q");
+        replace.put("\\|OPU\\|", "r");
+        replace.put("\\|YXV\\|", "s");
+        replace.put("\\|SXW\\|", "t");
+        replace.put("\\|UYX\\|", "u");
+        replace.put("\\|UMY\\|", "v");
+        replace.put("\\|QSZ\\|", "w");
+        replace.put("\\|AKA\\|", "x");
+        replace.put("\\|VPB\\|", "y");
+        replace.put("\\|YYC\\|", "z");
 
-        replace.put("\\|DD\\|", ":");
-        replace.put("\\|SS\\|", "/");
-        replace.put("\\|OO\\|", ".");
+        replace.put("\\|DDA\\|", ":");
+        replace.put("\\|SSB\\|", "/");
+        replace.put("\\|OOC\\|", ".");
 
         for (String key : replace.keySet()) {
             String with = replace.get(key);
