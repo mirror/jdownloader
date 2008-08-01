@@ -2466,6 +2466,10 @@ public class JDUtilities {
 
         return fileOutput0;
     }
+    
+    public static String validateFileandPathName(String name) {
+       return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/])+", "_");
+    }
 
     public static void waitOnObject(File file) {
         int c = 0;

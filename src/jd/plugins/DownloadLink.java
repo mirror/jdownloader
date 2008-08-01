@@ -97,7 +97,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private long downloadMax;
 
-    private String downloadPath = null;
+    private String subdirectory = null;
 
     // /**
     // * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
@@ -261,7 +261,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return getDownloadURL().compareTo(o.getDownloadURL());
         // return
         // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
-    }    
+    }
 
     /**
      * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
@@ -370,7 +370,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     // /**
     // * Kennzeichnet den Download als in Bearbeitung oder nicht Im gegensatz zu
     // * link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in
-    // * bearbeitung ist. über getStatus kann nur abgerufen werden ob der download
+    // * bearbeitung ist. über getStatus kann nur abgerufen werden ob der
+    // download
     // * gerade läuft
     // *
     // * @param inProgress
@@ -425,18 +426,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getFileOutput0() {
-        if (downloadPath != null) {
-            return new File(new File(downloadPath), getName()).getAbsolutePath();
+        if (subdirectory != null) {
+            if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
+                return new File(new File(getFilePackage().getDownloadDirectory(),File.separator+subdirectory), getName()).getAbsolutePath();
+            } else {
+
+                return null;
+            }            
         } else {
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
                 return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
             } else {
-
                 return null;
-
             }
         }
-
     }
 
     // /*
@@ -805,14 +808,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt den Downloadpfad neu
+     * Setzt ein Subdirectory für den DeonloadLink neu
      * 
      * @param downloadPath
      *            der neue downloadPfad
      */
-    public void setDownloadPath(String downloadPath) {
-        this.downloadPath = downloadPath;
+    public void setSubdirectory(String subdir) {        
+        if (subdir != null && name.length() > 0) {
+            this.subdirectory = JDUtilities.validateFileandPathName(subdir);
+        }else
+            this.subdirectory=null;
+    }
 
+    public String getSubdirectory() {
+        return this.subdirectory;
     }
 
     /**
@@ -858,11 +867,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.filePackage.remove(this);
         }
         this.filePackage = filePackage;
-        if (filePackage == null && this.filePackage != null) {
-            setDownloadPath(this.filePackage.getDownloadDirectory());
-        } else {
-            setDownloadPath(null);
-        }
+        // if (filePackage == null && this.filePackage != null) {
+        // setDownloadPath(this.filePackage.getDownloadDirectory());
+        // } else {
+        // setDownloadPath(null);
+        // }
         if (filePackage != null && !filePackage.contains(this)) {
             filePackage.add(this);
         }
@@ -932,13 +941,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setName(String name) {
         if (name != null && name.length() > 3) {
-            this.name = name;
+            this.name = JDUtilities.validateFileandPathName(name);
             updatePartID();
-
-        } else {
-            // logger.severe("Set invalid filename: " + name);
         }
-
     }
 
     public DownloadLink setSourcePluginComment(String sourcePluginComment) {
@@ -962,8 +967,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      */
     public void setStaticFileName(String staticFileName) {
-        this.staticFileName = staticFileName;
-        updatePartID();
+        if (staticFileName != null && staticFileName.length() > 3) {
+            this.staticFileName = JDUtilities.validateFileandPathName(staticFileName);
+            updatePartID();
+        }
     }
 
     /**
@@ -1021,12 +1028,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
 
     }
+
     /**
      * Gibt Fortschritt in % an (10000 entspricht 100%))
+     * 
      * @return
      */
     public int getPercent() {
-        return (int)(10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
+        return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
     }
 
 }
