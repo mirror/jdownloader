@@ -1117,7 +1117,7 @@ abstract public class DownloadInterface {
     // */
     protected void error(int id, String string) {
     
-        logger.severe("Error occured: " + id);
+        logger.severe("Error occured: " + LinkStatus.toString(id));
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }

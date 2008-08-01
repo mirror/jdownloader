@@ -191,14 +191,14 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
                 return progress;
             } else if (dLink.getLinkStatus().getRemainingWaittime() > 0) {
-                progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
+                progress.setMaximum((int)dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 }
                 progress.setStringPainted(true);
-                progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
+                progress.setValue((int)dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
             }

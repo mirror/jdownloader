@@ -356,10 +356,11 @@ public abstract class PluginForHost extends Plugin {
     // }
 
 
-    public int getRemainingHosterWaittime() {
+    public long getRemainingHosterWaittime() {
         // TODO Auto-generated method stub
         if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) { return 0; }
-        return Math.max(0, (int) (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
+        HashMap<Class<? extends PluginForHost>, Long> tmp = HOSTER_WAIT_UNTIL_TIMES;
+        return Math.max(0,  (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
 
 

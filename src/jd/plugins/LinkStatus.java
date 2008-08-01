@@ -126,7 +126,7 @@ public class LinkStatus implements Serializable {
     private int lastestStatus = TODO;
     private int status = TODO;
     private transient String statusText = null;
-    private int totalWaitTime = 0;
+    private long totalWaitTime = 0;
     private long value = 0;
     private long waitUntil = 0;
     private int retryCount = 0;
@@ -209,10 +209,13 @@ public class LinkStatus implements Serializable {
         return lastestStatus;
     }
 
-    public int getRemainingWaittime() {
+    public long getRemainingWaittime() {
+        if(!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
+            this.resetWaitTime();           
+        }
         long now = System.currentTimeMillis();
         long ab = waitUntil - now;
-        return Math.max(0, (int) ab);
+        return Math.max(0l, ab);
     }
 
     /**
@@ -261,18 +264,19 @@ public class LinkStatus implements Serializable {
         if (hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             int speed = Math.max(0, downloadLink.getDownloadSpeed());
             String chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
-            if (downloadLink.getDownloadMax() < 0) {
-                return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Dateigröße unbekannt)");
-            } else {
-                if (speed > 0) {
+
+            if (speed > 0) {
+                if (downloadLink.getDownloadMax() < 0) {
+                    return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
+                } else {
 
                     long remainingBytes = downloadLink.getDownloadMax() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
                     return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + chunkString;
-                } else {
-                    return JDUtilities.formatKbReadable(speed) + "/s " + chunkString;
 
                 }
+            } else {
+                return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
 
             }
         }
@@ -282,8 +286,11 @@ public class LinkStatus implements Serializable {
 
     }
 
-    public int getTotalWaitTime() {
-
+    public long getTotalWaitTime() {
+        if(!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
+            this.resetWaitTime();
+           
+        }
         return totalWaitTime;
     }
 
@@ -384,9 +391,34 @@ public class LinkStatus implements Serializable {
     }
 
     public void setWaitTime(int milliSeconds) {
-        long now = System.currentTimeMillis();
+     
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;
+
+    }
+
+    public static String toString(int status) {
+
+        Field[] fields = LinkStatus.class.getDeclaredFields();
+        for (Field field : fields) {
+            if (field.getModifiers() == 25) {
+                int value;
+                try {
+                    value = field.getInt(null);
+                    if (value == status) return field.getName();
+
+                } catch (IllegalArgumentException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+        return null;
 
     }
 

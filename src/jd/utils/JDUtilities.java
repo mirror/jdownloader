@@ -639,7 +639,7 @@ public class JDUtilities {
      * @param fill
      * @return aufgefüllte Zeichenkette
      */
-    public static String fillInteger(int i, int num, String fill) {
+    public static String fillInteger(long i, int num, String fill) {
         String ret = "" + i;
         while (ret.length() < num) {
             ret = fill + ret;
@@ -663,7 +663,7 @@ public class JDUtilities {
      * GIbt den Integer der sich in src befindet zurück. alle nicht
      * integerzeichen werden ausgefiltert
      * 
-     * @param src
+     * @param src 
      * @return Integer in src
      */
     public static int filterInt(String src) {
@@ -765,11 +765,11 @@ public class JDUtilities {
      *            toURI().toURL();
      * @return formatierte Zeit
      */
-    public static String formatSeconds(int eta) {
-        int hours = eta / (60 * 60);
+    public static String formatSeconds(long eta) {
+        long hours = eta / (60 * 60);
         eta -= hours * 60 * 60;
-        int minutes = eta / 60;
-        int seconds = eta - minutes * 60;
+        long minutes = eta / 60;
+        long seconds = eta - minutes * 60;
         if (hours == 0) { return JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0"); }
         return JDUtilities.fillInteger(hours, 2, "0") + ":" + JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0");
     }

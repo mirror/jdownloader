@@ -301,7 +301,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                             if (nextDownloadLink.isEnabled()) {
                                 if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
                                     if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {
-                                        int rw = ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime();
+                                        long rw = ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime();
                                         if (nextDownloadLink.getPlugin() != null && ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime() <= 0) {
                                             if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum()) {
 

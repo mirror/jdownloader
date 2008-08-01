@@ -130,8 +130,7 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
-            // linkStatus.setStatusText(JDLocale.L("controller.status.active",
-            // "aktiv"));
+             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
@@ -156,6 +155,9 @@ public class SingleDownloadController extends Thread {
             }
             if(linkStatus.isFailed()){
                 logger.severe("\r\nError occured- " + downloadLink.getLinkStatus());
+            }else{
+                logger.severe("\r\nFinished- " + downloadLink.getLinkStatus());
+                
             }
             switch (linkStatus.getLatestStatus()) {
 
