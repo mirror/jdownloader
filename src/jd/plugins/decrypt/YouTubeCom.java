@@ -108,15 +108,20 @@ public class YouTubeCom extends PluginForDecrypt {
                 } else if (ConvertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
                     link += "&fmt=13";
                 }
+                
 
-                link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + ConvertTo + "\" >";
-                //logger.info(link);
-                FilePackage fp = new FilePackage();
+                
                 String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch();
-                fp.setName(name);
+                link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + ConvertTo.name() + "\" name=\"" + name + "\" >";
+                logger.info(link);
+                
                 DownloadLink thislink = createDownloadlink(link);
+                thislink.setBrowserUrl(parameter);
+                logger.info("BrowserURL: " + thislink.getBrowserUrl());
                 thislink.setName(name);
-                thislink.setSourcePluginComment("Convert to "+ConvertTo.toString());
+                thislink.setSourcePluginComment("Convert to "+ConvertTo.GetText());
+                FilePackage fp = new FilePackage();  
+                fp.setName(name);
                 fp.add(thislink);
                 decryptedLinks.add(thislink);
             }

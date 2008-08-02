@@ -38,22 +38,40 @@ public class ConvertDialog extends JFrame {
     
     
     public static enum ConversionMode { 
-    	AUDIOMP3("Audio (MP3)"), 
-    	VIDEOFLV("Video (FLV)"), 
-    	AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)"), 
-    	VIDEOMP4("Video (MP4)"), 
-    	VIDEO3GP("Video (3GP)");
+    	AUDIOMP3("Audio (MP3)",new String[]{".mp3"}), 
+    	VIDEOFLV("Video (FLV)",new String[]{".flv"}), 
+    	AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)",new String[]{".mp3",".flv"}), 
+    	VIDEOMP4("Video (MP4)",new String[]{".mp4"}), 
+    	VIDEO3GP("Video (3GP)",new String[]{".3gp"});
 
     String text;
+    String[] ext;
     
-    ConversionMode(String text) {
+    ConversionMode(String text,String[] ext) {
         this.text = text;
+        this.ext = ext;
     }
     
     
     @Override
     public String toString() {
         return this.text;
+    }
+    
+    public String GetText() {
+        return this.text;
+    }
+    
+    public String[] GetExtArray() {
+        return this.ext;
+    }
+    
+    public String GetExt(int i) {
+        return this.ext[i];
+    }
+    
+    public String GetExtFirst() {
+        return this.ext[0];
     }
         
     };
