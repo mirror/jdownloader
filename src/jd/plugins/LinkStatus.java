@@ -175,7 +175,7 @@ public class LinkStatus implements Serializable {
 
         case LinkStatus.ERROR_FILE_NOT_FOUND:
             return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
-
+        case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_NO_CONNECTION:
             return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
 
@@ -210,7 +210,7 @@ public class LinkStatus implements Serializable {
     }
 
     public long getRemainingWaittime() {
-        if(!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
+        if(waitUntil>0&&!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
             this.resetWaitTime();           
         }
         long now = System.currentTimeMillis();
@@ -390,7 +390,7 @@ public class LinkStatus implements Serializable {
 
     }
 
-    public void setWaitTime(int milliSeconds) {
+    public void setWaitTime(long milliSeconds) {
      
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;

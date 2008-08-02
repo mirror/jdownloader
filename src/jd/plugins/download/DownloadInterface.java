@@ -1345,7 +1345,7 @@ abstract public class DownloadInterface {
         // "Chunk(s) incomplete"));
         // return false;
         // }
-        if (totaleLinkBytesLoaded != fileSize && fileSize > 0) {
+        if (totaleLinkBytesLoaded<=0||(totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
@@ -1356,8 +1356,7 @@ abstract public class DownloadInterface {
 
             return false;
         }
-
-        linkStatus.setStatus(LinkStatus.FINISHED);
+if(!linkStatus.isFailed())        linkStatus.setStatus(LinkStatus.FINISHED);
         return true;
     }
 

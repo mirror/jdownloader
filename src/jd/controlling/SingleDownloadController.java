@@ -452,8 +452,8 @@ public class SingleDownloadController extends Thread {
         LinkStatus linkStatus=downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Serverconnection");
         long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
-       // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        linkStatus.setWaitTime((int) milliSeconds);
+        linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        linkStatus.setWaitTime( milliSeconds);
 
         downloadLink.setEnabled(false);
 if(linkStatus.getErrorMesage()==null){

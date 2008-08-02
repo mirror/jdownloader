@@ -1130,20 +1130,20 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
 
-                    logger.info("SELECTED " + (DownloadLink) path.getLastPathComponent());
+                   
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
 
-                    logger.info("SELECTED " + (FilePackage) path.getLastPathComponent());
+                    
                 }
             } else {
 
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-                    logger.info("NOT SELECTED " + (DownloadLink) path.getLastPathComponent());
+                  
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-                    logger.info("NOT SELECTED " + (FilePackage) path.getLastPathComponent());
+      
                 }
             }
         }
