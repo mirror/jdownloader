@@ -37,6 +37,7 @@ import jd.parser.Regex;
 import jd.plugins.HTTPConnection;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
+import jd.utils.Sniffy;
 
 public abstract class Request {
     public static int MAX_REDIRECTS = 30;
@@ -318,7 +319,12 @@ public abstract class Request {
         return new Regex(htmlCode, pat).matches();
     }
 
-    public void openConnection() {
+    public void openConnection() throws IOException {
+        if(Sniffy.hasSniffer()){
+            JDUtilities.getLogger().severe("Sniffer Software detected");
+            throw new IOException("Sniffer found");
+        }
+        
         try {
             long tima = System.currentTimeMillis();
             httpConnection = new HTTPConnection(url.openConnection());

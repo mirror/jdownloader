@@ -24,7 +24,7 @@ public class Executer extends Thread {
             String line;
             try {
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                   
                     sb.append(line + "\r\n");
                 }
             } catch (IOException e) {
