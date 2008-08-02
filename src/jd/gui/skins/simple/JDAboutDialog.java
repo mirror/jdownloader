@@ -79,8 +79,7 @@ public class JDAboutDialog {
         // This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
 
-        // {" uncomment and add your nick"," xxx@yyy.com"," describe
-        // yourself..."},
+       {" coalado"," support@jdownloader.org"," JDownloader core, ocr, container, website, project administration"},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
@@ -137,6 +136,7 @@ public class JDAboutDialog {
             @Override
             public void run() {
                 try {
+                   
                     final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
                     // JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About
                     // JDownloader"), txt);
