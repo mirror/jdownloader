@@ -33,22 +33,22 @@ import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 
-public class Youtube extends PluginForHost {
-    // static private final String new Regex("$Revision$","\\$Revision:
+public class MyVideo extends PluginForHost {
+    // static private final String new Regex("$Revision: 2107 $","\\$Revision:
     // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision: 2107 $","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
-    static private final String HOST = "youtube.com";
+    static private final String HOST = "myvideo.de";
+
+    static private final Pattern URL =         Pattern.compile("< myvideodl url=\"(.*?)\" decrypted=\".*?\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern DOWNLOADFILE= Pattern.compile("< myvideodl url=\".*?\" decrypted=\"(.*?)\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern CONVERT =     Pattern.compile("< myvideodl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern FILENAME=     Pattern.compile("< myvideodl url=\".*?\" decrypted=\".*?\" convert=\".*?\" name=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED=Pattern.compile("< myvideodl url=\".*\" decrypted=\".*\" convert=\".*\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
     
-    static private final Pattern URL =         Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern DOWNLOADFILE= Pattern.compile("< youtubedl url=\".*?\" decrypted=\"(.*?)\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern CONVERT =     Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern FILENAME=     Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\".*?\" name=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_SUPPORTED=Pattern.compile("< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
     
-    
-    public Youtube() {
+    public MyVideo() {
         super();
     }
 
@@ -59,7 +59,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://youtube.com/t/terms";
+        return "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
     }
 
     @Override
@@ -108,7 +108,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision: 2107 $", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
 
@@ -126,7 +126,7 @@ public class Youtube extends PluginForHost {
         if (name == null || downloadfile == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             
-            linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.host.myvideo.unavailable", "MyVideo Serverfehler"));
             return;
 
         }
@@ -142,10 +142,6 @@ public class Youtube extends PluginForHost {
         if (dl.startDownload()) {
         	
         	ConversionMode InType = ConversionMode.VIDEOFLV;
-        	if((convertto.equals(ConversionMode.VIDEOMP4))||(convertto.equals(ConversionMode.VIDEO3GP)))
-        	{
-        	    InType = convertto;
-        	}
         	
         	if(JDMediaConvert.ConvertFile(downloadLink, InType, convertto));
         	{

@@ -93,7 +93,10 @@ public class ConvertDialog extends JFrame {
     			}
     		}
     	}
-    	
+    	if(displaymodes.length == 1) // Nur eine Auswahl
+    	{
+    		return (ConversionMode) displaymodes[0];
+    	}
     	
         JCheckBox checkBox = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
         checkBox.setSelected(false);
@@ -126,9 +129,9 @@ public class ConvertDialog extends JFrame {
     {
     	//ConversionMode[] mode = {ConversionMode.AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
     	DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
-        DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
-        DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
-    }*/
+        DisplayDialog(new ConversionMode[]{ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
+        DisplayDialog(new ConversionMode[]{ConversionMode.AUDIOMP3_AND_VIDEOFLV});
+    }/**/
     
     
 

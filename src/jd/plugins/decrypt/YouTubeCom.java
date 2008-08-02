@@ -113,11 +113,11 @@ public class YouTubeCom extends PluginForDecrypt {
                 
                 String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch();
                 link = "< youtubedl url=\"" + parameter + "\" decrypted=\"" + link + "\" convert=\"" + ConvertTo.name() + "\" name=\"" + name + "\" >";
-                logger.info(link);
+
                 
                 DownloadLink thislink = createDownloadlink(link);
                 thislink.setBrowserUrl(parameter);
-                logger.info("BrowserURL: " + thislink.getBrowserUrl());
+                
                 thislink.setName(name);
                 thislink.setSourcePluginComment("Convert to "+ConvertTo.GetText());
                 FilePackage fp = new FilePackage();  
@@ -139,7 +139,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "b0ffed";
+        return "JD-Team";
     }
 
     @Override
@@ -162,128 +162,4 @@ public class YouTubeCom extends PluginForDecrypt {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
-    /*
-    private int getYoutubeConvertTo(boolean hasMp4, boolean has3gp) {
-        yConvertDialog(hasMp4, has3gp);
-        return useyConvert[0];
-
-    }
-
-    private void yConvertDialog(final boolean hasMp4, final boolean has3gp) {
-        if (yConvertChecked || useyConvert[1] == saveyConvert) {
-            return;
-        }
-        new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
-
-            private static final long serialVersionUID = -4282205277016215186L;
-
-            void init() {
-                setLayout(new BorderLayout());
-                setModal(true);
-                setTitle(JDLocale.L("plugins.YouTube.ConvertDialog.title", "Youtube.com Dateiformat"));
-                setAlwaysOnTop(true);
-                setLocation(20, 20);
-                JPanel panel = new JPanel(new GridBagLayout());
-                final class meth {
-                    public String name;
-
-                    public int var;
-
-                    public meth(String name, int var) {
-                        this.name = name;
-                        this.var = var;
-                    }
-
-                    @Override
-                    public String toString() {
-
-                        return name;
-                    }
-                }
-                ;
-
-                addWindowListener(new WindowListener() {
-
-                    public void windowActivated(WindowEvent e) {
-
-                    }
-
-                    public void windowClosed(WindowEvent e) {
-
-                    }
-
-                    public void windowClosing(WindowEvent e) {
-                        // useyConvert = new int[] { ((meth)
-                        // methods.getSelectedItem()).var, 0 };
-                        useyConvert = new int[] { -1, -1 };
-                        dispose();
-                    }
-
-                    public void windowDeactivated(WindowEvent e) {
-
-                    }
-
-                    public void windowDeiconified(WindowEvent e) {
-
-                    }
-
-                    public void windowIconified(WindowEvent e) {
-
-                    }
-
-                    public void windowOpened(WindowEvent e) {
-
-                    }
-                });
-
-                int n = 3;
-                if (hasMp4) {
-                    n++;
-                }
-                if (has3gp) {
-                    n++;
-                }
-
-                meth[] meths = new meth[n];
-                n = 0;
-                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp3", "Audio (MP3)"), CONVERT_ID_AUDIO);
-                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Flv", "Video (FLV)"), CONVERT_ID_VIDEO);
-                meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.FlvAndMp3", "Audio und Video (MP3 & FLV)"), CONVERT_ID_AUDIO_AND_VIDEO);
-                if (hasMp4) {
-                    meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.Mp4", "Video (MP4)"), CONVERT_ID_MP4);
-                }
-                if (has3gp) {
-                    meths[n++] = new meth(JDLocale.L("plugins.YouTube.ConvertDialog.3gp", "Video (3GP)"), CONVERT_ID_3GP);
-                }
-
-                methods = new JComboBox(meths);
-                checkyConvert = new JCheckBox(JDLocale.L("plugins.YouTube.ConvertDialog.KeepSettings", "Format für diese Sitzung beibehalten"), false);
-                Insets insets = new Insets(0, 0, 0, 0);
-                JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.YouTube.ConvertDialog.action", "Dateiformat: ")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JDUtilities.addToGridBag(panel, checkyConvert, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
-                btnOK.addActionListener(new ActionListener() {
-
-                    public void actionPerformed(ActionEvent e) {
-                        if (e.getSource() == btnOK) {
-                            useyConvert = new int[] { ((meth) methods.getSelectedItem()).var, checkyConvert.isSelected() ? saveyConvert : 0 };
-                        } else {
-                            useyConvert = new int[] { -1, -1 };
-                        }
-
-                        dispose();
-                    }
-
-                });
-                JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-                add(panel, BorderLayout.CENTER);
-                pack();
-                setVisible(true);
-            }
-
-        }.init();
-    }
-    */
 }
