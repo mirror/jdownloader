@@ -54,6 +54,7 @@ public class HTTPAllgemein extends PluginForHost {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), null, null, true);
                 HTTPConnection urlConnection = requestInfo.getConnection();
                 downloadLink.setName(getFileNameFormHeader(urlConnection));
+                downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 return true;
             }

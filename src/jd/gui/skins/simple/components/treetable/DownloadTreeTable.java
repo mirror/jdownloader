@@ -202,7 +202,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
 
                 try {
-                    new BrowserLauncher().openURLinBrowser(link.getDownloadURL());
+                    new BrowserLauncher().openURLinBrowser(link.getBrowserUrl());
                 } catch (BrowserLaunchingInitializingException e1) {
                     e1.printStackTrace();
                 } catch (UnsupportedOperatingSystemException e1) {
@@ -980,7 +980,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             case DownloadTreeTableModel.COL_FILE:
                 sb.append("<h1>" + link.getFileOutput() + "</h1><hr>");
                 if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                    sb.append("<p>" + link.getDownloadURL() + "</p>");
+                    sb.append("<p>" + link.getBrowserUrl() + "</p>");
                 }
                 break;
             case DownloadTreeTableModel.COL_HOSTER:

@@ -98,6 +98,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private long downloadMax;
 
     private String subdirectory = null;
+    
+    private String browserurl = null;
 
     // /**
     // * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
@@ -365,6 +367,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         return urlDownload;
+    }
+    
+    public String getBrowserUrl(){
+        if (this.browserurl!=null) return browserurl;
+        return getDownloadURL();
+    }
+    
+    public void setBrowserUrl(String url){
+        this.browserurl=url;
     }
 
     // /**
