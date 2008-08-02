@@ -2461,14 +2461,14 @@ public class JDUtilities {
                 hd = fileOutput0.substring(0, 3);
                 fileOutput0 = fileOutput0.substring(3);
             }
-            fileOutput0 = hd + fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?])+", "_");
+            fileOutput0 = hd + fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?|\\x00])+", "_");
         }
 
         return fileOutput0;
     }
     
     public static String validateFileandPathName(String name) {
-       return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/])+", "_");
+       return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
     public static void waitOnObject(File file) {
