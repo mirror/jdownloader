@@ -21,11 +21,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
@@ -45,41 +43,30 @@ public class RelinkUs extends PluginForDecrypt {
     private static final String USE_RSDF = "USE_RSDF";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public RelinkUs() {
         super();
         setConfigEelements();
     }
 
     private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
-        ArrayList<String> container_link = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE), 1);
-        if (container_link.size() == 1) {
+        String container_link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getFirstMatch(1);
+        if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + ContainerFormat);
-            URL container_url = new URL("http://relink.us/" + JDUtilities.htmlDecode(container_link.get(0)));
+            URL container_url = new URL("http://relink.us/" + JDUtilities.htmlDecode(container_link));
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
             JDUtilities.download(container, container_con);
             JDUtilities.getController().loadContainerFile(container);
-        } else {
-            logger.severe("Please Update RelinkUs Plugin(Container Pattern)");
         }
     }
 
     private void add_relinkus_links(RequestInfo reqinfo, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        ArrayList<String> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE), 1);
-        progress.addToMax(links.size());
-        for (int i = 0; i < links.size(); i++) {
-            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(links.get(i))), "submit=Open");
-            String link = new Regex(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
-
-            if (link.contains("yourlayer")) {
-                /* CHECKME: wann passiert das hier? */
-                reqinfo = HTTP.getRequest(new URL(JDUtilities.htmlDecode(link)));
-                link = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), "frameborder=\"0\" src=\"°\">", 0);
-            }
-
-            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
+        String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        progress.addToMax(links.length);
+        for (String link : links) {
+            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(link)), "submit=Open");
+            String dl_link = new Regex(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"\n?(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(dl_link)));
             progress.increase(1);
         }
     }
@@ -103,9 +90,9 @@ public class RelinkUs extends PluginForDecrypt {
             }
 
             add_relinkus_links(reqinfo, decryptedLinks);
-            ArrayList<String> more_links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"go\\.php\\?id\\=(\\d*)\\&seite\\=(\\d*)\">", Pattern.CASE_INSENSITIVE), 0);
-            for (int i = 0; i < more_links.size(); i++) {
-                url = new URL("http://relink.us/" + JDUtilities.htmlDecode(new Regex(more_links.get(i), "<a href=\"(.*?)\">", Pattern.CASE_INSENSITIVE).getFirstMatch()));
+            String more_links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            for (String link : more_links) {
+                url = new URL("http://relink.us/" + link);
                 reqinfo = HTTP.getRequest(url);
                 add_relinkus_links(reqinfo, decryptedLinks);
             }
