@@ -30,7 +30,7 @@ import jd.plugins.RequestInfo;
 
 public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
     
 
@@ -45,9 +45,11 @@ public class RockHouseIn extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), "<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE).getMatches();
-            default_password.add(jd.utils.JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getFirstMatch()));
+            String pw= jd.utils.JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getFirstMatch());
             for (String[] element : links) {
-                decryptedLinks.add(createDownloadlink(element[0].replaceAll("\n", "")));
+                DownloadLink link=createDownloadlink(element[0].replaceAll("\n", ""));
+                link.addSourcePluginPassword(pw);
+                decryptedLinks.add(link);
             }
         } catch (IOException e) {
             e.printStackTrace();
