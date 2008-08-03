@@ -72,7 +72,7 @@ public class Netloadin extends PluginForHost {
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"°\" >Alternativ klicke hier.</a>";
     // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/.{20}.*|http://.*?netload\\.in/.{20}.*/.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*|http://.*?netload\\.in/(?!index\\.php).*/.*)", Pattern.CASE_INSENSITIVE);
     // <form method="post" action="index.php?id=10">
     static private final String POST_URL = "<form method=\"post\" action=\"°\">";
     private static final String PROPERTY_TRY_2_SIMULTAN = "TRY_2_SIMULTAN";
