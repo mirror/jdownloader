@@ -32,9 +32,7 @@ public class FalinksCom extends PluginForDecrypt {
 
     static private String host = "falinks.com";
 
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=[0-9]+", Pattern.CASE_INSENSITIVE);
-
-    
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public FalinksCom() {
         super();
@@ -46,15 +44,15 @@ public class FalinksCom extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
+            String pw=new Regex(reqinfo.getHtmlCode(),"</form>\npw: (.*?)\n.*?</td>",Pattern.CASE_INSENSITIVE).getFirstMatch();
             String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getMatches(1);
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; i++) {
-                //logger.info(links[i]);
-                    decryptedLinks.add(createDownloadlink(links[i]));
-                
+            for (String link:links) {
+                DownloadLink dlLink=this.createDownloadlink(link);
+                dlLink.addSourcePluginPassword(pw);
+                decryptedLinks.add(dlLink);
                 progress.increase(1);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
             return null;
