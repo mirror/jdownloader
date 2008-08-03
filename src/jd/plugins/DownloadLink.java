@@ -838,7 +838,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setSubdirectory(String subdir) {        
         if (subdir != null && name.length() > 0) {
-            this.subdirectory = JDUtilities.validateFileandPathName(subdir);
+            this.subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
         }else
             this.subdirectory=null;
     }
@@ -967,7 +967,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setName(String name) {
         if (name != null && name.length() > 3) {
-            this.name = JDUtilities.validateFileandPathName(name);
+            this.name = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(name));
             updatePartID();
         }
     }
@@ -994,7 +994,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setStaticFileName(String staticFileName) {
         if (staticFileName != null && staticFileName.length() > 3) {
-            this.staticFileName = JDUtilities.validateFileandPathName(staticFileName);
+            this.staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(staticFileName));
             updatePartID();
         }else this.staticFileName=null;
     }

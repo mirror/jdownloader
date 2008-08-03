@@ -374,7 +374,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setDownloadDirectory(String subFolder) {
-        downloadDirectory = subFolder;
+        downloadDirectory = JDUtilities.removeEndingPoints(subFolder);
     }
 
     public void setDownloadLinks(Vector<DownloadLink> downloadLinks) {
@@ -382,7 +382,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name=JDUtilities.removeEndingPoints(name);
     }
 
     public void setPassword(String password) {

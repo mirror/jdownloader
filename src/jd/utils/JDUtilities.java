@@ -663,7 +663,7 @@ public class JDUtilities {
      * GIbt den Integer der sich in src befindet zurück. alle nicht
      * integerzeichen werden ausgefiltert
      * 
-     * @param src 
+     * @param src
      * @return Integer in src
      */
     public static int filterInt(String src) {
@@ -673,6 +673,7 @@ public class JDUtilities {
             return 0;
         }
     }
+
     public static long filterLong(String src) {
         try {
             return Long.parseLong(JDUtilities.filterString(src, "1234567890"));
@@ -744,6 +745,7 @@ public class JDUtilities {
         return value + " KB";
 
     }
+
     public static String formatKbReadable(long value) {
 
         DecimalFormat c = new DecimalFormat("0.00");
@@ -1015,7 +1017,7 @@ public class JDUtilities {
     }
 
     public static UIInterface getGUI() {
-        if( JDUtilities.getController()==null)return null;
+        if (JDUtilities.getController() == null) return null;
         return JDUtilities.getController().getUiInterface();
     }
 
@@ -2466,9 +2468,15 @@ public class JDUtilities {
 
         return fileOutput0;
     }
-    
+
     public static String validateFileandPathName(String name) {
-       return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
+        if (name == null) return null;
+        return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
+    }
+
+    public static String removeEndingPoints(String name) {
+        if (name == null) return null;
+        return name.replaceAll("\\.*$", "");
     }
 
     public static void waitOnObject(File file) {
