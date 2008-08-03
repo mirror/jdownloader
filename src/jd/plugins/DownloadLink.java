@@ -992,9 +992,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * um den Speichernamen anzugeben.
      * 
      */
-    public void setStaticFileName(String staticFileName) {
-        if (staticFileName != null && staticFileName.length() > 3) {
-            this.staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(staticFileName));
+    public void setStaticFileName(String newStaticFileName) {
+        if (newStaticFileName != null && newStaticFileName.length() > 3) {
+        	this.staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newStaticFileName));
             updatePartID();
         }else this.staticFileName=null;
     }

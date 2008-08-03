@@ -37,8 +37,9 @@ import jd.utils.JDMediaConvert;
 public class Youtube extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String HOST = "youtube.com";
-
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
+    static private final String AGB = "http://youtube.com/t/terms";
+    
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
 
     public Youtube() {
         super();
@@ -51,7 +52,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://youtube.com/t/terms";
+        return AGB;
     }
 
     @Override
@@ -64,10 +65,8 @@ public class Youtube extends PluginForHost {
         try {
             if (HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true).getResponseCode() == 200) { return true; }
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return false;
@@ -104,7 +103,7 @@ public class Youtube extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
+            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
 

@@ -97,10 +97,10 @@ public class YouTubeCom extends PluginForDecrypt {
                 } else if (ConvertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
                     link += "&fmt=13";
                 }
-                String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch();
+                String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim();
                 DownloadLink thislink = createDownloadlink(link);
                 thislink.setBrowserUrl(parameter);
-                thislink.setStaticFileName(name);
+                thislink.setStaticFileName(name + ".tmp");
                 thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
                 thislink.setProperty("convertto", ConvertTo.name());               
                 decryptedLinks.add(thislink);
