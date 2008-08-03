@@ -34,18 +34,11 @@ import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 
 public class Youtube extends PluginForHost {
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
     static private final String CODER = "JD-Team";
     static private final String HOST = "youtube.com";
     
-    static private final Pattern URL =         Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\".*?\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern DOWNLOADFILE= Pattern.compile("< youtubedl url=\".*?\" decrypted=\"(.*?)\" convert=\".*?\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern CONVERT =     Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\"(.*?)\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern FILENAME=     Pattern.compile("< youtubedl url=\".*?\" decrypted=\".*?\" convert=\".*?\" name=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_SUPPORTED=Pattern.compile("< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" name=\".*?\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern LINKINFOS=     Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\"(.*?)\" convert=\"(.*?)\" name=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED= Pattern.compile("< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" name=\".*\" >", Pattern.CASE_INSENSITIVE);
     
     
     public Youtube() {
@@ -70,10 +63,9 @@ public class Youtube extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
 
-    	String name = new Regex(downloadLink.getDownloadURL(), FILENAME).getFirstMatch();           
-    	downloadLink.setName(name + ".tmp");
+    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4,0);           
     	downloadLink.setStaticFileName(name + ".tmp");
-    	String browserurl = new Regex(downloadLink.getDownloadURL(), URL).getFirstMatch();  
+    	String browserurl = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(1,0);  
     	downloadLink.setBrowserUrl(browserurl);
         //TODO: Anderen Dateinamen anzeigen, sprich .tmp durch entsprechendes ersetzen
         if (name == null) { return false; }
@@ -82,7 +74,6 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        //LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
     }
 
@@ -116,12 +107,11 @@ public class Youtube extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         
-        final ConversionMode convertto = ConversionMode.valueOf(new Regex(downloadLink.getDownloadURL(), CONVERT).getFirstMatch());
-         
-    	String name = new Regex(downloadLink.getDownloadURL(), FILENAME).getFirstMatch();           
-    	downloadLink.setName(name + ".tmp");
+        final ConversionMode convertto = ConversionMode.valueOf(new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(3,0));
+
+    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4,0);           
     	downloadLink.setStaticFileName(name + ".tmp");    
-        String downloadfile = new Regex(downloadLink.getDownloadURL(), DOWNLOADFILE).getFirstMatch().trim();
+        String downloadfile = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(2,0).trim();
 
         if (name == null || downloadfile == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

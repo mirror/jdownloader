@@ -113,15 +113,6 @@ public class ConvertDialog extends JFrame {
         	keepformat = false;
         }
         return selectedValue;
-        
-        /*
-        if      (selectedValue == ConversionMode.AUDIOMP3); // do something
-        else if (selectedValue == ConversionMode.VIDEOMP4); // do something
-        else if (selectedValue == ConversionMode.THREEGP); // do something
-        else if (selectedValue == ConversionMode.VIDEOFLV); // do something
-        else if (selectedValue == ConversionMode.AUDIOMP3_AND_VIDEOFLV); // do something
-        else ; // User pressed cancel       
-        */
        
     }
     
