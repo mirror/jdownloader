@@ -52,8 +52,7 @@ public class MyvideoDe extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url,null,null,true);
 
             String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getFirstMatch();
-            String name = new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim();
-            logger.info(link);
+            String name = new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim();            
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
@@ -65,8 +64,7 @@ public class MyvideoDe extends PluginForDecrypt {
             thislink.setStaticFileName(name + ".tmp");
             thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
             thislink.setProperty("convertto", ConvertTo.name());               
-            decryptedLinks.add(thislink);
-            
+            decryptedLinks.add(thislink);            
         } catch (IOException e) {
             e.printStackTrace();
             return null;

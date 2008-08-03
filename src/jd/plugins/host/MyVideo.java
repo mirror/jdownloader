@@ -37,8 +37,7 @@ import jd.utils.JDMediaConvert;
 public class MyVideo extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String HOST = "myvideo.de";
-    static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
-                                                                //http://myvideo-348.vo.llnwd.net/d4/movie13/2d/4711348.flv
+    static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";                                                                
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?myvideo.*?\\.llnwd\\.net/d[\\d]+/movie[\\d]+/.+/[\\d]+\\.flv", Pattern.CASE_INSENSITIVE);
 
     public MyVideo() {
