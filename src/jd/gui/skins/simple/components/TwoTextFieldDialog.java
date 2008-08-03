@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -28,10 +27,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
 import jd.gui.skins.simple.LocationListener;
@@ -42,12 +38,9 @@ import jd.utils.JDUtilities;
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit zwei textfeldern
  * 
- * @author JD-Team
+ * @author gluewurm
  */
 public class TwoTextFieldDialog extends JDialog implements ActionListener {
-    /**
-     * 
-     */
     private static final long serialVersionUID = -655039113948925165L;
     
     public static String[] showDialog(JFrame frame, String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
@@ -56,21 +49,11 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
     }
 
     private JButton btnCancel;
-
     private JButton btnOk;
-    
-    /**
-     * 
-     */
 
     protected Insets insets = new Insets(0, 0, 0, 0);
-
     protected Logger logger = JDUtilities.getLogger();
 
-    // private JLabel lblText;
-
-    private JScrollPane scrollPane;
-    private JScrollPane scrollPane2;
     private String[] text2 = new String[2];
     
     private JTextField textField;
@@ -91,82 +74,47 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
         setTitle(title);
-        textField = new JTextField();
-        textField2 = new JTextField();
+        textField = new JTextField(defField1);
+        textField2 = new JTextField(defField2);
         
-        scrollPane = new JScrollPane(textField);
-        scrollPane2 = new JScrollPane(textField2);
-        // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-
         setResizable(true);
-        // int width = screenSize.width;
-        // int height = screenSize.height;
-
-        // this.setPreferredSize(new
-        // Dimension((int)(width*0.9),(int)(height*0.9)));
 
         textField.setEditable(true);
         textField2.setEditable(true);
         textField.requestFocusInWindow();
         
         c.weighty = 1.0;
-    	c.weightx = 1.0;
-    	c.gridwidth = 2;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 0;
-            this.add(new JLabel(questionField1), c);
+		c.weightx = 1.0;
+		c.gridwidth = 2;
+		c.gridheight = 1;
+		c.gridx = 0;
+		c.gridy = 0;
+		this.add(new JLabel(questionField1), c);
+
+		c.gridx = 0;
+		c.gridy = 1;
+		this.add(textField, c);
+
+		c.gridx = 0;
+		c.gridy = 2;
+		this.add(new JLabel(questionField2), c);
+
+		c.gridx = 0;
+		c.gridy = 3;
+		this.add(textField2, c);
+
+		c.weighty = 1.0;
+		c.weightx = 1.0;
+		c.gridwidth = 1;
+		c.gridheight = 1;
+		c.gridx = 0;
+		c.gridy = 4;
+		this.add(btnOk, c);
+
+		c.gridx = 1;
+		c.gridy = 4;
+		this.add(btnCancel, c);
         
-            c.weighty = 1.0;
-        	c.weightx = 1.0;
-        	c.gridwidth = 2;
-        		c.gridheight = 1;
-        		c.gridx = 0;
-        		c.gridy = 1;
-                this.add(textField, c);
-                
-        if (defField1 != null) {
-            textField.setText(defField1);
-        }
-        
-        if (defField2 != null) {
-        	textField2.setText(defField2);
-        }
-        
-        
-    		c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 2;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 2;
-            this.add(new JLabel(questionField2), c);
-            
-            c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 2;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 3;
-            this.add(scrollPane2, c);
-            
-            c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 1;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 4;
-            this.add(btnOk, c);
-            
-            c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 1;
-    		c.gridheight = 1;
-    		c.gridx = 1;
-    		c.gridy = 4;
-            this.add(btnCancel, c);
-        
-        // this.setVisible(true);
         pack();
 
         getRootPane().setDefaultButton(btnOk);
