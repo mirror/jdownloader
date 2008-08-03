@@ -46,7 +46,7 @@ public class YouPornCom extends PluginForDecrypt {
 			try {
 				loader = HTTP.getRequest(new URL(parameter), "age_check=1", "", true);
 				String matches = new Regex(loader.getHtmlCode(), DOWNLOADFILE).getFirstMatch();
-				DownloadLink dlink = this.createDownloadlink("httpviajd://" + matches);
+				DownloadLink dlink = this.createDownloadlink("http://" + matches);
 				dlink.setBrowserUrl(parameter);
 				decryptedLinks.add(dlink);
 			} catch (MalformedURLException e) {
