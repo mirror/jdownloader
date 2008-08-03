@@ -34,7 +34,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
@@ -146,7 +146,7 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             setPriority(Thread.MIN_PRIORITY);
-            MAX_BUFFERSIZE = (long)JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
+            MAX_BUFFERSIZE = (long) JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
 
         }
 
@@ -154,13 +154,14 @@ abstract public class DownloadInterface {
             chunkBytesLoaded += limit;
 
         }
-        
+
         /**
          * Gibt Fortschritt in % an (10000 entspricht 100%))
+         * 
          * @return
          */
         public int getPercent() {
-            return (int)(10000 * (chunkBytesLoaded) / Math.max(1, Math.max((chunkBytesLoaded), (this.endByte-this.startByte))));
+            return (int) (10000 * (chunkBytesLoaded) / Math.max(1, Math.max((chunkBytesLoaded), (this.endByte - this.startByte))));
         }
 
         /**
@@ -175,9 +176,7 @@ abstract public class DownloadInterface {
 
         public void checkTimeout(long timeout) {
             long timer = blockStart;
-            if (Thread.interrupted() || !isAlive()) {
-                return;
-            }
+            if (Thread.interrupted() || !isAlive()) { return; }
             // try {
             // if (this.inputStream.available() > 0) {
             // blockStart = -1;
@@ -190,9 +189,7 @@ abstract public class DownloadInterface {
                 interrupt();
 
             }
-            if (timer <= 0) {
-                return;
-            }
+            if (timer <= 0) { return; }
             long dif = System.currentTimeMillis() - timer;
             // logger.info(this + " " + dif);
             if (dif >= timeout) {
@@ -219,9 +216,7 @@ abstract public class DownloadInterface {
 
             long start = startByte + getPreBytes(this);
             String end = (endByte > 0 ? endByte + 1 : "") + "";
-            if (start == 0) {
-                return connection;
-            }
+            if (start == 0) { return connection; }
             try {
                 URL link = connection.getURL();
                 HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
@@ -290,8 +285,8 @@ abstract public class DownloadInterface {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
                 // logger.finer(bufferSize+" - "+this.getTimeInterval());
-                /*max 2gb buffer*/
-                buffer = ByteBuffer.allocateDirect((int)bufferSize);
+                /* max 2gb buffer */
+                buffer = ByteBuffer.allocateDirect((int) bufferSize);
 
             } catch (OutOfMemoryError e) {
                 error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
@@ -434,8 +429,8 @@ abstract public class DownloadInterface {
                     if (Math.abs(bufferSize - tempBuff) > 1000) {
                         bufferSize = tempBuff;
                         try {
-                            /*max 2gb buffer*/
-                            buffer = ByteBuffer.allocateDirect((int)Math.max(128, bufferSize));
+                            /* max 2gb buffer */
+                            buffer = ByteBuffer.allocateDirect((int) Math.max(128, bufferSize));
 
                         } catch (Exception e) {
                             error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
@@ -462,7 +457,7 @@ abstract public class DownloadInterface {
                     }
                     deltaTime = System.currentTimeMillis() - timer;
 
-                    bytesPerSecond = 1000 *  bytes / deltaTime;
+                    bytesPerSecond = 1000 * bytes / deltaTime;
                     updateSpeed();
 
                     if (speedDebug) {
@@ -545,9 +540,7 @@ abstract public class DownloadInterface {
             if (speedDebug) {
                 logger.finer("speed " + maxspeed);
             }
-            if (!downloadLink.isLimited()) {
-                return (int) MAX_BUFFERSIZE;
-            }
+            if (!downloadLink.isLimited()) { return (int) MAX_BUFFERSIZE; }
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
@@ -565,7 +558,7 @@ abstract public class DownloadInterface {
          * @return
          */
         public long getBytesLoaded() {
-            return  (getCurrentBytesPosition() - startByte);
+            return (getCurrentBytesPosition() - startByte);
         }
 
         /**
@@ -578,7 +571,7 @@ abstract public class DownloadInterface {
         }
 
         public long getChunkSize() {
-            return  (endByte - startByte + 1);
+            return (endByte - startByte + 1);
         }
 
         /**
@@ -634,9 +627,7 @@ abstract public class DownloadInterface {
                 if (speedDebug) {
                     logger.finer("return speed: min " + maxSpeed + " - " + desiredBps * 1.5);
                 }
-                if (desiredBps < 1024) {
-                    return maxSpeed;
-                }
+                if (desiredBps < 1024) { return maxSpeed; }
                 return Math.min(maxSpeed, (int) (desiredBps * 1.3));
             } catch (Exception e) {
                 addException(e);
@@ -659,9 +650,7 @@ abstract public class DownloadInterface {
          * @return
          */
         private int getTimeInterval() {
-            if (!downloadLink.isLimited()) {
-                return TIME_BASE;
-            }
+            if (!downloadLink.isLimited()) { return TIME_BASE; }
 
             return Math.min(TIME_BASE * 5, (int) (TIME_BASE * bufferTimeFaktor));
 
@@ -714,8 +703,8 @@ abstract public class DownloadInterface {
                     preBytes = inputStream.available();
                 }
                 ReadableByteChannel channel = Channels.newChannel(inputStream);
-                /*max 2 gb buffer*/
-                buffer = ByteBuffer.allocateDirect((int)preBytes);
+                /* max 2 gb buffer */
+                buffer = ByteBuffer.allocateDirect((int) preBytes);
 
                 while (buffer.hasRemaining()) {
 
@@ -848,7 +837,7 @@ abstract public class DownloadInterface {
 
             // Content-Range=[133333332-199999999/200000000]}
             if (startByte + getPreBytes(this) > 0) {
-                String[] range = SimpleMatches.getSimpleMatches("[" + connection.getHeaderField("Content-Range") + "]", "[°-°/°]");
+                String[][] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getMatches();
                 if (speedDebug) {
                     logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
                 }
@@ -861,8 +850,8 @@ abstract public class DownloadInterface {
                     return;
 
                 } else if (range != null) {
-                    long gotSB = JDUtilities.filterLong(range[0]);
-                    long gotEB = JDUtilities.filterLong(range[1]);
+                    long gotSB = JDUtilities.filterLong(range[0][0]);
+                    long gotEB = JDUtilities.filterLong(range[0][1]);
                     if (gotSB != startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)) {
                         logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + (startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)));
                     }
@@ -1004,7 +993,7 @@ abstract public class DownloadInterface {
 
     private boolean waitFlag = true;
 
-    private boolean fatalErrorOccured=false;
+    private boolean fatalErrorOccured = false;
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
@@ -1116,12 +1105,12 @@ abstract public class DownloadInterface {
     // * @param id
     // */
     protected void error(int id, String string) {
-    
+
         logger.severe("Error occured: " + LinkStatus.toString(id));
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
-        if(fatalErrorOccured)return;
+        if (fatalErrorOccured) return;
         linkStatus.addStatus(id);
         linkStatus.setErrorMessage(string);
         switch (id) {
@@ -1204,9 +1193,7 @@ abstract public class DownloadInterface {
     }
 
     private long getPreBytes(Chunk chunk) {
-        if (chunk.getID() != 0 || chunk.startByte > 0) {
-            return 0;
-        }
+        if (chunk.getID() != 0 || chunk.startByte > 0) { return 0; }
         return preBytes;
     }
 
@@ -1345,7 +1332,7 @@ abstract public class DownloadInterface {
         // "Chunk(s) incomplete"));
         // return false;
         // }
-        if (totaleLinkBytesLoaded<=0||(totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
+        if (totaleLinkBytesLoaded <= 0 || (totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
@@ -1356,7 +1343,7 @@ abstract public class DownloadInterface {
 
             return false;
         }
-if(!linkStatus.isFailed())        linkStatus.setStatus(LinkStatus.FINISHED);
+        if (!linkStatus.isFailed()) linkStatus.setStatus(LinkStatus.FINISHED);
         return true;
     }
 
@@ -1527,22 +1514,18 @@ if(!linkStatus.isFailed())        linkStatus.setStatus(LinkStatus.FINISHED);
      * @return
      */
     public boolean startDownload() {
-
+        boolean do_reset = downloadLink.resetResetFlag();
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
 
             error(LinkStatus.ERROR_LINK_IN_PROGRESS, JDLocale.L("system.download.errors.linkisinprogress", "Downloadlink is already in progress"));
-            if (!handleErrors()) {
-                return false;
-            }
+            if (!handleErrors()) { return false; }
         }
         File fileOutput = new File(downloadLink.getFileOutput());
-        if (fileOutput == null || fileOutput.getParentFile() == null) {
+        if (fileOutput.getParentFile() == null) {
             error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
-            if (!handleErrors()) {
-                return false;
-            }
+            if (!handleErrors()) { return false; }
         }
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
@@ -1553,24 +1536,20 @@ if(!linkStatus.isFailed())        linkStatus.setStatus(LinkStatus.FINISHED);
             logger.severe("File already exists. " + fileOutput);
             String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
-            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
+            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen")) || do_reset == true) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
                 } else {
 
                     error(LinkStatus.ERROR_ALREADYEXISTS, JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
-                    if (!handleErrors()) {
-                        return false;
-                    }
+                    if (!handleErrors()) { return false; }
                 }
 
             } else {
 
                 error(LinkStatus.ERROR_ALREADYEXISTS, null);
-                if (!handleErrors()) {
-                    return false;
-                }
+                if (!handleErrors()) { return false; }
             }
 
         }
@@ -1621,7 +1600,6 @@ if(!linkStatus.isFailed())        linkStatus.setStatus(LinkStatus.FINISHED);
     private void terminate(int id) {
 
         logger.severe("A critical Downloaderror occured. Terminate...");
-       
 
         Iterator<Chunk> it = chunks.iterator();
         while (it.hasNext()) {

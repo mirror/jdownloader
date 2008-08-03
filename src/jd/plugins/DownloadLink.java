@@ -120,6 +120,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
     private boolean isEnabled;
+    
+    private boolean reset=false;
 
     private boolean isMirror = false;
 
@@ -734,13 +736,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
-
+        reset =true;
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
 
         linkStatus = new LinkStatus(this);
 
+    }
+    
+    public boolean statusResetFlag(){
+        return this.reset;
+    }
+    
+    public boolean resetResetFlag(){        
+        boolean temp=this.reset;
+        this.reset=false;
+        return temp;
     }
 
     /**
