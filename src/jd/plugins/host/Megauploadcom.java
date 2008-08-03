@@ -295,7 +295,7 @@ public class Megauploadcom extends PluginForHost {
             // Error");
             return;
         }
-        String code = this.getCaptchaCode(file);
+        String code = this.getCaptchaCode(file, downloadLink);
         // case PluginStep.STEP_PENDING:
         requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code, true);
         if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {

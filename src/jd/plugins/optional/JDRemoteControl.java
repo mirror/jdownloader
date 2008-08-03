@@ -374,7 +374,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output = output + " file_package=\"" + Package_ID.toString() + "\"";
                             output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
                             output = output + " file_hoster=\"" + dLink.getHost() + "\"";
-                            output = output + " file_status=\"" + dLink.getLinkStatus().getStatusText().toString() + "\"";
+                            output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                             output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
                             output = output + " > ";// Close File
                         }
@@ -453,7 +453,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         output = output + " file_package=\"" + Package_ID.toString() + "\"";
                         output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
                         output = output + " file_hoster=\"" + dLink.getHost() + "\"";
-                        output = output + " file_status=\"" + dLink.getLinkStatus().getStatusText().toString() + "\"";
+                        output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                         output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
                         output = output + " > ";// Close File
                     }
@@ -523,7 +523,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output = output + " file_package=\"" + Package_ID.toString() + "\"";
                             output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
                             output = output + " file_hoster=\"" + dLink.getHost() + "\"";
-                            output = output + " file_status=\"" + dLink.getLinkStatus().getStatusText().toString() + "\"";
+                            output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                             output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
                             output = output + " > ";// Close File
                         }

@@ -53,18 +53,15 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         try {
             downloadurl = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (!requestInfo.containsHTML(">Fehler!<")) {
-                String filename = requestInfo.getRegexp("helvetica;\">(.*?)</div>").getFirstMatch();
-                String filesize;
-                if ((filesize = requestInfo.getRegexp("<label>Gr��e:(.*?)MB</label>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.trim().replaceAll(",", "."))) * 1024 * 1024);
-                } else if ((filesize = requestInfo.getRegexp("<label>Gr��e:(.*?)KB</label>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.trim().replaceAll(",", "."))) * 1024);
-                }
+            br.getPage(downloadurl);
+            
+            if (!Regex.matches(br,"\\>Fehler\\!\\<")) {
+                String filename = br.getRegex("helvetica;\">(.*?)</div>").getFirstMatch();
+                String filesizeString=br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getFirstMatch();
+                downloadLink.setDownloadMax(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
                 return true;
             }
@@ -116,20 +113,21 @@ public class Dataupde extends PluginForHost {
         /* 10 seks warten, kann weggelassen werden */
         // this.sleep(10000, downloadLink);
         /* DownloadLink holen */
-        Form form = requestInfo.getForms()[2];
+        Form form = br.getForms()[2];
         form.withHtmlCode = false;
-        requestInfo = form.getRequestInfo(false);
+        br.setFollowRedirects(false);
+        HTTPConnection urlConnection=br.openFormConnection(form);
 
         /* DownloadLimit? */
-        if (requestInfo.getLocation() != null) {
+        if ( br.getRedirectLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            // step.setParameter(120000L);
+            linkStatus.setValue(120000L);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+         
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);

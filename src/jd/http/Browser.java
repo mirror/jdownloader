@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.utils.JDUtilities;
@@ -425,6 +426,10 @@ public class Browser {
             return "Browser. no rquest yet";
         }
         return request.toString();
+    }
+
+    public Regex getRegex(String string) {    
+        return new Regex(this,string);
     }
 
 }

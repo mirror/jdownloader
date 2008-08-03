@@ -481,7 +481,7 @@ public class Uploadedto extends PluginForHost {
         }
         // case PluginStep.STEP_DOWNLOAD:
         if (useCaptchaVersion) {
-            String code = this.getCaptchaCode(file);
+            String code = this.getCaptchaCode(file, downloadLink);
             finalURL = finalURL + code;
             logger.info("dl " + finalURL);
             postParameter.put(postTarget, code);

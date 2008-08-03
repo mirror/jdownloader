@@ -171,7 +171,7 @@ public class FileFactory extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        String captchaCode = this.getCaptchaCode(captchaFile);
+        String captchaCode = this.getCaptchaCode(captchaFile, downloadLink);
         try {
             logger.info(postTarget + "&captcha=" + captchaCode);
             requestInfo = HTTP.postRequest((new URL(actionString)), requestInfo.getCookie(), actionString, null, postTarget + "&captcha=" + captchaCode, true);

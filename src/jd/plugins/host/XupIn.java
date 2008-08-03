@@ -256,7 +256,7 @@ public class XupIn extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        String vchep = this.getCaptchaCode(file);
+        String vchep = this.getCaptchaCode(file, downloadLink);
 
         if (vpass != "") {
             requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);

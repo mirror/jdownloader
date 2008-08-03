@@ -232,7 +232,7 @@ public class Gulli extends PluginForHost {
         }
         // case PluginStep.STEP_WAIT_TIME:
 
-        String captchaTxt = this.getCaptchaCode(file);
+        String captchaTxt = this.getCaptchaCode(file, downloadLink);
 
         logger.info("file=" + fileId + "&" + "captcha=" + captchaTxt);
         requestInfo = HTTP.postRequest(new URL(DOWNLOAD_URL), cookie, null, null, "file=" + fileId + "&" + "captcha=" + captchaTxt, true);

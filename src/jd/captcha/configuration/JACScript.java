@@ -151,6 +151,9 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("toBlackAndWhite")) {
                         letter.toBlackAndWhite();
                         continue;
+                    } else if (cmd[1].equalsIgnoreCase("invert")) {
+                        letter.invert();
+                        continue;
 
                     } else {
                         if (JAntiCaptcha.isLoggerActive()) {

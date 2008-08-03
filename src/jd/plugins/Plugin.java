@@ -43,6 +43,7 @@ import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
 import jd.unrar.JUnrar;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -286,9 +287,7 @@ public abstract class Plugin implements ActionListener {
      * @return wahr, falls ein Treffer gefunden wurde.
      */
     public synchronized boolean canHandle(String data) {
-        if (data == null) {
-            return false;
-        }
+        if (data == null) { return false; }
         Pattern pattern = getSupportedLinks();
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
@@ -371,27 +370,18 @@ public abstract class Plugin implements ActionListener {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
-    public String getCaptchaCode(File file) {
-        return Plugin.getCaptchaCode(file, this);
+    public String getCaptchaCode(File file, DownloadLink downloadLink) {
+
+        String tmp = downloadLink.getLinkStatus().getStatusText();
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.statustext.captchadetection", "Get captchacode"));
+        downloadLink.requestGuiUpdate();
+        String ret = Plugin.getCaptchaCode(file, this);
+        downloadLink.getLinkStatus().setStatusText(tmp);
+        downloadLink.requestGuiUpdate();
+        return ret;
     }
 
-    public String getCaptchaCode(String captchaURL) {
-        File file = this.getLocalCaptchaFile(this);
-        logger.info("Captcha " + captchaURL);
-        RequestInfo requestInfo;
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), null, null, true);
-        } catch (Exception e) {
 
-            e.printStackTrace();
-            return null;
-        }
-        if (!requestInfo.isOK() || !JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
-            return null;
-        }
-        return this.getCaptchaCode(file);
-    }
 
     public int getCaptchaDetectionID() {
         return captchaDetectionID;
@@ -547,7 +537,7 @@ public abstract class Plugin implements ActionListener {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
         return url.getFile().substring(index + 1);
     }
-    
+
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den
      * dateinamen zuzugreifen sollte bis auf Ausnamen immer

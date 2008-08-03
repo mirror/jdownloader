@@ -200,7 +200,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             } else {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
             }
-            addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getLinkStatus().getStatusText());
+            addEntry(JDLocale.L("linkinformation.download.status", "Status"), downloadLink.getLinkStatus().getStatusString());
 
             if (downloadLink.isEnabled()) {
                 switch (downloadLink.getLinkStatus().getLatestStatus()) {
@@ -320,7 +320,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     h2.put("download_status", "deactivated");
                 }
 
-                h2.put("download_status_text", f.format(percent) + "% " + dLink.getLinkStatus().getStatusText());
+                h2.put("download_status_text", f.format(percent) + "% " + dLink.getLinkStatus().getStatusString());
                 v2.addElement(h2);
 
             }

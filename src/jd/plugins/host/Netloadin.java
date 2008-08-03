@@ -210,7 +210,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
 
-        requestInfo = HTTP.postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + this.getCaptchaCode(file) + "&start=", false);
+        requestInfo = HTTP.postRequest(new URL(postURL), sessionID, requestInfo.getLocation(), null, "file_id=" + fileID + "&captcha_check=" + this.getCaptchaCode(file, downloadLink) + "&start=", false);
         if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

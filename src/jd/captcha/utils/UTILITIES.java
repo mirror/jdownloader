@@ -362,7 +362,7 @@ public class UTILITIES {
         NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) {
             if (JAntiCaptcha.isLoggerActive()) {
-                logger.severe("ERROR: XML Attribute missing: " + key);
+                logger.info("ERROR: XML Attribute missing: " + key);
             }
             return null;
         }

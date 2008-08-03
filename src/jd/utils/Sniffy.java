@@ -14,6 +14,7 @@ public final class Sniffy {
     public static Pattern[] whiteList = new Pattern[] { Pattern.compile("Sniffy", Pattern.CASE_INSENSITIVE) };
 
     public static boolean hasSniffer() {
+        if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV||JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL)return false;
         if (OSDetector.isWindows()) { return hasWinSnifer();
 
         }

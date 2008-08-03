@@ -233,7 +233,7 @@ public class FilesTo extends PluginForHost {
         }
         // case PluginStep.STEP_DOWNLOAD:
 
-        String code = this.getCaptchaCode(file);
+        String code = this.getCaptchaCode(file, downloadLink);
 
         HashMap<String, String> requestHeaders = new HashMap<String, String>();
         requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");

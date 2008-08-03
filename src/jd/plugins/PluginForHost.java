@@ -24,6 +24,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
@@ -54,7 +55,7 @@ public abstract class PluginForHost extends Plugin {
     private int maxConnections = 50;
 
     private static final int ACCOUNT_NUM = 5;
-
+    protected Browser br = new Browser();
     private boolean enablePremium = false;
   
     // private boolean[] tmpAccountDisabled = new boolean[ACCOUNT_NUM];
@@ -69,7 +70,7 @@ public abstract class PluginForHost extends Plugin {
         requestInfo = null;
         request = null;
         dl = null;
-
+        br= new Browser();
         super.clean();
     }
 
@@ -478,6 +479,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void resetPluginGlobals() {
+        br= new Browser();
         resetHosterWaitTime();
     }
 
@@ -525,7 +527,7 @@ public abstract class PluginForHost extends Plugin {
 
 
     public void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
+        while (i > 0 &&downloadLink.getDownloadLinkController()!=null&& !downloadLink.getDownloadLinkController().isAborted()) {
 
             i -= 1000;
             downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));

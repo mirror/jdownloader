@@ -155,10 +155,8 @@ public class SingleDownloadController extends Thread {
             }
             if(linkStatus.isFailed()){
                 logger.severe("\r\nError occured- " + downloadLink.getLinkStatus());
-            }else{
-                logger.severe("\r\nFinished- " + downloadLink.getLinkStatus());
-                
             }
+        
             switch (linkStatus.getLatestStatus()) {
 
             case LinkStatus.ERROR_IP_BLOCKED:
@@ -174,7 +172,7 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
-
+         
             case LinkStatus.ERROR_FATAL:
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -199,8 +197,22 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_TIMEOUT_REACHED:
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
+                
+            default:
+                if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
+                    logger.severe("\r\nFinished- " + downloadLink.getLinkStatus());
+                    onDownloadFinishedSuccessFull(downloadLink);
+                }else{
+                retry(downloadLink,currentPlugin);
+                }
             }
-
+            
+            
+      
+        
+            
+         
+        
             // if (linkStatus.isStatus(LinkStatus.TODO) &&
             // currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() &&
             // !downloadLink.isWaitingForReconnect()) {
@@ -217,9 +229,7 @@ public class SingleDownloadController extends Thread {
             // this.onErrorRetry(downloadLink, currentPlugin);
             // return;
             // }
-            if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
-                onDownloadFinishedSuccessFull(downloadLink);
-            }
+      
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -525,7 +535,7 @@ if(linkStatus.getErrorMesage()==null){
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
             status.addStatus(LinkStatus.ERROR_FATAL);
             status.setErrorMessage(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
-            return;
+            return ;
         }
         status.setWaitTime((int) milliSeconds);
         plugin.setHosterWaittime((int) milliSeconds);

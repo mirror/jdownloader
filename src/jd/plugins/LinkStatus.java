@@ -225,7 +225,7 @@ public class LinkStatus implements Serializable {
      * @return Statusstring mit eventl Wartezeit
      */
 
-    public String getStatusText() {
+    public String getStatusString() {
         String ret = "";
         if (hasStatus(LinkStatus.FINISHED)) {
 
@@ -479,6 +479,10 @@ public class LinkStatus implements Serializable {
     public Object getErrorMesage() {
 
         return errorMessage;
+    }
+
+    public String getStatusText() {
+        return statusText;
     }
 
 }
