@@ -155,6 +155,13 @@ public interface UIInterface extends ControlListener {
     public String showTextAreaDialog(String title, String question, String def);
     
     /**
+     * Zeigt einen Textfield dialog mit zwei Textfields und zwei Labels an
+     * 
+     * @param string
+     */
+    public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo);
+    
+    /**
      * Zeigt einen Textarea dialog mit zwei Textareas und zwei Labels an
      * 
      * @param string
