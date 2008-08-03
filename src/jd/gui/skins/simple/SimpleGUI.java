@@ -2087,4 +2087,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void windowOpened(WindowEvent e) {
     }
 
+	@Override
+	public String[] showTextAreaDialog(String title, String questionOne,
+			String questionTwo, String defaultOne, String defaultTwo) {
+        logger.info("Textareadialog");
+        return TextAreaDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
+	}
+
 }
