@@ -17,6 +17,8 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -31,16 +33,13 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
-import jd.utils.JDUtilities;
 
 public class Youtube extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String HOST = "youtube.com";
-    
-    static private final Pattern LINKINFOS=     Pattern.compile("< youtubedl url=\"(.*?)\" decrypted=\"(.*?)\" convert=\"(.*?)\" name=\"(.*?)\" >", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_SUPPORTED= Pattern.compile("< youtubedl url=\".*\" decrypted=\".*\" convert=\".*\" name=\".*\" >", Pattern.CASE_INSENSITIVE);
-    
-    
+
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
+
     public Youtube() {
         super();
     }
@@ -62,19 +61,16 @@ public class Youtube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-
-    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4);           
-    	downloadLink.setStaticFileName(name + ".tmp");
-    	String browserurl = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(1);  
-    	downloadLink.setBrowserUrl(browserurl);
-        //TODO: Anderen Dateinamen anzeigen, sprich .tmp durch entsprechendes ersetzen
-        if (name == null) { return false; }
-        return true;
-    }
-
-    @Override
-    public String getFileInformationString(DownloadLink downloadLink) {
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        try {
+            if (HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true).getResponseCode() == 200) { return true; }
+        } catch (MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
@@ -104,55 +100,39 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        
-        final ConversionMode convertto = ConversionMode.valueOf(new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(3));
-
-    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4);           
-    	downloadLink.setStaticFileName(name + ".tmp");    
-        String downloadfile = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(2).trim();
-
-        if (name == null || downloadfile == null) {
+        if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.youtube.unavailable", "YouTube Serverfehler"));
             return;
-
         }
-        
-        RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadfile), null, downloadfile, true);
-        HTTPConnection urlConnection = requestInfo.getConnection();
 
+        RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, downloadLink.getBrowserUrl(), true);
+        HTTPConnection urlConnection = requestInfo.getConnection();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
-        dl.setRequestTimeout(100000);
-        dl.setReadTimeout(1000000);
         dl.setResume(false);
         if (dl.startDownload()) {
-        	
-        	ConversionMode InType = ConversionMode.VIDEOFLV;
-        	if((convertto.equals(ConversionMode.VIDEOMP4))||(convertto.equals(ConversionMode.VIDEO3GP)))
-        	{
-        	    InType = convertto;
-        	}
-        	
-        	if(JDMediaConvert.ConvertFile(downloadLink, InType, convertto));
-        	{
-        	    linkStatus.addStatus(LinkStatus.FINISHED);
-        	}
-            
-        }
+            if (downloadLink.getProperty("convertto") != null) {
+                ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
+                ConversionMode InType = ConversionMode.VIDEOFLV;
+                if ((convertto.equals(ConversionMode.VIDEOMP4)) || (convertto.equals(ConversionMode.VIDEO3GP))) {
+                    InType = convertto;
+                }
 
+                if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
+                    logger.severe("Video-Convert failed!");
+                }
+            }
+        }
     }
 
     @Override
     public void reset() {
-    	
     }
 
     @Override
     public void resetPluginGlobals() {
-
     }
 }
