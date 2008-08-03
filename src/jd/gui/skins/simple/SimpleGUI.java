@@ -96,6 +96,7 @@ import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
@@ -2080,4 +2081,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return TextAreaDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
     }
 
+    public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
+        logger.info("TextFieldDialog");
+        return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
+    }
 }
