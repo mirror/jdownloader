@@ -71,6 +71,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final Pattern CMD_DISCONNECT = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern CMD_MODE = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CMD_JOIN = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_NICK = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_PM = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CMD_SLAP = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
@@ -132,6 +133,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/query");
         COMMANDS.add("/nick ");
         COMMANDS.add("/mode ");
+        COMMANDS.add("/join");
         COMMANDS.add("/translate ");
         COMMANDS.add("/translate artoda ");
         COMMANDS.add("/translate artode ");
@@ -761,7 +763,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     public String getNick() {
@@ -1295,6 +1297,10 @@ public class JDChat extends PluginOptional implements ControlListener {
             } else if (Regex.matches(cmd, CMD_TOPIC)) {
                 conn.doTopic(CHANNEL, prepareToSend(rest));
                 lastCommand = "/topic ";
+            } else if (Regex.matches(cmd, CMD_JOIN)) {
+                conn.doJoin(CHANNEL, null);
+                setLoggedIn(true);
+                perform();
             } else if (Regex.matches(cmd, CMD_NICK)) {
                 conn.doNick(rest.trim());
                 lastCommand = "/nick ";
