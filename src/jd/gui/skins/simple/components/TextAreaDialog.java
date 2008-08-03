@@ -244,6 +244,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         } else if (e.getSource() == btnOk && optTextArea != null) { 
         	text2[0] = textArea.getText();
         	text2[1] = optTextArea.getText();
+        	dispose();
         } else {
             dispose();
         }
