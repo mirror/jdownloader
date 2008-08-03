@@ -26,6 +26,7 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
@@ -36,12 +37,27 @@ public class RsLayerCom extends PluginForDecrypt {
     final static String host = "rs-layer.com";
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/.+\\.html", Pattern.CASE_INSENSITIVE);
-
-    
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
 
     public RsLayerCom() {
         super();
+    }
+
+    private boolean add_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
+        String link_id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+        String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
+        if (reqinfo.containsHTML(container_link)) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
+            URL container_url = new URL(container_link);
+            HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
+            container_con.setRequestProperty("Referer", cryptedLink);
+            container_con.setRequestProperty("Cookie", reqinfo.getCookie());
+            if (JDUtilities.download(container, container_con)) {
+                JDUtilities.getController().loadContainerFile(container);
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -52,9 +68,12 @@ public class RsLayerCom extends PluginForDecrypt {
             if (parameter.indexOf("/link-") != -1) {
                 String link = new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
                 link = JDUtilities.htmlDecode(link);
-                progress.setRange(1);
-                decryptedLinks.add(createDownloadlink(link));
-                progress.increase(1);
+                if (link == null) {
+                    return null;
+                } else {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
+                ;
             } else if (parameter.indexOf("/directory-") != -1) {
                 Form[] forms = Form.getForms(reqinfo);
                 if (forms != null && forms.length != 0 && forms[0] != null) {
@@ -85,14 +104,21 @@ public class RsLayerCom extends PluginForDecrypt {
                     }
                 }
                 String layerLinks[][] = new Regex(reqinfo.getHtmlCode(), linkPattern).getMatches();
-                progress.setRange(layerLinks.length);
-
-                for (String[] element : layerLinks) {
-                    String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
-                    RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
-                    String link = new Regex(request2.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                    decryptedLinks.add(createDownloadlink(link));
-                    progress.increase(1);
+                if (layerLinks.length == 0) {
+                    if (!add_container(reqinfo, parameter, ".dlc")) {
+                        if (!add_container(reqinfo, parameter, ".rsdf")) {
+                            add_container(reqinfo, parameter, ".ccf");
+                        }
+                    }
+                } else {
+                    progress.setRange(layerLinks.length);
+                    for (String[] element : layerLinks) {
+                        String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
+                        RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
+                        String link = new Regex(request2.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                        if (link != null) decryptedLinks.add(createDownloadlink(link));
+                        progress.increase(1);
+                    }
                 }
             }
         } catch (IOException e) {
