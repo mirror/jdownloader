@@ -89,9 +89,9 @@ captcha.prepare.cleanWithDetailMask(bg_mask.png,2500000);
 captcha.prepare.blurIt(2);
 
 #################Letter Prepare Funktionen
-letter.prepare.invert();
+#letter.prepare.invert();
 letter.prepare.toBlackAndWhite(1.1);
-letter.prepare.invert();
+#letter.prepare.invert();
 
 
 		
