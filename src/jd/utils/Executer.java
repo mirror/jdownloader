@@ -42,6 +42,7 @@ public class Executer extends Thread {
     private StringBuffer sbe;
 
     private int waitTimeout = 60;
+    private int exitValue=-1;
 
     public Executer(String command) {
         this.command = command;
@@ -143,7 +144,8 @@ public class Executer extends Thread {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
                 sbeObserver.interrupt();
             }
-
+         this.exitValue=process.exitValue();
+            
             try {
                 process.destroy();
             } catch (Exception e) {
@@ -181,5 +183,9 @@ public class Executer extends Thread {
             }
 
         }
+    }
+
+    public int getExitValue() {
+        return exitValue;
     }
 }

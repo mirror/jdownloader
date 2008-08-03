@@ -192,29 +192,20 @@ public class Regex {
         return null;
     }
 
-    public String getMatch(int num) {
-        if (matcher == null) {
-            return null;
-        }
-        if (matcher.groupCount() == 0) {
-            return getMatch(0, num);
-        } else {
-            return getMatch(1, num);
-        }
-    }
+ 
 
-    public String getMatch(int group, int num) {
+    public String getMatch(int group) {
         if (matcher == null) {
             return null;
         }
         Matcher matchertmp = matcher;
-        while (num >= 0 && matchertmp.find()) {
-            num--;
+        if( matchertmp.find()) {
+            return   matchertmp.group(group+1);
         }
-        if (num >= 0) {
+       
             return null;
-        }
-        return matchertmp.group(group);
+       
+       
     }
 
     /**

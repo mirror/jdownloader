@@ -63,9 +63,9 @@ public class Youtube extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
 
-    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4,0);           
+    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4);           
     	downloadLink.setStaticFileName(name + ".tmp");
-    	String browserurl = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(1,0);  
+    	String browserurl = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(1);  
     	downloadLink.setBrowserUrl(browserurl);
         //TODO: Anderen Dateinamen anzeigen, sprich .tmp durch entsprechendes ersetzen
         if (name == null) { return false; }
@@ -107,11 +107,11 @@ public class Youtube extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         
-        final ConversionMode convertto = ConversionMode.valueOf(new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(3,0));
+        final ConversionMode convertto = ConversionMode.valueOf(new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(3));
 
-    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4,0);           
+    	String name = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(4);           
     	downloadLink.setStaticFileName(name + ".tmp");    
-        String downloadfile = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(2,0).trim();
+        String downloadfile = new Regex(downloadLink.getDownloadURL(), LINKINFOS).getMatch(2).trim();
 
         if (name == null || downloadfile == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

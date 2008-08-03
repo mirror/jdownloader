@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -58,14 +59,18 @@ public class DataHu extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+     
         try {
+            Browser br= new Browser();
+            
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (requestInfo.getHtmlCode().length() == 0) { return false; }
-            String[] test = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch().split("/");
-            String name = test[test.length - 1];
-            downloadLink.setName(name);
+           String page= br.getPage(url);
+      
+            if ( page==null||page.length() == 0) { return false; }
+            String[][] dat = new Regex(br, "<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">", Pattern.CASE_INSENSITIVE|Pattern.DOTALL).getMatches();
+            long length=Regex.getSize(dat[0][1].trim());
+            downloadLink.setDownloadMax(length);
+            downloadLink.setName(dat[0][0].trim());
             return true;
         } catch (Exception e) {
             e.printStackTrace();

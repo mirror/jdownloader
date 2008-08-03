@@ -1361,9 +1361,17 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) { return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText(); }
-        return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
-    }
+        if (!link.isAvailabilityChecked()) { 
+            return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
+            }
+        if(link.isAvailable()){
+            return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
+            
+        }else{
+            return link.getLinkStatus().getStatusText().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isoffline", "[offline] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusText();
+             
+        }
+     }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
         Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
