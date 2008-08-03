@@ -88,7 +88,7 @@ public class AgbDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht aktzeptiert"));
 
-        labelInfo1 = new JLabel(JDLocale.L("gui.dialogs.agb_tos.description1", String.format("Die Allgemeinen Geschäftsbedingungen (AGB) von %s", plugin.getHost())));
+        labelInfo1 = new JLabel(String.format(JDLocale.L("gui.dialogs.agb_tos.description1", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s"), plugin.getHost()));
 
         labelInfo2 = new JLabel(JDLocale.L("gui.dialogs.agb_tos.description2", "wurden nicht gelesen und akzeptiert."));
 

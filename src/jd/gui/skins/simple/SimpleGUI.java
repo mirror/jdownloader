@@ -616,9 +616,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     // private JDAction actionItemsBottom;
 
     public static void setUIManager() {
-        if (uiInitated) {
-            return;
-        }
+        if (uiInitated) { return; }
         uiInitated = true;
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
 
@@ -943,9 +941,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
-            if (ret == null) {
-                return;
-            }
+            if (ret == null) { return; }
             if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
@@ -1343,32 +1339,24 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             Thread.sleep(300);
                         } catch (Exception e) {
                         }
-                        if (this.isInterrupted()) {
-                            return;
-                        }
+                        if (this.isInterrupted()) { return; }
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 warning.setEnabled(false);
                             }
                         });
-                        if (this.isInterrupted()) {
-                            return;
-                        }
+                        if (this.isInterrupted()) { return; }
                         try {
                             Thread.sleep(100);
                         } catch (Exception e) {
                         }
-                        if (this.isInterrupted()) {
-                            return;
-                        }
+                        if (this.isInterrupted()) { return; }
                         EventQueue.invokeLater(new Runnable() {
                             public void run() {
                                 warning.setEnabled(true);
                             }
                         });
-                        if (this.isInterrupted()) {
-                            return;
-                        }
+                        if (this.isInterrupted()) { return; }
 
                     }
 
@@ -2087,11 +2075,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void windowOpened(WindowEvent e) {
     }
 
-	@Override
-	public String[] showTextAreaDialog(String title, String questionOne,
-			String questionTwo, String defaultOne, String defaultTwo) {
+    public String[] showTextAreaDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
         logger.info("Textareadialog");
         return TextAreaDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
-	}
+    }
 
 }

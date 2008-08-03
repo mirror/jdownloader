@@ -181,7 +181,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
                 value = downloadLink.getHost();
                 break;
             case COL_STATUS:
-                value = downloadLink.getLinkStatus().getStatusText();
+                value = downloadLink.getLinkStatus().getStatusString();
                 break;
             case COL_PROGRESS:
                 return downloadLink;

@@ -190,7 +190,7 @@ public class DownloadInfo extends JFrame {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
         }
 
-        addEntry("download.status", downloadLink.getLinkStatus().getStatusText());
+        addEntry("download.status", downloadLink.getLinkStatus().getStatusString());
 
         DownloadInterface dl;
         if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {

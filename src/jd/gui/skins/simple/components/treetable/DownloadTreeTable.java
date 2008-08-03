@@ -994,7 +994,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 sb.append("</p>");
                 break;
             case DownloadTreeTableModel.COL_STATUS:
-                sb.append("<p>" + link.getLinkStatus().getStatusText() + "</p>");
+                sb.append("<p>" + link.getLinkStatus().getStatusString() + "</p>");
                 break;
             case DownloadTreeTableModel.COL_PROGRESS:
                 if (link.getDownloadInstance() == null) {
