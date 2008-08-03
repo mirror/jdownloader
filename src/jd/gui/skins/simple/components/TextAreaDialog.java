@@ -163,15 +163,23 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         textArea.setEditable(true);
         optTextArea.setEditable(true);
         textArea.requestFocusInWindow();
-        if (questionField1 != null) {
-    		c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 2;
+        
+        c.weighty = 1.0;
+    	c.weightx = 1.0;
+    	c.gridwidth = 2;
     		c.gridheight = 1;
     		c.gridx = 0;
     		c.gridy = 0;
             this.add(new JLabel(questionField1), c);
-        }
+        
+            c.weighty = 1.0;
+        	c.weightx = 1.0;
+        	c.gridwidth = 2;
+        		c.gridheight = 1;
+        		c.gridx = 0;
+        		c.gridy = 1;
+                this.add(textArea, c);
+                
         if (defField1 != null) {
             textArea.setText(defField1);
         }
@@ -179,30 +187,23 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         if (defField2 != null) {
         	optTextArea.setText(defField2);
         }
-        if (questionField2 != null) {
+        
+        
     		c.weighty = 1.0;
     		c.weightx = 1.0;
     		c.gridwidth = 2;
     		c.gridheight = 1;
     		c.gridx = 0;
-    		c.gridy = 1;
-            this.add(new JLabel(questionField1), c);
+    		c.gridy = 2;
+            this.add(new JLabel(questionField2), c);
             
             c.weighty = 1.0;
     		c.weightx = 1.0;
     		c.gridwidth = 2;
     		c.gridheight = 1;
     		c.gridx = 0;
-    		c.gridy = 2;
-            this.add(optScrollPane, c);
-            
-            c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 1;
-    		c.gridheight = 1;
-    		c.gridx = 0;
     		c.gridy = 3;
-            this.add(btnOk, c);
+            this.add(optScrollPane, c);
             
             c.weighty = 1.0;
     		c.weightx = 1.0;
@@ -210,32 +211,16 @@ public class TextAreaDialog extends JDialog implements ActionListener {
     		c.gridheight = 1;
     		c.gridx = 0;
     		c.gridy = 4;
-            this.add(btnCancel, c);
-        } else {
-        	c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 2;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 1;
-            this.add(optScrollPane, c);
-            
-            c.weighty = 1.0;
-    		c.weightx = 1.0;
-    		c.gridwidth = 1;
-    		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 2;
             this.add(btnOk, c);
             
             c.weighty = 1.0;
     		c.weightx = 1.0;
     		c.gridwidth = 1;
     		c.gridheight = 1;
-    		c.gridx = 0;
-    		c.gridy = 3;
+    		c.gridx = 1;
+    		c.gridy = 4;
             this.add(btnCancel, c);
-        }
+        
         // this.setVisible(true);
         pack();
 
