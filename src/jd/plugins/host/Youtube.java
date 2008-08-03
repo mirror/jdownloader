@@ -38,8 +38,9 @@ public class Youtube extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String HOST = "youtube.com";
     static private final String AGB = "http://youtube.com/t/terms";
-    
+
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
+    private RequestInfo requestInfo;
 
     public Youtube() {
         super();
@@ -63,7 +64,8 @@ public class Youtube extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            if (HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true).getResponseCode() == 200) { return true; }
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
+            if (requestInfo.getResponseCode() == 200) { return true; }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -106,8 +108,6 @@ public class Youtube extends PluginForHost {
             linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-
-        RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, downloadLink.getBrowserUrl(), true);
         HTTPConnection urlConnection = requestInfo.getConnection();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);

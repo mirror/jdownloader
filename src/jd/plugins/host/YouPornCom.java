@@ -27,12 +27,15 @@ import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
     private static final String CODER = "JD-Team";
     private static final String HOST = "youporn.com";
     private static final Pattern patternSupported = Pattern.compile("http://download\\.youporn\\.com/download/\\d+/flv/.*", Pattern.CASE_INSENSITIVE);
+    private RequestInfo requestInfo;
 
     @Override
     public String getAGBLink() {
@@ -65,18 +68,17 @@ public class YouPornCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        LinkStatus linkStatus = link.getLinkStatus();
         if (!getFileInformation(link)) {
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link.getDownloadURL()), null, null, true);
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
         }
-
         dl = new RAFDownload(this, link, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
@@ -104,12 +106,12 @@ public class YouPornCom extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {        
+    public String getPluginName() {
         return HOST;
     }
 
     @Override
-    public Pattern getSupportedLinks() {        
+    public Pattern getSupportedLinks() {
         return patternSupported;
     }
 

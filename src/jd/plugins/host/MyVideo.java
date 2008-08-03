@@ -37,8 +37,9 @@ import jd.utils.JDMediaConvert;
 public class MyVideo extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String HOST = "myvideo.de";
-    static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";                                                                
+    static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?myvideo.*?\\.llnwd\\.net/d[\\d]+/movie[\\d]+/.+/[\\d]+\\.flv", Pattern.CASE_INSENSITIVE);
+    private RequestInfo requestInfo;
 
     public MyVideo() {
         super();
@@ -62,7 +63,8 @@ public class MyVideo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            if (HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true).getResponseCode() == 200) { return true; }
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
+            if (requestInfo.getResponseCode() == 200) { return true; }
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -105,8 +107,7 @@ public class MyVideo extends PluginForHost {
             linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-        
-        RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, downloadLink.getBrowserUrl(), true);
+
         HTTPConnection urlConnection = requestInfo.getConnection();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
