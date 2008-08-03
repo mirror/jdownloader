@@ -984,7 +984,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (staticFileName != null && staticFileName.length() > 3) {
             this.staticFileName = JDUtilities.validateFileandPathName(staticFileName);
             updatePartID();
-        }
+        }else this.staticFileName=null;
     }
 
     /**
