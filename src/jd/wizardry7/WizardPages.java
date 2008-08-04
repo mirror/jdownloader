@@ -58,12 +58,7 @@ public class WizardPages {
     }
 
     public static DefaultWizardPage[] getWizardPages() {
-        DefaultWizardPage[] wizardPages = new DefaultWizardPage[] { 
-                Welcome.getInstance(), 
-                CheckAGB.getInstance(), 
-                DownloadFolder.getInstance(), 
-                Reconnect.getInstance(), 
-                Finished.getInstance(), };
+        DefaultWizardPage[] wizardPages = new DefaultWizardPage[] { Welcome.getInstance(), CheckAGB.getInstance(), DownloadFolder.getInstance(), Reconnect.getInstance(), Finished.getInstance(), };
 
         ImageIcon headerIcon;
         int step = 0;

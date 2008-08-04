@@ -526,9 +526,7 @@ public class JDController implements ControlListener, UIListener {
             }
         }
 
-        if (Math.min(a.length(), b.length()) == 0) {
-            return 0;
-        }
+        if (Math.min(a.length(), b.length()) == 0) { return 0; }
         // logger.info("comp: " + a + " <<->> " + b + "(" + (c * 100) /
         // (b.length()) + ")");
         return c * 100 / b.length();
@@ -576,9 +574,7 @@ public class JDController implements ControlListener, UIListener {
             break;
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) {
-                return;
-            }
+            if (!(event.getSource() instanceof PluginForHost)) { return; }
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             addToFinished(lastDownloadFinished);
 
@@ -607,9 +603,8 @@ public class JDController implements ControlListener, UIListener {
 
             break;
         case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            if (uiInterface == null) {
-                return;
-                // logger.info("rvc event" + links);
+            if (uiInterface == null) { return;
+            // logger.info("rvc event" + links);
             }
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
@@ -724,9 +719,7 @@ public class JDController implements ControlListener, UIListener {
         // logger.info(controlEvent.getID()+" controllistener "+controlEvent);
         // if (uiInterface != null)
         // uiInterface.delegatedControlEvent(controlEvent);
-        if (controlEvent == null) {
-            return;
-        }
+        if (controlEvent == null) { return; }
         if (controlEvent.getID() == ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED) {
             increaseChangeID();
         }
@@ -817,9 +810,7 @@ public class JDController implements ControlListener, UIListener {
                 for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
 
                     nextDownloadLink = linkIterator.next();
-                    if (lastElement == lastDownloadLink) {
-                        return nextDownloadLink;
-                    }
+                    if (lastElement == lastDownloadLink) { return nextDownloadLink; }
                     lastDownloadLink = nextDownloadLink;
 
                 }
@@ -841,9 +832,7 @@ public class JDController implements ControlListener, UIListener {
                 for (Iterator<DownloadLink> linkIterator = fp.getDownloadLinks().iterator(); linkIterator.hasNext();) {
 
                     nextDownloadLink = linkIterator.next();
-                    if (downloadLink == nextDownloadLink) {
-                        return lastDownloadLink;
-                    }
+                    if (downloadLink == nextDownloadLink) { return lastDownloadLink; }
                     lastDownloadLink = nextDownloadLink;
 
                 }
@@ -917,9 +906,7 @@ public class JDController implements ControlListener, UIListener {
             FilePackage fp;
             while (it.hasNext()) {
                 fp = it.next();
-                if (fp.contains(link)) {
-                    return fp;
-                }
+                if (fp.contains(link)) { return fp; }
             }
         }
         logger.severe("Link " + link + " does not belong to any Package");
@@ -969,9 +956,7 @@ public class JDController implements ControlListener, UIListener {
      * @return ZUletzt bearbeiteter Captcha
      */
     public String getLastCaptchaImage() {
-        if (lastCaptchaLoaded == null) {
-            return "";
-        }
+        if (lastCaptchaLoaded == null) { return ""; }
         return lastCaptchaLoaded.getAbsolutePath();
     }
 
@@ -989,9 +974,7 @@ public class JDController implements ControlListener, UIListener {
      * @return Die zuletzte fertiggestellte datei
      */
     public String getLastFinishedFile() {
-        if (lastDownloadFinished == null) {
-            return "";
-        }
+        if (lastDownloadFinished == null) { return ""; }
         return lastDownloadFinished.getFileOutput();
     }
 
@@ -1008,9 +991,7 @@ public class JDController implements ControlListener, UIListener {
 
             while (iterator.hasNext()) {
                 fp = iterator.next();
-                if (fp.contains(downloadLink)) {
-                    return fp.getDownloadLinks();
-                }
+                if (fp.contains(downloadLink)) { return fp.getDownloadLinks(); }
 
             }
         }
@@ -1131,9 +1112,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public int getSpeedMeter() {
 
-        if (getWatchdog() == null || !getWatchdog().isAlive()) {
-            return 0;
-        }
+        if (getWatchdog() == null || !getWatchdog().isAlive()) { return 0; }
         return getWatchdog().getTotalSpeed();
     }
 
@@ -1170,9 +1149,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) {
-                        return true;
-                    }
+                    if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) { return true; }
                 }
             }
         } catch (Exception e) {
@@ -1435,15 +1412,9 @@ public class JDController implements ControlListener, UIListener {
      * @return
      */
     public boolean moveLinks(Vector<DownloadLink> links, DownloadLink before, DownloadLink after) {
-        if (links.contains(before) || links.contains(after)) {
-            return false;
-        }
-        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) {
-            return false;
-        }
-        if (before == null & after == null) {
-            return false;
-        }
+        if (links.contains(before) || links.contains(after)) { return false; }
+        if (before != null && after != null && before.getFilePackage() != after.getFilePackage()) { return false; }
+        if (before == null & after == null) { return false; }
         DownloadLink link;
 
         Iterator<DownloadLink> iterator = links.iterator();
@@ -1504,15 +1475,9 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean movePackages(Vector<FilePackage> fps, FilePackage before, FilePackage after) {
-        if (after != null && fps.contains(after)) {
-            return false;
-        }
-        if (before != null && fps.contains(before)) {
-            return false;
-        }
-        if (before == null && after == null) {
-            return false;
-        }
+        if (after != null && fps.contains(after)) { return false; }
+        if (before != null && fps.contains(before)) { return false; }
+        if (before == null && after == null) { return false; }
         synchronized (packages) {
             packages.removeAll(fps);
             int pos = after == null ? packages.indexOf(before) + 1 : packages.indexOf(after);
@@ -1675,9 +1640,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void removeDownloadLinks(Vector<DownloadLink> links) {
-        if (links == null || links.size() == 0) {
-            return;
-        }
+        if (links == null || links.size() == 0) { return; }
         Iterator<DownloadLink> iterator = links.iterator();
         while (iterator.hasNext()) {
 
@@ -1688,9 +1651,7 @@ public class JDController implements ControlListener, UIListener {
 
     private String removeExtension(String a) {
         // logger.finer("file " + a);
-        if (a == null) {
-            return a;
-        }
+        if (a == null) { return a; }
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
@@ -1704,9 +1665,7 @@ public class JDController implements ControlListener, UIListener {
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        if (a.equals(ret)) {
-            return ret;
-        }
+        if (a.equals(ret)) { return ret; }
         return ret;
 
     }
@@ -1823,8 +1782,7 @@ public class JDController implements ControlListener, UIListener {
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);
      * 
-     * watchdog.abortDownloadLink(oldLinks.elementAt(i)); } }
-     *  }
+     * watchdog.abortDownloadLink(oldLinks.elementAt(i)); } } }
      */
     /**
      * Speichert die Linksliste ab

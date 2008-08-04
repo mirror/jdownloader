@@ -34,8 +34,6 @@ public class ImagefapCom extends PluginForDecrypt {
 
     private URL url;
 
-    
-
     public ImagefapCom() {
         super();
     }

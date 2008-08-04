@@ -41,8 +41,6 @@ public class Lixin extends PluginForDecrypt {
     static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?lix\\.in/[-]{0,1}[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Lixin() {
         super();
     }

@@ -35,8 +35,6 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Rapidsafenet() {
         super();
     }
@@ -50,9 +48,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
             // Links auslesen und konvertieren
             String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();

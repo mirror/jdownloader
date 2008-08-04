@@ -15,9 +15,7 @@ public class SpaceManager {
     public static boolean checkPath(File Path, long size) {
         if (size > 0) {
             long space = SpaceManager.getUsableSpace(Path);
-            if (space > 0 && space - size < 1) {
-                return false;
-            }
+            if (space > 0 && space - size < 1) { return false; }
         }
         return true;
     }

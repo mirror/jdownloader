@@ -102,9 +102,7 @@ public class Main {
             } else {
 
                 file = new File(path);
-                if (!file.exists()) {
-                    return "File does not exist";
-                }
+                if (!file.exists()) { return "File does not exist"; }
 
             }
 
@@ -333,9 +331,7 @@ public class Main {
 
     private static void setSplashStatus(SplashScreen splashScreen, int i, String l) {
         // System.out.println(l);
-        if (splashScreen == null) {
-            return;
-        }
+        if (splashScreen == null) { return; }
         try {
             splashScreen.setText(l);
             splashScreen.setValue(splashScreen.getValue() + i);

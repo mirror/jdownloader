@@ -24,7 +24,7 @@ public class Executer extends Thread {
             String line;
             try {
                 while ((line = reader.readLine()) != null) {
-                   
+
                     sb.append(line + "\r\n");
                 }
             } catch (IOException e) {
@@ -42,7 +42,7 @@ public class Executer extends Thread {
     private StringBuffer sbe;
 
     private int waitTimeout = 60;
-    private int exitValue=-1;
+    private int exitValue = -1;
 
     public Executer(String command) {
         this.command = command;
@@ -118,9 +118,7 @@ public class Executer extends Thread {
         try {
             process = pb.start();
 
-            if (waitTimeout == 0) {
-                return;
-            }
+            if (waitTimeout == 0) { return; }
             StreamObserver sbeObserver = new StreamObserver(process.getErrorStream(), sbe);
             StreamObserver sbObserver = new StreamObserver(process.getInputStream(), sb);
             sbeObserver.start();
@@ -144,8 +142,8 @@ public class Executer extends Thread {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
                 sbeObserver.interrupt();
             }
-         this.exitValue=process.exitValue();
-            
+            exitValue = process.exitValue();
+
             try {
                 process.destroy();
             } catch (Exception e) {

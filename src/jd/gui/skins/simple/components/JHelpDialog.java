@@ -68,7 +68,8 @@ public class JHelpDialog extends JDialog implements ActionListener {
         title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
         // int buttons = JOptionPane.YES_NO_OPTION;
         // int messageType = JOptionPane.INFORMATION_MESSAGE;
-        // String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"),
+        // String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok",
+        // "OK"),
         // JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
         JHelpDialog d = new JHelpDialog(parent, title, message);
         d.getBtn3().setVisible(false);

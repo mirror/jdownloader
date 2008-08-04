@@ -35,8 +35,6 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://downloads\\.pes-arena\\.com/\\?id=(\\d+)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public DownloadsPesArenacom() {
         super();
     }

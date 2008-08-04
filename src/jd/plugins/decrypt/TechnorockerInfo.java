@@ -33,8 +33,6 @@ public class TechnorockerInfo extends PluginForDecrypt {
     final static String host = "technorocker.info";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public TechnorockerInfo() {
         super();
         default_password.add("technorocker");
@@ -46,9 +44,7 @@ public class TechnorockerInfo extends PluginForDecrypt {
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             String link = new Regex(reqinfo.getHtmlCode(), "<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(link));
         } catch (IOException e) {
             e.printStackTrace();

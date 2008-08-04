@@ -67,9 +67,7 @@ public class JDTrayIcon extends PluginOptional {
                 interrupt();
             }
 
-            if (popupMenu.isVisible()) {
-                return;
-            }
+            if (popupMenu.isVisible()) { return; }
 
             String displaytext = "";
             int speed = 0;

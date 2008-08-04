@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -38,10 +39,10 @@ public class ImageFap extends PluginForHost {
 
     public ImageFap() {
         super();
-        
+
     }
 
-    private String DecryptLink(String code) { 
+    private String DecryptLink(String code) {
         try {
             String s1 = JDUtilities.htmlDecode(code.substring(0, code.length() - 1));
 
@@ -90,9 +91,9 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        try {            
+        try {
             Browser br = new Browser();
-            br.getPage(downloadLink.getDownloadURL());            
+            br.getPage(downloadLink.getDownloadURL());
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
             String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
@@ -100,20 +101,22 @@ public class ImageFap extends PluginForHost {
                 gallery_name = gallery_name.trim();
             }
             if (picture_name != null) {
-                //String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                //br.setConnectTimeout(1000);
-                //HTTPConnection con = br.openGetConnection(imagelink);
-                //logger.info("GOT connection");
-//              if(con!=null)downloadLink.setDownloadMax(con.getContentLength());
+                // String imagelink = DecryptLink(new Regex(br,
+                // Pattern.compile("return lD\\('(\\S+?)'\\);",
+                // Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                // br.setConnectTimeout(1000);
+                // HTTPConnection con = br.openGetConnection(imagelink);
+                // logger.info("GOT connection");
+                // if(con!=null)downloadLink.setDownloadMax(con.getContentLength());
                 FilePackage fp = new FilePackage();
-                fp.setName(uploader_name);                
+                fp.setName(uploader_name);
                 downloadLink.setName(gallery_name + " + " + picture_name);
                 downloadLink.setFilePackage(fp);
                 return true;
             }
         } catch (Exception e) {
             e.printStackTrace();
-        }        
+        }
         return false;
     }
 
@@ -147,7 +150,7 @@ public class ImageFap extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        Browser br = new Browser();        
+        Browser br = new Browser();
         br.getPage(downloadLink.getDownloadURL());
         String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
         if (picture_name == null) {
@@ -162,14 +165,14 @@ public class ImageFap extends PluginForHost {
         /* DownloadLink holen */
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
         HTTPConnection con = br.openGetConnection(imagelink);
-        
-        String filename = getFileNameFormHeader(con).replaceAll("getimg\\.php\\?img=", "");
+
+        String filename = Plugin.getFileNameFormHeader(con).replaceAll("getimg\\.php\\?img=", "");
         downloadLink.setStaticFileName(filename);
         downloadLink.setSubdirectory(gallery_name);
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
         dl.setChunkNum(1);
-        dl.startDownload();        
+        dl.startDownload();
         return;
     }
 

@@ -158,9 +158,7 @@ public class ConfigContainer implements Serializable {
      * @return ConfigEntry
      */
     public ConfigEntry getEntryAt(int i) {
-        if (content.size() <= i) {
-            return null;
-        }
+        if (content.size() <= i) { return null; }
         return content.elementAt(i);
     }
 
@@ -181,9 +179,7 @@ public class ConfigContainer implements Serializable {
     }
 
     public void requestSave() {
-        if (actionListener == null) {
-            return;
-        }
+        if (actionListener == null) { return; }
         actionListener.actionPerformed(new ActionEvent(this, ACTION_REQUEST_SAVE, "save"));
 
     }

@@ -38,7 +38,8 @@ public class DownloadFolder extends DefaultWizardPage {
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-        // Geht jetzt. Das ganze ging nur nicht, weil das configpanel intern auf den Controller zugreifen will, der noch nicht initialisiert war.
+        // Geht jetzt. Das ganze ging nur nicht, weil das configpanel intern auf
+        // den Controller zugreifen will, der noch nicht initialisiert war.
         panel.add(cpanel);
 
         return panel;
@@ -61,14 +62,14 @@ public class DownloadFolder extends DefaultWizardPage {
 
     @Override
     protected void initComponents() {
-         ConfigContainer configContainer = new ConfigContainer(this, "Titel");
-         ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER,  JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory","Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-         configContainer.addEntry(ce);
-        
-         cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
-         for (Component c : cpanel.getComponents()) {
+        ConfigContainer configContainer = new ConfigContainer(this, "Titel");
+        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        configContainer.addEntry(ce);
+
+        cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
+        for (Component c : cpanel.getComponents()) {
             System.out.println(c);
         }
-         cpanel.setBorder(new LineBorder(Color.red, 1));
+        cpanel.setBorder(new LineBorder(Color.red, 1));
     }
 }

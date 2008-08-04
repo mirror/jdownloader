@@ -68,10 +68,10 @@ public class InteractionTrigger implements Serializable {
     private String name;
 
     /**
-     * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die TRigger
-     * gleich in einen vector geschrieben und dadurch NIE! vom GarbageCollector
-     * erfasst. Man sollte also im Normalen programmablauf keine neuen Trigger mehr
-     * Instanzieren
+     * Erstellt einen neuen Trigger. ACHTUNG. Beim instanzieren werden die
+     * TRigger gleich in einen vector geschrieben und dadurch NIE! vom
+     * GarbageCollector erfasst. Man sollte also im Normalen programmablauf
+     * keine neuen Trigger mehr Instanzieren
      * 
      * @param id
      * @param name

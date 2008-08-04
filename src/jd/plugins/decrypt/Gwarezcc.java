@@ -45,8 +45,6 @@ public class Gwarezcc extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
 
-    
-
     public Gwarezcc() {
         super();
         setConfigEelements();
@@ -102,12 +100,14 @@ public class Gwarezcc extends PluginForDecrypt {
                 /* Parts suchen */
                 String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getMatches(1);
                 /* Passwort suchen */
-                url = new URL("http://gwarez.cc/" + downloadid + "#details");                
+                url = new URL("http://gwarez.cc/" + downloadid + "#details");
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();                
-                if (password==null) {                    
+                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (password == null) {
                     logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-                }else password=password.trim();
+                } else {
+                    password = password.trim();
+                }
 
                 for (int ii = 0; ii < parts.length; ii++) {
                     /* Parts decrypten und adden */
@@ -172,8 +172,6 @@ public class Gwarezcc extends PluginForDecrypt {
         replace.put("CHJ\\|", "8");
         replace.put("BIK\\|", "9");
         replace.put("AJL\\|", "0");
-        
-        
 
         replace.put("\\|JQD\\|", "a");
         replace.put("\\|GRE\\|", "b");

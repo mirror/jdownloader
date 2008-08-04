@@ -33,8 +33,6 @@ public class URLCash extends PluginForDecrypt {
     static private String host = "urlcash.net";
     private Pattern patternSupported = Pattern.compile("http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public URLCash() {
         super();
     }
@@ -46,9 +44,7 @@ public class URLCash extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(link));
         } catch (IOException e) {
             e.printStackTrace();

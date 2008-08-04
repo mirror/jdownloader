@@ -265,7 +265,7 @@ public class XupIn extends PluginForHost {
         }
 
         HTTPConnection urlConnection = requestInfo.getConnection();
-        
+
         if (urlConnection.getContentType().contains("text/html")) {
 
             logger.severe("Captcha code or password wrong");
@@ -274,8 +274,6 @@ public class XupIn extends PluginForHost {
             return;
 
         }
-
-        
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);

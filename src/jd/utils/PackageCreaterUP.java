@@ -43,9 +43,7 @@ public class PackageCreaterUP {
 
         String[] packages = srcDir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".svn")) {
-                    return false;
-                }
+                if (name.endsWith(".svn")) { return false; }
                 if (new File(dir, name).isDirectory()) {
                     return true;
                 } else {
@@ -63,9 +61,7 @@ public class PackageCreaterUP {
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
-                    if (name.endsWith(".svn")) {
-                        return false;
-                    }
+                    if (name.endsWith(".svn")) { return false; }
                     return true;
 
                 }

@@ -53,9 +53,7 @@ public class JDSimpleWebserver extends Thread {
                             }
                         }
                     }
-                    if (index > max_buf) {
-                        return null;
-                    }
+                    if (index > max_buf) { return null; }
                     buffer[index] = (byte) byteread;
                     index++;
                 }

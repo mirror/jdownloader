@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -96,6 +97,7 @@ public class DepositFiles extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
@@ -268,10 +270,7 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        
-        
-
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -286,6 +285,7 @@ public class DepositFiles extends PluginForHost {
 
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
@@ -387,9 +387,9 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        logger.info("Filename: " + getFileNameFormHeader(requestInfo.getConnection()));
+        logger.info("Filename: " + Plugin.getFileNameFormHeader(requestInfo.getConnection()));
 
-        if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+        if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);

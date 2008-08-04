@@ -26,6 +26,7 @@ import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -53,6 +54,7 @@ public class QshareCom extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -93,7 +95,7 @@ public class QshareCom extends PluginForHost {
             return;
         }
         HTTPConnection con = br.openGetConnection(link);
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             sleep(20000, downloadLink);
@@ -107,7 +109,10 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         return;
 
@@ -182,8 +187,6 @@ public class QshareCom extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
-
 
     // private void setConfigElements() {
     // ConfigEntry cfg;

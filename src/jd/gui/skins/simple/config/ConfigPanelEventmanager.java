@@ -147,7 +147,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     // DefaultListModel model = new DefaultListModel();
     //
     // for (int i = 0; i < interactions.size(); i++) {
-    // model.add(i, i + ". " + interactions.elementAt(i).getInteractionName() + " ("
+    // model.add(i, i + ". " + interactions.elementAt(i).getInteractionName() +
+    // " ("
     // + interactions.elementAt(i).getTriggerName() + ")");
     // }
     // list.setModel(model);
@@ -306,11 +307,14 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         btnAdd.addActionListener(this);
         btnRemove.addActionListener(this);
         btnEdit.addActionListener(this);
-        // JDUtilities.ahddToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1, insets,
+        // JDUtilities.ahddToGridBag(panel, scrollpane, 0, 0, 5, 1, 1, 1,
+        // insets,
         // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
 
-        // JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets,
+        // JDUtilities.addToGridBag(panel, scrollpane,
+        // GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1,
+        // insets,
         // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
         //
         // JDUtilities.addToGridBag(panel, btnAdd, 0, 1, 1, 1, 0, 1, insets,

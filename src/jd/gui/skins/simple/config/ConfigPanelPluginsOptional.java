@@ -217,9 +217,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     private PluginOptional getSelectedPlugin() {
         int index = getSelectedIndex();
-        if (index < 0) {
-            return null;
-        }
+        if (index < 0) { return null; }
         return plugins.elementAt(index);
     }
 
@@ -347,9 +345,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
         PluginOptional plugin = getSelectedPlugin();
         // currentPlugin = plugin;
-        if (plugin == null) {
-            return;
-        }
+        if (plugin == null) { return; }
 
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);

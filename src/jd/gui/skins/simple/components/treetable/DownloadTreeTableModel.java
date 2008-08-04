@@ -219,9 +219,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
 
     public boolean move(TreePath[] from, Object before, Object after) {
 
-        if (from.length == 0) {
-            return false;
-        }
+        if (from.length == 0) { return false; }
         if (from[0].getLastPathComponent() instanceof DownloadLink) { return moveDownloadLinks(from, (DownloadLink) before, (DownloadLink) after); }
         return movePackages(from, (FilePackage) before, (FilePackage) after);
 
@@ -244,25 +242,19 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
         for (TreePath path : from) {
             fps.add((FilePackage) path.getLastPathComponent());
         }
-        if (after != null && !(after instanceof FilePackage)) {
-            return false;
-        }
+        if (after != null && !(after instanceof FilePackage)) { return false; }
         return JDUtilities.getController().movePackages(fps, before, after);
 
     }
 
     public boolean moveToPackage(TreePath[] from, FilePackage filePackage, boolean position) {
-        if (!(from[0].getLastPathComponent() instanceof DownloadLink)) {
-            return false;
-        }
+        if (!(from[0].getLastPathComponent() instanceof DownloadLink)) { return false; }
         Vector<DownloadLink> links = new Vector<DownloadLink>();
 
         for (TreePath path : from) {
             links.add((DownloadLink) path.getLastPathComponent());
         }
-        if (filePackage.size() == 0) {
-            return false;
-        }
+        if (filePackage.size() == 0) { return false; }
 
         if (position) {
             return JDUtilities.getController().moveLinks(links, null, filePackage.get(0));

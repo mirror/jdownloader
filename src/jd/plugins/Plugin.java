@@ -381,8 +381,6 @@ public abstract class Plugin implements ActionListener {
         return ret;
     }
 
-
-
     public int getCaptchaDetectionID() {
         return captchaDetectionID;
     }
@@ -515,7 +513,7 @@ public abstract class Plugin implements ActionListener {
      */
     static public String getFileNameFormHeader(HTTPConnection urlConnection) {
 
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return getFileNameFormURL(urlConnection.getURL()); }
+        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
         String ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);

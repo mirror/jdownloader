@@ -33,8 +33,6 @@ public class JDLowSpeed extends PluginOptional {
     private Thread pluginThread = null;
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
 
-    
-
     public JDLowSpeed() {
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_RAPIDSHAREONLY, JDLocale.L("plugins.optional.jdlowspeed.rsonly", "Nur Raidshare überwachen")));
@@ -91,9 +89,7 @@ public class JDLowSpeed extends PluginOptional {
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
                         long size = downloadLink.getDownloadMax();
-                        if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) {
-                            return;
-                        }
+                        if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) { return; }
                         if (size != 0) {
                             try {
                                 if ((size - downloadLink.getDownloadCurrent()) / speed < size / maxspeed) { return; }

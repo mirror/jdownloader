@@ -173,7 +173,8 @@ public class ConfigPanelDefault extends ConfigPanel implements ActionListener {
     // private Vector<ConfigPanelPlugin> subPanels=null;
     // protected Interaction interaction;
     //
-    // public ConfigPanelDefault(UIInterface uiinterface, Interaction interaction) {
+    // public ConfigPanelDefault(UIInterface uiinterface, Interaction
+    // interaction) {
     // super(uiinterface);
     // this.interaction = interaction;
     // initPanel();

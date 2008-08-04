@@ -31,10 +31,8 @@ import jd.utils.JDUtilities;
 
 public class Rsprotectfreehosterch extends PluginForDecrypt {
 
-    final static String host = "rs-protect.freehoster.ch";    
+    final static String host = "rs-protect.freehoster.ch";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-
-    
 
     public Rsprotectfreehosterch() {
         super();
@@ -47,9 +45,7 @@ public class Rsprotectfreehosterch extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String link = new Regex(reqinfo.getHtmlCode(), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();

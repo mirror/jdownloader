@@ -66,9 +66,7 @@ public class JDLocale {
 
     public static Vector<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
-        if (!dir.exists()) {
-            return null;
-        }
+        if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
         Vector<String> ret = new Vector<String>();
         for (File element : files) {
@@ -217,13 +215,9 @@ public class JDLocale {
         if (dat == null) {
             dat = data;
         }
-        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) {
-            return;
-        }
+        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) { return; }
         Iterator<Entry<String, String>> iterator;
-        if (dat == null) {
-            return;
-        }
+        if (dat == null) { return; }
         iterator = dat.entrySet().iterator();
         // stellt die Wartezeiten zurück
         Entry<String, String> i;

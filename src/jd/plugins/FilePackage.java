@@ -151,9 +151,7 @@ public class FilePackage extends Property implements Serializable {
      *         wird nur der Directory-NAME zurückgegeben, nicht der ganze Pfad
      */
     public String getDownloadDirectoryName() {
-        if (!hasDownloadDirectory()) {
-            return ".";
-        }
+        if (!hasDownloadDirectory()) { return "."; }
         return new File(downloadDirectory).getName();
     }
 
@@ -171,9 +169,7 @@ public class FilePackage extends Property implements Serializable {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-        if (totalDownloadSpeed / 1024 == 0) {
-            return -1;
-        }
+        if (totalDownloadSpeed / 1024 == 0) { return -1; }
         return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
 
     }
@@ -222,9 +218,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public String getName() {
-        if (name == null) {
-            return "";
-        }
+        if (name == null) { return ""; }
         return name;
     }
 
@@ -274,9 +268,7 @@ public class FilePackage extends Property implements Serializable {
         synchronized (downloadLinks) {
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
                 next = it.next();
-                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) {
-                    return next;
-                }
+                if (next.getFileOutput().toLowerCase().endsWith(".sfv")) { return next; }
             }
         }
         return null;
@@ -382,7 +374,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setName(String name) {
-        this.name=JDUtilities.removeEndingPoints(name);
+        this.name = JDUtilities.removeEndingPoints(name);
     }
 
     public void setPassword(String password) {

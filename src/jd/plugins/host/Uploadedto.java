@@ -31,6 +31,7 @@ import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -215,7 +216,7 @@ public class Uploadedto extends PluginForHost {
             requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
 
             if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
-                if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+                if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     logger.severe("Endlink not found");
                     linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -236,8 +237,8 @@ public class Uploadedto extends PluginForHost {
         }
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
-        
-        if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+
+        if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -512,8 +513,8 @@ public class Uploadedto extends PluginForHost {
                 sleep(20000, downloadLink);
                 return;
             }
-            
-            if (getFileNameFormHeader(requestInfo.getConnection()) == null || getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+
+            if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -538,7 +539,7 @@ public class Uploadedto extends PluginForHost {
                 sleep(20000, downloadLink);
                 return;
             }
-            
+
             int w = 0;
             while (requestInfo.getHeaders().size() < 2) {
                 w++;

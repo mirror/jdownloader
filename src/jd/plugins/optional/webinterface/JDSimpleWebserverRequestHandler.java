@@ -115,9 +115,7 @@ public class JDSimpleWebserverRequestHandler {
             }
         }
 
-        if (Math.min(a.length(), b.length()) == 0) {
-            return 0;
-        }
+        if (Math.min(a.length(), b.length()) == 0) { return 0; }
         return c * 100 / b.length();
     }
 
@@ -552,9 +550,7 @@ public class JDSimpleWebserverRequestHandler {
     }
 
     private String removeExtension(String a) {
-        if (a == null) {
-            return a;
-        }
+        if (a == null) { return a; }
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
@@ -566,9 +562,7 @@ public class JDSimpleWebserverRequestHandler {
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        if (a.equals(ret)) {
-            return ret;
-        }
+        if (a.equals(ret)) { return ret; }
         return ret;
 
     }

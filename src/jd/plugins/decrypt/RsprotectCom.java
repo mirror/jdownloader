@@ -35,8 +35,6 @@ public class RsprotectCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    
-
     public RsprotectCom() {
         super();
     }
@@ -48,9 +46,7 @@ public class RsprotectCom extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String link = new Regex(reqinfo.getHtmlCode(), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();

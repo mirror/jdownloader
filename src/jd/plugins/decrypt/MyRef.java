@@ -35,8 +35,6 @@ public class MyRef extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}", Pattern.CASE_INSENSITIVE);
 
-    
-
     public MyRef() {
         super();
     }

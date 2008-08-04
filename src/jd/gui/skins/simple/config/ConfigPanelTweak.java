@@ -56,7 +56,8 @@ public class ConfigPanelTweak extends ConfigPanel {
     public void initPanel() {
 
         GUIConfigEntry ce;
-        // ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // ce = new GUIConfigEntry(new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
         // configuration, Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS,
         // JDLocale.L("gui.config.general.webupdate.osFilter", "Webupdate: Alle
         // Erweiterungen aktualisieren (auch

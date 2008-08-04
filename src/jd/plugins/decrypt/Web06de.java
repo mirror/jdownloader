@@ -30,8 +30,6 @@ public class Web06de extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Web06de() {
         super();
     }

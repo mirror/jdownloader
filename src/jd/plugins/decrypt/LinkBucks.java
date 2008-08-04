@@ -34,8 +34,6 @@ public class LinkBucks extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+/\\d+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public LinkBucks() {
         super();
     }

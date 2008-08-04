@@ -33,9 +33,7 @@ public class HTMLParser {
      * @return
      */
     public static Vector<String> findPasswords(String data) {
-        if (data == null) {
-            return new Vector<String>();
-        }
+        if (data == null) { return new Vector<String>(); }
         Vector<String> ret = new Vector<String>();
         data = data.replaceAll("(?s)<!-- .*? -->", "").replaceAll("(?s)<script .*?>.*?</script>", "").replaceAll("(?s)<.*?>", "").replaceAll("Spoiler:", "").replaceAll("(no.{0,2}|kein.{0,8}|ohne.{0,8}|nicht.{0,8})(pw|passwort|password|pass)", "").replaceAll("(pw|passwort|password|pass).{0,12}(nicht|falsch|wrong)", "");
 
@@ -117,9 +115,7 @@ public class HTMLParser {
      */
     public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
         String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch();
-        if (pat == null) {
-            return null;
-        }
+        if (pat == null) { return null; }
         return HTMLParser.getFormInputHidden(pat);
     }
 

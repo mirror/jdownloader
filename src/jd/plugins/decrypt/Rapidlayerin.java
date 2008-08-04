@@ -41,8 +41,6 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     private String CODER = "JD-Team";
 
-    
-
     public Rapidlayerin() {
         super();
     }

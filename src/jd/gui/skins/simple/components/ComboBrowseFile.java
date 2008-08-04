@@ -198,9 +198,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) {
-            return;
-        }
+        if (currentPath == null) { return; }
         this.currentPath = currentPath;
         String item = currentPath.toString();
         if (!files.contains(item)) {

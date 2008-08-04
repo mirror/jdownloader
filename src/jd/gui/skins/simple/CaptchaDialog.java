@@ -196,9 +196,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
                     long t = System.currentTimeMillis();
                     while (c >= 0) {
-                        if (!isVisible()) {
-                            return;
-                        }
+                        if (!isVisible()) { return; }
                         t = System.currentTimeMillis();
                         setTitle("Countdown " + JDUtilities.formatSeconds(c / 1000));
                         if (c < 3000) {
@@ -215,9 +213,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                         } catch (InterruptedException e) {
                         }
 
-                        if (!isVisible()) {
-                            return;
-                        }
+                        if (!isVisible()) { return; }
 
                     }
                     captchaText = textField.getText();

@@ -33,8 +33,6 @@ public class DatenschleuderCc extends PluginForDecrypt {
     final static String host = "datenschleuder.cc";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public DatenschleuderCc() {
         super();
     }

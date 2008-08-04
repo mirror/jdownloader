@@ -69,21 +69,15 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
      */
     @Override
     public boolean accept(File f) {
-        if (f.isDirectory()) {
-            return acceptDirectories;
-        }
+        if (f.isDirectory()) { return acceptDirectories; }
         if (extension != null) {
             for (String element : extension) {
-                if (f.getName().toLowerCase().endsWith(element.toLowerCase())) {
-                    return true;
-                }
+                if (f.getName().toLowerCase().endsWith(element.toLowerCase())) { return true; }
             }
             return false;
         }
         if (name != null) {
-            if (!f.getName().startsWith(name)) {
-                return false;
-            }
+            if (!f.getName().startsWith(name)) { return false; }
         }
         return true;
     }

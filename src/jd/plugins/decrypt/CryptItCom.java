@@ -36,6 +36,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -91,8 +92,6 @@ public class CryptItCom extends PluginForDecrypt {
 
     private String CODER = "jD-Team";
 
-    
-
     public CryptItCom() {
         super();
     }
@@ -126,7 +125,7 @@ public class CryptItCom extends PluginForDecrypt {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
             }
 
-            String name = getFileNameFormHeader(requestInfo.getConnection());
+            String name = Plugin.getFileNameFormHeader(requestInfo.getConnection());
 
             if (name.equals("redir.ccf") || !name.contains(".ccf")) {
                 logger.severe("Container not found");

@@ -333,10 +333,10 @@ public class Template {
      * </pre>
      * 
      * <p>
-     *            Would normally cause an error, but if you create the Template
-     *            with strict == 0, HTML.Template will ignore it.
-     *            <p>
-     *            Default: true
+     * Would normally cause an error, but if you create the Template with strict ==
+     * 0, HTML.Template will ignore it.
+     * <p>
+     * Default: true
      * @param die_on_bad_params
      *            [Optional] if set to true the module will complain if you try
      *            to set tmpl.setParam("param_name", "value") and param_name

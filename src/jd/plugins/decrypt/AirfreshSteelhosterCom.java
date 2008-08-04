@@ -32,8 +32,6 @@ public class AirfreshSteelhosterCom extends PluginForDecrypt {
     final static String host = "airfresh.steelhoster.com";
     static private final Pattern patternSupported = Pattern.compile("http://airfresh\\.steelhoster\\.com/\\?\\d{4}", Pattern.CASE_INSENSITIVE);
 
-    
-
     public AirfreshSteelhosterCom() {
         super();
     }

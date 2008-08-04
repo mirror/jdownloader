@@ -138,17 +138,17 @@ public class SharedZillacom extends PluginForHost {
         downloadLink.setProperty("pass", passCode);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);/*
-                             * bei dem speed lohnen mehrere chunks nicht, da es
-                             * nicht schneller wird
-                             */
+         * bei dem speed lohnen mehrere chunks nicht, da es
+         * nicht schneller wird
+         */
         dl.setResume(true);
         dl.startDownload();
     }

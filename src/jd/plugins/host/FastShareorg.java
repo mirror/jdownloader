@@ -133,13 +133,13 @@ public class FastShareorg extends PluginForHost {
         // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url),
         // null, url, postdata, false);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), null, url, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();       
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
 
     }

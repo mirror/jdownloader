@@ -138,9 +138,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             fc.setFileFilter(new JDFileFilter(null, ".xml", true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
-            if (ret == null || !ret.exists()) {
-                return;
-            }
+            if (ret == null || !ret.exists()) { return; }
             try {
                 Vector<String> save = (Vector<String>) JDUtilities.loadObject(frame, ret, true);
                 textArea.setText(save.get(2));
@@ -158,9 +156,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             fc.setFileFilter(new JDFileFilter(null, ".xml", true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
-            if (ret == null) {
-                return;
-            }
+            if (ret == null) { return; }
             if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("xml")) {
 
                 ret = new File(ret.getAbsolutePath() + ".xml");
@@ -168,9 +164,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             Vector<String> save = new Vector<String>();
             String manu = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.save.manufactur", "Manufactur? (e.g. Siemens)"));
             String model = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.save.model", "Model? (e.g. Gigaset 555 (fw 3.01.05)"));
-            if (manu == null || model == null) {
-                return;
-            }
+            if (manu == null || model == null) { return; }
             save.add(manu);
             save.add(model);
             save.add(textArea.getText());
@@ -193,9 +187,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         if (e.getSource() == menEditAddRequest) {
 
-            if (!validate()) {
-                return;
-            }
+            if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
             StringBuffer sb = new StringBuffer();
@@ -211,9 +203,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             return;
         }
         if (e.getSource() == menEditAddDefine) {
-            if (!validate()) {
-                return;
-            }
+            if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.indexOf("[[[STEP]]]"), script.indexOf("[[[HSRC]]]") + 9);
             StringBuffer sb = new StringBuffer();
@@ -228,9 +218,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             return;
         }
         if (e.getSource() == menEditAddWait) {
-            if (!validate()) {
-                return;
-            }
+            if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
             StringBuffer sb = new StringBuffer();

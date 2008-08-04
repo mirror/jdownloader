@@ -144,7 +144,7 @@ public class JDInit {
                 if (splashScreen != null) {
                     splashScreen.finish();
                 }
-                
+
                 JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
             }
 

@@ -611,9 +611,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.getWriter().println("Restarting...");
 
                 class JDClose implements Runnable { /*
-                 * zeitverzögertes beenden -
-                 * thx jiaz
-                 */
+                                                     * zeitverzögertes beenden -
+                                                     * thx jiaz
+                                                     */
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -638,9 +638,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.getWriter().println("Shutting down...");
 
                 class JDClose implements Runnable { /*
-                 * zeitverzögertes beenden -
-                 * thx jiaz
-                 */
+                                                     * zeitverzögertes beenden -
+                                                     * thx jiaz
+                                                     */
                     JDClose() {
                         new Thread(this).start();
                     }
@@ -751,13 +751,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 boolean newclip = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/clipboard/(.*)").getFirstMatch());
                 logger.fine("RemoteControl - Set ClipBoard: " + newclip);
                 if (ClipboardHandler.getClipboard().isEnabled() ^ newclip) /*
-                 * C++
-                 * User:^
-                 * is
-                 * equuvalent
-                 * to
-                 * XOR
-                 */
+                                                                             * C++
+                                                                             * User:^
+                                                                             * is
+                                                                             * equuvalent
+                                                                             * to
+                                                                             * XOR
+                                                                             */
                 {
                     simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
                     response.getWriter().println("clip=" + newclip + " (CHANGED=true)");
@@ -771,13 +771,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getFirstMatch());
                 logger.fine("RemoteControl - Set Beta: " + newbeta);
                 if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta) /*
-                 * C++
-                 * User:^
-                 * is
-                 * equuvalent
-                 * to
-                 * XOR
-                 */
+                                                                             * C++
+                                                                             * User:^
+                                                                             * is
+                                                                             * equuvalent
+                                                                             * to
+                                                                             * XOR
+                                                                             */
                 {
                     JDUtilities.getSubConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
                     JDUtilities.getSubConfig("WEBUPDATE").save();
@@ -799,13 +799,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 ;
                 logger.fine("RemoteControl - Set ReConnect: " + disprc);
                 if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == newrc) /*
-                 * C++
-                 * User:^
-                 * is
-                 * equivalent
-                 * to
-                 * XOR
-                 */
+                                                                                                                                 * C++
+                                                                                                                                 * User:^
+                                                                                                                                 * is
+                                                                                                                                 * equivalent
+                                                                                                                                 * to
+                                                                                                                                 * XOR
+                                                                                                                                 */
                 {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
 
@@ -822,13 +822,13 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getFirstMatch());
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
                 if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) /*
-                 * C++
-                 * User:^
-                 * is
-                 * equivalent
-                 * to
-                 * XOR
-                 */
+                                                                                                                                         * C++
+                                                                                                                                         * User:^
+                                                                                                                                         * is
+                                                                                                                                         * equivalent
+                                                                                                                                         * to
+                                                                                                                                         * XOR
+                                                                                                                                         */
                 {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
                     JDUtilities.saveConfig();
@@ -855,12 +855,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     @SuppressWarnings("unused")
     private AbstractHandler serverHandler;
 
-    
-
     public void actionPerformed(ActionEvent e) {
-        if (server == null) {
-            return;
-        }
+        if (server == null) { return; }
         try {
             if (server.isStarted() || server.isStarting()) {
                 server.stop();

@@ -98,8 +98,8 @@ public class JDSimpleWebserverResponseCreator {
 
     // leg die lib ins home_dir gibt ja noch keine lib, nur java und class f
     /**
-     * Mark the response as 200 OK. This also sets the content length, so
-     * the method should not be called until all content has been appended
+     * Mark the response as 200 OK. This also sets the content length, so the
+     * method should not be called until all content has been appended
      */
     public void setOk() {
         headers.append("HTTP/1.1 200 OK\r\n");

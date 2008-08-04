@@ -210,7 +210,6 @@ public class YourFilesBiz extends PluginForHost {
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
         urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-       
 
         // case PluginStep.STEP_DOWNLOAD:
 

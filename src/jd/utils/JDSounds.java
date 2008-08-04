@@ -168,8 +168,8 @@ public class JDSounds {
     }
 
     /**
-     * Legt fest ob sich sounds überschneiden dürfen. Default ist false.d.h. dass
-     * ein 2. Sound nicht gespielt wird wenn der erste noch läuft
+     * Legt fest ob sich sounds überschneiden dürfen. Default ist false.d.h.
+     * dass ein 2. Sound nicht gespielt wird wenn der erste noch läuft
      * 
      * @param v
      */

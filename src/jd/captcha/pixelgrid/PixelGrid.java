@@ -146,9 +146,7 @@ public class PixelGrid extends Property {
     }
 
     public static int[][] getGridCopy(int[][] grid) {
-        if (grid.length == 0) {
-            return null;
-        }
+        if (grid.length == 0) { return null; }
         int[][] ret = new int[grid.length][grid[0].length];
         for (int x = 0; x < grid.length; x++) {
             for (int y = 0; y < grid[0].length; y++) {
@@ -160,9 +158,7 @@ public class PixelGrid extends Property {
     }
 
     public static int getGridHeight(int[][] grid) {
-        if (grid.length == 0) {
-            return 0;
-        }
+        if (grid.length == 0) { return 0; }
         return grid[0].length;
     }
 
@@ -186,12 +182,8 @@ public class PixelGrid extends Property {
      * @return Pixelwert bei x,y
      */
     public static int getPixelValue(int x, int y, int[][] grid, JAntiCaptcha owner) {
-        if (x < 0 || x >= grid.length) {
-            return -1;
-        }
-        if (y < 0 || grid.length == 0 || y >= grid[0].length) {
-            return -1;
-        }
+        if (x < 0 || x >= grid.length) { return -1; }
+        if (y < 0 || grid.length == 0 || y >= grid[0].length) { return -1; }
         return grid[x][y];
 
     }
@@ -637,9 +629,7 @@ public class PixelGrid extends Property {
 
             }
         }
-        if (i == 0) {
-            return 0;
-        }
+        if (i == 0) { return 0; }
         avg[0] /= i;
         avg[1] /= i;
         avg[2] /= i;
@@ -986,9 +976,7 @@ public class PixelGrid extends Property {
      * @return Höhe
      */
     public int getHeight() {
-        if (grid.length == 0) {
-            return 0;
-        }
+        if (grid.length == 0) { return 0; }
         return grid[0].length;
     }
 
@@ -1082,9 +1070,7 @@ public class PixelGrid extends Property {
      */
     private void getObject(int x, int y, int[][] tmpGrid, PixelObject object) {
 
-        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) {
-            return;
-        }
+        if (x < 0 || y < 0 || tmpGrid.length <= x || tmpGrid[0].length <= y || tmpGrid[x][y] < 0) { return; }
         int localValue = PixelGrid.getPixelValue(x, y, tmpGrid, owner);
         // UTILITIES.trace(x+"/"+y);
         try {

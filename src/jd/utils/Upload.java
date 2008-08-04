@@ -64,9 +64,8 @@ public class Upload {
                     break;
                 }
             }
-            if (form == null) {
-                return null;
-                // logger.info("iiiii"+form);
+            if (form == null) { return null;
+            // logger.info("iiiii"+form);
             }
 
             form.vars.put("content", str);
@@ -80,9 +79,7 @@ public class Upload {
             form.action = "http://pastebin.ca/index.php";
             RequestInfo ri = form.getRequestInfo();
             //
-            if (!ri.containsHTML("Ihr Paste wurde angenommen")) {
-                return null;
-            }
+            if (!ri.containsHTML("Ihr Paste wurde angenommen")) { return null; }
 
             String ret = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "Die URL lautet:</p><p><a href=\"/°\">http://pastebin", 0);
 

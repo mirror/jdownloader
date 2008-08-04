@@ -161,7 +161,7 @@ public class FileBaseTo extends PluginForHost {
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();
         downloadLink.setDownloadMax(urlConnection.getContentLength());
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
         dl.setChunkNum(1);
         dl.startDownload();

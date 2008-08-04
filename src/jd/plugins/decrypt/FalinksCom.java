@@ -44,11 +44,11 @@ public class FalinksCom extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String pw=new Regex(reqinfo.getHtmlCode(),"</form>\npw: (.*?)\n.*?</td>",Pattern.CASE_INSENSITIVE).getFirstMatch();
+            String pw = new Regex(reqinfo.getHtmlCode(), "</form>\npw: (.*?)\n.*?</td>", Pattern.CASE_INSENSITIVE).getFirstMatch();
             String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getMatches(1);
             progress.setRange(links.length);
-            for (String link:links) {
-                DownloadLink dlLink=this.createDownloadlink(link);
+            for (String link : links) {
+                DownloadLink dlLink = createDownloadlink(link);
                 dlLink.addSourcePluginPassword(pw);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);

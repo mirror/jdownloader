@@ -272,9 +272,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
             File ret = fc.getSelectedFile();
-            if (ret == null) {
-                return;
-            }
+            if (ret == null) { return; }
             if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
@@ -418,9 +416,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
             ret = fc.getSelectedFile();
-            if (ret == null) {
-                return;
-            }
+            if (ret == null) { return; }
             if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
@@ -564,9 +560,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     }
 
     public TableCellRenderer getCellRenderer(int row, int col) {
-        if (col >= 1) {
-            return cellRenderer;
-        }
+        if (col >= 1) { return cellRenderer; }
         return super.getCellRenderer(row, col);
     }
 
@@ -616,9 +610,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             Vector<DownloadLink> links = getSelectedDownloadLinks();
             Vector<FilePackage> fps = getSelectedFilePackages();
 
-            if (fps.size() == 0 && links.size() == 0) {
-                return;
-            }
+            if (fps.size() == 0 && links.size() == 0) { return; }
 
             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                 DownloadLink link = it.next();
@@ -667,9 +659,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             Point point = e.getPoint();
             int row = rowAtPoint(point);
             TreePath path = getPathForRow(row);
-            if (path == null) {
-                return;
-            }
+            if (path == null) { return; }
             Object obj = path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
                 new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) getPathForRow(row).getLastPathComponent());
@@ -742,9 +732,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
-            if (getPathForRow(row) == null) {
-                return;
-            }
+            if (getPathForRow(row) == null) { return; }
             Object obj = getPathForRow(row).getLastPathComponent();
             JMenuItem tmp;
             if (obj instanceof DownloadLink) {
@@ -889,9 +877,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         ignoreSelectionsAndExpansions(2000);
         logger.info(links.size() + " - " + fps.size());
         if (links.size() >= fps.size()) {
-            if (links.size() == 0) {
-                return;
-            }
+            if (links.size() == 0) { return; }
 
             switch (id) {
             case JDAction.ITEMS_MOVE_BOTTOM:
@@ -925,18 +911,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 break;
             case JDAction.ITEMS_MOVE_UP:
                 int i = JDUtilities.getController().getPackages().indexOf(fps.get(0));
-                if (i <= 0) {
-                    return;
-                }
+                if (i <= 0) { return; }
 
                 FilePackage before = JDUtilities.getController().getPackages().get(i - 1);
                 JDUtilities.getController().movePackages(fps, null, before);
                 break;
             case JDAction.ITEMS_MOVE_DOWN:
                 i = JDUtilities.getController().getPackages().indexOf(fps.lastElement());
-                if (i >= JDUtilities.getController().getPackages().size() - 1) {
-                    return;
-                }
+                if (i >= JDUtilities.getController().getPackages().size() - 1) { return; }
 
                 FilePackage after = JDUtilities.getController().getPackages().get(i + 1);
                 JDUtilities.getController().movePackages(fps, after, null);
@@ -963,9 +945,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             tooltip = null;
         }
 
-        if (!SimpleGUI.CURRENTGUI.getFrame().isActive() || transferHandler.isDragging) {
-            return;
-        }
+        if (!SimpleGUI.CURRENTGUI.getFrame().isActive() || transferHandler.isDragging) { return; }
         StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = getPathForRow(mouseOverRow).getLastPathComponent();
@@ -997,23 +977,19 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 sb.append("<p>" + link.getLinkStatus().getStatusString() + "</p>");
                 break;
             case DownloadTreeTableModel.COL_PROGRESS:
-                if (link.getDownloadInstance() == null) {
-                    return;
-                }
+                if (link.getDownloadInstance() == null) { return; }
                 DownloadInterface dl = link.getDownloadInstance();
                 String table = "<p><table>";
                 for (Chunk chunk : dl.getChunks()) {
                     long loaded = chunk.getBytesLoaded();
                     long total = chunk.getChunkSize();
-                    long percent =chunk.getPercent()/100;
+                    long percent = chunk.getPercent() / 100;
                     table += "<tr>";
                     table += "<td> Verbindung " + chunk.getID() + "</td>";
                     table += "<td>" + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s" + "</td>";
                     table += "<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>";
 
-                    
-
-                    table += "<td>" + "<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" +percent + "%' bgcolor='#000000'/><td width='" + (100 - percent) + "%' bgcolor='#cccccc'/></tr> </table>" + "</td>";
+                    table += "<td>" + "<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" + percent + "%' bgcolor='#000000'/><td width='" + (100 - percent) + "%' bgcolor='#cccccc'/></tr> </table>" + "</td>";
                     table += "</tr>";
                 }
                 table += "</table></p>";
@@ -1063,9 +1039,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         }
 
         sb.append("</div>");
-        if (sb.length() <= 22) {
-            return;
-        }
+        if (sb.length() <= 22) { return; }
         tooltip = HTMLTooltip.show(sb.toString(), mousePoint);
 
     }
@@ -1075,17 +1049,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
      * Ästen deren Status
      */
     public void treeCollapsed(TreeExpansionEvent event) {
-        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) {
-            return;
-        }
+        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) { return; }
         FilePackage fp = (FilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(DownloadTreeTable.PROPERTY_EXPANDED, false);
     }
 
     public void treeExpanded(TreeExpansionEvent event) {
-        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) {
-            return;
-        }
+        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) { return; }
         FilePackage fp = (FilePackage) event.getPath().getLastPathComponent();
         fp.setProperty(DownloadTreeTable.PROPERTY_EXPANDED, true);
     }
@@ -1122,28 +1092,24 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         TreePath[] paths = e.getPaths();
         // logger.info("" + e);
-        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) {
-            return;
-        }
+        if (ignoreSelectionsAndExpansionsUntil > System.currentTimeMillis()) { return; }
         for (TreePath path : paths) {
             if (e.isAddedPath(path)) {
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
 
-                   
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, true);
 
-                    
                 }
             } else {
 
                 if (path.getLastPathComponent() instanceof DownloadLink) {
                     ((DownloadLink) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-                  
+
                 } else {
                     ((FilePackage) path.getLastPathComponent()).setProperty(DownloadTreeTable.PROPERTY_SELECTED, false);
-      
+
                 }
             }
         }

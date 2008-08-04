@@ -74,9 +74,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) {
-                return;
-            }
+            if (!(event.getSource() instanceof PluginForHost)) { return; }
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 write(lastDownloadFinished);

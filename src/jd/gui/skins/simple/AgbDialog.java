@@ -31,7 +31,6 @@ import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

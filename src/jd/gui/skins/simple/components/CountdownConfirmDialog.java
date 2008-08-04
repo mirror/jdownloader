@@ -96,9 +96,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                 int c = countdown;
 
                 while (--c >= 0) {
-                    if (countdownThread == null) {
-                        return;
-                    }
+                    if (countdownThread == null) { return; }
                     setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
 
                     try {
@@ -106,9 +104,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
                     } catch (InterruptedException e) {
                     }
-                    if (!isVisible()) {
-                        return;
-                    }
+                    if (!isVisible()) { return; }
 
                 }
                 result = defaultResult;

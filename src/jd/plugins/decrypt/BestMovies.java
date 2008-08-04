@@ -38,8 +38,6 @@ public class BestMovies extends PluginForDecrypt {
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternSupported = Pattern.compile("http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public BestMovies() {
         super();
     }

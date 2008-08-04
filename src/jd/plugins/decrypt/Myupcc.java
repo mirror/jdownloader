@@ -35,8 +35,6 @@ public class Myupcc extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Myupcc() {
         super();
     }

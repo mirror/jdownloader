@@ -119,7 +119,8 @@ public class HTTPLiveHeader extends Interaction {
             for (String element : cats) {
                 requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
                 // ArrayList<ArrayList<String>> router =
-                // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
+                // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(),
+                // "<a
                 // class=\"link\" href=?cat_select=°&show=°>°</a>");
                 String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
                 for (String[] element2 : router) {

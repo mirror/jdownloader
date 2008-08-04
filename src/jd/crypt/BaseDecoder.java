@@ -210,8 +210,8 @@ public class BaseDecoder {
      * char[] abuf = new char[all];
      * 
      * System.arraycopy(remainedChars, 0, abuf, 0, remainedChars.length);
-     * System.arraycopy(in, off, abuf, remainedChars.length, len);
-     *  // remainedChars = new char[rem]; // System.arraycopy(abuf, abuf.length -
+     * System.arraycopy(in, off, abuf, remainedChars.length, len); //
+     * remainedChars = new char[rem]; // System.arraycopy(abuf, abuf.length -
      * remainedChars.length, // remainedChars, 0, remainedChars.length);
      * 
      * char[] cbuf = new char[all]; System.arraycopy(abuf, 0, cbuf, 0,

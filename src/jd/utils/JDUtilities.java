@@ -1017,7 +1017,9 @@ public class JDUtilities {
     }
 
     public static UIInterface getGUI() {
-        if (JDUtilities.getController() == null) return null;
+        if (JDUtilities.getController() == null) {
+            return null;
+        }
         return JDUtilities.getController().getUiInterface();
     }
 
@@ -2470,12 +2472,16 @@ public class JDUtilities {
     }
 
     public static String validateFileandPathName(String name) {
-        if (name == null) return null;
+        if (name == null) {
+            return null;
+        }
         return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
     public static String removeEndingPoints(String name) {
-        if (name == null) return null;
+        if (name == null) {
+            return null;
+        }
         return name.replaceAll("\\.*$", "");
     }
 

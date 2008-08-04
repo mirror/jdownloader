@@ -196,8 +196,6 @@ public class LoadTo extends PluginForHost {
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen(0-20s)");
         urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-        
-       
 
         // case PluginStep.STEP_DOWNLOAD:
 

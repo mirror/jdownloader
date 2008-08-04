@@ -919,9 +919,9 @@ public class UTILITIES {
 
     /** ************************************XML**************************************** */
     /**
-     * public static Document parseXmlFile(String filename, boolean
-     * validating) liest filename als XML ein und gibt ein XML Document
-     * zurück. Parameter validating: Macht einen validt check
+     * public static Document parseXmlFile(String filename, boolean validating)
+     * liest filename als XML ein und gibt ein XML Document zurück. Parameter
+     * validating: Macht einen validt check
      * 
      * @param is
      *            InputStream

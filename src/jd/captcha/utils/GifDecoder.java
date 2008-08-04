@@ -776,9 +776,11 @@ public class GifDecoder {
                     Graphics2D g = image.createGraphics();
                     Color c = null;
                     if (transparency) {
-                        c = new Color(0, 0, 0, 0); // assume background is transparent
+                        c = new Color(0, 0, 0, 0); // assume background is
+                                                    // transparent
                     } else {
-                        c = new Color(lastBgColor); // use given background color
+                        c = new Color(lastBgColor); // use given background
+                                                    // color
                     }
                     g.setColor(c);
                     g.setComposite(AlphaComposite.Src); // replace area

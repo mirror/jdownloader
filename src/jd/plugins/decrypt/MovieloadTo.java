@@ -32,8 +32,6 @@ public class MovieloadTo extends PluginForDecrypt {
     final static String host = "movieload.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public MovieloadTo() {
         super();
         default_password.add("movieload.to");

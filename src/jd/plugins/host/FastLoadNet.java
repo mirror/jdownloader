@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -233,7 +234,7 @@ public class FastLoadNet extends PluginForHost {
             }
 
             // case PluginStep.STEP_DOWNLOAD:
-            
+
             String code = getCaptchaCode(file, downloadLink);
 
             String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
@@ -250,8 +251,8 @@ public class FastLoadNet extends PluginForHost {
 
                     if (length == 13) {
 
-                        if ((maxCaptchaTries--) > 0) {
-                            logger.warning("Captcha wrong. Retries left: "+maxCaptchaTries);
+                        if (maxCaptchaTries-- > 0) {
+                            logger.warning("Captcha wrong. Retries left: " + maxCaptchaTries);
                             continue;
                         } else {
                             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
@@ -280,7 +281,7 @@ public class FastLoadNet extends PluginForHost {
                 }
 
                 downloadLink.setDownloadMax(length);
-                downloadLink.setName(getFileNameFormHeader(urlConnection));
+                downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
 
                 // Download starten
                 dl = new RAFDownload(this, downloadLink, urlConnection);

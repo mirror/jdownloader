@@ -35,8 +35,6 @@ public class CineTo extends PluginForDecrypt {
     private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
-    
-
     public CineTo() {
         super();
     }
@@ -107,54 +105,34 @@ public class CineTo extends PluginForDecrypt {
         erg[14] = source[captchanumber * 4 + 62][0];
 
         String[] wert0 = { "s", "s", "s", "s", "w", "s", "s", "w", "s", "s", "s", "w", "s", "s", "s" };
-        if (Arrays.equals(erg, wert0)) {
-            return "0";
-        }
+        if (Arrays.equals(erg, wert0)) { return "0"; }
 
         String[] wert1 = { "w", "w", "s", "w", "s", "s", "w", "w", "s", "w", "w", "s", "w", "w", "s" };
-        if (Arrays.equals(erg, wert1)) {
-            return "1";
-        }
+        if (Arrays.equals(erg, wert1)) { return "1"; }
 
         String[] wert2 = { "s", "s", "s", "w", "w", "s", "w", "s", "s", "s", "w", "w", "s", "s", "s" };
-        if (Arrays.equals(erg, wert2)) {
-            return "2";
-        }
+        if (Arrays.equals(erg, wert2)) { return "2"; }
 
         String[] wert3 = { "s", "s", "s", "w", "w", "s", "w", "s", "s", "w", "w", "s", "s", "s", "s" };
-        if (Arrays.equals(erg, wert3)) {
-            return "3";
-        }
+        if (Arrays.equals(erg, wert3)) { return "3"; }
 
         String[] wert4 = { "s", "w", "w", "s", "w", "s", "s", "s", "s", "w", "w", "s", "w", "w", "s" };
-        if (Arrays.equals(erg, wert4)) {
-            return "4";
-        }
+        if (Arrays.equals(erg, wert4)) { return "4"; }
 
         String[] wert5 = { "s", "s", "s", "s", "w", "w", "s", "s", "s", "w", "w", "s", "s", "s", "s" };
-        if (Arrays.equals(erg, wert5)) {
-            return "5";
-        }
+        if (Arrays.equals(erg, wert5)) { return "5"; }
 
         String[] wert6 = { "s", "s", "s", "s", "w", "w", "s", "s", "s", "s", "w", "s", "s", "s", "s" };
-        if (Arrays.equals(erg, wert6)) {
-            return "6";
-        }
+        if (Arrays.equals(erg, wert6)) { return "6"; }
 
         String[] wert7 = { "s", "s", "s", "w", "w", "s", "w", "s", "s", "w", "w", "s", "w", "w", "s" };
-        if (Arrays.equals(erg, wert7)) {
-            return "7";
-        }
+        if (Arrays.equals(erg, wert7)) { return "7"; }
 
         String[] wert8 = { "s", "s", "s", "s", "w", "s", "s", "s", "s", "s", "w", "s", "s", "s", "s" };
-        if (Arrays.equals(erg, wert8)) {
-            return "8";
-        }
+        if (Arrays.equals(erg, wert8)) { return "8"; }
 
         String[] wert9 = { "s", "s", "s", "s", "w", "s", "s", "s", "s", "w", "w", "s", "s", "s", "s" };
-        if (Arrays.equals(erg, wert9)) {
-            return "9";
-        }
+        if (Arrays.equals(erg, wert9)) { return "9"; }
 
         return "0";
     }

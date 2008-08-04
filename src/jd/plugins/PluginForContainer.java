@@ -65,12 +65,8 @@ public abstract class PluginForContainer extends Plugin {
     @Override
     public synchronized boolean canHandle(String data) {
 
-        if (data == null) {
-            return false;
-        }
-        if (getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) {
-            return true;
-        }
+        if (data == null) { return false; }
+        if (getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) { return true; }
 
         return false;
     }
@@ -208,9 +204,7 @@ public abstract class PluginForContainer extends Plugin {
         if (downloadLinksURL == null) {
             initContainer(downloadLink.getContainerFile());
         }
-        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) {
-            return null;
-        }
+        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) { return null; }
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
 
@@ -261,9 +255,7 @@ public abstract class PluginForContainer extends Plugin {
      * @return
      */
     public PluginForContainer getPlugin(String containerFile) {
-        if (PLUGINS.containsKey(containerFile)) {
-            return PLUGINS.get(containerFile);
-        }
+        if (PLUGINS.containsKey(containerFile)) { return PLUGINS.get(containerFile); }
         try {
             PluginForContainer newPlugin = this.getClass().newInstance();
             PLUGINS.put(containerFile, newPlugin);
@@ -280,9 +272,7 @@ public abstract class PluginForContainer extends Plugin {
     }
 
     public synchronized void initContainer(String filename) {
-        if (filename == null) {
-            return;
-        }
+        if (filename == null) { return; }
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
             containedLinks = CONTAINER.get(filename);

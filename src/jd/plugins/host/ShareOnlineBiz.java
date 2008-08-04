@@ -81,9 +81,9 @@ public class ShareOnlineBiz extends PluginForHost {
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
-                                     * Sicherheitspause, sonst gibts 403
-                                     * Response
-                                     */
+                 * Sicherheitspause, sonst gibts 403
+                 * Response
+                 */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
                     String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
@@ -217,7 +217,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -225,7 +225,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
-        dl.setResume(false);        
+        dl.setResume(false);
         dl.startDownload();
     }
 

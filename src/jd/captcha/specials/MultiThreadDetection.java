@@ -85,9 +85,7 @@ public class MultiThreadDetection {
 
         while (true) {
             if (list == null) {
-                if (DETECTION_THREADS.size() == 0 && DETECTION_QUEUE.size() == 0) {
-                    return;
-                }
+                if (DETECTION_THREADS.size() == 0 && DETECTION_QUEUE.size() == 0) { return; }
             } else {
                 boolean found = false;
                 for (DetectionThread detectionThread : DETECTION_THREADS) {
@@ -96,9 +94,7 @@ public class MultiThreadDetection {
                         break;
                     }
                 }
-                if (!found) {
-                    return;
-                }
+                if (!found) { return; }
             }
             try {
                 Thread.sleep(500);

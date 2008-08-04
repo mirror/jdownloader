@@ -35,8 +35,6 @@ public class Xailicom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Xailicom() {
         super();
     }

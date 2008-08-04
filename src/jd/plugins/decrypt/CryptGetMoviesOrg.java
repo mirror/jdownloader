@@ -32,8 +32,6 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     static private final String host = "crypt.get-movies.org";
     private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public CryptGetMoviesOrg() {
         super();
         default_password.add("www.get-movies.6x.to");

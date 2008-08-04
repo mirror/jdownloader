@@ -135,13 +135,13 @@ public class Vipfilecom extends PluginForHost {
         }
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

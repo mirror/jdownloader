@@ -161,7 +161,7 @@ abstract public class DownloadInterface {
          * @return
          */
         public int getPercent() {
-            return (int) (10000 * (chunkBytesLoaded) / Math.max(1, Math.max((chunkBytesLoaded), (this.endByte - this.startByte))));
+            return (int) (10000 * chunkBytesLoaded / Math.max(1, Math.max(chunkBytesLoaded, (endByte - startByte))));
         }
 
         /**
@@ -558,7 +558,7 @@ abstract public class DownloadInterface {
          * @return
          */
         public long getBytesLoaded() {
-            return (getCurrentBytesPosition() - startByte);
+            return getCurrentBytesPosition() - startByte;
         }
 
         /**
@@ -571,7 +571,7 @@ abstract public class DownloadInterface {
         }
 
         public long getChunkSize() {
-            return (endByte - startByte + 1);
+            return endByte - startByte + 1;
         }
 
         /**
@@ -1110,7 +1110,9 @@ abstract public class DownloadInterface {
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
-        if (fatalErrorOccured) return;
+        if (fatalErrorOccured) {
+            return;
+        }
         linkStatus.addStatus(id);
         linkStatus.setErrorMessage(string);
         switch (id) {
@@ -1120,9 +1122,9 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_FILE_NOT_FOUND:
         case LinkStatus.ERROR_LOCAL_IO:
         case LinkStatus.ERROR_NO_CONNECTION:
-
+        case LinkStatus.ERROR_ALREADYEXISTS:
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
-            this.fatalErrorOccured = true;
+            fatalErrorOccured = true;
             terminate(id);
 
         }
@@ -1332,7 +1334,7 @@ abstract public class DownloadInterface {
         // "Chunk(s) incomplete"));
         // return false;
         // }
-        if (totaleLinkBytesLoaded <= 0 || (totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
+        if (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
@@ -1343,7 +1345,9 @@ abstract public class DownloadInterface {
 
             return false;
         }
-        if (!linkStatus.isFailed()) linkStatus.setStatus(LinkStatus.FINISHED);
+        if (!linkStatus.isFailed()) {
+            linkStatus.setStatus(LinkStatus.FINISHED);
+        }
         return true;
     }
 

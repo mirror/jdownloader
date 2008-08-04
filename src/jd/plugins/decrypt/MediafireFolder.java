@@ -32,8 +32,6 @@ public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public MediafireFolder() {
         super();
     }
@@ -45,9 +43,7 @@ public class MediafireFolder extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String reqlink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
-            if (reqlink == null) {
-                return null;
-            }
+            if (reqlink == null) { return null; }
             reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + reqlink), reqinfo.getCookie(), parameter, true);
             String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("hm\\[.*?\\]=Array\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);

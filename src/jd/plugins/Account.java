@@ -12,8 +12,8 @@ public class Account extends Property {
     private int id;
 
     public Account(String user, String pass) {
-        this.user=user;
-        this.pass=pass;
+        this.user = user;
+        this.pass = pass;
     }
 
     public String getUser() {
@@ -32,8 +32,6 @@ public class Account extends Property {
     public void setUser(String user) {
         this.user = user;
     }
-
-
 
     public int getId() {
         return id;

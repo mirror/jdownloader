@@ -116,7 +116,9 @@ public class RsLayerCom extends PluginForDecrypt {
                         String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
                         RequestInfo request2 = HTTP.getRequest(new URL(layerLink));
                         String link = new Regex(request2.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                        if (link != null) decryptedLinks.add(createDownloadlink(link));
+                        if (link != null) {
+                            decryptedLinks.add(createDownloadlink(link));
+                        }
                         progress.increase(1);
                     }
                 }

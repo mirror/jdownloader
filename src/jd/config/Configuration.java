@@ -321,9 +321,7 @@ public class Configuration extends Property implements Serializable {
      * @return Versionsstring der Konfiguration
      */
     public String getConfigurationVersion() {
-        if (version == null) {
-            return "0.0.0";
-        }
+        if (version == null) { return "0.0.0"; }
         return version;
     }
 
@@ -362,9 +360,7 @@ public class Configuration extends Property implements Serializable {
      */
     @Override
     public Object getProperty(String key, Object defaultValue) {
-        if (getProperty(key) == null) {
-            return defaultValue;
-        }
+        if (getProperty(key) == null) { return defaultValue; }
         return getProperty(key);
     }
 

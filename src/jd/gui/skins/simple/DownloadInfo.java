@@ -194,7 +194,7 @@ public class DownloadInfo extends JFrame {
 
         DownloadInterface dl;
         if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {
-            addEntry(JDLocale.L("download.chunks.label","Chunks"), "");
+            addEntry(JDLocale.L("download.chunks.label", "Chunks"), "");
             int i = 1;
             for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
                 JProgressBar p;
@@ -203,7 +203,7 @@ public class DownloadInfo extends JFrame {
                 p.setMaximum(10000);
                 p.setValue(next.getPercent());
                 p.setStringPainted(true);
-                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + c.format(next.getPercent()/100.0)+ " %");
+                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %");
             }
 
         }

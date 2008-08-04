@@ -75,11 +75,11 @@ public class JDAboutDialog {
         String[][] devs = new String[][] { { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" },
 
         // See how I added myself above. Every string starts with a
-        // single white space.
-        // This improves the way the entries look in the table
-        // (without fiddleing with the tablecellrenderer)
+                // single white space.
+                // This improves the way the entries look in the table
+                // (without fiddleing with the tablecellrenderer)
 
-       {" coalado"," support@jdownloader.org"," JDownloader core, ocr, container, website, project administration"},
+                { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
@@ -136,7 +136,7 @@ public class JDAboutDialog {
             @Override
             public void run() {
                 try {
-                   
+
                     final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
                     // JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About
                     // JDownloader"), txt);

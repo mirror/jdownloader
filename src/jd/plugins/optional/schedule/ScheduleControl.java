@@ -82,7 +82,8 @@ public class ScheduleControl extends JDialog implements ActionListener {
 
         if (e.getSource() == remove) {
             try {
-                // ScheduleFrame s = (ScheduleFrame) v.elementAt(list.getSelectedIndex());
+                // ScheduleFrame s = (ScheduleFrame)
+                // v.elementAt(list.getSelectedIndex());
 
                 v.remove(list.getSelectedIndex());
                 reloadList();

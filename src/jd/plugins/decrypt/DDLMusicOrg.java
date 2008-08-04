@@ -40,7 +40,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
+        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
 
@@ -51,13 +51,17 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 RequestInfo reqinfo = HTTP.getRequest(new URL(cryptedLink.replace("ddlm_cr.php", "test2.php")), null, cryptedLink, false);
                 String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                if (link == null) return null;
+                if (link == null) {
+                    return null;
+                }
                 decryptedLinks.add(createDownloadlink(link));
             } else if (new Regex(cryptedLink, patternLink_Main).matches()) {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 // passwort auslesen
                 String password = new Regex(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                if (password != null && password.contains("kein Passwort")) password = null;
+                if (password != null && password.contains("kein Passwort")) {
+                    password = null;
+                }
 
                 String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getMatches(1);
 
@@ -65,9 +69,9 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 DownloadLink link;
                 for (int i = 0; i < ids.length; i++) {
                     if (ids[i].startsWith("/ddlm_cr.php")) {
-                        link=createDownloadlink("http://ddl-music.org" + ids[i]);                        
+                        link = createDownloadlink("http://ddl-music.org" + ids[i]);
                     } else {
-                        link=createDownloadlink(ids[i]);                        
+                        link = createDownloadlink(ids[i]);
                         try {
                             Thread.sleep(250);
                         } catch (InterruptedException e) {

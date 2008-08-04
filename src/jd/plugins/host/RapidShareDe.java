@@ -71,6 +71,7 @@ public class RapidShareDe extends PluginForHost {
         return false;
     } // kein BotCheck
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
@@ -156,6 +157,7 @@ public class RapidShareDe extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();

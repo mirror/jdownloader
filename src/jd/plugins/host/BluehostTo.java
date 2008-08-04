@@ -25,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -67,6 +68,7 @@ public class BluehostTo extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -102,14 +104,14 @@ public class BluehostTo extends PluginForHost {
             return;
         }
         Form[] forms = br.getForms();
-        HTTPConnection con = br.openFormConnection(forms[2]);        
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+        HTTPConnection con = br.openFormConnection(forms[2]);
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setParameter(60*60*1000l);
 
             return;
-        }       
+        }
 
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
@@ -117,8 +119,6 @@ public class BluehostTo extends PluginForHost {
         dl.startDownload();
 
     }
-
-
 
     @Override
     public String getAGBLink() {
@@ -190,8 +190,6 @@ public class BluehostTo extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
-
 
     // private void setConfigElements() {
     // ConfigEntry cfg;

@@ -55,11 +55,11 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         HTMLDialog tda = new HTMLDialog(frame, title, question);
 
         Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
-        int minWidth = Math.min(tda.getPreferredSize().width, (int)(size.width*.75));
-        int minHeight = Math.min(tda.getPreferredSize().height, (int)(size.height*.75));
+        int minWidth = Math.min(tda.getPreferredSize().width, (int) (size.width * .75));
+        int minHeight = Math.min(tda.getPreferredSize().height, (int) (size.height * .75));
         tda.setPreferredSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 480)));
         tda.pack();
-        
+
         return tda.success;
     }
 

@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -234,7 +233,7 @@ public class ShareBaseDe extends PluginForHost {
 
         // Download vorbereiten
         HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
-        
+
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
 

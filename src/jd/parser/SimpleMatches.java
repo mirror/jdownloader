@@ -166,9 +166,7 @@ public class SimpleMatches {
     static String getBetween(String data, String startPattern, String lastPattern) {
         Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
         Matcher match = p.matcher(data);
-        if (match.find()) {
-            return match.group(1);
-        }
+        if (match.find()) { return match.group(1); }
         return data;
     }
 
@@ -190,9 +188,7 @@ public class SimpleMatches {
     public @Deprecated
     static String getFirstMatch(String data, Pattern pattern, int group) {
         String hit = null;
-        if (data == null) {
-            return null;
-        }
+        if (data == null) { return null; }
         if (pattern != null) {
             Matcher matcher = pattern.matcher(data);
             if (matcher.find() && group <= matcher.groupCount()) {
@@ -312,9 +308,7 @@ public class SimpleMatches {
     public @Deprecated
     static String[] getSimpleMatches(Object source, String pattern) {
         // DEBUG.trace("pattern: "+STRING.getPattern(pattern));
-        if (source == null || pattern == null) {
-            return null;
-        }
+        if (source == null || pattern == null) { return null; }
         Matcher rr = Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL).matcher(source.toString());
         if (!rr.find()) {
             // Keine treffer

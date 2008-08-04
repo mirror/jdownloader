@@ -35,8 +35,6 @@ public class NixPopOrg extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?nix-pop\\.org/html/main/(show|showvid|showspec)\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public NixPopOrg() {
         super();
     }

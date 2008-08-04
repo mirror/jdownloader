@@ -119,6 +119,7 @@ public class Gulli extends PluginForHost {
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) { return false; }
             requestInfo = HTTP.readFromURL(requestInfo.getConnection());
 
+            if (Regex.matches(requestInfo, "Fehler 404")) { return false; }
             int filesize = 0;
             String size;
             size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);
@@ -140,6 +141,8 @@ public class Gulli extends PluginForHost {
 
                 if (size != null) {
                     filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024 * 1024);
+                } else {
+
                 }
 
             }
@@ -195,12 +198,20 @@ public class Gulli extends PluginForHost {
         RequestInfo requestInfo = null;
         String dlUrl = null;
 
-        DownloadLink downloadLink = parameter;        
+        DownloadLink downloadLink = parameter;
         // switch (step.getStep()) {
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
         // con.setRequestProperty("Cookie",
         // Plugin.joinMap(cookieMap,"=","; "));
         requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+        if (Regex.matches(requestInfo, "Fehler")) {
+            String errorid = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(0);
+            String errortext = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(1);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage(errortext);
+            return;
+
+        }
         fileId = new Regex(requestInfo.getHtmlCode(), PAT_FILE_ID).getMatch(1 - 1);
         String captchaLocalUrl = new Regex(requestInfo.getHtmlCode(), PAT_CAPTCHA).getMatch(1 - 1);
         dlUrl = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_URL).getMatch(1 - 1);
@@ -288,7 +299,7 @@ public class Gulli extends PluginForHost {
         }
 
         // case PluginStep.STEP_DOWNLOAD:
-        logger.info("dl " + finalDownloadURL);        
+        logger.info("dl " + finalDownloadURL);
 
         dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
         dl.startDownload();

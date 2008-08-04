@@ -25,6 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -63,7 +64,7 @@ public class RamZal extends PluginForHost {
         try {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
             HTTPConnection urlConnection = requestInfo.getConnection();
-            downloadLink.setName(getFileNameFormHeader(urlConnection));
+            downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
             downloadLink.setDownloadMax(urlConnection.getContentLength());
             return true;
         } catch (Exception e) {

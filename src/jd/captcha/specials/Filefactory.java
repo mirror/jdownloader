@@ -90,7 +90,7 @@ public class Filefactory {
 
         }
 
-        ArrayList<PixelObject> os2 = new ArrayList<PixelObject>();
+        
 
         ArrayList<Letter> ret = new ArrayList<Letter>();
         int i = 0;

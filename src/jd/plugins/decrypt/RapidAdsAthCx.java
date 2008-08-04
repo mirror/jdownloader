@@ -34,8 +34,6 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidads\\.ath\\.cx/crypter/.+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public RapidAdsAthCx() {
         super();
     }
@@ -48,9 +46,7 @@ public class RapidAdsAthCx extends PluginForDecrypt {
 
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
             String temp = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<p><p><form action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            if (temp == null) {
-                return null;
-            }
+            if (temp == null) { return null; }
             String[] helpa = temp.split("&#");
             String help = "";
             for (int i = 0; i < helpa.length; i++) {

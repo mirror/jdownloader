@@ -136,7 +136,7 @@ public class Freaksharenet extends PluginForHost {
         // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -144,7 +144,7 @@ public class Freaksharenet extends PluginForHost {
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
-        dl.setResume(false);        
+        dl.setResume(false);
         dl.startDownload();
     }
 

@@ -33,8 +33,6 @@ public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
 
-    
-
     public AnimeLoadsorg() {
         super();
     }

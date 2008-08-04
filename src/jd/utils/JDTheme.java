@@ -55,9 +55,7 @@ public class JDTheme {
 
     public static Vector<String> getThemeIDs() {
         File dir = JDUtilities.getResourceFile(THEME_DIR);
-        if (!dir.exists()) {
-            return null;
-        }
+        if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
         Vector<String> ret = new Vector<String>();
         for (File element : files) {
@@ -72,9 +70,7 @@ public class JDTheme {
             return key;
         }
 
-        if (data.containsKey(key)) {
-            return JDUtilities.UTF8Decode(data.get(key));
-        }
+        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)); }
         logger.info("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {

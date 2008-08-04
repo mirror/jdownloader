@@ -111,10 +111,11 @@ public class Netloadin extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-        
+
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
 
@@ -250,17 +251,21 @@ public class Netloadin extends PluginForHost {
         // case PluginStep.STEP_PENDING:
         sleep(20000, downloadLink);
         // case PluginStep.STEP_DOWNLOAD:
-        
+
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
-        
+
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.startDownload();
 
     }
-    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-        
+
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
         // Login
@@ -341,7 +346,6 @@ public class Netloadin extends PluginForHost {
         // logger.info("Download " + finalURL);
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), sessionID, null, false);
-        
 
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
         dl.setResume(true);
@@ -472,7 +476,6 @@ public class Netloadin extends PluginForHost {
     // // XXX: ???
     // return null;
     // }
-
 
     @Override
     public void reset() {

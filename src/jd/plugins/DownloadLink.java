@@ -98,7 +98,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private long downloadMax;
 
     private String subdirectory = null;
-    
+
     private String browserurl = null;
 
     // /**
@@ -120,8 +120,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Zeigt an, ob dieser Downloadlink aktiviert ist
      */
     private boolean isEnabled;
-    
-    private boolean reset=false;
+
+    private boolean reset = false;
 
     private boolean isMirror = false;
 
@@ -224,7 +224,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.urlDownload = null;
         }
         if (name == null && urlDownload != null) {
-            this.name = Plugin.extractFileNameFromURL(this.getDownloadURL());
+            this.name = Plugin.extractFileNameFromURL(getDownloadURL());
         }
     }
 
@@ -370,14 +370,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
         return urlDownload;
     }
-    
-    public String getBrowserUrl(){
-        if (this.browserurl!=null) return browserurl;
+
+    public String getBrowserUrl() {
+        if (browserurl != null) { return browserurl; }
         return getDownloadURL();
     }
-    
-    public void setBrowserUrl(String url){
-        this.browserurl=url;
+
+    public void setBrowserUrl(String url) {
+        browserurl = url;
     }
 
     // /**
@@ -441,11 +441,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getFileOutput0() {
         if (subdirectory != null) {
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
-                return new File(new File(getFilePackage().getDownloadDirectory(),File.separator+subdirectory), getName()).getAbsolutePath();
+                return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
             } else {
 
                 return null;
-            }            
+            }
         } else {
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
                 return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
@@ -736,7 +736,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
-        reset =true;
+        reset = true;
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
@@ -744,14 +744,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus = new LinkStatus(this);
 
     }
-    
-    public boolean statusResetFlag(){
-        return this.reset;
+
+    public boolean statusResetFlag() {
+        return reset;
     }
-    
-    public boolean resetResetFlag(){        
-        boolean temp=this.reset;
-        this.reset=false;
+
+    public boolean resetResetFlag() {
+        boolean temp = reset;
+        reset = false;
         return temp;
     }
 
@@ -836,15 +836,16 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param downloadPath
      *            der neue downloadPfad
      */
-    public void setSubdirectory(String subdir) {        
+    public void setSubdirectory(String subdir) {
         if (subdir != null && name.length() > 0) {
-            this.subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
-        }else
-            this.subdirectory=null;
+            subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
+        } else {
+            subdirectory = null;
+        }
     }
 
     public String getSubdirectory() {
-        return this.subdirectory;
+        return subdirectory;
     }
 
     /**
@@ -855,12 +856,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setEnabled(boolean isEnabled) {
         this.isEnabled = isEnabled;
-        
+
         if (!isEnabled) {
             setAborted(true);
         } else {
             setAborted(false);
-           
+
         }
         if (isEnabled == true) {
             getLinkStatus().resetWaitTime();
@@ -994,9 +995,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setStaticFileName(String newStaticFileName) {
         if (newStaticFileName != null && newStaticFileName.length() > 3) {
-        	this.staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newStaticFileName));
+            staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newStaticFileName));
             updatePartID();
-        }else this.staticFileName=null;
+        } else {
+            staticFileName = null;
+        }
     }
 
     /**

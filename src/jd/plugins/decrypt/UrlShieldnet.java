@@ -45,8 +45,6 @@ public class UrlShieldnet extends PluginForDecrypt {
     private File captchaFile;
     private String passCode = null;
 
-    
-
     public UrlShieldnet() {
         super();
     }

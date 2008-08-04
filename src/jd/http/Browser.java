@@ -37,14 +37,10 @@ public class Browser {
     }
 
     public static void forwardCookies(Request request) {
-        if (request == null) {
-            return;
-        }
+        if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
-        if (cookies == null) {
-            return;
-        }
+        if (cookies == null) { return; }
         request.getCookies().putAll(cookies);
 
     }
@@ -77,9 +73,7 @@ public class Browser {
     }
 
     public static void updateCookies(Request request) {
-        if (request == null) {
-            return;
-        }
+        if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
         if (cookies == null) {
@@ -178,9 +172,7 @@ public class Browser {
     }
 
     public String getRedirectLocation() {
-        if (request == null) {
-            return null;
-        }
+        if (request == null) { return null; }
         return request.getLocation();
 
     }
@@ -277,7 +269,9 @@ public class Browser {
             }
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
-           if(post!=null) request.getPostData().putAll(post);
+            if (post != null) {
+            request.getPostData().putAll(post);
+        }
             if (headers != null) {
                 request.getHeaders().putAll(headers);
             }
@@ -422,14 +416,12 @@ public class Browser {
 
     @Override
     public String toString() {
-        if (request == null) {
-            return "Browser. no rquest yet";
-        }
+        if (request == null) { return "Browser. no rquest yet"; }
         return request.toString();
     }
 
-    public Regex getRegex(String string) {    
-        return new Regex(this,string);
+    public Regex getRegex(String string) {
+        return new Regex(this, string);
     }
 
 }

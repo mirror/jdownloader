@@ -187,9 +187,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     @Override
     public String getLinkName() {
-        if (cryptedLink == null) {
-            return "";
-        }
+        if (cryptedLink == null) { return ""; }
         try {
             return new URL(cryptedLink).getFile();
         } catch (MalformedURLException e) {

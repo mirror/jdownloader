@@ -130,7 +130,7 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
-             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
+            linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
             fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
@@ -143,7 +143,7 @@ public class SingleDownloadController extends Thread {
                     e.printStackTrace();
 
                     linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ")+JDUtilities.convertExceptionReadable(e));
+                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
                 }
             }
 
@@ -153,10 +153,10 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setStatus(LinkStatus.TODO);
                 return;
             }
-            if(linkStatus.isFailed()){
+            if (linkStatus.isFailed()) {
                 logger.severe("\r\nError occured- " + downloadLink.getLinkStatus());
             }
-        
+
             switch (linkStatus.getLatestStatus()) {
 
             case LinkStatus.ERROR_IP_BLOCKED:
@@ -172,7 +172,7 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
-         
+
             case LinkStatus.ERROR_FATAL:
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -197,22 +197,16 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_TIMEOUT_REACHED:
                 onErrorNoConnection(downloadLink, currentPlugin);
                 break;
-                
+
             default:
                 if (linkStatus.hasStatus(LinkStatus.FINISHED)) {
                     logger.severe("\r\nFinished- " + downloadLink.getLinkStatus());
                     onDownloadFinishedSuccessFull(downloadLink);
-                }else{
-                retry(downloadLink,currentPlugin);
+                } else {
+                    retry(downloadLink, currentPlugin);
                 }
             }
-            
-            
-      
-        
-            
-         
-        
+
             // if (linkStatus.isStatus(LinkStatus.TODO) &&
             // currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() &&
             // !downloadLink.isWaitingForReconnect()) {
@@ -229,7 +223,6 @@ public class SingleDownloadController extends Thread {
             // this.onErrorRetry(downloadLink, currentPlugin);
             // return;
             // }
-      
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -327,8 +320,6 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
-
- 
 
         downloadLink.requestGuiUpdate();
     }
@@ -459,16 +450,16 @@ public class SingleDownloadController extends Thread {
     // }
 
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
-        LinkStatus linkStatus=downloadLink.getLinkStatus();
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Serverconnection");
         long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        linkStatus.setWaitTime( milliSeconds);
+        linkStatus.setWaitTime(milliSeconds);
 
         downloadLink.setEnabled(false);
-if(linkStatus.getErrorMesage()==null){
-    linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
-}
+        if (linkStatus.getErrorMesage() == null) {
+            linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
+        }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }
@@ -535,7 +526,7 @@ if(linkStatus.getErrorMesage()==null){
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
             status.addStatus(LinkStatus.ERROR_FATAL);
             status.setErrorMessage(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
-            return ;
+            return;
         }
         status.setWaitTime((int) milliSeconds);
         plugin.setHosterWaittime((int) milliSeconds);

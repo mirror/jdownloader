@@ -125,13 +125,13 @@ public class SiloFilescom extends PluginForHost {
 
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

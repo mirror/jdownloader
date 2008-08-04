@@ -123,7 +123,7 @@ public class MediafireCom extends PluginForHost {
         requestInfo = HTTP.getRequest(new URL("http://www.mediafire.com/dynamic/download.php?qk=" + para[1] + "&pk=" + para[3] + "&r=" + para[5]), requestInfo.getCookie(), url, true);
         String finishURL = "http://" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn\\+'/'\\+ ", " \\+'g/'") + " = '", "'") + "g/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jU='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jK='", "'");
         HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
     }
 

@@ -249,7 +249,8 @@ public class WebUpdater implements Serializable {
                 }
                 // if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER,
                 // false)){
-                // if(tmp[0].startsWith("jd/captcha/methods/")&& tmp[0].endsWith("mth")){
+                // if(tmp[0].startsWith("jd/captcha/methods/")&&
+                // tmp[0].endsWith("mth")){
                 // log("Autotrain filter: "+tmp[0]);
                 // continue;
                 // }

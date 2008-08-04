@@ -256,9 +256,7 @@ public class Property implements Serializable {
         if (logger == null) {
             logger = JDUtilities.getLogger();
         }
-        if (JDUtilities.getController() == null) {
-            return;
-        }
+        if (JDUtilities.getController() == null) { return; }
         try {
             if (old == null && value != null) {
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_JDPROPERTY_CHANGED, key));

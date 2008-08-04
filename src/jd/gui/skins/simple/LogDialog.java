@@ -262,9 +262,7 @@ public class LogDialog extends JFrame implements ActionListener {
             }
             content = TextAreaDialog.showDialog(owner, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 
-            if (content == null || content.length() == 0) {
-                return;
-            }
+            if (content == null || content.length() == 0) { return; }
 
             String name = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.askName", "Your name?"));
             String question = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("gui.logger.askQuestion", "Please describe your Problem/Bug/Question!"));

@@ -131,9 +131,9 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public static Interaction[] getInteractionList() {
         return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink(), /*
-         * new
-         * DLCConverter(),
-         */new Backup() };
+                                                                                                             * new
+                                                                                                             * DLCConverter(),
+                                                                                                             */new Backup() };
     }
 
     /**
@@ -211,9 +211,7 @@ public abstract class Interaction extends Property implements Serializable {
 
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
-        if (interacts == 0) {
-            return false;
-        }
+        if (interacts == 0) { return false; }
         return ret;
     }
 
@@ -389,9 +387,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean isAlive() {
-        if (thread == null) {
-            return false;
-        }
+        if (thread == null) { return false; }
         return thread.isAlive();
     }
 

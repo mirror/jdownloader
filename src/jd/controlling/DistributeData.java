@@ -118,9 +118,7 @@ public class DistributeData extends ControlBroadcaster {
      * @return
      */
     private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
-        if (decryptedLinks.size() == 0) {
-            return false;
-        }
+        if (decryptedLinks.size() == 0) { return false; }
         boolean hasDecryptedLinks = false;
 
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
@@ -188,9 +186,7 @@ public class DistributeData extends ControlBroadcaster {
     public Vector<DownloadLink> findLinks(boolean searchpw) {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) {
-            return new Vector<DownloadLink>();
-        }
+        if (JDUtilities.getPluginsForHost() == null) { return new Vector<DownloadLink>(); }
         Vector<String> foundpassword = new Vector<String>();
         if (searchpw == true) {
             foundpassword = HTMLParser.findPasswords(data);
@@ -260,8 +256,8 @@ public class DistributeData extends ControlBroadcaster {
                 data = pHost.cutMatches(data);
             }
         }
-        
-        data=data.replaceAll("http://", "httpviajd://");
+
+        data = data.replaceAll("http://", "httpviajd://");
         iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             PluginForHost pHost = iteratorHost.next();
@@ -277,7 +273,7 @@ public class DistributeData extends ControlBroadcaster {
                 data = pHost.cutMatches(data);
             }
         }
-        data=data.replaceAll("httpviajd://", "http://");
+        data = data.replaceAll("httpviajd://", "http://");
 
         return links;
     }
@@ -289,9 +285,7 @@ public class DistributeData extends ControlBroadcaster {
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (JDUtilities.getPluginsForDecrypt() == null) {
-            return decryptedLinks;
-        }
+        if (JDUtilities.getPluginsForDecrypt() == null) { return decryptedLinks; }
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             PluginForDecrypt pDecrypt = iteratorDecrypt.next();

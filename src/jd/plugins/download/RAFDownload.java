@@ -222,10 +222,10 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            // downloadLink.getLinkStatus().addStatus(LinkStatus.
                             // CRC_STATUS_OK);
                         } else {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            // downloadLink.getLinkStatus().addStatus(LinkStatus.
                             // ERROR_CRC_STATUS_BAD);
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
 
@@ -257,7 +257,7 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
 
-            //linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            // linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             downloadLink.setDownloadMax(fileSize);
             setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
             if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
@@ -342,17 +342,18 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
+    @Override
     protected boolean writeChunkBytes(Chunk chunk) {
         if (writeType) {
             ByteBuffer buffer = ByteBuffer.allocateDirect(chunk.buffer.limit());
             buffer.put(chunk.buffer);
             buffer.flip();
             synchronized (bufferList) {
-                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(),chunk.getCurrentBytesPosition() - 1, chunk.getID()));
+                bufferList.add(new ChunkBuffer(buffer, chunk.getWritePosition(), chunk.getCurrentBytesPosition() - 1, chunk.getID()));
                 // logger.info("new buffer. size: " + bufferList.size());
             }
 
-            if (this.writer == null) {
+            if (writer == null) {
                 writer = new WriterWorker();
 
             }
@@ -369,7 +370,9 @@ public class RAFDownload extends DownloadInterface {
                 synchronized (outputChannel) {
                     outputFile.seek(chunk.getWritePosition());
                     outputChannel.write(chunk.buffer);
-                    if (chunk.getID() >= 0) downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
+                    if (chunk.getID() >= 0) {
+                        downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
+                    }
 
                     return true;
                 }

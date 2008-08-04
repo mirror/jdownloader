@@ -409,7 +409,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         boolean hasInProgressLinks;
         boolean hasTempDisabledLinks;
         aborted = false;
-int stopCounter=5;
+        int stopCounter = 5;
         int currentTotalSpeed = 0;
         int inProgress = 0;
         while (aborted != true) {
@@ -444,11 +444,11 @@ int stopCounter=5;
 
                         }
 
-//                        if (!link.isEnabled()) {
-//                            continue;
-//                        }
+                        // if (!link.isEnabled()) {
+                        // continue;
+                        // }
                         // Link mit Wartezeit in der queue
-                        if (link.isEnabled()&&linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                        if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             if (linkStatus.getRemainingWaittime() == 0) {
                                 // reaktiviere Downloadlink
                                 linkStatus.reset();
@@ -456,19 +456,18 @@ int stopCounter=5;
                             }
 
                         }
-                        
-                        
+
                         if (linkStatus.getRemainingWaittime() > 0) {
                             hasWaittimeLinks = true;
                             updates.add(link);
 
                         }
-                        if (link.isEnabled()&&linkStatus.isPluginActive()) {
+                        if (link.isEnabled() && linkStatus.isPluginActive()) {
                             // logger.info("ip: "+link);
                             hasInProgressLinks = true;
 
                         }
-                        if (link.isEnabled()&&linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                             inProgress++;
                             currentTotalSpeed += link.getDownloadSpeed();
                         }
@@ -519,21 +518,21 @@ int stopCounter=5;
                     deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
 
                 }
-                int ret=0;
-                if (Interaction.getInteractionsRunning() == 0 && (activeDownloadControllers.size() < getSimultanDownloadNum() && !pause)) {
+                int ret = 0;
+                if (Interaction.getInteractionsRunning() == 0 && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
 
-                    ret= setDownloadActive();
+                    ret = setDownloadActive();
 
-                } 
-                if(ret==0) {
+                }
+                if (ret == 0) {
 
                     if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {
                         stopCounter--;
-                        if(stopCounter==0){
-                        totalSpeed = 0;
-                        logger.info("Alle Downloads beendet");
+                        if (stopCounter == 0) {
+                            totalSpeed = 0;
+                            logger.info("Alle Downloads beendet");
 
-                        break;
+                            break;
                         }
 
                     }

@@ -34,8 +34,6 @@ public class UpPicoasisNet extends PluginForDecrypt {
     final static String host = "up.picoasis.net";
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public UpPicoasisNet() {
         super();
     }
@@ -48,9 +46,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
 
             String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) {
-                return null;
-            }
+            if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();

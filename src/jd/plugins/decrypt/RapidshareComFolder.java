@@ -37,8 +37,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
     private String para = "";
     private String password = "";
 
-    
-
     public RapidshareComFolder() {
         super();
     }

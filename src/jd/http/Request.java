@@ -50,7 +50,7 @@ public abstract class Request {
      * @return
      */
     public static HashMap<String, String> parseQuery(String query) {
-        if(query==null)return null;
+        if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
             try {
@@ -61,9 +61,7 @@ public abstract class Request {
             }
         }
 
-        if (query == null) {
-            return ret;
-        }
+        if (query == null) { return ret; }
         try {
             StringTokenizer st = new StringTokenizer(query, "&=");
             while (st.hasMoreTokens()) {
@@ -111,9 +109,7 @@ public abstract class Request {
 
     private void collectCookiesFromConnection() {
         Collection<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
-        if (cookieHeaders == null) {
-            return;
-        }
+        if (cookieHeaders == null) { return; }
         if (cookies == null) {
             cookies = new HashMap<String, String>();
         }
@@ -138,7 +134,7 @@ public abstract class Request {
         postRequest(httpConnection);
 
         collectCookiesFromConnection();
-        while (followRedirects && httpConnection.getHeaderField("Location") != null && httpConnection.getHeaderField("Location").length()>8) {
+        while (followRedirects && httpConnection.getHeaderField("Location") != null && httpConnection.getHeaderField("Location").length() > 8) {
             followCounter++;
             if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
 
@@ -151,9 +147,7 @@ public abstract class Request {
     }
 
     public boolean containsHTML(String html) {
-        if (htmlCode == null) {
-            return false;
-        }
+        if (htmlCode == null) { return false; }
         return htmlCode.contains(html);
     }
 
@@ -168,9 +162,7 @@ public abstract class Request {
      * cookies.put(st.nextToken().trim(), st.nextToken().trim()); }
      */
     public String followRedirect() throws IOException {
-        if (getLocation() == null) {
-            return null;
-        }
+        if (getLocation() == null) { return null; }
         try {
             url = new URL(getLocation());
 
@@ -188,9 +180,7 @@ public abstract class Request {
 
     public long getContentLength() {
 
-        if (httpConnection == null) {
-            return -1;
-        }
+        if (httpConnection == null) { return -1; }
         return httpConnection.getContentLength();
     }
 
@@ -203,9 +193,7 @@ public abstract class Request {
 
     public String getCookieString() {
         {
-            if (!hasCookies()) {
-                return null;
-            }
+            if (!hasCookies()) { return null; }
 
             StringBuffer buffer = new StringBuffer();
             boolean first = true;
@@ -241,9 +229,7 @@ public abstract class Request {
     }
 
     public String getLocation() {
-        if (httpConnection == null) {
-            return null;
-        }
+        if (httpConnection == null) { return null; }
         return httpConnection.getHeaderField("Location");
     }
 
@@ -270,16 +256,12 @@ public abstract class Request {
     }
 
     public String getResponseHeader(String key) {
-        if (httpConnection == null) {
-            return null;
-        }
+        if (httpConnection == null) { return null; }
         return httpConnection.getHeaderField(key);
     }
 
     public Map<String, List<String>> getResponseHeaders() {
-        if (httpConnection == null) {
-            return null;
-        }
+        if (httpConnection == null) { return null; }
         return httpConnection.getHeaderFields();
     }
 
@@ -320,11 +302,11 @@ public abstract class Request {
     }
 
     public void openConnection() throws IOException {
-        if(Sniffy.hasSniffer()){
+        if (Sniffy.hasSniffer()) {
             JDUtilities.getLogger().severe("Sniffer Software detected");
             throw new IOException("Sniffer found");
         }
-        
+
         try {
             long tima = System.currentTimeMillis();
             httpConnection = new HTTPConnection(url.openConnection());
@@ -410,9 +392,7 @@ public abstract class Request {
 
     @Override
     public String toString() {
-        if (!requested) {
-            return "Request not sent yet";
-        }
+        if (!requested) { return "Request not sent yet"; }
         if (htmlCode == null || htmlCode.length() == 0) {
             if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
             return "No htmlCode read";

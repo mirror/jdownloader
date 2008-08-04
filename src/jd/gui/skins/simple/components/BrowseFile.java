@@ -175,9 +175,7 @@ public class BrowseFile extends JPanel implements ActionListener {
      *            the currentPath to set
      */
     public void setCurrentPath(final File currentPath) {
-        if (currentPath == null) {
-            return;
-        }
+        if (currentPath == null) { return; }
         this.currentPath = currentPath;
 
         txtInput.setText(currentPath.getAbsolutePath());

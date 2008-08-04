@@ -66,9 +66,7 @@ public class UploadedTo {
 
         Vector<PixelObject> letters = UploadedTo.getObjects(captcha);
 
-        if (letters == null) {
-            return null;
-        }
+        if (letters == null) { return null; }
 
         Letter[] ret = new Letter[letters.size()];
         for (int i = 0; i < letters.size(); i++) {
@@ -109,12 +107,8 @@ public class UploadedTo {
         Collections.sort(objects, new Comparator<PixelObject>() {
             public int compare(PixelObject obj1, PixelObject obj2) {
 
-                if (obj1.getLocation()[0] < obj2.getLocation()[0]) {
-                    return 1;
-                }
-                if (obj1.getLocation()[0] > obj2.getLocation()[0]) {
-                    return -1;
-                }
+                if (obj1.getLocation()[0] < obj2.getLocation()[0]) { return 1; }
+                if (obj1.getLocation()[0] > obj2.getLocation()[0]) { return -1; }
                 return 0;
             }
         });

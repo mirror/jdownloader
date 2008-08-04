@@ -65,8 +65,8 @@ public class YouTubeCom extends PluginForDecrypt {
             String t = "";
             String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
             if (match == null) { return null; }
-            
-            /*DownloadUrl holen*/
+
+            /* DownloadUrl holen */
             String[] lineSub = match.split(",|:");
             for (int i = 0; i < lineSub.length; i++) {
                 String s = lineSub[i];
@@ -78,8 +78,8 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-            
-            /*Konvertierungsmöglichkeiten adden*/
+
+            /* Konvertierungsmöglichkeiten adden */
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEOMP4);
             }
@@ -102,7 +102,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 thislink.setBrowserUrl(parameter);
                 thislink.setStaticFileName(name + ".tmp");
                 thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-                thislink.setProperty("convertto", ConvertTo.name());               
+                thislink.setProperty("convertto", ConvertTo.name());
                 decryptedLinks.add(thislink);
             }
         } catch (IOException e) {

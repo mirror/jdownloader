@@ -33,8 +33,6 @@ public class Linkshield extends PluginForDecrypt {
     static private final String host = "www.linkshield.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Linkshield() {
         super();
     }

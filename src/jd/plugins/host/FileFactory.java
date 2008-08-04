@@ -75,7 +75,7 @@ public class FileFactory extends PluginForHost {
     private File captchaFile;
     private String postTarget;
     private RequestInfo requestInfo;
-    
+
     private int wait;
 
     public FileFactory() {
@@ -94,6 +94,7 @@ public class FileFactory extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         parameter.setUrlDownload(parameter.getDownloadURL().replaceAll(".com//", ".com/"));
@@ -239,8 +240,6 @@ public class FileFactory extends PluginForHost {
 
         }
 
-        
-        
         if (requestInfo.getConnection().getHeaderField("Location") != null) {
             requestInfo = HTTP.getRequest(new URL(requestInfo.getConnection().getHeaderField("Location")));
 
@@ -267,11 +266,13 @@ public class FileFactory extends PluginForHost {
     }
 
     // by eXecuTe
-    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
-
 
         if (user == null || pass == null) {
 
@@ -329,7 +330,7 @@ public class FileFactory extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        HTTPConnection urlConnection = requestInfo.getConnection();       
+        HTTPConnection urlConnection = requestInfo.getConnection();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
@@ -466,9 +467,6 @@ public class FileFactory extends PluginForHost {
      * 
      * return ret; }
      */
-
-
-
 
     @Override
     public void init() {

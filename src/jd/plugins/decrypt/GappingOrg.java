@@ -33,8 +33,6 @@ public class GappingOrg extends PluginForDecrypt {
     final static String host = "gapping.org";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?gapping\\.org/(index\\.php\\?folderid=[0-9]+|file\\.php\\?id=.+|f/.+)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public GappingOrg() {
         super();
     }

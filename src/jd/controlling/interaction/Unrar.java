@@ -45,9 +45,7 @@ class mergeFile extends File {
     public boolean equals(Object obj) {
         if (obj instanceof File) {
             File file = (File) obj;
-            if (!file.getParentFile().equals(getParentFile())) {
-                return false;
-            }
+            if (!file.getParentFile().equals(getParentFile())) { return false; }
             String oName = file.getName(), name = getName();
             String matcher = name.matches(".*\\.\\a.$") ? name.replaceFirst("\\.a.$", "") : name.replaceFirst("\\.[\\d]+($|\\..*)", "");
             String oMatcher = oName.matches(".*\\.\\a.$") ? oName.replaceFirst("\\.a.$", "") : oName.replaceFirst("\\.[\\d]+($|\\..*)", "");

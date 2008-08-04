@@ -13,6 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -138,7 +139,7 @@ public class SpeedySharecom extends PluginForHost {
         /* Datei herunterladen */
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), null, url, postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();
-        String filename = getFileNameFormHeader(urlConnection);
+        String filename = Plugin.getFileNameFormHeader(urlConnection);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -151,7 +152,7 @@ public class SpeedySharecom extends PluginForHost {
             // step.setParameter("Wrong Password");
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
     }
 

@@ -61,9 +61,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
     private String rootDir;
 
     public JDClassLoader(String rootDir, ClassLoader classLoaderParent) {
-        if (rootDir == null) {
-            throw new IllegalArgumentException("Null root directory");
-        }
+        if (rootDir == null) { throw new IllegalArgumentException("Null root directory"); }
         this.rootDir = rootDir;
         this.classLoaderParent = classLoaderParent;
         logger.fine("rootDir:" + rootDir);
@@ -128,9 +126,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
         URL url;
         url = rootClassLoader.findResource(name);
-        if (url != null) {
-            return url;
-        }
+        if (url != null) { return url; }
 
         return super.findResource(name);
     }
@@ -162,13 +158,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (url != null) { return url; }
         url = super.getResource(new String(key));
 
-        if (url != null) {
-            return url;
-        }
+        if (url != null) { return url; }
         url = classLoaderParent.getResource(new String(key));
-        if (url != null) {
-            return url;
-        }
+        if (url != null) { return url; }
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
@@ -202,13 +194,9 @@ public class JDClassLoader extends java.lang.ClassLoader {
         if (url != null) { return url; }
         url = super.getResource(name);
 
-        if (url != null) {
-            return url;
-        }
+        if (url != null) { return url; }
         url = classLoaderParent.getResource(name);
-        if (url != null) {
-            return url;
-        }
+        if (url != null) { return url; }
         try {
             // Falls immer noch nichts vorhanden, wird ein neu erzeugtes File
             // Objekt zurückgegeben
@@ -231,9 +219,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
 
             urls.add(tmp);
         }
-        if (urls.size() > 0) {
-            return urls.elements();
-        }
+        if (urls.size() > 0) { return urls.elements(); }
         if (jars != null) {
             JarEntry entry;
             for (JarFile element : jars) {
@@ -291,9 +277,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                         byte data[] = loadClassData(element, entry);
 
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
-                        if (c == null) {
-                            throw new ClassNotFoundException(name);
-                        }
+                        if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
                         e.printStackTrace();
                     } catch (IOException e) {

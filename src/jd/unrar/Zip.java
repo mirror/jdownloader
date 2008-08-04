@@ -65,17 +65,13 @@ public class Zip {
     }
 
     private void addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
-        if (srcFile.endsWith("Thumbs.db")) {
-            return;
-        }
+        if (srcFile.endsWith("Thumbs.db")) { return; }
         if (Regex.matches(srcFile, excludeFilter)) {
             System.out.println("Filtered: " + srcFile);
             return;
         }
         File folder = new File(srcFile);
-        if (excludeFiles.contains(folder)) {
-            return;
-        }
+        if (excludeFiles.contains(folder)) { return; }
         if (folder.isDirectory()) {
             addFolderToZip(path, srcFile, zip);
         } else {
@@ -91,9 +87,7 @@ public class Zip {
 
     private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
         File folder = new File(srcFolder);
-        if (excludeFiles.contains(folder)) {
-            return;
-        }
+        if (excludeFiles.contains(folder)) { return; }
         for (String fileName : folder.list()) {
             if (Regex.matches(fileName, excludeFilter)) {
                 System.out.println("Filtered: " + fileName);

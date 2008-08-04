@@ -124,7 +124,7 @@ public class ArchivTo extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return;
             }
-            dl = new RAFDownload(this, downloadLink, urlConnection);            
+            dl = new RAFDownload(this, downloadLink, urlConnection);
             dl.startDownload();
             return;
 

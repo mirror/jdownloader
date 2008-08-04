@@ -61,9 +61,7 @@ public class HTTPConnection {
     }
 
     public long getContentLength() {
-        if (connection.getHeaderField("content-length")==null){
-            return -1;
-        }
+        if (connection.getHeaderField("content-length") == null) { return -1; }
         return new Long(connection.getHeaderField("content-length"));
     }
 

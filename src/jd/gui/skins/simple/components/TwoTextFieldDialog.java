@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
  */
 public class TwoTextFieldDialog extends JDialog implements ActionListener {
     private static final long serialVersionUID = -655039113948925165L;
-    
+
     public static String[] showDialog(JFrame frame, String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
         TwoTextFieldDialog tda = new TwoTextFieldDialog(frame, title, questionOne, questionTwo, defaultOne, defaultTwo);
         return tda.getTextArray();
@@ -55,16 +55,14 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
     protected Logger logger = JDUtilities.getLogger();
 
     private String[] text2 = new String[2];
-    
+
     private JTextField textField;
     private JTextField textField2;
-    
-    
 
     private TwoTextFieldDialog(JFrame frame, String title, String questionField1, String questionField2, String defField1, String defField2) {
         super(frame);
         GridBagConstraints c = new GridBagConstraints();
-		c.fill = GridBagConstraints.BOTH;
+        c.fill = GridBagConstraints.BOTH;
 
         setModal(false);
         setLayout(new GridBagLayout());
@@ -76,45 +74,45 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         setTitle(title);
         textField = new JTextField(defField1);
         textField2 = new JTextField(defField2);
-        
+
         setResizable(true);
 
         textField.setEditable(true);
         textField2.setEditable(true);
         textField.requestFocusInWindow();
-        
+
         c.weighty = 1.0;
-		c.weightx = 1.0;
-		c.gridwidth = 2;
-		c.gridheight = 1;
-		c.gridx = 0;
-		c.gridy = 0;
-		this.add(new JLabel(questionField1), c);
+        c.weightx = 1.0;
+        c.gridwidth = 2;
+        c.gridheight = 1;
+        c.gridx = 0;
+        c.gridy = 0;
+        this.add(new JLabel(questionField1), c);
 
-		c.gridx = 0;
-		c.gridy = 1;
-		this.add(textField, c);
+        c.gridx = 0;
+        c.gridy = 1;
+        this.add(textField, c);
 
-		c.gridx = 0;
-		c.gridy = 2;
-		this.add(new JLabel(questionField2), c);
+        c.gridx = 0;
+        c.gridy = 2;
+        this.add(new JLabel(questionField2), c);
 
-		c.gridx = 0;
-		c.gridy = 3;
-		this.add(textField2, c);
+        c.gridx = 0;
+        c.gridy = 3;
+        this.add(textField2, c);
 
-		c.weighty = 1.0;
-		c.weightx = 1.0;
-		c.gridwidth = 1;
-		c.gridheight = 1;
-		c.gridx = 0;
-		c.gridy = 4;
-		this.add(btnOk, c);
+        c.weighty = 1.0;
+        c.weightx = 1.0;
+        c.gridwidth = 1;
+        c.gridheight = 1;
+        c.gridx = 0;
+        c.gridy = 4;
+        this.add(btnOk, c);
 
-		c.gridx = 1;
-		c.gridy = 4;
-		this.add(btnCancel, c);
-        
+        c.gridx = 1;
+        c.gridy = 4;
+        this.add(btnCancel, c);
+
         pack();
 
         getRootPane().setDefaultButton(btnOk);
@@ -129,18 +127,18 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         setModal(true);
         setVisible(true);
     }
-    
+
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOk) {
-        	text2[0] = textField.getText();
-        	text2[1] = textField2.getText();
-        	dispose();
+            text2[0] = textField.getText();
+            text2[1] = textField2.getText();
+            dispose();
         } else {
             dispose();
         }
     }
 
     private String[] getTextArray() {
-    	return text2;
+        return text2;
     }
 }

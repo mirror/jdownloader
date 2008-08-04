@@ -9,9 +9,7 @@ public class JDHexUtils {
     public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
 
     public static byte[] getByteArray(String hexString) {
-        if (hexString == null) {
-            return null;
-        }
+        if (hexString == null) { return null; }
         int length = hexString.length();
         byte[] buffer = new byte[(length + 1) / 2];
         boolean evenByte = true;
@@ -67,9 +65,7 @@ public class JDHexUtils {
 
     static public String getHexString(String string) {
         try {
-            if (string == null) {
-                return null;
-            }
+            if (string == null) { return null; }
             byte[] raw = string.getBytes("ASCII");
             byte[] hex = new byte[2 * raw.length];
             int index = 0;

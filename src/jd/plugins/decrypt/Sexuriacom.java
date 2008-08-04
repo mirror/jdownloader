@@ -24,7 +24,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-
 public class Sexuriacom extends PluginForDecrypt {
     private static final String CODER = "ToKaM";
     private static final String HOST = "sexuria.com";
@@ -52,7 +51,7 @@ public class Sexuriacom extends PluginForDecrypt {
             String page = br.getPage(cryptedLink);
             String Links[] = new Regex(page, "href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE).getMatches(1);
             for (String Link : Links) {
-                decryptedLinks.add(this.createDownloadlink("http://sexuria.com/dl_links_" + Link));
+                decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + Link));
             }
             return decryptedLinks;
         } else if (new Regex(cryptedLink, patternSupported_Crypt).matches()) {
@@ -63,7 +62,7 @@ public class Sexuriacom extends PluginForDecrypt {
             String Links[] = new Regex(page, "value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE).getMatches(1);
             for (String Link : Links) {
                 br.getPage(Link);
-                DownloadLink dl_link = this.createDownloadlink(br.getRedirectLocation());
+                DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
                 logger.info(br.getRedirectLocation());

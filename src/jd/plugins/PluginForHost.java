@@ -45,7 +45,6 @@ public abstract class PluginForHost extends Plugin {
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
     private static HashMap<Class<? extends PluginForHost>, boolean[]> HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class<? extends PluginForHost>, boolean[]>();
 
-    
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     // public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
     // private static long END_OF_DOWNLOAD_LIMIT = 0;
@@ -57,7 +56,7 @@ public abstract class PluginForHost extends Plugin {
     private static final int ACCOUNT_NUM = 5;
     protected Browser br = new Browser();
     private boolean enablePremium = false;
-  
+
     // private boolean[] tmpAccountDisabled = new boolean[ACCOUNT_NUM];
 
     public boolean[] checkLinks(DownloadLink[] urls) {
@@ -70,7 +69,7 @@ public abstract class PluginForHost extends Plugin {
         requestInfo = null;
         request = null;
         dl = null;
-        br= new Browser();
+        br = new Browser();
         super.clean();
     }
 
@@ -90,7 +89,7 @@ public abstract class PluginForHost extends Plugin {
         for (int i = 1; i <= ACCOUNT_NUM; i++) {
             premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, (i) + ". " + JDLocale.L("plugins.hoster.premiumAccount", "Premium Account")));
+            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, i + ". " + JDLocale.L("plugins.hoster.premiumAccount", "Premium Account")));
             conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM + "_" + i, JDLocale.L("plugins.hoster.usePremium", "Premium Account verwenden"));
             premiumConfig.addEntry(conditionEntry);
             premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER + "_" + i, JDLocale.L("plugins.hoster.premiumUser", "Premium User")));
@@ -356,14 +355,11 @@ public abstract class PluginForHost extends Plugin {
     //
     // }
 
-
     public long getRemainingHosterWaittime() {
         // TODO Auto-generated method stub
         if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) { return 0; }
-        HashMap<Class<? extends PluginForHost>, Long> tmp = HOSTER_WAIT_UNTIL_TIMES;
-        return Math.max(0,  (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
+        return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
-
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
@@ -373,31 +369,32 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
-         if (!this.isAGBChecked()) {
-         
-         logger.severe("AGB not signed : " + this.getPluginID());
-         downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
-         downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.error.agb", "TOC not signed"));
-         return;
-         }
-         
-         if(true){
-             
-//             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
-//             downloadLink.getLinkStatus().setErrorMessage("bla und so");
-//             downloadLink.getLinkStatus().setValue(0);
-//             return;
-         }
-         
-         
+        if (!isAGBChecked()) {
+
+            logger.severe("AGB not signed : " + getPluginID());
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
+            downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.error.agb", "TOC not signed"));
+            return;
+        }
+
+        if (true) {
+
+            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // downloadLink.getLinkStatus().setErrorMessage("bla und so");
+            // downloadLink.getLinkStatus().setValue(0);
+            // return;
+        }
+
         // RequestInfo requestInfo;
-        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+        if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
             handleFree(downloadLink);
             return;
         }
         Account account = null;
         ArrayList<Account> disabled = new ArrayList<Account>();
-        if (!HOSTER_TMP_ACCOUNT_STATUS.containsKey(this.getClass())) HOSTER_TMP_ACCOUNT_STATUS.put(this.getClass(), new boolean[ACCOUNT_NUM]);
+        if (!HOSTER_TMP_ACCOUNT_STATUS.containsKey(this.getClass())) {
+            HOSTER_TMP_ACCOUNT_STATUS.put(this.getClass(), new boolean[ACCOUNT_NUM]);
+        }
         boolean[] tmpAccountStatus = HOSTER_TMP_ACCOUNT_STATUS.get(this.getClass());
         for (int i = 0; i < ACCOUNT_NUM; i++) {
             if (!tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
@@ -479,7 +476,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void resetPluginGlobals() {
-        br= new Browser();
+        br = new Browser();
         resetHosterWaitTime();
     }
 
@@ -524,10 +521,8 @@ public abstract class PluginForHost extends Plugin {
         this.maxConnections = maxConnections;
     }
 
-
-
     public void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0 &&downloadLink.getDownloadLinkController()!=null&& !downloadLink.getDownloadLinkController().isAborted()) {
+        while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
 
             i -= 1000;
             downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));

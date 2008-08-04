@@ -116,7 +116,7 @@ public class Youtube extends PluginForHost {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
                 ConversionMode InType = ConversionMode.VIDEOFLV;
-                if ((convertto.equals(ConversionMode.VIDEOMP4)) || (convertto.equals(ConversionMode.VIDEO3GP))) {
+                if (convertto.equals(ConversionMode.VIDEOMP4) || convertto.equals(ConversionMode.VIDEO3GP)) {
                     InType = convertto;
                 }
 

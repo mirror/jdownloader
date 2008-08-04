@@ -56,9 +56,7 @@ public class UpdateStable {
     private void scanDir(File dir) {
         dir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                if (name.endsWith(".svn")) {
-                    return true;
-                }
+                if (name.endsWith(".svn")) { return true; }
                 if (new File(dir, name).isDirectory()) {
                     scanDir(new File(dir, name));
                 } else {

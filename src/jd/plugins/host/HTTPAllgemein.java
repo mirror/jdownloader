@@ -12,6 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -53,7 +54,7 @@ public class HTTPAllgemein extends PluginForHost {
             if (linkurl != null) {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), null, null, true);
                 HTTPConnection urlConnection = requestInfo.getConnection();
-                downloadLink.setName(getFileNameFormHeader(urlConnection));
+                downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadMax(urlConnection.getContentLength());
                 return true;
@@ -106,7 +107,7 @@ public class HTTPAllgemein extends PluginForHost {
         }
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), null, null, true);
-        HTTPConnection urlConnection = requestInfo.getConnection();        
+        HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);

@@ -103,11 +103,11 @@ public class Megauploadcom extends PluginForHost {
         return false;
     }
 
-    public void handlePremium(DownloadLink parameter,String user, String pass) throws Exception {
+    public void handlePremium(DownloadLink parameter, String user, String pass) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-  
+
         String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
         logger.info("PREMOIM");
         String url = "http://www.megaupload.com/de/";
@@ -143,7 +143,7 @@ public class Megauploadcom extends PluginForHost {
 
         // requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalurl),
         // Browser.getCookie(url,"user"), link, false);
-        urlConnection = br.openGetConnection(br.getRedirectLocation());        
+        urlConnection = br.openGetConnection(br.getRedirectLocation());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
@@ -237,7 +237,6 @@ public class Megauploadcom extends PluginForHost {
     // }
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-    
 
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
@@ -352,7 +351,7 @@ public class Megauploadcom extends PluginForHost {
             return;
 
         }
-        
+
         dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
 
         dl.startDownload();

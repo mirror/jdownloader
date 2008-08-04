@@ -59,16 +59,16 @@ public class DataHu extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-     
+
         try {
-            Browser br= new Browser();
-            
+            Browser br = new Browser();
+
             String url = downloadLink.getDownloadURL();
-           String page= br.getPage(url);
-      
-            if ( page==null||page.length() == 0) { return false; }
-            String[][] dat = new Regex(br, "<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">", Pattern.CASE_INSENSITIVE|Pattern.DOTALL).getMatches();
-            long length=Regex.getSize(dat[0][1].trim());
+            String page = br.getPage(url);
+
+            if (page == null || page.length() == 0) { return false; }
+            String[][] dat = new Regex(br, "<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).getMatches();
+            long length = Regex.getSize(dat[0][1].trim());
             downloadLink.setDownloadMax(length);
             downloadLink.setName(dat[0][0].trim());
             return true;
@@ -131,7 +131,7 @@ public class DataHu extends PluginForHost {
             return;
         }
 
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
         // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();

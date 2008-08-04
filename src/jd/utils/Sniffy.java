@@ -14,8 +14,8 @@ public final class Sniffy {
     public static Pattern[] whiteList = new Pattern[] { Pattern.compile("Sniffy", Pattern.CASE_INSENSITIVE) };
 
     public static boolean hasSniffer() {
-        if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV||JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL)return false;
-        if (OSDetector.isWindows()) { return hasWinSnifer();
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV || JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) { return false; }
+        if (OSDetector.isWindows()) { return Sniffy.hasWinSnifer();
 
         }
         return false;
@@ -48,7 +48,7 @@ public final class Sniffy {
             exec.start();
             exec.waitTimeout();
             String prem = exec.getStream() + " \r\n " + exec.getErrorStream();
-            if (!Regex.matches(prem, "could be a sniffer")) return false;
+            if (!Regex.matches(prem, "could be a sniffer")) { return false; }
             for (Pattern white : whiteList) {
 
                 list = white.matcher(list).replaceAll("");

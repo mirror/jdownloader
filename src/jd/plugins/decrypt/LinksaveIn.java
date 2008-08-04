@@ -37,8 +37,6 @@ public class LinksaveIn extends PluginForDecrypt {
 
     private String CODER = "JD-Team";
 
-    
-
     public LinksaveIn() {
         super();
     }

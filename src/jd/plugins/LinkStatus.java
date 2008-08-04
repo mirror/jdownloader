@@ -210,8 +210,8 @@ public class LinkStatus implements Serializable {
     }
 
     public long getRemainingWaittime() {
-        if(waitUntil>0&&!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
-            this.resetWaitTime();           
+        if (waitUntil > 0 && !hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
+            resetWaitTime();
         }
         long now = System.currentTimeMillis();
         long ab = waitUntil - now;
@@ -248,10 +248,10 @@ public class LinkStatus implements Serializable {
 
         //    
         if (hasStatus(ERROR_IP_BLOCKED) && getRemainingWaittime() > 0) {
-            if (statusText == null) {
+            if (errorMessage == null) {
                 ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000)));
             } else {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000))) + statusText;
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000))) + errorMessage;
 
             }
             return ret;
@@ -287,9 +287,9 @@ public class LinkStatus implements Serializable {
     }
 
     public long getTotalWaitTime() {
-        if(!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE|LinkStatus.ERROR_IP_BLOCKED)){
-            this.resetWaitTime();
-           
+        if (!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
+            resetWaitTime();
+
         }
         return totalWaitTime;
     }
@@ -339,7 +339,7 @@ public class LinkStatus implements Serializable {
 
         errorMessage = null;
         statusText = null;
-        this.retryCount = 0;
+        retryCount = 0;
         resetWaitTime();
 
     }
@@ -351,7 +351,9 @@ public class LinkStatus implements Serializable {
         }
         totalWaitTime = 0;
         waitUntil = 0;
-        if (downloadLink.getPlugin() != null) ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
+        if (downloadLink.getPlugin() != null) {
+            ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
+        }
     }
 
     public void setErrorMessage(String string) {
@@ -391,7 +393,7 @@ public class LinkStatus implements Serializable {
     }
 
     public void setWaitTime(long milliSeconds) {
-     
+
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;
 
@@ -405,7 +407,9 @@ public class LinkStatus implements Serializable {
                 int value;
                 try {
                     value = field.getInt(null);
-                    if (value == status) return field.getName();
+                    if (value == status) {
+                        return field.getName();
+                    }
 
                 } catch (IllegalArgumentException e) {
                     // TODO Auto-generated catch block
@@ -472,7 +476,7 @@ public class LinkStatus implements Serializable {
     }
 
     public int getRetryCount() {
-        return this.retryCount;
+        return retryCount;
 
     }
 

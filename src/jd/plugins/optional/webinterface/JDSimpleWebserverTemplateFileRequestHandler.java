@@ -75,16 +75,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 } else {
                     Single_Status = "deactivated";
                 }
-                double percent = next.getPercent()/100.0;
+                double percent = next.getPercent() / 100.0;
 
                 h_info.put("info_percent", f.format(percent));
                 h_info.put("download_status", Single_Status);
                 h_info.put("info_var", i + ". " + next.getName());
                 h_info.put("info_value", JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
                 h_info.put("download_id", i - 1);/*
-                                                     * von 0 anfangen für js
-                                                     * skripte
-                                                     */
+                 * von 0 anfangen für js
+                 * skripte
+                 */
                 v_info.addElement(h_info);
             }
             t.setParam("all_infos", v_info);
@@ -223,15 +223,15 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
                     Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
                     Chunk next = it.next();
-                    double percent = next.getPercent()/100.0;
+                    double percent = next.getPercent() / 100.0;
                     h_info.put("download_status", Single_Status);
                     h_info.put("info_var", JDLocale.L("download.chunks.connection", "Verbindung") + " " + i);
-                    h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + f.format(next.getPercent()/100.0)+" %");
+                    h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %");
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
-                                                         * von 0 anfangen für js
-                                                         * skripte
-                                                         */
+                     * von 0 anfangen für js
+                     * skripte
+                     */
                     v_info.addElement(h_info);
                 }
 

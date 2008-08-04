@@ -36,8 +36,6 @@ public class DreiDlAm extends PluginForDecrypt {
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public DreiDlAm() {
         super();
     }

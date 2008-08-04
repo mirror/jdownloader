@@ -48,7 +48,9 @@ public class ShareRocktEs extends PluginForDecrypt {
             matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getMatches(1);
         } else {
             String match = new Regex(cryptedLink, patternSupported_go).getFirstMatch();
-            if (match == null) return null;
+            if (match == null) {
+                return null;
+            }
             matches = new String[] { match };
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -64,11 +66,11 @@ public class ShareRocktEs extends PluginForDecrypt {
                     gotLink = true;
                     String link = new Regex(linksite, Pattern.compile("<iframe src='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                     if (link != null) {
-                        decryptedLinks.add(this.createDownloadlink(link));
+                        decryptedLinks.add(createDownloadlink(link));
                     } else {
                         link = new Regex(linksite, Pattern.compile("document\\.location='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                         if (link != null) {
-                            decryptedLinks.add(this.createDownloadlink(link));
+                            decryptedLinks.add(createDownloadlink(link));
                         }
                     }
                 }
@@ -103,6 +105,7 @@ public class ShareRocktEs extends PluginForDecrypt {
         return patternSupported;
     }
 
+    @Override
     public String getVersion() {
         String ret = new Regex("$Revision: 2086 $", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;

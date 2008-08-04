@@ -33,8 +33,6 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*", Pattern.CASE_INSENSITIVE);
 
-    
-
     public RsXXXBlog() {
         super();
         default_password.add("xxx-blog.dl.am");

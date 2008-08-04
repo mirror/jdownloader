@@ -36,8 +36,6 @@ public class SeCurNet extends PluginForDecrypt {
     private String LINK_OUT_TEMPLATE = "http://se-cur.net/out.php?d=";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public SeCurNet() {
         super();
     }

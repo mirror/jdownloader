@@ -36,8 +36,14 @@ public class MyvideoDe extends PluginForDecrypt {
     static private String host = "myvideo.de";
     static private final Pattern FILENAME = Pattern.compile("GetThis\\('(.*?)',", Pattern.CASE_INSENSITIVE);
     static public final Pattern DOWNLOADURL = Pattern.compile("SWFObject\\('http://myvideo.*?/player/.*?swf\\?(http://[\\w\\.\\-0-9]*//*.*?flv)&amp;ID=[0-9]+', 'video_player_swf'", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/" /*Das reicht, Titel dahinter nicht nötig*/, Pattern.CASE_INSENSITIVE);
-
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/" /*
+                                                                                                         * Das
+                                                                                                         * reicht,
+                                                                                                         * Titel
+                                                                                                         * dahinter
+                                                                                                         * nicht
+                                                                                                         * nötig
+                                                                                                         */, Pattern.CASE_INSENSITIVE);
 
     public MyvideoDe() {
         super();
@@ -49,22 +55,22 @@ public class MyvideoDe extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url,null,null,true);
+            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
 
             String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getFirstMatch();
-            String name = new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim();            
+            String name = new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim();
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-            
+
             ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray());
 
             DownloadLink thislink = createDownloadlink(link);
             thislink.setBrowserUrl(parameter);
             thislink.setStaticFileName(name + ".tmp");
             thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-            thislink.setProperty("convertto", ConvertTo.name());               
-            decryptedLinks.add(thislink);            
+            thislink.setProperty("convertto", ConvertTo.name());
+            decryptedLinks.add(thislink);
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -102,4 +108,4 @@ public class MyvideoDe extends PluginForDecrypt {
         String ret = new Regex("$Revision: 2121 $", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-}	
+}

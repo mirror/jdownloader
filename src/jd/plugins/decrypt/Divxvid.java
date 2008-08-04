@@ -45,8 +45,6 @@ public class Divxvid extends PluginForDecrypt {
      */
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
-    
-
     public Divxvid() {
         super();
         default_password.add("dxd-tivi");

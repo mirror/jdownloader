@@ -239,8 +239,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     private JList subscribedList;
 
-    
-
     public Newsfeeds() {
     }
 

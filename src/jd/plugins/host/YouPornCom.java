@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -47,7 +48,7 @@ public class YouPornCom extends PluginForHost {
         try {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter.getDownloadURL()), null, null, true);
             HTTPConnection urlConnection = requestInfo.getConnection();
-            parameter.setName(getFileNameFormHeader(urlConnection));
+            parameter.setName(Plugin.getFileNameFormHeader(urlConnection));
             parameter.setDownloadMax(urlConnection.getContentLength());
             return true;
         } catch (MalformedURLException e) {

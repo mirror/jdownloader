@@ -80,6 +80,7 @@ public class Filer extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         int maxCaptchaTries = 5;
@@ -166,24 +167,26 @@ public class Filer extends PluginForHost {
         sleep(61000, downloadLink);
 
         HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-        
-        logger.info("Filename: " + getFileNameFormHeader(con));
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+
+        logger.info("Filename: " + Plugin.getFileNameFormHeader(con));
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             // step.setParameter(20000l);
             return;
         }
-        
+
         dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(1);
         dl.startDownload();
 
     }
 
-    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
 
         String page = null;
         Browser br = new Browser();
@@ -194,9 +197,9 @@ public class Filer extends PluginForHost {
         br.getPage("http://www.filer.net/dl/" + id);
 
         HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-        
-        logger.info("Filename: " + getFileNameFormHeader(con));
-        if (getFileNameFormHeader(con) == null || getFileNameFormHeader(con).indexOf("?") >= 0) {
+
+        logger.info("Filename: " + Plugin.getFileNameFormHeader(con));
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             // step.setParameter(20000l);
@@ -246,7 +249,7 @@ public class Filer extends PluginForHost {
                 Form[] forms = br.getForms();
                 if (forms.length < 2) { return true; }
                 br.submitForm(forms[1]);
-                downloadLink.setName(getFileNameFormURL(new URL(br.getRedirectLocation())));
+                downloadLink.setName(Plugin.getFileNameFormURL(new URL(br.getRedirectLocation())));
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -291,8 +294,6 @@ public class Filer extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
-   
 
     @Override
     public void reset() {

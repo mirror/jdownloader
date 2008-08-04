@@ -33,8 +33,6 @@ public class FileFactoryFolder extends PluginForDecrypt {
     final static String host = "filefactory.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public FileFactoryFolder() {
         super();
     }

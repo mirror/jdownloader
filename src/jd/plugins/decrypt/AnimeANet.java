@@ -33,8 +33,6 @@ public class AnimeANet extends PluginForDecrypt {
     final static String host = "animea.net";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/.*", Pattern.CASE_INSENSITIVE);
 
-    
-
     public AnimeANet() {
         super();
     }

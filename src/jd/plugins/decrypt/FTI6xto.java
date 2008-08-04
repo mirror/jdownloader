@@ -33,8 +33,6 @@ public class FTI6xto extends PluginForDecrypt {
     static private final String host = "fucktheindustry.ru";
     private static final Pattern patternSupported = Pattern.compile("http://92\\.241\\.164\\.148/(file\\.php\\?id=\\d+|store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc)", Pattern.CASE_INSENSITIVE);
 
-    
-
     public FTI6xto() {
         super();
     }

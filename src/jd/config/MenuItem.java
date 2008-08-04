@@ -49,9 +49,7 @@ public class MenuItem extends Property {
     }
 
     public MenuItem get(int i) {
-        if (items == null) {
-            return null;
-        }
+        if (items == null) { return null; }
         return items.get(i);
     }
 
@@ -75,9 +73,7 @@ public class MenuItem extends Property {
 
     public int getSize() {
 
-        if (items == null) {
-            return 0;
-        }
+        if (items == null) { return 0; }
         return items.size();
     }
 

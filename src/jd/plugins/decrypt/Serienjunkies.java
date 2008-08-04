@@ -69,8 +69,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private boolean scatChecked = false;
 
-    
-
     public Serienjunkies() {
         super();
         setConfigElements();
@@ -132,9 +130,7 @@ public class Serienjunkies extends PluginForDecrypt {
             for (String element : links) {
                 Matcher m = pat.matcher(element);
 
-                if (!m.matches()) {
-                    return true;
-                }
+                if (!m.matches()) { return true; }
             }
         }
         return false;
@@ -203,17 +199,13 @@ public class Serienjunkies extends PluginForDecrypt {
                         break;
                     }
                 }
-                if (name == null) {
-                    return decryptedLinks;
-                }
+                if (name == null) { return decryptedLinks; }
                 request.getRequest(parameter);
                 name += " ";
                 String[] bet = null;
                 while (bet == null) {
                     name = name.substring(0, name.length() - 1);
-                    if (name.length() == 0) {
-                        return decryptedLinks;
-                    }
+                    if (name.length() == 0) { return decryptedLinks; }
                     try {
                         bet = request.getRegexp("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
                     } catch (Exception e) {
@@ -349,9 +341,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 for (String[] element3 : links) {
                     try {
 
-                        if (element3[1].contains(link)) {
-                            return new String[] { size, element3[0], element3[1], title };
-                        }
+                        if (element3[1].contains(link)) { return new String[] { size, element3[0], element3[1], title }; }
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
@@ -381,9 +371,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 break;
             }
         }
-        if (c == -1) {
-            return null;
-        }
+        if (c == -1) { return null; }
         for (String element : sp) {
             String mirror = null;
             try {
@@ -429,9 +417,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     private void sCatDialog(final boolean isP) {
-        if (scatChecked || useScat[1] == saveScat) {
-            return;
-        }
+        if (scatChecked || useScat[1] == saveScat) { return; }
         new Dialog(((SimpleGUI) JDUtilities.getGUI()).getFrame()) {
 
             /**

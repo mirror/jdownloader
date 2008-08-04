@@ -36,8 +36,6 @@ public class UploadJockeycom extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
     private String CODER = "JD-Team";
 
-    
-
     public UploadJockeycom() {
         super();
     }

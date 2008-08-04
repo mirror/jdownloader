@@ -34,8 +34,6 @@ public class FastDomainNet extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fast-domain\\.net/link\\.php\\?stack=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public FastDomainNet() {
         super();
     }

@@ -212,7 +212,8 @@ public class RapidshareCom {
         // Vector<PixelObject> whites = getWhiteObjects(is, lc.getOwner());
         //
         // if (whites.size() > 0 && whites.firstElement().getSize() > 100) {
-        // // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
+        // //
+        // BasicWindow.showImage(whiteSpace.firstElement().toLetter().getImage(2));
         // lc.setTmpExtensionError(2.0);
         // }
         //
@@ -496,14 +497,13 @@ public class RapidshareCom {
      * (l.grid[x][y] > limit && tmp[x][y] != 1) { PixelObject p = new
      * PixelObject(l); recFill(p, l, x, y, tmp, 0);
      * 
-     * if (!p.isBordered()) { ret.add(p); p.setColor(0x000000); }
-     *  // BasicWindow.showImage(p.toLetter().getImage(), x+" - // "+y);
-     *  } } } Collections.sort(ret, new Comparator<PixelObject>() { public int
+     * if (!p.isBordered()) { ret.add(p); p.setColor(0x000000); } //
+     * BasicWindow.showImage(p.toLetter().getImage(), x+" - // "+y); } } }
+     * Collections.sort(ret, new Comparator<PixelObject>() { public int
      * compare(PixelObject a, PixelObject b) { if (a.getSize() < b.getSize())
      * return 1; if (a.getSize() > b.getSize()) return -1; return 0; }
      * 
-     * }); return ret;
-     *  }
+     * }); return ret; }
      */
     private static Vector<PixelObject> getWhiteObjects(Letter l, JAntiCaptcha jac) {
 
@@ -648,10 +648,10 @@ public class RapidshareCom {
             int limit = 10 + 4 * dif.getWidth() / jac.getJas().getInteger("minimumLetterWidth");
             int sizefaktor = 1 * dif.getWidth() / jac.getJas().getInteger("minimumLetterWidth");
             if (pixp >= limit && vp > 25.0 + l.getIntegerProperty("ValityLimit", 0) + sizefaktor && w > 2 * jac.getJas().getInteger("minimumLetterWidth") + 5/*
-             * &&
-             * count <
-             * 7
-             */) {
+                                                                                                                                                                 * &&
+                                                                                                                                                                 * count <
+                                                                                                                                                                 * 7
+                                                                                                                                                                 */) {
 
                 logger.info("split in 22");
                 ret.remove(i);

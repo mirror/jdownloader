@@ -1,13 +1,11 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -29,8 +27,6 @@ public class Dataupde extends PluginForHost {
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
-    private RequestInfo requestInfo;
-
     public Dataupde() {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
@@ -57,10 +53,10 @@ public class Dataupde extends PluginForHost {
         try {
             downloadurl = downloadLink.getDownloadURL();
             br.getPage(downloadurl);
-            
-            if (!Regex.matches(br,"\\>Fehler\\!\\<")) {
+
+            if (!Regex.matches(br, "\\>Fehler\\!\\<")) {
                 String filename = br.getRegex("helvetica;\">(.*?)</div>").getFirstMatch();
-                String filesizeString=br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getFirstMatch();
+                String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getFirstMatch();
                 downloadLink.setDownloadMax(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
                 return true;
@@ -116,10 +112,10 @@ public class Dataupde extends PluginForHost {
         Form form = br.getForms()[2];
         form.withHtmlCode = false;
         br.setFollowRedirects(false);
-        HTTPConnection urlConnection=br.openFormConnection(form);
+        HTTPConnection urlConnection = br.openFormConnection(form);
 
         /* DownloadLimit? */
-        if ( br.getRedirectLocation() != null) {
+        if (br.getRedirectLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(120000L);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -127,13 +123,13 @@ public class Dataupde extends PluginForHost {
         }
 
         /* Datei herunterladen */
-         
+
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);        
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

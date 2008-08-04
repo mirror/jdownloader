@@ -63,6 +63,7 @@ public class MeinUpload extends PluginForHost {
         return false;
     }
 
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -84,12 +85,15 @@ public class MeinUpload extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-        
+
         dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
         dl.startDownload();
     }
 
-    public void handlePremium(DownloadLink downloadLink,Account account) throws Exception{String user=account.getUser();String pass=account.getPass();
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
@@ -138,7 +142,7 @@ public class MeinUpload extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
-           
+
             dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
             dl.setChunkNum(1);
             dl.setResume(false);
@@ -237,8 +241,6 @@ public class MeinUpload extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
- 
 
     @Override
     public void reset() {

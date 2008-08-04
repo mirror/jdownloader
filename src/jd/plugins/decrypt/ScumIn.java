@@ -38,8 +38,6 @@ public class ScumIn extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    
-
     public ScumIn() {
         super();
     }
