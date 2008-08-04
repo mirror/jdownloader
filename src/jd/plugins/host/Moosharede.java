@@ -1,14 +1,12 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -52,7 +50,6 @@ public class Moosharede extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         try {
             Browser.clearCookies(HOST);
@@ -111,14 +108,11 @@ public class Moosharede extends PluginForHost {
         }
 
         /* DownloadLink holen */
-        String url=br.getRegex("popup\\('(.*?)',").getFirstMatch();
-       br.openGetConnection(url);
-     
-      
+        String url = br.getRegex("popup\\('(.*?)',").getFirstMatch();
+        br.openGetConnection(url);
 
         /* Datei herunterladen */
-         
-      
+
         HTTPConnection urlConnection = br.openGetConnection(null);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

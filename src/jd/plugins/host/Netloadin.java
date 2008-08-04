@@ -32,32 +32,18 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-// http://www.netload.in/datei408a37036e4ceacf1d24857fbc9acbed.htm
-// http://netload.in/datei0eabdd9b6897b96bd2970a9b54afc284.htm
-//  http://netload.in/mindestens20zeichen
-//http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
 public class Netloadin extends PluginForHost {
     static private final String AGB_LINK = "http://netload.in/index.php?id=13";
-    // <img src="share/includes/captcha.php?t=1189894445" alt="Sicherheitsbild"
-    // />
 
     static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.1.0";
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+
     static private final String CODER = "JD-Team";
     static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
     static private final String DOWNLOAD_START = "download_load.tpl";
     static private String LINK_PASS = null;
 
-    // static private final String DOWNLOAD_WAIT = "download_wait.tpl";
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
-    /**
-     * Muss static bleiben!!!. Das Rapidshare Plugin merkt sich so, dass es
-     * gerade wartezeit hat. Überflüssige
-     */
 
     static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen)";
 
@@ -67,17 +53,9 @@ public class Netloadin extends PluginForHost {
     static private long LAST_FILE_STARTED = 0;
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
-    // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
     static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*|http://.*?netload\\.in/(?!index\\.php).*/.*)", Pattern.CASE_INSENSITIVE);
-    // <form method="post" action="index.php?id=10">
-    static private final String POST_URL = "<form method=\"post\" action=\"°\">";
-    private static final String PROPERTY_TRY_2_SIMULTAN = "TRY_2_SIMULTAN";
 
     private static String getID(String link) {
-        // http://www.netload.in/datei408a37036e4ceacf1d24857fbc9acbed.htm
-        // http://netload.in/datei0eabdd9b6897b96bd2970a9b54afc284.htm
-        // http://netload.in/mindestens20zeichen
-        // http://netload.in/datei47f13cf27d3f9104b19553abf57eba8e/Svyatie.iz.bundoka.by.Shevlyakov.part02.rar.htm
 
         return new Regex(link, "\\/datei([a-fA-F0-9]{32})").getFirstMatch();
 
@@ -100,32 +78,30 @@ public class Netloadin extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_WAIT_TIME:
         Browser.clearCookies(HOST);
         LAST_FILE_STARTED = System.currentTimeMillis();
 
         br.getPage(downloadLink.getDownloadURL());
-        checkPassword(downloadLink,linkStatus);
-        if(linkStatus.isFailed())return;
+        checkPassword(downloadLink, linkStatus);
+        if (linkStatus.isFailed()) return;
         String url = br.getRegex("<div class=\"Free_dl\"><a href=\"(.*?)\">").getFirstMatch();
         url = url.replaceAll("\\&amp\\;", "&");
 
         if (br.containsHTML(FILE_NOT_FOUND)) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
         }
 
         if (!br.containsHTML(DOWNLOAD_START)) {
             linkStatus.setErrorMessage("Download link not found");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
@@ -133,34 +109,29 @@ public class Netloadin extends PluginForHost {
         br.getPage(url);
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
         }
 
         if (!br.containsHTML(DOWNLOAD_CAPTCHA)) {
             linkStatus.setErrorMessage("Captcha not found");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
-        // logger.info(requestInfo.getHtmlCode());
+
         String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getFirstMatch();
         Form[] forms = br.getForms();
         Form captchaPost = forms[0];
 
-        // String fileID =
-        // HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode()).get("file_id");
-        // String postURL = "http://" + HOST + "/" +
-        // SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), POST_URL, 0);
-        // logger.info(captchaURL + " - " + fileID + " - " + postURL);
         if (captchaURL == null) {
             if (requestInfo.getHtmlCode().indexOf("download_load.tpl") >= 0) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
+
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
@@ -168,29 +139,26 @@ public class Netloadin extends PluginForHost {
 
         if (!JDUtilities.download(file, br.openGetConnection(captchaURL)) || !file.exists()) {
             logger.severe("Captcha donwload failed: " + captchaURL);
-            // this.sleep(nul,downloadLink);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-            // ImageIO
-            // Error");
+
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         captchaPost.vars.put("captcha_check", this.getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
         if (br.containsHTML(FILE_DAMAGED)) {
             logger.warning("File is on a damaged server");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
         }
 
         if (br.containsHTML(LIMIT_REACHED) || br.containsHTML(DOWNLOAD_LIMIT)) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
 
             long waitTime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
@@ -200,15 +168,13 @@ public class Netloadin extends PluginForHost {
             return;
         }
         if (br.containsHTML(CAPTCHA_WRONG)) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
+
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         String finalURL = br.getRegex(NEW_HOST_URL).getFirstMatch();
 
-        // case PluginStep.STEP_PENDING:
         sleep(20000, downloadLink);
-        // case PluginStep.STEP_DOWNLOAD:
 
         dl = new RAFDownload(this, downloadLink, br.openGetConnection(finalURL));
         dl.startDownload();
@@ -216,14 +182,14 @@ public class Netloadin extends PluginForHost {
     }
 
     private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) {
-        if(!br.containsHTML("download_password"))return;
+        if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
 
         // falls das pw schon gesetzt und gespeichert wurde.. versucht er es
         // damit
         if (pass != null && br.containsHTML("download_password")) {
             Form[] forms = br.getForms();
-            Form pw = forms[forms.length-1];
+            Form pw = forms[forms.length - 1];
             pw.vars.put("password", pass);
             br.submitForm(pw);
         }
@@ -231,7 +197,7 @@ public class Netloadin extends PluginForHost {
         int maxretries = 3;
         while (br.containsHTML("download_password") && maxretries-- >= 0) {
             Form[] forms = br.getForms();
-            Form pw = forms[forms.length-1];
+            Form pw = forms[forms.length - 1];
             pw.vars.put("password", pass = JDUtilities.getGUI().showUserInputDialog(String.format(JDLocale.L("plugins.netload.downloadPassword_question", "Password protected. Enter Password for %s"), downloadLink.getName())));
             br.submitForm(pw);
         }
@@ -246,7 +212,7 @@ public class Netloadin extends PluginForHost {
             downloadLink.setProperty("LINK_PASSWORD", pass);
             LINK_PASS = pass;
         }
-        
+
     }
 
     @Override
@@ -256,11 +222,6 @@ public class Netloadin extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_WAIT_TIME:
-        // Login
-
-        // SessionID holen
         br.setFollowRedirects(false);
         br.getPage("http://" + HOST);
         br.postPage("http://" + HOST + "/index.php", "txtuser=" + user + "&txtpass=" + pass + "&txtcheck=login&txtlogin=");
@@ -274,47 +235,36 @@ public class Netloadin extends PluginForHost {
         HTTPConnection con;
         if (br.getRedirectLocation() == null) {
 
-            
-            checkPassword(downloadLink,linkStatus);
-            if(linkStatus.isFailed())return;
+            checkPassword(downloadLink, linkStatus);
+            if (linkStatus.isFailed()) return;
             if (br.containsHTML(FILE_NOT_FOUND)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+
                 return;
             }
 
             if (br.containsHTML(FILE_DAMAGED)) {
                 linkStatus.setErrorMessage("File is on a damaged server");
-                // step.setStatus(PluginStep.STATUS_ERROR);
+
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 return;
             }
 
-        
-            String url=br.getRedirectLocation();
-            if(url==null) url=br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getFirstMatch();
-            if (url==null) {
+            String url = br.getRedirectLocation();
+            if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getFirstMatch();
+            if (url == null) {
                 logger.severe("Download link not found");
-                // step.setStatus(PluginStep.STATUS_ERROR);
+
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 return;
             }
-            
-            con = br.openGetConnection(url); 
-        }else{
-            con = br.openGetConnection(null); 
+
+            con = br.openGetConnection(url);
+        } else {
+            con = br.openGetConnection(null);
         }
 
-        // case PluginStep.STEP_PENDING:
         sleep(100, downloadLink);
-
-        // case PluginStep.STEP_GET_CAPTCHA_FILE:
-        // step.setStatus(PluginStep.STATUS_SKIP);
-
-        // case PluginStep.STEP_DOWNLOAD:
-        // logger.info("Download " + finalURL);
-
-       
 
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
@@ -338,7 +288,7 @@ public class Netloadin extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        //
+
         Browser.clearCookies(HOST);
 
         br.setConnectTimeout(15000);
@@ -380,7 +330,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
@@ -388,12 +338,6 @@ public class Netloadin extends PluginForHost {
     public String getHost() {
         return HOST;
     }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.Plugin#doBotCheck(java.io.File)
-     */
 
     @Override
     public int getMaxSimultanDownloadNum() {
@@ -439,12 +383,6 @@ public class Netloadin extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
-    // 
-    // public URLConnection getURLConnection() {
-    // // XXX: ???
-    // return null;
-    // }
 
     @Override
     public void reset() {
