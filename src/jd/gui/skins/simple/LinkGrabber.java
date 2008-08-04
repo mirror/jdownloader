@@ -234,7 +234,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 case 2:
                     return linkList.get(rowIndex).getName();
                 case 3:
-                    return (linkList.get(rowIndex).isAvailabilityChecked()&&linkList.get(rowIndex).getDownloadMax()>0) ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "~";
+                    return (linkList.get(rowIndex).isAvailabilityChecked() && linkList.get(rowIndex).getDownloadMax() > 0) ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "~";
                 case 4:
                     return getInfoString(linkList.get(rowIndex));
 
@@ -633,7 +633,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         public void setPackageName(String name) {
-            txtName.setText(name);
+            txtName.setText(JDUtilities.removeEndingPoints(name));
         }
 
         public void setPassword(String pw) {
@@ -1361,17 +1361,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     protected String getInfoString(DownloadLink link) {
-        if (!link.isAvailabilityChecked()) { 
-            return link.getLinkStatus().getStatusString().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusString();
-            }
-        if(link.isAvailable()){
+        if (!link.isAvailabilityChecked()) { return link.getLinkStatus().getStatusString().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.notonlinechecked", "[Verf. nicht überprüft] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusString(); }
+        if (link.isAvailable()) {
             return link.getLinkStatus().getStatusString().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isonline", "[online] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusString();
-            
-        }else{
+
+        } else {
             return link.getLinkStatus().getStatusString().length() == 0 ? JDLocale.L("gui.linkgrabber.lbl.isoffline", "[offline] ") + link.getFileInfomationString() : link.getFileInfomationString() + " " + link.getLinkStatus().getStatusString();
-             
+
         }
-     }
+    }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
         Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
