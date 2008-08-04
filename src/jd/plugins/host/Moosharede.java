@@ -5,13 +5,13 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -29,8 +29,6 @@ public class Moosharede extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
 
     private static final String PLUGIN_NAME = HOST;
-    private String downloadurl;
-    private RequestInfo requestInfo;
 
     public Moosharede() {
         super();
@@ -55,11 +53,13 @@ public class Moosharede extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        downloadurl = downloadLink.getDownloadURL();
+
         try {
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (requestInfo != null && requestInfo.getLocation() == null) {
-                String filename = requestInfo.getRegexp("<center>Dateiname: <b>(.*?)</b>").getFirstMatch();
+            Browser.clearCookies(HOST);
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.getRedirectLocation() == null) {
+                String filename = br.getRegex("<center>Dateiname: <b>(.*?)</b>").getFirstMatch();
                 if (filename != "") {
                     downloadLink.setName(filename);
                     return true;
@@ -69,7 +69,7 @@ public class Moosharede extends PluginForHost {
 
             e.printStackTrace();
         }
-        downloadLink.setAvailable(false);
+
         return false;
     }
 
@@ -111,13 +111,15 @@ public class Moosharede extends PluginForHost {
         }
 
         /* DownloadLink holen */
-        downloadurl = requestInfo.getRegexp("popup\\('(.*?)',").getFirstMatch();
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        downloadurl = "http://" + requestInfo.getConnection().getURL().getHost() + requestInfo.getLocation();
+        String url=br.getRegex("popup\\('(.*?)',").getFirstMatch();
+       br.openGetConnection(url);
+     
+      
 
         /* Datei herunterladen */
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+         
+      
+        HTTPConnection urlConnection = br.openGetConnection(null);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
