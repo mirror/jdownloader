@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -62,14 +63,15 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+ 
         try {
+            Browser.clearCookies(HOST);
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
+            br.getPage(url);
 
-            if (requestInfo.containsHTML(offlinelink)) { return false; }
+            if (br.getRegex(offlinelink).matches()) { return false; }
 
-            downloadLink.setName(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "<title>", "</title>"));
+            downloadLink.setName(br.getRegex("<title>(.*?)<\\/title>").getFirstMatch().trim());
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,19 +112,32 @@ public class MediafireCom extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_PAGE:
         url = downloadLink.getDownloadURL();
-        requestInfo = HTTP.getRequest(new URL(url));
-        if (requestInfo.containsHTML(offlinelink)) {
+        Browser.clearCookies(HOST);
+        br.getPage(url);
+        if (br.getRegex(offlinelink).matches()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
         // case PluginStep.STEP_DOWNLOAD:
-        String[] para = new Regex(requestInfo.getHtmlCode(), "cg\\(\'(.*?)\',\'(.*?)\',\'(.*?)\'\\)").getMatches(0);
-        para = para[0].split("'");
-        requestInfo = HTTP.getRequest(new URL("http://www.mediafire.com/dynamic/download.php?qk=" + para[1] + "&pk=" + para[3] + "&r=" + para[5]), requestInfo.getCookie(), url, true);
-        String finishURL = "http://" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jn\\+'/'\\+ ", " \\+'g/'") + " = '", "'") + "g/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jU='", "'") + "/" + SimpleMatches.getBetween(requestInfo.getHtmlCode(), "jK='", "'");
-        HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
+        String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
+        if (para.length == 0 || para[0].length == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            return;
+        }
+        br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
+        String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getFirstMatch();
+        url = "http://" + url.replaceAll("'(.*?)'", "$1");
+
+        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getMatches(1);
+
+        for (String var : vars) {
+            String value = br.getRegex(var + " ?= ?\\'(.*?)\\'").getFirstMatch();
+            url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
+
+        }
+        HTTPConnection urlConnection = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
     }
