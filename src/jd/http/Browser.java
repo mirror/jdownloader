@@ -19,8 +19,13 @@ package jd.http;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -30,7 +35,7 @@ import jd.utils.JDUtilities;
 
 public class Browser {
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
-
+private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
 
@@ -41,9 +46,33 @@ public class Browser {
         String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
         if (cookies == null) { return; }
-        request.getCookies().putAll(cookies);
+        
+        if(cookies.containsKey("expires") && isExpired(cookies.get("expires"))){
+            return;
+        }   
+        for(Iterator<Entry<String, String>> it = cookies.entrySet().iterator();it.hasNext();){
+            Entry<String, String> cookie = it.next();
+            
+                     
+            //Pfade sollten verarbeitet werden...TODO
+            if(cookie.getKey().equalsIgnoreCase("path")||cookie.getKey().equalsIgnoreCase("expires")){
+                continue;
+            }
+            request.getCookies().put(cookie.getKey(),cookie.getValue());
+        }
+        
 
     }
+
+    private static boolean isExpired(String cookie) {
+        if (cookie == null) return false;
+       
+        try {            
+            return (new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
+        } catch (Exception e) {          
+            return false;
+        }
+        }
 
     public static String getCookie(String url, String string) {
         String host;
@@ -131,10 +160,8 @@ public class Browser {
     }
 
     public String getPage(String string) {
+        string=getURL(string);
         try {
-            if (string.equals("http://bluehost.to/fetchinfo")) {
-                string = "http://bluehost.to/image/head.gif";
-            }
 
             if (currentURL == null) {
                 currentURL = new URL(string);
@@ -173,8 +200,14 @@ public class Browser {
 
     public String getRedirectLocation() {
         if (request == null) { return null; }
-        return request.getLocation();
-
+        String red = request.getLocation();
+        if (red == null) return null;
+        try {
+            new URL(red);
+        } catch (Exception e) {
+            red = "http://" + request.getHttpConnection().getURL().getHost() + (red.charAt(0)=='/'?red:"/"+red);
+        }
+        return red;
     }
 
     public Request getRequest() {
@@ -219,6 +252,8 @@ public class Browser {
     }
 
     public HTTPConnection openGetConnection(String string) {
+        string = getURL(string);
+
         try {
             if (currentURL == null) {
                 currentURL = new URL(string);
@@ -253,7 +288,20 @@ public class Browser {
         return null;
     }
 
+    private String getURL(String string) {
+        if (string == null) string = this.getRedirectLocation();
+
+        try {
+            new URL(string);
+        } catch (Exception e) {
+            if (request == null || request.getHttpConnection() == null) return string;
+            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0)=='/'?string:"/"+string);
+        }
+        return string;
+    }
+
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
+        url=getURL(url);
         try {
             if (currentURL == null) {
                 currentURL = new URL(url);
@@ -270,8 +318,8 @@ public class Browser {
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             if (post != null) {
-            request.getPostData().putAll(post);
-        }
+                request.getPostData().putAll(post);
+            }
             if (headers != null) {
                 request.getHeaders().putAll(headers);
             }
@@ -296,6 +344,7 @@ public class Browser {
     }
 
     public String postPage(String url, HashMap<String, String> post) {
+        url=getURL(url);
         try {
             if (currentURL == null) {
                 currentURL = new URL(url);
@@ -422,6 +471,14 @@ public class Browser {
 
     public Regex getRegex(String string) {
         return new Regex(this, string);
+    }
+
+    public Regex getRegex(Pattern compile) {
+        return new Regex(this, compile);
+    }
+
+    public boolean containsHTML(String fileNotFound) {
+        return new Regex(this,fileNotFound).matches();
     }
 
 }

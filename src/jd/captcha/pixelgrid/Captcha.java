@@ -1651,5 +1651,47 @@ public class Captcha extends PixelGrid {
         valityPercent = d;
 
     }
+/**
+ * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance ist
+ * @param mode
+ * @param tollerance
+ */
+    public void cleanByRGBDistance(int mode, int tollerance) {
+        int[][] newgrid = new int[getWidth()][getHeight()];
+   
+
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+
+                int p = getPixelValue(x, y);
+
+                Color c = new Color(p);
+                int br = Math.abs(c.getBlue() - c.getRed());
+                int bg = Math.abs(c.getBlue() - c.getGreen());
+                int rg = Math.abs(c.getGreen() - c.getRed());
+
+                int v = (br + bg + rg) / 3;
+
+                if (mode == 1) {
+                    if (v > tollerance) {
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                    } else {
+                        newgrid[x][y] = grid[x][y];
+                    }
+
+                } else {
+                    if (v < tollerance) {
+                        PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
+                    } else {
+                        newgrid[x][y] = grid[x][y];
+                    }
+
+                }
+
+            }
+        }
+        grid = newgrid;
+
+    }
 
 }

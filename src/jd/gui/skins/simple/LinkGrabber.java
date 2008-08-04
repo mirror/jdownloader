@@ -1049,7 +1049,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
             lastIndex = tabList.size() - 1;
             addLinksToTab(new DownloadLink[] { link }, lastIndex);
-            String newPackageName = getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
+            String newPackageName = JDUtilities.getSimString(tabList.get(lastIndex).getPackageName(), removeExtension(link.getName()));
             tabList.get(lastIndex).setPackageName(newPackageName);
             onPackageNameChanged(tabList.get(lastIndex));
 
@@ -1074,7 +1074,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             } else {
                 // logger.info("Found package " +
                 // tabList.get(bestIndex).getpackageName());
-                String newPackageName = autoPackage ? getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
+                String newPackageName = autoPackage ? JDUtilities.getSimString(tabList.get(bestIndex).getPackageName(), packageName) : packageName;
                 tabList.get(bestIndex).setPackageName(newPackageName);
                 onPackageNameChanged(tabList.get(bestIndex));
                 addLinksToTab(new DownloadLink[] { link }, bestIndex);
@@ -1390,16 +1390,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         return tabList.get(tabbedPane.getSelectedIndex());
     }
 
-    private String getSimString(String a, String b) {
 
-        String ret = "";
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                ret += a.charAt(i);
-            }
-        }
-        return ret;
-    }
 
     public int getTotalLinkCount() {
         return totalLinkList.size();

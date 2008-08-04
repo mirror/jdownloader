@@ -193,6 +193,10 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
                 break;
+                
+              case LinkStatus.ERROR_PLUGIN_DEFEKT:
+                    onErrorPluginDefect(downloadLink, currentPlugin);
+                    break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
                 onErrorNoConnection(downloadLink, currentPlugin);
@@ -228,6 +232,17 @@ public class SingleDownloadController extends Thread {
             e.printStackTrace();
 
         }
+    }
+
+    private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
+       logger.severe(" The PLugin for "+currentPlugin.getHost()+" seems to be out of date. Please inform the Support-team http://jdownloader.org/support.");
+       logger.severe(downloadLink2.getLinkStatus().getErrorMesage());
+        
+       downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+       downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
+        
+        downloadLink.requestGuiUpdate();
+        
     }
 
     public boolean isAborted() {

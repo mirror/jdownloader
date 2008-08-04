@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -40,18 +41,23 @@ public class MediafireFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String reqlink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
+            Browser br= new Browser();
+          
+            br.getPage(parameter);
+            String reqlink =  br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
             if (reqlink == null) { return null; }
-            reqinfo = HTTP.getRequest(new URL("http://www.mediafire.com/js/myfiles.php/" + reqlink), reqinfo.getCookie(), parameter, true);
-            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("hm\\[.*?\\]=Array\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getMatches();
+            br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
+            String links[][] = br.getRegex( Pattern.compile("[a-z]{1,3}\\[[0-9]{1,3}\\]=Array\\(\\'([a-z0-9]{8,13})\\'\\,[0-9]{1,3}\\)", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
+        
             for (String[] element : links) {
-                decryptedLinks.add(createDownloadlink("http://www.mediafire.com/download.php?" + element[0]));
+                br.getPage("http://www.mediafire.com/download.php?" + element[0]);
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
+                link.setName(br.getRegex("<title>(.*?)<\\/title>").getFirstMatch().trim());
+                decryptedLinks.add(link);
                 progress.increase(1);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

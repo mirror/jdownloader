@@ -480,7 +480,7 @@ public class LinkStatus implements Serializable {
 
     }
 
-    public Object getErrorMesage() {
+    public String getErrorMesage() {
 
         return errorMessage;
     }

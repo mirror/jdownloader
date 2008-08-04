@@ -223,7 +223,16 @@ public class JDUtilities {
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+    public static String getSimString(String a, String b) {
 
+        String ret = "";
+        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
+            if (a.charAt(i) == b.charAt(i)) {
+                ret += a.charAt(i);
+            }
+        }
+        return ret;
+    }
     /**
      * Fügt ein Bild zur Map hinzu
      * 

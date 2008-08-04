@@ -432,6 +432,7 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("cleanBackgroundByColor")) {
                         captcha.cleanBackgroundByColor(Integer.parseInt(params[0].trim()));
                         continue;
+                 
                     } else if (cmd[1].equalsIgnoreCase("doSpecial")) {
                         String[] ref = params[0].trim().split("\\.");
                         if (ref.length != 2) {
@@ -479,7 +480,9 @@ public class JACScript {
                     } else if (cmd[1].equalsIgnoreCase("removeBridges")) {
                         captcha.removeBridges(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
-
+                    } else if (cmd[1].equalsIgnoreCase("cleanByRGBDistance")) {
+                        captcha.cleanByRGBDistance(Integer.parseInt(params[0].trim()),Integer.parseInt(params[1].trim()));
+                        continue;
                     } else if (cmd[1].equalsIgnoreCase("cleanWithDetailMask")) {
                         captcha.cleanWithDetailMask(owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(params[0].trim()))), Integer.parseInt(params[1].trim()));
                         continue;

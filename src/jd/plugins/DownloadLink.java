@@ -18,6 +18,9 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -590,8 +593,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Name des Downloads
      */
     public String getName() {
-
-        if (getStaticFileName() == null) { return name == null ? UNKNOWN_FILE_NAME : name; }
+        String urlName;
+        if (getStaticFileName() == null) {
+            try {
+                return name == null ? ((urlName = new File(new URL(this.getDownloadURL()).toURI()).getName()) != null ? urlName : UNKNOWN_FILE_NAME) : name;
+            } catch (Exception e) {
+                return UNKNOWN_FILE_NAME;
+            }
+        }
         return getStaticFileName();
 
     }

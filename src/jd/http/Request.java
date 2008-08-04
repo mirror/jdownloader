@@ -64,8 +64,17 @@ public abstract class Request {
         if (query == null) { return ret; }
         try {
             StringTokenizer st = new StringTokenizer(query, "&=");
-            while (st.hasMoreTokens()) {
-                ret.put(st.nextToken().trim(), st.nextToken().trim());
+            while (true) {
+                String key=null;
+                String value=null;
+                if(st.hasMoreTokens())key=st.nextToken().trim();
+                if(st.hasMoreTokens())value=st.nextToken().trim();
+               if(key!=null){
+                   ret.put(key, value);
+               }else{
+                   break;
+               }
+            
             }
 
         } catch (NoSuchElementException e) {
