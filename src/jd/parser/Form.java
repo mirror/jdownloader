@@ -63,6 +63,7 @@ public class Form {
      */
     public static Form[] getForms(RequestInfo requestInfo, String matcher) {
         LinkedList<Form> forms = new LinkedList<Form>();
+       
         Pattern pattern = Pattern.compile("<[\\s]*form(.*?)>(.*?)<[\\s]*/[\\s]*form[\\s]*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher formmatcher = pattern.matcher(requestInfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", ""));
         while (formmatcher.find()) {
@@ -533,5 +534,22 @@ public class Form {
             ret += "requestPopertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
         }
         return ret;
+    }
+
+    public String getPropertyString() {
+        StringBuffer stbuffer = new StringBuffer();
+        boolean first = true;
+        for (Map.Entry<String, String> entry : vars.entrySet()) {
+            if (first) {
+                first = false;
+            } else {
+                stbuffer.append("&");
+            }
+            stbuffer.append(entry.getKey());
+            stbuffer.append("=");
+            stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
+        }
+       return stbuffer.toString();
+        
     }
 }

@@ -76,12 +76,12 @@ public class Moosharede extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

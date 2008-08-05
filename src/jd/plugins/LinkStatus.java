@@ -266,11 +266,11 @@ public class LinkStatus implements Serializable {
             String chunkString = "(" + downloadLink.getDownloadInstance().getChunksDownloading() + "/" + downloadLink.getDownloadInstance().getChunkNum() + ")";
 
             if (speed > 0) {
-                if (downloadLink.getDownloadMax() < 0) {
+                if (downloadLink.getDownloadSize() < 0) {
                     return JDUtilities.formatKbReadable(speed / 1024) + "/s " + JDLocale.L("gui.download.filesize_unknown", "(Filesize unknown)");
                 } else {
 
-                    long remainingBytes = downloadLink.getDownloadMax() - downloadLink.getDownloadCurrent();
+                    long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
                     return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + chunkString;
 
@@ -287,7 +287,7 @@ public class LinkStatus implements Serializable {
     }
 
     public long getTotalWaitTime() {
-        if (!hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
+        if (waitUntil > 0 && !hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
             resetWaitTime();
 
         }
@@ -349,11 +349,12 @@ public class LinkStatus implements Serializable {
         if (totalWaitTime > 0 && !downloadLink.isEnabled()) {
             downloadLink.setEnabled(true);
         }
-        totalWaitTime = 0;
-        waitUntil = 0;
-        if (downloadLink.getPlugin() != null) {
+     
+        if (   waitUntil>0&&downloadLink.getPlugin() != null) {
             ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
         }
+        totalWaitTime = 0;
+        waitUntil = 0;
     }
 
     public void setErrorMessage(String string) {

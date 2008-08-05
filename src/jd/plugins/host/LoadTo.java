@@ -109,7 +109,7 @@ public class LoadTo extends PluginForHost {
 
                 try {
                     int length = Integer.parseInt(fileSize.trim());
-                    downloadLink.setDownloadMax(length);
+                    downloadLink.setDownloadSize(length);
                 } catch (Exception e) {
                 }
 
@@ -133,12 +133,12 @@ public class LoadTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 3; // max 1. Download
     }
 
     @Override
-    public String getPluginName() {
+*/ public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -175,7 +175,7 @@ public class LoadTo extends PluginForHost {
 
         try {
             int length = Integer.parseInt(fileSize.trim());
-            downloadLink.setDownloadMax(length);
+            downloadLink.setDownloadSize(length);
         } catch (Exception e) {
 
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);

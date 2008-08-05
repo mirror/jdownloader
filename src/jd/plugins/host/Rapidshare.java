@@ -431,7 +431,7 @@ public class Rapidshare extends PluginForHost {
                     if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) {
                         ret[c] = false;
                     } else {
-                        urls[c].setDownloadMax(Integer.parseInt(erg[4]));
+                        urls[c].setDownloadSize(Integer.parseInt(erg[4]));
                         urls[c].setName(erg[5].trim());
                     }
                     c++;
@@ -1431,7 +1431,7 @@ public class Rapidshare extends PluginForHost {
             if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) { return false; }
 
             downloadLink.setName(erg[5]);
-            downloadLink.setDownloadMax(Integer.parseInt(erg[4]));
+            downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
 
             return true;
         } catch (MalformedURLException e) {
@@ -1542,7 +1542,7 @@ public class Rapidshare extends PluginForHost {
      * Auto-generated method stub return null; }
      */
 
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         // if
         // (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS,
         // false) && FORCE_FREE_USER) { return 1; }
@@ -1557,7 +1557,7 @@ public class Rapidshare extends PluginForHost {
         return ret;
     }
 
-    public String getPluginName() {
+   */ public String getPluginName() {
         return host;
     }
 

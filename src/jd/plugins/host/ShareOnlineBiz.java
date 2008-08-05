@@ -99,7 +99,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     } else {
                         filesize = (int) size;
                     }
-                    downloadLink.setDownloadMax(filesize);
+                    downloadLink.setDownloadSize(filesize);
                     downloadLink.setName(filename);
                     return true;
                 }
@@ -118,12 +118,12 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

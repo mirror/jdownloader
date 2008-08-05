@@ -244,7 +244,7 @@ public class Filer extends PluginForHost {
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
-                downloadLink.setDownloadMax(bytes);
+                downloadLink.setDownloadSize(bytes);
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
                 if (forms.length < 2) { return true; }
@@ -262,7 +262,7 @@ public class Filer extends PluginForHost {
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -271,7 +271,7 @@ public class Filer extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -280,7 +280,7 @@ public class Filer extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

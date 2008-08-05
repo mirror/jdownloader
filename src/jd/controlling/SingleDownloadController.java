@@ -576,11 +576,14 @@ public class SingleDownloadController extends Thread {
          * Das Plugin, das den aktuellen Download steuert
          */
         PluginForHost plugin;
+        linkStatus.setStatusText(null);
+        linkStatus.setErrorMessage(null);
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
         linkStatus.setInProgress(true);
-        plugin.resetPlugin();
+        //plugin.resetPlugin();
+     
         handlePlugin();
 
         linkStatus.setInProgress(false);

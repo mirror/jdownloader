@@ -17,14 +17,11 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -85,12 +82,12 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

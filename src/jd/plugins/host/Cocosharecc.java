@@ -64,7 +64,7 @@ public class Cocosharecc extends PluginForHost {
                 String filename = requestInfo.getRegexp("<h1>(.*?)</h1>").getFirstMatch();
                 String filesize;
                 if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax(new Integer(filesize.trim().replaceAll("\\.", "")));
+                    downloadLink.setDownloadSize(new Integer(filesize.trim().replaceAll("\\.", "")));
                 }
                 downloadLink.setName(filename);
                 return true;
@@ -85,10 +85,7 @@ public class Cocosharecc extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
+
 
     @Override
     public String getPluginName() {

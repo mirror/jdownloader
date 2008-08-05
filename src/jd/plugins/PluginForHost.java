@@ -269,7 +269,41 @@ public abstract class PluginForHost extends Plugin {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_RETRIES, 3);
     }
 
-    public abstract int getMaxSimultanDownloadNum();
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 20;
+    }
+
+    public boolean ignoreHosterWaittime(DownloadLink link) {
+        if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) { return false; }
+        Account account = null;
+
+        if (!HOSTER_TMP_ACCOUNT_STATUS.containsKey(this.getClass())) {
+            HOSTER_TMP_ACCOUNT_STATUS.put(this.getClass(), new boolean[ACCOUNT_NUM]);
+        }
+
+        boolean[] tmpAccountStatus = HOSTER_TMP_ACCOUNT_STATUS.get(this.getClass());
+        synchronized (tmpAccountStatus) {
+            for (int i = 0; i < ACCOUNT_NUM; i++) {
+                if (!tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
+                    account = new Account(getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + (i + 1)), getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + (i + 1)));
+                    account.setId(i);
+                    break;
+                }
+            }
+        }
+        if (account != null) return true;
+        return false;
+    }
+
+    public int getMaxSimultanDownloadNum(DownloadLink link) {
+
+        return ignoreHosterWaittime(link) ? getMaxSimultanPremiumDownloadNum() : getMaxSimultanFreeDownloadNum();
+
+    }
 
     // public int getMaxRetriesOnError() {
     // return
@@ -395,49 +429,57 @@ public abstract class PluginForHost extends Plugin {
         if (!HOSTER_TMP_ACCOUNT_STATUS.containsKey(this.getClass())) {
             HOSTER_TMP_ACCOUNT_STATUS.put(this.getClass(), new boolean[ACCOUNT_NUM]);
         }
+        HashMap<Class<? extends PluginForHost>, boolean[]> tmp = HOSTER_TMP_ACCOUNT_STATUS;
+
         boolean[] tmpAccountStatus = HOSTER_TMP_ACCOUNT_STATUS.get(this.getClass());
-        for (int i = 0; i < ACCOUNT_NUM; i++) {
-            if (!tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
-                account = new Account(getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + (i + 1)), getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + (i + 1)));
-                account.setId(i);
-                break;
-            } else if (tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
-                Account acc;
-                disabled.add(acc = new Account(getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + (i + 1)), getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + (i + 1))));
-                acc.setId(i);
+        synchronized (tmpAccountStatus) {
+            for (int i = 0; i < ACCOUNT_NUM; i++) {
+                if (!tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
+                    account = new Account(getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + (i + 1)), getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + (i + 1)));
+                    account.setId(i);
+                    break;
+                } else if (tmpAccountStatus[i] && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + (i + 1), false)) {
+                    Account acc;
+                    disabled.add(acc = new Account(getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + (i + 1)), getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + (i + 1))));
+                    acc.setId(i);
+                }
             }
         }
         if (account != null) {
             handlePremium(downloadLink, account);
-            if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
-                if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-                    logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
-                    tmpAccountStatus[account.getId()] = true;
-                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
-                    getProperties().save();
-                } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
+            synchronized (tmpAccountStatus) {
+                if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
+                    if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
+                        logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                        tmpAccountStatus[account.getId()] = true;
+                        getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
+                        getProperties().save();
+                    } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
 
-                    getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
-                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
-                    getProperties().save();
-                    logger.severe("Premium Account " + account.getUser() + ": expired");
+                        getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
+                        getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
+                        getProperties().save();
+                        logger.severe("Premium Account " + account.getUser() + ": expired");
+                    } else {
+                        getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
+                        getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
+                        getProperties().save();
+                        logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getErrorMessage());
+                    }
+
                 } else {
-                    getProperties().setProperty(PROPERTY_USE_PREMIUM + "_" + (account.getId() + 1), false);
-                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), downloadLink.getLinkStatus().getErrorMessage());
+                    getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
                     getProperties().save();
-                    logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getErrorMessage());
                 }
-
-            } else {
-                getProperties().setProperty(PROPERTY_PREMIUM_MESSAGE + "_" + (account.getId() + 1), JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
-                getProperties().save();
             }
 
         } else {
             handleFree(downloadLink);
-            if (disabled.size() > 0) {
-                int randId = (int) (Math.random() * disabled.size());
-                tmpAccountStatus[disabled.get(randId).getId()] = false;
+            synchronized (tmpAccountStatus) {
+                if (disabled.size() > 0) {
+                    int randId = (int) (Math.random() * disabled.size());
+                    tmpAccountStatus[disabled.get(randId).getId()] = false;
+                }
             }
         }
 

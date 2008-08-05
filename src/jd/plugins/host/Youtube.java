@@ -80,12 +80,12 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 50;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

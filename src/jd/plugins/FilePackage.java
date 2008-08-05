@@ -437,13 +437,13 @@ public class FilePackage extends Property implements Serializable {
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
                 next = it.next();
 
-                if (next.getDownloadMax() > 0) {
+                if (next.getDownloadSize() > 0) {
 
                     if (next.isEnabled()) {
-                        totalEstimatedPackageSize += next.getDownloadMax() / 1024;
+                        totalEstimatedPackageSize += next.getDownloadSize() / 1024;
                     }
 
-                    avg = (i * avg + next.getDownloadMax() / 1024) / (i + 1);
+                    avg = (i * avg + next.getDownloadSize() / 1024) / (i + 1);
                     // logger.info(i+"+ "+next.getDownloadMax()/1024+" kb
                     // avg:"+avg+" = +"+totalEstimatedPackageSize);
                     i++;

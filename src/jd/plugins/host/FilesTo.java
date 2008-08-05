@@ -102,7 +102,7 @@ public class FilesTo extends PluginForHost {
 
                 try {
 
-                    downloadLink.setDownloadMax(fileSize);
+                    downloadLink.setDownloadSize(fileSize);
 
                 } catch (Exception e) {
                 }
@@ -122,7 +122,7 @@ public class FilesTo extends PluginForHost {
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     private int getFileSize(String source) {
@@ -147,12 +147,12 @@ public class FilesTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

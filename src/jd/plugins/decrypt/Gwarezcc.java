@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;

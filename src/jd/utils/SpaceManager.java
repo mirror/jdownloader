@@ -9,7 +9,7 @@ import jd.plugins.DownloadLink;
 public class SpaceManager {
 
     public static boolean checkDownloadLink(DownloadLink downloadLink) {
-        return SpaceManager.checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadMax());
+        return SpaceManager.checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadSize());
     }
 
     public static boolean checkPath(File Path, long size) {

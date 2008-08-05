@@ -19,8 +19,6 @@ package jd.http;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,7 +33,7 @@ import jd.utils.JDUtilities;
 
 public class Browser {
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
-private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
+
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
 
@@ -46,33 +44,19 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
         String host = Browser.getHost(request.getUrl());
         HashMap<String, String> cookies = COOKIES.get(host);
         if (cookies == null) { return; }
-        
-        if(cookies.containsKey("expires") && isExpired(cookies.get("expires"))){
-            return;
-        }   
-        for(Iterator<Entry<String, String>> it = cookies.entrySet().iterator();it.hasNext();){
+
+        if (cookies.containsKey("expires") && Request.isExpired(cookies.get("expires"))) { return; }
+        for (Iterator<Entry<String, String>> it = cookies.entrySet().iterator(); it.hasNext();) {
             Entry<String, String> cookie = it.next();
-            
-                     
-            //Pfade sollten verarbeitet werden...TODO
-            if(cookie.getKey().equalsIgnoreCase("path")||cookie.getKey().equalsIgnoreCase("expires")){
+
+            // Pfade sollten verarbeitet werden...TODO
+            if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
                 continue;
             }
-            request.getCookies().put(cookie.getKey(),cookie.getValue());
+            request.getCookies().put(cookie.getKey(), cookie.getValue());
         }
-        
 
     }
-
-    private static boolean isExpired(String cookie) {
-        if (cookie == null) return false;
-       
-        try {            
-            return (new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
-        } catch (Exception e) {          
-            return false;
-        }
-        }
 
     public static String getCookie(String url, String string) {
         String host;
@@ -141,6 +125,7 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
 
     public Form[] getForms() {
         try {
+
             return Form.getForms(getRequest().getRequestInfo());
         } catch (Exception e) {
             return null;
@@ -160,7 +145,7 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
     }
 
     public String getPage(String string) {
-        string=getURL(string);
+        string = getURL(string);
         try {
 
             if (currentURL == null) {
@@ -205,7 +190,7 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
         try {
             new URL(red);
         } catch (Exception e) {
-            red = "http://" + request.getHttpConnection().getURL().getHost() + (red.charAt(0)=='/'?red:"/"+red);
+            red = "http://" + request.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : "/" + red);
         }
         return red;
     }
@@ -295,13 +280,13 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
-            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0)=='/'?string:"/"+string);
+            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : "/" + string);
         }
         return string;
     }
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
-        url=getURL(url);
+        url = getURL(url);
         try {
             if (currentURL == null) {
                 currentURL = new URL(url);
@@ -344,7 +329,7 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
     }
 
     public String postPage(String url, HashMap<String, String> post) {
-        url=getURL(url);
+        url = getURL(url);
         try {
             if (currentURL == null) {
                 currentURL = new URL(url);
@@ -478,7 +463,23 @@ private static final SimpleDateFormat DATE_FORMAT=new SimpleDateFormat("EEE, dd-
     }
 
     public boolean containsHTML(String fileNotFound) {
-        return new Regex(this,fileNotFound).matches();
+        return new Regex(this, fileNotFound).matches();
+    }
+
+    public String loadConnection(HTTPConnection con) {
+        try {
+            if (con == null) return request.read();
+            if (con == null) return null;
+            return Request.read(con);
+        } catch (IOException e) {
+            return null;
+        }
+
+    }
+
+    public HTTPConnection getHttpConnection() {
+        if (request == null) return null;
+        return request.getHttpConnection();
     }
 
 }

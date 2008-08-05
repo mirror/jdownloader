@@ -400,7 +400,7 @@ public class FileFactory extends PluginForHost {
                 }
 
                 downloadLink.setName(fileName);
-                downloadLink.setDownloadMax(length);
+                downloadLink.setDownloadSize(length);
 
             }
 
@@ -416,7 +416,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -425,7 +425,7 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -434,7 +434,7 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return host;
     }
 

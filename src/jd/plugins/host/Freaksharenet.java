@@ -65,9 +65,9 @@ public class Freaksharenet extends PluginForHost {
                 downloadLink.setName(filename.get(0).get(1));
                 ArrayList<ArrayList<String>> filesize = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
                 if (filesize.get(0).get(3).contains("MB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024 * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024 * 1024);
                 } else if (filesize.get(0).get(3).contains("KB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024);
                 }
                 return true;
             }
@@ -88,12 +88,12 @@ public class Freaksharenet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

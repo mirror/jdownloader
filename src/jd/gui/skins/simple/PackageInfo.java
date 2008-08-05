@@ -182,7 +182,7 @@ public class PackageInfo extends JFrame {
             p.setMaximum(10000);
             p.setValue(next.getPercent());
             p.setStringPainted(true);
-            p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
+            p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
 
         }
 

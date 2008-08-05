@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

@@ -56,7 +56,7 @@ public class Zippysharecom extends PluginForHost {
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (!requestInfo.containsHTML("File does not exist")) {
                     downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
                     return true;
                 }
                 Thread.sleep(250);
@@ -81,12 +81,12 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

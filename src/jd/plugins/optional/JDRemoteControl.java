@@ -372,7 +372,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output = output + " file_name=\"" + dLink.getName() + "\"";
                             output = output + " file_id=\"" + Download_ID.toString() + "\"";
                             output = output + " file_package=\"" + Package_ID.toString() + "\"";
-                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
+                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"";
                             output = output + " file_hoster=\"" + dLink.getHost() + "\"";
                             output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                             output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
@@ -451,7 +451,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         output = output + " file_name=\"" + dLink.getName() + "\"";
                         output = output + " file_id=\"" + Download_ID.toString() + "\"";
                         output = output + " file_package=\"" + Package_ID.toString() + "\"";
-                        output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
+                        output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"";
                         output = output + " file_hoster=\"" + dLink.getHost() + "\"";
                         output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                         output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";
@@ -521,7 +521,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output = output + " file_name=\"" + dLink.getName() + "\"";
                             output = output + " file_id=\"" + Download_ID.toString() + "\"";
                             output = output + " file_package=\"" + Package_ID.toString() + "\"";
-                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax())) + "\"";
+                            output = output + " file_percent=\"" + f.format(dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize())) + "\"";
                             output = output + " file_hoster=\"" + dLink.getHost() + "\"";
                             output = output + " file_status=\"" + dLink.getLinkStatus().getStatusString().toString() + "\"";
                             output = output + " file_speed=\"" + dLink.getDownloadSpeed() + "\"";

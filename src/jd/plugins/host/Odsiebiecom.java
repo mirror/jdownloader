@@ -66,9 +66,9 @@ public class Odsiebiecom extends PluginForHost {
                 String filename = requestInfo.getRegexp("Nazwa pliku: <strong>(.*?)</strong>").getFirstMatch();
                 String filesize;
                 if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)MB</strong>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
                 } else if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)KB</strong>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize) * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
                 }
                 downloadLink.setName(filename);
                 return true;
@@ -87,12 +87,12 @@ public class Odsiebiecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

@@ -970,7 +970,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 sb.append("<p>");
                 sb.append(JDLocale.L("gui.downloadlist.tooltip.connections", "Akt. Verbindungen: ") + "" + plg.getCurrentConnections() + "/" + plg.getMaxConnections());
                 sb.append("<br>");
-                sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + " " + plg.getMaxSimultanDownloadNum());
+                sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + " " + plg.getMaxSimultanDownloadNum(link));
                 sb.append("</p>");
                 break;
             case DownloadTreeTableModel.COL_STATUS:

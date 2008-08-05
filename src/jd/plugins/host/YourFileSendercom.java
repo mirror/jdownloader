@@ -62,7 +62,7 @@ public class YourFileSendercom extends PluginForHost {
                 String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getMatches();
 
                 if (linkinfo[0][2].matches("KBytes")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
                 }
                 downloadLink.setName(linkinfo[0][0]);
                 return true;
@@ -81,12 +81,12 @@ public class YourFileSendercom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

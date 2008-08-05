@@ -66,7 +66,7 @@ public class FileUploadnet extends PluginForHost {
                     String filename = requestInfo.getRegexp("<h1>Download \"(.*?)\"</h1>").getFirstMatch();
                     String filesize;
                     if ((filesize = requestInfo.getRegexp("e:</b></td><td>(.*?)Kbyte<td>").getFirstMatch()) != null) {
-                        downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
+                        downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
                     return true;
@@ -79,7 +79,7 @@ public class FileUploadnet extends PluginForHost {
                     String filename = requestInfo.getRegexp("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getFirstMatch();
                     String filesize;
                     if ((filesize = requestInfo.getRegexp("e:</b>(.*?)Kbyte").getFirstMatch()) != null) {
-                        downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
+                        downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
                     return true;
@@ -99,12 +99,12 @@ public class FileUploadnet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

@@ -9,7 +9,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class Dataupde extends PluginForHost {
@@ -57,7 +56,7 @@ public class Dataupde extends PluginForHost {
             if (!Regex.matches(br, "\\>Fehler\\!\\<")) {
                 String filename = br.getRegex("helvetica;\">(.*?)</div>").getFirstMatch();
                 String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getFirstMatch();
-                downloadLink.setDownloadMax(Regex.getSize(filesizeString));
+                downloadLink.setDownloadSize(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
                 return true;
             }
@@ -74,10 +73,6 @@ public class Dataupde extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
 
     @Override
     public String getPluginName() {

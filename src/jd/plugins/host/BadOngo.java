@@ -92,7 +92,7 @@ public class BadOngo extends PluginForHost {
                 } else {
                     bytes = (int) length;
                 }
-                downloadLink.setDownloadMax(bytes);
+                downloadLink.setDownloadSize(bytes);
             } catch (Exception e) {
             }
             // Datei ist noch verfuegbar
@@ -111,13 +111,10 @@ public class BadOngo extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
+  
 
     @Override
-    public String getPluginName() {
+   public String getPluginName() {
         return HOST;
     }
 

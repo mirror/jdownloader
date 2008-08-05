@@ -91,7 +91,7 @@ public class Replacer {
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) {
             if (dLink == null) { return ""; }
-            return dLink.getDownloadMax() + "";
+            return dLink.getDownloadSize() + "";
 
         }
 

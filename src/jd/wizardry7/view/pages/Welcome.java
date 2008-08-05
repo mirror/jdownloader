@@ -2,6 +2,7 @@ package jd.wizardry7.view.pages;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;

@@ -88,7 +88,7 @@ public class JDLowSpeed extends PluginOptional {
                             e.printStackTrace();
                         }
                         int speed = downloadLink.getSpeedMeter().getSpeed();
-                        long size = downloadLink.getDownloadMax();
+                        long size = downloadLink.getDownloadSize();
                         if (!downloadLink.getLinkStatus().isPluginActive() || downloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || speed > minspeed) { return; }
                         if (size != 0) {
                             try {

@@ -69,9 +69,9 @@ public class Upsharenet extends PluginForHost {
                 String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>File size:</b></td>[\\r\\n\\s]*<td align=left>([0-9\\.]*) ([GKMB]*)</td>", Pattern.CASE_INSENSITIVE)).getMatches();
 
                 if (linkinfo[0][1].matches("MB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
                 } else if (linkinfo[0][1].matches("KB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
                 }
                 downloadLink.setName(new URL(downloadurl).getQuery().substring(3));
                 return true;
@@ -90,12 +90,12 @@ public class Upsharenet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

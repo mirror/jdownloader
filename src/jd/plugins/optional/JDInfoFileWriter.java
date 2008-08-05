@@ -93,13 +93,10 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         return CODER;
     }
 
-    @Override
-    public String getPluginName() {
-        return NAME;
-    }
+
 
     @Override
-    public String getRequirements() {
+  public String getRequirements() {
         return "JRE 1.5+";
     }
 

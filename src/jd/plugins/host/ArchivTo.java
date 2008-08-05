@@ -73,7 +73,7 @@ public class ArchivTo extends PluginForHost {
             requestInfo = HTTP.getRequest(new URL(url));
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadMax(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
+                downloadLink.setDownloadSize(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
             } else {
                 return false;
             }
@@ -89,10 +89,6 @@ public class ArchivTo extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
 
     @Override
     public String getPluginName() {

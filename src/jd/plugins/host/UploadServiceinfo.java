@@ -61,7 +61,7 @@ public class UploadServiceinfo extends PluginForHost {
                 downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax(new Integer(filesize) * 1024 * 1024);
+                    downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024);
                 }
                 return true;
             }
@@ -82,12 +82,12 @@ public class UploadServiceinfo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

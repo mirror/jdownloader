@@ -1,6 +1,7 @@
 package jd.wizardry7;
 
 import java.awt.BorderLayout;
+
 import javax.swing.JOptionPane;
 
 import jd.wizardry7.view.DefaultWizardPage;

@@ -446,7 +446,7 @@ public class DepositFiles extends PluginForHost {
                 String fileSizeString = new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch();
                 int length = (int) Regex.getSize(fileSizeString);
 
-                downloadLink.setDownloadMax(length);
+                downloadLink.setDownloadSize(length);
 
             }
 
@@ -463,7 +463,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -471,14 +471,7 @@ public class DepositFiles extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
+   
 
     @Override
     public String getPluginName() {

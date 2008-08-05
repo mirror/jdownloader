@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +43,7 @@ import jd.utils.Sniffy;
 
 public abstract class Request {
     public static int MAX_REDIRECTS = 30;
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
 
     /**
      * Gibt eine Hashmap mit allen key:value pairs im query zurück
@@ -65,16 +68,16 @@ public abstract class Request {
         try {
             StringTokenizer st = new StringTokenizer(query, "&=");
             while (true) {
-                String key=null;
-                String value=null;
-                if(st.hasMoreTokens())key=st.nextToken().trim();
-                if(st.hasMoreTokens())value=st.nextToken().trim();
-               if(key!=null){
-                   ret.put(key, value);
-               }else{
-                   break;
-               }
-            
+                String key = null;
+                String value = null;
+                if (st.hasMoreTokens()) key = st.nextToken().trim();
+                if (st.hasMoreTokens()) value = st.nextToken().trim();
+                if (key != null) {
+                    ret.put(key, value);
+                } else {
+                    break;
+                }
+
             }
 
         } catch (NoSuchElementException e) {
@@ -200,21 +203,39 @@ public abstract class Request {
         return cookies;
     }
 
+    public static boolean isExpired(String cookie) {
+        if (cookie == null) return false;
+
+        try {
+            return (new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public String getCookieString() {
         {
             if (!hasCookies()) { return null; }
 
             StringBuffer buffer = new StringBuffer();
             boolean first = true;
-            for (Map.Entry<String, String> entry : cookies.entrySet()) {
+
+            if (cookies.containsKey("expires") && isExpired(cookies.get("expires"))) { return ""; }
+            for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+
+                // Pfade sollten verarbeitet werden...TODO
+                if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
+                    continue;
+                }
+
                 if (first) {
                     first = false;
                 } else {
                     buffer.append(";");
                 }
-                buffer.append(entry.getKey());
+                buffer.append(cookie.getKey());
                 buffer.append("=");
-                buffer.append(entry.getValue());
+                buffer.append(cookie.getValue());
             }
             return buffer.toString();
         }
@@ -287,6 +308,8 @@ public abstract class Request {
         headers = new HashMap<String, String>();
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        headers.put("Connection","close");
+        
     }
 
     public boolean isFollowRedirects() {
@@ -351,13 +374,20 @@ public abstract class Request {
 
     public String read() throws IOException {
         long tima = System.currentTimeMillis();
-        BufferedReader rd;
-        if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+        this.htmlCode = read(httpConnection);
+        readTime = System.currentTimeMillis() - tima;
 
-            rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
+        return htmlCode.toString();
+    }
+
+    public static String read(HTTPConnection con) throws IOException {
+        BufferedReader rd;
+        if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+
+            rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(con.getInputStream())));
 
         } else {
-            rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
+            rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
         }
         String line;
         StringBuffer htmlCode = new StringBuffer();
@@ -365,8 +395,7 @@ public abstract class Request {
             htmlCode.append(line + "\r\n");
         }
         rd.close();
-        readTime = System.currentTimeMillis() - tima;
-        this.htmlCode = htmlCode.toString();
+
         return htmlCode.toString();
     }
 
@@ -407,5 +436,9 @@ public abstract class Request {
             return "No htmlCode read";
         }
         return htmlCode;
+    }
+
+    public void setHtmlCode(String htmlCode) {
+        this.htmlCode = htmlCode;
     }
 }

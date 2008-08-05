@@ -60,9 +60,9 @@ public class SiloFilescom extends PluginForHost {
                 String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getFirstMatch();
                 String filesize;
                 if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)MB</b>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
                 } else if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)KB</b>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize) * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
                 }
                 downloadLink.setName(filename);
                 return true;
@@ -81,12 +81,12 @@ public class SiloFilescom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

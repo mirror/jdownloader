@@ -75,7 +75,7 @@ public class UploadStube extends PluginForHost {
                 } else {
                     bytes = (int) length;
                 }
-                downloadLink.setDownloadMax(bytes);
+                downloadLink.setDownloadSize(bytes);
             } catch (Exception e) {
             }
             return true;
@@ -91,12 +91,12 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

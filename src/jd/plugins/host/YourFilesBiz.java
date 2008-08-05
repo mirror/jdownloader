@@ -102,7 +102,7 @@ public class YourFilesBiz extends PluginForHost {
                 downloadLink.setName(fileName);
 
                 try {
-                    downloadLink.setDownloadMax(length);
+                    downloadLink.setDownloadSize(length);
                 } catch (Exception e) {
                 }
 
@@ -150,12 +150,12 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -195,7 +195,7 @@ public class YourFilesBiz extends PluginForHost {
 
         try {
             int length = getFileSize(requestInfo.getHtmlCode());
-            downloadLink.setDownloadMax(length);
+            downloadLink.setDownloadSize(length);
         } catch (Exception e) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             // step.setStatus(PluginStep.STATUS_ERROR);

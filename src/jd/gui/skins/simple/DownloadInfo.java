@@ -158,8 +158,8 @@ public class DownloadInfo extends JFrame {
         // addEntry("writeInfoFile",
         // downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
         // }
-        if (downloadLink.getDownloadMax() > 0) {
-            addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()));
+        if (downloadLink.getDownloadSize() > 0) {
+            addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
         }
         // JDLocale.L("linkinformation.", "")
         if (downloadLink.isAborted()) {

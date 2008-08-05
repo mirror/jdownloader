@@ -321,7 +321,7 @@ public class Netloadin extends PluginForHost {
 
         downloadLink.setName(entries[0]);
         fileStatusText = entries[2];
-        downloadLink.setDownloadMax((int) Regex.getSize(entries[1]));
+        downloadLink.setDownloadSize((int) Regex.getSize(entries[1]));
 
         if (entries[2].equalsIgnoreCase("online")) { return true; }
         return false;
@@ -339,22 +339,7 @@ public class Netloadin extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-
-        } else {
-            if (System.currentTimeMillis() - LAST_FILE_STARTED > 1000 || !getProperties().getBooleanProperty("TRY_2_SIMULTAN", false)) {
-                // 1 sekunde nach dem 1. downloadstart wird hier versucht erneut
-                // eine datei zu laden
-                return 1;
-            } else {
-                return 1;
-            }
-
-        }
-    }
+ 
 
     /*
      * (non-Javadoc)
@@ -363,7 +348,7 @@ public class Netloadin extends PluginForHost {
      */
 
     @Override
-    public String getPluginName() {
+   public String getPluginName() {
         return HOST;
     }
 

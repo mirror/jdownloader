@@ -214,7 +214,7 @@ public class JDTrayIcon extends PluginOptional {
         return "jD-Team";
     }
 
-    public String getPluginName() {
+   public String getPluginName() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }
 

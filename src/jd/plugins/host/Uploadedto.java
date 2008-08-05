@@ -23,8 +23,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -298,7 +296,7 @@ public class Uploadedto extends PluginForHost {
                             length *= 1024;
                         }
 
-                        downloadLink.setDownloadMax(length);
+                        downloadLink.setDownloadSize(length);
                     } catch (Exception e) {
                     }
                 }
@@ -312,14 +310,14 @@ public class Uploadedto extends PluginForHost {
 
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     public String getHost() {
         return HOST;
     }
 
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -327,7 +325,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 
@@ -577,14 +575,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     private void setConfigElements() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+      
 
     }
 }

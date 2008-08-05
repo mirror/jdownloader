@@ -234,7 +234,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 case 2:
                     return linkList.get(rowIndex).getName();
                 case 3:
-                    return linkList.get(rowIndex).isAvailabilityChecked() && linkList.get(rowIndex).getDownloadMax() > 0 ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadMax()) : "~";
+                    return linkList.get(rowIndex).isAvailabilityChecked() && linkList.get(rowIndex).getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadSize()) : "~";
                 case 4:
                     return getInfoString(linkList.get(rowIndex));
 
@@ -664,8 +664,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             case SIZE:
                 Collections.sort(linkList, new Comparator<DownloadLink>() {
                     public int compare(DownloadLink a, DownloadLink b) {
-                        if (a.getDownloadMax() == b.getDownloadMax()) { return 0; }
-                        return sortedOn > 0 ? a.getDownloadMax() > b.getDownloadMax() ? 1 : -1 : a.getDownloadMax() < b.getDownloadMax() ? 1 : -1;
+                        if (a.getDownloadSize() == b.getDownloadSize()) { return 0; }
+                        return sortedOn > 0 ? a.getDownloadSize() > b.getDownloadSize() ? 1 : -1 : a.getDownloadSize() < b.getDownloadSize() ? 1 : -1;
                     }
 
                 });
@@ -831,7 +831,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     boolean ch = false;
                     for (int c = 0; c < mirrors.size(); c++) {
                         DownloadLink mirror = mirrors.get(c);
-                        if (plugin.getMaxSimultanDownloadNum() > 1 && mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) {
+                        if (plugin.getMaxSimultanDownloadNum(mirror) > 1 && mirrors.get(c).getHost().equalsIgnoreCase(plugin.getHost())) {
                             finalList.add(mirror);
                             ch = true;
                             found = true;

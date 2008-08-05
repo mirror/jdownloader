@@ -98,7 +98,7 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     @Override
-    public String getPluginName() {
+   public String getPluginName() {
         return host;
     }
 

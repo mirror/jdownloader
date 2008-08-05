@@ -60,9 +60,9 @@ public class FastShareorg extends PluginForHost {
                 downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "Wenn sie die Datei \"<b>", "</b>\"")));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
                 } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 }
                 return true;
             }
@@ -83,12 +83,12 @@ public class FastShareorg extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

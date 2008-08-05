@@ -112,7 +112,7 @@ public class ShareBaseDe extends PluginForHost {
                     } else if (fileSizeData[1].equals("MB")) {
                         length *= 1048576;
                     }
-                    downloadLink.setDownloadMax((int) length);
+                    downloadLink.setDownloadSize((int) length);
                 } catch (Exception e) {
                 }
 
@@ -136,12 +136,12 @@ public class ShareBaseDe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

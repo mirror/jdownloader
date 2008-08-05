@@ -18,8 +18,6 @@ package jd.plugins;
 
 import java.io.File;
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -333,7 +331,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return Die Größe der Datei
      */
-    public long getDownloadMax() {
+    public long getDownloadSize() {
 
         return Math.max(getDownloadCurrent(), downloadMax);
     }
@@ -749,7 +747,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
-
+        linkStatus.reset();
         linkStatus = new LinkStatus(this);
 
     }
@@ -828,13 +826,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt die Größe der herunterzuladenden Datei, und aktualisiert die
-     * Fortschrittsanzeige
+     * Setzt die Größe der herunterzuladenden Datei
      * 
      * @param downloadMax
      *            Die Größe der Datei
      */
-    public void setDownloadMax(long downloadMax) {
+    public void setDownloadSize(long downloadMax) {
 
         this.downloadMax = downloadMax;
     }

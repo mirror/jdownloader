@@ -352,9 +352,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return "jD-Team";
     }
 
-    public String getPluginName() {
-        return JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter");
-    }
 
     public String getRequirements() {
         return "JRE 1.5+";

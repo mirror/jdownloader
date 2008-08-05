@@ -119,8 +119,8 @@ public abstract class PluginForContainer extends Plugin {
 
                 next.setName(srcLink.getName());
 
-                if (next.getDownloadMax() < 10) {
-                    next.setDownloadMax((int) srcLink.getDownloadMax());
+                if (next.getDownloadSize() < 10) {
+                    next.setDownloadSize((int) srcLink.getDownloadSize());
                 }
 
                 next.getSourcePluginPasswords().addAll(srcLink.getSourcePluginPasswords());

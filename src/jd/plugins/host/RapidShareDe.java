@@ -257,7 +257,7 @@ public class RapidShareDe extends PluginForHost {
         requestInfo = forms[1].getRequestInfo();
         try {
             String[][] regExp = new Regex(requestInfo.getHtmlCode(), "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
-            downloadLink.setDownloadMax(Integer.parseInt(regExp[0][1]) * 1024);
+            downloadLink.setDownloadSize(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
             return true;
         } catch (Exception e) {
@@ -272,7 +272,7 @@ public class RapidShareDe extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -281,7 +281,7 @@ public class RapidShareDe extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

@@ -19,11 +19,10 @@ package jd.utils;
 import java.io.File;
 import java.util.logging.Logger;
 
-import de.savemytube.flv.FLV;
-
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.plugins.DownloadLink;
+import de.savemytube.flv.FLV;
 
 public class JDMediaConvert {
 

@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -49,7 +50,7 @@ public class YouPornCom extends PluginForHost {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter.getDownloadURL()), null, null, true);
             HTTPConnection urlConnection = requestInfo.getConnection();
             parameter.setName(Plugin.getFileNameFormHeader(urlConnection));
-            parameter.setDownloadMax(urlConnection.getContentLength());
+            parameter.setDownloadSize(urlConnection.getContentLength());
             return true;
         } catch (MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -62,10 +63,7 @@ public class YouPornCom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
+
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
@@ -107,7 +105,7 @@ public class YouPornCom extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   public String getPluginName() {
         return HOST;
     }
 

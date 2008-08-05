@@ -61,11 +61,11 @@ public class Vipfilecom extends PluginForHost {
                 String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Size:.*?<b style=\"padding-left:5px;\">([0-9\\.]*) (.*?)</b>", Pattern.CASE_INSENSITIVE)).getMatches();
 
                 if (linkinfo[0][1].matches("Gb")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024 * 1024));
                 } else if (linkinfo[0][1].matches("Mb")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
                 } else if (linkinfo[0][1].matches("Kb")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
                 }
                 downloadLink.setName(new Regex(downloadurl, PAT_SUPPORTED).getFirstMatch());
                 return true;
@@ -84,12 +84,12 @@ public class Vipfilecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

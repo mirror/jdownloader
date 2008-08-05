@@ -65,7 +65,7 @@ public class RamZal extends PluginForHost {
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
             HTTPConnection urlConnection = requestInfo.getConnection();
             downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
-            downloadLink.setDownloadMax(urlConnection.getContentLength());
+            downloadLink.setDownloadSize(urlConnection.getContentLength());
             return true;
         } catch (Exception e) {
             // TODO: handle exception
@@ -79,12 +79,12 @@ public class RamZal extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

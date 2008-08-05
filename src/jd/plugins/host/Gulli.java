@@ -22,7 +22,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -147,7 +146,7 @@ public class Gulli extends PluginForHost {
 
             }
             if (filesize > 0) {
-                downloadLink.setDownloadMax(filesize);
+                downloadLink.setDownloadSize(filesize);
             }
 
             return true;
@@ -163,7 +162,7 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -172,7 +171,7 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

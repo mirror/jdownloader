@@ -63,9 +63,9 @@ public class SpeedySharecom extends PluginForHost {
                 downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>File Name\\:</b>(.*?)<br>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "<b>File Size\\:</b>(.*)Mb<br>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
                 } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<b>File Size\\:</b>(.*)Kb<br>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 }
                 return true;
             }
@@ -86,12 +86,12 @@ public class SpeedySharecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

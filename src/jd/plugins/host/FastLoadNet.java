@@ -120,7 +120,7 @@ public class FastLoadNet extends PluginForHost {
                 downloadLink.setName(fileName);
 
                 try {
-                    downloadLink.setDownloadMax(length);
+                    downloadLink.setDownloadSize(length);
                 } catch (Exception e) {
                 }
 
@@ -147,12 +147,12 @@ public class FastLoadNet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return MAX_SIMULTAN_DOWNLOADS;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -202,7 +202,7 @@ public class FastLoadNet extends PluginForHost {
         try {
 
             int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
-            downloadLink.setDownloadMax(length);
+            downloadLink.setDownloadSize(length);
 
         } catch (Exception e) {
 
@@ -280,7 +280,7 @@ public class FastLoadNet extends PluginForHost {
 
                 }
 
-                downloadLink.setDownloadMax(length);
+                downloadLink.setDownloadSize(length);
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
 
                 // Download starten

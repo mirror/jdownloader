@@ -68,9 +68,9 @@ public class ShareNownet extends PluginForHost {
                     linkinfo = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"style1\">(.*?)\\(([0-9\\.]*)\\s*([GKMB]*)\\) </span>", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
                 if (linkinfo[0][2].matches("MB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024 * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024 * 1024));
                 } else if (linkinfo[0][2].matches("KB")) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024));
                 }
                 downloadLink.setName(linkinfo[0][0]);
                 return true;
@@ -89,12 +89,12 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

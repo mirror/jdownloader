@@ -185,7 +185,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                         ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
                     }
                     progress.setValue(dLink.getPercent());
-                    progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadMax())) + ")");
+                    progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")");
 
                 }
 

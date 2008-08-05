@@ -997,7 +997,7 @@ abstract public class DownloadInterface {
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
-        this.downloadLink.setDownloadMax(urlConnection.getContentLength());
+        this.downloadLink.setDownloadSize(urlConnection.getContentLength());
         this.downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
         linkStatus = downloadLink.getLinkStatus();
         downloadLink.setDownloadInstance(this);
@@ -1186,9 +1186,9 @@ abstract public class DownloadInterface {
         if (fileSize > 0) {
 
         return fileSize; }
-        if (downloadLink.getDownloadMax() > 0) {
+        if (downloadLink.getDownloadSize() > 0) {
 
-        return downloadLink.getDownloadMax();
+        return downloadLink.getDownloadSize();
 
         }
         return -1;

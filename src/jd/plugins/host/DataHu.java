@@ -69,7 +69,7 @@ public class DataHu extends PluginForHost {
             if (page == null || page.length() == 0) { return false; }
             String[][] dat = new Regex(br, "<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).getMatches();
             long length = Regex.getSize(dat[0][1].trim());
-            downloadLink.setDownloadMax(length);
+            downloadLink.setDownloadSize(length);
             downloadLink.setName(dat[0][0].trim());
             return true;
         } catch (Exception e) {
@@ -83,13 +83,10 @@ public class DataHu extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
+ 
 
     @Override
-    public String getPluginName() {
+  public String getPluginName() {
         return HOST;
     }
 

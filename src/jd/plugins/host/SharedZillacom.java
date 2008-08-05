@@ -60,7 +60,7 @@ public class SharedZillacom extends PluginForHost {
                 String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("nowrap title=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 String filesize = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span title=\"(.*?) Bytes\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 if (filesize != null) {
-                    downloadLink.setDownloadMax(new Integer(filesize));
+                    downloadLink.setDownloadSize(new Integer(filesize));
                 }
                 downloadLink.setName(filename);
                 return true;
@@ -79,12 +79,12 @@ public class SharedZillacom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return PLUGIN_NAME;
     }
 

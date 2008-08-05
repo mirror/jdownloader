@@ -99,7 +99,7 @@ public class ScumIn extends PluginForDecrypt {
     }
 
     @Override
-    public String getPluginName() {
+public String getPluginName() {
         return host;
     }
 

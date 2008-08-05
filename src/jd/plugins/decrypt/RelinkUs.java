@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.parser.Regex;

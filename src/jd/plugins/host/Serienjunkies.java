@@ -402,11 +402,11 @@ public class Serienjunkies extends PluginForHost {
         return HOST;
     }
 
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return 1;
     }
 
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

@@ -56,7 +56,7 @@ public class HTTPAllgemein extends PluginForHost {
                 HTTPConnection urlConnection = requestInfo.getConnection();
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
-                downloadLink.setDownloadMax(urlConnection.getContentLength());
+                downloadLink.setDownloadSize(urlConnection.getContentLength());
                 return true;
             }
         } catch (MalformedURLException e) {
@@ -72,12 +72,12 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

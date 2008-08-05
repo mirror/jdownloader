@@ -72,7 +72,7 @@ public class zShare extends PluginForHost {
                 } else {
                     bytes = (int) length;
                 }
-                downloadLink.setDownloadMax(bytes);
+                downloadLink.setDownloadSize(bytes);
             } catch (Exception e) {
             }
             // Datei ist noch verfuegbar
@@ -89,12 +89,12 @@ public class zShare extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

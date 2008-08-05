@@ -77,7 +77,7 @@ public class FileBaseTo extends PluginForHost {
                 downloadLink.setAvailable(false);
                 return false;
             }
-            downloadLink.setDownloadMax(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
+            downloadLink.setDownloadSize(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
 
             return true;
         } catch (Exception e) {
@@ -92,12 +92,12 @@ public class FileBaseTo extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 
@@ -160,7 +160,7 @@ public class FileBaseTo extends PluginForHost {
 
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();
-        downloadLink.setDownloadMax(urlConnection.getContentLength());
+        downloadLink.setDownloadSize(urlConnection.getContentLength());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
         dl.setChunkNum(1);

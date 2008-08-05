@@ -60,11 +60,11 @@ public class Shareplacecom extends PluginForHost {
                 downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)MB<b>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
                 } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)KB<b>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)) * 1024);
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)byte<b>").getFirstMatch()) != null) {
-                    downloadLink.setDownloadMax((int) Math.round(Double.parseDouble(filesize)));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
                 }
                 return true;
             }
@@ -85,12 +85,12 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

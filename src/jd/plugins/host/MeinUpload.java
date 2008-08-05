@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
@@ -197,7 +196,7 @@ public class MeinUpload extends PluginForHost {
 
             if (filesize == null || name == null) { return false; }
 
-            downloadLink.setDownloadMax(Integer.parseInt(filesize));
+            downloadLink.setDownloadSize(Integer.parseInt(filesize));
             downloadLink.setName(name);
             return true;
 
@@ -218,7 +217,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -227,7 +226,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

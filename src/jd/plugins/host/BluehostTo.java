@@ -144,7 +144,7 @@ public class BluehostTo extends PluginForHost {
             String[] dat = page.split("\\, ");
             if (dat.length != 5) { return false; }
             downloadLink.setName(dat[0]);
-            downloadLink.setDownloadMax(Integer.parseInt(dat[2]));
+            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
             return true;
         } catch (Exception e) {
         }
@@ -154,7 +154,7 @@ public class BluehostTo extends PluginForHost {
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -162,18 +162,7 @@ public class BluehostTo extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    public int getMaxSimultanDownloadNum() {
-        // if
-        // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
-        // true) &&
-        // this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false))
-        // {
-        // return 20;
-        // } else {
-        return 2;
-        // }
-    }
+  
 
     @Override
     public String getPluginName() {

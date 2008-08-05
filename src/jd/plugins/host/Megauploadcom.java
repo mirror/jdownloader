@@ -184,10 +184,10 @@ public class Megauploadcom extends PluginForHost {
             if (fileName == null || fileSize == null) { return false; }
             downloadLink.setName(fileName.trim());
             if (fileSize.indexOf("KB") > 0) {
-                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024));
+                downloadLink.setDownloadSize((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024));
             }
             if (fileSize.indexOf("MB") > 0) {
-                downloadLink.setDownloadMax((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024 * 1024));
+                downloadLink.setDownloadSize((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024 * 1024));
             }
         } catch (MalformedURLException e) {
             return false;
@@ -200,14 +200,14 @@ public class Megauploadcom extends PluginForHost {
     public String getFileInformationString(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+        return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     public String getHost() {
         return HOST;
     }
 
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
             return 20;
         } else {
@@ -217,7 +217,7 @@ public class Megauploadcom extends PluginForHost {
 
     // Retry-After
 
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

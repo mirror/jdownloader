@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -46,6 +47,7 @@ public class QshareCom extends PluginForHost {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         // setConfigElements();
+        this.enablePremium();
 
     }
 
@@ -60,28 +62,45 @@ public class QshareCom extends PluginForHost {
 
         String page = null;
 
-        Browser br = new Browser();
+        Browser.clearCookies(HOST);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink);
+        // String[][] dat = new Regex(page, "<SPAN
+        // STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\-
+        // google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end
+        // \\-\\->(.*?)<\\/SPAN>").getMatches();
+        //
+        // if (dat == null || dat.length == 0) {
+        //
+        // // step.setStatus(PluginStep.STATUS_ERROR);
+        //
+        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        // return;
+        // }
 
-        Browser.clearCookies("qshare.com");
+        br.getPage((String) null);
 
-        page = br.getPage(downloadLink.getDownloadURL());
-        String[][] dat = new Regex(page, "<SPAN STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\- google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end \\-\\->(.*?)<\\/SPAN>").getMatches();
-
-        if (dat == null || dat.length == 0) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+        String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
+        if (error != null) {
+            linkStatus.setErrorMessage(error);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
         Form[] forms = br.getForms();
         page = br.submitForm(forms[0]);
 
+        if(br.getRegex("Du hast die maximal zulässige Anzahl").matches()){
+            logger.severe("There is already a download running with our ip");
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+            linkStatus.setValue(60000l);
+            return;
+        }
+        
         String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getFirstMatch();
         if (wait != null) {
             long waitTime = Long.parseLong(wait) * 60 * 1000;
             // step.setStatus(PluginStep.STATUS_ERROR);
-            // step.setParameter(waitTime);
+            linkStatus.setValue(waitTime);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
@@ -91,14 +110,14 @@ public class QshareCom extends PluginForHost {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
 
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
         HTTPConnection con = br.openGetConnection(link);
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            sleep(20000, downloadLink);
+           
             return;
         }
         dl = new RAFDownload(this, downloadLink, con);
@@ -114,6 +133,74 @@ public class QshareCom extends PluginForHost {
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+
+        Browser.clearCookies(HOST);
+        br.getPage("http://www.qshare.com");
+        br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
+        br.setFollowRedirects(false);
+        // passt invalid html code an. es fehlt der form-close tag
+        if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
+            br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
+        }
+
+        Form[] forms = br.getForms();
+        Form login = forms[0];
+        login.vars.put("username", user );
+        login.vars.put("password", pass);
+        login.vars.put("cookie", "1");
+        br.submitForm(login);
+
+        String premiumError = br.getRegex("Folgender Fehler ist aufgetreten: (.*?)[\\.|<]").getFirstMatch();
+        if (premiumError != null) {
+            linkStatus.setErrorMessage(JDUtilities.htmlDecode(premiumError));
+            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            return;
+        }
+        br.getPage(downloadLink);
+        String url = br.getRegex("A HREF=\"(.*?)\">").getFirstMatch();
+        br.openGetConnection(url);
+
+        if (br.getRedirectLocation() != null) {
+            logger.info("Direct Download is activ");
+            br.openGetConnection(null);
+        } else {
+            logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
+            br.loadConnection(null);
+            String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
+            if (error != null) {
+                linkStatus.setErrorMessage(error);
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                return;
+            }
+            forms = br.getForms();
+            Form premium = forms[forms.length - 1];
+
+            Browser.clearCookies(HOST);
+            br.setFollowRedirects(false);
+            br.submitForm(premium);
+            br.getPage((String) null);
+            if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
+                br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
+            }
+            forms = br.getForms();
+            login = forms[forms.length - 1];
+            login.vars.put("username", user);
+            login.vars.put("password", pass);
+            login.vars.put("cookie", "1");
+            br.submitForm(login);
+            br.getPage((String) null);
+            url = br.getRegex("<A HREF=\"(.{20,200})\" STYLE=\"font-size:14px;font\\-weight:bold;text\\-decoration:underline\">Dein Download Link<\\/A><BR>").getFirstMatch();
+            br.setFollowRedirects(true);
+            br.openGetConnection(url);
+
+        }
+
+        dl = new RAFDownload(this, downloadLink, br.getHttpConnection());
+        dl.setResume(true);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
+        dl.startDownload();
         return;
 
     }
@@ -131,7 +218,7 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+      
         try {
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
@@ -141,7 +228,7 @@ public class QshareCom extends PluginForHost {
             String[][] dat = new Regex(page, "<SPAN STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\- google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end \\-\\->(.*?)<\\/SPAN>").getMatches();
 
             downloadLink.setName(dat[0][0].trim());
-            downloadLink.setDownloadMax((int) Regex.getSize(dat[0][1].trim()));
+            downloadLink.setDownloadSize((int) Regex.getSize(dat[0][1].trim()));
             return true;
         } catch (Exception e) {
         }
@@ -150,8 +237,8 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()) + ")";
+       
+        return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
@@ -159,8 +246,9 @@ public class QshareCom extends PluginForHost {
         return HOST;
     }
 
+    
     @Override
-    public int getMaxSimultanDownloadNum() {
+    /*public int getMaxSimultanDownloadNum() {
         // if
         // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
         // true) &&
@@ -173,7 +261,7 @@ public class QshareCom extends PluginForHost {
     }
 
     @Override
-    public String getPluginName() {
+   */ public String getPluginName() {
         return HOST;
     }
 

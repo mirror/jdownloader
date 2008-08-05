@@ -131,7 +131,7 @@ public class Gamezam extends PluginForDecrypt {
     }
 
     @Override
-    public String getPluginName() {
+public String getPluginName() {
         return host;
     }
 

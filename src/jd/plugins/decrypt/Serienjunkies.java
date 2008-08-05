@@ -166,7 +166,7 @@ public class Serienjunkies extends PluginForDecrypt {
         dlink.setProperty("mirrors", mirrors);
         if (name != null) {
             dlink.setSourcePluginComment(title + " ::: " + name);
-            dlink.setDownloadMax(size * 1024 * 1024);
+            dlink.setDownloadSize(size * 1024 * 1024);
         }
         dlink.getLinkStatus().setStatusText(getHostname(parameter));
         return dlink;

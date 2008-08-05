@@ -80,7 +80,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h_info.put("info_percent", f.format(percent));
                 h_info.put("download_status", Single_Status);
                 h_info.put("info_var", i + ". " + next.getName());
-                h_info.put("info_value", JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadMax() + " bytes");
+                h_info.put("info_value", JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
                 h_info.put("download_id", i - 1);/*
                  * von 0 anfangen für js
                  * skripte
@@ -170,8 +170,8 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (downloadLink.getFilePackage() != null) {
                 addEntry(JDLocale.L("linkinformation.package.name", "Packet"), downloadLink.getFilePackage().getName());
             }
-            if (downloadLink.getDownloadMax() > 0) {
-                addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadMax()));
+            if (downloadLink.getDownloadSize() > 0) {
+                addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
             }
             if (downloadLink.isAborted()) {
                 addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
@@ -287,7 +287,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 /* Download Infos */
 
-                percent = (double) (dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadMax()));
+                percent = (double) (dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize()));
 
                 h2 = new Hashtable<Object, Object>();
                 h2.put("download_status_percent", f.format(percent));
