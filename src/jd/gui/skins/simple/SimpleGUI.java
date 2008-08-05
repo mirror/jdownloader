@@ -1652,7 +1652,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
         // Adds the menus form the plugins
         JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
-        JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.host", "Hoster"));
+        JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
         JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt", "Decrypter"));
         JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 

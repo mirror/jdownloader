@@ -86,6 +86,7 @@ public class FileFactory extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
         setConfigElements();
+        this.enablePremium();
 
     }
 
@@ -501,13 +502,7 @@ public class FileFactory extends PluginForHost {
 
     private void setConfigElements() {
 
-        ConfigEntry cfg;
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue(JDLocale.L("plugins.host.premium.email", "Email"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+       
 
     }
 

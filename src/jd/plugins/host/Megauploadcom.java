@@ -97,6 +97,7 @@ public class Megauploadcom extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         setConfigElements();
+        this.enablePremium();
     }
 
     public boolean doBotCheck(File file) {
@@ -372,13 +373,7 @@ public class Megauploadcom extends PluginForHost {
     private void setConfigElements() {
 
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.host.premium.account", "Premium Account")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.host.premium.user", "Benutzer")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.host.premium.password", "Passwort")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.host.premium.useAccount", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+       
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
 

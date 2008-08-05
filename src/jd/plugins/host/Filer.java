@@ -72,7 +72,7 @@ public class Filer extends PluginForHost {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         setConfigElements();
-
+this.enablePremium();
     }
 
     @Override
@@ -306,13 +306,7 @@ public class Filer extends PluginForHost {
     }
 
     private void setConfigElements() {
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER, JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
-        cfg.setDefaultValue("Kundennummer");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS, JDLocale.L("plugins.hoster.rapidshare.de.premiumPass", "Premium Pass")));
-        cfg.setDefaultValue("Passwort");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM, JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account verwenden")));
-        cfg.setDefaultValue(false);
+        
 
     }
 }

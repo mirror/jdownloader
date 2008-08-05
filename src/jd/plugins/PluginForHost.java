@@ -16,14 +16,24 @@
 
 package jd.plugins;
 
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
+
+import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
@@ -72,10 +82,130 @@ public abstract class PluginForHost extends Plugin {
         br = new Browser();
         super.clean();
     }
+    public void actionPerformed(ActionEvent e) {
+        switch(e.getID()){
+        case 1:
+          
+
+            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config, "Select where filesdownloaded with JDownloader should be stored.");
+            JPanel panel = new JPanel(new BorderLayout());
+
+            // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+
+            PluginForHost plugin = this;
+            // currentPlugin = plugin;
+            if (plugin == null) { return; }
+
+            JPanel topPanel = new JPanel();
+            panel.add(topPanel, BorderLayout.NORTH);
+            panel.add(cpanel, BorderLayout.CENTER);
+          
+            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel, SimpleGUI.CURRENTGUI, JDUtilities.getConfiguration());
+            pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
+            pop.setVisible(true);
+        }
+        return;
+    }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        return null;
+
+        
+        
+        ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
+        if(!this.enablePremium)return null;
+        MenuItem account;
+        MenuItem m;
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.configs", "Configuration"), 1);
+        m.setActionListener(this);
+        MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.menu.accounts", "Accounts"), 0);
+        // MenuItem hh = new MenuItem(MenuItem.CONTAINER,
+        // JDLocale.L("plugins.rapidshare.menu.happyHour", "Happy Hours"), 0);
+        menuList.add(m);
+        menuList.add(premium);
+        for (int i = 1; i <= ACCOUNT_NUM; i++) {
+
+            boolean use = getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + i, false);
+            String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + i, "");
+            String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + i, "");
+
+            // account1
+            account = new MenuItem(MenuItem.CONTAINER, i + ". " + user, 0);
+
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 0);
+            m.setSelected(use);
+
+            m.setActionListener(this);
+
+            account.addMenuItem(m);
+            m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 0);
+            m.setActionListener(this);
+
+            account.addMenuItem(m);
+            premium.addMenuItem(account);
+        }
+        return menuList;
+        //
+        // // Account 2
+        // account = new MenuItem(MenuItem.CONTAINER,
+        // JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") +
+        // getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
+        //
+        // if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2,
+        // false)) {
+        // m = new MenuItem(MenuItem.TOGGLE,
+        // JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"),
+        // ACTION_TOGGLE_PREMIUM_2);
+        // m.setSelected(false);
+        //
+        // } else {
+        // m = new MenuItem(MenuItem.TOGGLE,
+        // JDLocale.L("plugins.rapidshare.menu.disable_premium",
+        // "Deaktivieren"), ACTION_TOGGLE_PREMIUM_2);
+        // m.setSelected(true);
+        //
+        // }
+        // m.setActionListener(this);
+        //
+        // account.addMenuItem(m);
+        // m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo",
+        // "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_2);
+        // m.setActionListener(this);
+        //
+        // account.addMenuItem(m);
+        // premium.addMenuItem(account);
+        // // Account 3
+        // account = new MenuItem(MenuItem.CONTAINER,
+        // JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") +
+        // getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
+        //
+        // if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3,
+        // false)) {
+        // m = new MenuItem(MenuItem.TOGGLE,
+        // JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"),
+        // ACTION_TOGGLE_PREMIUM_3);
+        // m.setSelected(false);
+        //
+        // } else {
+        // m = new MenuItem(MenuItem.TOGGLE,
+        // JDLocale.L("plugins.rapidshare.menu.disable_premium",
+        // "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
+        // m.setSelected(true);
+        // logger.info("TRUE");
+        //
+        // }
+        // m.setActionListener(this);
+        // m.setProperty("id", 3);
+        // account.addMenuItem(m);
+        // m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo",
+        // "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_3);
+        // m.setActionListener(this);
+        //
+        // account.addMenuItem(m);
+        // premium.addMenuItem(account);
+        //
+        // return menuList;
+
     }
 
     public abstract String getAGBLink();

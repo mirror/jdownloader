@@ -90,6 +90,7 @@ public class Uploadedto extends PluginForHost {
         // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
         setConfigElements();
+        this.enablePremium();
     }
 
     /**
