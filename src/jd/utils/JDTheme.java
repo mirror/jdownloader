@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 
 import jd.JDFileFilter;
+import jd.http.Encoding;
 import jd.parser.Regex;
 
 /**
@@ -70,11 +71,11 @@ public class JDTheme {
             return key;
         }
 
-        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)); }
+        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
         logger.info("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
-            def = JDUtilities.UTF8Decode(defaultData.get(key));
+            def = Encoding.UTF8Decode(defaultData.get(key));
             logger.finer("Use default Value: " + def);
         }
         if (def == null) {

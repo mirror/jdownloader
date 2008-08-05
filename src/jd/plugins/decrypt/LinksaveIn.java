@@ -23,9 +23,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -53,7 +54,7 @@ public class LinksaveIn extends PluginForDecrypt {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
-                JDUtilities.download(container, dlc_con);
+                Browser.download(container, dlc_con);
                 JDUtilities.getController().loadContainerFile(container);
             }
         } catch (MalformedURLException e) {

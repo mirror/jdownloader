@@ -22,10 +22,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -104,7 +106,7 @@ public class XupIn extends PluginForHost {
 
             }
 
-            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
             Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
 
             // downloadinfos gefunden? -> download verfügbar
@@ -196,7 +198,7 @@ public class XupIn extends PluginForHost {
 
         }
 
-        String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
         downloadLink.setName(fileName);
 
         try {
@@ -242,7 +244,7 @@ public class XupIn extends PluginForHost {
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
 
-        if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
+        if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             // this.sleep(nul,downloadLink);

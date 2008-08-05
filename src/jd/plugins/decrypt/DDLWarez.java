@@ -55,19 +55,19 @@ public class DDLWarez extends PluginForDecrypt {
         public void run() {
             if (gotjob == true) {
                 logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " started!");
-                String action = form.getAction();
+                String action = form.getAction(null);
                 if (action.contains("get_file")) {
                     PostRequest r = new PostRequest(action);
-                    r.setPostVariable("dont", form.vars.get("dont"));
-                    r.setPostVariable("do", form.vars.get("do"));
-                    r.setPostVariable("this", form.vars.get("this"));
-                    r.setPostVariable("now", form.vars.get("now"));
+                    r.setPostVariable("dont", form.getVars().get("dont"));
+                    r.setPostVariable("do", form.getVars().get("do"));
+                    r.setPostVariable("this", form.getVars().get("this"));
+                    r.setPostVariable("now", form.getVars().get("now"));
                     r.getHeaders().put("Referer", parameter);
                     for (int retry = 1; retry <= 10; retry++) {
                         try {
                             r.load();
-                            RequestInfo formInfo = r.getRequestInfo();
-                            downloadlink = new Regex(formInfo.getHtmlCode(), Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                         
+                            downloadlink = new Regex(r.read(), Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                             break;
                         } catch (Exception e) {
                             logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " PostRequest-Error, try again!");
@@ -126,7 +126,7 @@ public class DDLWarez extends PluginForDecrypt {
                     passwords.add(pass);
                 }
 
-                Form[] forms = Form.getForms(req.getRequestInfo());
+                Form[] forms = Form.getForms(req.getHtmlCode());
                 progress.setRange(forms.length);
                 DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
                 for (int i = 0; i < forms.length; ++i) {

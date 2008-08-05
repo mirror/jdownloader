@@ -23,10 +23,12 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.controlling.DistributeData;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
@@ -56,11 +58,11 @@ public class Cryptlinkws extends PluginForDecrypt {
                 url = new URL(cryptedLink);
                 reqinfo = HTTP.getRequest(url);
                 String link = new Regex(reqinfo.getHtmlCode(), "unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
-                link = JDUtilities.htmlDecode(JDUtilities.htmlDecode(link));
+                link = Encoding.htmlDecode(Encoding.htmlDecode(link));
                 url = new URL("http://www.cryptlink.ws/" + link);
                 reqinfo = HTTP.getRequest(url);
                 link = new Regex(reqinfo.getHtmlCode(), "unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
-                link = JDUtilities.htmlDecode(JDUtilities.htmlDecode(link));
+                link = Encoding.htmlDecode(Encoding.htmlDecode(link));
                 if (link.startsWith("cryptfiles/")) {
                     /* weiterleitung durch den server */
                     url = new URL("http://www.cryptlink.ws/" + link);
@@ -83,7 +85,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                             /* auf abbruch geklickt */
                             return decryptedLinks;
                         }
-                        post_parameter += "folderpass=" + JDUtilities.urlEncode(password);
+                        post_parameter += "folderpass=" + Encoding.urlEncode(password);
                     }
                     if (reqinfo.containsHTML("captcha.php")) {
                         File captchaFile = getLocalCaptchaFile(this);
@@ -91,7 +93,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                         HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.cryptlink.ws/captcha.php").openConnection());
                         captcha_con.setRequestProperty("Referer", cryptedLink);
                         captcha_con.setRequestProperty("Cookie", reqinfo.getCookie());
-                        if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                        if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
                             return decryptedLinks;
@@ -101,7 +103,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                         if (post_parameter != "") {
                             post_parameter += "&";
                         }
-                        post_parameter += "captchainput=" + JDUtilities.urlEncode(captchaCode);
+                        post_parameter += "captchainput=" + Encoding.urlEncode(captchaCode);
                     }
                     if (post_parameter != "") {
                         reqinfo = HTTP.postRequest(new URL("http://www.cryptlink.ws/index.php?action=getfolder"), reqinfo.getCookie(), cryptedLink, null, post_parameter, false);

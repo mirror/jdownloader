@@ -21,11 +21,11 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -137,13 +137,13 @@ public class Netloadin extends PluginForHost {
         }
         File file = this.getLocalCaptchaFile(this);
 
-        if (!JDUtilities.download(file, br.openGetConnection(captchaURL)) || !file.exists()) {
+        if (!Browser.download(file, br.openGetConnection(captchaURL)) || !file.exists()) {
             logger.severe("Captcha donwload failed: " + captchaURL);
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
-        captchaPost.vars.put("captcha_check", this.getCaptchaCode(file, downloadLink));
+        captchaPost.getVars().put("captcha_check", this.getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {
 
@@ -190,7 +190,7 @@ public class Netloadin extends PluginForHost {
         if (pass != null && br.containsHTML("download_password")) {
             Form[] forms = br.getForms();
             Form pw = forms[forms.length - 1];
-            pw.vars.put("password", pass);
+            pw.put("password", pass);
             br.submitForm(pw);
         }
         // ansonsten 3 abfrageversuche
@@ -198,7 +198,7 @@ public class Netloadin extends PluginForHost {
         while (br.containsHTML("download_password") && maxretries-- >= 0) {
             Form[] forms = br.getForms();
             Form pw = forms[forms.length - 1];
-            pw.vars.put("password", pass = JDUtilities.getGUI().showUserInputDialog(String.format(JDLocale.L("plugins.netload.downloadPassword_question", "Password protected. Enter Password for %s"), downloadLink.getName())));
+            pw.put("password", pass = JDUtilities.getGUI().showUserInputDialog(String.format(JDLocale.L("plugins.netload.downloadPassword_question", "Password protected. Enter Password for %s"), downloadLink.getName())));
             br.submitForm(pw);
         }
         // falls falsch abbruch
@@ -231,7 +231,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
 
-        br.getPage(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         HTTPConnection con;
         if (br.getRedirectLocation() == null) {
 

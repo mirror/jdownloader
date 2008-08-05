@@ -22,14 +22,14 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class BestMovies extends PluginForDecrypt {
     static private final String HOST = "best-movies.us";
@@ -69,7 +69,7 @@ public class BestMovies extends PluginForDecrypt {
                     HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
                     captcha_con.setRequestProperty("Referer", cryptedLink);
                     captcha_con.setRequestProperty("Cookie", cookie);
-                    if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                    if (!Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen!");
                         return null;

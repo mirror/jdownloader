@@ -23,10 +23,10 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;

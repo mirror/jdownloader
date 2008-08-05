@@ -24,10 +24,12 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -96,8 +98,8 @@ public class FilesTo extends PluginForHost {
                 // Datei gelöscht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
 
-                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch());
-                int fileSize = getFileSize(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch()));
+                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch());
+                int fileSize = getFileSize(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch()));
                 downloadLink.setName(fileName);
 
                 try {
@@ -220,7 +222,7 @@ public class FilesTo extends PluginForHost {
 
         File file = this.getLocalCaptchaFile(this);
 
-        if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
+        if (!Browser.download(file, captchaAddress) || !file.exists()) {
 
             logger.severe("Captcha download failed: " + captchaAddress);
             // this.sleep(nul,downloadLink);

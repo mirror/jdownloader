@@ -34,9 +34,9 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;

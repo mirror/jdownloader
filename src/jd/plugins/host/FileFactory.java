@@ -25,14 +25,16 @@ import java.util.regex.Pattern;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.GetRequest;
+import jd.http.HTTPConnection;
 import jd.http.PostRequest;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -155,7 +157,7 @@ public class FileFactory extends PluginForHost {
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
         captchaFile = this.getLocalCaptchaFile(this);
 
-        if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+        if (!Browser.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
 
             logger.severe("Captcha Download failed: " + captchaAddress);
 
@@ -291,8 +293,8 @@ public class FileFactory extends PluginForHost {
 
         // case PluginStep.STEP_WAIT_TIME:
         PostRequest req = new PostRequest(downloadLink.getDownloadURL());
-        req.setPostVariable("email", JDUtilities.urlEncode(user));
-        req.setPostVariable("password", JDUtilities.urlEncode(pass));
+        req.setPostVariable("email", Encoding.urlEncode(user));
+        req.setPostVariable("password", Encoding.urlEncode(pass));
         req.setPostVariable("login", "Log+In");
         req.load();
 
@@ -365,7 +367,7 @@ public class FileFactory extends PluginForHost {
                 return false;
             } else {
 
-                String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getFirstMatch());
+                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getFirstMatch());
                 int length = 0;
                 Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
                 //                

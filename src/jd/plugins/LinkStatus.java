@@ -350,7 +350,7 @@ public class LinkStatus implements Serializable {
             downloadLink.setEnabled(true);
         }
      
-        if (   waitUntil>0&&downloadLink.getPlugin() != null) {
+        if (   waitUntil>0&&downloadLink.getPlugin() != null&&hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
             ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
         }
         totalWaitTime = 0;

@@ -24,10 +24,12 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -53,10 +55,10 @@ public class RelinkUs extends PluginForDecrypt {
         String container_link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getFirstMatch(1);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + ContainerFormat);
-            URL container_url = new URL("http://relink.us/" + JDUtilities.htmlDecode(container_link));
+            URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
-            JDUtilities.download(container, container_con);
+            Browser.download(container, container_con);
             JDUtilities.getController().loadContainerFile(container);
         }
     }
@@ -65,9 +67,9 @@ public class RelinkUs extends PluginForDecrypt {
         String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getMatches(1);
         progress.addToMax(links.length);
         for (String link : links) {
-            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + JDUtilities.htmlDecode(link)), "submit=Open");
+            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + Encoding.htmlDecode(link)), "submit=Open");
             String dl_link = new Regex(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"\n?(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(dl_link)));
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
             progress.increase(1);
         }
     }

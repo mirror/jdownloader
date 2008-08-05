@@ -20,15 +20,15 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class ImageFap extends PluginForHost {
 
@@ -44,7 +44,7 @@ public class ImageFap extends PluginForHost {
 
     private String DecryptLink(String code) {
         try {
-            String s1 = JDUtilities.htmlDecode(code.substring(0, code.length() - 1));
+            String s1 = Encoding.htmlDecode(code.substring(0, code.length() - 1));
 
             String t = "";
             for (int i = 0; i < s1.length(); i++) {
@@ -67,7 +67,7 @@ public class ImageFap extends PluginForHost {
             // return unescape(t);
             // logger.info("return of DecryptLink(): " +
             // JDUtilities.htmlDecode(t));
-            return JDUtilities.htmlDecode(t);
+            return Encoding.htmlDecode(t);
         } catch (Exception e) {
             e.printStackTrace();
         }

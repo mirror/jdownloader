@@ -21,17 +21,17 @@ import java.net.URI;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.GetRequest;
+import jd.http.HTTPConnection;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -77,7 +77,9 @@ public class RapidShareDe extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
-        Form[] forms = Form.getForms(downloadLink.getDownloadURL());
+        Browser.clearCookies(HOST);
+br.setFollowRedirects(false);
+        Form[] forms = br.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("konnte den Download nicht finden");
@@ -87,7 +89,7 @@ public class RapidShareDe extends PluginForHost {
         form = forms[1];
         form.remove("dl.start");
         form.put("dl.start", "Free");
-        requestInfo = form.getRequestInfo();
+        br.submitForm(form);
 
         // case PluginStep.STEP_PENDING:
         // if (aborted) {
@@ -97,12 +99,12 @@ public class RapidShareDe extends PluginForHost {
         // return;
         // }
         try {
-            waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
+            waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
         } catch (Exception e) {
             try {
-                waittime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
+                waittime = Long.parseLong(new Regex(br, "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+                linkStatus.setValue(waittime);
             } catch (Exception es) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("kann wartezeit nicht setzen");
@@ -110,17 +112,15 @@ public class RapidShareDe extends PluginForHost {
                 return;
             }
         }
-        linkStatus.setValue((int) waittime);
 
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
-        String ticketCode = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
-        RequestInfo req = new RequestInfo(ticketCode, null, requestInfo.getCookie(), requestInfo.getHeaders(), requestInfo.getResponseCode());
-        req.setConnection(requestInfo.getConnection());
-        form = Form.getForms(req)[0];
+        String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
+
+        form = br.getForm(0);
         captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
         logger.info("CaptchaAdress:" + captchaAdress);
-        boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), requestInfo.getCookie(), null, true).getConnection());
+        boolean fileDownloaded = br.downloadFile(captchaFile, captchaAdress);
         if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
             logger.severe("Captcha not found");
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
@@ -152,7 +152,7 @@ public class RapidShareDe extends PluginForHost {
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-        HTTPConnection urlConnection = form.getConnection();
+        HTTPConnection urlConnection = br.openFormConnection(form);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();
@@ -162,7 +162,8 @@ public class RapidShareDe extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
         String pass = account.getPass();
-
+        Browser.clearCookies(HOST);
+        br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         String formatPass = "";
@@ -173,7 +174,7 @@ public class RapidShareDe extends PluginForHost {
 
         String path = new URI(downloadLink.getDownloadURL()).getPath();
         PostRequest r = new PostRequest("http://rapidshare.de");
-        r.setPostVariable("uri", JDUtilities.urlEncode(path));
+        r.setPostVariable("uri", Encoding.urlEncode(path));
         r.setPostVariable("dl.start", "PREMIUM");
         r.getCookies().put("user", user + "-" + formatPass);
 
@@ -252,12 +253,16 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        Form[] forms = Form.getForms(downloadLink.getDownloadURL());
+        
+        Browser.clearCookies(HOST);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        Form[] forms = br.getForms();
         if (forms.length < 2) { return false; }
-        requestInfo = forms[1].getRequestInfo();
+
+        br.submitForm(forms[1]);
         try {
-            String[][] regExp = new Regex(requestInfo.getHtmlCode(), "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
+            String[][] regExp = new Regex(br, "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
             downloadLink.setDownloadSize(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
             return true;
@@ -273,16 +278,14 @@ public class RapidShareDe extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
-
-    @Override
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { if
+     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+     * true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+     * return 20; } else { return 1; } }
+     * 
+     * @Override
+     */public String getPluginName() {
         return HOST;
     }
 
@@ -308,7 +311,6 @@ public class RapidShareDe extends PluginForHost {
     }
 
     private void setConfigElements() {
-        
 
     }
 }

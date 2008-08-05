@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;

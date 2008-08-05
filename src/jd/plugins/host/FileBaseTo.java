@@ -21,16 +21,16 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class FileBaseTo extends PluginForHost {
 
@@ -152,11 +152,11 @@ public class FileBaseTo extends PluginForHost {
         String linkurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<form name=\"waitform\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         String submit_wait_value = new Regex(requestInfo.getHtmlCode(), Pattern.compile("wait.value = \"Download (.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        String postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
-        postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
-        postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
-        postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
-        postdata = postdata + "&wait=" + JDUtilities.urlEncode("Download " + submit_wait_value);
+        String postdata = "code=" + Encoding.urlEncode(submitvalues.get("code"));
+        postdata = postdata + "&cid=" + Encoding.urlEncode(submitvalues.get("cid"));
+        postdata = postdata + "&userid=" + Encoding.urlEncode(submitvalues.get("userid"));
+        postdata = postdata + "&usermd5=" + Encoding.urlEncode(submitvalues.get("usermd5"));
+        postdata = postdata + "&wait=" + Encoding.urlEncode("Download " + submit_wait_value);
 
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();

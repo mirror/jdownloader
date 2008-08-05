@@ -71,8 +71,8 @@ public class MeinUpload extends PluginForHost {
         r.setPostVariable("submit", "Kostenlos");
         r.setPostVariable("sent", "1");
         r.load();
-        Form[] forms = Form.getForms(r.getRequestInfo());
-        if (forms.length != 1 || !forms[0].vars.containsKey("download")) {
+        Form[] forms = Form.getForms(r.getHtmlCode());
+        if (forms.length != 1 || !forms[0].getVars().containsKey("download")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;

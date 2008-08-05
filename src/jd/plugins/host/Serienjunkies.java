@@ -30,13 +30,15 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -119,7 +121,7 @@ public class Serienjunkies extends PluginForHost {
 
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
 
-                    fileDownloaded = JDUtilities.download(captchaFile, con);
+                    fileDownloaded = Browser.download(captchaFile, con);
                     if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
                         try {
@@ -229,7 +231,7 @@ public class Serienjunkies extends PluginForHost {
                     }
                     String captchaAdress = "http://serienjunki.es" + matcher.group(2);
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-                    fileDownloaded = JDUtilities.download(captchaFile, captchaAdress);
+                    fileDownloaded = Browser.download(captchaFile, captchaAdress);
                     logger.info("captchafile: " + fileDownloaded);
                     if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
@@ -308,7 +310,7 @@ public class Serienjunkies extends PluginForHost {
 
             URL url = new URL(parameter);
             subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getFirstMatch();
-            String modifiedURL = JDUtilities.htmlDecode(url.toString());
+            String modifiedURL = Encoding.htmlDecode(url.toString());
             modifiedURL = modifiedURL.replaceAll("safe/", "safe/f");
             modifiedURL = modifiedURL.replaceAll("save/", "save/f");
             modifiedURL = modifiedURL.substring(modifiedURL.lastIndexOf("/"));
@@ -352,20 +354,20 @@ public class Serienjunkies extends PluginForHost {
                 logger.info("safe link");
                 helpstring = EinzelLinks(parameter);
                 // if (aborted) return null;
-                decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(helpstring), true));
+                decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(helpstring), true));
             } else if (parameter.indexOf(subdomain + "serienjunkies.org") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
                 // if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
-                    decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
+                    decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(helpvector.get(j)), true));
                 }
             } else if (parameter.indexOf("/sjsafe/") >= 0) {
                 logger.info("sjsafe link");
                 helpvector = ContainerLinks(parameter);
                 // if (aborted) return null;
                 for (int j = 0; j < helpvector.size(); j++) {
-                    decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
+                    decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(helpvector.get(j)), true));
                 }
             } else {
                 logger.info("else link");
@@ -375,15 +377,15 @@ public class Serienjunkies extends PluginForHost {
                     if (links.get(i).get(0).indexOf("/safe/") >= 0) {
                         helpstring = EinzelLinks(links.get(i).get(0));
                         // if (aborted) return null;
-                        decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(helpstring), true));
+                        decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(helpstring), true));
                     } else if (links.get(i).get(0).indexOf("/sjsafe/") >= 0) {
                         helpvector = ContainerLinks(links.get(i).get(0));
                         // if (aborted) return null;
                         for (int j = 0; j < helpvector.size(); j++) {
-                            decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(helpvector.get(j)), true));
+                            decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(helpvector.get(j)), true));
                         }
                     } else {
-                        decryptedLinks.add(new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(links.get(i).get(0)), true));
+                        decryptedLinks.add(new DownloadLink(this, null, getHost(), Encoding.htmlDecode(links.get(i).get(0)), true));
                     }
                 }
             }

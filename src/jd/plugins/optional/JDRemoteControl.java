@@ -48,6 +48,7 @@ import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -719,7 +720,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 }
                 ;
                 // response.getWriter().println(startdl.toString());
-                link = JDUtilities.htmlDecode(link);
+                link = Encoding.htmlDecode(link);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
 
                 DistributeData distributeData = new DistributeData(link, hidegrabber, startdl);
@@ -731,7 +732,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             // Open DLC Container
             else if (request.getRequestURI().matches("(?is).*/action/add/container/[\\s\\S]+")) {
                 String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/add/container/([\\s\\S]+)").getFirstMatch();
-                dlcfilestr = JDUtilities.htmlDecode(dlcfilestr);
+                dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().loadContainerFile(new File(dlcfilestr));
                 response.getWriter().println("Container opened. (" + dlcfilestr + ")");
@@ -740,7 +741,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             // Save Linklist as DLC Container
             else if (request.getRequestURI().matches("(?is).*/action/save/container/[\\s\\S]+")) {
                 String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getFirstMatch();
-                dlcfilestr = JDUtilities.htmlDecode(dlcfilestr);
+                dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().saveDLC(new File(dlcfilestr));
                 response.getWriter().println("Container saved. (" + dlcfilestr + ")");

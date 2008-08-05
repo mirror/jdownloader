@@ -22,12 +22,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
@@ -44,7 +44,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         try {
             URL url = new URL(cryptedLink);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "src=\"(.*?)\"").getFirstMatch());
+            String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "src=\"(.*?)\"").getFirstMatch());
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {

@@ -41,6 +41,7 @@ import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
@@ -251,8 +252,8 @@ public abstract class Plugin implements ActionListener {
 
     private Captcha lastCaptcha;
 
-    protected CRequest request = new CRequest();
 
+    @Deprecated
     protected RequestInfo requestInfo;
 
     /**

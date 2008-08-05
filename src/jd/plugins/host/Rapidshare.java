@@ -42,7 +42,9 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.GetRequest;
+import jd.http.HTTPConnection;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
@@ -50,7 +52,6 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -862,8 +863,8 @@ public class Rapidshare extends PluginForHost {
         br.setFollowRedirects(false);
         setMaxConnections(35);
 
-        user = JDUtilities.urlEncode(user.trim());
-        pass = JDUtilities.urlEncode(pass.trim());
+        user = Encoding.urlEncode(user.trim());
+        pass = Encoding.urlEncode(pass.trim());
         // String encodePass = rawUrlEncode(pass);
 
         long headLength;
@@ -986,7 +987,7 @@ public class Rapidshare extends PluginForHost {
         // pass));
         HTTPConnection urlConnection;
         // GetRequest req = new GetRequest(link);
-        br.getHeaders().put("Authorization", "Basic " + JDUtilities.Base64Encode(user + ":" + pass));
+        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
         br.setFollowRedirects(true);
 
         urlConnection = br.openGetConnection(link);
@@ -1080,7 +1081,7 @@ public class Rapidshare extends PluginForHost {
             error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getFirstMatch();
         }
 
-        error = JDUtilities.htmlDecode(error);
+        error = Encoding.htmlDecode(error);
         String[] er = Regex.getLines(error);
 
         if (er == null || er.length == 0) { return null; }
@@ -1584,8 +1585,8 @@ public class Rapidshare extends PluginForHost {
                 // getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
                 // break;
                 // }
-                user = JDUtilities.urlEncode(user.trim());
-                pass = JDUtilities.urlEncode(pass.trim());
+                user = Encoding.urlEncode(user.trim());
+                pass = Encoding.urlEncode(pass.trim());
                 String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + user + "&password=" + pass;
                 ProgressController progress = new ProgressController(JDLocale.L("plugins.hoster.rapidshare.com.loadinfo", "Lade Rs.com Account Informationen: ") + user, 5);
 

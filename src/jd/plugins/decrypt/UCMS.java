@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -91,7 +93,7 @@ public class UCMS extends PluginForDecrypt {
                         logger.finest("Captcha Protected");
                         String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                         captchaFile = getLocalCaptchaFile(this);
-                        JDUtilities.download(captchaFile, captchaAdress);
+                        Browser.download(captchaFile, captchaAdress);
                         capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
@@ -128,13 +130,13 @@ public class UCMS extends PluginForDecrypt {
                 }
                 String links[][] = null;
                 if (reqinfo.containsHTML("unescape")) {
-                    String temp = JDUtilities.htmlDecode(JDUtilities.htmlDecode(JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
                     links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 } else {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
                 for (String[] element2 : links) {
-                    DownloadLink link = createDownloadlink(JDUtilities.htmlDecode(element2[0]));
+                    DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2[0]));
                     link.addSourcePluginPassword(pass);
                     decryptedLinks.add(link);
                 }

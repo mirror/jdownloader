@@ -19,6 +19,7 @@ package jd.plugins;
 import java.util.List;
 import java.util.Map;
 
+import jd.http.HTTPConnection;
 import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;

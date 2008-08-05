@@ -21,11 +21,12 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -64,7 +65,7 @@ public class QshareCom extends PluginForHost {
 
         Browser.clearCookies(HOST);
         br.setFollowRedirects(false);
-        br.getPage(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         // String[][] dat = new Regex(page, "<SPAN
         // STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\-
         // google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end
@@ -145,19 +146,19 @@ public class QshareCom extends PluginForHost {
 
         Form[] forms = br.getForms();
         Form login = forms[0];
-        login.vars.put("username", user );
-        login.vars.put("password", pass);
-        login.vars.put("cookie", "1");
+        login.put("username", user );
+        login.put("password", pass);
+        login.put("cookie", "1");
         br.submitForm(login);
 
         String premiumError = br.getRegex("Folgender Fehler ist aufgetreten: (.*?)[\\.|<]").getFirstMatch();
         if (premiumError != null) {
-            linkStatus.setErrorMessage(JDUtilities.htmlDecode(premiumError));
+            linkStatus.setErrorMessage(Encoding.htmlDecode(premiumError));
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             return;
         }
-        br.getPage(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         String url = br.getRegex("A HREF=\"(.*?)\">").getFirstMatch();
         br.openGetConnection(url);
 
@@ -185,9 +186,9 @@ public class QshareCom extends PluginForHost {
             }
             forms = br.getForms();
             login = forms[forms.length - 1];
-            login.vars.put("username", user);
-            login.vars.put("password", pass);
-            login.vars.put("cookie", "1");
+            login.put("username", user);
+            login.put("password", pass);
+            login.put("cookie", "1");
             br.submitForm(login);
             br.getPage((String) null);
             url = br.getRegex("<A HREF=\"(.{20,200})\" STYLE=\"font-size:14px;font\\-weight:bold;text\\-decoration:underline\">Dein Download Link<\\/A><BR>").getFirstMatch();

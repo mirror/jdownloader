@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
@@ -186,7 +187,7 @@ public class JDSimpleWebserver extends Thread {
                                                              * RequestParameter
                                                              * zusammenbauen
                                                              */
-                                                            RequestParams = "do=Upload&file=" + JDUtilities.urlEncode(containerfile.getName());
+                                                            RequestParams = "do=Upload&file=" + Encoding.urlEncode(containerfile.getName());
                                                             break;
                                                         }
                                                     } else {
@@ -271,7 +272,7 @@ public class JDSimpleWebserver extends Thread {
 
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
         max_clientCounter = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_CONNECTIONS, 10);
-        AuthUser = "Basic " + JDUtilities.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
+        AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
         NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
         try {
             Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765));

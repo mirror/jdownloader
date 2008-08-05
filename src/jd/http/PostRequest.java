@@ -22,15 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.parser.Form;
-import jd.plugins.HTTPConnection;
 
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
 
     public PostRequest(Form form) {
-        super(form.getAction());
+        super(form.getAction(null));
 
-        postData = form.vars;
+        postData = form.getVars();
     }
 
     public PostRequest(String url) {

@@ -18,7 +18,6 @@ package jd.http;
 
 import java.io.IOException;
 
-import jd.plugins.HTTPConnection;
 
 public class HeadRequest extends Request {
 

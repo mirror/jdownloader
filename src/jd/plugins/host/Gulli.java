@@ -22,16 +22,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 /**
  * HostPlugin für gullishare TODO: Erzwungene Wartezeit (gibt es die überhaupt
@@ -229,7 +229,7 @@ public class Gulli extends PluginForHost {
             logger.finest("Captcha Page");
             String captchaUrl = "http://share.gulli.com" + captchaLocalUrl;
 
-            if (!JDUtilities.download(file, captchaUrl) || !file.exists()) {
+            if (!Browser.download(file, captchaUrl) || !file.exists()) {
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
                 // this.sleep(nul,downloadLink);
                 // step.setStatus(PluginStep.STATUS_ERROR);

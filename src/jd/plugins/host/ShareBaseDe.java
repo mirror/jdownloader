@@ -22,16 +22,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class ShareBaseDe extends PluginForHost {
 
@@ -91,8 +91,8 @@ public class ShareBaseDe extends PluginForHost {
         try {
 
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            String fileSize = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+            String fileSize = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
             boolean sim_dl = new Regex(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
             boolean dl_limit = new Regex(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
@@ -171,7 +171,7 @@ public class ShareBaseDe extends PluginForHost {
 
         requestInfo = HTTP.getRequest(downloadUrl);
 
-        String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
 
         if (requestInfo.containsHTML(DOWLOAD_RUNNING)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -223,7 +223,7 @@ public class ShareBaseDe extends PluginForHost {
         // case PluginStep.STEP_DOWNLOAD:
 
         requestInfo = HTTP.postRequest(downloadUrl, cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
-        finishURL = JDUtilities.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
+        finishURL = Encoding.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
 
         if (finishURL == null) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);

@@ -16,27 +16,17 @@
 
 package jd.parser;
 
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
-import jd.plugins.MultiPartFormOutputStream;
-import jd.plugins.Plugin;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
+import jd.http.Encoding;
 
 public class Form {
     public static final int METHOD_FILEPOST = 3;
@@ -52,7 +42,7 @@ public class Form {
     /**
      * Ein Array mit allen Forms einer Seite
      */
-    public static Form[] getForms(RequestInfo requestInfo) {
+    public static Form[] getForms(Object requestInfo) {
         return Form.getForms(requestInfo, ".*");
     }
 
@@ -61,18 +51,18 @@ public class Form {
      * der Matcher bezieht sich nicht auf die Properties einer Form sondern auf
      * den Text der zwischen der Form steht. Dafür gibt es die formProperties
      */
-    public static Form[] getForms(RequestInfo requestInfo, String matcher) {
+    public static Form[] getForms(Object requestInfo, String matcher) {
         LinkedList<Form> forms = new LinkedList<Form>();
-       
+
         Pattern pattern = Pattern.compile("<[\\s]*form(.*?)>(.*?)<[\\s]*/[\\s]*form[\\s]*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        Matcher formmatcher = pattern.matcher(requestInfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", ""));
+        Matcher formmatcher = pattern.matcher(requestInfo.toString().replaceAll("(?s)<!--.*?-->", ""));
         while (formmatcher.find()) {
             String formPropertie = formmatcher.group(1);
             String inForm = formmatcher.group(2);
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
-                form.baseRequest = requestInfo;
+                // form.baseRequest = requestInfo;
                 form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(" ([^\\s]+)\\=[\"'](.*?)[\"']", Pattern.CASE_INSENSITIVE);
                 Matcher matcherfp = patternfp.matcher(formPropertie);
@@ -116,34 +106,15 @@ public class Form {
                         form.formProperties.put(pname, matcherfp.group(2));
                     }
                 }
-                if (form.action == null) {
-                    form.action = requestInfo.getConnection().getURL().toString();
-                }
+                // if (form.action == null) {
+                // form.action =
+                // requestInfo.getConnection().getURL().toString();
+                // }
                 form.vars.putAll(form.getInputFields(inForm));
                 forms.add(form);
             }
         }
         return forms.toArray(new Form[forms.size()]);
-    }
-
-    public static Form[] getForms(String url) {
-        try {
-            return Form.getForms(new URL(url));
-        } catch (MalformedURLException e) {
-            // TODO Automatisch erstellter Catch-Block
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static Form[] getForms(URL url) {
-        try {
-            return Form.getForms(HTTP.getRequest(url));
-        } catch (IOException e) {
-            // TODO Automatisch erstellter Catch-Block
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /**
@@ -152,15 +123,10 @@ public class Form {
     public String action;
 
     /**
-     * Wird bei der Benutzung von getForms automatisch gesetzt
-     */
-    private RequestInfo baseRequest;
-
-    /**
      * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
      * hochgeladen werden sollen
      */
-    public File fileToPost = null;
+    private File fileToPost = null;
 
     private String filetoPostName = null;
 
@@ -178,20 +144,21 @@ public class Form {
     public int method;
 
     /**
-     * zusätzliche request Poperties die gesetzt werden sollen z.B. Range
-     */
-    private HashMap<String, String> requestPoperties = new HashMap<String, String>();
-
-    /**
      * Value und name von Inputs/Textareas/Selectoren HashMap<name, value>
      * Achtung müssen zum teil noch ausgefüllt werden
      */
-    public HashMap<String, String> vars = new HashMap<String, String>();
+    private HashMap<String, String> vars = new HashMap<String, String>();
 
-    public boolean withHtmlCode = true;
 
-    public String getAction() {
-        URL baseurl = baseRequest.getConnection().getURL();
+
+    public String getAction(String baseURL) {
+        URL baseurl = null;
+        try {
+            baseurl = new URL(baseURL);
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+        }
         String ret = action;
         if (action == null || action.matches("[\\s]*")) {
             if (baseurl == null) { return null; }
@@ -226,143 +193,154 @@ public class Form {
         return ret;
     }
 
-    @SuppressWarnings("deprecation")
-    public HTTPConnection getConnection() {
-        if (method == METHOD_UNKNOWN) {
-            JDUtilities.getLogger().severe("Unknown method");
-            return null;
-        } else if (method == METHOD_PUT) {
-            JDUtilities.getLogger().severe("PUT is not Supported");
-            return null;
-        }
-        if (baseRequest == null) { return null; }
-        URL baseurl = baseRequest.getConnection().getURL();
-        if (action == null || action.matches("[\\s]*")) {
-            if (baseurl == null) { return null; }
-            action = baseurl.toString();
-        } else if (!action.matches("http://.*")) {
-            if (baseurl == null) { return null; }
-            if (action.charAt(0) == '/') {
-                action = "http://" + baseurl.getHost() + action;
-            } else if (action.charAt(0) == '&') {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*")) {
-                    action = base + action;
-                } else {
-                    action = base + "/" + action;
-                }
-            } else if (action.charAt(0) == '?') {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*")) {
-                    action = base.replaceFirst("\\?.*", "") + action;
-                } else {
-                    action = base + "/" + action;
-                }
-            } else {
-                String base = baseurl.toString();
-                if (base.matches("http://.*/.*")) {
-                    action = base.substring(0, base.lastIndexOf("/")) + "/" + action;
-                } else {
-                    action = base + "/" + action;
-                }
-            }
-        }
-        StringBuffer stbuffer = new StringBuffer();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : vars.entrySet()) {
-            if (first) {
-                first = false;
-            } else {
-                stbuffer.append("&");
-            }
-            stbuffer.append(entry.getKey());
-            stbuffer.append("=");
-            stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
-        }
-        String varString = stbuffer.toString();
-        if (method == METHOD_GET) {
-            if (varString != null && !varString.matches("[\\s]*")) {
-                if (action.matches(".*\\?.+")) {
-                    action += "&";
-                } else if (action.matches("[^\\?]*")) {
-                    action += "?";
-                }
-                action += varString;
-            }
-            try {
-                HTTPConnection HTTPConnection = new HTTPConnection(new URL(action).openConnection());
-                HTTPConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-                HTTPConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                HTTPConnection.setRequestProperty("Cookie", baseRequest.getCookie());
-                for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-                    HTTPConnection.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-                HTTPConnection.setRequestProperty("Referer", baseurl.toString());
-                return HTTPConnection;
-            } catch (MalformedURLException e) {
-
-                e.printStackTrace();
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-        } else if (method == METHOD_POST) {
-            try {
-                Logger logger = JDUtilities.getLogger();
-                HTTPConnection connection = new HTTPConnection(new URL(action).openConnection());
-                connection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-                connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                connection.setRequestProperty("Cookie", baseRequest.getCookie());
-                for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-                    connection.setRequestProperty(entry.getKey(), entry.getValue());
-                    logger.info(entry.getKey() + " : " + entry.getValue());
-                }
-                connection.setRequestProperty("Referer", baseurl.toString());
-                connection.setDoOutput(true);
-                OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
-                wr.write(varString);
-                wr.flush();
-                wr.close();
-                return connection;
-            } catch (MalformedURLException e) {
-
-                e.printStackTrace();
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-        } else if (method == METHOD_FILEPOST) {
-            try {
-                // JOptionPane.showMessageDialog(null,
-                // "Dateiname:"+exsistingFileName );
-                String boundary = MultiPartFormOutputStream.createBoundary();
-                HTTPConnection urlConn = new HTTPConnection(MultiPartFormOutputStream.createConnection(new URL(action)));
-                urlConn.setRequestProperty("Accept", "*/*");
-                urlConn.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-                urlConn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                urlConn.setRequestProperty("Cookie", baseRequest.getCookie());
-                for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-                    urlConn.setRequestProperty(entry.getKey(), entry.getValue());
-                }
-                urlConn.setRequestProperty("Referer", baseurl.toString());
-                urlConn.setRequestProperty("Content-Type", MultiPartFormOutputStream.getContentType(boundary));
-                urlConn.setRequestProperty("Connection", "Keep-Alive");
-                urlConn.setRequestProperty("Cache-Control", "no-cache");
-                MultiPartFormOutputStream out = new MultiPartFormOutputStream(urlConn.getOutputStream(), boundary);
-                for (Map.Entry<String, String> entry : vars.entrySet()) {
-                    out.writeField(entry.getKey(), URLEncoder.encode(entry.getValue()));
-                }
-                out.writeFile(filetoPostName, null, fileToPost);
-                out.close();
-                return urlConn;
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
-
-        }
-        return null;
-    }
+    // @SuppressWarnings("deprecation")
+    // public HTTPConnection getConnection() {
+    // if (method == METHOD_UNKNOWN) {
+    // JDUtilities.getLogger().severe("Unknown method");
+    // return null;
+    // } else if (method == METHOD_PUT) {
+    // JDUtilities.getLogger().severe("PUT is not Supported");
+    // return null;
+    // }
+    // if (baseRequest == null) { return null; }
+    // URL baseurl = baseRequest.getConnection().getURL();
+    // if (action == null || action.matches("[\\s]*")) {
+    // if (baseurl == null) { return null; }
+    // action = baseurl.toString();
+    // } else if (!action.matches("http://.*")) {
+    // if (baseurl == null) { return null; }
+    // if (action.charAt(0) == '/') {
+    // action = "http://" + baseurl.getHost() + action;
+    // } else if (action.charAt(0) == '&') {
+    // String base = baseurl.toString();
+    // if (base.matches("http://.*/.*")) {
+    // action = base + action;
+    // } else {
+    // action = base + "/" + action;
+    // }
+    // } else if (action.charAt(0) == '?') {
+    // String base = baseurl.toString();
+    // if (base.matches("http://.*/.*")) {
+    // action = base.replaceFirst("\\?.*", "") + action;
+    // } else {
+    // action = base + "/" + action;
+    // }
+    // } else {
+    // String base = baseurl.toString();
+    // if (base.matches("http://.*/.*")) {
+    // action = base.substring(0, base.lastIndexOf("/")) + "/" + action;
+    // } else {
+    // action = base + "/" + action;
+    // }
+    // }
+    // }
+    // StringBuffer stbuffer = new StringBuffer();
+    // boolean first = true;
+    // for (Map.Entry<String, String> entry : vars.entrySet()) {
+    // if (first) {
+    // first = false;
+    // } else {
+    // stbuffer.append("&");
+    // }
+    // stbuffer.append(entry.getKey());
+    // stbuffer.append("=");
+    // stbuffer.append(Encoding.urlEncode(entry.getValue()));
+    // }
+    // String varString = stbuffer.toString();
+    // if (method == METHOD_GET) {
+    // if (varString != null && !varString.matches("[\\s]*")) {
+    // if (action.matches(".*\\?.+")) {
+    // action += "&";
+    // } else if (action.matches("[^\\?]*")) {
+    // action += "?";
+    // }
+    // action += varString;
+    // }
+    // try {
+    // HTTPConnection HTTPConnection = new HTTPConnection(new
+    // URL(action).openConnection());
+    // HTTPConnection.setRequestProperty("Accept-Language",
+    // Plugin.ACCEPT_LANGUAGE);
+    // HTTPConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible;
+    // MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+    // HTTPConnection.setRequestProperty("Cookie", baseRequest.getCookie());
+    // for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+    // HTTPConnection.setRequestProperty(entry.getKey(), entry.getValue());
+    // }
+    // HTTPConnection.setRequestProperty("Referer", baseurl.toString());
+    // return HTTPConnection;
+    // } catch (MalformedURLException e) {
+    //
+    // e.printStackTrace();
+    // } catch (IOException e) {
+    //
+    // e.printStackTrace();
+    // }
+    // } else if (method == METHOD_POST) {
+    // try {
+    // Logger logger = JDUtilities.getLogger();
+    // HTTPConnection connection = new HTTPConnection(new
+    // URL(action).openConnection());
+    // connection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
+    // connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible;
+    // MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+    // connection.setRequestProperty("Cookie", baseRequest.getCookie());
+    // for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+    // connection.setRequestProperty(entry.getKey(), entry.getValue());
+    // logger.info(entry.getKey() + " : " + entry.getValue());
+    // }
+    // connection.setRequestProperty("Referer", baseurl.toString());
+    // connection.setDoOutput(true);
+    // OutputStreamWriter wr = new
+    // OutputStreamWriter(connection.getOutputStream());
+    // wr.write(varString);
+    // wr.flush();
+    // wr.close();
+    // return connection;
+    // } catch (MalformedURLException e) {
+    //
+    // e.printStackTrace();
+    // } catch (IOException e) {
+    //
+    // e.printStackTrace();
+    // }
+    // } else if (method == METHOD_FILEPOST) {
+    // try {
+    // // JOptionPane.showMessageDialog(null,
+    // // "Dateiname:"+exsistingFileName );
+    // String boundary = MultiPartFormOutputStream.createBoundary();
+    // HTTPConnection urlConn = new
+    // HTTPConnection(MultiPartFormOutputStream.createConnection(new
+    // URL(action)));
+    // urlConn.setRequestProperty("Accept", "*/*");
+    // urlConn.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
+    // urlConn.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE
+    // 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+    // urlConn.setRequestProperty("Cookie", baseRequest.getCookie());
+    // for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
+    // urlConn.setRequestProperty(entry.getKey(), entry.getValue());
+    // }
+    // urlConn.setRequestProperty("Referer", baseurl.toString());
+    // urlConn.setRequestProperty("Content-Type",
+    // MultiPartFormOutputStream.getContentType(boundary));
+    // urlConn.setRequestProperty("Connection", "Keep-Alive");
+    // urlConn.setRequestProperty("Cache-Control", "no-cache");
+    // MultiPartFormOutputStream out = new
+    // MultiPartFormOutputStream(urlConn.getOutputStream(), boundary);
+    // for (Map.Entry<String, String> entry : vars.entrySet()) {
+    // out.writeField(entry.getKey(), URLEncoder.encode(entry.getValue()));
+    // }
+    // out.writeFile(filetoPostName, null, fileToPost);
+    // out.close();
+    // return urlConn;
+    // } catch (IOException e) {
+    //
+    // e.printStackTrace();
+    // }
+    //
+    // }
+    // return null;
+    // }
 
     /**
      * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
@@ -397,7 +375,7 @@ public class Form {
 
             if (data.toLowerCase().matches(".*type=[\"']?file.*")) {
                 method = METHOD_FILEPOST;
-                filetoPostName = "";
+                setFiletoPostName("");
                 return null;
             }
             return null;
@@ -417,67 +395,11 @@ public class Form {
         }
         if (value == null && data.toLowerCase().matches(".*type=[\"']?file.*")) {
             method = METHOD_FILEPOST;
-            filetoPostName = key;
+            setFiletoPostName(key);
             return null;
         }
 
         return new String[] { key, value };
-    }
-
-    /**
-     * Erzeugt aus der Form eine RequestInfo
-     */
-    public RequestInfo getRequestInfo() {
-        return getRequestInfo(true);
-    }
-
-    @SuppressWarnings("deprecation")
-    public RequestInfo getRequestInfo(boolean redirect) {
-        HTTPConnection connection = (HTTPConnection) getConnection();
-        if (connection == null) { return null; }
-        connection.setInstanceFollowRedirects(redirect);
-        RequestInfo ri = null;
-        int responseCode = HTTPConnection.HTTP_NOT_IMPLEMENTED;
-        try {
-            responseCode = connection.getResponseCode();
-        } catch (IOException e) {
-        }
-        if (withHtmlCode) {
-            if (method == METHOD_FILEPOST) {
-                // Serverantwort empfangen
-                try {
-                    DataInputStream inStream = new DataInputStream(connection.getInputStream());
-
-                    String str;
-                    String output = "";
-
-                    while ((str = inStream.readLine()) != null) {
-                        output = output + str;
-                    }
-                    if (output != "") {
-                        // JOptionPane.showMessageDialog(null, output );
-                    }
-                    inStream.close();
-                    ri = new RequestInfo(output, connection.getHeaderField("Location"), HTTP.getCookieString(connection), connection.getHeaderFields(), responseCode);
-                } catch (IOException ioex) {
-                }
-
-            } else {
-                try {
-                    ri = HTTP.readFromURL(connection);
-                } catch (IOException e) {
-                    // TODO Automatisch erstellter Catch-Block
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            ri = new RequestInfo("", connection.getHeaderField("Location"), HTTP.getCookieString(connection), connection.getHeaderFields(), responseCode);
-        }
-        if (ri != null) {
-            ri.setConnection(connection);
-            return ri;
-        }
-        return null;
     }
 
     public void put(String key, String value) {
@@ -486,10 +408,6 @@ public class Form {
 
     public void remove(String key) {
         vars.remove(key);
-    }
-
-    public void setRequestPoperty(String key, String value) {
-        requestPoperties.put(key, value);
     }
 
     public String setVariable(int i, String value) {
@@ -517,8 +435,8 @@ public class Form {
             ret += "Method: PUT is not supported\n";
         } else if (method == METHOD_FILEPOST) {
             ret += "Method: FILEPOST\n";
-            ret += "filetoPostName:" + filetoPostName + "\n";
-            if (fileToPost == null) {
+            ret += "filetoPostName:" + getFiletoPostName() + "\n";
+            if (getFileToPost() == null) {
                 ret += "Warning: you have to set the fileToPost\n";
             }
         } else if (method == METHOD_UNKNOWN) {
@@ -530,9 +448,7 @@ public class Form {
         for (Map.Entry<String, String> entry : formProperties.entrySet()) {
             ret += "formProperty: " + entry.getKey() + "=" + entry.getValue() + "\n";
         }
-        for (Map.Entry<String, String> entry : requestPoperties.entrySet()) {
-            ret += "requestPopertie: " + entry.getKey() + "=" + entry.getValue() + "\n";
-        }
+
         return ret;
     }
 
@@ -547,9 +463,33 @@ public class Form {
             }
             stbuffer.append(entry.getKey());
             stbuffer.append("=");
-            stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
+            stbuffer.append(Encoding.urlEncode(entry.getValue()));
         }
-       return stbuffer.toString();
-        
+        return stbuffer.toString();
+
+    }
+
+    public HashMap<String, String> getVars() {
+        return vars;
+    }
+
+    public void setVars(HashMap<String, String> vars) {
+        this.vars = vars;
+    }
+
+    public void setFiletoPostName(String filetoPostName) {
+        this.filetoPostName = filetoPostName;
+    }
+
+    public String getFiletoPostName() {
+        return filetoPostName;
+    }
+
+    public void setFileToPost(File fileToPost) {
+        this.fileToPost = fileToPost;
+    }
+
+    public File getFileToPost() {
+        return fileToPost;
     }
 }

@@ -63,7 +63,7 @@ public abstract class PluginForHost extends Plugin {
     // private int retryOnErrorCount = 0;
     private int maxConnections = 50;
 
-    private static final int ACCOUNT_NUM = 5;
+    private static final int ACCOUNT_NUM = 3;
     protected Browser br = new Browser();
     private boolean enablePremium = false;
 
@@ -77,7 +77,7 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public void clean() {
         requestInfo = null;
-        request = null;
+   
         dl = null;
         br = new Browser();
         super.clean();

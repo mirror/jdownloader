@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -340,7 +341,7 @@ public class Secured extends PluginForDecrypt {
                     capHash = capHash.substring(0, capHash.length() - 4);
                     String captchaAdress = "http://" + HOST + "/" + matcher.group(1);
                     captchaFile = getLocalCaptchaFile(this);
-                    JDUtilities.download(captchaFile, captchaAdress);
+                    Browser.download(captchaFile, captchaAdress);
 
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
                     String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;

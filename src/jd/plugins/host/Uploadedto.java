@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
@@ -284,7 +286,7 @@ public class Uploadedto extends PluginForHost {
                     return false;
                 }
 
-                String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
+                String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 1));
                 String ext = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 4);
                 String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), FILE_INFO, 7);
                 downloadLink.setName(fileName.trim() + "" + ext.trim());
@@ -464,7 +466,7 @@ public class Uploadedto extends PluginForHost {
         File file = this.getLocalCaptchaFile(this);
         if (useCaptchaVersion) {
 
-            if (!JDUtilities.download(file, captchaAddress) || !file.exists()) {
+            if (!Browser.download(file, captchaAddress) || !file.exists()) {
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                 // this.sleep(nul,downloadLink);
                 // step.setStatus(PluginStep.STATUS_ERROR);

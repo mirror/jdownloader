@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.JDFileFilter;
+import jd.http.Encoding;
 import jd.parser.Regex;
 
 /**
@@ -69,7 +70,7 @@ public class JDSounds {
             return key;
         }
 
-        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)); }
+        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
         return null;
 
     }

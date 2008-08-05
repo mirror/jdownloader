@@ -57,6 +57,7 @@ import jd.event.ControlListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.components.MiniLogDialog;
+import jd.http.Encoding;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -157,7 +158,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             ch.clear();
             final String[] d = new String[scripts.size()];
             for (int i = 0; i < d.length; i++) {
-                d[i] = i + ". " + JDUtilities.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
+                d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
             }
 
             // String selected = (String) JOptionPane.showInputDialog(this,

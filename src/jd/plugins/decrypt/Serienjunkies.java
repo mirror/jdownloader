@@ -40,6 +40,8 @@ import javax.swing.JPanel;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -146,9 +148,9 @@ public class Serienjunkies extends PluginForDecrypt {
         String name = null, linkName = null, title = null;
         String[] mirrors = null;
         if (info != null) {
-            name = JDUtilities.htmlDecode(info[1]);
+            name = Encoding.htmlDecode(info[1]);
             size = Integer.parseInt(info[0]);
-            title = JDUtilities.htmlDecode(info[3]);
+            title = Encoding.htmlDecode(info[3]);
             mirrors = getMirrors(parameter, info[2]);
         }
         try {
@@ -177,10 +179,9 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        request.redirect = true;
-        request.withHtmlCode = false;
-        request.getRequest("http://serienjunkies.org/enter/");
-        request.withHtmlCode = true;
+       Browser.clearCookies("serienjunkies.org");
+        br.getPage("http://serienjunkies.org/enter/");
+      
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
             boolean isP = parameter.contains("/?p=");
@@ -188,10 +189,10 @@ public class Serienjunkies extends PluginForDecrypt {
             scatChecked = false;
             int cat = Integer.parseInt(parameter.replaceFirst(".*\\?(cat|p)\\=", "").replaceFirst("[^\\d].*", ""));
             if (sCatNewestDownload == catst) {
-                request.getRequest("http://serienjunkies.org/");
+                br.getPage("http://serienjunkies.org/");
 
                 Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(request.getHtmlCode());
+                Matcher matcher = pattern.matcher(br+"");
                 String name = null;
                 while (matcher.find()) {
                     if (Integer.parseInt(matcher.group(1)) == cat) {
@@ -200,21 +201,21 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
                 }
                 if (name == null) { return decryptedLinks; }
-                request.getRequest(parameter);
+                br.getPage(parameter);
                 name += " ";
                 String[] bet = null;
                 while (bet == null) {
                     name = name.substring(0, name.length() - 1);
                     if (name.length() == 0) { return decryptedLinks; }
                     try {
-                        bet = request.getRegexp("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
+                        bet = br.getRegex("<p><strong>(" + name + ".*?)</strong>(.*?)</p>").getMatches()[0];
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
 
                 }
-                lastHtmlCode = request.getHtmlCode();
-                String[] links = HTMLParser.getHttpLinks(bet[1], request.urlToString());
+                lastHtmlCode = br+"";
+                String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
                 for (String element : links) {
                     decryptedLinks.add(createDownloadlink(element));
                 }
@@ -223,15 +224,15 @@ public class Serienjunkies extends PluginForDecrypt {
 
                 String htmlcode = "";
                 if (isP) {
-                    request.getRequest(parameter);
-                    htmlcode = request.getHtmlCode();
+                    br.getPage(parameter);
+                    htmlcode = br+"";
                 } else {
-                    request.getRequest("http://serienjunkies.org/?cat=" + cat);
-                    htmlcode = request.getHtmlCode();
+                    br.getPage("http://serienjunkies.org/?cat=" + cat);
+                    htmlcode = br+"";
                     try {
-                        int pages = Integer.parseInt(request.getRegexp("<p align=\"center\">  Pages \\(([\\d]+)\\):").getFirstMatch());
+                        int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getFirstMatch());
                         for (int i = 2; i < pages + 1; i++) {
-                            htmlcode += "\n" + request.getRequest("http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
+                            htmlcode += "\n" + br.getPage("http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
                         }
                     } catch (Exception e) {
                         // TODO: handle exception
@@ -275,8 +276,8 @@ public class Serienjunkies extends PluginForDecrypt {
             String[] info = getLinkName(parameter);
 
             if (info == null) {
-                request.getRequest("http://serienjunkies.org/?s=" + parameter.replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen");
-                lastHtmlCode = request.getHtmlCode();
+                br.getPage("http://serienjunkies.org/?s=" + parameter.replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen");
+                lastHtmlCode = br+"";
                 info = getLinkName(parameter);
             }
 

@@ -22,14 +22,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.plugins.CRequest.CaptchaInfo;
-import jd.utils.JDUtilities;
 
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
@@ -43,38 +43,46 @@ public class Stealth extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            CaptchaInfo<File, String> captchaInfo = null;
-            request.getRequest(parameter);
+            //CaptchaInfo<File, String> captchaInfo = null;
+            Browser.clearCookies(host);
+            br.getPage(parameter);
             for (int i = 0; i < 5; i++) {
-                if (request.toString().contains("captcha_img.php")) {
+                if (br.containsHTML("captcha_img.php")) {
 
-                    String sessid = new Regex(request.getCookie(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
+                    String sessid = new Regex(br.getRequest().getCookieString(), "PHPSESSID=([a-zA-Z0-9]*)").getFirstMatch();
                     if (sessid == null) {
-                        logger.severe("Error sessionid: " + request.getCookie());
+                        logger.severe("Error sessionid: " + br.getRequest().getCookieString());
                         return null;
                     }
                     logger.finest("Captcha Protected");
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
-                    captchaInfo = request.getCaptchaCode(this, captchaAdress);
-                    Form form = request.getForm();
-                    form.put("txtCode", captchaInfo.captchaCode);
-                    request.setRequestInfo(form);
+                    File file=this.getLocalCaptchaFile(this);
+                    Form form=br.getForm(0);
+                    Browser.download(file, br.openGetConnection(captchaAdress));
+                    String code=getCaptchaCode(file, this);
+                   
+                    form.put("txtCode", code);
+                   
+                    br.submitForm(form);
                 } else {
                     break;
                 }
             }
-
-            RequestInfo reqhelp = HTTP.postRequest(new URL("http://stealth.to/ajax.php"), null, parameter, null, "id=" + new Regex(request.getHtmlCode(), Pattern.compile("<div align=\"center\"><a id=\"(.*?)\" href=\"", Pattern.CASE_INSENSITIVE)).getFirstMatch() + "&typ=hit", true);
-            String[] links = new Regex(request.getHtmlCode(), Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+String p=new Regex(br, Pattern.compile("<div align=\"center\"><a id=\"(.*?)\" href=\"", Pattern.CASE_INSENSITIVE)).getFirstMatch() + "&typ=hit";
+            br.postPage("http://stealth.to/ajax.php", p);
+            String[] links = br.getRegex( Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(links.length);
 
             for (String element : links) {
-                reqhelp = HTTP.getRequest(new URL("http://stealth.to/" + element));
-                String[] decLinks = new Regex(reqhelp.getHtmlCode(), Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(decLinks[1])));
+                //entspricht quasi neuem tab
+                Browser tmp=br.cloneBrowser();
+              
+                tmp.getPage("http://stealth.to/" + element);
+                String[] decLinks = tmp.getRegex(Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(decLinks[1])));
                 progress.increase(1);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

@@ -20,10 +20,10 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -94,7 +94,7 @@ public class BluehostTo extends PluginForHost {
 
         br.getPage("http://bluehost.to/fetchinfo");
         // }
-        br.getPage(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);

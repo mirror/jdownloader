@@ -23,12 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class ProtectTehparadoxcom extends PluginForDecrypt {
 
@@ -51,7 +51,7 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.postRequest(url, null, cryptedLink, null, "id=" + downloadid, false);
             String downloadlink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
             if (downloadlink != null) {
-                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(downloadlink)));
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
             } else {
                 return null;
             }

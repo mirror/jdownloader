@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -46,7 +47,7 @@ public class FTI6xto extends PluginForDecrypt {
                 parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + requestInfo.getFirstMatch("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc") + ".dlc";
             }
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            if (JDUtilities.download(container, parameter)) {
+            if (Browser.download(container, parameter)) {
                 JDUtilities.getController().loadContainerFile(container);
             }
         } catch (IOException e) {

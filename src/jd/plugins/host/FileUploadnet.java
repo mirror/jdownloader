@@ -4,11 +4,12 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -56,16 +57,18 @@ public class FileUploadnet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Browser.clearCookies(HOST);
+        br.setFollowRedirects(false);
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
                 /* LinkCheck für DownloadFiles */
                 downloadurl = downloadLink.getDownloadURL();
-                requestInfo = HTTP.getRequest(new URL(downloadurl));
-                if (!requestInfo.containsHTML("Datei existiert nicht auf unserem Server")) {
-                    String filename = requestInfo.getRegexp("<h1>Download \"(.*?)\"</h1>").getFirstMatch();
+            
+                br.getPage(downloadurl);
+                if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
+                    String filename = br.getRegex("<h1>Download \"(.*?)\"</h1>").getFirstMatch();
                     String filesize;
-                    if ((filesize = requestInfo.getRegexp("e:</b></td><td>(.*?)Kbyte<td>").getFirstMatch()) != null) {
+                    if ((filesize = br.getRegex("e:</b></td><td>(.*?)Kbyte<td>").getFirstMatch()) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -74,11 +77,11 @@ public class FileUploadnet extends PluginForHost {
             } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
                 /* LinkCheck für DownloadFiles */
                 downloadurl = downloadLink.getDownloadURL();
-                requestInfo = HTTP.getRequest(new URL(downloadurl));
-                if (!requestInfo.containsHTML("Datei existiert nicht auf unserem Server")) {
-                    String filename = requestInfo.getRegexp("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getFirstMatch();
+                br.getPage(downloadurl);
+                if (!  br.containsHTML("Datei existiert nicht auf unserem Server")) {
+                    String filename =   br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getFirstMatch();
                     String filesize;
-                    if ((filesize = requestInfo.getRegexp("e:</b>(.*?)Kbyte").getFirstMatch()) != null) {
+                    if ((filesize =   br.getRegex("e:</b>(.*?)Kbyte").getFirstMatch()) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -132,22 +135,22 @@ public class FileUploadnet extends PluginForHost {
 
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
-            downloadurl = requestInfo.getRegexp("action=\"(.*?)\" method=\"post\"").getFirstMatch();
-            Form form = requestInfo.getForms()[0];
-            form.withHtmlCode = false;
-            requestInfo = form.getRequestInfo(false);
+            downloadurl =   br.getRegex("action=\"(.*?)\" method=\"post\"").getFirstMatch();
+            Form form = br.getForm(0);
+     br.openFormConnection(form);
+          
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
-            downloadurl = requestInfo.getRegexp("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getFirstMatch();
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        } else {
+            downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getFirstMatch();
+            br.openGetConnection(downloadurl);
+       } else {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.getHttpConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);

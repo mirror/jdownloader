@@ -24,13 +24,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
-import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.event.TableModelEvent;
@@ -42,9 +36,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.Link.JLinkButton;
-import jd.gui.skins.simple.components.TextAreaDialog;
-import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -137,68 +128,115 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"))) {
             JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-t" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"))) {
-            String user = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("gui.config.captcha.ces.register", "Gewünschter Benutzername?"));
-
-            if (user != null) {
-                CESClient ces = new CESClient();
-                String pass = ces.register(user);
-                if (pass == null) {
-                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.error", "Fehler aufgetreten"), ces.getStatusText());
-                } else {
-                    JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.success", "Erfolgreich"), JDLocale.L("gui.config.captcha.ces.register.success.logins", "Deine neuen C.E.S Logins<br><font color='RED'>Logins unbedingt aufschreiben!</font> Verlorene Logins können nicht ersetzt werden") + "<hr><p>" + user + ":" + pass + "</p>");
-                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_USER, user);
-                    JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_PASS, pass);
-                    JDUtilities.getSubConfig("JAC").save();
-                    JDUtilities.saveConfig();
-                    ConfigurationDialog.DIALOG.dispose();
-                    ConfigurationDialog.DIALOG.setVisible(false);
-
-                }
-            }
-
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"))) {
-            CESClient ces = new CESClient();
-            ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER), JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-            String nick = JOptionPane.showInputDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askUser", "Wer soll die Nachricht erhalten?"));
-            String message = TextAreaDialog.showDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage", "Nachricht eingeben"), JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage", "Nachricht eingeben"), "");
-
-            if (nick == null || message == null || nick.trim().length() == 0 || message.trim().length() == 0 || !ces.sendMessage(nick, message)) {
-                JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, JDLocale.L("gui.config.captcha.ces.sendMessage.error", "Fehler! Nachricht nicht verschickt."));
-            } else {
-                JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG, String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success", "Nachricht an %s verschickt"), nick));
-            }
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"))) {
-
-            try {
-                save();
-                JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER) + "&Pass=" + JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
-            } catch (MalformedURLException e1) {
-
-                e1.printStackTrace();
-            }
-        } else if (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"))) {
-            Object oldMessages = JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
-            HashMap<Integer, ArrayList<String>> savedMessages = null;
-            if (oldMessages != null) {
-                savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
-            } else {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages", "C.E.S. Keine Nachrichten für dich!"));
-                return;
-            }
-            String html = "<link href=\"http://jdownloader.org/jdccs.css\" rel=\"stylesheet\" type=\"text/css\" />";
-
-            ArrayList<String> message;
-            int i = 0;
-            for (Iterator<Entry<Integer, ArrayList<String>>> it = savedMessages.entrySet().iterator(); it.hasNext();) {
-                Entry<Integer, ArrayList<String>> next = it.next();
-                message = next.getValue();
-                html += "<br" + String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle", "<div><p>%s Nachricht von %s<hr>%s</p></div>"), JDUtilities.htmlDecode(message.get(0)), JDUtilities.htmlDecode(message.get(1)), JDUtilities.htmlDecode(message.get(2)));
-                i++;
-            }
-            String title = String.format(JDLocale.L("captcha.ces.message.titleoverview", "C.E.S. %s Nachrichten"), i + "");
-            JDUtilities.getGUI().showHTMLDialog(title, html);
-        } else {
+        }
+        // else if
+        // (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_register",
+        // "Registrieren"))) {
+        // String user =
+        // JDUtilities.getGUI().showUserInputDialog(JDLocale.L("gui.config.captcha.ces.register",
+        // "Gewünschter Benutzername?"));
+        //
+        // if (user != null) {
+        // CESClient ces = new CESClient();
+        // String pass = ces.register(user);
+        // if (pass == null) {
+        // JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.error",
+        // "Fehler aufgetreten"), ces.getStatusText());
+        // } else {
+        // JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.config.captcha.ces.register.success",
+        // "Erfolgreich"),
+        // JDLocale.L("gui.config.captcha.ces.register.success.logins", "Deine
+        // neuen C.E.S Logins<br><font color='RED'>Logins unbedingt
+        // aufschreiben!</font> Verlorene Logins können nicht ersetzt werden") +
+        // "<hr><p>" + user + ":" + pass + "</p>");
+        // JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_USER,
+        // user);
+        // JDUtilities.getSubConfig("JAC").setProperty(CESClient.PARAM_PASS,
+        // pass);
+        // JDUtilities.getSubConfig("JAC").save();
+        // JDUtilities.saveConfig();
+        // ConfigurationDialog.DIALOG.dispose();
+        // ConfigurationDialog.DIALOG.setVisible(false);
+        //
+        // }
+        // }
+        //
+        // } else if
+        // (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_sendmessages",
+        // "Nachricht senden"))) {
+        // CESClient ces = new CESClient();
+        // ces.setLogins(JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER),
+        // JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
+        // String nick = JOptionPane.showInputDialog(ConfigurationDialog.DIALOG,
+        // JDLocale.L("gui.config.captcha.ces.sendMessage.askUser", "Wer soll
+        // die Nachricht erhalten?"));
+        // String message =
+        // TextAreaDialog.showDialog(ConfigurationDialog.DIALOG,
+        // JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage",
+        // "Nachricht eingeben"),
+        // JDLocale.L("gui.config.captcha.ces.sendMessage.askMessage",
+        // "Nachricht eingeben"), "");
+        //
+        // if (nick == null || message == null || nick.trim().length() == 0 ||
+        // message.trim().length() == 0 || !ces.sendMessage(nick, message)) {
+        // JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG,
+        // JDLocale.L("gui.config.captcha.ces.sendMessage.error", "Fehler!
+        // Nachricht nicht verschickt."));
+        // } else {
+        // JOptionPane.showMessageDialog(ConfigurationDialog.DIALOG,
+        // String.format(JDLocale.L("gui.config.captcha.ces.sendMessage.success",
+        // "Nachricht an %s verschickt"), nick));
+        // }
+        // } else if
+        // (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_stats",
+        // "Meine Statistiken"))) {
+        //
+        // try {
+        // save();
+        // JLinkButton.openURL("http://dvk.com.ua/rapid/index.php?Nick=" +
+        // JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_USER)
+        // + "&Pass=" +
+        // JDUtilities.getSubConfig("JAC").getStringProperty(CESClient.PARAM_PASS));
+        // } catch (MalformedURLException e1) {
+        //
+        // e1.printStackTrace();
+        // }
+        // } else if
+        // (e.getActionCommand().equalsIgnoreCase(JDLocale.L("gui.config.captcha.ces.btn_messages",
+        // "Meine Nachrichten anzeigen"))) {
+        // Object oldMessages =
+        // JDUtilities.getSubConfig("JAC").getProperty(CESClient.MESSAGES);
+        // HashMap<Integer, ArrayList<String>> savedMessages = null;
+        // if (oldMessages != null) {
+        // savedMessages = (HashMap<Integer, ArrayList<String>>) oldMessages;
+        // } else {
+        // JDUtilities.getGUI().showMessageDialog(JDLocale.L("captcha.ces.message.nomessages",
+        // "C.E.S. Keine Nachrichten für dich!"));
+        // return;
+        // }
+        // String html = "<link href=\"http://jdownloader.org/jdccs.css\"
+        // rel=\"stylesheet\" type=\"text/css\" />";
+        //
+        // ArrayList<String> message;
+        // int i = 0;
+        // for (Iterator<Entry<Integer, ArrayList<String>>> it =
+        // savedMessages.entrySet().iterator(); it.hasNext();) {
+        // Entry<Integer, ArrayList<String>> next = it.next();
+        // message = next.getValue();
+        // html += "<br" +
+        // String.format(JDLocale.L("captcha.ces.message.bodywithoutstyle",
+        // "<div><p>%s Nachricht von %s<hr>%s</p></div>"),
+        // Encoding.htmlDecode(message.get(0)),
+        // Encoding.htmlDecode(message.get(1)),
+        // Encoding.htmlDecode(message.get(2)));
+        // i++;
+        // }
+        // String title =
+        // String.format(JDLocale.L("captcha.ces.message.titleoverview", "C.E.S.
+        // %s Nachrichten"), i + "");
+        // JDUtilities.getGUI().showHTMLDialog(title, html);
+        // }
+        else {
             JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", "-s" }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0);
 
         }
@@ -312,9 +350,12 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         container = new ConfigContainer(this);
 
         ConfigContainer jac = new ConfigContainer(this, JDLocale.L("gui.config.captcha.JAC.tab", "jAntiCaptcha"));
-        ConfigContainer ces = new ConfigContainer(this, JDLocale.L("gui.config.captcha.CES.tab", "Captcha Exchange Service"));
+        // ConfigContainer ces = new ConfigContainer(this,
+        // JDLocale.L("gui.config.captcha.CES.tab", "Captcha Exchange
+        // Service"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, jac));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ces));
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
+        // ces));
 
         ConfigEntry ce;
         ConfigEntry conditionEntry;
@@ -349,48 +390,64 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         jac.addEntry(ce);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         // CES
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.JAC_USE_CES, JDLocale.L("gui.config.captcha.use_Ces", "CaptchaExchangeServer verwenden(Neustart nötig)"));
-        ce.setDefaultValue(true);
-        conditionEntry = ce;
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
+//        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.JAC_USE_CES, JDLocale.L("gui.config.captcha.use_Ces", "CaptchaExchangeServer verwenden(Neustart nötig)"));
+//        ce.setDefaultValue(true);
+//        conditionEntry = ce;
+//        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
 
         // ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp",
         // "http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3"));
-        ces.addEntry(ce);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, JDUtilities.getSubConfig("JAC"), CESClient.PARAM_USER, JDLocale.L("gui.config.captcha.ces.user", "C.E.S. Benutzername"));
-        ce.setDefaultValue("JD_" + JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, (int) System.currentTimeMillis()));
-
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ces.addEntry(ce);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, JDUtilities.getSubConfig("JAC"), CESClient.PARAM_PASS, JDLocale.L("gui.config.captcha.ces.pass", "C.E.S. Passwort"));
-
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ces.addEntry(ce);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), CESClient.DO_WARNING, JDLocale.L("gui.config.captcha.useCESPenaltyWarning", "Durch frühzeitige Rückfrage Punktstrafen vermeiden"));
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
-
-        ce.setDefaultValue(true);
-        ces.addEntry(ce);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten anzeigen"));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht senden"));
-        ces.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ces.addEntry(ce);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
+        // JDUtilities.getSubConfig("JAC"), CESClient.PARAM_USER,
+        // JDLocale.L("gui.config.captcha.ces.user", "C.E.S. Benutzername"));
+        // ce.setDefaultValue("JD_" +
+        // JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID,
+        // (int) System.currentTimeMillis()));
+        //
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ces.addEntry(ce);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD,
+        // JDUtilities.getSubConfig("JAC"), CESClient.PARAM_PASS,
+        // JDLocale.L("gui.config.captcha.ces.pass", "C.E.S. Passwort"));
+        //
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ces.addEntry(ce);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getSubConfig("JAC"), CESClient.DO_WARNING,
+        // JDLocale.L("gui.config.captcha.useCESPenaltyWarning", "Durch
+        // frühzeitige Rückfrage Punktstrafen vermeiden"));
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        // ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help",
+        // "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
+        //
+        // ce.setDefaultValue(true);
+        // ces.addEntry(ce);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.ces.btn_register", "Registrieren"));
+        // ces.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.ces.btn_stats", "Meine Statistiken"));
+        // ces.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.ces.btn_messages", "Meine Nachrichten
+        // anzeigen"));
+        // ces.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.ces.btn_sendmessages", "Nachricht
+        // senden"));
+        // ces.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", true);
 
     }
 

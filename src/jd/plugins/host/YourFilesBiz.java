@@ -22,16 +22,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class YourFilesBiz extends PluginForHost {
 
@@ -93,7 +93,7 @@ public class YourFilesBiz extends PluginForHost {
                 return false;
             }
 
-            String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
+            String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
             Integer length = getFileSize(requestInfo.getHtmlCode());
 
             // downloadinfos gefunden? -> download verfügbar
@@ -124,7 +124,7 @@ public class YourFilesBiz extends PluginForHost {
     private int getFileSize(String source) {
 
         int size = 0;
-        String sizeString = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
+        String sizeString = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
         if (sizeString == null) {
             sizeString = "";
         }
@@ -190,7 +190,7 @@ public class YourFilesBiz extends PluginForHost {
             return;
         }
 
-        String fileName = JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
+        String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
         downloadLink.setName(fileName);
 
         try {
@@ -203,7 +203,7 @@ public class YourFilesBiz extends PluginForHost {
         }
 
         // downloadLink auslesen
-        downloadURL = "http://" + JDUtilities.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
+        downloadURL = "http://" + Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
         // case PluginStep.STEP_WAIT_TIME:
 

@@ -4,16 +4,16 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Odsiebiecom extends PluginForHost {
     private static final String CODER = "JD-Team";
@@ -162,7 +162,7 @@ public class Odsiebiecom extends PluginForHost {
                 HTTPConnection captcha_con = new HTTPConnection(new URL(captchaurl).openConnection());
                 captcha_con.setRequestProperty("Referer", referrerurl);
                 captcha_con.setRequestProperty("Cookie", downloadcookie);
-                if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                     /* Fehler beim Captcha */
                     logger.severe("Captcha Download fehlgeschlagen!");
                     // step.setStatus(PluginStep.STATUS_ERROR);

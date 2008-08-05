@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Encoding;
 import jd.http.PostRequest;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -85,13 +86,13 @@ public class JDLocale {
         if (def == null) {
             def = key;
         }
-        if (data.containsKey(key)) { return JDUtilities.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
+        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
         logger.info("Key not found: " + key);
         if (defaultData.containsKey(key)) {
-            def = JDUtilities.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
+            def = Encoding.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         }
-        data.put(key, JDUtilities.UTF8Encode(def));
-        missingData.put(key, JDUtilities.UTF8Encode(def));
+        data.put(key, Encoding.UTF8Encode(def));
+        missingData.put(key, Encoding.UTF8Encode(def));
 
         JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
         JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
@@ -278,7 +279,7 @@ public class JDLocale {
         try {
             page = r.load();
 
-            return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
+            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (Exception e) {
 
             e.printStackTrace();
@@ -320,7 +321,7 @@ public class JDLocale {
         try {
             page = r.load();
 
-            return JDUtilities.UTF8Decode(JDUtilities.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
+            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
         } catch (IOException e) {
 
             e.printStackTrace();

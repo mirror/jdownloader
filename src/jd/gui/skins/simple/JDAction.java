@@ -40,7 +40,7 @@ public class JDAction extends AbstractAction {
     public static final int ABOUT = 32;
 
     public static final int APP_ALLOW_RECONNECT = 31;
-    public static final int APP_CES = 30;
+//    public static final int APP_CES = 30;
     public static final int APP_CLIPBOARD = 28;
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;

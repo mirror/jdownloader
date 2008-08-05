@@ -24,6 +24,8 @@ import java.util.Vector;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -41,6 +43,8 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
     protected ProgressController progress;
 
+    protected Browser br;
+
     /**
      * Diese Methode entschlüsselt Links.
      * 
@@ -53,7 +57,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      */
 
     public PluginForDecrypt() {
-
+        br = new Browser();
     }
 
     // private String decrypterDefaultPassword = null;
@@ -69,7 +73,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     };
 
     protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(this, null, getHost(), JDUtilities.htmlDecode(link), true);
+        DownloadLink dl = new DownloadLink(this, null, getHost(), Encoding.htmlDecode(link), true);
         return dl;
     }
 
@@ -108,6 +112,10 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         progress = new ProgressController("Decrypter: " + getLinkName());
         progress.setStatusText("decrypt-" + getPluginName() + ": " + getLinkName());
         ArrayList<DownloadLink> tmpLinks = decryptIt(cryptedLink);
+        if(tmpLinks==null){
+            logger.severe("Decrypter out of date: "+this);
+            return new ArrayList<DownloadLink>();
+        }
         FilePackage fp= new FilePackage();
         String pn=null;
         for(DownloadLink link:tmpLinks){

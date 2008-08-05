@@ -22,12 +22,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Hubuploadcom extends PluginForDecrypt {
 
@@ -52,7 +52,7 @@ public class Hubuploadcom extends PluginForDecrypt {
             progress.setRange(links.length);
             for (String element : links) {
                 reqinfo = HTTP.getRequest(new URL(element), Cookie, cryptedLink, false);
-                String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                 }

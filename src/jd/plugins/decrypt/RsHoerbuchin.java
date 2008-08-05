@@ -23,13 +23,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class RsHoerbuchin extends PluginForDecrypt {
     static private final String host = "rs.hoerbuch.in";
@@ -51,11 +51,11 @@ public class RsHoerbuchin extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.getRequest(url);
             if (parameter.matches(patternLink_RS.pattern())) {
                 HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                String newURL = "http://rapidshare.com" + JDUtilities.htmlDecode(fields.get("uri"));
+                String newURL = "http://rapidshare.com" + Encoding.htmlDecode(fields.get("uri"));
                 decryptedLinks.add(createDownloadlink(newURL));
             } else if (parameter.matches(patternLink_DE.pattern())) {
                 HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                String newURL = "http://rapidshare.de" + JDUtilities.htmlDecode(fields.get("uri"));
+                String newURL = "http://rapidshare.de" + Encoding.htmlDecode(fields.get("uri"));
                 decryptedLinks.add(createDownloadlink(newURL));
             } else if (parameter.matches(patternLink_UP.pattern())) {
                 String links[][] = new Regex(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatches();

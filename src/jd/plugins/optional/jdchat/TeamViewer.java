@@ -16,24 +16,8 @@
 
 package jd.plugins.optional.jdchat;
 
-import java.awt.BorderLayout;
-import java.awt.Insets;
 import java.util.logging.Logger;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
-
-import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -43,39 +27,31 @@ import jd.utils.JDUtilities;
  */
 public class TeamViewer {
 
-    //private static Logger logger = JDUtilities.getLogger();
+    // private static Logger logger = JDUtilities.getLogger();
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
-    
-
 
     protected Logger logger = JDUtilities.getLogger();
-    private String id, pw;
-    
-    
-    public static String[] handleTeamviewer(){	
-    		return AskForTeamviewerIDPW(); 		
+
+    public static String[] handleTeamviewer() {
+        return TeamViewer.AskForTeamviewerIDPW();
     }
-    
+
     public static String[] AskForTeamviewerIDPW() {
-    	System.out.println("Ask for Teamviewer ID & PW.");
-    	
-    	
-    	
+        System.out.println("Ask for Teamviewer ID & PW.");
+
         String[] abc = SimpleGUI.CURRENTGUI.showTextAreaDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
-    	 
-        
 
         return abc;
-       
+
     }
-    
-    public static void main(String[] args)
-    {
-    	//ConversionMode[] mode = {ConversionMode.AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
-    	AskForTeamviewerIDPW();
+
+    public static void main(String[] args) {
+        // ConversionMode[] mode =
+        // {ConversionMode.AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
+        TeamViewer.AskForTeamviewerIDPW();
 
     }
 

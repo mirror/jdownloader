@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -51,7 +52,7 @@ public class EinsKhDe extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             if (cryptedLink.matches(patternSupported_File.pattern())) {
                 /* eine einzelne Datei */
-                String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
+                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {

@@ -73,10 +73,11 @@ public class SAUGUS extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            request.getRequest(parameter);
-            if (request.toString().contains("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
-            String hst = "http://" + request.getHost() + "/";
-            String[] crypt = new Regex(request.getHtmlCode(), "document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
+            br.getPage(parameter);
+            
+            if ( br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
+            String hst = "http://" + br.getRequest().getUrl().getHost() + "/";
+            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
             progress.setRange(crypt.length);
 
             for (String string : crypt) {
@@ -89,9 +90,11 @@ public class SAUGUS extends PluginForDecrypt {
                 string = deca1(string);
 
                 string = hst + HTMLEntities.unhtmlentities(new Regex(string, "javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
-                string = HTMLEntities.unhtmlentities(new Regex(request.getRequest(string).toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
+                br.getPage(string);
+                string = HTMLEntities.unhtmlentities(new Regex(br.toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
                 if (!string.toLowerCase().matches("http\\:\\/\\/.*")) {
-                    decryptedLinks.add(createDownloadlink(request.getRequest(hst + string).getForm().action));
+                    br.getPage(hst + string);
+                    decryptedLinks.add(createDownloadlink(br.getForm(0).getAction("http://saug.us")));
                 } else {
                     decryptedLinks.add(createDownloadlink(string));
                 }

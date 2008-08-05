@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -61,7 +63,7 @@ public class XinkIt extends PluginForDecrypt {
                     captchaAdress += "?" + session;
 
                     captchaFile = getLocalCaptchaFile(this);
-                    JDUtilities.download(captchaFile, captchaAdress);
+                    Browser.download(captchaFile, captchaAdress);
 
                     capTxt = JDUtilities.getCaptcha(this, "xink.it", captchaFile, false);
 
@@ -143,12 +145,12 @@ public class XinkIt extends PluginForDecrypt {
         // implementiert von js vorlage http.xink.it/lcv1.js
         // l001011l10110101l11010101l101l01l( decodiert Base64
         // TODO: hier bitte die JS lib nutzen
-        String evalCode = JDUtilities.Base64Decode(source);
+        String evalCode = Encoding.Base64Decode(source);
 
-        String l010 = JDUtilities.Base64Decode(new Regex(evalCode, "l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
+        String l010 = Encoding.Base64Decode(new Regex(evalCode, "l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
         String gt = new Regex(evalCode, "gt\\=\"(.*?)\";").getFirstMatch();
-        String l011 = JDUtilities.Base64Decode(new Regex(evalCode, "l011 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
-        String l012 = JDUtilities.Base64Decode(gt);
+        String l011 = Encoding.Base64Decode(new Regex(evalCode, "l011 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
+        String l012 = Encoding.Base64Decode(gt);
 
         String r = l012;
         String ar = r;

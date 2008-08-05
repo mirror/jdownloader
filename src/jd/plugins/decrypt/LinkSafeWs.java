@@ -22,13 +22,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class LinkSafeWs extends PluginForDecrypt {
     /*
@@ -57,7 +57,7 @@ public class LinkSafeWs extends PluginForDecrypt {
             for (int i = 0; i < files.size(); i++) {
                 reqinfo = HTTP.postRequest(new URL("http://www.linksafe.ws/go/"), reqinfo.getCookie(), strURL, null, "id=" + files.get(i).get(0) + "&f=" + files.get(i).get(2) + "&Download.x=5&Download.y=10&Download=Download", true);
                 String newLink = SimpleMatches.getSimpleMatch(reqinfo.getHtmlCode(), LINK, 0);
-                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(newLink)));
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(newLink)));
                 progress.increase(1);
             }
         } catch (IOException e) {

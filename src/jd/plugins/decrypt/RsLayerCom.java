@@ -22,11 +22,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
@@ -43,16 +45,15 @@ public class RsLayerCom extends PluginForDecrypt {
         super();
     }
 
-    private boolean add_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
+    private boolean add_container( String cryptedLink, String ContainerFormat) throws IOException {
         String link_id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
-        if (reqinfo.containsHTML(container_link)) {
+        if (br.containsHTML(container_link)) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
-            URL container_url = new URL(container_link);
-            HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
-            container_con.setRequestProperty("Referer", cryptedLink);
-            container_con.setRequestProperty("Cookie", reqinfo.getCookie());
-            if (JDUtilities.download(container, container_con)) {
+           
+            
+ 
+            if (Browser.download(container, br.openGetConnection(container_link))) {
                 JDUtilities.getController().loadContainerFile(container);
                 return true;
             }
@@ -64,10 +65,12 @@ public class RsLayerCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
+           
+            Browser.clearCookies(host);
+            br.getPage(parameter);
             if (parameter.indexOf("/link-") != -1) {
-                String link = new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                link = JDUtilities.htmlDecode(link);
+                String link = br.getRegex( "<iframe src=\"(.*?)\" ").getFirstMatch();
+                link = Encoding.htmlDecode(link);
                 if (link == null) {
                     return null;
                 } else {
@@ -75,14 +78,14 @@ public class RsLayerCom extends PluginForDecrypt {
                 }
                 ;
             } else if (parameter.indexOf("/directory-") != -1) {
-                Form[] forms = Form.getForms(reqinfo);
+                Form[] forms = br.getForms();
                 if (forms != null && forms.length != 0 && forms[0] != null) {
                     Form captchaForm = forms[0];
-                    String captchaFileName = new Regex(reqinfo.getHtmlCode(), strCaptchaPattern).getFirstMatch(1);
+                    String captchaFileName = br.getRegex( strCaptchaPattern).getFirstMatch(1);
                     if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://" + host + "/" + captchaFileName;
                     File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-                    boolean fileDownloaded = JDUtilities.download(captchaFile, HTTP.getRequestWithoutHtmlCode(new URL(captchaUrl), reqinfo.getCookie(), null, true).getConnection());
+                    boolean fileDownloaded = Browser.download(captchaFile, br.openGetConnection(captchaUrl));
                     if (!fileDownloaded) {
                         logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
                         return null;
@@ -93,21 +96,22 @@ public class RsLayerCom extends PluginForDecrypt {
                         return null;
                     }
                     captchaForm.put("captcha_input", captchaCode);
-                    reqinfo = HTTP.readFromURL(captchaForm.getConnection());
-                    if (reqinfo.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
+                    br.submitForm(captchaForm);
+                  
+                    if (br.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
                         logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
                         return null;
                     }
-                    if (reqinfo.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
+                    if (br.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
                         logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
                         return null;
                     }
                 }
-                String layerLinks[][] = new Regex(reqinfo.getHtmlCode(), linkPattern).getMatches();
+                String layerLinks[][] = br.getRegex(linkPattern).getMatches();
                 if (layerLinks.length == 0) {
-                    if (!add_container(reqinfo, parameter, ".dlc")) {
-                        if (!add_container(reqinfo, parameter, ".rsdf")) {
-                            add_container(reqinfo, parameter, ".ccf");
+                    if (!add_container( parameter, ".dlc")) {
+                        if (!add_container( parameter, ".rsdf")) {
+                            add_container(parameter, ".ccf");
                         }
                     }
                 } else {

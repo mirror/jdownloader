@@ -24,12 +24,12 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.controlling.DistributeData;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Wordpress extends PluginForDecrypt {
     static private final String host = "Wordpress Parser";
@@ -90,7 +90,7 @@ public class Wordpress extends PluginForDecrypt {
                 password = new Regex(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE)).getMatches(1);
                 if (password.length != 0) {
                     for (String element : password) {
-                        link_passwds.add(JDUtilities.htmlDecode(element));
+                        link_passwds.add(Encoding.htmlDecode(element));
                     }
                     break;
                 }
@@ -102,7 +102,7 @@ public class Wordpress extends PluginForDecrypt {
                 if (!new Regex(links[i], patternSupported).matches()) {
                     Vector<DownloadLink> LinkList = new DistributeData(links[i]).findLinks();
                     for (int ii = 0; ii < LinkList.size(); ii++) {
-                        DownloadLink link = createDownloadlink(JDUtilities.htmlDecode(LinkList.get(ii).getDownloadURL()));
+                        DownloadLink link = createDownloadlink(Encoding.htmlDecode(LinkList.get(ii).getDownloadURL()));
                         link.setSourcePluginPasswords(link_passwds);
                         decryptedLinks.add(link);
                     }

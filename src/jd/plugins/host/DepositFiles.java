@@ -22,16 +22,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -75,8 +73,6 @@ public class DepositFiles extends PluginForHost {
 
     // private String captchaAddress;
 
-    private String finalURL;
-
     // Rechtschreibfehler übernommen
     private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
 
@@ -102,25 +98,23 @@ public class DepositFiles extends PluginForHost {
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
-        RequestInfo requestInfo;
-
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
+        Browser.clearCookies(HOST);
 
         // switch (step.getStep()) {
 
         // case PluginStep.STEP_WAIT_TIME:
-        Browser.clearCookies("depositfiles.com");
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
         link = link.replace("com/files/", "com/de/files/");
         downloadLink.setUrlDownload(link);
 
-        finalURL = link;
+        String finalURL = link;
 
         br.getPage(finalURL);
-        requestInfo = br.getRequest().getRequestInfo();
+        // br.getRequest();
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
 
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
@@ -140,7 +134,7 @@ public class DepositFiles extends PluginForHost {
         }
 
         // Datei geloescht?
-        if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
+        if (br.containsHTML(FILE_NOT_FOUND)) {
 
             logger.severe("Download not found");
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -149,7 +143,7 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
+        if (br.containsHTML(DOWNLOAD_NOTALLOWED)) {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Download not possible now");
@@ -158,23 +152,38 @@ public class DepositFiles extends PluginForHost {
             return;
 
         }
+        
 
         Form[] forms = br.getForms();
+        
+        if(forms.length<2){
+          String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getFirstMatch();
+            if(wait!=null){
+                linkStatus.setValue(Regex.getMilliSeconds(wait)); 
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                
+                return;
+            }
+            
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+          
+            return;
+        }
         br.submitForm(forms[1]);
         // requestInfo = HTTP.postRequest(new URL(finalURL),
         // requestInfo.getCookie(), finalURL, null,
         // "x=15&y=7&gateway_result=" +
         // SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(),
         // HIDDENPARAM, 1), true);
-        requestInfo = br.getRequest().getRequestInfo();
-        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
+        // br.getRequest();
+        if (br.containsHTML(PASSWORD_PROTECTED)) {
 
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-            requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
+            br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
 
         }
 
-        if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
 
             logger.severe("Unknown error. Retry in 20 seconds");
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -227,6 +236,22 @@ public class DepositFiles extends PluginForHost {
         // return;
         // }
         finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getFirstMatch();
+        if (finalURL == null) {
+            if (br.containsHTML("IP-Addresse")) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.host.depositfiles.iplocked", "Your IP is already downloading a file"));
+                linkStatus.setValue(10000l);
+                return;
+            }
+            if (br.containsHTML("download_limit")) {
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                linkStatus.setValue(300000l);
+                return;
+
+            }
+            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            return;
+        }
         // case PluginStep.STEP_PENDING:
         // step.setStatus(PluginStep.STATUS_SKIP);
 
@@ -292,8 +317,7 @@ public class DepositFiles extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        RequestInfo requestInfo;
-
+        Browser.clearCookies(HOST);
         // switch (step.getStep()) {
 
         // case PluginStep.STEP_WAIT_TIME:
@@ -303,9 +327,10 @@ public class DepositFiles extends PluginForHost {
         link = link.replace("com/files/", "com/de/files/");
         downloadLink.setUrlDownload(link);
 
-        finalURL = link;
-        requestInfo = HTTP.getRequest(new URL(finalURL));
-        cookie = requestInfo.getCookie();
+        String finalURL = link;
+
+        br.getPage(finalURL);
+        cookie = br.getRequest().getCookieString();
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
@@ -338,26 +363,26 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        Form[] forms = requestInfo.getForms();
+        Form[] forms = br.getForms();
         Form login = forms[0];
-        login.vars.put("login", user);
-        login.vars.put("password", pass);
-        login.vars.put("x", "30");
-        login.vars.put("y", "11");
-        requestInfo = login.getRequestInfo();
-        cookie += "; " + requestInfo.getCookie();
+        login.getVars().put("login", user);
+        login.getVars().put("password", pass);
+        login.getVars().put("x", "30");
+        login.getVars().put("y", "11");
+        br.submitForm(login);
 
-        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_REDIRECT).getFirstMatch();
-        requestInfo = HTTP.getRequest(new URL(finalURL), cookie, finalURL, true);
-        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
+        cookie += "; " + br.getRequest().getCookieString();
+
+        finalURL = br.getRegex(PATTERN_PREMIUM_REDIRECT).getFirstMatch();
+        br.getPage(finalURL);
+        if (br.containsHTML(PASSWORD_PROTECTED)) {
 
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-            requestInfo = HTTP.postRequest(new URL(finalURL), requestInfo.getCookie(), finalURL, null, "go=1&gateway_result=1&file_password=" + password, true);
-
+            br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
         } else {
-            logger.info(requestInfo.getHtmlCode());
+            logger.info(br + "");
         }
-        finalURL = new Regex(requestInfo.getHtmlCode(), PATTERN_PREMIUM_FINALURL).getFirstMatch();
+        finalURL = br.getRegex(PATTERN_PREMIUM_FINALURL).getFirstMatch();
 
         if (finalURL == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -377,20 +402,9 @@ public class DepositFiles extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
 
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), cookie, finalURL, true);
+        HTTPConnection con = br.openGetConnection(finalURL);
 
-        if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setParameter(20000l);
-            return;
-
-        }
-
-        logger.info("Filename: " + Plugin.getFileNameFormHeader(requestInfo.getConnection()));
-
-        if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
 
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -399,7 +413,18 @@ public class DepositFiles extends PluginForHost {
 
         }
 
-        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+        logger.info("Filename: " + Plugin.getFileNameFormHeader(con));
+
+        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
+
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+            // step.setParameter(20000l);
+            return;
+
+        }
+
+        dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 
@@ -419,7 +444,6 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         RequestInfo requestInfo;
         String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
@@ -472,8 +496,6 @@ public class DepositFiles extends PluginForHost {
         return HOST;
     }
 
-   
-
     @Override
     public String getPluginName() {
         return HOST;
@@ -492,16 +514,15 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void reset() {
-        finalURL = null;
+       
     }
 
     @Override
     public void resetPluginGlobals() {
-        finalURL = "";
+      
     }
 
     private void setConfigElements() {
-       
 
     }
 

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,7 +31,6 @@ import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Lixin extends PluginForDecrypt {
 
@@ -50,20 +50,22 @@ public class Lixin extends PluginForDecrypt {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            URL url = new URL(cryptedLink);
-            RequestInfo reqInfo = null;
+          
+            
             boolean lix_continue = false;
             Matcher matcher;
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */
-            reqInfo = HTTP.getRequest(url);
+           
+            br.getPage(cryptedLink);
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                matcher = patternCaptcha.matcher(reqInfo.getHtmlCode());
+                matcher = patternCaptcha.matcher(br+"");
                 if (matcher.find()) {
-                    form = reqInfo.getForms()[0];
+                    form = br.getForm(0);
+                    
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                     File captchaFile = this.getLocalCaptchaFile(this);
-                    if (!JDUtilities.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                    if (!Browser.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                         return null;
@@ -75,7 +77,7 @@ public class Lixin extends PluginForDecrypt {
                     }
                     captchaCode = captchaCode.toUpperCase();
                     form.put("capt", captchaCode);
-                    reqInfo = form.getRequestInfo();
+                    br.submitForm(form);
                 } else {
                     lix_continue = true;
                     break;
@@ -83,17 +85,18 @@ public class Lixin extends PluginForDecrypt {
             }
             if (lix_continue == true) {
                 /* EinzelLink filtern */
-                matcher = patternIframe.matcher(reqInfo.getHtmlCode());
+                matcher = patternIframe.matcher(br+"");
                 if (matcher.find()) {
                     /* EinzelLink gefunden */
                     String link = matcher.group(1);
                     decryptedLinks.add(createDownloadlink(link));
                 } else {
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
-                    Form[] forms = reqInfo.getForms();
+                    Form[] forms = br.getForms();
                     for (Form element : forms) {
-                        RequestInfo reqInfo2 = element.getRequestInfo();
-                        matcher = patternIframe.matcher(reqInfo2.getHtmlCode());
+                       
+                        br.submitForm(element);
+                        matcher = patternIframe.matcher(br+"");
                         if (matcher.find()) {
                             /* EinzelLink gefunden */
                             String link = matcher.group(1);
@@ -102,7 +105,7 @@ public class Lixin extends PluginForDecrypt {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

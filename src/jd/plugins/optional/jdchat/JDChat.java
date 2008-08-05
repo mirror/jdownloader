@@ -811,9 +811,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public User getUser(String name) {
         for (User next : NAMES) {
-            if (next.isUser(name)) {
-                return next;
-            }
+            if (next.isUser(name)) { return next; }
 
         }
         return null;
@@ -979,9 +977,7 @@ public class JDChat extends PluginOptional implements ControlListener {
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 
-                    if (textField.getText().length() == 0) {
-                        return;
-                    }
+                    if (textField.getText().length() == 0) { return; }
 
                     sendMessage(CHANNEL, textField.getText());
 
@@ -1017,9 +1013,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
                         }
                     }
-                    if (users.size() == 0) {
-                        return;
-                    }
+                    if (users.size() == 0) { return; }
 
                     counter++;
                     if (counter > users.size() - 1) {
@@ -1165,9 +1159,7 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public void perform() {
         String[] perform = Regex.getLines(JDUtilities.getSubConfig("JDCHAT").getStringProperty(PERFORM));
-        if (perform == null) {
-            return;
-        }
+        if (perform == null) { return; }
         for (String cmd : perform) {
             if (cmd.trim().length() > 0) {
                 sendMessage(CHANNEL, cmd);
@@ -1353,9 +1345,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void setNick(String nickname) {
-        if (nickname == null) {
-            return;
-        }
+        if (nickname == null) { return; }
         addToText(null, JDChat.STYLE_SYSTEM_MESSAGE, "Rename to " + nickname);
 
         conn.doNick(nickname);
@@ -1363,9 +1353,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     private void setNickAway(boolean b) {
-        if (nickaway == b) {
-            return;
-        }
+        if (nickaway == b) { return; }
         nickaway = b;
         if (b) {
             orgNick = conn.getNick();

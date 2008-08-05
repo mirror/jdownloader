@@ -22,17 +22,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
@@ -111,7 +112,7 @@ public class FastLoadNet extends PluginForHost {
 
             }
 
-            String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
             Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
 
             // downloadinfos gefunden? -> download verfügbar
@@ -196,7 +197,7 @@ public class FastLoadNet extends PluginForHost {
 
         }
 
-        String fileName = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
         downloadLink.setName(fileName);
 
         try {
@@ -220,7 +221,7 @@ public class FastLoadNet extends PluginForHost {
 
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
 
-            if (!JDUtilities.download(file, requestInfo.getConnection()) || !file.exists()) {
+            if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
                 logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
                 // step.setParameter(null);

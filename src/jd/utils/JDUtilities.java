@@ -46,7 +46,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,8 +54,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -101,10 +98,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
+import jd.http.Encoding;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -116,8 +113,6 @@ import jd.update.WebUpdater;
 
 import org.w3c.dom.Document;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 /**
  * @author astaldo/JD-Team
@@ -196,7 +191,7 @@ public class JDUtilities {
     /**
      * Der Logger für Meldungen
      */
-    private static Logger logger = JDUtilities.getLogger();
+    public static Logger logger = JDUtilities.getLogger();
     /**
      * Loggername
      */
@@ -388,26 +383,6 @@ public class JDUtilities {
 
     }
 
-    public static String Base64Decode(String base64) {
-        if (base64 == null) { return null; }
-        try {
-            byte[] plain = new BASE64Decoder().decodeBuffer(base64);
-            if (JDUtilities.filterString(new String(plain)).length() < plain.length / 1.5) { return base64; }
-            return new String(plain);
-        } catch (IOException e) {
-            return base64;
-        }
-    }
-
-    public static String Base64Encode(String plain) {
-
-        if (plain == null) { return null; }
-        String base64 = new BASE64Encoder().encode(plain.getBytes());
-        base64 = JDUtilities.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
-
-        return base64;
-    }
-
     public static String convertExceptionReadable(Exception e) {
         String s = e.getClass().getName().replaceAll("Exception", "");
         s = s.substring(s.lastIndexOf(".") + 1);
@@ -508,123 +483,6 @@ public class JDUtilities {
     }
 
     /**
-     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
-     * 
-     * @param file
-     * @param con
-     * @return Erfolg true/false
-     */
-    public static boolean download(File file, HTTPConnection con) {
-        try {
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    logger.severe("Konnte Datei nicht überschreiben " + file);
-                    return false;
-                }
-            }
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            logger.info(" file" + file + " - " + con.getContentLength());
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Lädt eine url lokal herunter
-     * 
-     * @param file
-     * @param urlString
-     * @return Erfolg true/false
-     */
-    public static boolean download(File file, String urlString) {
-        try {
-            urlString = URLDecoder.decode(urlString, "UTF-8");
-            URL url = new URL(urlString);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-            con.setInstanceFollowRedirects(true);
-            return JDUtilities.download(file, con);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public static boolean downloadBinary(String filepath, String fileurl) {
-
-        try {
-            fileurl = JDUtilities.urlEncode(fileurl.replaceAll("\\\\", "/"));
-            File file = new File(filepath);
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    logger.info("Konnte Datei nicht löschen " + file);
-                    return false;
-                }
-
-            }
-
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            fileurl = URLDecoder.decode(fileurl, "UTF-8");
-
-            URL url = new URL(fileurl);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
-
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-
-        }
-
-    }
-
-    /**
      * verschlüsselt string mit der übergebenen encryption (Containerpluginname
      * 
      * @param string
@@ -677,7 +535,7 @@ public class JDUtilities {
      */
     public static int filterInt(String src) {
         try {
-            return Integer.parseInt(JDUtilities.filterString(src, "1234567890"));
+            return Integer.parseInt(Encoding.filterString(src, "1234567890"));
         } catch (NumberFormatException e) {
             return 0;
         }
@@ -685,49 +543,10 @@ public class JDUtilities {
 
     public static long filterLong(String src) {
         try {
-            return Long.parseLong(JDUtilities.filterString(src, "1234567890"));
+            return Long.parseLong(Encoding.filterString(src, "1234567890"));
         } catch (NumberFormatException e) {
             return 0;
         }
-    }
-
-    /**
-     * Filtert alle nicht lesbaren zeichen aus str
-     * 
-     * @param str
-     * @return
-     */
-    public static String filterString(String str) {
-        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&%(){}#~+ 1234567890<>='\"/";
-        return JDUtilities.filterString(str, allowed);
-    }
-
-    /**
-     * Filtert alle zeichen aus str die in filter nicht auftauchen
-     * 
-     * @param str
-     * @param filter
-     * @return
-     */
-    public static String filterString(String str, String filter) {
-        if (str == null || filter == null) { return ""; }
-
-        byte[] org = str.getBytes();
-        byte[] mask = filter.getBytes();
-        byte[] ret = new byte[org.length];
-        int count = 0;
-        int i;
-        for (i = 0; i < org.length; i++) {
-            byte letter = org[i];
-            for (byte element : mask) {
-                if (letter == element) {
-                    ret[count] = letter;
-                    count++;
-                    break;
-                }
-            }
-        }
-        return new String(ret).trim();
     }
 
     /**
@@ -1064,7 +883,7 @@ public class JDUtilities {
         // Falls das nicht geklappt hat wird die klasse im homedir gesucht
         if (newClass == null) {
             try {
-                String url = JDUtilities.urlEncode(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()).toURI().toURL().toString());
+                String url = Encoding.urlEncode(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()).toURI().toURL().toString());
                 URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
                 newClass = Class.forName(classPath, true, cl);
             } catch (ClassNotFoundException e) {
@@ -1855,60 +1674,6 @@ public class JDUtilities {
         return pluginsForHost;
     }
 
-    /**
-     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
-     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
-     * 
-     * @param str
-     * @return decoded string
-     */
-    public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
-        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
-        // Br0th3rs.part1.rar
-        if (str == null) { return null; }
-        String pattern = "\\&\\#x([a-f0-9A-F]+)\\;?";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$' || c == '\\') {
-                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", "\\" + c);
-                } else {
-                    str = str.replaceFirst("\\&\\#x([a-f0-9A-F]+)\\;?", c + "");
-                }
-            }
-        }
-
-        pattern = "\\&\\#(\\d+)\\;?";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 10);
-                if (c == '$' || c == '\\') {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", "\\" + c);
-                } else {
-                    str = str.replaceFirst("\\&\\#(\\d+)\\;?", c + "");
-                }
-            }
-        }
-
-        pattern = "\\%([a-f0-9A-F]{2})";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 16);
-                if (c == '$' || c == '\\') {
-                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", "\\" + c);
-                } else {
-                    str = str.replaceFirst("\\%[a-f0-9A-F]{2}", c + "");
-                }
-            }
-        }
-        try {
-            str = URLDecoder.decode(str, "UTF-8");
-        } catch (Exception e) {
-        }
-        return HTMLEntities.unhtmlentities(str);
-    }
-
     // /**
     // * Fügt einen PluginListener hinzu
     // *
@@ -2398,62 +2163,6 @@ public class JDUtilities {
         }
 
         return pattern;
-    }
-
-    /**
-     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
-     *         Zeichen aus
-     * @param str
-     * @return str URLCodiert
-     */
-    @SuppressWarnings("deprecation")
-    public static String urlEncode(String str) {
-        try {
-            return URLEncoder.encode(str);
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-        return null;
-        /*
-         * 
-         * 
-         * if (str == null) return str; String allowed =
-         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
-         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
-         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
-         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
-         * (l.length() == 1 ? "0" + l : l); } }
-         */
-
-    }
-
-    /**
-     * @author JD-Team
-     * @param str
-     * @return str als UTF8Decodiert
-     */
-    public static String UTF8Decode(String str) {
-        if (str == null) { return null; }
-        try {
-            return new String(str.getBytes(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
-     * @author JD-Team
-     * @param str
-     * @return str als UTF8 Kodiert
-     */
-    public static String UTF8Encode(String str) {
-        try {
-            return new String(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     /**

@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.Vector;
 
 import jd.config.Configuration;
+import jd.http.Browser;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -79,10 +80,10 @@ public class CaptchaMethodLoader extends Interaction implements Serializable {
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
                     logger.info("Webupdater: direktfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-                    JDUtilities.downloadBinary(tmp[0], tmp[1]);
+                    Browser.downloadBinary(tmp[0], tmp[1]);
                 } else {
                     logger.info("Webupdater: file: " + updater.getOnlinePath() + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
-                    JDUtilities.downloadBinary(akt, updater.getOnlinePath() + "/" + files.elementAt(i).elementAt(0));
+                    Browser.downloadBinary(akt, updater.getOnlinePath() + "/" + files.elementAt(i).elementAt(0));
                 }
                 logger.info("Webupdater: ready");
             }

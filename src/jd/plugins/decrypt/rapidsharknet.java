@@ -23,12 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class rapidsharknet extends PluginForDecrypt {
 
@@ -58,7 +58,7 @@ public class rapidsharknet extends PluginForDecrypt {
                 String downloadid = url.getFile().substring(13);
                 requestInfo = HTTP.getRequest(url, null, "http://rapidshark.net/" + downloadid, false);
                 downloadid = new Regex(requestInfo, "src=\"(.*)\"></iframe>").getFirstMatch();
-                decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(downloadid)));
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadid)));
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();

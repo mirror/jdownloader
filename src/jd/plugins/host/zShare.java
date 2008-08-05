@@ -19,10 +19,10 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.plugins.CRequest;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -57,9 +57,11 @@ public class zShare extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        
         try {
-            String[] fileInfo = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image")).getRegexp("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
+            Browser.clearCookies(HOST);
+            br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
             downloadLink.setName(fileInfo[0]);
             try {
                 double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
@@ -118,16 +120,16 @@ public class zShare extends PluginForHost {
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-
+        Browser.clearCookies(HOST);
         logger.info(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-        request = new CRequest();
-        request = request.getRequest(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
+       
+        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
 
-        Regex reg = request.getRegexp("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
+        Regex reg = br.getRegex("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
 
         String url = reg.getMatches()[0][0];
-        request.withHtmlCode = false;
-        HTTPConnection urlConnection = request.getRequest(url).getConnection();
+    
+        HTTPConnection urlConnection = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();

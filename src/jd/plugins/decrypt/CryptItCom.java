@@ -29,13 +29,15 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.crypt.AESdecrypt;
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
@@ -113,7 +115,7 @@ public class CryptItCom extends PluginForDecrypt {
                 if (requestInfo.containsHTML(PATTERN_PW)) {
 
                     String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-                    String postData = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                    String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                     requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                     if (requestInfo.containsHTML(PATTERN_PW)) {
                         logger.warning("Password wrong");
@@ -133,7 +135,7 @@ public class CryptItCom extends PluginForDecrypt {
             }
 
             File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-            JDUtilities.download(containerfile, requestInfo.getConnection());
+            Browser.download(containerfile, requestInfo.getConnection());
             JDUtilities.getController().loadContainerFile(containerfile);
 
         } catch (MalformedURLException e) {
@@ -155,7 +157,7 @@ public class CryptItCom extends PluginForDecrypt {
         // (byte) 110, (byte) 116, (byte) 82, (byte) 89, (byte) 100, (byte) 111,
         // (byte) 110, (byte) 116, (byte) 115, (byte) 116, (byte) 101, (byte)
         // 97, (byte) 108, (byte) 112, (byte) (byte) 114 };
-        byte[] key = JDUtilities.Base64Decode("c281c3hOc1BLZk5TRERaSGF5cjMyNTIw").getBytes();
+        byte[] key = Encoding.Base64Decode("c281c3hOc1BLZk5TRERaSGF5cjMyNTIw").getBytes();
         byte[] cipher = new byte[ciphertext.length() / 2 + ciphertext.length() % 2];
 
         for (int i = 0; i < ciphertext.length(); i += 2) {
@@ -204,7 +206,7 @@ public class CryptItCom extends PluginForDecrypt {
                         /* auf abbruch geklickt */
                         return null;
                     }
-                    String post = "a=pw&pw=" + JDUtilities.urlEncode(pass);
+                    String post = "a=pw&pw=" + Encoding.urlEncode(pass);
                     ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
                     if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                         break;
@@ -235,7 +237,7 @@ public class CryptItCom extends PluginForDecrypt {
             fp.setPassword(password);
             p.add(password);
             for (String string : ciphers) {
-                String cipher = JDUtilities.filterString(string, "1234567890abcdefABCDEF");
+                String cipher = Encoding.filterString(string, "1234567890abcdefABCDEF");
                 String linktext = decrypt(cipher);
                 progress.increase(1);
                 String[] links;

@@ -28,6 +28,7 @@ import jd.config.Property;
 import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
+import jd.http.Encoding;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 
@@ -172,7 +173,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private transient PluginForContainer pluginForContainer;
 
-    public LinkedList<Object> saveObjects = new LinkedList<Object>();
+//    public LinkedList<Object> saveObjects = new LinkedList<Object>();
 
     private String sourcePluginComment = null;
 
@@ -1055,7 +1056,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             ext = name.substring(index + 1);
             name = name.substring(0, index);
             try {
-                partID = Integer.parseInt(JDUtilities.filterString(ext, "1234567890"));
+                partID = Integer.parseInt(Encoding.filterString(ext, "1234567890"));
                 break;
             } catch (Exception e) {
             }

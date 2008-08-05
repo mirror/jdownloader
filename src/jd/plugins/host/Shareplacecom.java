@@ -6,15 +6,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Shareplacecom extends PluginForHost {
 
@@ -57,7 +57,7 @@ public class Shareplacecom extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (requestInfo.getLocation() == null) {
-                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)MB<b>").getFirstMatch()) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
@@ -118,7 +118,7 @@ public class Shareplacecom extends PluginForHost {
             return;
         }
         /* Link holen */
-        url = JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        url = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch());
 
         // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 20seks */

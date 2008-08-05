@@ -22,11 +22,11 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class RaidrushOrg extends PluginForDecrypt {
 
@@ -59,7 +59,7 @@ public class RaidrushOrg extends PluginForDecrypt {
                 String page2 = br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
                 String link = new Regex(page2, "unescape\\(\"(.*?)\"\\)").getFirstMatch();
 
-                link = JDUtilities.htmlDecode(link);
+                link = Encoding.htmlDecode(link);
                 link = new Regex(link, "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
                 DownloadLink dl = createDownloadlink(link);
                 dl.setSourcePluginPasswords(passes);

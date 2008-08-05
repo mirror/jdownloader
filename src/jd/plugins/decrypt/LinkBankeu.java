@@ -24,13 +24,13 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class LinkBankeu extends PluginForDecrypt {
     private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
@@ -59,7 +59,7 @@ public class LinkBankeu extends PluginForDecrypt {
             }
             if (getProperties().getBooleanProperty(CHECK_MIRRORS, false) == true) {
                 for (String element : mirrors) {
-                    decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(element)));
+                    decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
                 }
             }
         } catch (IOException e) {

@@ -27,7 +27,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class Wiireloaded extends PluginForDecrypt {
 
@@ -58,7 +57,7 @@ public class Wiireloaded extends PluginForDecrypt {
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
-            boolean fileDownloaded = JDUtilities.download(captchaFile, br.openGetConnection(adr));
+            boolean fileDownloaded = Browser.download(captchaFile, br.openGetConnection(adr));
             progress.addToMax(1);
             if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
                 return null;

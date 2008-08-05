@@ -21,7 +21,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.utils.JDUtilities;
+import jd.http.Encoding;
 
 /**
  * Bitte Regexp Klasse verwenden
@@ -77,7 +77,7 @@ public class SimpleMatches {
             entry = new ArrayList<String>();
             for (int x = 1; x <= r.groupCount(); x++) {
                 tmp = r.group(x).trim();
-                entry.add(JDUtilities.UTF8Decode(tmp));
+                entry.add(Encoding.UTF8Decode(tmp));
             }
             ret.add(entry);
         }

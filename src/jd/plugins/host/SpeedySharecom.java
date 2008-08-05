@@ -7,11 +7,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -60,7 +61,7 @@ public class SpeedySharecom extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (!requestInfo.containsHTML("File Not Found")) {
-                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>File Name\\:</b>(.*?)<br>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>File Name\\:</b>(.*?)<br>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "<b>File Size\\:</b>(.*)Mb<br>").getFirstMatch()) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
@@ -121,13 +122,13 @@ public class SpeedySharecom extends PluginForHost {
         }
         /* Link holen */
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        postdata = "act=" + JDUtilities.urlEncode(submitvalues.get("act"));
-        postdata = postdata + "&id=" + JDUtilities.urlEncode(submitvalues.get("id"));
-        postdata = postdata + "&fname=" + JDUtilities.urlEncode(submitvalues.get("fname"));
+        postdata = "act=" + Encoding.urlEncode(submitvalues.get("act"));
+        postdata = postdata + "&id=" + Encoding.urlEncode(submitvalues.get("id"));
+        postdata = postdata + "&fname=" + Encoding.urlEncode(submitvalues.get("fname"));
         if (requestInfo.containsHTML("type=\"password\" name=\"password\"")) {
             String password = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.speedysharecom.password", "Enter Password:"));
             if (password != null && password != "") {
-                postdata = postdata + "&password=" + JDUtilities.urlEncode(password);
+                postdata = postdata + "&password=" + Encoding.urlEncode(password);
             }
         }
 

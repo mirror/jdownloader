@@ -7,16 +7,16 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class UploadServiceinfo extends PluginForHost {
 
@@ -58,7 +58,7 @@ public class UploadServiceinfo extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (!requestInfo.containsHTML("<strong>Die ausgew&auml;hlte Datei existiert nicht!</strong>")) {
-                downloadLink.setName(JDUtilities.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
+                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
                 String filesize = null;
                 if ((filesize = new Regex(requestInfo.getHtmlCode(), "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getFirstMatch()) != null) {
                     downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024);
@@ -117,7 +117,7 @@ public class UploadServiceinfo extends PluginForHost {
         /* Link holen */
         url = requestInfo.getForms()[0].action;
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        postdata = "key=" + JDUtilities.urlEncode(submitvalues.get("key"));
+        postdata = "key=" + Encoding.urlEncode(submitvalues.get("key"));
         postdata = postdata + "&mysubmit=Download";
 
         // case PluginStep.STEP_PENDING:

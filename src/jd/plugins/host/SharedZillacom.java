@@ -4,10 +4,11 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -123,9 +124,9 @@ public class SharedZillacom extends PluginForHost {
             }
         }
         /* Free Download starten */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), "id=" + id + "&upload_password=" + JDUtilities.urlEncode(passCode), false);
+        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), "id=" + id + "&upload_password=" + Encoding.urlEncode(passCode), false);
         if (requestInfo.getLocation() == null) {
-            requestInfo = HTTP.postRequest(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), null, "id=" + id + "&upload_password=" + JDUtilities.urlEncode(passCode), false);
+            requestInfo = HTTP.postRequest(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), null, "id=" + id + "&upload_password=" + Encoding.urlEncode(passCode), false);
             if (requestInfo.containsHTML("<p>Password is wrong!</p>")) {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);

@@ -46,6 +46,7 @@ import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
+import jd.http.Encoding;
 import jd.plugins.LogFormatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -258,7 +259,7 @@ public class LogDialog extends JFrame implements ActionListener {
 
             String content = logField.getSelectedText();
             if (content == null || content.length() == 0) {
-                content = JDUtilities.UTF8Encode(logField.getText());
+                content = Encoding.UTF8Encode(logField.getText());
             }
             content = TextAreaDialog.showDialog(owner, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 

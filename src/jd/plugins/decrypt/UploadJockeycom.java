@@ -23,12 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class UploadJockeycom extends PluginForDecrypt {
 
@@ -51,7 +51,7 @@ public class UploadJockeycom extends PluginForDecrypt {
             requestInfo = HTTP.getRequest(url, null, url.toString(), false);
             String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"http\\:\\/\\/www\\.uploadjockey\\.com\\/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
             for (String[] element : links) {
-                decryptedLinks.add(createDownloadlink(JDUtilities.Base64Decode(element[0])));
+                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element[0])));
             }
         } catch (MalformedURLException e) {
             e.printStackTrace();

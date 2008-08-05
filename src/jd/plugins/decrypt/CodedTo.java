@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -73,7 +74,7 @@ public class CodedTo extends PluginForDecrypt {
                 progress.setRange(files.length);
                 for (String[] element : files) {
                     reqinfo = HTTP.getRequest(new URL("http://www.coded.to/down.php?id=" + element[0]));
-                    String html = JDUtilities.htmlDecode(reqinfo.getHtmlCode());
+                    String html = Encoding.htmlDecode(reqinfo.getHtmlCode());
                     String newLink = new Regex(html, Pattern.compile(LINK, Pattern.CASE_INSENSITIVE)).getFirstMatch();
                     decryptedLinks.add(createDownloadlink(newLink));
                     progress.increase(1);

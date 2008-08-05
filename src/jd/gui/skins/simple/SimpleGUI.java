@@ -76,7 +76,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import jd.JDFileFilter;
-import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
@@ -107,7 +106,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.unrar.UnZip;
-import jd.utils.CESClient;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -309,18 +307,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
 
-                } else if (event.getParameter().equals(CESClient.UPDATE)) {
-                    p = (Property) event.getSource();
-                    CESClient ces = (CESClient) p.getProperty(CESClient.LASTEST_INSTANCE);
-                    if (ces != null) {
-                        setText(ces.getAccountInfoString());
-                    }
-
-                    if (!CES.isEnabled()) {
-                        btnCes.setIcon(CES.getImage());
-                        setText("");
-                    }
-                }
+                } 
+//                else if (event.getParameter().equals(CESClient.UPDATE)) {
+//                    p = (Property) event.getSource();
+//                    CESClient ces = (CESClient) p.getProperty(CESClient.LASTEST_INSTANCE);
+//                    if (ces != null) {
+//                        setText(ces.getAccountInfoString());
+//                    }
+//
+//                    if (!CES.isEnabled()) {
+//                        btnCes.setIcon(CES.getImage());
+//                        setText("");
+//                    }
+//                }
                 break;
             }
 
@@ -677,7 +676,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionAbout;
 
-    private JDAction actionCes;
+//    private JDAction actionCes;
 
     private JDAction actionClipBoard;
 
@@ -725,7 +724,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionWiki;
 
-    private JButton btnCes;
+//    private JButton btnCes;
 
     private JButton btnClipBoard;
 
@@ -921,11 +920,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             ClipboardHandler.getClipboard().toggleActivation();
 
             break;
-        case JDAction.APP_CES:
-            logger.finer("CES");
-            CES.toggleActivation();
-            btnCes.setIcon(CES.getImage());
-            break;
+//        case JDAction.APP_CES:
+//            logger.finer("CES");
+//            CES.toggleActivation();
+//            btnCes.setIcon(CES.getImage());
+//            break;
         case JDAction.APP_PASSWORDLIST:
             new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
             break;
@@ -1127,7 +1126,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnClipBoard = createMenuButton(actionClipBoard);
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
-        btnCes = createMenuButton(actionCes);
+//        btnCes = createMenuButton(actionCes);
         toolBar.setFloatable(false);
         // toolBar.add(createMenuButton(this.actionLoadDLC));
         // toolBar.add(createMenuButton(this.actionSaveDLC));
@@ -1152,9 +1151,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.addSeparator();
         toolBar.add(createMenuButton(actionUpdate));
 
-        if (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES, false)) {
-            toolBar.add(btnCes);
-        }
+        // if
+        // (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES,
+        // false)) {
+        // toolBar.add(btnCes);
+        //        }
 
         JPanel panel = new JPanel(new BorderLayout());
         int n = 2;
@@ -1574,7 +1575,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionTester = new JDAction(this, null, "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, null, "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-        actionCes = new JDAction(this, CES.getCesImageString(), "action.ces", JDAction.APP_CES);
+//        actionCes = new JDAction(this, CES.getCesImageString(), "action.ces", JDAction.APP_CES);
         actionPasswordlist = new JDAction(this, null, "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);

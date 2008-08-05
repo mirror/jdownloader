@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
+import jd.http.HTTPConnection;
 import jd.utils.JDUtilities;
 
 /**

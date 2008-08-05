@@ -6,17 +6,18 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class FastShareorg extends PluginForHost {
 
@@ -52,24 +53,24 @@ public class FastShareorg extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+     
         try {
+            Browser.clearCookies(HOST);
+            br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("No filename specified or the file has been deleted")) {
-                downloadLink.setName(JDUtilities.htmlDecode(SimpleMatches.getBetween(requestInfo.getHtmlCode(), "Wenn sie die Datei \"<b>", "</b>\"")));
+           br.getPage(url);
+            if (!br.containsHTML("No filename specified or the file has been deleted")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getFirstMatch()));
                 String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
+                if ((filesize = br.getRegex( "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
+                } else if ((filesize = br.getRegex( "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 }
                 return true;
             }
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        } catch (IOException e) {
+     
+        } catch (Exception e) {
 
             e.printStackTrace();
         }
@@ -108,6 +109,7 @@ public class FastShareorg extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         url = downloadLink.getDownloadURL();
+        
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -115,9 +117,9 @@ public class FastShareorg extends PluginForHost {
             return;
         }
         /* Link holen */
-        Form form = requestInfo.getForms()[0];
-        requestInfo = form.getRequestInfo();
-        if ((url = new Regex(requestInfo.getHtmlCode(), "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
+        Form form = br.getForm(0);
+        br.submitForm(form);
+        if ((url = new Regex(br, "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
@@ -132,8 +134,9 @@ public class FastShareorg extends PluginForHost {
         /* Datei herunterladen */
         // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url),
         // null, url, postdata, false);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), null, url, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+       
+        
+        HTTPConnection urlConnection = br.openGetConnection(url);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);

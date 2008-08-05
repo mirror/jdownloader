@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins;
+package jd.http;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -31,6 +31,7 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
+import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**
@@ -43,6 +44,8 @@ public class HTTPPost {
      * Deliminator für post parameter
      */
     private String boundary = "-----------------------------333227e09c";
+    
+
     /**
      * Gibt an ob eine Veribindung aufgebaut ist.
      */
@@ -103,7 +106,7 @@ public class HTTPPost {
     private URL url;
 
     public HTTPPost(String urlString, boolean followRedirects) {
-
+        boundary="--------------------" + Long.toString(System.currentTimeMillis(), 16);
         URL u;
         try {
             logger.info(urlString);
@@ -302,23 +305,7 @@ public class HTTPPost {
         return readTimeout;
     }
 
-    /**
-     * Gibt die requestinfo zurück
-     * 
-     * @return RequestInfo
-     */
-    public RequestInfo getRequestInfo() {
 
-        String htmlCode = read();
-        String location = connection.getHeaderField("Location");
-        String cookie = connection.getHeaderField("Set-Cookie");
-        int responseCode = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
-        try {
-            responseCode = connection.getResponseCode();
-        } catch (IOException e) {
-        }
-        return new RequestInfo(htmlCode, location, cookie, connection.getHeaderFields(), responseCode);
-    }
 
     /**
      * @return the requestTimeout

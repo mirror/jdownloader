@@ -20,9 +20,9 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;

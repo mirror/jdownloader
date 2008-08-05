@@ -3,10 +3,10 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -105,7 +105,7 @@ public class Dataupde extends PluginForHost {
         // this.sleep(10000, downloadLink);
         /* DownloadLink holen */
         Form form = br.getForms()[2];
-        form.withHtmlCode = false;
+       
         br.setFollowRedirects(false);
         HTTPConnection urlConnection = br.openFormConnection(form);
 

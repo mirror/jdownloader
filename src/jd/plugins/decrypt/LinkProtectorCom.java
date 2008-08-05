@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -67,7 +68,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
                     if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
                         break;
                     }
-                    requestInfo = HTTP.postRequest(url, null, referrer, null, "u_name=user&u_password=" + JDUtilities.urlEncode(passCode), false);
+                    requestInfo = HTTP.postRequest(url, null, referrer, null, "u_name=user&u_password=" + Encoding.urlEncode(passCode), false);
                 } else {
                     do_continue = true;
                     break;

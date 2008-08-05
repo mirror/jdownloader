@@ -8,17 +8,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Freaksharenet extends PluginForHost {
 
@@ -123,10 +123,10 @@ public class Freaksharenet extends PluginForHost {
         /* Link holen */
         url = requestInfo.getForms()[1].action;
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        postdata = "code=" + JDUtilities.urlEncode(submitvalues.get("code"));
-        postdata = postdata + "&cid=" + JDUtilities.urlEncode(submitvalues.get("cid"));
-        postdata = postdata + "&userid=" + JDUtilities.urlEncode(submitvalues.get("userid"));
-        postdata = postdata + "&usermd5=" + JDUtilities.urlEncode(submitvalues.get("usermd5"));
+        postdata = "code=" + Encoding.urlEncode(submitvalues.get("code"));
+        postdata = postdata + "&cid=" + Encoding.urlEncode(submitvalues.get("cid"));
+        postdata = postdata + "&userid=" + Encoding.urlEncode(submitvalues.get("userid"));
+        postdata = postdata + "&usermd5=" + Encoding.urlEncode(submitvalues.get("usermd5"));
         postdata = postdata + "&wait=Download";
 
         // case PluginStep.STEP_PENDING:

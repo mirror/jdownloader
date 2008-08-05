@@ -17,19 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class ftp2share extends PluginForDecrypt {
     static private final String host = "ftp2share.net";
@@ -47,37 +44,37 @@ public class ftp2share extends PluginForDecrypt {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            URL url;
-            RequestInfo requestInfo;
+            Browser br = new Browser();
+      
 
             if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                 if (!cryptedLink.contains("?system")) {
                     cryptedLink = cryptedLink + "?system=*";
                 }
-                url = new URL(cryptedLink);
-                requestInfo = HTTP.getRequest(url);
-                String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
+
+                br.getPage(cryptedLink);
+
+                String links[][] = new Regex(br, Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
                 for (String[] element : links) {
-                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
+                    String link = Encoding.Base64Decode(Encoding.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
                     decryptedLinks.add(createDownloadlink(link));
                 }
             } else if (cryptedLink.matches(patternSupported_File.pattern())) {
-                url = new URL(cryptedLink);
-                requestInfo = HTTP.getRequest(url);
-                Form[] forms = requestInfo.getForms();
+
+                br.getPage(cryptedLink);
+                Form[] forms = br.getForms();
                 if (forms.length > 1) {
-                    requestInfo = forms[1].getRequestInfo();
+                    br.submitForm(forms[1]);
+
                 }
-                String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
+                String links[][] = br.getRegex(Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
                 for (String[] element : links) {
-                    String link = JDUtilities.Base64Decode(JDUtilities.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
+                    String link = Encoding.Base64Decode(Encoding.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
                     decryptedLinks.add(createDownloadlink(link));
                 }
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

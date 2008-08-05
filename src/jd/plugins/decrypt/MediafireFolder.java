@@ -43,13 +43,14 @@ public class MediafireFolder extends PluginForDecrypt {
             String reqlink =  br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
             if (reqlink == null) { return null; }
             br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
-            String links[][] = br.getRegex( Pattern.compile("[a-z]{1,3}\\[[0-9]{1,3}\\]=Array\\(\\'([a-z0-9]{8,13})\\'\\,[0-9]{1,3}\\)", Pattern.CASE_INSENSITIVE)).getMatches();
+            String links[][] = br.getRegex( Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
         
             for (String[] element : links) {
-                br.getPage("http://www.mediafire.com/download.php?" + element[0]);
+               
                 DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                link.setName(br.getRegex("<title>(.*?)<\\/title>").getFirstMatch().trim());
+                link.setName(element[1]);
+                link.setDownloadSize(Long.parseLong(element[2]));
                 decryptedLinks.add(link);
                 progress.increase(1);
             }

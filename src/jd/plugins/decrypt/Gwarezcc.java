@@ -26,10 +26,11 @@ import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -122,7 +123,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", cryptedLink);
-                JDUtilities.download(container, dlc_con);
+                Browser.download(container, dlc_con);
                 JDUtilities.getController().loadContainerFile(container);
             }
 

@@ -131,9 +131,9 @@ public class Configuration extends Property implements Serializable {
 
     public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
 
-    public static final String JAC_USE_CES = "JAC_USE_CES";
-
-    public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
+//    public static final String JAC_USE_CES = "JAC_USE_CES";
+//
+//    public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
 
     public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
 

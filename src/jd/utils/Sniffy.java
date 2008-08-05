@@ -23,7 +23,7 @@ public final class Sniffy {
 
     public static void main(String args[]) {
 
-        System.out.println(Sniffy.hasSniffer());
+        System.out.println(Sniffy.hasWinSnifer());
 
     }
 
@@ -48,7 +48,9 @@ public final class Sniffy {
             exec.start();
             exec.waitTimeout();
             String prem = exec.getStream() + " \r\n " + exec.getErrorStream();
-            if (!Regex.matches(prem, "could be a sniffer")) { return false; }
+            boolean check1=true;
+            boolean check2=false;
+            if (!Regex.matches(prem, "could be a sniffer")) { check1= false; }
             for (Pattern white : whiteList) {
 
                 list = white.matcher(list).replaceAll("");
@@ -58,10 +60,10 @@ public final class Sniffy {
                 Regex r;
                 if ((r = new Regex(list, black)).matches()) {
 
-                return true; }
+                    check2= true; }
             }
 
-            return false;
+            return check1|check2;
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -36,8 +36,6 @@ import java.util.zip.GZIPInputStream;
 
 import jd.config.Configuration;
 import jd.parser.Regex;
-import jd.plugins.HTTPConnection;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 import jd.utils.Sniffy;
 
@@ -119,6 +117,11 @@ public abstract class Request {
 
     }
 
+    public Request(HTTPConnection con) {
+        httpConnection=con;
+        collectCookiesFromConnection();
+    }
+
     private void collectCookiesFromConnection() {
         Collection<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
         if (cookieHeaders == null) { return; }
@@ -130,8 +133,18 @@ public abstract class Request {
         for (String header : cookieHeaders) {
             try {
                 StringTokenizer st = new StringTokenizer(header, ";=");
-                while (st.hasMoreTokens()) {
-                    cookies.put(st.nextToken().trim(), st.nextToken().trim());
+                while (true) {
+
+                    String key = null;
+                    String value = null;
+                    if (st.hasMoreTokens()) key = st.nextToken().trim();
+                    if (st.hasMoreTokens()) value = st.nextToken().trim();
+                    if (key != null) {
+                        cookies.put(key, value);
+                    } else {
+                        break;
+                    }
+
                 }
             } catch (NoSuchElementException e) {
                 // ignore
@@ -214,31 +227,35 @@ public abstract class Request {
     }
 
     public String getCookieString() {
-        {
-            if (!hasCookies()) { return null; }
 
-            StringBuffer buffer = new StringBuffer();
-            boolean first = true;
+        return getCookieString(cookies);
 
-            if (cookies.containsKey("expires") && isExpired(cookies.get("expires"))) { return ""; }
-            for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+    }
 
-                // Pfade sollten verarbeitet werden...TODO
-                if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
-                    continue;
-                }
+    public static String getCookieString(HashMap<String, String> cookies) {
+        if (cookies == null) { return null; }
 
-                if (first) {
-                    first = false;
-                } else {
-                    buffer.append(";");
-                }
-                buffer.append(cookie.getKey());
-                buffer.append("=");
-                buffer.append(cookie.getValue());
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+
+        if (cookies.containsKey("expires") && isExpired(cookies.get("expires"))) { return ""; }
+        for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+
+            // Pfade sollten verarbeitet werden...TODO
+            if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
+                continue;
             }
-            return buffer.toString();
+
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(";");
+            }
+            buffer.append(cookie.getKey());
+            buffer.append("=");
+            buffer.append(cookie.getValue());
         }
+        return buffer.toString();
     }
 
     public int getFollowCounter() {
@@ -271,16 +288,6 @@ public abstract class Request {
         return readTimeout;
     }
 
-    public RequestInfo getRequestInfo() throws IOException {
-        RequestInfo requestInfo;
-
-        requestInfo = new RequestInfo(htmlCode, httpConnection.getHeaderField("Location"), getCookieString(), httpConnection.getHeaderFields(), httpConnection.getResponseCode());
-        requestInfo.setRequest(this);
-        requestInfo.setConnection(httpConnection);
-        return requestInfo;
-
-    }
-
     public long getRequestTime() {
         return requestTime;
     }
@@ -308,8 +315,8 @@ public abstract class Request {
         headers = new HashMap<String, String>();
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        headers.put("Connection","close");
-        
+        headers.put("Connection", "close");
+
     }
 
     public boolean isFollowRedirects() {
@@ -335,7 +342,7 @@ public abstract class Request {
 
     public void openConnection() throws IOException {
         if (Sniffy.hasSniffer()) {
-            JDUtilities.getLogger().severe("Sniffer Software detected");
+            System.err.println("Sniffer Software detected");
             throw new IOException("Sniffer found");
         }
 

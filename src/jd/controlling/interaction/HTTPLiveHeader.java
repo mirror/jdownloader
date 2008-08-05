@@ -41,9 +41,10 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -130,7 +131,7 @@ public class HTTPLiveHeader extends Interaction {
 
                     String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getFirstMatch();
 
-                    String script = HTTPLiveHeader.getScriptFromCURL(code, JDUtilities.htmlDecode(element2[2]));
+                    String script = HTTPLiveHeader.getScriptFromCURL(code, Encoding.htmlDecode(element2[2]));
                     if (script == null) {
 
                         cScript = new String[] { element2[0], element2[2], code };
@@ -756,13 +757,13 @@ public class HTTPLiveHeader extends Interaction {
             key = key.substring(id + 3);
 
             if (fnc.equalsIgnoreCase("URLENCODE")) {
-                ret = JDUtilities.urlEncode(ret);
+                ret = Encoding.urlEncode(ret);
             } else if (fnc.equalsIgnoreCase("URLDECODE")) {
-                ret = JDUtilities.htmlDecode(ret);
+                ret = Encoding.htmlDecode(ret);
             } else if (fnc.equalsIgnoreCase("UTF8DECODE")) {
-                ret = JDUtilities.UTF8Decode(ret);
+                ret = Encoding.UTF8Decode(ret);
             } else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
-                ret = JDUtilities.UTF8Encode(ret);
+                ret = Encoding.UTF8Encode(ret);
             } else if (fnc.equalsIgnoreCase("MD5")) {
                 ret = JDUtilities.getMD5(ret);
             } else if (fnc.equalsIgnoreCase("BASE64")) {

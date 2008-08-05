@@ -12,6 +12,7 @@ import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -238,7 +239,7 @@ public class JDSimpleWebserverRequestHandler {
                             synchronized (JDWebinterface.Link_Adder_Packages) {
                                 for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
                                     if (requestParameter.containsKey("adder_package_name_" + i)) {
-                                        JDWebinterface.Link_Adder_Packages.get(i).setName(JDUtilities.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
+                                        JDWebinterface.Link_Adder_Packages.get(i).setName(Encoding.htmlDecode(requestParameter.get("adder_package_name_" + i).toString()));
                                     }
                                 }
                             }
@@ -469,7 +470,7 @@ public class JDSimpleWebserverRequestHandler {
 
             } else if (requestParameter.get("do").compareToIgnoreCase("add") == 0) {
                 if (requestParameter.containsKey("addlinks")) {
-                    String AddLinks = JDUtilities.htmlDecode(requestParameter.get("addlinks"));
+                    String AddLinks = Encoding.htmlDecode(requestParameter.get("addlinks"));
                     Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
                     addLinkstoWaitingList(waitingLinkList);
                 }
@@ -485,7 +486,7 @@ public class JDSimpleWebserverRequestHandler {
         if (requestParameter.containsKey("passwd")) {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 if (requestParameter.containsKey("password_list")) {
-                    String password_list = JDUtilities.htmlDecode(requestParameter.get("password_list"));
+                    String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
                     JUnrar unrar = new JUnrar(false);
                     unrar.editPasswordlist(Regex.getLines(password_list));
                 }

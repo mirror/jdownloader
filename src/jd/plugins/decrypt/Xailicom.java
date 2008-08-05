@@ -22,12 +22,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Xailicom extends PluginForDecrypt {
 
@@ -53,7 +53,7 @@ public class Xailicom extends PluginForDecrypt {
                 reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + element));
                 String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 if (link != null) {
-                    link = JDUtilities.htmlDecode(link);
+                    link = Encoding.htmlDecode(link);
                     decryptedLinks.add(createDownloadlink(link));
                 }
                 progress.increase(1);

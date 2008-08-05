@@ -22,10 +22,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
@@ -57,7 +58,7 @@ public class Gamezam extends PluginForDecrypt {
                 captcha_con.setRequestProperty("Referer", "http://www.gamez.am/start.php?");
                 captcha_con.setRequestProperty("Cookie", cookie);
                 File captchaFile = this.getLocalCaptchaFile(this);
-                if (!JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                if (!Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                     /* Fehler beim Captcha */
                     return null;
                 }

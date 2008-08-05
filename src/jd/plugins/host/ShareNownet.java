@@ -4,17 +4,17 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class ShareNownet extends PluginForHost {
     private static final String CODER = "JD-Team";
@@ -33,7 +33,8 @@ public class ShareNownet extends PluginForHost {
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
-    private RequestInfo requestInfo;
+    
+ 
 
     public ShareNownet() {
         super();
@@ -57,11 +58,12 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    Browser.clearCookies(HOST);
+    br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
         try {
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (!requestInfo.containsHTML("Datei existiert nicht oder wurde gel&ouml;scht!")) {
+            br.getPage(downloadurl);
+            if (!br.containsHTML("Datei existiert nicht oder wurde gel&ouml;scht!")) {
 
                 String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getMatches();
                 if (linkinfo.length != 1) {
@@ -119,16 +121,16 @@ public class ShareNownet extends PluginForHost {
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        Form form = requestInfo.getForms()[1];
-        form.withHtmlCode = false;
+       
+        Form form =  br.getForm(1);
+    
         /* gibts nen captcha? */
-        if (requestInfo.containsHTML("Sicherheitscode eingeben")) {
+        if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
-            HTTPConnection captcha_con = new HTTPConnection(new URL("http://share-now.net/captcha.php?id=" + form.vars.get("download")).openConnection());
-            captcha_con.setRequestProperty("Referer", downloadLink.getDownloadURL());
-            captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-            if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+            
+            
+            if (!br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download")) || !captchaFile.exists()) {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
                 // step.setStatus(PluginStep.STATUS_ERROR);
@@ -141,23 +143,23 @@ public class ShareNownet extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
-            form.vars.put("captcha", captchaCode);
+            form.put("captcha", captchaCode);
         }
         /* DownloadLink holen/Captcha check */
-        requestInfo = form.getRequestInfo(false);
-        if (requestInfo.getLocation() != null) {
+        HTTPConnection con = br.openFormConnection(form);
+        if (br.getRedirectLocation()!= null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
+ 
+        if (con.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

@@ -44,6 +44,8 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JHelpDialog;
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
@@ -139,7 +141,7 @@ public class JDInit {
         JDUtilities.getRunType();
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
-            String lastLog = JDUtilities.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
+            String lastLog = Encoding.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
             if (lastLog.trim().length() > 5) {
                 if (splashScreen != null) {
                     splashScreen.finish();
@@ -255,7 +257,7 @@ public class JDInit {
                     createQueueBackup();
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                        JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                        Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
                         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
@@ -272,7 +274,7 @@ public class JDInit {
 
                                     try {
 
-                                        String update = JDUtilities.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
+                                        String update = Encoding.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
 
                                         JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
                                     } catch (IOException e) {
@@ -286,7 +288,7 @@ public class JDInit {
                             d.showDialog();
 
                             if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
-                                JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                                Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
                                 JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_LOAD_ALL_TOOLS, false) ? "/all" : "", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
@@ -469,7 +471,7 @@ public class JDInit {
 
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
 
-                    JDUtilities.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                    Browser.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
                     JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
 

@@ -22,8 +22,8 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.plugins.Plugin;
-import jd.utils.JDUtilities;
 
 public class HTMLParser {
 
@@ -162,7 +162,7 @@ public class HTMLParser {
         for (Pattern element : basePattern) {
             m = element.matcher(data);
             if (m.find()) {
-                url = JDUtilities.htmlDecode(m.group(1));
+                url = Encoding.htmlDecode(m.group(1));
                 break;
             }
         }
@@ -189,7 +189,7 @@ public class HTMLParser {
         for (Pattern element : linkAndFormPattern) {
             m = element.matcher(data);
             while (m.find()) {
-                link = JDUtilities.htmlDecode(m.group(1));
+                link = Encoding.htmlDecode(m.group(1));
                 link = link.replaceAll(protocols[0] + "://", "http://");
                 if (link.length() > 6 && link.substring(0, 7).equals("http://")) {
                     ;
@@ -215,7 +215,7 @@ public class HTMLParser {
         m = Pattern.compile("www\\.[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = "http://" + m.group();
-            link = JDUtilities.htmlDecode(link);
+            link = Encoding.htmlDecode(link);
             link = link.replaceAll(protocols[0] + "://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
@@ -224,7 +224,7 @@ public class HTMLParser {
         m = Pattern.compile(protocolPattern + "://[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group();
-            link = JDUtilities.htmlDecode(link);
+            link = Encoding.htmlDecode(link);
             link = link.replaceAll(protocols[0] + "://", "http://");
             if (!set.contains(link)) {
                 set.add(link);

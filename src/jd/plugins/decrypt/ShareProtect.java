@@ -20,11 +20,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
@@ -38,22 +39,23 @@ public class ShareProtect extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-
-            request.getRequest(parameter);
-            String[] matches = request.getRegexp("unescape\\(\\'(.*?)'\\)").getMatches(1);
+            Browser.clearCookies(host);
+       
+            br.getPage(parameter);
+            String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getMatches(1);
             StringBuffer htmlc = new StringBuffer();
             for (String element : matches) {
-                htmlc.append(JDUtilities.htmlDecode(element) + "\n");
+                htmlc.append(Encoding.htmlDecode(element) + "\n");
             }
-            requestInfo = request.getRequestInfo();
-            requestInfo.setHtmlCode(htmlc.toString());
+         
 
-            String[] links = request.getRegexp("<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
+            String[] links = new Regex(htmlc,"<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
             progress.setRange(links.length);
             htmlc = new StringBuffer();
             for (String element : links) {
-                request.getRequest("http://" + request.getHost() + "/" + element);
-                htmlc.append(JDUtilities.htmlDecode(request.getRegexp("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
+                
+                br.getPage("http://" + br.getHost() + "/" + element);
+                htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
                 progress.increase(1);
             }
             requestInfo.setHtmlCode(htmlc.toString());

@@ -22,12 +22,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class DownloadsPesArenacom extends PluginForDecrypt {
 
@@ -48,7 +48,7 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
             if (id != null) {
                 URL url = new URL("http://downloads.pes-arena.com/content.php?id=" + id);
                 RequestInfo reqinfo = HTTP.getRequest(url);
-                String link = JDUtilities.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\"").getFirstMatch());
+                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\"").getFirstMatch());
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {

@@ -32,7 +32,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import jd.JDInit;
-import jd.captcha.CES;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
@@ -560,7 +559,7 @@ public class JDController implements ControlListener, UIListener {
             break;
         case ControlEvent.CONTROL_SYSTEM_EXIT:
 
-            CES.setEnabled(false);
+            // CES.setEnabled(false);
             if (fileLogger != null) {
                 try {
                     fileLogger.flush();

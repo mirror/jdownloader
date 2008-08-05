@@ -18,8 +18,6 @@ package jd.http;
 
 import java.io.IOException;
 
-import jd.plugins.HTTPConnection;
-
 public class GetRequest extends Request {
 
     public GetRequest(String url) {

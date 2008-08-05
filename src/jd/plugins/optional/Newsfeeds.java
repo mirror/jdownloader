@@ -29,6 +29,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.HTTP;
 import jd.plugins.PluginOptional;
@@ -424,8 +425,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 if (title != null && link != null) {
 
                     String[] temp = new String[2];
-                    temp[0] = JDUtilities.htmlDecode(title);
-                    temp[1] = JDUtilities.htmlDecode(link);
+                    temp[0] = Encoding.htmlDecode(title);
+                    temp[1] = Encoding.htmlDecode(link);
 
                     if (temp[0].toLowerCase().contains(filter.toLowerCase())) {
                         vector.add(temp);

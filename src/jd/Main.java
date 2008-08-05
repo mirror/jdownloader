@@ -46,7 +46,8 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.HTTPConnection;
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -97,7 +98,7 @@ public class Main {
 
                 String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
                 file = new File(filepath);
-                JDUtilities.download(file, path);
+                Browser.download(file, path);
 
             } else {
 

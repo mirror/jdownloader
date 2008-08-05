@@ -16,9 +16,16 @@
 
 package jd.http;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -27,9 +34,6 @@ import java.util.regex.Pattern;
 
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.HTTPConnection;
-import jd.utils.JDUtilities;
 
 public class Browser {
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
@@ -56,6 +60,14 @@ public class Browser {
             request.getCookies().put(cookie.getKey(), cookie.getValue());
         }
 
+    }
+
+    public static void forwardCookies(HTTPConnection con) {
+        if (con == null) { return; }
+        String host = Browser.getHost(con.getURL().toString());
+        HashMap<String, String> cookies = COOKIES.get(host);
+        String cs = Request.getCookieString(cookies);
+        if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
     public static String getCookie(String url, String string) {
@@ -101,7 +113,7 @@ public class Browser {
     private int connectTimeout = -1;
     private URL currentURL;
 
-    private boolean doRedirects = true;
+    private boolean doRedirects = false;
 
     private HashMap<String, String> headers;
 
@@ -126,7 +138,7 @@ public class Browser {
     public Form[] getForms() {
         try {
 
-            return Form.getForms(getRequest().getRequestInfo());
+            return Form.getForms(this);
         } catch (Exception e) {
             return null;
         }
@@ -138,10 +150,6 @@ public class Browser {
             headers = new HashMap<String, String>();
         }
         return headers;
-    }
-
-    public String getPage(DownloadLink downloadLink) {
-        return getPage(downloadLink.getDownloadURL());
     }
 
     public String getPage(String string) {
@@ -201,13 +209,16 @@ public class Browser {
     }
 
     public HTTPConnection openFormConnection(Form form) {
-        String action = form.getAction();
+
+        String base = null;
+        if (request != null) base = request.getUrl().toString();
+        String action = form.getAction(base);
         switch (form.method) {
 
         case Form.METHOD_GET:
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
-            for (Map.Entry<String, String> entry : form.vars.entrySet()) {
+            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
                 if (first) {
                     first = false;
                 } else {
@@ -215,7 +226,7 @@ public class Browser {
                 }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
-                stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
+                stbuffer.append(Encoding.urlEncode(entry.getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -230,7 +241,7 @@ public class Browser {
 
         case Form.METHOD_POST:
 
-            return this.openPostConnection(action, form.vars);
+            return this.openPostConnection(action, form.getVars());
         }
         return null;
 
@@ -413,14 +424,15 @@ public class Browser {
     }
 
     public String submitForm(Form form) {
-
-        String action = form.getAction();
+        String base = null;
+        if (request != null) base = request.getUrl().toString();
+        String action = form.getAction(base);
         switch (form.method) {
 
         case Form.METHOD_GET:
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
-            for (Map.Entry<String, String> entry : form.vars.entrySet()) {
+            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
                 if (first) {
                     first = false;
                 } else {
@@ -428,7 +440,7 @@ public class Browser {
                 }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
-                stbuffer.append(JDUtilities.urlEncode(entry.getValue()));
+                stbuffer.append(Encoding.urlEncode(entry.getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -443,14 +455,71 @@ public class Browser {
 
         case Form.METHOD_POST:
 
-            return this.postPage(action, form.vars);
+            return this.postPage(action, form.getVars());
+
+        case Form.METHOD_FILEPOST:
+
+            HTTPPost up = new HTTPPost(action, doRedirects);
+            up.doUpload();
+            up.connect();
+
+            up.getConnection().setRequestProperty("Accept", "*/*");
+            up.getConnection().setRequestProperty("Accept-Language", acceptLanguage);
+            up.getConnection().setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+            forwardCookies(up.getConnection());
+            up.getConnection().setRequestProperty("Referer", currentURL.toString());
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                up.getConnection().setRequestProperty(entry.getKey(), entry.getValue());
+            }
+
+            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
+                up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue()));
+            }
+            up.sendFile(form.getFileToPost().toString(), form.getFiletoPostName());
+
+            // Dummy request um das ganze kompatibel zu machen
+            Request request = new Request(up.getConnection()) {
+
+                @Override
+                public void postRequest(HTTPConnection httpConnection) throws IOException {
+
+                }
+
+                @Override
+                public void preRequest(HTTPConnection httpConnection) throws IOException {
+
+                }
+
+            };
+            request.getHeaders().putAll(headers);
+            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+            request.setFollowRedirects(doRedirects);
+            Browser.forwardCookies(request);
+            request.getHeaders().put("Referer", currentURL.toString());
+            String ret = null;
+            try {
+                ret = request.read();
+            } catch (IOException e) {
+
+                e.printStackTrace();
+            }
+            Browser.updateCookies(request);
+            this.request = request;
+            try {
+                currentURL = new URL(action);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            up.close();
+            return ret;
+
         }
         return null;
     }
 
     @Override
     public String toString() {
-        if (request == null) { return "Browser. no rquest yet"; }
+        if (request == null) { return "Browser. no request yet"; }
         return request.toString();
     }
 
@@ -480,6 +549,165 @@ public class Browser {
     public HTTPConnection getHttpConnection() {
         if (request == null) return null;
         return request.getHttpConnection();
+    }
+
+    /**
+     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
+     * 
+     * @param file
+     * @param con
+     * @return Erfolg true/false
+     */
+    public static boolean download(File file, HTTPConnection con) {
+        try {
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    System.out.println("Konnte Datei nicht überschreiben " + file);
+                    return false;
+                }
+            }
+            if (!file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+            byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+            output.close();
+            input.close();
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public static boolean downloadBinary(String filepath, String fileurl) {
+
+        try {
+            fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
+            File file = new File(filepath);
+            if (file.isFile()) {
+                if (!file.delete()) {
+                    System.out.println("Konnte Datei nicht löschen " + file);
+                    return false;
+                }
+
+            }
+
+            if (file.getParentFile() != null && !file.getParentFile().exists()) {
+                file.getParentFile().mkdirs();
+            }
+            file.createNewFile();
+
+            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+            fileurl = URLDecoder.decode(fileurl, "UTF-8");
+
+            URL url = new URL(fileurl);
+            HTTPConnection con = new HTTPConnection(url.openConnection());
+
+            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+
+            byte[] b = new byte[1024];
+            int len;
+            while ((len = input.read(b)) != -1) {
+                output.write(b, 0, len);
+            }
+            output.close();
+            input.close();
+
+            return true;
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+
+        }
+
+    }
+    public boolean downloadFile(File file, String urlString) {
+        try {
+            urlString = URLDecoder.decode(urlString, "UTF-8");
+           
+            HTTPConnection con = this.openGetConnection(urlString);
+            con.setInstanceFollowRedirects(true);
+            return Browser.download(file, con);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } 
+        return false;
+    }
+
+    /**
+     * Lädt eine url lokal herunter
+     * 
+     * @param file
+     * @param urlString
+     * @return Erfolg true/false
+     */
+    public static boolean download(File file, String urlString) {
+        try {
+            urlString = URLDecoder.decode(urlString, "UTF-8");
+            URL url = new URL(urlString);
+            HTTPConnection con = new HTTPConnection(url.openConnection());
+            con.setInstanceFollowRedirects(true);
+            return Browser.download(file, con);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public Form getForm(int i) {
+        Form[] forms = getForms();
+        if (forms.length <= i) return null;
+        return forms[i];
+    }
+
+    public String getHost() {
+        if (request == null) return null;
+        return request.getUrl().getHost();
+
+    }
+
+    public Browser cloneBrowser() {
+        Browser br = new Browser();
+        br.acceptLanguage = acceptLanguage;
+        br.connectTimeout = connectTimeout;
+        br.currentURL = currentURL;
+        br.doRedirects = doRedirects;
+        br.getHeaders().putAll(headers);
+        br.limit = limit;
+        br.readTimeout = readTimeout;
+        br.request = request;
+        return br;
+    }
+
+    public Form[] getForms(String downloadURL) {
+       this.getPage(downloadURL);
+       return this.getForms();
+    
     }
 
 }

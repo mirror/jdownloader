@@ -24,6 +24,7 @@ import java.util.Vector;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -105,7 +106,7 @@ public class WebUpdate extends Interaction implements Serializable {
             if (files.size() > 0 || jdus.length > 0) {
                 logger.info("New Updates Available! " + files);
                 logger.info("New Packages to install: " + jdus.length);
-                JDUtilities.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true)) {
                     // Eine checkfile schreiben. Diese CheckFile wird vom

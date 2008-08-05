@@ -20,10 +20,11 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
-import jd.plugins.HTTPConnection;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -154,7 +155,7 @@ public class ShareOnlineBiz extends PluginForHost {
         HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
         captcha_con.setRequestProperty("Referer", url);
         captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-        if (!captcha_con.getContentType().contains("text") && !JDUtilities.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+        if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
             // step.setStatus(PluginStep.STATUS_ERROR);

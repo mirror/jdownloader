@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.Date;
 import java.util.logging.Logger;
 
+import jd.http.Browser;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
@@ -77,7 +78,7 @@ public class UploadedTo {
             ri = HTTP.getRequest(new URL(link));
 
             String captchaURL = "http://uploaded.to/" + ri.getRegexp("<img name=\"img_captcha\" src=\"(.*?)\"");
-            JDUtilities.download(new File(file, getCaptchaName()), captchaURL);
+            Browser.download(new File(file, getCaptchaName()), captchaURL);
 
             logger.info(captchaURL + " - " + new File(file, getCaptchaName()));
         } catch (MalformedURLException e) {

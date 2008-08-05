@@ -23,12 +23,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -63,7 +63,7 @@ public class Rapidlayerin extends PluginForDecrypt {
             Scriptable scope = cx.initStandardObjects();
             String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
             Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            if ((link = JDUtilities.htmlDecode(Context.toString(result))) != null) {
+            if ((link = Encoding.htmlDecode(Context.toString(result))) != null) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {
                 return null;

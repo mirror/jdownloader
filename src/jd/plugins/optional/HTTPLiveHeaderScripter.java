@@ -63,6 +63,7 @@ import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -402,7 +403,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         ch.clear();
         final String[] d = new String[scripts.size()];
         for (int i = 0; i < d.length; i++) {
-            d[i] = i + ". " + JDUtilities.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
+            d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
         }
 
         // String selected = (String) JOptionPane.showInputDialog(this,

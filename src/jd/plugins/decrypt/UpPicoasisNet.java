@@ -22,12 +22,12 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class UpPicoasisNet extends PluginForDecrypt {
 
@@ -47,7 +47,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
             String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
             if (link == null) { return null; }
-            decryptedLinks.add(createDownloadlink(JDUtilities.htmlDecode(link)));
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
