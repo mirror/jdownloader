@@ -22,8 +22,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener {
 
-    private static final Color INACTIVE = new Color(0xa40604);
     private static final Color ACTIVE = new Color(0x7cd622);
+    private static final Color INACTIVE = new Color(0xa40604);
     private static final long serialVersionUID = 3275917572262383770L;
     private static final Insets INSETS = new Insets(2, 5, 2, 10);
     private JCheckBox[] enables;
@@ -99,7 +99,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
         for (int i = 1; i <= accountNum; i++) {
             
             final JCheckBox active = new JCheckBox("<html><b>Premium Account #" + i + "</b></html>");
-            active.setForeground(Color.red);
+            active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
                     if (active.isSelected()) {
