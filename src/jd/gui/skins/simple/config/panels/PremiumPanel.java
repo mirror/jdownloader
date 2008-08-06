@@ -22,6 +22,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener {
 
+    private static final Color INACTIVE = new Color(0xa40604);
+    private static final Color ACTIVE = new Color(0x7cd622);
     private static final long serialVersionUID = 3275917572262383770L;
     private static final Insets INSETS = new Insets(2, 5, 2, 10);
     private JCheckBox[] enables;
@@ -101,9 +103,9 @@ public class PremiumPanel extends JPanel implements ChangeListener {
             active.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
                     if (active.isSelected()) {
-                        active.setForeground(Color.green.darker());
+                        active.setForeground(ACTIVE);
                     } else {
-                        active.setForeground(Color.red.darker());
+                        active.setForeground(INACTIVE);
                     }
                 }
             });
