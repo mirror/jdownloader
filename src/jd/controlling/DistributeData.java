@@ -235,6 +235,7 @@ public class DistributeData extends ControlBroadcaster {
                     }
                 } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
+                    e.printStackTrace();
                 }
 
             }
