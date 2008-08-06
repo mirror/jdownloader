@@ -113,7 +113,7 @@ public class RsLayerCom extends PluginForDecrypt {
                         String page = br.getPage(layerLink);
                         String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
                         if (link != null) {
-                            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+                            decryptedLinks.add(createDownloadlink(link));
                         }
                         progress.increase(1);
                     }
