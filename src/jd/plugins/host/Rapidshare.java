@@ -18,12 +18,10 @@ package jd.plugins.host;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -39,7 +37,6 @@ import javax.swing.border.EmptyBorder;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -212,8 +209,8 @@ public class Rapidshare extends PluginForHost {
         super();
 
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-        // serverMap.put("Cogent", "cg");
-        // serverMap.put("Cogent #2", "cg2");
+        serverMap.put("Cogent #1", "cg");
+         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
         serverMap.put("GlobalCrossing #1", "gc");
         serverMap.put("GlobalCrossing #2", "gc2");
@@ -223,48 +220,17 @@ public class Rapidshare extends PluginForHost {
         serverMap.put("Level(3) #4", "l34");
         serverMap.put("Tata Com. #1", "tg");
         serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("TeliaSonera", "tl");
+        serverMap.put("TeliaSonera #1", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
 
-        serverList1 = new String[] { "gc", "gc2", "dt", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
-        serverList2 = new String[] { "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
+        serverList1 = new String[] {"cg","cg2","dt", "gc", "gc2",  "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
+        serverList2 = new String[] { "cg","dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         setConfigElements();
         enablePremium();
     }
 
-   
 
-    /**
-     * Wartet 5 minuten und startet den Downlaod anschließend neu.
-     * 
-     * @param step
-     * @param downloadLink
-     * @throws InterruptedException
-     */
-    /*
-     * private void waitForHappyHours( DownloadLink downloadLink) throws
-     * InterruptedException { // 5 Minuten Warten und dann einenj Neuversuch
-     * starten
-     * 
-     * int happyWaittime = 5 * 60 * 1000; ProgressController p = new
-     * ProgressController(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext",
-     * "Warte auf HappyHour. Nächster Versuch in %s min"),
-     * JDUtilities.formatSeconds(happyWaittime / 1000)), happyWaittime);
-     * p.setStatus(happyWaittime);
-     * downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.rapidshare.waitForHappyHour",
-     * "Warte auf HappyHour")); downloadLink.requestGuiUpdate(); while
-     * (happyWaittime > 0) { if
-     * (downloadLink.getDownloadLinkController().isAborted()) { p.finalize();
-     * return; } Thread.sleep(1000); happyWaittime -= 1000;
-     * p.setStatus(happyWaittime);
-     * p.getLinkStatus().setStatusText(String.format(JDLocale.L("plugins.rapidshare.waitForHappyHour.progressbartext",
-     * "Warte auf HappyHour. Nächster Versuch in %s min"),
-     * JDUtilities.formatSeconds(happyWaittime / 1000))); }
-     * 
-     * //step.setStatus(PluginStep.STATUS_ERROR); this.sleep(0,downloadLink);
-     * linkStatus.addStatus(LinkStatus.ERROR_RETRY); }
-     */
     /**
      * Prüft vor dem Download ob der Download geschrieben werden darf Es wird
      * z.B. auf "Is local file in progress" oder "fileexists" geprüft.
@@ -359,7 +325,6 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-
     public boolean doBotCheck(File file) {
 
         String hash = JDUtilities.getLocalHash(file);
@@ -367,88 +332,7 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    /**
-     * Wird ein Premium DirectLink angeboten, kann der link von freusern wie ein
-     * Premiumuser egladen werden, ohne downloadbeschränkung
-     * 
-     * @param step
-     * @param downloadLink
-     * @param location
-     * @return
-     */
-    private void doDirectDownload(DownloadLink downloadLink, String location) {
-        logger.info("Direct Download from: " + location.substring(0, 30));
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
-            // HashMap<String, String> ranger = new HashMap<String, String>();
-            // ranger.put("Authorization", "Basic " +
-            // JDUtilities.Base64Encode(user + ":" +
-            // pass));
-            HTTPConnection urlConnection;
-            GetRequest req = new GetRequest(location);
-
-            req.connect();
-            urlConnection = req.getHttpConnection();
-            if (urlConnection.getHeaderField("content-disposition") == null) {
-
-                String page = req.read();
-                String error;
-                if ((error = findError(page)) != null) {
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    logger.warning(error);
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-
-                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                    downloadLink.getLinkStatus().setStatusText(error);
-                    linkStatus.setErrorMessage(error);
-
-                    return;
-                } else {
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-
-                    reportUnknownError(page, 6);
-
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-
-            }
-
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-
-            dl.setResume(true);
-            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            if (dl.startDownload()) {
-
-                if (new File(downloadLink.getFileOutput()).length() < 6000 && Regex.matches(JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())), PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                    downloadLink.getLinkStatus().setStatusText("Download error(>log)");
-                    // step.setParameter("Download error(>log)");
-                    logger.severe("Error detected.  " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-
-                    // step.setStatus(PluginStep.STATUS_ERROR);
-                    return;
-                }
-
-                // step.setStatus(PluginStep.STATUS_DONE);
-                linkStatus.addStatus(LinkStatus.FINISHED);
-
-                return;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            logger.severe("DDL Error");
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
-        return;
-    }
+   
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -470,7 +354,7 @@ public class Rapidshare extends PluginForHost {
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download");
-            doDirectDownload(downloadLink, br.getRedirectLocation());
+            this.handlePremium(downloadLink, new Account("dummy","dummy"));
             return;
         }
         // posturl für auswahl free7premium wird gesucht
@@ -507,21 +391,7 @@ public class Rapidshare extends PluginForHost {
             return;
         }
 
-        // Wartezeit (Downloadlimit) wird gesucht
-        // String strWaitTime = new Regex(br,
-        // PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
-        // int waitTime;
-        // if (strWaitTime != null) {
-        // waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
-        // logger.info("DownloadLimit reached. Wait " +
-        // JDUtilities.formatSeconds(waitTime / 1000) + " or reconnect");
-        // linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-        //         
-        // // step.setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.setValue(waitTime);
-        //
-        // return;
-        // }
+
 
         // Fehlersuche
         if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
@@ -732,132 +602,8 @@ public class Rapidshare extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Rapidshare.correctURL(downloadLink);
-        /*
-         * try {
-         * 
-         * if
-         * (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS,
-         * false)) { // RS URL wird aufgerufen
-         * 
-         * GetRequest req = new GetRequest(downloadLink.getDownloadURL());
-         * req.load(); if (req.getLocation() != null) { logger.info("Direct
-         * Download"); return doDirectDownload(step, downloadLink,
-         * req.getLocation()); } // posturl für auswahl free7premium wird
-         * gesucht String freeOrPremiumSelectPostURL = new Regex(req,
-         * PATTERN_FIND_MIRROR_URL).getFirstMatch(); // Fehlerbehandlung auf der
-         * ersten Seite if (freeOrPremiumSelectPostURL == null) { String error =
-         * null; if ((error = findError(req + "")) != null) {
-         * //step.setStatus(PluginStep.STATUS_ERROR);
-         * linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-         * linkStatus.setErrorMessage(error); return; } reportUnknownError(req,
-         * 1); linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-         * //step.setStatus(PluginStep.STATUS_ERROR); logger.warning("could not
-         * get newURL"); return; } // Post um freedownload auszuwählen
-         * PostRequest pReq = new PostRequest(freeOrPremiumSelectPostURL);
-         * pReq.setPostVariable("dl.start", "free"); pReq.load(); // String
-         * error = null; // Fehlersuche // if ((error = new Regex(pReq, //
-         * PATTERN_FIND_ERROR_CODES).getFirstMatch()) != null) { //
-         * setError(step, downloadLink, error); // return; // } // if
-         * (Regex.matches(pReq, PATTERN_MATCHER_FIND_ERROR)) { // error = new
-         * Regex(pReq, // PATTERN_FIND_ERROR_MESSAGE).getFirstMatch(); //
-         * reportUnknownError(pReq, 2); // //
-         * //step.setStatus(PluginStep.STATUS_ERROR); //
-         * linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-         * //linkStatus.setErrorMessage(error); // return; // } // //
-         * FORCE_FREE_USER = false; // Wartezeit (Downloadlimit) wird gesucht
-         * String strWaitTime = new Regex(pReq,
-         * PATTERN_FIND_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch(); int waitTime;
-         * 
-         * if (strWaitTime != null &&
-         * !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
-         * false)) { logger.info("Waittime detected. check happy hour via
-         * jdownloader.org"); String happyCHeck = new
-         * GetRequest("http://jdownloader.org/hh.php?txt=1").load();
-         * 
-         * if (happyCHeck != null && happyCHeck.contains("happy")) {
-         * FORCE_FREE_USER = true; logger.info("jdownloader.org detected Happy
-         * Hour. Reconnect now"); logger.severe("wait " + strWaitTime + "
-         * minutes"); waitTime = (int) (Double.parseDouble(strWaitTime) * 60 *
-         * 1000); linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-         * setDownloadLimitTime(waitTime);
-         * //step.setStatus(PluginStep.STATUS_ERROR);
-         * 
-         * //step.setParameter((long) waitTime); return; }
-         * logger.info("jdownloader.org detected NO Happy Hour, ...continue with
-         * Premium"); } else if (strWaitTime != null) {
-         * 
-         * logger.info("jdownloader.org detected Happy Hour, but Reconnect is
-         * disabled..continue with Premium"); } else { if (new Regex(pReq,
-         * PATTERN_MATCHER_HAPPY_HOUR).matches()) { logger.info("happy Hour is
-         * active. Disable Force Free Download inhappy hour to avoid this");
-         * FORCE_FREE_USER = true; this.doFree(downloadLink); } else {
-         * logger.info("Not happy hour..continue with premium"); } } } } catch
-         * (Exception e) { e.printStackTrace(); }
-         */
-        //   
-        //     
-        // String firstPage=new
-        // GetRequest(downloadLink.getDownloadURL()).load();
-        //        
-        // String newURL =
-        // SimpleMatches.getFirstMatch(ri.getHtmlCode(),PATTERN_FIND_MIRROR_URL,
-        // 1);
-        // ri = HTTP.postRequest(new URL(newURL), null, null, null,
-        // "dl.start=FREE",
-        // true);
-        // String strWaitTime = new Regex(requestInfo,
-        // PATTERN_MATCHER_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
-        //        
-        // if (strWaitTime != null &&
-        // !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT,
-        // false)) {
-        // logger.info("Waittime detected. check happy hour via
-        // jdownloader.org");
-        // RequestInfo ch = HTTP.getRequest(new
-        // URL("http://jdownloader.org/hh.php?txt=1"));
-        // if (ch.containsHTML("happy")) {
-        // logger.info("jdownloader.org detected Happy Hour. Reconnect now");
-        // logger.severe("wait " + strWaitTime + " minutes");
-        // waitTime = (int) (Double.parseDouble(strWaitTime) * 60 * 1000);
-        // linkStatus.addStatus(LinkStatus.ERROR_TRAFFIC_LIMIT);
-        // setDownloadLimitTime(waitTime);
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        // logger.info(" WARTEZEIT SETZEN IN " + step + " : " + waitTime);
-        // //step.setParameter((long) waitTime);
-        // return;
-        // } else {
-        // logger.info("jdownloader.org detected NO Happy Hour, ...continue with
-        // Premium");
-        // HAPPYHOUR_IS_SUPPOSED = false;
-        //        
-        // }
-        // } else if (strWaitTime != null) {
-        // HAPPYHOUR_IS_SUPPOSED = false;
-        // logger.info("jdownloader.org detected Happy Hour, but Reconnect is
-        // disabled..continue with Premium");
-        // } else {
-        // if (new Regex(ri, PATTERN_MATCHER_HAPPY_HOUR).matches()) {
-        // logger.info("happy Hour is active. Disable Force Free Download in
-        // happy hour
-        // to avoid this");
-        // HAPPYHOUR_IS_SUPPOSED = true;
-        // this.resetSteps();
-        // this.doFree(downloadLink);
-        // } else {
-        // logger.info("Not happy hour..continue with premium");
-        // HAPPYHOUR_IS_SUPPOSED = false;
-        // }
-        //        
-        // }
-        // } catch (MalformedURLException e) {
-        // // e.printStackTrace();
-        // } catch (IOException e) {
-        // // e.printStackTrace();
-        // }
-        //        
-        // }
-        // if (step == this.steps.firstElement()) this.downloadType =
-        // PREMIUM;
+        logger.info(downloadLink.getDownloadURL());
+        
         Browser br = new Browser();
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
@@ -876,109 +622,23 @@ public class Rapidshare extends PluginForHost {
         hReq.load();
 
         headLength = hReq.getContentLength();
-        // if (headLength <= 0 ||
-        // hReq.getHttpConnection().getHeaderField("Content-Disposition") ==
-        // null) {
-        // // requestInfo = HTTP.getRequest(new URL(link), null, "",
-        // // false);
-        // String page = new GetRequest(link).load();
-        // String error = null;
-        //
-        // if ((error = new Regex(page,
-        // PATTERN_FIND_ERROR_CODES).getFirstMatch()) != null) {
-        // setError(step, downloadLink, error);
-        // return;
-        // }
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        //
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return;
-        //
-        // }
+        if ((headLength <= 0 || hReq.getHttpConnection().getHeaderField("Content-Disposition") == null)&&hReq.getHttpConnection().getHeaderField("Location") != null) {
+            // requestInfo = HTTP.getRequest(new URL(link), null, "",
+            // false);
+            String page = br.getPage(link);
+            String error = null;
 
-        // if
-        // (this.getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED,
-        // false)) {
-        //
-        // // get shure that dllink.isPluginActive() reacted already on
-        // // dl start
-        // if (freeInsteadOfPremiumStarttime + 2000 >
-        // System.currentTimeMillis()) {
-        // logger.info("A download started before -> wait 2 seconds (prevent
-        // this by
-        // deactivating 'Free download if limit not reached')");
-        // Thread.sleep(2000);
-        // }
-        //
-        // if (freeInsteadOfPremiumDownloadlink == null ||
-        // !freeInsteadOfPremiumDownloadlink.isPluginActive()) {
-        //
-        // freeInsteadOfPremiumDownloadlink = null;
-        // // has to be set here because getRequest takes to much
-        // // time
-        // freeInsteadOfPremiumStarttime = System.currentTimeMillis();
-        //
-        // RequestInfo ri = HTTP.getRequest(new URL(link), null, "", false);
-        // String error = null;
-        //
-        // if ((error = new
-        // Regex(requestInfo,PATTERN_FIND_ERROR_CODES).getFirstMatch())!=null)
-        // {
-        // setError(step, downloadLink, error);
-        // return;
-        // }
-        // String newURL = SimpleMatches.getFirstMatch(ri.getHtmlCode(),
-        // PATTERN_FIND_MIRROR_URL, 1);
-        // ri = HTTP.postRequest(new URL(newURL), null, null, null,
-        // "dl.start=FREE",
-        // true);
-        // String strWaitTime = new Regex(requestInfo,
-        // PATTERN_MATCHER_DOWNLOAD_LIMIT_WAITTIME).getFirstMatch();
-        //
-        // if
-        // (getProperties().getBooleanProperty(PROPERTY_FREE_IF_LIMIT_NOT_REACHED,
-        // false) && strWaitTime == null && !new Regex(ri,
-        // PATTERM_MATCHER_ALREADY_LOADING).matches()) {
-        // // wait time pattern not found -> free download
-        // logger.info("Download limit not reached yet -> free download (see
-        // RS.com
-        // options)");
-        // //currentStep = steps.firstElement();
-        // noLimitFreeInsteadPremium = true;
-        //
-        // freeInsteadOfPremiumDownloadlink = downloadLink;
-        //
-        // return doFree(step, downloadLink);
-        //
-        // } else {
-        // logger.info("Download limit reached or free download not possible
-        // -> premium
-        // download");
-        // }
-        //
-        // } else {
-        // logger.info("There is already a running free download -> premium
-        // download");
-        // }
-        //
-        // }
+            if ((error = findError(page)) != null) {
+                // step.setStatus(PluginStep.STATUS_ERROR);
+logger.severe(error);
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(error);
+                return;
 
-        // if
-        // (getProperties().getBooleanProperty(Rapidshare.PARAM_FORRCEFREE_WHILE_HAPPYHOURS,
-        // false)) {
-        // requestInfo = HTTP.getRequest(new URL(link), null, "", false);
-        // String newURL =
-        // SimpleMatches.getFirstMatch(requestInfo.getHtmlCode(),
-        // PATTERN_FIND_MIRROR_URL, 1);
-        // requestInfo = HTTP.postRequest(new URL(newURL), null, null, null,
-        // "dl.start=FREE", true);
-        // if (new Regex(requestInfo,
-        // PATTERM_MATCHER_ALREADY_LOADING).matches()) {
-        // return doFree(step, downloadLink);
-        //
-        // }
-        //
-        // }
+            }
+        }
+
+   
 
         logger.info("Loading from: " + link.substring(0, 30));
         // HashMap<String, String> ranger = new HashMap<String, String>();
@@ -991,7 +651,8 @@ public class Rapidshare extends PluginForHost {
         br.setFollowRedirects(true);
 
         urlConnection = br.openGetConnection(link);
-        if (urlConnection.getHeaderField("content-disposition") == null || Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength) {
+        // urlConnection.getHeaderField("Content-Type").equals("text/html")
+        if (Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength) {
 
             String page = br.getRequest().read();
             String error;
@@ -1323,22 +984,17 @@ public class Rapidshare extends PluginForHost {
      * Auto-generated method stub return null; }
      */
 
-    /*public int getMaxSimultanDownloadNum() {
-        // if
-        // (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS,
-        // false) && FORCE_FREE_USER) { return 1; }
-        int ret = 0;
-
-        if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM)) {
-            ret = getMaxConnections() / getChunksPerFile();
-        } else {
-            ret = 1;
-        }
-
-        return ret;
-    }
-
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { // if //
+     * (this.getProperties().getBooleanProperty(PARAM_FORRCEFREE_WHILE_HAPPYHOURS, //
+     * false) && FORCE_FREE_USER) { return 1; } int ret = 0;
+     * 
+     * if (getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM)) { ret =
+     * getMaxConnections() / getChunksPerFile(); } else { ret = 1; }
+     * 
+     * return ret; }
+     * 
+     */public String getPluginName() {
         return host;
     }
 
@@ -1651,13 +1307,7 @@ public class Rapidshare extends PluginForHost {
                         JPanel panel = new JPanel(new BorderLayout(n, n));
                         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-
-                        String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
+                        String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"), JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
                         String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
                         JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
                         for (int j = 0; j < data.length; j++) {
