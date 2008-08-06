@@ -16,7 +16,6 @@
 
 package jd.gui.skins.simple.config;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -52,8 +51,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.PlainDocument;
-
-import org.mozilla.javascript.tools.shell.JSConsole;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -290,7 +287,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             input[0] = new PremiumPanel(this);
             input[0].setEnabled(configEntry.isEnabled());
 
-            this.add(input[0]);
+            JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             // total.setMinimumSize(new Dimension(200, 200));
             total = null;
 
