@@ -36,9 +36,9 @@ public class RapidSpreadCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String page = br.getPage(parameter);
-        String[] links = new Regex(page, Pattern.compile("<a href=\"/redirect\\?link=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        String[] links = new Regex(page, Pattern.compile("<a href=\"/redirect\\?(link=\\d+&hash=\\w+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
         for (String element : links) {
-            br.getPage("http://www.rapidspread.com/redirect?link=" + element);
+            br.getPage("http://www.rapidspread.com/redirect?" + element);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
         return decryptedLinks;
