@@ -103,7 +103,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
                     if (active.isSelected()) {
                         active.setForeground(Color.green.darker());
                     } else {
-                        active.setForeground(Color.red);
+                        active.setForeground(Color.red.darker());
                     }
                 }
             });
