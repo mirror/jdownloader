@@ -36,7 +36,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
 
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
-        this.setLayout(new MigLayout("ins 22", "[right]10[grow,fill]15[right][grow,fill]"));
+        this.setLayout(new MigLayout("ins 5", "[right]10[grow,fill]15[right][grow,fill]"));
         this.createPanel();
     }
 
@@ -123,7 +123,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
             JTextField status = new JTextField("tuxla sold me into slavery :(");
             stati[i-1]=status;
             status.setEditable(false);
-            add(status, "span, gapbottom ::push");
+            add(status, "span, gapbottom :10:push");
         }
         
         
