@@ -350,9 +350,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter");
+    }
 
     public String getRequirements() {
         return "JRE 1.5+";
@@ -507,7 +510,9 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         dialog.pack();
         dialog.setLocationRelativeTo(null);
         dialog.setVisible(true);
-        int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.showConfirmDialog(this,
+        int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.
+                                                           // showConfirmDialog
+                                                           // (this,
         // panel,
         // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
         // "Router
@@ -599,7 +604,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         // EditMenu
         menEditValidate = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.validate", "Validate current script"));
         // this.menEditTest = new
-        // JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.test",
+        // JMenuItem(JDLocale.L(
+        // "plugins.optional.httpliveheaderscripter.gui.menu.edit.test",
         // "Test current script"));
         menEditAddRequest = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest", "Add request tag"));
         menEditAddDefine = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine", "Add define tag"));

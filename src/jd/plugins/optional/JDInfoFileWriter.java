@@ -37,22 +37,15 @@ import jd.utils.Replacer;
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
     public static final String CODER = "JD-Team";
+
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
     private static final String INFO_STRING_DEFAULT = "Passwort: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFertig gestellt am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr";
-
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer");
 
     private static final String PARAM_FILENAME = "FILENAME";
 
     private static final String PARAM_INFO_STRING = "INFO_STRING";
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 7680205811276541375L;
 
     public static final String VERSION = "$Revision$";
@@ -93,10 +86,13 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         return CODER;
     }
 
-
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer");
+    }
 
     @Override
-  public String getRequirements() {
+    public String getRequirements() {
         return "JRE 1.5+";
     }
 
@@ -139,7 +135,8 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     protected boolean write(Object arg) {
 
         // if
-        // (!JDUtilities.getConfiguration().getBooleanProperty("INFOFILEWRITER_ENABLED",
+        // (!JDUtilities.getConfiguration().getBooleanProperty(
+        // "INFOFILEWRITER_ENABLED",
         // false)) { return false; }
 
         String content = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);

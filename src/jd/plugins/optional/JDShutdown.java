@@ -55,7 +55,6 @@ public class JDShutdown extends PluginOptional {
             cfg.setProperty(PROPERTY_ENABLED, false);
             cfg.save();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird von JDownloader NICHT heruntergefahren."));
-
         }
     }
 
@@ -79,10 +78,10 @@ public class JDShutdown extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
         if (!JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.enable", "Herunterfahren"), 0).setActionListener(this));
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.enable", "Herunterfahren aktivieren"), 0).setActionListener(this));
             m.setSelected(false);
         } else {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.disable", "Herunterfahren"), 1).setActionListener(this));
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.disable", "Herunterfahren deaktivieren"), 1).setActionListener(this));
             m.setSelected(true);
         }
         return menu;
