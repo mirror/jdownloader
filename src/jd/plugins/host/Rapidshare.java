@@ -1607,7 +1607,7 @@ public class Rapidshare extends PluginForHost {
                         // String login =
                         // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
                         String validUntil = ri.getRegexp("<td>G&uuml;ltig bis:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String trafficLeft = formatKB(ri.getRegexp("<td>Traffic &uuml;brig:</td><td.*?><b><script>document\\.write\\(setzeTT\\(\"(.*?)\"\\)\\);</script> KB</b></td>").getFirstMatch(1)).trim() + " KB";
+                        String trafficLeft = formatKB(ri.getRegexp("<td>Traffic &uuml;brig:</td><td.*?><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\((.*?)/1000\\)\\)\\);</script> MB</b></td>").getFirstMatch(1)).trim() + " KB";
                         String files = ri.getRegexp("<td>Dateien:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
                         String rapidPoints = ri.getRegexp("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
                         String usedSpace = ri.getRegexp("<td>Belegter Speicher:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
@@ -1657,7 +1657,8 @@ public class Rapidshare extends PluginForHost {
                                 JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"),
                                 JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"),
                                 JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"),
-                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };                        String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
+                        String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
                         JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
                         for (int j = 0; j < data.length; j++) {
                             datapanel.add(new JLabel(label[j]));
