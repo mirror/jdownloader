@@ -1,8 +1,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -14,22 +12,16 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import net.miginfocom.swing.MigLayout;
 
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 3275917572262383770L;
     private static final Insets INSETS = new Insets(2, 5, 2, 10);
     private JCheckBox[] enables;
@@ -43,11 +35,9 @@ public class PremiumPanel extends JPanel implements ChangeListener {
     private ConfigEntry configEntry;
 
     public PremiumPanel(GUIConfigEntry gce) {
-
         this.configEntry = gce.getConfigEntry();
         this.setLayout(new MigLayout("ins 22", "[right]10[grow,fill]15[right][grow,fill]"));
         this.createPanel();
-
     }
 
     /**
@@ -133,7 +123,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
             JTextField status = new JTextField("tuxla sold me into slavery :(");
             stati[i-1]=status;
             status.setEditable(false);
-            add(status, "span, gapbottom :1000:push");
+            add(status, "span, gapbottom ::push");
         }
         
         
