@@ -1651,8 +1651,13 @@ public class Rapidshare extends PluginForHost {
                         JPanel panel = new JPanel(new BorderLayout(n, n));
                         panel.setBorder(new EmptyBorder(n, n, n, n));
 
-                        String[] label = new String[] { "Valid until", "Traffic left", "Files", "Rapidpoints", "Used Space", "Traffic Share left" };
-                        String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
+
+                        String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"),
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"),
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"),
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"),
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"),
+                                JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };                        String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
                         JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
                         for (int j = 0; j < data.length; j++) {
                             datapanel.add(new JLabel(label[j]));

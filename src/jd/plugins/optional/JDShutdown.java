@@ -35,6 +35,8 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
+    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
+
     private static final int count = 60;
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
@@ -45,15 +47,14 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        SubConfiguration cfg = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
         MenuItem mi = (MenuItem) e.getSource();
         if (mi.getActionID() == 0) {
-            cfg.setProperty(PROPERTY_ENABLED, true);
-            cfg.save();
+            subConfig.setProperty(PROPERTY_ENABLED, true);
+            subConfig.save();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "JDownloader wird das System nach dem Download herunterfahren."));
         } else {
-            cfg.setProperty(PROPERTY_ENABLED, false);
-            cfg.save();
+            subConfig.setProperty(PROPERTY_ENABLED, false);
+            subConfig.save();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird von JDownloader NICHT heruntergefahren."));
         }
     }
@@ -61,12 +62,11 @@ public class JDShutdown extends PluginOptional {
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
+        if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
-                    SubConfiguration cfg = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
-                    cfg.setProperty(PROPERTY_ENABLED, false);
-                    cfg.save();
+                    subConfig.setProperty(PROPERTY_ENABLED, false);
+                    subConfig.save();
                     shutDown();
                 }
             }
@@ -77,7 +77,7 @@ public class JDShutdown extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-        if (!JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
+        if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
             menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.enable", "Herunterfahren aktivieren"), 0).setActionListener(this));
             m.setSelected(false);
         } else {
@@ -119,6 +119,9 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void onExit() {
+//        Wollen wir, dass der Status auch beim "normalen" Beenden resettet wird?
+//        subConfig.setProperty(PROPERTY_ENABLED, false);
+//        subConfig.save();
     }
 
     public void shutDown() {
