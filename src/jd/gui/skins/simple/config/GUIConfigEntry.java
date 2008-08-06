@@ -56,6 +56,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.gui.skins.simple.config.panels.PremiumPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
@@ -281,6 +282,15 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
                 JDUtilities.addToGridBag(this, input[i], 0, i, 1, 1, 0, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             }
             break;
+        case ConfigContainer.TYPE_PREMIUMPANEL:
+
+            input[0] = new PremiumPanel(this);
+            input[0].setEnabled(configEntry.isEnabled());
+
+            JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            // total.setMinimumSize(new Dimension(200, 200));
+            total = null;
+
         case ConfigContainer.TYPE_LABEL:
 
             JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
@@ -351,7 +361,11 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_TEXTAREA:
             return ((JTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
+
             return ((JCheckBox) input[0]).isSelected();
+
+        case ConfigContainer.TYPE_PREMIUMPANEL:
+            return ((PremiumPanel) input[0]).getAccounts();
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
@@ -462,6 +476,10 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_TEXTAREA:
             ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
+            
+        case ConfigContainer.TYPE_PREMIUMPANEL:
+            ((PremiumPanel) input[0]).setAccounts(text);
+            break;
         case ConfigContainer.TYPE_CHECKBOX:
             if (text == null) {
                 text = false;
@@ -521,5 +539,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
     public void stateChanged(ChangeEvent e) {
         getConfigEntry().valueChanged(getText());
     }
+
+   
 
 }

@@ -98,6 +98,7 @@ public class ConfigContainer implements Serializable {
      * propertyInstance, String propertyName, String label) {
      */
     public static final int TYPE_TEXTFIELD = 0;
+    public static final int TYPE_PREMIUMPANEL = 14;
 
     private ActionListener actionListener;
 

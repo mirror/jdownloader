@@ -64,7 +64,8 @@ public abstract class PluginForHost extends Plugin {
     // private int retryOnErrorCount = 0;
     private int maxConnections = 50;
 
-    private static final int ACCOUNT_NUM = 3;
+    private static final int ACCOUNT_NUM = 5;
+    public static final String PROPERTY_PREMIUM = "PREMIUM";
     protected Browser br = new Browser();
     private boolean enablePremium = false;
 
@@ -145,66 +146,7 @@ public abstract class PluginForHost extends Plugin {
             premium.addMenuItem(account);
         }
         return menuList;
-        //
-        // // Account 2
-        // account = new MenuItem(MenuItem.CONTAINER,
-        // JDLocale.L("plugins.rapidshare.menu.premium2", "2. Account (") +
-        // getProperties().getProperty(PROPERTY_PREMIUM_USER_2) + ")", 0);
-        //
-        // if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_2,
-        // false)) {
-        // m = new MenuItem(MenuItem.TOGGLE,
-        // JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"),
-        // ACTION_TOGGLE_PREMIUM_2);
-        // m.setSelected(false);
-        //
-        // } else {
-        // m = new MenuItem(MenuItem.TOGGLE,
-        // JDLocale.L("plugins.rapidshare.menu.disable_premium",
-        // "Deaktivieren"), ACTION_TOGGLE_PREMIUM_2);
-        // m.setSelected(true);
-        //
-        // }
-        // m.setActionListener(this);
-        //
-        // account.addMenuItem(m);
-        // m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo",
-        // "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_2);
-        // m.setActionListener(this);
-        //
-        // account.addMenuItem(m);
-        // premium.addMenuItem(account);
-        // // Account 3
-        // account = new MenuItem(MenuItem.CONTAINER,
-        // JDLocale.L("plugins.rapidshare.menu.premium3", "3. Account (") +
-        // getProperties().getProperty(PROPERTY_PREMIUM_USER_3) + ")", 0);
-        //
-        // if (!getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM_3,
-        // false)) {
-        // m = new MenuItem(MenuItem.TOGGLE,
-        // JDLocale.L("plugins.rapidshare.menu.enable_premium", "Aktivieren"),
-        // ACTION_TOGGLE_PREMIUM_3);
-        // m.setSelected(false);
-        //
-        // } else {
-        // m = new MenuItem(MenuItem.TOGGLE,
-        // JDLocale.L("plugins.rapidshare.menu.disable_premium",
-        // "Deaktivieren"), ACTION_TOGGLE_PREMIUM_3);
-        // m.setSelected(true);
-        // logger.info("TRUE");
-        //
-        // }
-        // m.setActionListener(this);
-        // m.setProperty("id", 3);
-        // account.addMenuItem(m);
-        // m = new MenuItem(JDLocale.L("plugins.rapidshare.menu.premiumInfo",
-        // "Accountinformationen abrufen"), ACTION_INFO_PREMIUM_3);
-        // m.setActionListener(this);
-        //
-        // account.addMenuItem(m);
-        // premium.addMenuItem(account);
-        //
-        // return menuList;
+       
 
     }
 
@@ -213,26 +155,29 @@ public abstract class PluginForHost extends Plugin {
     protected void enablePremium() {
         enablePremium = true;
         ConfigEntry cfg;
-        ConfigEntry conditionEntry;
+      
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
-        for (int i = 1; i <= ACCOUNT_NUM; i++) {
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, i + ". " + JDLocale.L("plugins.hoster.premiumAccount", "Premium Account")));
-            conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM + "_" + i, JDLocale.L("plugins.hoster.usePremium", "Premium Account verwenden"));
-            premiumConfig.addEntry(conditionEntry);
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER + "_" + i, JDLocale.L("plugins.hoster.premiumUser", "Premium User")));
-            cfg.setDefaultValue(JDLocale.L("plugins.hoster.userid", "Kundennummer"));
-            cfg.setEnabledCondidtion(conditionEntry, "==", true);
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS + "_" + i, JDLocale.L("plugins.hoster.premiumPass", "Premium Pass")));
-            cfg.setDefaultValue(JDLocale.L("plugins.hoster.pass", "Passwort"));
-            cfg.setEnabledCondidtion(conditionEntry, "==", true);
-            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_MESSAGE + "_" + i, JDLocale.L("plugins.hoster.premiumMessage", "Last account status")));
-
-            conditionEntry.setDefaultValue(false);
-
-        }
+        
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getProperties(),PROPERTY_PREMIUM,5));
+        cfg.setDefaultValue(new ArrayList<Account>());
+//        for (int i = 1; i <= ACCOUNT_NUM; i++) {
+//            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+//
+//            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, i + ". " + JDLocale.L("plugins.hoster.premiumAccount", "Premium Account")));
+//            conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PREMIUM + "_" + i, JDLocale.L("plugins.hoster.usePremium", "Premium Account verwenden"));
+//            premiumConfig.addEntry(conditionEntry);
+//            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_USER + "_" + i, JDLocale.L("plugins.hoster.premiumUser", "Premium User")));
+//            cfg.setDefaultValue(JDLocale.L("plugins.hoster.userid", "Kundennummer"));
+//            cfg.setEnabledCondidtion(conditionEntry, "==", true);
+//            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getProperties(), PROPERTY_PREMIUM_PASS + "_" + i, JDLocale.L("plugins.hoster.premiumPass", "Premium Pass")));
+//            cfg.setDefaultValue(JDLocale.L("plugins.hoster.pass", "Passwort"));
+//            cfg.setEnabledCondidtion(conditionEntry, "==", true);
+//            premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getProperties(), PROPERTY_PREMIUM_MESSAGE + "_" + i, JDLocale.L("plugins.hoster.premiumMessage", "Last account status")));
+//
+//            conditionEntry.setDefaultValue(false);
+//
+//        }
 
     }
 

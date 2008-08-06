@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {
@@ -198,6 +199,14 @@ public class ConfigEntry implements Serializable, PropertyChangeListener {
         propertyName = link;
         this.label = label;
         enabled = true;
+    }
+
+    public ConfigEntry(int type, Property propertyInstance,String propertyName, int num) {
+        this.type = type;
+        this.propertyName = propertyName;
+        this.propertyInstance = propertyInstance;
+        this.end=num;
+        
     }
 
     private void addConditionListener(ConfigEntry configEntry) {
