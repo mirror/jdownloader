@@ -561,6 +561,10 @@ public class SingleDownloadController extends Thread {
         // break;
         // }
         // }
+        
+        
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
+
 
     }
 

@@ -210,13 +210,11 @@ public class LinkStatus implements Serializable {
     }
 
     public long getRemainingWaittime() {
-        if (waitUntil > 0 && !hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
-            resetWaitTime();
-        }
-        long now = System.currentTimeMillis();
+            long now = System.currentTimeMillis();
         long ab = waitUntil - now;
         return Math.max(0l, ab);
     }
+
 
     /**
      * Erstellt den Statustext, fügt eine eventl Wartezeit hzin und gibt diesen
@@ -243,18 +241,23 @@ public class LinkStatus implements Serializable {
         }
 
         if (isFailed()) { return getErrorMessage(); }
+      
 
         // String ret = "";
 
         //    
-        if (hasStatus(ERROR_IP_BLOCKED) && getRemainingWaittime() > 0) {
+        if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000)));
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
             } else {
-                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((getRemainingWaittime() / 1000))) + errorMessage;
+                ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000))) + errorMessage;
 
             }
             return ret;
+        }
+        
+        if(downloadLink.getPlugin().getRemainingHosterWaittime()>0){
+            return  JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]");
         }
 
         // + "sek)"; }
@@ -280,17 +283,16 @@ public class LinkStatus implements Serializable {
 
             }
         }
-
+        if(downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()){
+            return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]");
+        }
         if (statusText != null) { return statusText; }
         return "";
 
     }
 
     public long getTotalWaitTime() {
-        if (waitUntil > 0 && !hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE | LinkStatus.ERROR_IP_BLOCKED)) {
-            resetWaitTime();
-
-        }
+     
         return totalWaitTime;
     }
 
@@ -340,21 +342,17 @@ public class LinkStatus implements Serializable {
         errorMessage = null;
         statusText = null;
         retryCount = 0;
+        totalWaitTime = 0;
         resetWaitTime();
 
     }
 
     public void resetWaitTime() {
 
-        if (totalWaitTime > 0 && !downloadLink.isEnabled()) {
-            downloadLink.setEnabled(true);
-        }
-     
-        if (   waitUntil>0&&downloadLink.getPlugin() != null&&hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
-            ((PluginForHost) downloadLink.getPlugin()).resetHosterWaitTime();
-        }
+   
         totalWaitTime = 0;
         waitUntil = 0;
+       
     }
 
     public void setErrorMessage(String string) {

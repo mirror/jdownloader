@@ -50,6 +50,16 @@ public abstract class Request {
      *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
      */
+    public static HashMap<String,String> parsetohashMap(String txt,String pattern){
+       
+       int i;
+       while(true){
+           
+           
+       }
+        
+        
+    }
     public static HashMap<String, String> parseQuery(String query) {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -64,12 +74,15 @@ public abstract class Request {
 
         if (query == null) { return ret; }
         try {
-            StringTokenizer st = new StringTokenizer(query, "&=");
+        
+            String[] split = query.trim().split("[\\&|=]");
+            int i=0;
             while (true) {
                 String key = null;
                 String value = null;
-                if (st.hasMoreTokens()) key = st.nextToken().trim();
-                if (st.hasMoreTokens()) value = st.nextToken().trim();
+                if (split.length>i) key = split[i++];
+                if (split.length>i) value = split[i++];
+              
                 if (key != null) {
                     ret.put(key, value);
                 } else {

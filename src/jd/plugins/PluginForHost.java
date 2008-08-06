@@ -29,6 +29,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
+import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
@@ -77,20 +78,21 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public void clean() {
         requestInfo = null;
-   
+
         dl = null;
         br = new Browser();
         super.clean();
     }
+
     public void actionPerformed(ActionEvent e) {
-        switch(e.getID()){
+        switch (e.getID()) {
         case 1:
-          
 
             ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config, "Select where filesdownloaded with JDownloader should be stored.");
             JPanel panel = new JPanel(new BorderLayout());
 
-            // InteractionTrigger[] triggers = InteractionTrigger.getAllTrigger();
+            // InteractionTrigger[] triggers =
+            // InteractionTrigger.getAllTrigger();
 
             PluginForHost plugin = this;
             // currentPlugin = plugin;
@@ -99,7 +101,7 @@ public abstract class PluginForHost extends Plugin {
             JPanel topPanel = new JPanel();
             panel.add(topPanel, BorderLayout.NORTH);
             panel.add(cpanel, BorderLayout.CENTER);
-          
+
             ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel, SimpleGUI.CURRENTGUI, JDUtilities.getConfiguration());
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
@@ -110,10 +112,8 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
 
-        
-        
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
-        if(!this.enablePremium)return null;
+        if (!this.enablePremium) return null;
         MenuItem account;
         MenuItem m;
         m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.configs", "Configuration"), 1);
@@ -548,9 +548,19 @@ public abstract class PluginForHost extends Plugin {
             // downloadLink.getLinkStatus().setValue(0);
             // return;
         }
+        Long t = 0l;
 
+        if (HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) {
+            t = HOSTER_WAIT_UNTIL_TIMES.get(this.getClass());
+        }
         // RequestInfo requestInfo;
         if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
+
+            if (t > 0) {
+                this.resetHosterWaitTime();
+                
+                this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
+            }
             handleFree(downloadLink);
             return;
         }
@@ -559,7 +569,7 @@ public abstract class PluginForHost extends Plugin {
         if (!HOSTER_TMP_ACCOUNT_STATUS.containsKey(this.getClass())) {
             HOSTER_TMP_ACCOUNT_STATUS.put(this.getClass(), new boolean[ACCOUNT_NUM]);
         }
-        HashMap<Class<? extends PluginForHost>, boolean[]> tmp = HOSTER_TMP_ACCOUNT_STATUS;
+     
 
         boolean[] tmpAccountStatus = HOSTER_TMP_ACCOUNT_STATUS.get(this.getClass());
         synchronized (tmpAccountStatus) {
@@ -604,6 +614,10 @@ public abstract class PluginForHost extends Plugin {
             }
 
         } else {
+            if (t > 0) {
+                this.resetHosterWaitTime();
+                this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
+            }
             handleFree(downloadLink);
             synchronized (tmpAccountStatus) {
                 if (disabled.size() > 0) {
@@ -649,7 +663,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void resetPluginGlobals() {
         br = new Browser();
-        resetHosterWaitTime();
+
     }
 
     public void setAGBChecked(boolean value) {
@@ -704,6 +718,17 @@ public abstract class PluginForHost extends Plugin {
         }
 
         downloadLink.getLinkStatus().setStatusText(null);
+    }
+
+    /**
+     * wird vom controlling (watchdog) beim stoppen aufgerufen. Damit werdend ie
+     * hostercontrollvariablen zurückgesetzt.
+     */
+    public static void resetStatics() {
+        HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
+        HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
+        HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class<? extends PluginForHost>, boolean[]>();
+
     }
 
     // public void handleDownloadLimit( DownloadLink downloadLink) {

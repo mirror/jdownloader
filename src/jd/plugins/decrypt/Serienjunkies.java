@@ -163,7 +163,7 @@ public class Serienjunkies extends PluginForDecrypt {
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
         String hostname = getHostname(parameter);
-        DownloadLink dlink = new DownloadLink(this, name, getHost(), "http://sjdownload.org/" + hostname + "/" + linkName, true);
+        DownloadLink dlink = new DownloadLink(null, name, getHost(), "http://sjdownload.org/" + hostname + "/" + linkName, true);
         dlink.setProperty("link", parameter);
         dlink.setProperty("mirrors", mirrors);
         if (name != null) {

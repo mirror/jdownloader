@@ -145,6 +145,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         activeDownloadControllers.removeAllElements();
         // logger.finer("TODO!!! HIER WERDEN MEINE FEHLERHAFTEN LINKS
         // ZURÜCKGESETZT!");
+        PluginForHost.resetStatics();
         Vector<FilePackage> fps;
         Vector<DownloadLink> links;
         fps = controller.getPackages();
@@ -290,22 +291,23 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             for (FilePackage filePackage : controller.getPackages()) {
                 for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
                     nextDownloadLink = it2.next();
+                    // Setzt die Wartezeit zurück
                     if (!nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                         nextDownloadLink.reset();
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                     }
-
+                    if (nextDownloadLink.isEnabled()) {
+                        if (nextDownloadLink.getPlugin().ignoreHosterWaittime(nextDownloadLink)|| nextDownloadLink.getPlugin().getRemainingHosterWaittime() <=0) {  
                     if (!isDownloadLinkActive(nextDownloadLink)) {
                         // if (!nextDownloadLink.isAborted()) {
                         if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                            if (nextDownloadLink.isEnabled()) {
+                            
                                 if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                    if (nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0) {                                       
-                                        if (nextDownloadLink.getPlugin() != null &&(((PluginForHost) nextDownloadLink.getPlugin()).ignoreHosterWaittime(nextDownloadLink)|| ((PluginForHost) nextDownloadLink.getPlugin()).getRemainingHosterWaittime() <= 0)) {
-                                            if (getDownloadNumByHost((PluginForHost) nextDownloadLink.getPlugin()) < ((PluginForHost) nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)) {
+                                                                       
+                                            if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < ( nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)) {
 
                                             return nextDownloadLink; }
-                                        }
+                                        
                                     }
                                 }
                             }
@@ -545,6 +547,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             }
         }
         aborted = true;
+       
+        
         logger.info("Wait for termination");
         while (aborting) {
             try {

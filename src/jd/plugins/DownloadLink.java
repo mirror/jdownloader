@@ -123,7 +123,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private boolean isEnabled;
 
-    private boolean reset = false;
+
 
     private boolean isMirror = false;
 
@@ -165,7 +165,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     /**
      * Das Plugin, das für diesen Download zuständig ist
      */
-    private transient Plugin plugin;
+    private transient PluginForHost plugin;
 
     /**
      * Falls vorhanden, das Plugin für den Container, aus der dieser Download
@@ -211,7 +211,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param isEnabled
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
-    public DownloadLink(Plugin plugin, String name, String host, String urlDownload, boolean isEnabled) {
+    public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
         setName(name);
         sourcePluginPasswords = new Vector<String>();
@@ -423,11 +423,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Erweiterter "Dateiname"
      */
     public String getFileInfomationString() {
-        if (getPlugin() instanceof PluginForHost) {
-            return ((PluginForHost) getPlugin()).getFileInformationString(this);
-        } else {
-            return getName();
-        }
+        
+            return  getPlugin().getFileInformationString(this);
+        
     }
 
     /**
@@ -617,7 +615,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      * @return Das Plugin
      */
-    public Plugin getPlugin() {
+    public PluginForHost getPlugin() {
         return plugin;
     }
 
@@ -744,7 +742,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
-        reset = true;
+ 
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
@@ -753,15 +751,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     }
 
-    public boolean statusResetFlag() {
-        return reset;
-    }
 
-    public boolean resetResetFlag() {
-        boolean temp = reset;
-        reset = false;
-        return temp;
-    }
 
     /**
      * kann mit setAborted(true) den Download abbrechen
@@ -871,7 +861,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         if (isEnabled == true) {
-            getLinkStatus().resetWaitTime();
+            
             setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");

@@ -73,7 +73,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     };
 
     protected DownloadLink createDownloadlink(String link) {
-        DownloadLink dl = new DownloadLink(this, null, getHost(), Encoding.htmlDecode(link), true);
+        DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.htmlDecode(link), true);
         return dl;
     }
 

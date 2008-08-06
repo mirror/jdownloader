@@ -934,7 +934,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getLinkStatus().getRemainingWaittime() == 0 && nextDownloadLink.isEnabled()) {
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0 && nextDownloadLink.isEnabled()) {
 
                         ret++;
                     }
@@ -1971,5 +1971,33 @@ public class JDController implements ControlListener, UIListener {
             new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
             break;
         }
+    }
+
+    /**
+     * Gibt alle Downloadlinks die zu dem übergebenem Hosterplugin gehören
+     * zurück.
+     * 
+     * @param pluginForHost
+     */
+    public ArrayList<DownloadLink> getDownloadLinks(PluginForHost pluginForHost) {
+        ArrayList<DownloadLink> al = new ArrayList<DownloadLink>();
+        synchronized (packages) {
+
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()) al.add(nextDownloadLink);
+
+                }
+            }
+
+        }
+        return al;
+
     }
 }

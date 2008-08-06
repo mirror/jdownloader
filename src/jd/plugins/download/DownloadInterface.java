@@ -491,9 +491,16 @@ abstract public class DownloadInterface {
                     ;
 
                 } else {
+                    e.printStackTrace();
+                    if(e.getLocalizedMessage().contains("503")){
+                        linkStatus.setValue(10*60000l);
+                        error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
+                       
+                        
+                    }else{
                     logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
                     error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
-
+                    }
                 }
             } catch (Exception e) {
 
@@ -1518,7 +1525,7 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean startDownload() {
-        boolean do_reset = downloadLink.resetResetFlag();
+
         if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
@@ -1540,7 +1547,7 @@ abstract public class DownloadInterface {
             logger.severe("File already exists. " + fileOutput);
             String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
-            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen")) || do_reset == true) {
+            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen")) ) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");

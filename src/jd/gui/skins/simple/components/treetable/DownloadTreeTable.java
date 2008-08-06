@@ -306,9 +306,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
             for (int i = 0; i < links.size(); i++) {
                 // if (!links.elementAt(i).isPluginActive()) {
-                links.elementAt(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                links.elementAt(i).getLinkStatus().setStatusText("");
+                links.elementAt(i).getLinkStatus().reset();
                 links.elementAt(i).reset();
+                
 
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));

@@ -238,9 +238,17 @@ public class DepositFiles extends PluginForHost {
         finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getFirstMatch();
         if (finalURL == null) {
             if (br.containsHTML("IP-Addresse")) {
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.host.depositfiles.iplocked", "Your IP is already downloading a file"));
-                linkStatus.setValue(10000l);
+//                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+//                linkStatus.setErrorMessage(JDLocale.L("plugins.host.depositfiles.iplocked", "Your IP is already downloading a file"));
+//                linkStatus.setValue(10000l);
+//                
+                
+                if (br.containsHTML("download_limit")) {
+                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                    linkStatus.setValue(30000l);
+                    return;
+
+                }
                 return;
             }
             if (br.containsHTML("download_limit")) {
