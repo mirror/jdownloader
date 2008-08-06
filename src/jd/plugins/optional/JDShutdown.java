@@ -65,7 +65,9 @@ public class JDShutdown extends PluginOptional {
         if (JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").getBooleanProperty(PROPERTY_ENABLED, false)) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
-                    JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN").setProperty(PROPERTY_ENABLED, false);
+                    SubConfiguration cfg = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
+                    cfg.setProperty(PROPERTY_ENABLED, false);
+                    cfg.save();
                     shutDown();
                 }
             }
