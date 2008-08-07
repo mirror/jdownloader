@@ -87,11 +87,10 @@ public class DatabaseConnector implements Serializable {
         System.out.println("save " + name);
         dbdata.put(name, data);
         try {
-            ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
-            
-            if(rs.getMetaData().getColumnCount() > 0) {
+            ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
+            rs.next();
+            if(rs.getInt(1) > 0) {
                 System.out.println("update " + name);
-                System.out.println(dbdata.get(name).getClass().getName());
                 PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
                 pst.setObject(1, data);
                 pst.execute();
