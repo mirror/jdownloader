@@ -68,7 +68,7 @@ param.intersectionDimensionWeight=8.0;
 param.inverseFontWeight=100.0;
 
 ##Letter Scan Limits
-param.LetterSearchLimitPerfectPercent=5;
+param.LetterSearchLimitPerfectPercent=2;
 
 ## Quickscan
 param.quickScanReliabilityLimit=0;
@@ -85,8 +85,10 @@ param.preScanFaktor=3;
 
 ##################Prepare captcha Funktionen
 
-captcha.prepare.cleanWithDetailMask(bg_mask.png,2500000);
-captcha.prepare.blurIt(2);
+captcha.prepare.cleanWithDetailMask(bg_mask.png,30);
+captcha.prepare.toBlackAndWhite(1.1);
+captcha.prepare.removeSmallObjects(0.6,0.8,30);
+#captcha.prepare.blurIt(2);
 
 #################Letter Prepare Funktionen
 #letter.prepare.invert();
