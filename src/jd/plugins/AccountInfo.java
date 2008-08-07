@@ -1,22 +1,24 @@
 package jd.plugins;
 
-import java.lang.reflect.Field;
-
 import jd.config.Property;
 
 public class AccountInfo extends Property {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1825140346023286206L;
     private PluginForHost plugin;
     private Account account;
-    private boolean valid=true;
-    private long validUntil=-1;
-    private long trafficLeft=-1;
-    private int filesNum=-1;
-    private int premiumPoints=-1;
-    private int accountBalance=-1;
-    private long usedSpace=-1;
-    private long trafficShareLeft=-1;
-    private boolean expired=false;
+    private boolean valid = true;
+    private long validUntil = -1;
+    private long trafficLeft = -1;
+    private int filesNum = -1;
+    private int premiumPoints = -1;
+    private int accountBalance = -1;
+    private long usedSpace = -1;
+    private long trafficShareLeft = -1;
+    private boolean expired = false;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
@@ -168,6 +170,5 @@ public class AccountInfo extends Property {
     public boolean isExpired() {
         return expired;
     }
-
 
 }
