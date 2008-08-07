@@ -145,12 +145,15 @@ public class ImageFap extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-
+    public int getMaxSimultanFreeDownloadNum() {
+        return 15;
+    }
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         Browser br = new Browser();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
         if (picture_name == null) {

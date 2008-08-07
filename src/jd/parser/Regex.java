@@ -50,8 +50,9 @@ public class Regex {
         if (matches[0].length == 2) {
             res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
         }
-
-        if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+        if (Regex.matches(string, Pattern.compile("(gb|gbyte|gig)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024*1024;
+        }else      if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024 * 1024;
         } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024;

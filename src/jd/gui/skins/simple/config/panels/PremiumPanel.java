@@ -1,7 +1,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.Insets;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
@@ -18,6 +17,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
+import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener {
@@ -25,7 +25,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
     private static final long serialVersionUID = 3275917572262383770L;
-    private static final Insets INSETS = new Insets(2, 5, 2, 10);
+  
     private JCheckBox[] enables;
     private JTextField[] usernames;
     private JPasswordField[] passwords;
@@ -98,7 +98,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
 
         for (int i = 1; i <= accountNum; i++) {
             
-            final JCheckBox active = new JCheckBox("<html><b>Premium Account #" + i + "</b></html>");
+            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum","<html><b>Premium Account #%s</b></html>",i));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
@@ -115,14 +115,14 @@ public class PremiumPanel extends JPanel implements ChangeListener {
             add(active, "alignleft");
             add(new JSeparator(), "spanx, pushx, growx");
 
-            add(usernamesLabels[i-1]=new JLabel("Premium User"), "gaptop 12");
-            add(usernames[i-1]=new JTextField("coalado"));
+            add(usernamesLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.user","Premium User")), "gaptop 12");
+            add(usernames[i-1]=new JTextField(""));
 
-            add(passwordsLabels[i-1]=new JLabel("Passwort"));
-            add(passwords[i-1]=new JPasswordField("1234565789"), "wrap");
+            add(passwordsLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.password","Passwort")));
+            add(passwords[i-1]=new JPasswordField(""), "wrap");
 
-            add(statiLabels[i-1]=new JLabel("Account Status"));
-            JTextField status = new JTextField("tuxla sold me into slavery :(");
+            add(statiLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.accountstatus","Last Account Status")));
+            JTextField status = new JTextField("");
             stati[i-1]=status;
             status.setEditable(false);
             add(status, "span, gapbottom :10:push");

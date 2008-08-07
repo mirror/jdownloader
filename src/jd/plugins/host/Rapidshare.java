@@ -110,11 +110,11 @@ public class Rapidshare extends PluginForHost {
 
     // private CESClient ces;
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("Dieses Konto ist am .*? abgelaufen");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("expired");
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("Sie haben heute");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("You have exceeded the download limit");
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("anderen IP gerade genutzt");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("IP");
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minutes)");
 

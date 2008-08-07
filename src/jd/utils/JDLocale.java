@@ -27,6 +27,8 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import javax.swing.Icon;
+
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
@@ -371,6 +373,16 @@ public class JDLocale {
         }
         JDLocale.saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
 
+    }
+/**
+ * Wrapper für String.format(JDLocale.L(..),args)
+ * @param key
+ * @param value
+ * @param args
+ * @return
+ */
+    public static String LF(String key, String value, Object ... args) {
+        return String.format(L(key,value),args);
     }
 
 }

@@ -492,14 +492,13 @@ abstract public class DownloadInterface {
 
                 } else {
                     e.printStackTrace();
-                    if(e.getLocalizedMessage().contains("503")){
-                        linkStatus.setValue(10*60000l);
+                    if (e.getLocalizedMessage().contains("503")) {
+                        linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
-                       
-                        
-                    }else{
-                    logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
-                    error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
+
+                    } else {
+                        logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+                        error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
                     }
                 }
             } catch (Exception e) {
@@ -1117,9 +1116,7 @@ abstract public class DownloadInterface {
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
-        if (fatalErrorOccured) {
-            return;
-        }
+        if (fatalErrorOccured) { return; }
         linkStatus.addStatus(id);
         linkStatus.setErrorMessage(string);
         switch (id) {
@@ -1526,12 +1523,12 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean startDownload() {
-DownloadLink block=JDUtilities.getController().getLinkThatBlocks(downloadLink);
-        if (block!=null) {
+        DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
+        if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
 
-            error(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"),block.getPlugin().getHost()));
+            error(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
             if (!handleErrors()) { return false; }
         }
         File fileOutput = new File(downloadLink.getFileOutput());
@@ -1548,7 +1545,7 @@ DownloadLink block=JDUtilities.getController().getLinkThatBlocks(downloadLink);
             logger.severe("File already exists. " + fileOutput);
             String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
-            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen")) ) {
+            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");

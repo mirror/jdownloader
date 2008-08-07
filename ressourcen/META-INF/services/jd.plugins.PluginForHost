@@ -4,7 +4,7 @@ jd.plugins.host.Uploadedto
 jd.plugins.host.FileFactory
 jd.plugins.host.Netloadin
 jd.plugins.host.Megauploadcom
-jd.plugins.host.LoadTo
+#jd.plugins.host.LoadTo
 jd.plugins.host.ShareBaseDe
 jd.plugins.host.Filer
 jd.plugins.host.ImageFap
