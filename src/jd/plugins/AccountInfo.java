@@ -8,15 +8,15 @@ public class AccountInfo extends Property {
 
     private PluginForHost plugin;
     private Account account;
-    private boolean valid;
-    private long validUntil;
-    private long trafficLeft;
-    private int filesNum;
-    private int premiumPoints;
-    private int accountBalance;
-    private long usedSpace;
-    private long trafficShareLeft;
-    private boolean expired;
+    private boolean valid=true;
+    private long validUntil=-1;
+    private long trafficLeft=-1;
+    private int filesNum=-1;
+    private int premiumPoints=-1;
+    private int accountBalance=-1;
+    private long usedSpace=-1;
+    private long trafficShareLeft=-1;
+    private boolean expired=false;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
