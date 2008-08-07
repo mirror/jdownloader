@@ -189,4 +189,17 @@ public class HTTPConnection {
 
     }
 
+    public boolean isOK() {
+     
+            try {
+                if(connection.getResponseCode()>-2 && connection.getResponseCode()<500)
+                    return true;
+                else
+                    return false;
+            } catch (IOException e) {
+                return false;
+            }
+        }
+    
+
 }

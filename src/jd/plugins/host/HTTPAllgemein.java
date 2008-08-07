@@ -23,9 +23,9 @@ public class HTTPAllgemein extends PluginForHost {
     private static final String HOST = "HTTP Links";
 
     static private final Pattern patternSupported = Pattern.compile("httpviajd://[\\w\\.]*/.*?(zip|mp3|mp4|avi|iso|mov|wmv|mpg|rar|mp2|7z|pdf|flv|jpg|exe|3gp|wav|mkv|tar|bz2)", Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
-    private String linkurl;
-    private LinkStatus linkStatus;
+
+    private String contentType;
+
 
     public HTTPAllgemein() {
         super();
@@ -45,27 +45,29 @@ public class HTTPAllgemein extends PluginForHost {
     public String getCoder() {
         return "JD-Team";
     }
-
+    public String getFileInformationString(DownloadLink parameter) {
+        return "("+contentType+")"+parameter.getName();
+    }
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        linkStatus = downloadLink.getLinkStatus();
-        linkurl = downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://");
-        try {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+         String linkurl;
+        downloadLink.setUrlDownload(linkurl=downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
+       
+      
             if (linkurl != null) {
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), null, null, true);
-                HTTPConnection urlConnection = requestInfo.getConnection();
+                br.setFollowRedirects(true);
+               
+         
+                HTTPConnection urlConnection =  br.openGetConnection(linkurl);
+                if(!urlConnection.isOK())return false;
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadSize(urlConnection.getContentLength());
+                this.contentType=urlConnection.getContentType();
                 return true;
             }
-        } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+     
         linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
         return false;
 
@@ -105,11 +107,11 @@ public class HTTPAllgemein extends PluginForHost {
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), null, null, true);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection =  br.openGetConnection(downloadLink.getDownloadURL());
+        
+   
         if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
