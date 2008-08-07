@@ -391,23 +391,21 @@ public class JDInit {
     }
 
     public Configuration loadConfiguration() {
-        File fileInput = null;
-        try {
-            fileInput = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
-        } catch (RuntimeException e) {
-            e.printStackTrace();
-        }
         boolean allOK = true;
         try {
+            Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
+            
+            if(obj==null) {
+                File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
+                if (file.exists()) {
+                    logger.info("Wrapping jdownloader.config");
+                    obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+                    System.out.println(obj.getClass().getName());
+                    JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
+                }
+            }
 
-            if (fileInput != null && fileInput.exists()) {
-                // try {
-                // splashScreen.increase();
-                // splashScreen.setText("Load Configuration");
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
-                Object obj = JDUtilities.loadObject(null, fileInput, Configuration.saveAsXML);
+            if (obj != null) {
                 if (obj instanceof Configuration) {
                     Configuration configuration = (Configuration) obj;
                     JDUtilities.setConfiguration(configuration);

@@ -705,6 +705,7 @@ public class JDController implements ControlListener, UIListener {
         saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
+        JDUtilities.getDatabaseConnector().shutdownDatabase();
         System.exit(0);
     }
 
@@ -1169,7 +1170,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public boolean initDownloadLinks() {
 
-        packages = loadDownloadLinks(JDUtilities.getResourceFile("links.dat"));
+        packages = loadDownloadLinks();
         if (packages == null) {
             packages = new Vector<FilePackage>();
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -1320,10 +1321,18 @@ public class JDController implements ControlListener, UIListener {
      * @return Ein neuer Vector mit den DownloadLinks
      */
     @SuppressWarnings("unchecked")
-    private Vector<FilePackage> loadDownloadLinks(File file) {
+    private Vector<FilePackage> loadDownloadLinks() {
         try {
-            if (file.exists()) {
-                Object obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+            Object obj = JDUtilities.getDatabaseConnector().getLinks();
+            
+            /*if(obj==null) {
+                File file = JDUtilities.getResourceFile("links.dat");
+                if (file.exists()) {
+                    logger.info("Wrapping links.dat");
+                    obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+                    JDUtilities.getDatabaseConnector().saveLinks(packages);
+                }
+            }*/
 
                 if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
                     Vector<FilePackage> packages = (Vector<FilePackage>) obj;
@@ -1392,7 +1401,7 @@ public class JDController implements ControlListener, UIListener {
                     }
                     return packages;
                 }
-            }
+            
 
             return null;
         } catch (Exception e) {
@@ -1792,8 +1801,9 @@ public class JDController implements ControlListener, UIListener {
     public void saveDownloadLinks() {
         // JDUtilities.saveObject(null, downloadLinks.toArray(new
         // DownloadLink[]{}), file, "links", "dat", true);
-        File file = JDUtilities.getResourceFile("links.dat");
-        JDUtilities.saveObject(null, packages, file, "links", "dat", Configuration.saveAsXML);
+        //File file = JDUtilities.getResourceFile("links.dat");
+        //JDUtilities.saveObject(null, packages, file, "links", "dat", Configuration.saveAsXML);
+        JDUtilities.getDatabaseConnector().saveLinks(packages);
     }
 
     /**

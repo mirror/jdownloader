@@ -94,6 +94,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.Configuration;
+import jd.config.DatabaseConnector;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
@@ -128,6 +129,8 @@ public class JDUtilities {
      * Die Konfiguration
      */
     private static Configuration configuration = new Configuration();
+    
+    private static DatabaseConnector dbconnect = new DatabaseConnector();
 
     private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
 
@@ -1926,8 +1929,8 @@ public class JDUtilities {
     }
 
     public static void saveConfig() {
-        JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
-
+        //JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+        JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
     }
 
     /**
@@ -2293,6 +2296,10 @@ public class JDUtilities {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    public static DatabaseConnector getDatabaseConnector() {
+        return dbconnect;
     }
 
 }
