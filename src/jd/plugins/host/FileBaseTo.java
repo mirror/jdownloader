@@ -21,8 +21,10 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -63,21 +65,25 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Browser.clearCookies(HOST);
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
+            br.getPage(url);
+     
             String[] helpurl = url.split("/");
             downloadLink.setName(helpurl[helpurl.length - 1]);
-            if (requestInfo.containsHTML("Angeforderte Datei herunterladen")) {
-                requestInfo = HTTP.getRequest(new URL(url + "&dl=1"));
+            if ( br.containsHTML("Angeforderte Datei herunterladen")) {
+              
+                br.getPage(url + "&dl=1");
             }
 
-            if (requestInfo.containsHTML("Vielleicht wurde der Eintrag")) {
-                downloadLink.setAvailable(false);
+            if (br.containsHTML("Vielleicht wurde der Eintrag")) {
+               
                 return false;
             }
-            downloadLink.setDownloadSize(getSize(new Regex(requestInfo.getHtmlCode(), "<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch()));
+            
+            String size=br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch();
+            downloadLink.setDownloadSize(Regex.getSize(size));
 
             return true;
         } catch (Exception e) {
@@ -92,12 +98,11 @@ public class FileBaseTo extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { return Integer.MAX_VALUE; }
+     * 
+     * @Override
+     */public String getPluginName() {
         return HOST;
     }
 
@@ -148,18 +153,7 @@ public class FileBaseTo extends PluginForHost {
             return;
         }
 
-        /* Postdaten zusammenbaun */
-        String linkurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<form name=\"waitform\" action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-        String submit_wait_value = new Regex(requestInfo.getHtmlCode(), Pattern.compile("wait.value = \"Download (.*?)\";", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        String postdata = "code=" + Encoding.urlEncode(submitvalues.get("code"));
-        postdata = postdata + "&cid=" + Encoding.urlEncode(submitvalues.get("cid"));
-        postdata = postdata + "&userid=" + Encoding.urlEncode(submitvalues.get("userid"));
-        postdata = postdata + "&usermd5=" + Encoding.urlEncode(submitvalues.get("usermd5"));
-        postdata = postdata + "&wait=" + Encoding.urlEncode("Download " + submit_wait_value);
-
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(linkurl), "", downloadLink.getDownloadURL(), postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.openFormConnection(1);
         downloadLink.setDownloadSize(urlConnection.getContentLength());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);

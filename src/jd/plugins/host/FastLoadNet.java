@@ -148,12 +148,11 @@ public class FastLoadNet extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { return MAX_SIMULTAN_DOWNLOADS; }
+     * 
+     * @Override
+     */public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -237,7 +236,17 @@ public class FastLoadNet extends PluginForHost {
             // case PluginStep.STEP_DOWNLOAD:
 
             String code = getCaptchaCode(file, downloadLink);
+            if (code == null) {
+                if (maxCaptchaTries-- > 0) {
+                    logger.warning("Captcha wrong. Retries left: " + maxCaptchaTries);
+                    continue;
+                } else {
+                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                    linkStatus.setErrorMessage(requestInfo.getHtmlCode());
+                    return;
+                }
 
+            }
             String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
 
             requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);

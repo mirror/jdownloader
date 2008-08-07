@@ -242,7 +242,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     private String convertFF(String script) {
-        String[] forbidden = new String[] { "jpg", "gif", "ico", "png", "mid" };
+        String[] forbidden = new String[] { "jpg", "gif", "ico", "png", "mid" , "css" , "js", "xml"  };
         String[] forbiddenHeaders = new String[] { "accept", "user-agent", "If-Modified-Since", "Cache-Control" };
 
         ArrayList<String> ips = new ArrayList<String>();

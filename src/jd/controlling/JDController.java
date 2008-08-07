@@ -1217,7 +1217,7 @@ public class JDController implements ControlListener, UIListener {
         return false;
     }
 
-    public boolean isLocalFileInProgress(DownloadLink link) {
+    public DownloadLink getLinkThatBlocks(DownloadLink link) {
         synchronized (packages) {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1230,14 +1230,14 @@ public class JDController implements ControlListener, UIListener {
 
                     if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                         logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
-                        return true;
+                        return nextDownloadLink;
 
                     }
                 }
 
             }
         }
-        return false;
+        return null;
     }
 
     /**

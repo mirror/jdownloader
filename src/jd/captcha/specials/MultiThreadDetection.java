@@ -101,6 +101,7 @@ public class MultiThreadDetection {
             } catch (InterruptedException e) {
 
                 e.printStackTrace();
+                return;
             }
         }
     }

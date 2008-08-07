@@ -478,6 +478,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return m2;
         case MenuItem.CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
+           
             m3.addMenuListener(new MenuListener() {
 
                 public void menuCanceled(MenuEvent e) {
@@ -490,6 +491,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     JMenu m = (JMenu) e.getSource();
                     m.removeAll();
                     JMenuItem c;
+                    if(mi.getSize()==0)m.setEnabled(false);
                     for (int i = 0; i < mi.getSize(); i++) {
                         c = SimpleGUI.getJMenuItem(mi.get(i));
                         if (c == null) {

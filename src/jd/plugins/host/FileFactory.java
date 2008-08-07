@@ -284,7 +284,7 @@ public class FileFactory extends PluginForHost {
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             // step.setParameter(JDLocale.L("plugins.host.premium.loginError",
             // "Loginfehler"));
-            getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
+           // getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
             return;
 
         }

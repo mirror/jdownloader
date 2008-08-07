@@ -710,4 +710,9 @@ public class Browser {
     
     }
 
+    public HTTPConnection openFormConnection(int i) {
+        return openFormConnection(getForm(i));
+        
+    }
+
 }

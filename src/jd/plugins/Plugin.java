@@ -99,24 +99,24 @@ public abstract class Plugin implements ActionListener {
      * Beispielsweise kann so der JDController die Premiumnutzung abschalten
      * wenn er fehler feststellt
      */
-    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
-    public static final String PROPERTY_PREMIUM_MESSAGE = "PREMIUM_MESSAGE";
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
+//    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
+//    public static final String PROPERTY_PREMIUM_MESSAGE = "PREMIUM_MESSAGE";
+//
+//    /**
+//     * Property name für die Config. Diese sollten möglichst einheitlich sein.
+//     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
+//     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
+//     * wenn er fehler feststellt
+//     */
+//    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
+//
+//    /**
+//     * Property name für die Config. Diese sollten möglichst einheitlich sein.
+//     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
+//     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
+//     * wenn er fehler feststellt
+//     */
+//    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
 
     // public boolean aborted = false;
 

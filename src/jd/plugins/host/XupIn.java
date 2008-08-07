@@ -216,7 +216,7 @@ public class XupIn extends PluginForHost {
 
         cookie = requestInfo.getCookie();
 
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
 
             logger.severe("File already is in progress: " + downloadLink.getFileOutput());
             linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);

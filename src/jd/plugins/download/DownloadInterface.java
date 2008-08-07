@@ -1130,6 +1130,7 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_LOCAL_IO:
         case LinkStatus.ERROR_NO_CONNECTION:
         case LinkStatus.ERROR_ALREADYEXISTS:
+        case LinkStatus.ERROR_LINK_IN_PROGRESS:
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             fatalErrorOccured = true;
             terminate(id);
@@ -1525,12 +1526,12 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean startDownload() {
-
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+DownloadLink block=JDUtilities.getController().getLinkThatBlocks(downloadLink);
+        if (block!=null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
 
-            error(LinkStatus.ERROR_LINK_IN_PROGRESS, JDLocale.L("system.download.errors.linkisinprogress", "Downloadlink is already in progress"));
+            error(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"),block.getPlugin().getHost()));
             if (!handleErrors()) { return false; }
         }
         File fileOutput = new File(downloadLink.getFileOutput());

@@ -172,7 +172,9 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_FILE_NOT_FOUND:
                 onErrorFileNotFound(downloadLink, currentPlugin);
                 break;
-
+            case LinkStatus.ERROR_LINK_IN_PROGRESS:
+                onErrorLinkBlock(downloadLink, currentPlugin);
+                
             case LinkStatus.ERROR_FATAL:
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -232,6 +234,19 @@ public class SingleDownloadController extends Thread {
             e.printStackTrace();
 
         }
+    }
+
+    private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
+     
+       
+        LinkStatus status = downloadLink.getLinkStatus();  
+
+            status.resetWaitTime();
+    
+
+        downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+        
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {

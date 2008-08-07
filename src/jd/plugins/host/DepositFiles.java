@@ -115,7 +115,7 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage(finalURL);
         // br.getRequest();
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
 
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
@@ -339,7 +339,7 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage(finalURL);
         cookie = br.getRequest().getCookieString();
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
             // step.setStatus(PluginStep.STATUS_ERROR);

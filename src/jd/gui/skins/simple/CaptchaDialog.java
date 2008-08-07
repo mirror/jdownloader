@@ -70,7 +70,7 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     private String captchaText = null;
 
-    public int countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
+    public int countdown = 0;
     private Thread countdownThread;
 
     private Thread jacThread;
@@ -93,9 +93,10 @@ public class CaptchaDialog extends JDialog implements ActionListener {
      */
     public CaptchaDialog(final Frame owner, final Plugin plugin, final File file, final String def) {
         super(owner);
-
+        countdown = Math.max(2, JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.JAC_SHOW_TIMEOUT, 20));
         JDSounds.PT("sound.captcha.onCaptchaInput");
         setModal(true);
+        this.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowListener() {
 
             public void windowActivated(WindowEvent e) {
@@ -106,11 +107,15 @@ public class CaptchaDialog extends JDialog implements ActionListener {
 
             public void windowClosing(WindowEvent e) {
                 // workaround für den scheiss compiz fehler
-                dispose();
+               
+                
+           
                 CaptchaDialog cd = new CaptchaDialog(owner, plugin, file, def);
                 cd.countdown = countdown;
+                countdown=-1;
                 cd.setVisible(true);
                 captchaText = cd.getCaptchaText();
+                dispose();
 
             }
 
@@ -212,10 +217,11 @@ public class CaptchaDialog extends JDialog implements ActionListener {
                             }
                         } catch (InterruptedException e) {
                         }
-
+                        if(countdown<0)return;
                         if (!isVisible()) { return; }
 
                     }
+                    if(countdown<0)return;
                     captchaText = textField.getText();
                     dispose();
 

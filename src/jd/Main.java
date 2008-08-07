@@ -147,11 +147,7 @@ public class Main {
         if (!new CheckJava().check()) {
             System.exit(0);
         }
-
-        // int t=0;
-        // for( t=0; t<200;t++)
-        // JDUtilities.downloadBinary(JDUtilities.getResourceFile("cap/cap_"+t+".jpg").getAbsolutePath(),
-        // "http://www.fast-load.net/includes/captcha.php");
+ 
         Boolean newInstance = false;
         boolean showSplash = true;
         boolean stop = false;

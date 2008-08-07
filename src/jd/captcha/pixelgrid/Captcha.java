@@ -249,7 +249,9 @@ public class Captcha extends PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
-                if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y)) < dif) {
+              
+                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y),getPixelValue(x, y)) < dif) {
+                  //  if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y)) < dif) {
 
                     PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
 

@@ -240,7 +240,7 @@ public class Rapidshare extends PluginForHost {
      * @return
      */
     private boolean checkDestFile(DownloadLink downloadLink) {
-        if (JDUtilities.getController().isLocalFileInProgress(downloadLink)) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -622,7 +622,7 @@ public class Rapidshare extends PluginForHost {
         hReq.load();
 
         headLength = hReq.getContentLength();
-        if ((headLength <= 0 || hReq.getHttpConnection().getHeaderField("Content-Disposition") == null)&&hReq.getHttpConnection().getHeaderField("Location") != null) {
+        if (headLength <= 10000) {
             // requestInfo = HTTP.getRequest(new URL(link), null, "",
             // false);
             String page = br.getPage(link);

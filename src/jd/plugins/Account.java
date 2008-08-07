@@ -9,9 +9,10 @@ public class Account extends Property {
     private static final long serialVersionUID = -7578649066389032068L;
     private String user;
     private String pass;
-    private int id;
+ 
     private boolean enabled=false;
     private String status=null;
+    private transient boolean tempDisabled=false;
 
     public Account(String user, String pass) {
         this.user = user;
@@ -35,13 +36,9 @@ public class Account extends Property {
         this.user = user;
     }
 
-    public int getId() {
-        return id;
-    }
+ 
 
-    public void setId(int id) {
-        this.id = id;
-    }
+   
 
     public boolean isEnabled() {
         return enabled;
@@ -57,6 +54,15 @@ public class Account extends Property {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public boolean isTempDisabled() {
+        // TODO Auto-generated method stub
+        return tempDisabled;
+    }
+
+    public void setTempDisabled(boolean tempDisabled) {
+        this.tempDisabled = tempDisabled;
     }
 
 }
