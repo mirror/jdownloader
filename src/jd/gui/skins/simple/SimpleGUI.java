@@ -24,7 +24,6 @@ import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
@@ -115,6 +114,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
 
@@ -2100,33 +2100,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
         new Thread() {
-
             public void run() {
                 AccountInfo ai = pluginForHost.getAccountInformation(account);
                 if (ai == null) {
                     SimpleGUI.this.showMessageDialog(String.format(JDLocale.L("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet."), pluginForHost.getHost()));
                     return;
                 }
-
+                JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]20:push[right]10[grow,fill][20]"));
                 String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
-                int n = 10;
-                JPanel panel = new JPanel(new BorderLayout(n, n));
-                panel.setBorder(new EmptyBorder(n, n, n, n));
-
                 String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left") };
                 String[] data = new String[] { new Date(ai.getValidUntil()) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
-                JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
+                panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
                 for (int j = 0; j < data.length; j++) {
-                    datapanel.add(new JLabel(label[j]));
-                    datapanel.add(new JTextField(data[j]));
+                    panel.add(new JLabel(label[j]), "gapleft 20");
+                    panel.add(new JTextField(data[j]), j!=0 && (j+1)%2 == 0 ? "wrap":"");
                 }
-                panel.add(new JXTitledSeparator(def), BorderLayout.NORTH);
-                panel.add(datapanel, BorderLayout.CENTER);
-
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
-
             }
         }.start();
-
     }
 }
