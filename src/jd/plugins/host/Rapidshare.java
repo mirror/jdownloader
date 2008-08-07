@@ -16,15 +16,12 @@
 
 package jd.plugins.host;
 
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,16 +30,9 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
-import javax.swing.border.EmptyBorder;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -61,7 +51,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-import org.jdesktop.swingx.JXTitledSeparator;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -1132,7 +1121,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * Erzeugtd en Configcontainer für die Gui
+     * Erzeugt den Configcontainer für die Gui
      */
     private void setConfigElements() {
 
@@ -1144,40 +1133,17 @@ public class Rapidshare extends PluginForHost {
         for (String element : serverList2) {
             m2.add(getServerName(element));
         }
-        m1.add("zufällig");
-        m2.add("zufällig");
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1"));
-        cfg.setDefaultValue("Level(3)");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2"));
-        cfg.setDefaultValue("TeliaSonera");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")));
-        cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")));
-        cfg.setDefaultValue(true);
-
-        ConfigContainer extended = new ConfigContainer(this, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
-
-        // extended.addEntry(cfg = new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // getProperties(), PROPERTY_USE_SSL,
-        // JDLocale.L("plugins.hoster.rapidshare.com.useSSL", "SSL Downloadlink
-        // verwenden")));
-        // cfg.setDefaultValue(false);
-        //
-        // extended.addEntry(cfg = new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(),
-        // PROPERTY_FREE_IF_LIMIT_NOT_REACHED,
-        // JDLocale.L("plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached",
-        // "Premium: Free Download wenn Limit noch nicht erreicht wurde")));
-        // cfg.setDefaultValue(false);
-
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
-        // cfg.setDefaultValue(true);
-
+        m1.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        m2.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 
     public AccountInfo getAccountInformation(Account account) {

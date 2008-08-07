@@ -2104,16 +2104,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             public void run() {
                 AccountInfo ai = pluginForHost.getAccountInformation(account);
                 if (ai == null) {
-                    SimpleGUI.this.showMessageDialog("The " + pluginForHost.getHost() + " plugin does not support the Accountinfo feature yet.");
+                    SimpleGUI.this.showMessageDialog(String.format(JDLocale.L("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet."), pluginForHost.getHost()));
                     return;
                 }
 
-                String def = account.getUser() + "'s accountinfo at " + pluginForHost.getHost();
+                String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
                 int n = 10;
                 JPanel panel = new JPanel(new BorderLayout(n, n));
                 panel.setBorder(new EmptyBorder(n, n, n, n));
 
-                String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"), JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
+                String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left") };
                 String[] data = new String[] { new Date(ai.getValidUntil()) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
                 JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
                 for (int j = 0; j < data.length; j++) {

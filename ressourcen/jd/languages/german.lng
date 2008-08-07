@@ -952,6 +952,14 @@ plugins.host.imagefap.imageerror = Bildfehler
 plugins.host.netload.try2SimultanDownloads = Versuchen 2 Dateien gleichzeitig zu laden
 plugins.host.premium.account = Premium Account
 plugins.host.premium.email = Email
+plugins.host.premium.info.error = Das %s Plugin unterstützt noch keine Accountinformationen.
+plugins.host.premium.info.files = Dateien
+plugins.host.premium.info.rapidpoints = RapidPoints
+plugins.host.premium.info.title = Accountinfo von %s für %s
+plugins.host.premium.info.trafficLeft = Traffic übrig
+plugins.host.premium.info.trafficShareLeft = TrafficShare übrig
+plugins.host.premium.info.usedSpace = Belegter Speicher
+plugins.host.premium.info.validUntil = Gültig bis
 plugins.host.premium.loginError = Login Fehler
 plugins.host.premium.password = Passwort
 plugins.host.premium.useAccount = Premium Account verwenden
@@ -967,20 +975,12 @@ plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
 plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
 plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>
 plugins.hoster.rapidshare.com.increaseTicketTime = Ticketwartezeit verlängern (0%-500%)
-plugins.hoster.rapidshare.com.info.error = <div style='text-align:center; width:100%; height:100%; color:red;'><b>Account konnte nicht gefunden werden!</b></div>
-plugins.hoster.rapidshare.com.info.expired = abgelaufen
-plugins.hoster.rapidshare.com.info.files = Dateien
-plugins.hoster.rapidshare.com.info.rapidpoints = RapidPoints
-plugins.hoster.rapidshare.com.info.title = Accountinfo für %s
-plugins.hoster.rapidshare.com.info.trafficLeft = Traffic übrig
-plugins.hoster.rapidshare.com.info.trafficShareLeft = TrafficShare übrig
-plugins.hoster.rapidshare.com.info.usedSpace = Belegter Speicher
-plugins.hoster.rapidshare.com.info.validUntil = Gültig bis
 plugins.hoster.rapidshare.com.loadinfo = Lade RS.com Account Informationen:
 plugins.hoster.rapidshare.com.loadpreBytes = Nur die ersten * Bytes jeder Datei laden[-1 to disable]
 plugins.hoster.rapidshare.com.offline = Keine Netzwerkverbindung
 plugins.hoster.rapidshare.com.preSelection = Vorauswahl übernehmen
 plugins.hoster.rapidshare.com.prefferedServer = Bevorzugte Server
+plugins.hoster.rapidshare.com.prefferedServer.random = Zufällig
 plugins.hoster.rapidshare.com.premiumAccount = Premium Account
 plugins.hoster.rapidshare.com.premiumPass = Premium Pass
 plugins.hoster.rapidshare.com.premiumPass2 = Premium Pass(alternativ)
