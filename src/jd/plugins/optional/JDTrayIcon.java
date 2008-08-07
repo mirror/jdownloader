@@ -158,27 +158,27 @@ public class JDTrayIcon extends PluginOptional {
 
             JDUtilities.saveConfig();
         } else if (e.getSource() == speed1) {
-            int speed = getProperties().getIntegerProperty("SPEED1", 100);
+            int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed2) {
-            int speed = getProperties().getIntegerProperty("SPEED2", 200);
+            int speed = getPluginConfig().getIntegerProperty("SPEED2", 200);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed3) {
-            int speed = getProperties().getIntegerProperty("SPEED3", 300);
+            int speed = getPluginConfig().getIntegerProperty("SPEED3", 300);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed4) {
-            int speed = getProperties().getIntegerProperty("SPEED4", 400);
+            int speed = getPluginConfig().getIntegerProperty("SPEED4", 400);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
         } else if (e.getSource() == speed5) {
-            int speed = getProperties().getIntegerProperty("SPEED5", 500);
+            int speed = getPluginConfig().getIntegerProperty("SPEED5", 500);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);
             JDUtilities.getSubConfig("DOWNLOAD").save();
             simplegui.setSpeedStatusBar(speed);
@@ -251,15 +251,15 @@ public class JDTrayIcon extends PluginOptional {
 
     private void initGUI() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED1", JDLocale.L("plugins.optional.trayIcon.speed1", "Speed 1:"), 1, 100000).setDefaultValue(100));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED1", JDLocale.L("plugins.optional.trayIcon.speed1", "Speed 1:"), 1, 100000).setDefaultValue(100));
         cfg.setDefaultValue("100");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED2", JDLocale.L("plugins.optional.trayIcon.speed2", "Speed 2:"), 1, 100000).setDefaultValue(200));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED2", JDLocale.L("plugins.optional.trayIcon.speed2", "Speed 2:"), 1, 100000).setDefaultValue(200));
         cfg.setDefaultValue("200");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED3", JDLocale.L("plugins.optional.trayIcon.speed3", "Speed 3:"), 1, 100000).setDefaultValue(300));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED3", JDLocale.L("plugins.optional.trayIcon.speed3", "Speed 3:"), 1, 100000).setDefaultValue(300));
         cfg.setDefaultValue("300");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED4", JDLocale.L("plugins.optional.trayIcon.speed4", "Speed 4:"), 1, 100000).setDefaultValue(400));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED4", JDLocale.L("plugins.optional.trayIcon.speed4", "Speed 4:"), 1, 100000).setDefaultValue(400));
         cfg.setDefaultValue("400");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "SPEED5", JDLocale.L("plugins.optional.trayIcon.speed5", "Speed 5:"), 1, 100000).setDefaultValue(500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED5", JDLocale.L("plugins.optional.trayIcon.speed5", "Speed 5:"), 1, 100000).setDefaultValue(500));
         cfg.setDefaultValue("500");
 
         popupMenu = new JPopupMenu();
@@ -274,27 +274,27 @@ public class JDTrayIcon extends PluginOptional {
         speeds = new JMenu(JDLocale.L("plugins.optional.trayIcon.setspeeds", "Speeds"));
         popupMenu.add(speeds);
 
-        speed1 = new JMenuItem(getProperties().getStringProperty("SPEED1", "100") + " kb/s");
+        speed1 = new JMenuItem(getPluginConfig().getStringProperty("SPEED1", "100") + " kb/s");
         speed1.addActionListener(this);
         speed1.setIcon(null);
         speeds.add(speed1);
 
-        speed2 = new JMenuItem(getProperties().getStringProperty("SPEED2", "200") + " kb/s");
+        speed2 = new JMenuItem(getPluginConfig().getStringProperty("SPEED2", "200") + " kb/s");
         speed2.addActionListener(this);
         speed2.setIcon(null);
         speeds.add(speed2);
 
-        speed3 = new JMenuItem(getProperties().getStringProperty("SPEED3", "300") + " kb/s");
+        speed3 = new JMenuItem(getPluginConfig().getStringProperty("SPEED3", "300") + " kb/s");
         speed3.addActionListener(this);
         speed3.setIcon(null);
         speeds.add(speed3);
 
-        speed4 = new JMenuItem(getProperties().getStringProperty("SPEED4", "400") + " kb/s");
+        speed4 = new JMenuItem(getPluginConfig().getStringProperty("SPEED4", "400") + " kb/s");
         speed4.addActionListener(this);
         speed4.setIcon(null);
         speeds.add(speed4);
 
-        speed5 = new JMenuItem(getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+        speed5 = new JMenuItem(getPluginConfig().getStringProperty("SPEED5", "500") + " kb/s");
         speed5.addActionListener(this);
         speed5.setIcon(null);
         speeds.add(speed5);
@@ -419,11 +419,11 @@ public class JDTrayIcon extends PluginOptional {
         clipboard.setSelected(ClipboardHandler.getClipboard().isEnabled());
         reconnect.setSelected(!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
 
-        speed1.setText(getProperties().getStringProperty("SPEED1", "100") + " kb/s");
-        speed2.setText(getProperties().getStringProperty("SPEED2", "200") + " kb/s");
-        speed3.setText(getProperties().getStringProperty("SPEED3", "300") + " kb/s");
-        speed4.setText(getProperties().getStringProperty("SPEED4", "400") + " kb/s");
-        speed5.setText(getProperties().getStringProperty("SPEED5", "500") + " kb/s");
+        speed1.setText(getPluginConfig().getStringProperty("SPEED1", "100") + " kb/s");
+        speed2.setText(getPluginConfig().getStringProperty("SPEED2", "200") + " kb/s");
+        speed3.setText(getPluginConfig().getStringProperty("SPEED3", "300") + " kb/s");
+        speed4.setText(getPluginConfig().getStringProperty("SPEED4", "400") + " kb/s");
+        speed5.setText(getPluginConfig().getStringProperty("SPEED5", "500") + " kb/s");
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

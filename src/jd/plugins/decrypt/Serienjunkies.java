@@ -85,12 +85,12 @@ public class Serienjunkies extends PluginForDecrypt {
         if (data.contains("serienjunkies.org") && (data.contains("/?cat=") || data.contains("/?p="))) {
             cat = getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing;
         }
-        boolean rscom = (Boolean) getProperties().getProperty("USE_RAPIDSHARE_V2", true);
-        boolean rsde = (Boolean) getProperties().getProperty("USE_RAPIDSHAREDE_V2", true);
-        boolean net = (Boolean) getProperties().getProperty("USE_NETLOAD_V2", true);
-        boolean uploaded = (Boolean) getProperties().getProperty("USE_UPLOADED_V2", true);
-        boolean simpleupload = (Boolean) getProperties().getProperty("USE_SIMLEUPLOAD_V2", true);
-        boolean filefactory = (Boolean) getProperties().getProperty("USE_FILEFACTORY_V2", true);
+        boolean rscom = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHARE_V2", true);
+        boolean rsde = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHAREDE_V2", true);
+        boolean net = (Boolean) getPluginConfig().getProperty("USE_NETLOAD_V2", true);
+        boolean uploaded = (Boolean) getPluginConfig().getProperty("USE_UPLOADED_V2", true);
+        boolean simpleupload = (Boolean) getPluginConfig().getProperty("USE_SIMLEUPLOAD_V2", true);
+        boolean filefactory = (Boolean) getPluginConfig().getProperty("USE_FILEFACTORY_V2", true);
         next = false;
         String hosterStr = "";
         if (rscom || rsde || net || uploaded) {
@@ -250,7 +250,7 @@ public class Serienjunkies extends PluginForDecrypt {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
                             for (String element4 : links2) {
                                 if (canHandle(element4)) {
-                                    if (getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+                                    if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
                                         decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(element4));
                                     } else {
                                         decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
@@ -268,7 +268,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (getProperties().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+        if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
             // step.setParameter((new
             // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
         } else {
@@ -518,21 +518,21 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_DIREKTDECRYPT", JDLocale.L("plugins.SerienJunkies.decryptImmediately", "Decrypt immediately")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_DIREKTDECRYPT", JDLocale.L("plugins.SerienJunkies.decryptImmediately", "Decrypt immediately")));
         cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_RAPIDSHAREDE_V2", "Rapidshare.de"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHAREDE_V2", "Rapidshare.de"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_NETLOAD_V2", "Netload.in"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_NETLOAD_V2", "Netload.in"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_UPLOADED_V2", "Uploaded.to"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_UPLOADED_V2", "Uploaded.to"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_SIMLEUPLOAD_V2", "SimpleUpload.net"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_SIMLEUPLOAD_V2", "SimpleUpload.net"));
         cfg.setDefaultValue(true);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), "USE_FILEFACTORY_V2", "FileFactory.com"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_FILEFACTORY_V2", "FileFactory.com"));
         cfg.setDefaultValue(true);
     }
 

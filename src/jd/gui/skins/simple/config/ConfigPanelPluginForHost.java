@@ -511,8 +511,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
             plg = pluginsForHost.elementAt(i);
             priority.add(plg.getHost());
-            if (plg.getProperties() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getPluginConfig() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
             }
 
         }

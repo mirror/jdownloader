@@ -24,6 +24,7 @@ import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
@@ -40,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -61,6 +63,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
@@ -99,6 +102,8 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
@@ -110,6 +115,8 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+
+import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -307,19 +314,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
 
-                } 
-//                else if (event.getParameter().equals(CESClient.UPDATE)) {
-//                    p = (Property) event.getSource();
-//                    CESClient ces = (CESClient) p.getProperty(CESClient.LASTEST_INSTANCE);
-//                    if (ces != null) {
-//                        setText(ces.getAccountInfoString());
-//                    }
-//
-//                    if (!CES.isEnabled()) {
-//                        btnCes.setIcon(CES.getImage());
-//                        setText("");
-//                    }
-//                }
+                }
+                // else if (event.getParameter().equals(CESClient.UPDATE)) {
+                // p = (Property) event.getSource();
+                // CESClient ces = (CESClient)
+                // p.getProperty(CESClient.LASTEST_INSTANCE);
+                // if (ces != null) {
+                // setText(ces.getAccountInfoString());
+                // }
+                //
+                // if (!CES.isEnabled()) {
+                // btnCes.setIcon(CES.getImage());
+                // setText("");
+                // }
+                // }
                 break;
             }
 
@@ -478,7 +486,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return m2;
         case MenuItem.CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
-           
+
             m3.addMenuListener(new MenuListener() {
 
                 public void menuCanceled(MenuEvent e) {
@@ -491,7 +499,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     JMenu m = (JMenu) e.getSource();
                     m.removeAll();
                     JMenuItem c;
-                    if(mi.getSize()==0)m.setEnabled(false);
+                    if (mi.getSize() == 0) m.setEnabled(false);
                     for (int i = 0; i < mi.getSize(); i++) {
                         c = SimpleGUI.getJMenuItem(mi.get(i));
                         if (c == null) {
@@ -678,7 +686,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionAbout;
 
-//    private JDAction actionCes;
+    // private JDAction actionCes;
 
     private JDAction actionClipBoard;
 
@@ -726,7 +734,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionWiki;
 
-//    private JButton btnCes;
+    // private JButton btnCes;
 
     private JButton btnClipBoard;
 
@@ -922,11 +930,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             ClipboardHandler.getClipboard().toggleActivation();
 
             break;
-//        case JDAction.APP_CES:
-//            logger.finer("CES");
-//            CES.toggleActivation();
-//            btnCes.setIcon(CES.getImage());
-//            break;
+        // case JDAction.APP_CES:
+        // logger.finer("CES");
+        // CES.toggleActivation();
+        // btnCes.setIcon(CES.getImage());
+        // break;
         case JDAction.APP_PASSWORDLIST:
             new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
             break;
@@ -1128,7 +1136,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnClipBoard = createMenuButton(actionClipBoard);
         btnReconnect.setSelected(false);
         btnClipBoard.setSelected(false);
-//        btnCes = createMenuButton(actionCes);
+        // btnCes = createMenuButton(actionCes);
         toolBar.setFloatable(false);
         // toolBar.add(createMenuButton(this.actionLoadDLC));
         // toolBar.add(createMenuButton(this.actionSaveDLC));
@@ -1157,7 +1165,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // (JDUtilities.getSubConfig("JAC").getBooleanProperty(Configuration.JAC_USE_CES,
         // false)) {
         // toolBar.add(btnCes);
-        //        }
+        // }
 
         JPanel panel = new JPanel(new BorderLayout());
         int n = 2;
@@ -1577,7 +1585,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionTester = new JDAction(this, null, "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, null, "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-//        actionCes = new JDAction(this, CES.getCesImageString(), "action.ces", JDAction.APP_CES);
+        // actionCes = new JDAction(this, CES.getCesImageString(), "action.ces",
+        // JDAction.APP_CES);
         actionPasswordlist = new JDAction(this, null, "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
@@ -2087,5 +2096,37 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo) {
         logger.info("TextFieldDialog");
         return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
+    }
+
+    public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
+        new Thread() {
+
+            public void run() {
+                AccountInfo ai = pluginForHost.getAccountInformation(account);
+                if (ai == null) {
+                    SimpleGUI.this.showMessageDialog("The " + pluginForHost.getHost() + " plugin does not support the Accountinfo feature yet.");
+                    return;
+                }
+
+                String def = account.getUser() + "'s accountinfo at " + pluginForHost.getHost();
+                int n = 10;
+                JPanel panel = new JPanel(new BorderLayout(n, n));
+                panel.setBorder(new EmptyBorder(n, n, n, n));
+
+                String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"), JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
+                String[] data = new String[] { new Date(ai.getValidUntil()) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
+                JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
+                for (int j = 0; j < data.length; j++) {
+                    datapanel.add(new JLabel(label[j]));
+                    datapanel.add(new JTextField(data[j]));
+                }
+                panel.add(new JXTitledSeparator(def), BorderLayout.NORTH);
+                panel.add(datapanel, BorderLayout.CENTER);
+
+                JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
+
+            }
+        }.start();
+
     }
 }

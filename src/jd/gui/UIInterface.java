@@ -22,8 +22,11 @@ import java.util.Vector;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
 
 /**
  * INterface für alle GUIS
@@ -187,5 +190,9 @@ public interface UIInterface extends ControlListener {
      * @return Der vom Benutzer eingegebene Text
      */
     public String showUserInputDialog(String string, String def);
+
+  
+
+    public void showAccountInformation(PluginForHost pluginForHost, Account account);
 
 }

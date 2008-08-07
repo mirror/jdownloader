@@ -57,7 +57,7 @@ public class LinkBankeu extends PluginForDecrypt {
                 requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, cryptedLink, false);
                 decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
             }
-            if (getProperties().getBooleanProperty(CHECK_MIRRORS, false) == true) {
+            if (getPluginConfig().getBooleanProperty(CHECK_MIRRORS, false) == true) {
                 for (String element : mirrors) {
                     decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
                 }
@@ -101,6 +101,6 @@ public class LinkBankeu extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CHECK_MIRRORS, JDLocale.L("plugins.decrypt.linkbankeu", "Check Mirror Links")).setDefaultValue(false));
     }
 }

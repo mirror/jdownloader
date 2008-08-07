@@ -22,8 +22,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -40,13 +45,13 @@ import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.GetRequest;
 import jd.http.HTTPConnection;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -210,7 +215,7 @@ public class Rapidshare extends PluginForHost {
 
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
         serverMap.put("Cogent #1", "cg");
-         serverMap.put("Cogent #2", "cg2");
+        serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
         serverMap.put("GlobalCrossing #1", "gc");
         serverMap.put("GlobalCrossing #2", "gc2");
@@ -224,12 +229,11 @@ public class Rapidshare extends PluginForHost {
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
 
-        serverList1 = new String[] {"cg","cg2","dt", "gc", "gc2",  "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
-        serverList2 = new String[] { "cg","dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
+        serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
+        serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         setConfigElements();
         enablePremium();
     }
-
 
     /**
      * Prüft vor dem Download ob der Download geschrieben werden darf Es wird
@@ -240,7 +244,7 @@ public class Rapidshare extends PluginForHost {
      * @return
      */
     private boolean checkDestFile(DownloadLink downloadLink) {
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -332,8 +336,6 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-   
-
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (ddl)this.doPremium(downloadLink);
@@ -354,7 +356,7 @@ public class Rapidshare extends PluginForHost {
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download");
-            this.handlePremium(downloadLink, new Account("dummy","dummy"));
+            this.handlePremium(downloadLink, new Account("dummy", "dummy"));
             return;
         }
         // posturl für auswahl free7premium wird gesucht
@@ -390,8 +392,6 @@ public class Rapidshare extends PluginForHost {
             linkStatus.setErrorMessage(error);
             return;
         }
-
-
 
         // Fehlersuche
         if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
@@ -478,9 +478,9 @@ public class Rapidshare extends PluginForHost {
         if (ticketTime != null) {
             pendingTime = Long.parseLong(ticketTime);
 
-            if (getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
-                logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100));
-                pendingTime = pendingTime + getProperties().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100;
+            if (getPluginConfig().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) > 0) {
+                logger.warning("Waittime increased by JD: " + pendingTime + " --> " + (pendingTime + getPluginConfig().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100));
+                pendingTime = pendingTime + getPluginConfig().getIntegerProperty(PROPERTY_INCREASE_TICKET, 0) * pendingTime / 100;
 
             }
             pendingTime *= 1000;
@@ -603,7 +603,7 @@ public class Rapidshare extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Rapidshare.correctURL(downloadLink);
         logger.info(downloadLink.getDownloadURL());
-        
+
         Browser br = new Browser();
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
@@ -630,15 +630,13 @@ public class Rapidshare extends PluginForHost {
 
             if ((error = findError(page)) != null) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
-logger.severe(error);
+                logger.severe(error);
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(error);
                 return;
 
             }
         }
-
-   
 
         logger.info("Loading from: " + link.substring(0, 30));
         // HashMap<String, String> ranger = new HashMap<String, String>();
@@ -760,7 +758,7 @@ logger.severe(error);
 
     public long getBotWaittime() {
 
-        return getProperties().getIntegerProperty(PROPERTY_WAIT_WHEN_BOT_DETECTED, -1);
+        return getPluginConfig().getIntegerProperty(PROPERTY_WAIT_WHEN_BOT_DETECTED, -1);
     }
 
     public String getCoder() {
@@ -781,8 +779,8 @@ logger.severe(error);
 
         String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getFirstMatch();
 
-        String server1 = getProperties().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
-        String server2 = getProperties().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
+        String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
+        String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
 
@@ -796,8 +794,8 @@ logger.severe(error);
             logger.finer("Use Random #2 server " + server2Abb);
         }
         // String endServerAbb = "";
-        boolean telekom = getProperties().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
-        boolean preselected = getProperties().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
+        boolean telekom = getPluginConfig().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
+        boolean preselected = getPluginConfig().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
 
         // actionString = getSimpleMatch(ticketCode, dataPatternAction,
         // 0);
@@ -1150,13 +1148,13 @@ logger.severe(error);
         m2.add("zufällig");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1"));
         cfg.setDefaultValue("Level(3)");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2"));
         cfg.setDefaultValue("TeliaSonera");
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")));
         cfg.setDefaultValue(false);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")));
         cfg.setDefaultValue(true);
 
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen"));
@@ -1176,159 +1174,59 @@ logger.severe(error);
         // "Premium: Free Download wenn Limit noch nicht erreicht wurde")));
         // cfg.setDefaultValue(false);
 
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
-        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
+        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
+        extended.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
         // cfg.setDefaultValue(true);
 
     }
 
-    /**
-     * Zeigt premiuminfos zum Account i
-     * 
-     * @param i
-     */
-    private void showInfo(final int i) {
-        new Thread() {
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        br.setAcceptLanguage("en");
+        br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
 
-            private String formatKB(String input) {
+        String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass();
+        if (br.containsHTML("Premium-Account wurde nicht gefunden")) {
+            ai.setValid(false);
+            return ai;
+        } else {
 
-                if (input != null) {
+            // String login =
+            // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
+            String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String trafficShareLeft = br.getRegex("<td>TrafficShare left:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
+            ai.setFilesNum(Integer.parseInt(files));
+            ai.setPremiumPoints(Integer.parseInt(rapidPoints));
+            ai.setUsedSpace(Regex.getSize(usedSpace));
+            ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
+            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
+            // dateFormat.applyPattern("EEE’, ’dd’. ’MMM’ ’yyyy");
 
-                    String result = "";
-                    int j = 0;
+           
 
-                    for (int i = input.length() - 1; i >= 0; i--) {
+            try {
+                Date date = dateFormat.parse(validUntil);
+                ai.setValidUntil(date.getTime());
+            } catch (ParseException e) {
 
-                        j++;
-                        result = input.charAt(i) + result;
-
-                        if (j == 3) {
-                            j = 0;
-                            result = " " + result;
-                        }
-
-                    }
-
-                    return result;
-
-                } else {
-                    return null;
-                }
-
+                e.printStackTrace();
             }
-
-            public void run() {
-
-                String user = null;
-                String pass = null;
-                // switch (i) {
-                // case 1:
-                // user = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_USER);
-                // pass = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_PASS);
-                // break;
-                // case 2:
-                // user = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_USER_2);
-                // pass = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_PASS_2);
-                // break;
-                // case 3:
-                // user = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_USER_3);
-                // pass = (String)
-                // getProperties().getProperty(PROPERTY_PREMIUM_PASS_3);
-                // break;
-                // }
-                user = Encoding.urlEncode(user.trim());
-                pass = Encoding.urlEncode(pass.trim());
-                String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + user + "&password=" + pass;
-                ProgressController progress = new ProgressController(JDLocale.L("plugins.hoster.rapidshare.com.loadinfo", "Lade Rs.com Account Informationen: ") + user, 5);
-
-                try {
-                    progress.increase(1);
-                    RequestInfo ri = HTTP.getRequest(new URL(url));
-                    progress.increase(1);
-                    // logger.info(ri.getHtmlCode());
-                    // String html = null;
-
-                    if (ri.containsHTML("Premium-Account wurde nicht gefunden")) {
-                        String html = null;
-                        html = JDLocale.L("plugins.hoster.rapidshare.com.info.error", "<div style='text-align:center; width:100%; height:100%; color:red;'><b>Account could not be found!</b></div>");
-                        JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title", "Accountinfo for %s"), user), html);
-
-                    } else {
-
-                        // String login =
-                        // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String validUntil = ri.getRegexp("<td>G&uuml;ltig bis:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String trafficLeft = formatKB(ri.getRegexp("<td>Traffic &uuml;brig:</td><td.*?><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\((.*?)/1000\\)\\)\\);</script> MB</b></td>").getFirstMatch(1)).trim() + " KB";
-                        String files = ri.getRegexp("<td>Dateien:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String rapidPoints = ri.getRegexp("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String usedSpace = ri.getRegexp("<td>Belegter Speicher:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-                        String trafficShareLeft = ri.getRegexp("<td>TrafficShare &uuml;brig:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-
-                        if (ri.containsHTML("abgelaufen") && ri.containsHTML("if (1)")) {
-                            validUntil += " (" + JDLocale.L("plugins.hoster.rapidshare.com.info.expired", "expired") + ")";
-                        }
-
-                        // html =
-                        // String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.html",
-                        // "<table style=\"height:100%; width:100%\">" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Valid until</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Traffic left</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Files</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Rapidpoints</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Used Space</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "<tr><th style=\"text-align:right;
-                        // padding-right:10px\">Traffic Share left</th> <td
-                        // style=\"text-align:left\">%s</td></tr>" +
-                        // "</table>"),
-                        // validUntil, trafficLeft, files, rapidPoints,
-                        // usedSpace, trafficShareLeft);
-
-                        // JDUtilities.getGUI().showHTMLDialog(String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title",
-                        // "Accountinfo for %s"), user), html);
-
-                        String title = String.format(JDLocale.L("plugins.hoster.rapidshare.com.info.title"), user);
-                        String def = title == null ? "Accountinfo for " + user : title;
-                        int n = 10;
-                        JPanel panel = new JPanel(new BorderLayout(n, n));
-                        panel.setBorder(new EmptyBorder(n, n, n, n));
-
-                        String[] label = new String[] { JDLocale.L("plugins.hoster.rapidshare.com.info.validUntil", "Valid until"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.hoster.rapidshare.com.info.files", "Files"), JDLocale.L("plugins.hoster.rapidshare.com.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.hoster.rapidshare.com.info.usedSpace", "Used Space"), JDLocale.L("plugins.hoster.rapidshare.com.info.trafficShareLeft", "Traffic Share left") };
-                        String[] data = new String[] { validUntil, trafficLeft, files, rapidPoints, usedSpace, trafficShareLeft };
-                        JPanel datapanel = new JPanel(new GridLayout(0, 4, n, n));
-                        for (int j = 0; j < data.length; j++) {
-                            datapanel.add(new JLabel(label[j]));
-                            datapanel.add(new JTextField(data[j]));
-                        }
-                        panel.add(new JXTitledSeparator(def), BorderLayout.NORTH);
-                        panel.add(datapanel, BorderLayout.CENTER);
-
-                        JOptionPane.showMessageDialog(null, panel, title, JOptionPane.INFORMATION_MESSAGE);
-
-                    }
-                } catch (MalformedURLException e) {
-                } catch (IOException e) {
-                }
-
-                progress.finalize();
+            if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
+                ai.setExpired(true);
             }
-        }.start();
-        ;
+            logger.info(ai+"");
+            // if((new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
+        }
+
+        return ai;
     }
+
 
     /**
      * Wartet die angegebene Ticketzeit ab

@@ -257,8 +257,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         PluginForContainer plg;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             plg = pluginsForContainer.elementAt(i);
-            if (plg.getProperties() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getPluginConfig() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
             }
         }
 

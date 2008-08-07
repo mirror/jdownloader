@@ -82,13 +82,13 @@ public class RelinkUs extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
 
-            if (getProperties().getBooleanProperty(USE_RSDF, true)) {
+            if (getPluginConfig().getBooleanProperty(USE_RSDF, true)) {
                 add_relinkus_container(reqinfo, cryptedLink, "rsdf");
             }
-            if (getProperties().getBooleanProperty(USE_CCF, true)) {
+            if (getPluginConfig().getBooleanProperty(USE_CCF, true)) {
                 add_relinkus_container(reqinfo, cryptedLink, "ccf");
             }
-            if (getProperties().getBooleanProperty(USE_DLC, true)) {
+            if (getPluginConfig().getBooleanProperty(USE_DLC, true)) {
                 add_relinkus_container(reqinfo, cryptedLink, "dlc");
             }
 
@@ -138,8 +138,8 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));
     }
 }

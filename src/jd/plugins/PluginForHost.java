@@ -51,7 +51,9 @@ public abstract class PluginForHost extends Plugin {
 
     private static HashMap<Class<? extends PluginForHost>, Integer> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
-//    private static HashMap<Class<? extends PluginForHost>, boolean[]> HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class<? extends PluginForHost>, boolean[]>();
+    // private static HashMap<Class<? extends PluginForHost>, boolean[]>
+    // HOSTER_TMP_ACCOUNT_STATUS = new HashMap<Class<? extends PluginForHost>,
+    // boolean[]>();
 
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
     // public static final String PARAM_MAX_ERROR_RETRIES = "MAX_ERROR_RETRIES";
@@ -82,6 +84,7 @@ public abstract class PluginForHost extends Plugin {
         super.clean();
     }
 
+    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         switch (e.getID()) {
         case 1:
@@ -95,7 +98,28 @@ public abstract class PluginForHost extends Plugin {
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
         }
-        return;
+        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        if (e.getID() >= 200) {
+            int accountID = e.getID() - 200;
+            Account account = accounts.get(accountID);
+            JDUtilities.getGUI().showAccountInformation(this, account);
+            return;
+        }
+
+        if (e.getID() >= 100) {
+            int accountID = e.getID() - 100;
+            Account account = accounts.get(accountID);
+
+            account.setEnabled(!account.isEnabled());
+            getPluginConfig().save();
+            return;
+        }
+
+    }
+
+    public AccountInfo getAccountInformation(Account account) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @SuppressWarnings("unchecked")
@@ -113,26 +137,23 @@ public abstract class PluginForHost extends Plugin {
         // JDLocale.L("plugins.rapidshare.menu.happyHour", "Happy Hours"), 0);
         menuList.add(m);
         menuList.add(premium);
-        ArrayList<Account> accounts = (ArrayList<Account>) getProperties().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
 
+        int i = 1;
+        int c = 0;
+        for (Account a : accounts) {
+            c++;
+            if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
 
-        int i=1;
-        for(Account a:accounts){
-if(a.getUser()==null||a.getUser().trim().length()==0)continue;
-//            boolean use = getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM + "_" + i, false);
-//            String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER + "_" + i, "");
-//            String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS + "_" + i, "");
-
-            // account1
             account = new MenuItem(MenuItem.CONTAINER, i + ". " + a.getUser(), 0);
 
-            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 0);
+            m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
             m.setSelected(a.isEnabled());
 
             m.setActionListener(this);
 
             account.addMenuItem(m);
-            m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 0);
+            m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
             m.setActionListener(this);
 
             account.addMenuItem(m);
@@ -151,7 +172,7 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getProperties(), PROPERTY_PREMIUM, 5));
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getPluginConfig(), PROPERTY_PREMIUM, 5));
         cfg.setDefaultValue(new ArrayList<Account>());
         // for (int i = 1; i <= ACCOUNT_NUM; i++) {
         // premiumConfig.addEntry(cfg = new
@@ -365,10 +386,8 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) { return false; }
 
         Account currentAccount = null;
-    
 
-      
-        ArrayList<Account> accounts = (ArrayList<Account>) getProperties().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
 
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
@@ -521,13 +540,12 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
         }
         Account account = null;
         ArrayList<Account> disabled = new ArrayList<Account>();
- 
-        ArrayList<Account> accounts = (ArrayList<Account>) getProperties().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+
+        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
 
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
                 Account next = accounts.get(i);
-              
 
                 if (!next.isTempDisabled() && next.isEnabled()) {
                     account = next;
@@ -548,25 +566,25 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
                         logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                         account.setTempDisabled(true);
                         account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                        getProperties().save();
+                        getPluginConfig().save();
                     } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
 
                         account.setEnabled(false);
                         account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                        
-                        getProperties().save();
+
+                        getPluginConfig().save();
                         logger.severe("Premium Account " + account.getUser() + ": expired");
                     } else {
-                        
+
                         account.setEnabled(false);
                         account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
-                       getProperties().save();
+                        getPluginConfig().save();
                         logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getErrorMessage());
                     }
 
                 } else {
-                    account.setStatus( JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
-                    getProperties().save();
+                    account.setStatus(JDLocale.L("plugins.hoster.premium.status_ok", "Account is ok"));
+                    getPluginConfig().save();
                 }
             }
 
@@ -579,8 +597,8 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
             synchronized (accounts) {
                 if (disabled.size() > 0) {
                     int randId = (int) (Math.random() * disabled.size());
-                   disabled.get(randId).setTempDisabled(false);
-                   getProperties().save();
+                    disabled.get(randId).setTempDisabled(false);
+                    getPluginConfig().save();
                 }
             }
         }
@@ -589,11 +607,11 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
     }
 
     public boolean isAGBChecked() {
-        if (!getProperties().hasProperty(AGB_CHECKED)) {
-            getProperties().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + getHost(), false));
-            getProperties().save();
+        if (!getPluginConfig().hasProperty(AGB_CHECKED)) {
+            getPluginConfig().setProperty(AGB_CHECKED, JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGBS_CHECKED_" + getPluginID(), false) || JDUtilities.getSubConfig(CONFIGNAME).getBooleanProperty("AGB_CHECKED_" + getHost(), false));
+            getPluginConfig().save();
         }
-        return getProperties().getBooleanProperty(AGB_CHECKED, false);
+        return getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }
 
     /**
@@ -616,9 +634,10 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
     public final void resetPlugin() {
         // this.resetSteps();
         reset();
-         ArrayList<Account> accounts = (ArrayList<Account>) getProperties().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
 
-         for(Account account:accounts)account.setTempDisabled(false);
+        for (Account account : accounts)
+            account.setTempDisabled(false);
         // this.aborted = false;
     }
 
@@ -628,8 +647,8 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
     }
 
     public void setAGBChecked(boolean value) {
-        getProperties().setProperty(AGB_CHECKED, value);
-        getProperties().save();
+        getPluginConfig().setProperty(AGB_CHECKED, value);
+        getPluginConfig().save();
     }
 
     public synchronized void setCurrentConnections(int CurrentConnections) {
@@ -688,7 +707,6 @@ if(a.getUser()==null||a.getUser().trim().length()==0)continue;
     public static void resetStatics() {
         HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
         HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
-  
 
     }
 

@@ -214,7 +214,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                                 + "Sample: /action/set/clipboard/true" + "<br />" + "<table border=\"0\" cellspacing=\"5\">");
                 for (int commandcount = 0; commandcount < commandvec.size(); commandcount++) {
 
-                    response.getWriter().println("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getProperties().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
+                    response.getWriter().println("<tr><td valign=\"top\"><a href=\"http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + commandvec.get(commandcount) + "\">" + commandvec.get(commandcount) + "</a></td><td valign=\"top\">" + infovector.get(commandcount) + "</td></tr>");
                 }
                 response.getWriter().println("</table>" + "<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;<br />&nbsp;" + "</p>" + "</body>" + "</html>");
             }
@@ -863,10 +863,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 server.stop();
                 JDUtilities.getGUI().showMessageDialog(getPluginName() + " stopped");
             } else {
-                server = new Server(getProperties().getIntegerProperty("PORT", 10025));
+                server = new Server(getPluginConfig().getIntegerProperty("PORT", 10025));
                 server.setHandler(new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getPluginName() + " started on port " + getProperties().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getProperties().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
+                JDUtilities.getGUI().showMessageDialog(getPluginName() + " started on port " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -911,11 +911,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     public void initRemoteControl() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getProperties(), "PORT", JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PORT", JDLocale.L("plugins.optional.RemoteControl.port", "Port:"), 1000, 65500));
         cfg.setDefaultValue(10025);
 
         try {
-            server = new Server(getProperties().getIntegerProperty("PORT", 10025));
+            server = new Server(getPluginConfig().getIntegerProperty("PORT", 10025));
             server.setHandler(new Serverhandler());
             server.start();
 

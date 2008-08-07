@@ -110,7 +110,7 @@ public class Megauploadcom extends PluginForHost {
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
 
-        String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
+        String countryID = getPluginConfig().getStringProperty("COUNTRY_ID", "-");
         logger.info("PREMOIM");
         String url = "http://www.megaupload.com/de/";
         if (!countryID.equals("-")) {
@@ -243,7 +243,7 @@ public class Megauploadcom extends PluginForHost {
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
 
-        String countryID = getProperties().getStringProperty("COUNTRY_ID", "-");
+        String countryID = getPluginConfig().getStringProperty("COUNTRY_ID", "-");
         if (!countryID.equals("-")) {
             logger.info("Use Country trick");
             // http://www.megaupload.com/HIER_STEHT_DER_2_STELLIGE_LÄNDERKÜRZEL/?d=EMXRGYTM
@@ -376,7 +376,7 @@ public class Megauploadcom extends PluginForHost {
         ConfigEntry cfg;
        
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getProperties(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
 
     }
 }

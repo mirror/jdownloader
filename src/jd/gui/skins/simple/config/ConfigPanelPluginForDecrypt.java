@@ -267,8 +267,8 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         Iterator<PluginForDecrypt> iter = pluginsForDecrypt.iterator();
         while (iter.hasNext()) {
             PluginForDecrypt plg = iter.next();
-            if (plg.getProperties() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getProperties());
+            if (plg.getPluginConfig() != null) {
+                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
             }
         }
 

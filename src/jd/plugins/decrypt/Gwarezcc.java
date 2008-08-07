@@ -75,7 +75,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                 String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getFirstMatch();
 
-                if (getProperties().getBooleanProperty(PREFER_DLC, false) == true) {
+                if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
                     String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getMatches(0);
                     if (dlc.length == 1) {
@@ -214,7 +214,7 @@ public class Gwarezcc extends PluginForDecrypt {
     }
 
     private void setConfigEelements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getProperties(), PREFER_DLC, JDLocale.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_DLC, JDLocale.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));
     }
 
 }

@@ -627,7 +627,7 @@ public abstract class Plugin implements ActionListener {
      * 
      * @return internes property objekt
      */
-    public SubConfiguration getProperties() {
+    public SubConfiguration getPluginConfig() {
 
         if (!JDUtilities.getResourceFile("config/" + getPluginName() + ".cfg").exists()) {
             SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
