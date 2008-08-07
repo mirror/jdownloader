@@ -130,7 +130,7 @@ public class JDUtilities {
      */
     private static Configuration configuration = new Configuration();
     
-    private static DatabaseConnector dbconnect = new DatabaseConnector();
+    private static DatabaseConnector dbconnect = null;
 
     private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
 
@@ -2297,9 +2297,12 @@ public class JDUtilities {
         }
         return null;
     }
-    
     public static DatabaseConnector getDatabaseConnector() {
+        if(dbconnect==null) {
+            dbconnect = new DatabaseConnector();
+        }
         return dbconnect;
     }
+    
 
 }

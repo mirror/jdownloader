@@ -71,8 +71,7 @@ public class DatabaseConnector implements Serializable {
             
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config");
             while(rs.next()) {
-                System.out.println("reading " + rs.getString(1) + " " + rs.getObject(2).getClass().getName());
-                //dbdata.put(rs.getString(1), rs.getObject(2));
+                dbdata.put(rs.getString(1), rs.getObject(2));
             }
             
         } catch (Exception e) {
@@ -86,8 +85,11 @@ public class DatabaseConnector implements Serializable {
     
     public void saveConfiguration(String name, Object data) {
         System.out.println("save " + name);
+        dbdata.put(name, data);
         try {
-            if(dbdata.containsKey(name)) {
+            ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config WHERE name = '" + name + "'");
+            
+            if(rs.getMetaData().getColumnCount() > 0) {
                 System.out.println("update " + name);
                 System.out.println(dbdata.get(name).getClass().getName());
                 PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
@@ -104,8 +106,6 @@ public class DatabaseConnector implements Serializable {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        
-        dbdata.put(name, data);
     }
     
     public void shutdownDatabase() {
