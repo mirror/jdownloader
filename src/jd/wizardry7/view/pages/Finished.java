@@ -13,6 +13,7 @@ import jd.wizardry7.view.DefaultWizardPage;
 
 public class Finished extends DefaultWizardPage {
 
+    private static final long serialVersionUID = -7016901570921641882L;
     private static final Finished INSTANCE = new Finished();
 
     public static Finished getInstance() {

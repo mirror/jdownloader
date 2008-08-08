@@ -27,8 +27,6 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import javax.swing.Icon;
-
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;

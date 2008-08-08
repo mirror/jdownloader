@@ -7,6 +7,8 @@ import javax.swing.WindowConstants;
 
 public class _WizardDialog extends JFrame {
 
+    private static final long serialVersionUID = 2135079888883294152L;
+
     public _WizardDialog() {
         super("JDownloader Settings Wizard");
         setPreferredSize(new Dimension(550, 700));

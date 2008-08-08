@@ -11,6 +11,7 @@ import jd.wizardry7.view.DefaultWizardPage;
 
 public class Welcome extends DefaultWizardPage {
 
+    private static final long serialVersionUID = 745225011108539091L;
     private static final Welcome INSTANCE = new Welcome();
 
     public static Welcome getInstance() {

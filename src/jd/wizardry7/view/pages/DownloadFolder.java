@@ -18,6 +18,7 @@ import jd.wizardry7.view.DefaultWizardPage;
 
 public class DownloadFolder extends DefaultWizardPage {
 
+    private static final long serialVersionUID = 300768092465899023L;
     private static final DownloadFolder INSTANCE = new DownloadFolder();
 
     public static DownloadFolder getInstance() {

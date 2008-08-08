@@ -9,6 +9,8 @@ import com.jgoodies.forms.layout.FormLayout;
 
 public class DefaultFooter extends JPanel {
 
+    private static final long serialVersionUID = 8480183514476816275L;
+
     public static JPanel buildWizardBar(JButton[] leftAlignedButtons, JButton back, JButton next, JButton overlayedFinish, JButton[] rightAlignedButtons) {
 
         ButtonBarBuilder builder = new ButtonBarBuilder();

@@ -15,6 +15,7 @@ import javax.swing.border.EmptyBorder;
 import jd.wizardry7.view.DefaultWizardPage;
 
 public class CheckAGB extends DefaultWizardPage {
+    private static final long serialVersionUID = -6086635140672934824L;
 
     private static class RTFView extends JScrollPane {
 

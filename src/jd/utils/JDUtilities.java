@@ -100,7 +100,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Encoding;
-import jd.parser.SimpleMatches;
+import jd.parser.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
@@ -991,7 +991,7 @@ public class JDUtilities {
             RequestInfo ri;
 
             ri = HTTP.getRequest(new URL(site), null, null, true);
-            String ip = SimpleMatches.getSimpleMatch(ri.getHtmlCode(), "<ip>°</ip>", 0);
+            String ip = new XPath(ri.getHtmlCode(), "/ip", false).getFirstMatch();
             if (ip == null) {
                 logger.info("Sec. IP Check failed.");
                 return "offline";

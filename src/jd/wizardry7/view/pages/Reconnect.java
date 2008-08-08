@@ -15,6 +15,7 @@ import jd.wizardry7.view.DefaultWizardPage;
 
 public class Reconnect extends DefaultWizardPage {
 
+    private static final long serialVersionUID = -6103811228533476916L;
     private static final Reconnect INSTANCE = new Reconnect();
 
     public static Reconnect getInstance() {

@@ -8,24 +8,32 @@ import javax.swing.Action;
 import jd.wizardry7.MVCWizard;
 
 class BackwardAction extends AbstractAction {
+    private static final long serialVersionUID = 6519707833041592186L;
+
     public void actionPerformed(ActionEvent e) {
         MVCWizard.getInstance().goBackward();
     }
 }
 
 class CancelAction extends AbstractAction {
+    private static final long serialVersionUID = -2246489208969887519L;
+
     public void actionPerformed(ActionEvent e) {
         MVCWizard.getInstance().doCancel();
     }
 }
 
 class FinishAction extends AbstractAction {
+    private static final long serialVersionUID = -2381843754569069058L;
+
     public void actionPerformed(ActionEvent e) {
         MVCWizard.getInstance().doFinish();
     }
 }
 
 class ForwardAction extends AbstractAction {
+    private static final long serialVersionUID = 3448356256615152260L;
+
     public void actionPerformed(ActionEvent e) {
         MVCWizard.getInstance().goForward();
     }
@@ -33,6 +41,8 @@ class ForwardAction extends AbstractAction {
 }
 
 class HelpAction extends AbstractAction {
+    private static final long serialVersionUID = 148041943993311465L;
+
     public void actionPerformed(ActionEvent e) {
         MVCWizard.getInstance().doHelp();
     }

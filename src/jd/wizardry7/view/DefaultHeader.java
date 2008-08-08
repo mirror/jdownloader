@@ -19,6 +19,7 @@ import com.jgoodies.forms.layout.FormLayout;
 
 public class DefaultHeader extends JPanel {
 
+    private static final long serialVersionUID = 8598787493904511872L;
     static Font descriptionFont = new Font("Arial", Font.PLAIN, 10);
     static Font titleFont = new Font("Arial", Font.BOLD, 12);
 

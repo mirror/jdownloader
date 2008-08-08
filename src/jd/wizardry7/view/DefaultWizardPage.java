@@ -7,6 +7,8 @@ import javax.swing.JPanel;
 
 abstract public class DefaultWizardPage extends JPanel {
 
+    private static final long serialVersionUID = 34944600760403685L;
+
     /**
      * Sometimes it is necessary to share data between WizardPages - e.g. one
      * page creates a list of files, which have to be uploaded by the next page.
