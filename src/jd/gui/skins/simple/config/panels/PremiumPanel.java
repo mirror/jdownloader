@@ -44,7 +44,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
-        this.setLayout(new MigLayout("ins 5", "[right]10[grow,fill]15[right][grow,fill]"));
+        this.setLayout(new MigLayout("ins 5", "[right]10[grow,fill]0[right][grow,fill]"));
         this.createPanel();
     }
 
@@ -119,25 +119,32 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             enables[i - 1] = active;
             enables[i - 1].addChangeListener(this);
             add(active, "alignleft");
-            add(new JSeparator(), "spanx, pushx, growx");
-
-            add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 12");
-            add(usernames[i - 1] = new JTextField(""));
-
-            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Passwort")));
-            add(passwords[i - 1] = new JPasswordField(""), "wrap");
-
-            add(statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status")));
-
+            
+            JButton bt = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status"));
+            checkBtns[i - 1] = bt;
+            add(bt, "w pref:pref:pref, split 2");
+            bt.addActionListener(this);
+            add(new JSeparator(), "w 30:push, growx, pushx");
+            
+            add(new JSeparator(), "w 30:push, growx, pushx");
+            statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status"));
             JTextField status = new JTextField("");
             stati[i - 1] = status;
             status.setEditable(false);
-            add(status, "span, gapbottom :10:push");
+            add(status, "spanx, pushx, growx");
+            
+            add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            add(usernames[i - 1] = new JTextField(""));
 
-            JButton bt = new JButton(JDLocale.L("plugins.config.premium.test", "Check Account"));
-            checkBtns[i - 1] = bt;
-            add(bt, "span, gapbottom :10:push");
-            bt.addActionListener(this);
+            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Passwort")), "gapleft 15");
+//            add(passwords[i - 1] = new JPasswordField(""), "wrap");
+            add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
+
+//            add(statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status")));
+//            JTextField status = new JTextField("");
+//            stati[i - 1] = status;
+//            status.setEditable(false);
+//            add(status, "span, gapbottom :10:push");
         }
 
     }
