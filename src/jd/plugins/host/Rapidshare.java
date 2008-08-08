@@ -1153,7 +1153,7 @@ public class Rapidshare extends PluginForHost {
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
 
         //String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass();
-        if (br.containsHTML("Premium-Account wurde nicht gefunden")) {
+        if (br.containsHTML("Your Premium Account has not been found")) {
             ai.setValid(false);
             return ai;
         } else {

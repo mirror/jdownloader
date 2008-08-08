@@ -170,6 +170,7 @@ public abstract class PluginForHost extends Plugin {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
         premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getPluginConfig(), PROPERTY_PREMIUM, 5));
+        cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
         // for (int i = 1; i <= ACCOUNT_NUM; i++) {
         // premiumConfig.addEntry(cfg = new

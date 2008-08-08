@@ -1,10 +1,13 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -17,15 +20,17 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
+import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumPanel extends JPanel implements ChangeListener {
+public class PremiumPanel extends JPanel implements ChangeListener, ActionListener {
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
     private static final long serialVersionUID = 3275917572262383770L;
-  
+
     private JCheckBox[] enables;
     private JTextField[] usernames;
     private JPasswordField[] passwords;
@@ -35,6 +40,7 @@ public class PremiumPanel extends JPanel implements ChangeListener {
     private JLabel[] passwordsLabels;
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
+    private JButton[] checkBtns;
 
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
@@ -93,12 +99,12 @@ public class PremiumPanel extends JPanel implements ChangeListener {
         passwords = new JPasswordField[accountNum];
         usernamesLabels = new JLabel[accountNum];
         passwordsLabels = new JLabel[accountNum];
-        statiLabels= new JLabel[accountNum];
+        statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
-
+        checkBtns = new JButton[accountNum];
         for (int i = 1; i <= accountNum; i++) {
-            
-            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum","<html><b>Premium Account #%s</b></html>",i));
+
+            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
@@ -110,71 +116,29 @@ public class PremiumPanel extends JPanel implements ChangeListener {
                 }
             });
             active.setSelected(i % 2 != 0 ? true : false);
-            enables[i-1]=active;
+            enables[i - 1] = active;
             enables[i - 1].addChangeListener(this);
             add(active, "alignleft");
             add(new JSeparator(), "spanx, pushx, growx");
 
-            add(usernamesLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.user","Premium User")), "gaptop 12");
-            add(usernames[i-1]=new JTextField(""));
+            add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 12");
+            add(usernames[i - 1] = new JTextField(""));
 
-            add(passwordsLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.password","Passwort")));
-            add(passwords[i-1]=new JPasswordField(""), "wrap");
+            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Passwort")));
+            add(passwords[i - 1] = new JPasswordField(""), "wrap");
 
-            add(statiLabels[i-1]=new JLabel(JDLocale.L("plugins.config.premium.accountstatus","Last Account Status")));
+            add(statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status")));
+
             JTextField status = new JTextField("");
-            stati[i-1]=status;
+            stati[i - 1] = status;
             status.setEditable(false);
             add(status, "span, gapbottom :10:push");
+
+            JButton bt = new JButton(JDLocale.L("plugins.config.premium.test", "Check Account"));
+            checkBtns[i - 1] = bt;
+            add(bt, "span, gapbottom :10:push");
+            bt.addActionListener(this);
         }
-        
-        
-        
-        
-//        int entryHeight = 5;
-//        int row = 0;
-//        for (int i = 1; i <= accountNum; i++) {
-//
-//            JDUtilities.addToGridBag(this, new JLabel("Enabled account " + i), 0, (i - 1) * entryHeight + row, 1, 1, 0, 0, INSETS, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//
-//            enables[i - 1] = new JCheckBox();
-//            enables[i - 1].setEnabled(configEntry.isEnabled());
-//            enables[i - 1].addChangeListener(this);
-//            JDUtilities.addToGridBag(this, enables[i - 1], 2, (i - 1) * entryHeight + row, 1, 1, 0, 0, INSETS, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-//
-//            row++;
-//            // User
-//            JDUtilities.addToGridBag(this, usernamesLabels[i - 1] = new JLabel("User"), 0, (i - 1) * entryHeight + row, 1, 1, 0, 0, INSETS, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            usernames[i - 1] = new JTextField();
-//            usernames[i - 1].setEnabled(configEntry.isEnabled());
-//            usernames[i - 1].setHorizontalAlignment(SwingConstants.RIGHT);
-//            JDUtilities.addToGridBag(this, usernames[i - 1], 2, (i - 1) * entryHeight + row, 1, 1, 1, 1, INSETS, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-//
-//            row++;
-//
-//            // pass
-//            JDUtilities.addToGridBag(this, passwordsLabels[i - 1] = new JLabel("Pass"), 0, (i - 1) * entryHeight + row, 1, 1, 0, 0, INSETS, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//            passwords[i - 1] = new JPasswordField();
-//
-//            passwords[i - 1].setEnabled(configEntry.isEnabled());
-//            passwords[i - 1].setHorizontalAlignment(SwingConstants.RIGHT);
-//            JDUtilities.addToGridBag(this, passwords[i - 1], 2, (i - 1) * entryHeight + row, 1, 1, 1, 1, INSETS, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-//
-//            row++;
-//            // Status
-//            stati[i - 1] = new JLabel("AccountStatus Hier steht was mit dem acocunt zuletzt so los war");
-//            stati[i - 1].setHorizontalAlignment(SwingConstants.RIGHT);
-//            JDUtilities.addToGridBag(this, stati[i - 1], 0, (i - 1) * entryHeight + row, 3, 1, 0, 0, INSETS, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//
-//            row++;
-//
-//            if (i != accountNum) {
-//
-//                JDUtilities.addToGridBag(this, new JSeparator(SwingConstants.HORIZONTAL), 0, (i - 1) * entryHeight + row, 3, 1, 1, 0, INSETS, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-//                row++;
-//            }
-//
-//        }
 
     }
 
@@ -192,4 +156,18 @@ public class PremiumPanel extends JPanel implements ChangeListener {
 
     }
 
+    @SuppressWarnings("unchecked")
+    public void actionPerformed(ActionEvent e) {
+        int accountNum = configEntry.getEnd();
+        ArrayList<Account> acc = (ArrayList<Account>) this.getAccounts();
+        for (int i = 1; i <= accountNum; i++) {
+            if (e.getSource() == this.checkBtns[i - 1]) {
+                Account account = acc.get(i - 1);
+
+                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), account);
+            }
+
+        }
+
+    }
 }

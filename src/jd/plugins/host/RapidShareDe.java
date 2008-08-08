@@ -98,10 +98,12 @@ br.setFollowRedirects(false);
                 waittime = Long.parseLong(new Regex(br, "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 linkStatus.setValue(waittime);
+                return;
             } catch (Exception es) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("kann wartezeit nicht setzen");
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.setErrorMessage("Waittime could not be set");
                 return;
             }
         }
@@ -172,6 +174,14 @@ br.setFollowRedirects(false);
         r.getCookies().put("user", user + "-" + formatPass);
 
         String page = r.load();
+        if(page.contains("Premium-Cookie nicht gefunden")){
+            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            linkStatus.setErrorMessage("Account not found or password wrong");
+            return;
+            
+            
+        }
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -190,38 +200,9 @@ br.setFollowRedirects(false);
         if (urlConnection.getHeaderField("content-disposition") == null) {
 
             page = req.read();
-
-            // if ((error = this.findError(page)) != null) {
-            // new File(downloadLink.getFileOutput()).delete();
-            //
-            // logger.warning(error);
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
-            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            // //step.setParameter(premium);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // } else if (Regex.matches(error,
-            // PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
-            // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-            // //step.setParameter(premium);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // } else {
-            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-            // downloadLink.getLinkStatus().setStatusText(error);
-            // //step.setParameter(error);
-            // }
-            //
-            // return;
-            // } else {
-            // new File(downloadLink.getFileOutput()).delete();
-            //
-            // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            //
-            // this.reportUnknownError(page, 6);
-            //
-            // //step.setStatus(PluginStep.STATUS_ERROR);
-            // return;
-            // }
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage(page);
+           
 
         }
 
