@@ -63,6 +63,8 @@ public class MyVideo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
+            
+         
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
             if (requestInfo.getResponseCode() == 200) { return true; }
         } catch (MalformedURLException e) {

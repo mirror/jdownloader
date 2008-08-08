@@ -17,6 +17,10 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -25,6 +29,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -214,7 +219,36 @@ public class Netloadin extends PluginForHost {
         }
 
     }
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+       
+        
+        br.postPage("http://" + HOST + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
+        if (br.getRedirectLocation() == null) {
+            ai.setValid(false);
+            return ai;
+        }
+        br.getPage("http://netload.in/index.php?id=2");
+        
 
+            // String login =
+            // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+            String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getFirstMatch().trim();
+         
+            String days=new Regex(validUntil,"([\\d]+) ?Tage").getFirstMatch();
+            String hours=new Regex(validUntil,"([\\d]+) ?Stunde").getFirstMatch();
+            long res=0;
+            if(days!=null)res+=Long.parseLong(days.trim())*24*60*60*1000;
+            if(hours!=null)res+=Long.parseLong(hours.trim())*60*60*1000;
+            res+=new Date().getTime();
+            
+            logger.info(new Date(res)+"");
+            ai.setValidUntil(res);
+            
+
+        return ai;
+    }
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();

@@ -79,7 +79,7 @@ public class QshareCom extends PluginForHost {
         // return;
         // }
 
-        br.getPage((String) null);
+        if(br.getRedirectLocation()!=null)br.getPage((String) null);
 
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
         if (error != null) {
@@ -225,6 +225,7 @@ public class QshareCom extends PluginForHost {
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
             // happyhour
             Browser br = new Browser();
+            br.setFollowRedirects(true);
             page = br.getPage(downloadLink.getDownloadURL());
             String[][] dat = new Regex(page, "<SPAN STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\- google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end \\-\\->(.*?)<\\/SPAN>").getMatches();
 

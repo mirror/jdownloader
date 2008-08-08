@@ -139,7 +139,13 @@ public class SingleDownloadController extends Thread {
                 currentPlugin.handle(downloadLink);
             } catch (Exception e) {
                 logger.severe("Plugin interrupt: " + e.getMessage());
-                if (!(e instanceof InterruptedException)) {
+                if (e instanceof NullPointerException) {
+                    e.printStackTrace();
+
+                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+
+                } else if (!(e instanceof InterruptedException)) {
                     e.printStackTrace();
 
                     linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -174,7 +180,7 @@ public class SingleDownloadController extends Thread {
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
                 onErrorLinkBlock(downloadLink, currentPlugin);
-                
+
             case LinkStatus.ERROR_FATAL:
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -195,10 +201,10 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_DOWNLOAD_FAILED:
                 onErrorChunkloadFailed(downloadLink, currentPlugin);
                 break;
-                
-              case LinkStatus.ERROR_PLUGIN_DEFEKT:
-                    onErrorPluginDefect(downloadLink, currentPlugin);
-                    break;
+
+            case LinkStatus.ERROR_PLUGIN_DEFEKT:
+                onErrorPluginDefect(downloadLink, currentPlugin);
+                break;
             case LinkStatus.ERROR_NO_CONNECTION:
             case LinkStatus.ERROR_TIMEOUT_REACHED:
                 onErrorNoConnection(downloadLink, currentPlugin);
@@ -237,27 +243,25 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorLinkBlock(DownloadLink downloadLink, PluginForHost currentPlugin) {
-     
-       
-        LinkStatus status = downloadLink.getLinkStatus();  
 
-            status.resetWaitTime();
-    
+        LinkStatus status = downloadLink.getLinkStatus();
+
+        status.resetWaitTime();
 
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-        
+
     }
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
-       logger.severe(" The PLugin for "+currentPlugin.getHost()+" seems to be out of date. Please inform the Support-team http://jdownloader.org/support.");
-       logger.severe(downloadLink2.getLinkStatus().getErrorMesage());
-        
-       downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
-       downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
-        
+        logger.severe(" The PLugin for " + currentPlugin.getHost() + " seems to be out of date. Please inform the Support-team http://jdownloader.org/support.");
+        logger.severe(downloadLink2.getLinkStatus().getErrorMesage());
+
+        downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+        downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
+
         downloadLink.requestGuiUpdate();
-        
+
     }
 
     public boolean isAborted() {
@@ -336,7 +340,8 @@ public class SingleDownloadController extends Thread {
             }
 
         } else {
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+            
+            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
 
         }
 
@@ -576,10 +581,8 @@ public class SingleDownloadController extends Thread {
         // break;
         // }
         // }
-        
-        
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
 
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
 
     }
 
@@ -601,8 +604,8 @@ public class SingleDownloadController extends Thread {
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
         linkStatus.setInProgress(true);
-        //plugin.resetPlugin();
-     
+        // plugin.resetPlugin();
+
         handlePlugin();
 
         linkStatus.setInProgress(false);

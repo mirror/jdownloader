@@ -40,6 +40,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -2109,11 +2110,31 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]20:push[right]10[grow,fill][20]"));
                 String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
                 String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left") };
-                String[] data = new String[] { new Date(ai.getValidUntil()) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
+                
+            
+
+                DateFormat formater;
+
+                formater = DateFormat.getDateTimeInstance( DateFormat.MEDIUM, DateFormat.MEDIUM );
+              
+
+             
+
+                
+                String[] data = new String[] {(ai.isExpired()?"[expired] ":"")+formater.format(new Date(ai.getValidUntil())  ) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
+               
+               
                 for (int j = 0; j < data.length; j++) {
-                    panel.add(new JLabel(label[j]), "gapleft 20");
-                    panel.add(new JTextField(data[j]), j!=0 && (j+1)%2 == 0 ? "wrap":"");
+// panel.add(lbl=new JLabel(label[j]), "gapleft 20");
+                    // panel.add(tf=new JTextField(data[j]), j!=0 && (j+1)%2 ==
+                    // 0 ? "wrap":"");
+                    
+                    if(data[j]!=null&&!data[j].equals("-1")){
+                        panel.add(new JLabel(label[j]), "gapleft 20");
+                        panel.add(new JTextField(data[j]),"wrap");
+                    }
+                    
                 }
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
             }

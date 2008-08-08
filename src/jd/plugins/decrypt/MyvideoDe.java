@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -58,7 +59,7 @@ public class MyvideoDe extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
 
             String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getFirstMatch();
-            String name = new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim();
+            String name = Encoding.UTF8Decode(new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim());
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);

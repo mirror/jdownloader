@@ -559,6 +559,7 @@ public class JDUtilities {
      * @return MegaByte Formatierter String
      */
     public static String formatBytesToMB(long downloadMax) {
+        if(downloadMax<0)return null;
         DecimalFormat c = new DecimalFormat("0.00");
         return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
     }

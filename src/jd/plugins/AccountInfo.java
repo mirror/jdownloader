@@ -1,5 +1,7 @@
 package jd.plugins;
 
+import java.util.Date;
+
 import jd.config.Property;
 
 public class AccountInfo extends Property {
@@ -168,7 +170,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isExpired() {
-        return expired;
+        return expired||this.getValidUntil()<new Date().getTime();
     }
 
 }
