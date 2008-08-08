@@ -50,15 +50,7 @@ public abstract class Request {
      *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
      */
-    public static HashMap<String,String> parsetohashMap(String txt,String pattern){
-       
-       while(true){
-           
-           
-       }
-        
-        
-    }
+  
     public static HashMap<String, String> parseQuery(String query) {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
