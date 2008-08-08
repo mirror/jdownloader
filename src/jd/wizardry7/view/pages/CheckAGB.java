@@ -25,7 +25,7 @@ public class CheckAGB extends DefaultWizardPage {
 
         public RTFView(File file) {
             try {
-                rtf = new JEditorPane(file.toURL());
+                rtf = new JEditorPane(file.toURI().toURL());
             } catch (Exception e) {
                 e.printStackTrace();
             }

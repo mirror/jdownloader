@@ -23,13 +23,12 @@ import jd.event.ControlListener;
 import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.plugins.Account;
-import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 /**
- * INterface für alle GUIS
+ * Interface für alle GUIS
  * 
  * @author astaldo
  * 
@@ -191,8 +190,14 @@ public interface UIInterface extends ControlListener {
      */
     public String showUserInputDialog(String string, String def);
 
-  
-
+    /**
+     * Zeigt die AccountInformationen an
+     * 
+     * @param pluginForHost
+     *            Das HostPlugin für den der Account gilt
+     * @param account
+     *            Der Account für den die Informationen geholt werden soll
+     */
     public void showAccountInformation(PluginForHost pluginForHost, Account account);
 
 }

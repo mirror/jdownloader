@@ -581,7 +581,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
             }
             // Prüfen obd er Link entfernt werden soll.
@@ -1324,14 +1324,14 @@ public class JDController implements ControlListener, UIListener {
     private Vector<FilePackage> loadDownloadLinks() {
         try {
             Object obj = JDUtilities.getDatabaseConnector().getLinks();
-            
-            if(obj==null) {
+
+            if (obj == null) {
                 File file = JDUtilities.getResourceFile("links.dat");
                 if (file.exists()) {
                     logger.info("Wrapping links.dat");
                     obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
                     JDUtilities.getDatabaseConnector().saveLinks(packages);
-                    //file.delete();
+                    // file.delete();
                 }
             }
 
@@ -1360,24 +1360,18 @@ public class JDController implements ControlListener, UIListener {
                             }
                         } else {
                             // Anhand des Hostnamens aus dem DownloadLink
-                            // wird
-                            // ein
-                            // passendes Plugin gesucht
+                            // wird ein passendes Plugin gesucht
                             try {
                                 pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                             // Gibt es einen Names für ein Containerformat,
-                            // wird
-                            // ein
-                            // passendes Plugin gesucht
+                            // wird ein passendes Plugin gesucht
                             try {
                                 if (localLink.getContainer() != null) {
                                     pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
-                                    if (pluginForContainer != null) {
-
-                                    } else {
+                                    if (pluginForContainer == null) {
                                         localLink.setEnabled(false);
                                     }
                                 }
@@ -1388,11 +1382,9 @@ public class JDController implements ControlListener, UIListener {
                             }
                             if (pluginForHost != null) {
                                 localLink.setLoadedPlugin(pluginForHost);
-
                             }
                             if (pluginForContainer != null) {
                                 localLink.setLoadedPluginForContainer(pluginForContainer);
-
                             }
                             if (pluginForHost == null) {
                                 logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
@@ -1782,10 +1774,10 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
-     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
-     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
-     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
+     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
+     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
+     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
      * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);
@@ -1801,8 +1793,9 @@ public class JDController implements ControlListener, UIListener {
     public void saveDownloadLinks() {
         // JDUtilities.saveObject(null, downloadLinks.toArray(new
         // DownloadLink[]{}), file, "links", "dat", true);
-        //File file = JDUtilities.getResourceFile("links.dat");
-        //JDUtilities.saveObject(null, packages, file, "links", "dat", Configuration.saveAsXML);
+        // File file = JDUtilities.getResourceFile("links.dat");
+        // JDUtilities.saveObject(null, packages, file, "links", "dat",
+        // Configuration.saveAsXML);
         JDUtilities.getDatabaseConnector().saveLinks(packages);
     }
 
