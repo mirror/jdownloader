@@ -88,7 +88,7 @@ public class BluehostTo extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-        int wait = Integer.parseInt(dat[4].trim());
+        //int wait = Integer.parseInt(dat[4].trim());
 
         // if (wait == 0) {
 

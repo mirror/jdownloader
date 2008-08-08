@@ -17,21 +17,14 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.http.HTTPConnection;
-import jd.parser.Form;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class FileBaseTo extends PluginForHost {
@@ -39,9 +32,6 @@ public class FileBaseTo extends PluginForHost {
     private static final String HOST = "filebase.to";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*", Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
-
-    //
 
     public FileBaseTo() {
         super();
@@ -104,32 +94,6 @@ public class FileBaseTo extends PluginForHost {
      * @Override
      */public String getPluginName() {
         return HOST;
-    }
-
-    private int getSize(String size) {
-        if (size == null) { return 0; }
-        String[] help = size.split(" ");
-        int loops = 0;
-        Double s = Double.parseDouble(help[0]);
-
-        if (help[1].equals("KB")) {
-            loops = 1;
-        }
-        if (help[1].equals("MB")) {
-            loops = 2;
-        }
-        if (help[1].equals("GB")) {
-            loops = 3;
-        }
-        if (help[1].equals("TB")) {
-            loops = 4;
-        }
-
-        for (int i = 0; i < loops; i++) {
-            s = s * 1024;
-        }
-
-        return (int) Math.round(s);
     }
 
     @Override

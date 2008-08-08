@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 //http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
@@ -70,7 +71,7 @@ public class ArchivTo extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
             if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
                 downloadLink.setDownloadSize(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
@@ -113,7 +114,7 @@ public class ArchivTo extends PluginForHost {
         try {
             String url = downloadLink.getDownloadURL();
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
+            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
 
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {

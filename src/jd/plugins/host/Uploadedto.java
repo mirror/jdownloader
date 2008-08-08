@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -35,7 +34,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
@@ -60,7 +58,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final String DOWNLOAD_URL = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
 
-    static private final String DOWNLOAD_URL_PREMIUM = "<form name=\"download_form\" method=\"post\" action=\"°\">";
+    //static private final String DOWNLOAD_URL_PREMIUM = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
     static private final String DOWNLOAD_URL_WITHOUT_CAPTCHA = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
@@ -71,13 +69,13 @@ public class Uploadedto extends PluginForHost {
     static private final String HOST = "uploaded.to";
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
-    static private final String TRAFFIC_EXCEEDED = "Ihr Premium-Traffic ist aufgebraucht";
+    //static private final String TRAFFIC_EXCEEDED = "Ihr Premium-Traffic ist aufgebraucht";
 
     static private final String TRAFFIC_EXCEEDED_FREE = "Ihr Free-Traffic ist aufgebraucht";
 
     private String captchaAddress;
 
-    private String cookie;
+    //private String cookie;
 
     private String finalURL;
 
@@ -419,7 +417,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                int waitTime = 61 * 60 * 1000;
+                //int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -439,7 +437,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                int waitTime = 61 * 60 * 1000;
+                //int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -491,7 +489,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                int waitTime = 61 * 60 * 1000;
+                //int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -571,7 +569,6 @@ public class Uploadedto extends PluginForHost {
 
     public void reset() {
         finalURL = null;
-        cookie = null;
     }
 
     public void resetPluginGlobals() {

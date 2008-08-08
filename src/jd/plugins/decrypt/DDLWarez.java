@@ -27,7 +27,6 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class DDLWarez extends PluginForDecrypt {
     static class DDLWarez_Linkgrabber extends Thread {

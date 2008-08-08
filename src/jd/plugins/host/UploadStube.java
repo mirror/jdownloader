@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
@@ -60,7 +61,7 @@ public class UploadStube extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getFirstMatch());
 
             try {
@@ -121,7 +122,7 @@ public class UploadStube extends PluginForHost {
         // return;
         // }
 
-        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
         String dlurl = new Regex(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getFirstMatch();
         if (dlurl == null) {
             logger.severe("Datei nicht gefunden");

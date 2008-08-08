@@ -1,9 +1,6 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -11,12 +8,9 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class FastShareorg extends PluginForHost {
@@ -24,7 +18,6 @@ public class FastShareorg extends PluginForHost {
     private static final String HOST = "fastshare.org";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fastshare\\.org/download/(.*)", Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
     private String url;
 
     //
@@ -58,7 +51,7 @@ public class FastShareorg extends PluginForHost {
             Browser.clearCookies(HOST);
             br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
-           br.getPage(url);
+            br.getPage(url);
             if (!br.containsHTML("No filename specified or the file has been deleted")) {
                 downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getFirstMatch()));
                 String filesize = null;

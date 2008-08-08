@@ -355,14 +355,14 @@ public class DepositFiles extends PluginForHost {
         }
 
         // Datei geloescht?
-        if (requestInfo.containsHTML(FILE_NOT_FOUND)) {
+        if (br.containsHTML(FILE_NOT_FOUND)) {
             logger.severe("Download not found");
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
-        if (requestInfo.containsHTML(DOWNLOAD_NOTALLOWED)) {
+        if (br.containsHTML(DOWNLOAD_NOTALLOWED)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("Download not possible now");
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

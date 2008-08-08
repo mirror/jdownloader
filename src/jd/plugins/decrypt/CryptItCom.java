@@ -107,7 +107,7 @@ public class CryptItCom extends PluginForDecrypt {
 
         try {
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
+            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
 
             if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
                 requestInfo = HTTP.readFromURL(requestInfo.getConnection());

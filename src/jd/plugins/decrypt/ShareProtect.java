@@ -58,8 +58,8 @@ public class ShareProtect extends PluginForDecrypt {
                 htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
                 progress.increase(1);
             }
-            requestInfo.setHtmlCode(htmlc.toString());
-            Form[] forms = requestInfo.getForms();
+            br.getRequest().setHtmlCode(htmlc.toString());
+            Form[] forms = br.getForms();
             for (Form element : forms) {
                 decryptedLinks.add(createDownloadlink(element.action));
             }

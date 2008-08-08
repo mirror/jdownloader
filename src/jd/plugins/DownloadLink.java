@@ -19,7 +19,6 @@ package jd.plugins;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
-import java.util.LinkedList;
 import java.util.Vector;
 import java.util.logging.Logger;
 

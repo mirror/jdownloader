@@ -1,7 +1,6 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -9,10 +8,8 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class FileUploadnet extends PluginForHost {
@@ -33,7 +30,6 @@ public class FileUploadnet extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile(PAT_Download.pattern() + "|" + PAT_VIEW.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
-    private RequestInfo requestInfo;
 
     public FileUploadnet() {
         super();

@@ -17,10 +17,8 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+
 import java.util.Date;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -131,8 +129,7 @@ public class Netloadin extends PluginForHost {
         Form captchaPost = forms[0];
 
         if (captchaURL == null) {
-            if (requestInfo.getHtmlCode().indexOf("download_load.tpl") >= 0) {
-
+            if (br.containsHTML("download_load.tpl")) {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
@@ -166,7 +163,7 @@ public class Netloadin extends PluginForHost {
 
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
 
-            long waitTime = Long.parseLong(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
+            long waitTime = Long.parseLong(new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
             waitTime = waitTime * 10L;
 
             linkStatus.setValue(waitTime);
@@ -405,8 +402,6 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void reset() {
-        requestInfo = null;
-
     }
 
     @Override

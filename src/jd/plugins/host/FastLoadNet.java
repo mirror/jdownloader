@@ -177,7 +177,7 @@ public class FastLoadNet extends PluginForHost {
 
         downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
 
-        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
         cookie = requestInfo.getCookie();
 
         if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {

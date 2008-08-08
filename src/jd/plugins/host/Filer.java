@@ -20,8 +20,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -34,7 +32,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {

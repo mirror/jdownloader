@@ -180,7 +180,7 @@ public class YourFilesBiz extends PluginForHost {
 
         // case PluginStep.STEP_PAGE:
 
-        requestInfo = HTTP.getRequest(downloadUrl);
+        RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
 
         // serverantwort leer (weiterleitung) -> download nicht verfügbar
         if (requestInfo.getHtmlCode().equals("")) {

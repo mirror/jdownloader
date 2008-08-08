@@ -260,7 +260,7 @@ public class Megauploadcom extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
 
-        requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
+        RequestInfo requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
         if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -372,11 +372,6 @@ public class Megauploadcom extends PluginForHost {
     }
 
     private void setConfigElements() {
-
-        ConfigEntry cfg;
-       
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
-
     }
 }

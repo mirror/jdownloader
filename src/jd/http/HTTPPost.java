@@ -31,7 +31,6 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**

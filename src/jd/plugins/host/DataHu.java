@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class DataHu extends PluginForHost {
@@ -112,7 +113,7 @@ public class DataHu extends PluginForHost {
         // }
 
         String url = downloadLink.getDownloadURL();
-        requestInfo = HTTP.getRequest(new URL(url));
+        RequestInfo requestInfo = HTTP.getRequest(new URL(url));
 
         String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         String[] test = link.split("/");

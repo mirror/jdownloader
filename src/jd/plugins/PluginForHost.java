@@ -72,13 +72,10 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean[] checkLinks(DownloadLink[] urls) {
         return null;
-
     }
 
     @Override
     public void clean() {
-        requestInfo = null;
-
         dl = null;
         br = new Browser();
         super.clean();

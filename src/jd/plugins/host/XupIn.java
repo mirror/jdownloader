@@ -179,7 +179,7 @@ public class XupIn extends PluginForHost {
 
         // case PluginStep.STEP_PAGE:
 
-        requestInfo = HTTP.getRequest(downloadUrl);
+        RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
 
         if (requestInfo.containsHTML(NOT_FOUND)) {
 

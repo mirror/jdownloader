@@ -1,7 +1,6 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -9,11 +8,9 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class ShareNownet extends PluginForHost {
@@ -65,9 +62,9 @@ public class ShareNownet extends PluginForHost {
             br.getPage(downloadurl);
             if (!br.containsHTML("Datei existiert nicht oder wurde gel&ouml;scht!")) {
 
-                String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getMatches();
+                String linkinfo[][] = new Regex(br.getRequest().getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getMatches();
                 if (linkinfo.length != 1) {
-                    linkinfo = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"style1\">(.*?)\\(([0-9\\.]*)\\s*([GKMB]*)\\) </span>", Pattern.CASE_INSENSITIVE)).getMatches();
+                    linkinfo = br.getRegex("<span class=\"style1\">(.*?)\\(([0-9\\.]*)\\s*([GKMB]*)\\) </span>").getMatches();
                 }
                 if (linkinfo[0][2].matches("MB")) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024 * 1024));

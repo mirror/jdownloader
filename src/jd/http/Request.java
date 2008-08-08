@@ -52,7 +52,6 @@ public abstract class Request {
      */
     public static HashMap<String,String> parsetohashMap(String txt,String pattern){
        
-       int i;
        while(true){
            
            

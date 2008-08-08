@@ -204,7 +204,7 @@ public class Gulli extends PluginForHost {
         // Plugin.joinMap(cookieMap,"=","; "));
         requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
         if (Regex.matches(requestInfo, "Fehler")) {
-            String errorid = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(0);
+            //String errorid = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(0);
             String errortext = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(1);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(errortext);
