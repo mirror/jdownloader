@@ -42,13 +42,6 @@ public class RapidShareDe extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
-    private File captchaFile;
-
-    private String code = null;
-
-    private Form form;
-
-    private long waittime = 0;
 
     //
 
@@ -83,11 +76,12 @@ br.setFollowRedirects(false);
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        form = forms[1];
+        Form form = forms[1];
         form.remove("dl.start");
         form.put("dl.start", "Free");
         br.submitForm(form);
 
+        long waittime;
         // case PluginStep.STEP_PENDING:
         // if (aborted) {
         // logger.warning("Plugin abgebrochen");
@@ -97,6 +91,8 @@ br.setFollowRedirects(false);
         // }
         try {
             waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
+            
+            this.sleep((int)waittime, downloadLink);
         } catch (Exception e) {
             try {
                 waittime = Long.parseLong(new Regex(br, "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
@@ -113,8 +109,8 @@ br.setFollowRedirects(false);
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
         String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
 
-        form = br.getForm(0);
-        captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+        form = Form.getForms(ticketCode)[0];
+        File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
         logger.info("CaptchaAdress:" + captchaAdress);
         boolean fileDownloaded = br.downloadFile(captchaFile, captchaAdress);
@@ -126,11 +122,10 @@ br.setFollowRedirects(false);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        try {
-            code = Plugin.getCaptchaCode(captchaFile, this);
-        } catch (Exception e) {
-
-        }
+        String code=null;
+  
+        code = Plugin.getCaptchaCode(captchaFile, this);
+      
         if (code == null || code == "") {
             logger.severe("Bot erkannt");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -149,9 +144,10 @@ br.setFollowRedirects(false);
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-        HTTPConnection urlConnection = br.openFormConnection(form);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-
+   
+        
+        dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
+//
         dl.startDownload();
     }
 
