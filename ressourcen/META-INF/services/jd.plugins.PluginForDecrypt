@@ -90,6 +90,7 @@ jd.plugins.decrypt.ShareRocktEs
 jd.plugins.decrypt.StacheldrahtTo
 jd.plugins.decrypt.Stealth
 jd.plugins.decrypt.TechnorockerInfo
+jd.plugins.decrypt.TinyLoadCom
 jd.plugins.decrypt.Tinyurl
 jd.plugins.decrypt.UCMS
 jd.plugins.decrypt.UploadJockeycom

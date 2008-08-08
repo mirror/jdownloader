@@ -24,21 +24,20 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-public class RapidSpreadCom extends PluginForDecrypt {
-    static private final String host = "rapidspread.com";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+", Pattern.CASE_INSENSITIVE);
+public class TinyLoadCom extends PluginForDecrypt {
+    static private final String host = "tinyload.com";
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyload\\.com/\\w+", Pattern.CASE_INSENSITIVE);
 
-    public RapidSpreadCom() {
+    public TinyLoadCom() {
         super();
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"/redirect\\?(link=\\d+&hash=\\w+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        String[] links = new Regex(br.getPage(parameter), Pattern.compile("alt=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
         for (String element : links) {
-            br.getPage("http://www.rapidspread.com/redirect?" + element);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            decryptedLinks.add(createDownloadlink(element));
         }
         return decryptedLinks;
     }
