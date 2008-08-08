@@ -60,7 +60,7 @@ public class DatabaseConnector implements Serializable {
                                 pst.setObject(2, props);
                                 pst.execute();
                             }
-                            //f.delete();
+                            f.delete();
                         }
                     }
                     catch(Exception e) {
@@ -84,19 +84,16 @@ public class DatabaseConnector implements Serializable {
     }
     
     public void saveConfiguration(String name, Object data) {
-        System.out.println("save " + name);
         dbdata.put(name, data);
         try {
             ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
             rs.next();
             if(rs.getInt(1) > 0) {
-                System.out.println("update " + name);
                 PreparedStatement pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
                 pst.setObject(1, data);
                 pst.execute();
             }
             else {
-                System.out.println("insert " + name);
                 PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
                 pst.setString(1, name);
                 pst.setObject(2, data);

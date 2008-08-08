@@ -21,16 +21,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPPost;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 

@@ -233,7 +233,6 @@ public class TextArea extends JScrollPane implements MouseListener, ClipboardOwn
         onChanged();
     }
 
-    @SuppressWarnings("static-access")
     public void setText(String text) {
         txt.setText(text);
         onChanged();

@@ -24,7 +24,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class ConfigEntry implements Serializable, PropertyChangeListener {

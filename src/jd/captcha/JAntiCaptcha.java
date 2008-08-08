@@ -2044,7 +2044,7 @@ public class JAntiCaptcha {
             }
             return -1;
         }
-        for (Letter element : letters) {
+        //for (Letter element : letters) {
             // if (letters[i] == null || letters[i].getWidth() < 2 ||
             // letters[i].getHeight() < 2) {
             // File file = getResourceFile("detectionErrors5/" +
@@ -2055,7 +2055,7 @@ public class JAntiCaptcha {
             // detection error");
             // return -1;
             // }
-        }
+        //}
 
         // Zeige das After-prepare Bild an
 

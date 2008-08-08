@@ -33,6 +33,7 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.HTTP;
 import jd.plugins.PluginOptional;
+import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -395,7 +396,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             logger.info("loading " + url);
 
-            requestInfo = HTTP.getRequest(new URL(url));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
 
             String patEntry = "";
             String patTitle = "";
@@ -875,7 +876,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             try {
 
-                requestInfo = HTTP.getRequest(new URL(parameter[1]), serienjunkiesCookie, null, true);
+                RequestInfo requestInfo = HTTP.getRequest(new URL(parameter[1]), serienjunkiesCookie, null, true);
 
                 if (requestInfo.containsHTML("Wenn Sie nicht weitergeleitet werden")) {
 

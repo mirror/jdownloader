@@ -21,15 +21,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Vector;
-import java.util.logging.Logger;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.utils.JDUtilities;
 
 /**
  * 
@@ -38,12 +34,11 @@ import jd.utils.JDUtilities;
  */
 public class Filefactory {
 
-    private static Logger logger = JDUtilities.getLogger();
-
     private static final double OBJECTCOLORCONTRAST = 0.01;
 
     private static final double OBJECTDETECTIONCONTRAST = 0.95;
 
+    @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
         ArrayList<PixelObject> os = new ArrayList<PixelObject>();
         for (int y = 0; y < captcha.getHeight(); y++) {
@@ -146,7 +141,7 @@ public class Filefactory {
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         int ths = Runtime.getRuntime().availableProcessors();
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
-        Vector<Letter> ret = new Vector<Letter>();
+        //Vector<Letter> ret = new Vector<Letter>();
 
         ArrayList<Letter> r = new ArrayList<Letter>();
         int iii = 0;
