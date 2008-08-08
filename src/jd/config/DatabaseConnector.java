@@ -32,6 +32,9 @@ public class DatabaseConnector implements Serializable {
         } 
     }
     
+    /**
+     * Constructor
+     */
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
@@ -79,10 +82,16 @@ public class DatabaseConnector implements Serializable {
         }
     }
     
+    /**
+     * Returns a configuration
+     */
     public Object getData(String name) {
         return dbdata.get(name);
     }
     
+    /**
+     * Saves a configuration into the database
+     */
     public void saveConfiguration(String name, Object data) {
         dbdata.put(name, data);
         try {
@@ -104,6 +113,9 @@ public class DatabaseConnector implements Serializable {
         }
     }
     
+    /**
+     * Shutdowns the database
+     */
     public void shutdownDatabase() {
         try {
             con.close();
@@ -112,6 +124,9 @@ public class DatabaseConnector implements Serializable {
         }
     }
     
+    /**
+     * Returns the saved linklist
+     */
     public Object getLinks() {
         try {
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM links");
@@ -123,6 +138,9 @@ public class DatabaseConnector implements Serializable {
         return null;
     }
     
+    /**
+     * Saves the linklist into the database
+     */
     public void saveLinks(Object obj) {
         try {
             if(getLinks() == null) {
@@ -140,5 +158,12 @@ public class DatabaseConnector implements Serializable {
         catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Returns the connection to the database
+     */
+    public Connection getDatabaseConnection() {
+        return con;
     }
 }

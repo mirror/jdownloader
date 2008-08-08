@@ -34,9 +34,6 @@ import jd.utils.JDUtilities;
  */
 public class Property implements Serializable {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -6093927038856757256L;
 
     protected transient Logger logger = JDUtilities.getLogger();
