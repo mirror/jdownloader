@@ -2110,7 +2110,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     return;
                 }
                 if (!ai.isValid()) {
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for %s isn't valid! Please check username and password!", account.getUser()));
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for \"%s\" isn't valid! Please check username and password!", account.getUser()));
                     return;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]20:push[right]10[grow,fill][20]"));
