@@ -1400,6 +1400,7 @@ public class JDUtilities {
      * @return Plugins zum Laden von Containerdateien
      */
     public static Vector<PluginForContainer> getPluginsForContainer() {
+        if(pluginsForContainer==null)pluginsForContainer= new Vector<PluginForContainer> ();
         return pluginsForContainer;
     }
 
@@ -1409,6 +1410,7 @@ public class JDUtilities {
      * @return Plugins zum Entschlüsseln
      */
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
+        if(pluginsForDecrypt==null) pluginsForDecrypt = new Vector<PluginForDecrypt>();
         return pluginsForDecrypt;
     }
 
@@ -1447,6 +1449,7 @@ public class JDUtilities {
      * @return Alle optionalen Plugins
      */
     public static HashMap<String, PluginOptional> getPluginsOptional() {
+        if(pluginsOptional==null)pluginsOptional=new HashMap<String, PluginOptional>();
         return pluginsOptional;
     }
 

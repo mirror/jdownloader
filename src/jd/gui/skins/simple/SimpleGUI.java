@@ -1621,6 +1621,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         // Adds the menus form the Addons
         HashMap<String, PluginOptional> addons = JDUtilities.getPluginsOptional();
+       
         Iterator<String> e = addons.keySet().iterator();
         JMenuItem mi;
 
