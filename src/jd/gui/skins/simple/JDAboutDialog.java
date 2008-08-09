@@ -73,7 +73,7 @@ public class JDAboutDialog {
         // See how I added myself above. Every string starts with a single white
         // space. This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
-        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, making the GUI more user-friendly" },
+        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" },
 
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},

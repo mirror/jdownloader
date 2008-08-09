@@ -31,7 +31,6 @@ import javax.swing.border.EmptyBorder;
 
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -54,12 +53,6 @@ public class AgbDialog extends JDialog implements ActionListener {
 
     private DownloadLink downloadLink;
 
-    private JLabel labelInfo;
-
-    private JLinkButton linkAgb;
-
-    private PluginForHost plugin;
-
     private Thread countdownThread;
 
     /**
@@ -75,7 +68,6 @@ public class AgbDialog extends JDialog implements ActionListener {
         JPanel panel = new JPanel();
         setContentPane(panel);
 
-        plugin = downloadLink.getPlugin();
         this.downloadLink = downloadLink;
 
         setModal(true);
@@ -84,9 +76,9 @@ public class AgbDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht aktzeptiert"));
 
-        labelInfo = new JLabel(JDLocale.LF("gui.dialogs.agb_tos.description1", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", plugin.getHost()));
+        JLabel labelInfo = new JLabel(JDLocale.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
 
-        linkAgb = new JLinkButton(JDLocale.L("gui.dialogs.agb_tos.readAgb", String.format("%s AGB lesen", plugin.getHost())), plugin.getAGBLink());
+        JLinkButton linkAgb = new JLinkButton(JDLocale.LF("gui.dialogs.agb_tos.readAgb", "%s AGB lesen", downloadLink.getPlugin().getHost()), downloadLink.getPlugin().getAGBLink());
         linkAgb.addActionListener(this);
         linkAgb.setFocusable(false);
 
@@ -142,7 +134,7 @@ public class AgbDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == btnOK) {
-            plugin.setAGBChecked(checkAgbAccepted.isSelected());
+            downloadLink.getPlugin().setAGBChecked(checkAgbAccepted.isSelected());
             if (checkAgbAccepted.isSelected()) {
                 downloadLink.getLinkStatus().reset();
             }
