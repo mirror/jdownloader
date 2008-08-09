@@ -841,7 +841,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", JFrame.NORMAL));
         frame.setVisible(true);
         // DND
-        dragNDrop = new Dropper(new JFrame());
+        dragNDrop = new Dropper();
         dragNDrop.addUIListener(this);
         // Ruft jede sekunde ein UpdateEvent auf
 

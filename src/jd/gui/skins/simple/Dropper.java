@@ -16,17 +16,12 @@
 
 package jd.gui.skins.simple;
 
-import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
@@ -42,43 +37,29 @@ import jd.utils.JDUtilities;
  * 
  * @author Tom
  */
-public class Dropper extends JDialog implements MouseListener, MouseMotionListener, WindowListener {
+public class Dropper extends JDialog implements WindowListener {
 
-    /**
-     * 8764525546298642601L
-     */
     private static final long serialVersionUID = 8764525546298642601L;
 
     private JLabel label;
-    // private Logger logger;
+
     private DragNDrop target;
 
-    // private Point point;
-    /**
-     * @param owner
-     *            Owner ist der Parent Frame
-     */
-    public Dropper(JFrame owner) {
-        super(owner);
+    public Dropper() {
+        super();
         setModal(false);
         setLayout(new GridBagLayout());
         JPanel p = new JPanel(new GridBagLayout());
-        p.addMouseListener(this);
-        p.addMouseMotionListener(this);
         addWindowListener(this);
         target = new DragNDrop();
-        // logger= JDUtilities.getLogger();
         label = new JLabel(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
         JDUtilities.addToGridBag(p, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
         JDUtilities.addToGridBag(p, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
         JDUtilities.addToGridBag(this, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        // p.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(50, 70);
         setResizable(false);
         setUndecorated(false);
-        // this.setBackground(new Color(255,255,255,100));
-        p.setBackground(new Color(255, 255, 255, 100));
         setTitle(JDLocale.L("gui.droptarget.title", "Linksammler aktiv (D&D + Clipboard)"));
 
         setLocation(20, 20);
@@ -96,41 +77,6 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         target.addUIListener(listener);
     }
 
-    public void mouseClicked(MouseEvent e) {
-        JDUtilities.getLogger().info("click");
-
-    }
-
-    public void mouseDragged(MouseEvent e) {
-        // this.setLocation(e.getXOnScreen()-point.x,e.getYOnScreen()-point.y);
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-        JDUtilities.getLogger().info("enter");
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-        JDUtilities.getLogger().info("exit");
-
-    }
-
-    public void mouseMoved(MouseEvent e) {
-        // JDUtilities.getLogger().info("move");
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-        // this.point=e.getPoint();
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-        JDUtilities.getLogger().info("release");
-
-    }
-
     /**
      * Entfernt die Targetkomponente als Listener
      * 
@@ -141,7 +87,7 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
     }
 
     /**
-     * Setzt den Südlichen text im Target
+     * Setzt den südlichen Text im Target
      * 
      * @param text
      */
@@ -150,33 +96,32 @@ public class Dropper extends JDialog implements MouseListener, MouseMotionListen
         pack();
     }
 
+    @Override
     public void windowActivated(WindowEvent e) {
-
     }
 
+    @Override
     public void windowClosed(WindowEvent e) {
-
     }
 
+    @Override
     public void windowClosing(WindowEvent e) {
         setVisible(false);
-
     }
 
+    @Override
     public void windowDeactivated(WindowEvent e) {
-
     }
 
+    @Override
     public void windowDeiconified(WindowEvent e) {
-
     }
 
+    @Override
     public void windowIconified(WindowEvent e) {
-
     }
 
+    @Override
     public void windowOpened(WindowEvent e) {
-
     }
-
 }
