@@ -981,7 +981,8 @@ public class Rapidshare extends PluginForHost {
      * 
      * return ret; }
      * 
-     */public String getPluginName() {
+     */
+    public String getPluginName() {
         return host;
     }
 
@@ -1152,43 +1153,35 @@ public class Rapidshare extends PluginForHost {
         br.setAcceptLanguage("en");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
 
-        //String url = "https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass();
-        if (br.containsHTML("Your Premium Account has not been found")) {
+        if (account.getUser().equals("") || account.getPass().equals("") || br.containsHTML("Your Premium Account has not been found")) {
             ai.setValid(false);
             return ai;
-        } else {
-
-            // String login =
-            // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
-            String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String trafficShareLeft = br.getRegex("<td>TrafficShare left:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
-            ai.setFilesNum(Integer.parseInt(files));
-            ai.setPremiumPoints(Integer.parseInt(rapidPoints));
-            ai.setUsedSpace(Regex.getSize(usedSpace));
-            ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
-            SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
-            // dateFormat.applyPattern("EEE’, ’dd’. ’MMM’ ’yyyy");
-
-           
-
-            try {
-                Date date = dateFormat.parse(validUntil);
-                ai.setValidUntil(date.getTime());
-            } catch (ParseException e) {
-
-                e.printStackTrace();
-            }
-            if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
-                ai.setExpired(true);
-            }
-            logger.info(ai+"");
-            // if((new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
         }
+
+        String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
+        String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        String trafficShareLeft = br.getRegex("<td>TrafficShare left:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
+        ai.setFilesNum(Integer.parseInt(files));
+        ai.setPremiumPoints(Integer.parseInt(rapidPoints));
+        ai.setUsedSpace(Regex.getSize(usedSpace));
+        ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
+
+        try {
+            Date date = dateFormat.parse(validUntil);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
+            ai.setExpired(true);
+        }
+        logger.info(ai + "");
 
         return ai;
     }

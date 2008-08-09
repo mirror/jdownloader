@@ -81,6 +81,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             passwords[i].setEnabled(account.isEnabled());
             usernames[i].setEnabled(account.isEnabled());
             stati[i].setEnabled(account.isEnabled());
+            checkBtns[i].setEnabled(account.isEnabled());
             passwordsLabels[i].setEnabled(enables[i].isSelected());
             usernamesLabels[i].setEnabled(enables[i].isSelected());
             statiLabels[i].setEnabled(enables[i].isSelected());
@@ -136,7 +137,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
             add(usernames[i - 1] = new JTextField(""));
 
-            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Passwort")), "gapleft 15");
+            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
 //            add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
 
@@ -155,6 +156,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 passwords[i].setEnabled(enables[i].isSelected());
                 usernames[i].setEnabled(enables[i].isSelected());
                 stati[i].setEnabled(enables[i].isSelected());
+                checkBtns[i].setEnabled(enables[i].isSelected());
                 passwordsLabels[i].setEnabled(enables[i].isSelected());
                 usernamesLabels[i].setEnabled(enables[i].isSelected());
                 statiLabels[i].setEnabled(enables[i].isSelected());
@@ -169,9 +171,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         ArrayList<Account> acc = (ArrayList<Account>) this.getAccounts();
         for (int i = 1; i <= accountNum; i++) {
             if (e.getSource() == this.checkBtns[i - 1]) {
-                Account account = acc.get(i - 1);
-
-                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), account);
+                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i - 1));
             }
 
         }

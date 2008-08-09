@@ -50,8 +50,8 @@ public class JDLocale {
 
     /*
      * private static Vector<String[]> send = new Vector<String[]>(); private
-     * static Vector<String> sent = new Vector<String>(); private static
-     * Thread sender;
+     * static Vector<String> sent = new Vector<String>(); private static Thread
+     * sender;
      */
     private static String lID;
 
@@ -300,7 +300,7 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
@@ -342,7 +342,7 @@ public class JDLocale {
         // Connection: keep-alive
         // Referer: http://translate.google.com/translate_t?sl=en&tl=de
         // Cookie:
-        // PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
+        //PREF=ID=58dc3a7b038af491:TM=1213636773:LM=1213636773:S=vBGFf-GXvSvFFztt
         // Content-Type: application/x-www-form-urlencoded
         // Content-Length: 38
         // hl=de&ie=UTF8&text=testing&sl=en&tl=de
@@ -372,15 +372,17 @@ public class JDLocale {
         JDLocale.saveData(JDUtilities.getResourceFile(LANGUAGES_DIR + "google_" + to + ".lng"), ret);
 
     }
-/**
- * Wrapper für String.format(JDLocale.L(..),args)
- * @param key
- * @param value
- * @param args
- * @return
- */
-    public static String LF(String key, String value, Object ... args) {
-        return String.format(L(key,value),args);
+
+    /**
+     * Wrapper für String.format(JDLocale.L(..),args)
+     * 
+     * @param key
+     * @param def
+     * @param args
+     * @return
+     */
+    public static String LF(String key, String def, Object... args) {
+        return String.format(L(key, def), args);
     }
 
 }
