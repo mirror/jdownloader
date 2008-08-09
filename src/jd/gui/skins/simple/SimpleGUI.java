@@ -1017,7 +1017,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             menViewLog.setSelected(!logDialog.isVisible());
             break;
         case JDAction.APP_RECONNECT:
-            doReconnect();
+            new Thread() {
+                @Override
+                public void run() {
+                    doReconnect();
+                }
+            }.start();
             break;
         case JDAction.APP_UPDATE:
             fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_UPDATE));
