@@ -33,9 +33,7 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 public class JDAboutDialog {
 
     private final static class LinkAction extends AbstractAction {
-        /**
-         * 
-         */
+
         private static final long serialVersionUID = 1L;
         private String url;
 
@@ -72,16 +70,11 @@ public class JDAboutDialog {
         JXTitledSeparator titledSeparator2 = new JXTitledSeparator("What is JDownloader?");
         titledSeparator2.setForeground(Color.BLUE);
 
-        String[][] devs = new String[][] { { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" },
+        // See how I added myself above. Every string starts with a single white
+        // space. This improves the way the entries look in the table
+        // (without fiddleing with the tablecellrenderer)
+        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, making the GUI more user-friendly" },
 
-        // See how I added myself above. Every string starts with a
-                // single white space.
-                // This improves the way the entries look in the table
-                // (without fiddleing with the tablecellrenderer)
-
-                { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" },
-        // {" uncomment and add your nick"," xxx@yyy.com"," describe
-        // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
@@ -103,8 +96,8 @@ public class JDAboutDialog {
         };
 
         JTable table = new JTable(devs, new String[] { "Entwickler", "Email", "Ressort" });
-        JDAboutDialog.setWidth(table.getColumnModel().getColumn(0), 100);
-        JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 120);
+        JDAboutDialog.setWidth(table.getColumnModel().getColumn(0), 80);
+        JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
         links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
@@ -138,8 +131,8 @@ public class JDAboutDialog {
                 try {
 
                     final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
-                    // JDUtilities.getGUI().showHTMLDialog(JDLocale.L("gui.dialog.about.title","About
-                    // JDownloader"), txt);
+                    // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
+                    // "gui.dialog.about.title","About JDownloader"), txt);
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             textPane.setText(txt);
