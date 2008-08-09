@@ -363,8 +363,6 @@ gui.config.unrar.usehjmerge = Merge HJSplitfiles
 gui.config.webupdate.name = Webupdate
 gui.dialogs.agb_tos.agbAccepted = I accept the terms of service
 gui.dialogs.agb_tos.title = Termas of service not accepted
-gui.dialogs.agb_tos_warning_text = <p><font size="3"><strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Terms os Service (TOS)</font></strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/>  what are readed and accepted.</font></font></p><p><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/> 	Manufacturer: </font></p>
-gui.dialogs.agb_tos_warning_title = Terms os Service (TOS) aren't accepted
 gui.dialogs.helpDialog.btn.help = Help
 gui.dialogs.helpDialog.btn.ok = OK
 gui.dialogs.progress.title = In progress... please wait

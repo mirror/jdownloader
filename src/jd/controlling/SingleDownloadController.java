@@ -300,7 +300,7 @@ public class SingleDownloadController extends Thread {
 
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
 
-        new AgbDialog(downloadLink2);
+        new AgbDialog(downloadLink2, 30);
 
         /*
          * 
