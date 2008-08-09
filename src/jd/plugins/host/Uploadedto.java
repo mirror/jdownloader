@@ -23,10 +23,12 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -58,7 +60,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final String DOWNLOAD_URL = "<form name=\"download_form\" onsubmit=\"startDownload();\" method=\"post\" action=\"°\">";
 
-    //static private final String DOWNLOAD_URL_PREMIUM = "<form name=\"download_form\" method=\"post\" action=\"°\">";
+    static private final String DOWNLOAD_URL_PREMIUM = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
     static private final String DOWNLOAD_URL_WITHOUT_CAPTCHA = "<form name=\"download_form\" method=\"post\" action=\"°\">";
 
@@ -69,13 +71,14 @@ public class Uploadedto extends PluginForHost {
     static private final String HOST = "uploaded.to";
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
-    //static private final String TRAFFIC_EXCEEDED = "Ihr Premium-Traffic ist aufgebraucht";
+    // static private final String TRAFFIC_EXCEEDED = "Ihr Premium-Traffic ist
+    // aufgebraucht";
 
     static private final String TRAFFIC_EXCEEDED_FREE = "Ihr Free-Traffic ist aufgebraucht";
 
     private String captchaAddress;
 
-    //private String cookie;
+    // private String cookie;
 
     private String finalURL;
 
@@ -116,138 +119,128 @@ public class Uploadedto extends PluginForHost {
         return false;
     }
 
-    private void doPremium(DownloadLink parameter) throws Exception {
-//        LinkStatus linkStatus = parameter.getLinkStatus();
-//
-//        correctURL(parameter);
-//
-//        RequestInfo requestInfo;
-//        String user = getProperties().getStringProperty(PROPERTY_PREMIUM_USER);
-//        String pass = getProperties().getStringProperty(PROPERTY_PREMIUM_PASS);
-//
-//        if (user == null || pass == null) {
-//
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            logger.severe("Premiumfehler Logins are incorrect");
-//            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-//            linkStatus.setErrorMessage(JDLocale.L("plugins.host.premium.loginError", "Login Fehler") + ": " + user);
-//            getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-//            return;
-//
-//        }
-//
-//        DownloadLink downloadLink = (DownloadLink) parameter;
-//        // switch (step.getStep()) {
-//        // Wird als login verwendet
-//        // case PluginStep.STEP_WAIT_TIME:
-//        logger.info("login");
-//        requestInfo = HTTP.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=" + user + "&password=" + pass, false);
-//
-//        if (requestInfo.getCookie().indexOf("auth") < 0) {
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
-//            linkStatus.setErrorMessage("Login Error: " + user);
-//            getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-//            return;
-//        }
-//        cookie = requestInfo.getCookie();
-//
-//        // case PluginStep.STEP_DOWNLOAD:
-//
-//        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
-//        // Datei geloescht?
-//        if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
-//            logger.severe("download not found");
-//            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            return;
-//        }
-//        // Traffic aufgebraucht?
-//        if (requestInfo.getHtmlCode().contains(TRAFFIC_EXCEEDED)) {
-//            logger.warning("Premium traffic exceeded (> 50 GiB in the last 10 days)");
-//            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-//            linkStatus.setErrorMessage("Premium overload (> 50 GiB)");
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
-//            return;
-//        }
-//
-//        String filepass = null;
-//        if (requestInfo.containsHTML("file_key")) {
-//            logger.info("File is Password protected");
-//            if (downloadLink.getStringProperty("pass", null) != null) {
-//                filepass = downloadLink.getStringProperty("pass", null);
-//            } else {
-//                filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
-//            }
-//            requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
-//        }
-//
-//        if (requestInfo.containsHTML("file_key")) {
-//            logger.severe("Wrong password entered");
-//            /* PassCode war falsch, also Löschen */
-//            downloadLink.setProperty("pass", null);
-//            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-//            linkStatus.setErrorMessage("Wrong Password");
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            return;
-//
-//        }
-//        if (filepass != null) {
-//            /* PassCode war richtig, also Speichern */
-//            downloadLink.setProperty("pass", filepass);
-//        }
-//        String newURL = null;
-//        if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
-//            newURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
-//
-//            if (newURL == null) {
-//                logger.severe("Indirekter Link konnte nicht gefunden werden");
-//
-//                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-//                linkStatus.setErrorMessage("Indirect Link Error");
-//                // step.setStatus(PluginStep.STATUS_ERROR);
-//                return;
-//            }
-//            if (!newURL.startsWith("http")) {
-//                newURL = "http://uploaded.to" + newURL;
-//            }
-//            requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
-//
-//            if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
-//                if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-//                    // step.setStatus(PluginStep.STATUS_ERROR);
-//                    logger.severe("Endlink not found");
-//                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-//
-//                    return;
-//                }
-//
-//            }
-//        } else {
-//            logger.info("Direct Downloads active");
-//
-//        }
-//        String redirect = requestInfo.getConnection().getHeaderField("Location");
-//        if (!redirect.startsWith("http://") && newURL != null) {
-//
-//            redirect = "http://" + new URL(newURL).getHost() + redirect;
-//
-//        }
-//
-//        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
-//
-//        if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
-//            // step.setStatus(PluginStep.STATUS_ERROR);
-//            logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
-//            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-//
-//            return;
-//        }
-//        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
-//        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-//        dl.setResume(true);
-//        dl.startDownload();
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        LinkStatus linkStatus = parameter.getLinkStatus();
+
+        correctURL(parameter);
+
+        RequestInfo requestInfo;
+        String user = account.getUser();
+        String pass = account.getPass();
+
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        // switch (step.getStep()) {
+        // Wird als login verwendet
+        // case PluginStep.STEP_WAIT_TIME:
+        logger.info("login");
+        requestInfo = HTTP.postRequest(new URL("http://uploaded.to/login"), null, null, null, "email=" + user + "&password=" + pass, false);
+
+        if (requestInfo.getCookie().indexOf("auth") < 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
+            linkStatus.setErrorMessage("Login Error: " + user);
+            linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            return;
+        }
+        String cookie = requestInfo.getCookie();
+
+        // case PluginStep.STEP_DOWNLOAD:
+
+        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), cookie, null, false);
+        // Datei geloescht?
+        if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
+            logger.severe("download not found");
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+        }
+        // Traffic aufgebraucht?
+        // if (requestInfo.getHtmlCode().contains(TRAFFIC_EXCEEDED)) {
+        // logger.warning("Premium traffic exceeded (> 50 GiB in the last 10
+        // days)");
+        // linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+        // linkStatus.setErrorMessage("Premium overload (> 50 GiB)");
+        // // step.setStatus(PluginStep.STATUS_ERROR);
+        // getProperties().setProperty(PROPERTY_USE_PREMIUM, false);
+        // return;
+        // }
+
+        String filepass = null;
+        if (requestInfo.containsHTML("file_key")) {
+            logger.info("File is Password protected");
+            if (downloadLink.getStringProperty("pass", null) != null) {
+                filepass = downloadLink.getStringProperty("pass", null);
+            } else {
+                filepass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password?");
+            }
+            requestInfo = HTTP.postRequest(new URL(downloadLink.getDownloadURL()), cookie, null, null, "lang=de&file_key=" + filepass, false);
+        }
+
+        if (requestInfo.containsHTML("file_key")) {
+            logger.severe("Wrong password entered");
+            /* PassCode war falsch, also Löschen */
+            downloadLink.setProperty("pass", null);
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage("Wrong Password");
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            return;
+
+        }
+        if (filepass != null) {
+            /* PassCode war richtig, also Speichern */
+            downloadLink.setProperty("pass", filepass);
+        }
+        String newURL = null;
+        if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
+            newURL = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_URL_PREMIUM, 0);
+
+            if (newURL == null) {
+                logger.severe("Indirekter Link konnte nicht gefunden werden");
+
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.setErrorMessage("Indirect Link Error");
+                // step.setStatus(PluginStep.STATUS_ERROR);
+                return;
+            }
+            if (!newURL.startsWith("http")) {
+                newURL = "http://uploaded.to" + newURL;
+            }
+            requestInfo = HTTP.postRequest(new URL(newURL), cookie, null, null, null, false);
+
+            if (requestInfo.getConnection().getHeaderField("Location") == null || requestInfo.getConnection().getHeaderField("Location").length() < 10) {
+                if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+                    // step.setStatus(PluginStep.STATUS_ERROR);
+                    logger.severe("Endlink not found");
+                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+
+                    return;
+                }
+
+            }
+        } else {
+            logger.info("Direct Downloads active");
+
+        }
+        String redirect = requestInfo.getConnection().getHeaderField("Location");
+        if (!redirect.startsWith("http://") && newURL != null) {
+
+            redirect = "http://" + new URL(newURL).getHost() + redirect;
+
+        }
+
+        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(redirect), cookie, null, false);
+
+        if (Plugin.getFileNameFormHeader(requestInfo.getConnection()) == null || Plugin.getFileNameFormHeader(requestInfo.getConnection()).indexOf("?") >= 0) {
+            // step.setStatus(PluginStep.STATUS_ERROR);
+            logger.severe("Fehler 2 Dateiname kann nicht ermittelt werden");
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+
+            return;
+        }
+        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setResume(true);
+        dl.startDownload();
 
     }
 
@@ -318,15 +311,13 @@ public class Uploadedto extends PluginForHost {
         return HOST;
     }
 
-    /*public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
-
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { if
+     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+     * true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+     * return 20; } else { return 1; } }
+     * 
+     */public String getPluginName() {
         return HOST;
     }
 
@@ -341,12 +332,15 @@ public class Uploadedto extends PluginForHost {
 
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-//        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-//
-//            doPremium(parameter);
-//
-//            return;
-//        }
+        // if
+        // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+        // true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM,
+        // false)) {
+        //
+        // doPremium(parameter);
+        //
+        // return;
+        // }
         // http://uploaded.to/file/6t2rrq
         // http://uploaded.to/?id=6t2rrq
         // http://uploaded.to/file/6t2rrq/blabla.rar
@@ -417,7 +411,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                //int waitTime = 61 * 60 * 1000;
+                // int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -426,10 +420,11 @@ public class Uploadedto extends PluginForHost {
             }
             if (requestInfo.getConnection().getHeaderField("Location") != null) {
                 finalURL = "http://" + requestInfo.getConnection().getRequestProperty("host") + requestInfo.getConnection().getHeaderField("Location");
-                return;
+
+            } else {
+                // step.setStatus(PluginStep.STATUS_ERROR);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             }
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         } else {
             useCaptchaVersion = true;
             logger.finer("Use Captcha Plugin");
@@ -437,7 +432,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                //int waitTime = 61 * 60 * 1000;
+                // int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -489,7 +484,7 @@ public class Uploadedto extends PluginForHost {
             // /?view=error_traffic_exceeded_free
             if (requestInfo.containsHTML(DOWNLOAD_LIMIT_REACHED) || requestInfo.getLocation() != null && requestInfo.getLocation().indexOf("traffic_exceeded") >= 0) {
 
-                //int waitTime = 61 * 60 * 1000;
+                // int waitTime = 61 * 60 * 1000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.info("Traffic Limit reached....");
@@ -528,7 +523,7 @@ public class Uploadedto extends PluginForHost {
             finalURL = finalURL + "";
             logger.info("dl " + finalURL);
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=de", null, false);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(finalURL), "lang=en", null, false);
 
             if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
                 // step.setStatus(PluginStep.STATUS_ERROR);
@@ -562,6 +557,8 @@ public class Uploadedto extends PluginForHost {
             // logger.info("Code: \r\n" + requestInfo.getHtmlCode());
 
             dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            dl.setResume(true);
             dl.startDownload();
 
         }
@@ -575,7 +572,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     private void setConfigElements() {
-      
 
     }
 }

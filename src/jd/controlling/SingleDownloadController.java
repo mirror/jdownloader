@@ -17,6 +17,7 @@
 package jd.controlling;
 
 import java.io.File;
+import java.net.SocketTimeoutException;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -137,20 +138,27 @@ public class SingleDownloadController extends Thread {
             currentPlugin.init();
             try {
                 currentPlugin.handle(downloadLink);
+            } catch (SocketTimeoutException e) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setErrorMessage("Hoster offline");
+                linkStatus.setValue(20 * 60 * 1000l);
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+            } catch (NullPointerException e) {
+                e.printStackTrace();
+
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+
             } catch (Exception e) {
-                logger.severe("Plugin interrupt: " + e.getMessage());
-                if (e instanceof NullPointerException) {
-                    e.printStackTrace();
 
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
 
-                } else if (!(e instanceof InterruptedException)) {
-                    e.printStackTrace();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                    linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-                }
             }
 
             if (isAborted()) {
@@ -340,8 +348,8 @@ public class SingleDownloadController extends Thread {
             }
 
         } else {
-            
-            //downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+
+            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
 
         }
 

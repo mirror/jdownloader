@@ -259,29 +259,29 @@ public class CaptchaDialog extends JDialog implements ActionListener {
             p.add(new JLabel("Current Captcha: "));
             JDUtilities.addToGridBag(this, p, 0, 2, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
-            if (JDUtilities.getSubConfig("JAC").getBooleanProperty("SHOW_EXTENDED_CAPTCHA", true)) {
-
-                JPanel p2 = new JPanel();
-                p2.add(new JLabel("Detection: "));
-
-                JPanel p3 = new JPanel();
-                p3.add(new JLabel("Uncertainty: "));
-                LetterComperator[] lcs = plugin.getLastCaptcha().getLetterComperators();
-                for (LetterComperator element : lcs) {
-                    Letter a = element.getA();
-                    Letter b = element.getB();
-                    if (a != null) {
-                        p.add(new JLabel(new ImageIcon(a.getImage(2))));
-                    }
-                    if (b != null) {
-                        p2.add(new JLabel(new ImageIcon(b.getImage(2))));
-                    }
-                    p3.add(new JLabel("" + Math.round(element.getValityPercent())));
-                }
-
-                JDUtilities.addToGridBag(this, p2, 0, 3, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-                JDUtilities.addToGridBag(this, p3, 0, 4, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
-            }
+//            if (JDUtilities.getSubConfig("JAC").getBooleanProperty("SHOW_EXTENDED_CAPTCHA", true)) {
+//
+//                JPanel p2 = new JPanel();
+//                p2.add(new JLabel("Detection: "));
+//
+//                JPanel p3 = new JPanel();
+//                p3.add(new JLabel("Uncertainty: "));
+//                LetterComperator[] lcs = plugin.getLastCaptcha().getLetterComperators();
+//                for (LetterComperator element : lcs) {
+//                    Letter a = element.getA();
+//                    Letter b = element.getB();
+//                    if (a != null) {
+//                        p.add(new JLabel(new ImageIcon(a.getImage(2))));
+//                    }
+//                    if (b != null) {
+//                        p2.add(new JLabel(new ImageIcon(b.getImage(2))));
+//                    }
+//                    p3.add(new JLabel("" + Math.round(element.getValityPercent())));
+//                }
+//
+//                JDUtilities.addToGridBag(this, p2, 0, 3, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+//                JDUtilities.addToGridBag(this, p3, 0, 4, 2, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
+//            }
         }
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));

@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ClosedByInterruptException;
@@ -485,6 +486,11 @@ abstract public class DownloadInterface {
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
 
                 error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
+            
+            }catch (UnknownHostException e){
+                linkStatus.setValue(10 * 60000l);
+                error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
+
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
@@ -497,7 +503,7 @@ abstract public class DownloadInterface {
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
 
                     } else {
-                        logger.severe("error occurred while writing to file. " + e.getLocalizedMessage());
+                        logger.severe("error occurred while writing to file. " + e.getMessage());
                         error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
                     }
                 }
@@ -1003,6 +1009,7 @@ abstract public class DownloadInterface {
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
+        if(urlConnection.getContentLength()>0)
         this.downloadLink.setDownloadSize(urlConnection.getContentLength());
         this.downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
         linkStatus = downloadLink.getLinkStatus();
@@ -1124,6 +1131,7 @@ abstract public class DownloadInterface {
         case LinkStatus.ERROR_FATAL:
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_FILE_NOT_FOUND:
+        case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
         case LinkStatus.ERROR_LOCAL_IO:
         case LinkStatus.ERROR_NO_CONNECTION:
         case LinkStatus.ERROR_ALREADYEXISTS:

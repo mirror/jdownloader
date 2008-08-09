@@ -16,9 +16,8 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -249,17 +248,16 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
 
     public void initPanel() {
         setupContainer();
-        setLayout(new GridBagLayout());
+        setLayout(new BorderLayout());
 
-        JDUtilities.addToGridBag(this, cep = new ConfigEntriesPanel(container, "Captcha"), 0, 0, 1, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
+        this.add(cep = new ConfigEntriesPanel(container, "Captcha"), BorderLayout.NORTH);
         table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
         table.setEditingRow(0);
         table.addMouseListener(this);
-        setPreferredSize(new Dimension(700, 350));
+        // setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -276,17 +274,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
             }
         }
 
-        // add(scrollPane);
-        // list = new JList();
-
-        JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
-
-        JDUtilities.addToGridBag(cep.getSubPanels().get(1).panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-
-        // JDUtilities.addToGridBag(this, panel,0, 0, 1, 1, 1, 1, insets,
-        // GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        // add(panel, BorderLayout.CENTER);
+        this.add(new JScrollPane(table), BorderLayout.CENTER);
 
     }
 
@@ -348,11 +336,13 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
     public void setupContainer() {
         container = new ConfigContainer(this);
 
-        ConfigContainer jac = new ConfigContainer(this, JDLocale.L("gui.config.captcha.JAC.tab", "jAntiCaptcha"));
+        // ConfigContainer jac = new ConfigContainer(this,
+        // JDLocale.L("gui.config.captcha.JAC.tab", "jAntiCaptcha"));
         // ConfigContainer ces = new ConfigContainer(this,
         // JDLocale.L("gui.config.captcha.CES.tab", "Captcha Exchange
         // Service"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, jac));
+        // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
+        // jac));
         // container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER,
         // ces));
 
@@ -369,30 +359,40 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener, Ac
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_CAPTCHA_JAC_DISABLE, JDLocale.L("gui.config.captcha.jac_disable", "Automatische Bilderkennung abschalten")).setDefaultValue(false);
 
         conditionEntry = ce;
-        jac.addEntry(ce);
+        container.addEntry(ce);
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA", JDLocale.L("gui.config.captcha.extendedCaptcha", "Captchaverarbeitung anzeigen"));
-        ce.setDefaultValue(true);
-
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
-        jac.addEntry(ce);
+        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getSubConfig("JAC"), "SHOW_EXTENDED_CAPTCHA",
+        // JDLocale.L("gui.config.captcha.extendedCaptcha", "Captchaverarbeitung
+        // anzeigen"));
+        // ce.setDefaultValue(true);
+        //
+        // ce.setEnabledCondidtion(conditionEntry, "==", false);
+        // jac.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getSubConfig("JAC"), Configuration.AUTOTRAIN_ERROR_LEVEL, JDLocale.L("gui.config.captcha.train.level", "Anzeigeschwelle"), 0, 100).setDefaultValue(80);
         ce.setInstantHelp(JDLocale.L("gui.config.captcha.train.level.instanthelp", "http://jdownloader.org/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle"));
         ce.setEnabledCondidtion(conditionEntry, "==", false);
-        jac.addEntry(ce);
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_train", "Captcha Training starten"));
-        jac.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.captcha.btn_show", "Testbild auswerten"));
-        jac.addEntry(ce);
-        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        container.addEntry(ce);
+        //
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.btn_train", "Captcha Training
+        // starten"));
+        // jac.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", false);
+        // ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this,
+        // JDLocale.L("gui.config.captcha.btn_show", "Testbild auswerten"));
+        // jac.addEntry(ce);
+        // ce.setEnabledCondidtion(conditionEntry, "==", false);
         // CES
-//        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("JAC"), Configuration.JAC_USE_CES, JDLocale.L("gui.config.captcha.use_Ces", "CaptchaExchangeServer verwenden(Neustart nötig)"));
-//        ce.setDefaultValue(true);
-//        conditionEntry = ce;
-//        ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help", "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
+        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // JDUtilities.getSubConfig("JAC"), Configuration.JAC_USE_CES,
+        // JDLocale.L("gui.config.captcha.use_Ces", "CaptchaExchangeServer
+        // verwenden(Neustart nötig)"));
+        // ce.setDefaultValue(true);
+        // conditionEntry = ce;
+        // ce.setInstantHelp(JDLocale.L("gui.config.captcha.ces.help",
+        // "http://jdownloader.org/wiki/index.php?title=C.E.S_-_Captcha_Exchange_Service"));
 
         // ce.setInstantHelp(JDLocale.L("gui.config.captcha.extendedCaptcha.instanthelp",
         // "http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3"));

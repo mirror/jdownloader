@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -68,13 +69,15 @@ public class ArchivTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Browser.clearCookies(HOST);
+        
         try {
             String url = downloadLink.getDownloadURL();
-            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            if (!requestInfo.getHtmlCode().contains(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadSize(Integer.parseInt(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch()));
+            br.getPage(url);
+           
+            downloadLink.setName(br.getRegex(FILENAME).getFirstMatch());
+            if (!br.containsHTML(":  Bytes (~ 0 MB)")) {
+                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex(FILESIZE).getFirstMatch()));
             } else {
                 return false;
             }
@@ -89,7 +92,6 @@ public class ArchivTo extends PluginForHost {
     public String getHost() {
         return HOST;
     }
-
 
     @Override
     public String getPluginName() {
@@ -111,9 +113,15 @@ public class ArchivTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Browser.clearCookies(HOST);
         try {
             String url = downloadLink.getDownloadURL();
 
+            br.getPage(url);
+            
+           //ownloadLink.setName(br.getRegex(FILENAME).getFirstMatch());
+           String s = br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getFirstMatch();
+                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getFirstMatch()));
             RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
 
             HTTPConnection urlConnection = requestInfo.getConnection();
