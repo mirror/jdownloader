@@ -127,7 +127,7 @@ public class Netloadin extends PluginForHost {
         String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getFirstMatch();
         Form[] forms = br.getForms();
         Form captchaPost = forms[0];
-
+        captchaPost.action="index.php?id=10";
         if (captchaURL == null) {
             if (br.containsHTML("download_load.tpl")) {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -138,8 +138,8 @@ public class Netloadin extends PluginForHost {
             return;
         }
         File file = this.getLocalCaptchaFile(this);
-
-        if (!Browser.download(file, br.openGetConnection(captchaURL)) || !file.exists()) {
+Browser c=br.cloneBrowser();
+        if (!Browser.download(file, c.openGetConnection(captchaURL)) || !file.exists()) {
             logger.severe("Captcha donwload failed: " + captchaURL);
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);

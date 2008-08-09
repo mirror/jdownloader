@@ -697,7 +697,7 @@ public class Browser {
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;
         br.doRedirects = doRedirects;
-        br.getHeaders().putAll(headers);
+        br.getHeaders().putAll(getHeaders());
         br.limit = limit;
         br.readTimeout = readTimeout;
         br.request = request;
