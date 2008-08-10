@@ -74,7 +74,7 @@ public class AgbDialog extends JDialog implements ActionListener {
         setLayout(new GridBagLayout());
         getRootPane().setDefaultButton(btnOK);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht aktzeptiert"));
+        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
 
         JLabel labelInfo = new JLabel(JDLocale.LF("gui.dialogs.agb_tos.description", "Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.", downloadLink.getPlugin().getHost()));
 
@@ -107,7 +107,7 @@ public class AgbDialog extends JDialog implements ActionListener {
 
                 while (--c >= 0) {
                     if (countdownThread == null) return;
-                    setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht aktzeptiert") + " [" + JDUtilities.formatSeconds(c) + "]");
+                    setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert") + " [" + JDUtilities.formatSeconds(c) + "]");
 
                     try {
                         Thread.sleep(1000);
@@ -147,7 +147,7 @@ public class AgbDialog extends JDialog implements ActionListener {
             countdownThread.interrupt();
         }
         countdownThread = null;
-        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht aktzeptiert"));
+        setTitle(JDLocale.L("gui.dialogs.agb_tos.title", "Allgemeine Geschäftsbedingungen nicht akzeptiert"));
     }
 
 }
