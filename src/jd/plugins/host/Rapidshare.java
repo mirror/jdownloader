@@ -1170,7 +1170,9 @@ public class Rapidshare extends PluginForHost {
         ai.setUsedSpace(Regex.getSize(usedSpace));
         ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
-
+//if(account.getStatus()==null||account.getStatus().trim().length()==0){
+//    account.setStatus("Account is ok");
+//}
         try {
             Date date = dateFormat.parse(validUntil);
             ai.setValidUntil(date.getTime());

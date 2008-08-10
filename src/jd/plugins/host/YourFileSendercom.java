@@ -125,7 +125,7 @@ public class YourFileSendercom extends PluginForHost {
         }
         /* 10 Seks warten */
         sleep(10000, downloadLink);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
+       requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
         if (requestInfo.getLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -140,6 +140,7 @@ public class YourFileSendercom extends PluginForHost {
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setFilesizeCheck(false);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

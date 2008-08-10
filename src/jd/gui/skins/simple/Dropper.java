@@ -96,32 +96,31 @@ public class Dropper extends JDialog implements WindowListener {
         pack();
     }
 
-    @Override
     public void windowActivated(WindowEvent e) {
     }
 
-    @Override
+  
     public void windowClosed(WindowEvent e) {
     }
 
-    @Override
+  
     public void windowClosing(WindowEvent e) {
         setVisible(false);
     }
 
-    @Override
+
     public void windowDeactivated(WindowEvent e) {
     }
 
-    @Override
+   
     public void windowDeiconified(WindowEvent e) {
     }
 
-    @Override
+
     public void windowIconified(WindowEvent e) {
     }
 
-    @Override
+   
     public void windowOpened(WindowEvent e) {
     }
 }

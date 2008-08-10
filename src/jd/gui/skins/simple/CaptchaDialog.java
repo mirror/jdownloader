@@ -280,7 +280,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
 
     }
 
-    @Override
+  
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
             captchaText = textField.getText();
@@ -308,7 +308,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         return captchaText;
     }
 
-    @Override
+   
     public void keyPressed(KeyEvent e) {
         if (countdownThread != null && countdownThread.isAlive()) {
             countdownThread.interrupt();
@@ -317,11 +317,11 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         setTitle(JDLocale.L("gui.captchaWindow.askForInput", "Bitte eingeben!"));
     }
 
-    @Override
+   
     public void keyReleased(KeyEvent e) {
     }
 
-    @Override
+
     public void keyTyped(KeyEvent e) {
     }
 }

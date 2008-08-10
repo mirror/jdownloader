@@ -1007,6 +1007,8 @@ abstract public class DownloadInterface {
 
     private boolean fatalErrorOccured = false;
 
+    private boolean doFileSizeCheck=true;
+
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
         if(urlConnection.getContentLength()>0)
@@ -1245,109 +1247,8 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-        //
-        // if (errors.contains(ERROR_ABORTED_BY_USER)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_TODO);
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_TOO_MUCH_BUFFERMEMORY)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_CHUNKLOAD_FAILED)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_CHUNKLOAD_FAILED);
-        //
-        // return false;
-        // }
-        //
-        // if (errors.contains(ERROR_COULD_NOT_RENAME)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_FILE_NOT_FOUND)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_OUTPUTFILE_ALREADYEXISTS)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-        //
-        // return false;
-        // }
-        //
-        // if (errors.contains(ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-        // return false;
-        // }
-        //
-        // if (errors.contains(ERROR_SECURITY)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
-        // return false;
-        // }
-        //
-        // if (errors.contains(ERROR_TIMEOUT_REACHED)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_NOCONNECTION);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_LOCAL_IO)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.io",
-        // "Schreibfehler"));
-        //
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_NIBBLE_LIMIT_REACHED)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-        // downloadLink.setEnabled(false);
-        // downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("download.error.message.nibble",
-        // "Nibbling aborted after %s bytes"), "" + this.maxBytes));
-        // return false;
-        // }
-        // if (errors.contains(ERROR_CRC)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-        // // downloadLink.setEnabled(false);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.crc",
-        // "Falsche Checksum"));
-        // return false;
-        // }
-        //
-        // if (exceptions != null) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.exception",
-        // "Ausnahmefehler: ") +
-        // JDUtilities.convertExceptionReadable(exceptions.get(0)));
-        // return false;
-        // }
-        // if (errors.contains(ERROR_UNKNOWN)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return false;
-        // }
-        // if (abortByError) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return false;
-        // }
-        // if (errors.contains(ERROR_CHUNK_INCOMPLETE)) {
-        // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.error.message.chunk_incomplete",
-        // "Chunk(s) incomplete"));
-        // return false;
-        // }
-        if (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0) {
+      
+        if (this.doFileSizeCheck&&(totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
@@ -1704,5 +1605,10 @@ abstract public class DownloadInterface {
      */
 
     abstract protected boolean writeChunkBytes(Chunk chunk);
+
+    public void setFilesizeCheck(boolean b) {
+        this.doFileSizeCheck=b;
+        
+    }
 
 }
