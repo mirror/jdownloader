@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -32,6 +33,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
 import javax.swing.table.AbstractTableModel;
 
 import jd.parser.Regex;
@@ -50,7 +52,7 @@ public class LangFileEditor implements ActionListener {
 
     private JFrame frame;
     private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblEntriesCount;
-    private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear, btnSelectOld, btnShowDupes;
+    private JButton btnAdd, btnAdopt, btnAdoptMissing, btnBrowseFile, btnBrowseFolder, btnClear, btnDelete, btnEdit, btnReload, btnSave, btnSelectMissing, btnSelectOld, btnShowDupes;
     private JTable table;
     private MyTableModel tableModel;
     private Vector<String> oldEntries = new Vector<String>();
@@ -71,9 +73,8 @@ public class LangFileEditor implements ActionListener {
             editor.lblFileValue.setText(args[1]);
             editor.initList();
 
+            editor.table.setRowSelectionInterval(0, 0);
         }
-
-        editor.table.setRowSelectionInterval(0, 0);
 
     }
 
@@ -86,6 +87,17 @@ public class LangFileEditor implements ActionListener {
 
         Vector<String[]> data = getData(source, file);
         tableModel.setData(data);
+        btnAdd.setEnabled(true);
+        btnAdopt.setEnabled(true);
+        btnAdoptMissing.setEnabled(true);
+        btnClear.setEnabled(true);
+        btnDelete.setEnabled(true);
+        btnEdit.setEnabled(true);
+        btnReload.setEnabled(true);
+        btnSave.setEnabled(true);
+        btnSelectMissing.setEnabled(true);
+        btnSelectOld.setEnabled(true);
+        btnShowDupes.setEnabled(true);
         setInfoLabels();
 
     }
@@ -134,38 +146,51 @@ public class LangFileEditor implements ActionListener {
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        btnBrowseFolder = new JButton("Browse");
-        btnBrowseFile = new JButton("Browse");
-        btnAdoptMissing = new JButton("Adopt Defaults of Missing Entries");
-        btnAdopt = new JButton("Adopt Default(s)");
+        
         btnAdd = new JButton("Add Key");
+        btnAdopt = new JButton("Adopt Default(s)");
+        btnAdoptMissing = new JButton("Adopt Defaults of Missing Entries");
+        btnBrowseFile = new JButton("Browse");
+        btnBrowseFolder = new JButton("Browse");
+        btnClear = new JButton("Clear Values");
         btnDelete = new JButton("Delete Key(s)");
         btnEdit = new JButton("Edit Value(s)");
-        btnSelectOld = new JButton("Select Old Entries");
-        btnSelectMissing = new JButton("Select Missing Entries");
-        btnShowDupes = new JButton("Show Dupes");
-        btnClear = new JButton("Clear Values");
         btnReload = new JButton("Reload");
         btnSave = new JButton("Save As");
+        btnSelectMissing = new JButton("Select Missing Entries");
+        btnSelectOld = new JButton("Select Old Entries");
+        btnShowDupes = new JButton("Show Dupes");
 
-        btnBrowseFolder.addActionListener(this);
-        btnBrowseFile.addActionListener(this);
-        btnAdoptMissing.addActionListener(this);
-        btnAdopt.addActionListener(this);
         btnAdd.addActionListener(this);
+        btnAdopt.addActionListener(this);
+        btnAdoptMissing.addActionListener(this);
+        btnBrowseFile.addActionListener(this);
+        btnBrowseFolder.addActionListener(this);
+        btnClear.addActionListener(this);
         btnDelete.addActionListener(this);
         btnEdit.addActionListener(this);
-        btnSelectOld.addActionListener(this);
-        btnSelectMissing.addActionListener(this);
-        btnShowDupes.addActionListener(this);
-        btnClear.addActionListener(this);
         btnReload.addActionListener(this);
         btnSave.addActionListener(this);
+        btnSelectMissing.addActionListener(this);
+        btnSelectOld.addActionListener(this);
+        btnShowDupes.addActionListener(this);
+
+        btnAdd.setEnabled(false);
+        btnAdopt.setEnabled(false);
+        btnAdoptMissing.setEnabled(false);
+        btnClear.setEnabled(false);
+        btnDelete.setEnabled(false);
+        btnEdit.setEnabled(false);
+        btnReload.setEnabled(false);
+        btnSave.setEnabled(false);
+        btnSelectMissing.setEnabled(false);
+        btnSelectOld.setEnabled(false);
+        btnShowDupes.setEnabled(false);
 
         lblFolder = new JLabel("Source Folder: ");
         lblFile = new JLabel("Language File: ");
-        lblFolderValue = new JLabel("/.../...");
-        lblFileValue = new JLabel("/.../...");
+        lblFolderValue = new JLabel("<Please select the Source Folder!>");
+        lblFileValue = new JLabel("<Please select the Language File!>");
         lblEntriesCount = new JLabel("Entries Count:");
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
@@ -180,6 +205,7 @@ public class LangFileEditor implements ActionListener {
         JPanel top3 = new JPanel(new BorderLayout(5, 5));
         JPanel infos = new JPanel(new BorderLayout(5, 5));
         JPanel buttons = new JPanel(new FlowLayout());
+        buttons.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.RAISED));
 
         top.add(top1, BorderLayout.PAGE_START);
         top.add(top2, BorderLayout.PAGE_END);
@@ -238,7 +264,7 @@ public class LangFileEditor implements ActionListener {
 
         } else if (e.getSource().equals(btnBrowseFile)) {
 
-            JFileChooser chooser = new JFileChooser(languageFile.getAbsolutePath());
+            JFileChooser chooser = new JFileChooser((languageFile != null) ? languageFile.getAbsolutePath() : null);
             int value = chooser.showOpenDialog(frame);
 
             if (value == JFileChooser.APPROVE_OPTION) {
@@ -441,11 +467,7 @@ public class LangFileEditor implements ActionListener {
             data.add(temp);
             if (temp[2] != "") {
                 tmp = getValue(dupeHelp, temp[2]);
-                if (tmp != null) {
-                    // System.out.println("Duplicated String: " + temp[2] +
-                    // "\n\t" + temp[0] + "\n\t" + tmp);
-                    dupes.add(new String[] { temp[2], temp[0], tmp });
-                }
+                if (tmp != null) dupes.add(new String[] { temp[2], temp[0], tmp });
                 dupeHelp.add(new String[] { temp[2], temp[0] });
             }
 
@@ -464,11 +486,7 @@ public class LangFileEditor implements ActionListener {
                 oldEntries.add(temp[0]);
                 if (temp[2] != "") {
                     tmp = getValue(dupeHelp, temp[2]);
-                    if (tmp != null) {
-                        // System.out.println("Duplicated String: " + temp[2] +
-                        // "\n\t" + temp[0] + "\n\t" + tmp);
-                        dupes.add(new String[] { temp[2], temp[0], tmp });
-                    }
+                    if (tmp != null) dupes.add(new String[] { temp[2], temp[0], tmp });
                     dupeHelp.add(new String[] { temp[2], temp[0] });
                 }
 
