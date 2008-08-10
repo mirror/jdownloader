@@ -1,6 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -31,14 +34,12 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
-import jd.gui.skins.simple.LocationListener;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 /**
  * 
- * Editor for jDownloader language files
- * Gets JDLocale entries from source and
+ * Editor for jDownloader language files Gets JDLocale entries from source and
  * compares them to the keypairs in the language file
  * 
  * @author eXecuTe
@@ -49,10 +50,11 @@ public class LangFileEditor implements ActionListener {
 
     private JFrame frame;
     private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblEntriesCount;
-    private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear, btnSelectOld;
+    private JButton btnAdoptMissing, btnAdd, btnDelete, btnEdit, btnSave, btnBrowseFolder, btnBrowseFile, btnReload, btnAdopt, btnSelectMissing, btnClear, btnSelectOld, btnShowDupes;
     private JTable table;
     private MyTableModel tableModel;
     private Vector<String> oldEntries = new Vector<String>();
+    private Vector<String[]> dupes = new Vector<String[]>();
 
     private File sourceFolder, languageFile;
 
@@ -108,80 +110,7 @@ public class LangFileEditor implements ActionListener {
 
         }
 
-        lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld);
-
-    }
-
-    class MyTableModel extends AbstractTableModel {
-
-        private static final long serialVersionUID = -5434313385327397539L;
-        private String[] columnNames = { "Key", "Source Value", "Language File Value" };
-        private Vector<String[]> tableData = new Vector<String[]>();
-
-        public int getColumnCount() {
-            return columnNames.length;
-        }
-
-        public int getRowCount() {
-            return tableData.size();
-        }
-
-        public String getColumnName(int col) {
-            return columnNames[col];
-        }
-
-        public String getValueAt(int row, int col) {
-            return tableData.get(row)[col];
-        }
-
-        @SuppressWarnings("unchecked")
-        public Class getColumnClass(int c) {
-            return getValueAt(0, c).getClass();
-        }
-
-        public boolean isCellEditable(int row, int col) {
-
-            if (col == 2) {
-                return false;
-            } else {
-                return true;
-            }
-
-        }
-
-        public void setValueAt(String value, int row, int col) {
-
-            tableData.get(row)[col] = value;
-            fireTableCellUpdated(row, col);
-
-        }
-
-        public void addRow(String[] value) {
-
-            tableData.add(value);
-            this.fireTableRowsInserted(tableData.size() - 1, tableData.size() - 1);
-
-        }
-
-        public void deleteRow(int index) {
-
-            tableData.remove(index);
-            this.fireTableRowsDeleted(index, index);
-
-        }
-
-        public void setData(Vector<String[]> newData) {
-
-            tableData = newData;
-            this.fireTableRowsInserted(0, tableData.size() - 1);
-
-        }
-
-        public Vector<String[]> getData() {
-
-            return tableData;
-
-        }
+        lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld + "     [Probably old] " + oldEntries.size() + "     [Probably dupes] " + dupes.size());
 
     }
 
@@ -198,9 +127,6 @@ public class LangFileEditor implements ActionListener {
         frame.setTitle("jDownloader Language File Editor");
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
-        LocationListener listener = new LocationListener();
-        frame.addComponentListener(listener);
-        frame.addWindowListener(listener);
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
@@ -215,11 +141,12 @@ public class LangFileEditor implements ActionListener {
         btnAdd = new JButton("Add Key");
         btnDelete = new JButton("Delete Key(s)");
         btnEdit = new JButton("Edit Value(s)");
-        btnSelectOld = new JButton("Select Probably Old Entries");
+        btnSelectOld = new JButton("Select Old Entries");
         btnSelectMissing = new JButton("Select Missing Entries");
+        btnShowDupes = new JButton("Show Dupes");
         btnClear = new JButton("Clear Values");
         btnReload = new JButton("Reload");
-        btnSave = new JButton("Save As...");
+        btnSave = new JButton("Save As");
 
         btnBrowseFolder.addActionListener(this);
         btnBrowseFile.addActionListener(this);
@@ -230,6 +157,7 @@ public class LangFileEditor implements ActionListener {
         btnEdit.addActionListener(this);
         btnSelectOld.addActionListener(this);
         btnSelectMissing.addActionListener(this);
+        btnShowDupes.addActionListener(this);
         btnClear.addActionListener(this);
         btnReload.addActionListener(this);
         btnSave.addActionListener(this);
@@ -249,6 +177,7 @@ public class LangFileEditor implements ActionListener {
 
         JPanel top1 = new JPanel(new BorderLayout(5, 5));
         JPanel top2 = new JPanel(new BorderLayout(5, 5));
+        JPanel top3 = new JPanel(new BorderLayout(5, 5));
         JPanel infos = new JPanel(new BorderLayout(5, 5));
         JPanel buttons = new JPanel(new FlowLayout());
 
@@ -264,13 +193,16 @@ public class LangFileEditor implements ActionListener {
 
         top2.add(lblFile, BorderLayout.LINE_START);
         top2.add(lblFileValue, BorderLayout.CENTER);
-        top2.add(btnBrowseFile, BorderLayout.EAST);
+        top2.add(top3, BorderLayout.EAST);
+
+        top3.add(btnBrowseFile, BorderLayout.WEST);
+        top3.add(btnSave, BorderLayout.EAST);
 
         infos.add(lblEntriesCount, BorderLayout.LINE_START);
 
-        buttons.add(btnSave);
         buttons.add(btnReload);
         buttons.add(btnClear);
+        buttons.add(btnShowDupes);
         buttons.add(btnSelectMissing);
         buttons.add(btnSelectOld);
         buttons.add(btnAdoptMissing);
@@ -345,7 +277,7 @@ public class LangFileEditor implements ActionListener {
                 } catch (IOException ex) {
                 }
 
-                JOptionPane.showMessageDialog(frame, "Saved.");
+                JOptionPane.showMessageDialog(frame, "LanguageFile saved successfully.");
 
             }
 
@@ -441,8 +373,6 @@ public class LangFileEditor implements ActionListener {
 
         } else if (e.getSource().equals(btnAdopt)) {
 
-            int j = -1;
-
             for (int i : table.getSelectedRows()) {
 
                 String def = tableModel.getValueAt(i, 1);
@@ -451,12 +381,6 @@ public class LangFileEditor implements ActionListener {
                     tableModel.setValueAt(def, i, 2);
                 }
 
-            }
-
-            if (j != -1 && j + 1 < table.getRowCount()) {
-                table.getSelectionModel().setSelectionInterval(j + 1, j + 1);
-            } else if (j != -1) {
-                table.getSelectionModel().setSelectionInterval(j, j);
             }
 
             setInfoLabels();
@@ -489,6 +413,10 @@ public class LangFileEditor implements ActionListener {
 
             }
 
+        } else if (e.getSource() == btnShowDupes) {
+
+            new DupeDialog(frame, dupes);
+
         }
 
     }
@@ -496,8 +424,11 @@ public class LangFileEditor implements ActionListener {
     @SuppressWarnings("unchecked")
     private Vector<String[]> getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
 
+        String tmp;
         Vector<String[]> data = new Vector<String[]>();
+        Vector<String[]> dupeHelp = new Vector<String[]>();
         oldEntries.clear();
+        dupes.clear();
 
         for (String[] entry : sourceEntries) {
 
@@ -508,6 +439,15 @@ public class LangFileEditor implements ActionListener {
             if (temp[2] == null) temp[2] = "";
 
             data.add(temp);
+            if (temp[2] != "") {
+                tmp = getValue(dupeHelp, temp[2]);
+                if (tmp != null) {
+                    // System.out.println("Duplicated String: " + temp[2] +
+                    // "\n\t" + temp[0] + "\n\t" + tmp);
+                    dupes.add(new String[] { temp[2], temp[0], tmp });
+                }
+                dupeHelp.add(new String[] { temp[2], temp[0] });
+            }
 
         }
 
@@ -522,6 +462,15 @@ public class LangFileEditor implements ActionListener {
 
                 data.add(temp);
                 oldEntries.add(temp[0]);
+                if (temp[2] != "") {
+                    tmp = getValue(dupeHelp, temp[2]);
+                    if (tmp != null) {
+                        // System.out.println("Duplicated String: " + temp[2] +
+                        // "\n\t" + temp[0] + "\n\t" + tmp);
+                        dupes.add(new String[] { temp[2], temp[0], tmp });
+                    }
+                    dupeHelp.add(new String[] { temp[2], temp[0] });
+                }
 
             }
 
@@ -666,6 +615,67 @@ public class LangFileEditor implements ActionListener {
 
     }
 
+    class MyTableModel extends AbstractTableModel {
+
+        private static final long serialVersionUID = -5434313385327397539L;
+        private String[] columnNames = { "Key", "Source Value", "Language File Value" };
+        private Vector<String[]> tableData = new Vector<String[]>();
+
+        public int getColumnCount() {
+            return columnNames.length;
+        }
+
+        public int getRowCount() {
+            return tableData.size();
+        }
+
+        public String getColumnName(int col) {
+            return columnNames[col];
+        }
+
+        public String getValueAt(int row, int col) {
+            return tableData.get(row)[col];
+        }
+
+        @SuppressWarnings("unchecked")
+        public Class getColumnClass(int c) {
+            return getValueAt(0, c).getClass();
+        }
+
+        public boolean isCellEditable(int row, int col) {
+            if (col == 0) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        public void setValueAt(String value, int row, int col) {
+            tableData.get(row)[col] = value;
+            fireTableCellUpdated(row, col);
+        }
+
+        public void addRow(String[] value) {
+            tableData.add(value);
+            this.fireTableRowsInserted(tableData.size() - 1, tableData.size() - 1);
+        }
+
+        public void deleteRow(int index) {
+            tableData.remove(index);
+            this.fireTableRowsDeleted(index, index);
+        }
+
+        public void setData(Vector<String[]> newData) {
+            tableData = newData;
+            this.fireTableRowsInserted(0, tableData.size() - 1);
+        }
+
+        public Vector<String[]> getData() {
+            return tableData;
+        }
+
+    }
+
     @SuppressWarnings("unchecked")
     private class StringArrayComparator implements Comparator {
 
@@ -679,6 +689,89 @@ public class LangFileEditor implements ActionListener {
 
             } else
                 return 1;
+
+        }
+
+    }
+
+    private class DupeDialog extends JDialog implements ActionListener {
+
+        private static final long serialVersionUID = 1L;
+
+        public DupeDialog(JFrame owner, Vector<String[]> dupes) {
+
+            super();
+
+            JPanel panel = new JPanel();
+            setContentPane(panel);
+
+            setModal(true);
+            setLayout(new GridBagLayout());
+            setTitle("Duplicated Entries");
+
+            MyDupeTableModel tableModel = new MyDupeTableModel();
+            JTable table = new JTable(tableModel);
+            tableModel.setData(dupes);
+            JScrollPane scroll = new JScrollPane(table);
+            scroll.setPreferredSize(new Dimension(900, 350));
+
+            JButton btnClose = new JButton("Close");
+            btnClose.addActionListener(this);
+            getRootPane().setDefaultButton(btnClose);
+
+            JDUtilities.addToGridBag(this, scroll, 1, 1, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+            JDUtilities.addToGridBag(this, btnClose, 1, 2, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
+
+            int n = 10;
+            panel.setBorder(new EmptyBorder(n, n, n, n));
+
+            pack();
+            setLocation(JDUtilities.getCenterOfComponent(owner, this));
+            setVisible(true);
+
+        }
+
+        public void actionPerformed(ActionEvent e) {
+
+            dispose();
+
+        }
+
+        class MyDupeTableModel extends AbstractTableModel {
+
+            private static final long serialVersionUID = -5434313385327397539L;
+            private String[] columnNames = { "String", "First Key", "Secondary Key" };
+            private Vector<String[]> tableData = new Vector<String[]>();
+
+            public int getColumnCount() {
+                return columnNames.length;
+            }
+
+            public int getRowCount() {
+                return tableData.size();
+            }
+
+            public String getColumnName(int col) {
+                return columnNames[col];
+            }
+
+            public String getValueAt(int row, int col) {
+                return tableData.get(row)[col];
+            }
+
+            @SuppressWarnings("unchecked")
+            public Class getColumnClass(int c) {
+                return getValueAt(0, c).getClass();
+            }
+
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
+
+            public void setData(Vector<String[]> newData) {
+                tableData = newData;
+                this.fireTableRowsInserted(0, tableData.size() - 1);
+            }
 
         }
 
