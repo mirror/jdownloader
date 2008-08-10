@@ -226,7 +226,7 @@ public class LangFileEditor implements ActionListener {
 
         if (e.getSource().equals(btnBrowseFolder)) {
 
-            JFileChooser chooser = new JFileChooser();
+            JFileChooser chooser = new JFileChooser(sourceFolder);
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int value = chooser.showOpenDialog(frame);
 
@@ -238,7 +238,7 @@ public class LangFileEditor implements ActionListener {
 
         } else if (e.getSource().equals(btnBrowseFile)) {
 
-            JFileChooser chooser = new JFileChooser();
+            JFileChooser chooser = new JFileChooser(languageFile.getAbsolutePath());
             int value = chooser.showOpenDialog(frame);
 
             if (value == JFileChooser.APPROVE_OPTION) {
