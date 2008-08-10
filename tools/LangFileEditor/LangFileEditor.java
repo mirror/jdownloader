@@ -51,7 +51,8 @@ import jd.utils.JDUtilities;
 public class LangFileEditor implements ActionListener {
 
     private JFrame frame;
-    private JLabel lblFolder, lblFile, lblFolderValue, lblFileValue, lblEntriesCount;
+    private JTextField txtFolder, txtFile;
+    private JLabel lblEntriesCount;
     private JButton btnAdd, btnAdopt, btnAdoptMissing, btnBrowseFile, btnBrowseFolder, btnClear, btnDelete, btnEdit, btnReload, btnSave, btnSelectMissing, btnSelectOld, btnShowDupes;
     private JTable table;
     private MyTableModel tableModel;
@@ -69,8 +70,8 @@ public class LangFileEditor implements ActionListener {
 
             editor.sourceFolder = new File(args[0]);
             editor.languageFile = new File(args[1]);
-            editor.lblFolderValue.setText(args[0]);
-            editor.lblFileValue.setText(args[1]);
+            editor.txtFolder.setText(args[0]);
+            editor.txtFile.setText(args[1]);
             editor.initList();
 
             editor.table.setRowSelectionInterval(0, 0);
@@ -187,11 +188,12 @@ public class LangFileEditor implements ActionListener {
         btnSelectOld.setEnabled(false);
         btnShowDupes.setEnabled(false);
 
-        lblFolder = new JLabel("Source Folder: ");
-        lblFile = new JLabel("Language File: ");
-        lblFolderValue = new JLabel("<Please select the Source Folder!>");
-        lblFileValue = new JLabel("<Please select the Language File!>");
+        txtFolder = new JTextField("<Please select the Source Folder!>");
+        txtFile = new JTextField("<Please select the Language File!>");
         lblEntriesCount = new JLabel("Entries Count:");
+
+        txtFolder.setEditable(false);
+        txtFile.setEditable(false);
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -211,14 +213,14 @@ public class LangFileEditor implements ActionListener {
         top.add(top2, BorderLayout.PAGE_END);
 
         bottom.add(infos, BorderLayout.PAGE_START);
-        bottom.add(buttons, BorderLayout.LINE_END);
+        bottom.add(buttons, BorderLayout.CENTER);
 
-        top1.add(lblFolder, BorderLayout.LINE_START);
-        top1.add(lblFolderValue, BorderLayout.CENTER);
+        top1.add(new JLabel("Source Folder: "), BorderLayout.LINE_START);
+        top1.add(txtFolder, BorderLayout.CENTER);
         top1.add(btnBrowseFolder, BorderLayout.EAST);
 
-        top2.add(lblFile, BorderLayout.LINE_START);
-        top2.add(lblFileValue, BorderLayout.CENTER);
+        top2.add(new JLabel("Language File: "), BorderLayout.LINE_START);
+        top2.add(txtFile, BorderLayout.CENTER);
         top2.add(top3, BorderLayout.EAST);
 
         top3.add(btnBrowseFile, BorderLayout.WEST);
@@ -258,7 +260,7 @@ public class LangFileEditor implements ActionListener {
 
             if (value == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
                 sourceFolder = chooser.getSelectedFile();
-                lblFolderValue.setText(sourceFolder.getAbsolutePath());
+                txtFolder.setText(sourceFolder.getAbsolutePath());
                 initList();
             }
 
@@ -269,7 +271,7 @@ public class LangFileEditor implements ActionListener {
 
             if (value == JFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
-                lblFileValue.setText(languageFile.getAbsolutePath());
+                txtFile.setText(languageFile.getAbsolutePath());
                 initList();
             }
 
@@ -669,7 +671,7 @@ public class LangFileEditor implements ActionListener {
 
         public void setValueAt(String value, int row, int col) {
             tableData.get(row)[col] = value;
-            fireTableCellUpdated(row, col);
+            this.fireTableCellUpdated(row, col);
         }
 
         public void addRow(String[] value) {
