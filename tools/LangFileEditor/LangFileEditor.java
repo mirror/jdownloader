@@ -661,11 +661,10 @@ public class LangFileEditor implements ActionListener {
         }
 
         public boolean isCellEditable(int row, int col) {
-            if (col == 0) {
-                return false;
-            } else {
+            if (col == 2) {
                 return true;
             }
+            return false;
         }
 
         public void setValueAt(String value, int row, int col) {
