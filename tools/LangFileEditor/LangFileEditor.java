@@ -61,6 +61,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private JTable table;
     private MyTableModel tableModel;
 
+    private Vector<String[]> data = new Vector<String[]>();
     private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
@@ -147,12 +148,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     private void initList() {
 
-        Vector<String[]> source = new Vector<String[]>();
-        if (sourceFolder != null) source = getSourceEntries(sourceFolder);
-        Vector<String[]> file = new Vector<String[]>();
-        if (languageFile != null) file = getLanguageFileEntries(languageFile);
-
-        tableModel.setData(getData(source, file));
+        getData(getSourceEntries(sourceFolder), getLanguageFileEntries(languageFile));
         mnuEntries.setEnabled(true);
         mnuKey.setEnabled(true);
         mnuReload.setEnabled(true);
@@ -165,7 +161,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         int numSource = 0, numFile = 0, numMissing = 0, numOld = 0;
 
-        for (String[] entry : tableModel.getData()) {
+        for (String[] entry : data) {
 
             if (entry[1] != "" && entry[2] != "") {
                 numSource++;
@@ -246,7 +242,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
         mnuShowDupes.addActionListener(this);
-        mnuEntries.addActionListener(this);
+        mnuSort.addActionListener(this);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
@@ -290,80 +286,52 @@ public class LangFileEditor extends JFrame implements ActionListener {
             chooser.setDialogTitle("Save Language File As...");
             chooser.setFileFilter(new LngFileFilter());
             chooser.setCurrentDirectory(languageFile.getParentFile());
-            int value = chooser.showOpenDialog(this);
 
-            if (value == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
+            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
 
         } else if (e.getSource() == mnuEdit) {
 
             int[] rows = table.getSelectedRows();
 
             for (int i = 0; i < rows.length; i++) {
-
-                int j = rows[i];
-
-                EditDialog dialog = new EditDialog(this, tableModel.getData().get(j));
-
-                if (dialog.value != null) {
-
-                    tableModel.setValueAt(dialog.value, j, 2);
-
-                    if (i + 1 == rows.length) {
-                        if (j + 1 < table.getRowCount()) {
-                            table.getSelectionModel().setSelectionInterval(j + 1, j + 1);
-                        } else {
-                            table.getSelectionModel().setSelectionInterval(j, j);
-                        }
-                    }
-
-                } else {
-                    break;
-                }
-
-                setInfoLabels();
-
+                EditDialog dialog = new EditDialog(this, data.get(rows[i]));
+                if (dialog.value != null) tableModel.setValueAt(dialog.value, rows[i], 2);
             }
 
         } else if (e.getSource() == mnuDelete) {
 
             int[] rows = table.getSelectedRows();
             for (int i = rows.length - 1; i >= 0; --i) {
-                tableModel.deleteRow(rows[i]);
+                String temp = data.remove(rows[i])[0];
+                oldEntries.remove(temp);
+                for (int j = dupes.size() - 1; i >= 0; --i) {
+                    if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
+                }
+                tableModel.fireTableRowsDeleted(rows[i], rows[i]);
             }
 
             setInfoLabels();
 
         } else if (e.getSource() == mnuAdd) {
 
-            Vector<String[]> data = tableModel.getData();
             AddDialog dialog = new AddDialog(this);
 
             if (dialog.key != null && dialog.value != null && !dialog.key.equals("") && !dialog.value.equals("")) {
                 data.add(new String[] { dialog.key, "", dialog.value });
             }
 
-            // Collections.sort(data, new StringArrayComparator());
-            tableModel.setData(data);
-            table.getSelectionModel().setSelectionInterval(0, 0);
+            tableModel.fireTableRowsInserted(data.size() - 1, data.size() - 1);
 
         } else if (e.getSource() == mnuAdoptMissing) {
 
-            Vector<String[]> data = tableModel.getData();
-
             for (int i = 0; i < data.size(); i++) {
 
-                if (data.get(i)[2] == "") {
-
+                if (data.get(i)[2].equals("")) {
                     String def = data.get(i)[1];
-                    if (!def.equals("") && !def.equals("<no default value>")) {
-                        tableModel.setValueAt(def, i, 2);
-                    }
-
+                    if (!def.equals("") && !def.equals("<no default value>")) tableModel.setValueAt(def, i, 2);
                 }
 
             }
-
-            setInfoLabels();
 
         } else if (e.getSource() == mnuReload) {
 
@@ -372,15 +340,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
         } else if (e.getSource() == mnuAdopt) {
 
             for (int i : table.getSelectedRows()) {
-
                 String def = tableModel.getValueAt(i, 1);
-                if (!def.equals("") && !def.equals("<no default value>")) {
-                    tableModel.setValueAt(def, i, 2);
-                }
-
+                if (!def.equals("") && !def.equals("<no default value>")) tableModel.setValueAt(def, i, 2);
             }
-
-            setInfoLabels();
 
         } else if (e.getSource() == mnuClear) {
 
@@ -392,22 +354,14 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             table.clearSelection();
             for (int i = 0; i < table.getRowCount(); i++) {
-
-                if (tableModel.getValueAt(i, 2).equals("")) {
-                    table.getSelectionModel().addSelectionInterval(i, i);
-                }
-
+                if (tableModel.getValueAt(i, 2).equals("")) table.getSelectionModel().addSelectionInterval(i, i);
             }
 
         } else if (e.getSource() == mnuSelectOld) {
 
             table.clearSelection();
             for (int i = 0; i < table.getRowCount(); i++) {
-
-                if (oldEntries.contains(table.getValueAt(i, 0))) {
-                    table.getSelectionModel().addSelectionInterval(i, i);
-                }
-
+                if (oldEntries.contains(table.getValueAt(i, 0))) table.getSelectionModel().addSelectionInterval(i, i);
             }
 
         } else if (e.getSource() == mnuShowDupes) {
@@ -426,11 +380,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 lngKey = result;
             }
 
-            Vector<String[]> data = tableModel.getData();
-
             for (int i = 0; i < data.size(); i++) {
 
-                if (data.get(i)[2] == "") {
+                if (data.get(i)[2].equals("")) {
 
                     String def = data.get(i)[1];
 
@@ -446,8 +398,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 }
 
             }
-
-            setInfoLabels();
 
         } else if (e.getSource() == mnuTranslate) {
 
@@ -471,8 +421,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             }
 
-            setInfoLabels();
-
         } else if (e.getSource() == mnuExit) {
 
             setVisible(false);
@@ -480,10 +428,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         } else if (e.getSource() == mnuSort) {
 
-            Vector<String[]> data = tableModel.getData();
             Collections.sort(data, new StringArrayComparator());
-            tableModel.setData(data);
-
+            tableModel.fireTableRowsUpdated(0, data.size() - 1);
         }
 
     }
@@ -491,7 +437,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
-        for (String[] entry : tableModel.getData()) {
+        for (String[] entry : data) {
             if (entry[2] != "") sb.append(entry[0] + " = " + entry[2] + "\n");
         }
 
@@ -507,11 +453,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
         JOptionPane.showMessageDialog(this, "LanguageFile saved successfully!", "Save successful!", JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private Vector<String[]> getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
+    private void getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
 
         String tmp;
-        Vector<String[]> data = new Vector<String[]>();
         Vector<String[]> dupeHelp = new Vector<String[]>();
+        data.clear();
         oldEntries.clear();
         dupes.clear();
         lngKey = null;
@@ -548,8 +494,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        // Collections.sort(data, new StringArrayComparator());
-        return data;
+        Collections.sort(data, new StringArrayComparator());
+        tableModel.fireTableRowsInserted(0, data.size() - 1);
 
     }
 
@@ -572,6 +518,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     private Vector<String[]> getLanguageFileEntries(File file) {
 
+        if (file == null) return new Vector<String[]>();
+
         String content = JDUtilities.getLocalFile(file);
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
@@ -591,12 +539,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        // Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
 
     private Vector<String[]> getSourceEntries(File dir) {
+
+        if (dir == null) return new Vector<String[]>();
 
         Vector<String> fileContents = getFileContents(dir, "java");
         Vector<String[]> entries = new Vector<String[]>();
@@ -650,7 +599,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        // Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -686,14 +634,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         private static final long serialVersionUID = -5434313385327397539L;
         private String[] columnNames = { "Key", "Source Value", "Language File Value" };
-        private Vector<String[]> tableData = new Vector<String[]>();
 
         public int getColumnCount() {
             return columnNames.length;
         }
 
         public int getRowCount() {
-            return tableData.size();
+            return data.size();
         }
 
         public String getColumnName(int col) {
@@ -701,7 +648,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         public String getValueAt(int row, int col) {
-            return tableData.get(row)[col];
+            return data.get(row)[col];
         }
 
         public Class<?> getColumnClass(int c) {
@@ -714,36 +661,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         public void setValueAt(Object value, int row, int col) {
-            tableData.get(row)[col] = (String) value;
+            data.get(row)[col] = (String) value;
             this.fireTableCellUpdated(row, col);
             setInfoLabels();
-        }
-
-        public void addRow(String[] value) {
-            tableData.add(value);
-            this.fireTableRowsInserted(tableData.size() - 1, tableData.size() - 1);
-            setInfoLabels();
-        }
-
-        public void deleteRow(int index) {
-            String temp = tableData.remove(index)[0];
-            oldEntries.remove(temp);
-            for (int i = dupes.size() - 1; i >= 0; --i) {
-                if (dupes.get(i)[1].equals(temp) || dupes.get(i)[2].equals(temp)) dupes.remove(i);
-            }
-            this.fireTableRowsDeleted(index, index);
-            setInfoLabels();
-        }
-
-        public void setData(Vector<String[]> newData) {
-            Collections.sort(newData, new StringArrayComparator());
-            tableData = newData;
-            this.fireTableRowsInserted(0, tableData.size() - 1);
-            setInfoLabels();
-        }
-
-        public Vector<String[]> getData() {
-            return tableData;
         }
 
     }
