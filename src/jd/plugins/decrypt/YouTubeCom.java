@@ -66,17 +66,19 @@ public class YouTubeCom extends PluginForDecrypt {
         	if(StreamingShareLink.matcher(parameter).matches())
         	{
         		//StreamingShareLink
-        		String[][] info = new Regex(parameter,StreamingShareLink).getMatches();
 
-        		//for(String debug:info)
-                //{
-                //	logger.info(debug);
-                //}
-        		DownloadLink thislink = createDownloadlink(info[0][1]);
-                thislink.setBrowserUrl(info[0][2]);
-                thislink.setStaticFileName(Encoding.htmlDecode(info[0][0]));
-                thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[0][3])).GetText());
-                thislink.setProperty("convertto", info[0][3]);
+        		String[] info = new Regex(parameter,StreamingShareLink).getMatches()[0];
+        		
+        		for(String debug:info)
+                {
+                	logger.info(debug);
+                }
+        		DownloadLink thislink = createDownloadlink(info[1]);
+                thislink.setBrowserUrl(info[2]);
+                thislink.setStaticFileName(info[0]);
+                thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[3])).GetText());
+                thislink.setProperty("convertto", info[3]);
+
                 decryptedLinks.add(thislink);
                 return decryptedLinks;
         	}

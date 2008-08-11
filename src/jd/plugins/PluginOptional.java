@@ -26,11 +26,11 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 0;
 
-    public static int VERSION_ID = 0;
-
-    public static int getVersionID() {
-        return VERSION_ID;
-    }
+//    public static int VERSION_ID = 0;
+//
+//    public static int getVersionID() {
+//        return VERSION_ID;
+//    }
 
     public void controlEvent(ControlEvent event) {
 
