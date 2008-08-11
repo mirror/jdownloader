@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -65,17 +66,19 @@ public class YouTubeCom extends PluginForDecrypt {
         	if(StreamingShareLink.matcher(parameter).matches())
         	{
         		//StreamingShareLink
-        		String[] info = new Regex(parameter,StreamingShareLink).getMatches(0);
-                for(String debug:info)
-                {
-                	logger.info(debug);
-                }
-        		DownloadLink thislink = createDownloadlink(info[2]);
-                thislink.setBrowserUrl(info[3]);
-                thislink.setStaticFileName(info[1]);
-                thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[4])).GetText());
-                thislink.setProperty("convertto", info[4]);
+        		String[][] info = new Regex(parameter,StreamingShareLink).getMatches();
+
+        		//for(String debug:info)
+                //{
+                //	logger.info(debug);
+                //}
+        		DownloadLink thislink = createDownloadlink(info[0][1]);
+                thislink.setBrowserUrl(info[0][2]);
+                thislink.setStaticFileName(Encoding.htmlDecode(info[0][0]));
+                thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[0][3])).GetText());
+                thislink.setProperty("convertto", info[0][3]);
                 decryptedLinks.add(thislink);
+                return decryptedLinks;
         	}
         	
             URL url = new URL(parameter);

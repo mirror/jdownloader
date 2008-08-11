@@ -206,9 +206,7 @@ public class StreamingShareTool extends PluginOptional {
                 "\" convertto=\"" + links.get(i).getProperty("convertto").toString() + 
                 "\" comment=\"" + comment + 
                 "\" >";
-        	
         toSave.add(new DownloadLink(null, null, getHost(), Encoding.htmlDecode(URL), true));
-        
 
         //logger.info(links.get(i).getDownloadURL());
         //logger.info(links.get(i).getName());
@@ -219,11 +217,11 @@ public class StreamingShareTool extends PluginOptional {
         }
         }
         
-        /*for(int i = 0; i < toSave.size();i++)
+        for(int i = 0; i < toSave.size();i++)
         {
         	logger.info(toSave.get(i).getDownloadURL());
         	//TO-DO: Debuginfo
-        }*/
+        }
 
         if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
