@@ -341,7 +341,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 data.add(new String[] { dialog.key, "", dialog.value });
             }
 
-            Collections.sort(data, new StringArrayComparator());
             tableModel.setData(data);
             table.getSelectionModel().setSelectionInterval(0, 0);
             setInfoLabels();
@@ -543,7 +542,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        Collections.sort(data, new StringArrayComparator());
         return data;
 
     }
@@ -587,7 +585,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -648,7 +645,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-        Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -727,6 +723,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         public void setData(Vector<String[]> newData) {
+            System.out.println(newData.get(newData.size() - 1)[0]);
+            Collections.sort(newData, new StringArrayComparator());
+            System.out.println(newData.get(newData.size() - 1)[0]);
             tableData = newData;
             this.fireTableRowsInserted(0, tableData.size() - 1);
         }
