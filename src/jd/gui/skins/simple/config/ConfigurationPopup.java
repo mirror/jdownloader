@@ -95,9 +95,9 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
 //        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 //        setLocation(JDUtilities.getCenterOfComponent(parent, this));
         
-        Container cpanel = new JPanel(new BorderLayout(10,10));
-        Container bpanel = new JPanel(new MigLayout());
-        bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
+        Container cpanel = new JPanel(new BorderLayout());
+        Container bpanel = new JPanel(new MigLayout("", "[grow][]"));
+//        bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
         bpanel.add(btnSave, "w pref!, align right, tag ok right");
         bpanel.add(btnCancel, "w pref!, tag cancel, wrap");
         
