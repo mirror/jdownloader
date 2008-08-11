@@ -37,6 +37,7 @@ import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -67,7 +68,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     private File sourceFolder, languageFile;
 
-    public static void main(String[] args) {
+    public static void main(String args[]) {
 
         LangFileEditor editor = new LangFileEditor();
 
@@ -577,8 +578,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
             if (match[1].startsWith(" ")) match[1] = match[1].substring(1);
             if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
-                keys.add(match[0]);
-                String[] temp = new String[] { match[0], match[1] };
+                keys.add(Encoding.UTF8Decode(match[0]));
+                String[] temp = new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) };
                 entries.add(temp);
 
             }
@@ -607,7 +608,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                 if (!keys.contains(match[0].trim())) {
 
-                    keys.add(match[0].trim());
+                    keys.add(Encoding.UTF8Decode(match[0].trim()));
                     String k = match[0].trim();
                     String v = "<no default value>";
 
@@ -616,7 +617,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                     } catch (Exception e) {
                     }
 
-                    String[] temp = new String[] { k, v };
+                    String[] temp = new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) };
                     entries.add(temp);
 
                 }
@@ -627,7 +628,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                 if (!keys.contains(match[0].trim())) {
 
-                    keys.add(match[0].trim());
+                    keys.add(Encoding.UTF8Decode(match[0].trim()));
                     String k = match[0].trim();
                     String v = "<no default value>";
 
@@ -636,7 +637,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                     } catch (Exception e) {
                     }
 
-                    String[] temp = new String[] { k, v };
+                    String[] temp = new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) };
                     entries.add(temp);
 
                 }
