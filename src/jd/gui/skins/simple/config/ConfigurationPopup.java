@@ -16,10 +16,14 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -27,6 +31,9 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
+
+import net.miginfocom.swing.MigLayout;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -85,15 +92,30 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
         btnCancel = new JButton(JDLocale.L("gui.config.popup.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
-        Insets insets = new Insets(5, 5, 5, 5);
-
-        JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.FIRST_LINE_START);
-        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        setLocation(JDUtilities.getCenterOfComponent(parent, this));
-
+//        Insets insets = new Insets(5, 5, 5, 5);
+//
+//        JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.FIRST_LINE_START);
+//        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+//        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+//        setLocation(JDUtilities.getCenterOfComponent(parent, this));
+        
+        Container cpanel = new JPanel(new BorderLayout(10,10));
+        Container bpanel = new JPanel(new MigLayout());
+        bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
+        bpanel.add(btnSave, "w pref!, tag save");
+        bpanel.add(btnCancel, "w pref!, tag cancel, wrap");
+        
+        cpanel.add(jpanel);
+        cpanel.add(bpanel, BorderLayout.SOUTH);
+        Dimension minSize = panel.getMinimumSize();
+        setContentPane(new JScrollPane(cpanel));
         pack();
-
+        Dimension ps = getPreferredSize();
+        Dimension available = Toolkit.getDefaultToolkit().getScreenSize();
+        setPreferredSize(new Dimension(Math.min(available.width, ps.width), Math.min(available.height, ps.height)));
+        pack();
+        panel.setPreferredSize(minSize);
+        setLocationRelativeTo(null);
     }
 
     public void actionPerformed(ActionEvent e) {

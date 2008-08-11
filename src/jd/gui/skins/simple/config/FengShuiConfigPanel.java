@@ -103,6 +103,5 @@ public class FengShuiConfigPanel {
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
         frame.setVisible(true);
-        System.out.println(frame.getBounds());
     }
 }

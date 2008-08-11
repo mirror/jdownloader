@@ -46,7 +46,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
-        this.setLayout(new MigLayout("ins 5", "[right]10[grow,fill]0[right][grow,fill]"));
+        this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
         this.createPanel();
     }
 
