@@ -20,9 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -33,12 +31,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import net.miginfocom.swing.MigLayout;
-
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der
@@ -102,7 +98,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
         Container cpanel = new JPanel(new BorderLayout(10,10));
         Container bpanel = new JPanel(new MigLayout());
         bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
-        bpanel.add(btnSave, "w pref!, tag save");
+        bpanel.add(btnSave, "w pref!, align right, tag ok right");
         bpanel.add(btnCancel, "w pref!, tag cancel, wrap");
         
         cpanel.add(jpanel);
