@@ -114,9 +114,18 @@ public class ConvertDialog extends JFrame {
     public static ConversionMode DisplayDialog(Object[] displaymodes, String name) {
         logger.fine(displaymodes.length + " Convertmodi zur Auswahl.");
         if (keepformat) {
-        	if(keepedmodes.equals(displaymodes))
+        	
+        	if(keepedmodes.length ==  displaymodes.length)
         	{
-        		return keeped;
+                for (int i = 0; i < displaymodes.length; i++) 
+                {
+                    if (displaymodes[i].equals(keeped)) 
+                    { 
+                        // Es muss überprüft werden, ob das Format überhaupt zur Auswahl
+                        // steht.
+                    	return keeped;
+                    }
+                }
         	}
         	if(keepineverycase)
         	{
