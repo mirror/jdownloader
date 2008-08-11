@@ -122,34 +122,35 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             enables[i - 1] = active;
             enables[i - 1].addChangeListener(this);
             add(active, "alignleft");
-            
+
             JButton bt = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status"));
             checkBtns[i - 1] = bt;
             add(bt, "w pref:pref:pref, split 2");
             bt.addActionListener(this);
             add(new JSeparator(), "w 30:push, growx, pushx");
-            
+
             add(new JSeparator(), "w 30:push, growx, pushx");
             statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status"));
             JTextField status = new JTextField("");
             stati[i - 1] = status;
             status.setEditable(false);
             add(status, "spanx, pushx, growx");
-            
+
             add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
             add(usernames[i - 1] = new JTextField(""));
             usernames[i - 1].addFocusListener(this);
             add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-// add(passwords[i - 1] = new JPasswordField(""), "wrap");
+            // add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
             passwords[i - 1].addFocusListener(this);
-// add(statiLabels[i - 1] = new
-// JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account
-// Status")));
-// JTextField status = new JTextField("");
-// stati[i - 1] = status;
-// status.setEditable(false);
-// add(status, "span, gapbottom :10:push");
+            // add(statiLabels[i - 1] = new
+            // JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last
+            // Account
+            // Status")));
+            // JTextField status = new JTextField("");
+            // stati[i - 1] = status;
+            // status.setEditable(false);
+            // add(status, "span, gapbottom :10:push");
         }
 
     }
@@ -183,16 +184,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     }
 
     public void focusGained(FocusEvent e) {
-        e=e;
-        String text = ((JTextField) e.getSource()).getText();
-       ((JTextField) e.getSource()).setSelectionStart(0);
-       ((JTextField) e.getSource()).setSelectionEnd(text.length());
-        // TODO Auto-generated method stub
-        
+        ((JTextField) e.getSource()).selectAll();
     }
 
     public void focusLost(FocusEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 }

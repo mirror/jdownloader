@@ -66,15 +66,25 @@ public class LangFileEditor implements ActionListener {
         LangFileEditor editor = new LangFileEditor();
         editor.showGui();
 
-        if (args.length == 2) {
+        if (args.length == 1) {
+            File file = new File(args[0]);
+            if (file.isDirectory()) {
+                editor.sourceFolder = file;
+                editor.txtFolder.setText(args[0]);
+                editor.initList();
+            } else if (args[0].endsWith(".lng")) {
+                editor.languageFile = file;
+                editor.txtFile.setText(args[0]);
+                editor.initList();
+            }
+        }
 
+        if (args.length == 2) {
             editor.sourceFolder = new File(args[0]);
             editor.languageFile = new File(args[1]);
             editor.txtFolder.setText(args[0]);
             editor.txtFile.setText(args[1]);
             editor.initList();
-
-            editor.table.setRowSelectionInterval(0, 0);
         }
 
     }
@@ -147,7 +157,6 @@ public class LangFileEditor implements ActionListener {
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        
         btnAdd = new JButton("Add Key");
         btnAdopt = new JButton("Adopt Default(s)");
         btnAdoptMissing = new JButton("Adopt Defaults of Missing Entries");
@@ -663,9 +672,7 @@ public class LangFileEditor implements ActionListener {
         }
 
         public boolean isCellEditable(int row, int col) {
-            if (col == 2) {
-                return true;
-            }
+            if (col == 2) return true;
             return false;
         }
 
