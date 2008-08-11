@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -29,44 +30,54 @@ import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class FuckTheIndustryRu extends PluginForDecrypt {
 
     static private String host = "fucktheindustry.ru";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+", Pattern.CASE_INSENSITIVE);
-    private Pattern patternDLC       = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
-    private Pattern patternPW        = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
-    
-    
-    //<input readonly id="pw_2_copy" class="boxes-inactive" onclick="className='boxes-active'" onblur="className='boxes-inactive'" type="text" value="passcomeshere">
-    //http://92.241.164.63/file.php?id=123456
+    private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
+    private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
+
+    // <input readonly id="pw_2_copy" class="boxes-inactive"
+    // onclick="className='boxes-active'" onblur="className='boxes-inactive'"
+    // type="text" value="passcomeshere">
+    // http://92.241.164.63/file.php?id=123456
     public FuckTheIndustryRu() {
         super();
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-    	
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            //logger.info(reqinfo.getHtmlCode());
-            String name =  new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(1);
-            String link =  new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(0);
-            String pass =  new Regex(reqinfo.getHtmlCode(), patternPW).getMatch(0);
+            // logger.info(reqinfo.getHtmlCode());
+            String name = new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(1);
+            String link = new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(0);
+            String pass = new Regex(reqinfo.getHtmlCode(), patternPW).getMatch(0);
             logger.info(name + " - " + link + " - " + pass);
-            if ((link != null)&&(name != null)) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            Vector<DownloadLink> links = null;
+            if (Browser.download(container, link)) {
+                links = JDUtilities.getController().getContainerLinks(container);
+
+            }
+
+            if (links != null) {
                 FilePackage fp = new FilePackage();
                 fp.setName(name);
                 fp.setPassword(pass);
                 fp.setComment("from " + parameter);
-                DownloadLink thislink = createDownloadlink(link);
-                thislink.setSourcePluginComment("from " + parameter);
-                logger.info("DLC: " + link + " Name: " + name + " Pass: " + pass);
-                decryptedLinks.add(thislink);
-                
+                for (DownloadLink dLink : links) {
+                    dLink.setSourcePluginComment("from " + parameter);
+                    fp.add(dLink);
+                }
+                decryptedLinks.addAll(links);
+
             } else {
                 return null;
             }

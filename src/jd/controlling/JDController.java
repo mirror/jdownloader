@@ -581,7 +581,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
             }
             // Prüfen obd er Link entfernt werden soll.
@@ -1313,6 +1313,48 @@ public class JDController implements ControlListener, UIListener {
         }.start();
     }
 
+    public Vector<DownloadLink> getContainerLinks(final File file) {
+
+        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
+        PluginForContainer pContainer;
+        ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
+        logger.info("load Container: " + file);
+
+        for (int i = 0; i < pluginsForContainer.size(); i++) {
+
+            pContainer = pluginsForContainer.get(i);
+            // logger.info(i + ". " + "Containerplugin: " +
+            // pContainer.getPluginName());
+            progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
+            if (pContainer.canHandle(file.getName())) {
+                // es muss jeweils eine neue plugininstanz erzeugt
+                // werden
+                try {
+                    pContainer = pContainer.getClass().newInstance();
+                    progress.setSource(pContainer);
+
+                    pContainer.initContainer(file.getAbsolutePath());
+                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
+                    if (links == null || links.size() == 0) {
+                        logger.severe("Container Decryption failed (1)");
+                    } else {
+                        downloadLinks = links;
+                        break;
+                    }
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            progress.increase(1);
+        }
+        progress.setStatusText(downloadLinks.size() + " links found");
+        progress.finalize();
+        return downloadLinks;
+
+    }
+
     /**
      * Lädt eine LinkListe
      * 
@@ -1774,10 +1816,10 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
-     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
-     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
-     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
+     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
+     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
+     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
      * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);
