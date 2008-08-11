@@ -69,7 +69,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
     public static void main(String[] args) {
 
         LangFileEditor editor = new LangFileEditor();
-        editor.showGui();
 
         if (args.length == 1) {
             File file = new File(args[0]);
@@ -94,49 +93,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     }
 
-    private void initList() {
-
-        Vector<String[]> source = new Vector<String[]>();
-        if (sourceFolder != null) source = getSourceEntries(sourceFolder);
-        Vector<String[]> file = new Vector<String[]>();
-        if (languageFile != null) file = getLanguageFileEntries(languageFile);
-
-        Vector<String[]> data = getData(source, file);
-        tableModel.setData(data);
-        mnuEntries.setEnabled(true);
-        mnuKey.setEnabled(true);
-        mnuReload.setEnabled(true);
-        mnuSave.setEnabled(true);
-        mnuSaveAs.setEnabled(true);
-        setInfoLabels();
-
-    }
-
-    private void setInfoLabels() {
-
-        Vector<String[]> data = tableModel.getData();
-        int numSource = 0, numFile = 0, numMissing = 0, numOld = 0;
-
-        for (String[] entry : data) {
-
-            if (entry[1] != "" && entry[2] != "") {
-                numSource++;
-                numFile++;
-            } else if (entry[1].equals("")) {
-                numFile++;
-                numOld++;
-            } else if (entry[2].equals("")) {
-                numSource++;
-                numMissing++;
-            }
-
-        }
-
-        lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld + "     [Probably old] " + oldEntries.size() + "     [Probably dupes] " + dupes.size());
-
-    }
-
-    private void showGui() {
+    public LangFileEditor() {
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -144,10 +101,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
             System.out.println("Error setting native LAF: " + e);
         }
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setTitle("jDownloader Language File Editor");
-        setPreferredSize(new Dimension(1200, 700));
-        setName("LANGFILEEDIT");
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setTitle("jDownloader Language File Editor");
+        this.setMinimumSize(new Dimension(800, 500));
+        this.setPreferredSize(new Dimension(1200, 700));
+        this.setName("LANGFILEEDIT");
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
@@ -195,9 +153,51 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         buildMenu();
 
-        setResizable(true);
-        pack();
-        setVisible(true);
+        this.setResizable(true);
+        this.pack();
+        this.setVisible(true);
+
+    }
+
+    private void initList() {
+
+        Vector<String[]> source = new Vector<String[]>();
+        if (sourceFolder != null) source = getSourceEntries(sourceFolder);
+        Vector<String[]> file = new Vector<String[]>();
+        if (languageFile != null) file = getLanguageFileEntries(languageFile);
+
+        Vector<String[]> data = getData(source, file);
+        tableModel.setData(data);
+        mnuEntries.setEnabled(true);
+        mnuKey.setEnabled(true);
+        mnuReload.setEnabled(true);
+        mnuSave.setEnabled(true);
+        mnuSaveAs.setEnabled(true);
+        setInfoLabels();
+
+    }
+
+    private void setInfoLabels() {
+
+        Vector<String[]> data = tableModel.getData();
+        int numSource = 0, numFile = 0, numMissing = 0, numOld = 0;
+
+        for (String[] entry : data) {
+
+            if (entry[1] != "" && entry[2] != "") {
+                numSource++;
+                numFile++;
+            } else if (entry[1].equals("")) {
+                numFile++;
+                numOld++;
+            } else if (entry[2].equals("")) {
+                numSource++;
+                numMissing++;
+            }
+
+        }
+
+        lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld + "     [Probably old] " + oldEntries.size() + "     [Probably dupes] " + dupes.size());
 
     }
 
