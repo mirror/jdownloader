@@ -256,7 +256,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
         setJMenuBar(menuBar);
     }
 
-    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
@@ -497,7 +496,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
         JOptionPane.showMessageDialog(this, "LanguageFile saved successfully.");
     }
 
-    @SuppressWarnings("unchecked")
     private Vector<String[]> getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
 
         String tmp;
@@ -567,7 +565,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     }
 
-    @SuppressWarnings("unchecked")
     private Vector<String[]> getLanguageFileEntries(File file) {
 
         String content = JDUtilities.getLocalFile(file);
@@ -595,7 +592,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     }
 
-    @SuppressWarnings("unchecked")
     private Vector<String[]> getSourceEntries(File dir) {
 
         Vector<String> fileContents = getFileContents(dir, "java");
@@ -741,19 +737,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     }
 
-    @SuppressWarnings("unchecked")
-    private class StringArrayComparator implements Comparator {
+    private class StringArrayComparator implements Comparator<String[]> {
 
-        public int compare(Object o1, Object o2) {
+        public int compare(String[] s1, String[] s2) {
 
-            if (o1 instanceof String[] && o2 instanceof String[]) {
-                String[] s1 = (String[]) o1;
-                String[] s2 = (String[]) o2;
-
-                return s1[0].compareTo(s2[0]);
-
-            } else
-                return 1;
+            return s1[0].compareTo(s2[0]);
 
         }
 
