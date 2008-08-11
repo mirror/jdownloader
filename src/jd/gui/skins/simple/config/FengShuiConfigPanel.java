@@ -92,13 +92,14 @@ public class FengShuiConfigPanel {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         JFrame frame = new JFrame("Feng Shui Config");
         JPanel panel = getPanel();
+        Dimension minSize = panel.getMinimumSize();
         frame.setContentPane(new JScrollPane(panel));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         Dimension ps = frame.getPreferredSize();
         frame.setPreferredSize(new Dimension(Math.min(800, ps.width), Math.min(600, ps.height)));
         frame.pack();
-        panel.setPreferredSize(new Dimension(400 , 500));
+        panel.setPreferredSize(minSize);
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
         frame.setVisible(true);
