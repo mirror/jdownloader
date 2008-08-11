@@ -99,7 +99,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setTitle("jDownloader Language File Editor");
+        this.setTitle("jDownloader - Language File Editor");
         this.setMinimumSize(new Dimension(800, 500));
         this.setPreferredSize(new Dimension(1200, 700));
         this.setName("LANGFILEEDIT");
@@ -158,7 +158,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
         mnuReload.setEnabled(true);
         mnuSave.setEnabled(true);
         mnuSaveAs.setEnabled(true);
-        setInfoLabels();
 
     }
 
@@ -344,7 +343,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
 //            Collections.sort(data, new StringArrayComparator());
             tableModel.setData(data);
             table.getSelectionModel().setSelectionInterval(0, 0);
-            setInfoLabels();
 
         } else if (e.getSource() == mnuAdoptMissing) {
 
@@ -679,7 +677,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     }
 
-    class MyTableModel extends AbstractTableModel {
+    private class MyTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = -5434313385327397539L;
         private String[] columnNames = { "Key", "Source Value", "Language File Value" };
@@ -710,25 +708,29 @@ public class LangFileEditor extends JFrame implements ActionListener {
             return false;
         }
 
-        public void setValueAt(String value, int row, int col) {
-            tableData.get(row)[col] = value;
+        public void setValueAt(Object value, int row, int col) {
+            tableData.get(row)[col] = (String) value;
             this.fireTableCellUpdated(row, col);
+            setInfoLabels();
         }
 
         public void addRow(String[] value) {
             tableData.add(value);
             this.fireTableRowsInserted(tableData.size() - 1, tableData.size() - 1);
+            setInfoLabels();
         }
 
         public void deleteRow(int index) {
-            tableData.remove(index);
+            oldEntries.remove(tableData.remove(index)[0]);
             this.fireTableRowsDeleted(index, index);
+            setInfoLabels();
         }
 
         public void setData(Vector<String[]> newData) {
             Collections.sort(newData, new StringArrayComparator());
             tableData = newData;
             this.fireTableRowsInserted(0, tableData.size() - 1);
+            setInfoLabels();
         }
 
         public Vector<String[]> getData() {
