@@ -60,6 +60,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes;
     private JTable table;
     private MyTableModel tableModel;
+
     private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
@@ -113,43 +114,32 @@ public class LangFileEditor extends JFrame implements ActionListener {
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        btnBrowseFile = new JButton("Browse");
-        btnBrowseFolder = new JButton("Browse");
-
-        btnBrowseFile.addActionListener(this);
-        btnBrowseFolder.addActionListener(this);
-
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
-        setContentPane(main);
+        this.setContentPane(main);
 
         JPanel top = new JPanel(new BorderLayout(5, 5));
-        JPanel bottom = new JPanel(new BorderLayout());
-
         JPanel top1 = new JPanel(new BorderLayout(5, 5));
         JPanel top2 = new JPanel(new BorderLayout(5, 5));
-        JPanel infos = new JPanel(new BorderLayout(5, 5));
 
         top.add(top1, BorderLayout.PAGE_START);
         top.add(top2, BorderLayout.PAGE_END);
 
-        bottom.add(infos, BorderLayout.PAGE_START);
-
         top1.add(new JLabel("Source Folder: "), BorderLayout.LINE_START);
         top1.add(txtFolder = new JTextField("<Please select the Source Folder!>"), BorderLayout.CENTER);
-        top1.add(btnBrowseFolder, BorderLayout.EAST);
+        top1.add(btnBrowseFolder = new JButton("Browse"), BorderLayout.EAST);
         txtFolder.setEditable(false);
+        btnBrowseFolder.addActionListener(this);
 
         top2.add(new JLabel("Language File: "), BorderLayout.LINE_START);
         top2.add(txtFile = new JTextField("<Please select the Language File!>"), BorderLayout.CENTER);
-        top2.add(btnBrowseFile, BorderLayout.EAST);
+        top2.add(btnBrowseFile = new JButton("Browse"), BorderLayout.EAST);
         txtFile.setEditable(false);
-
-        infos.add(lblEntriesCount = new JLabel("Entries Count:"), BorderLayout.LINE_START);
+        btnBrowseFile.addActionListener(this);
 
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table), BorderLayout.CENTER);
-        main.add(bottom, BorderLayout.PAGE_END);
+        main.add(lblEntriesCount = new JLabel("Entries Count:"), BorderLayout.PAGE_END);
 
         buildMenu();
 
@@ -166,8 +156,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         Vector<String[]> file = new Vector<String[]>();
         if (languageFile != null) file = getLanguageFileEntries(languageFile);
 
-        Vector<String[]> data = getData(source, file);
-        tableModel.setData(data);
+        tableModel.setData(getData(source, file));
         mnuEntries.setEnabled(true);
         mnuKey.setEnabled(true);
         mnuReload.setEnabled(true);
@@ -179,10 +168,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
     private void setInfoLabels() {
 
-        Vector<String[]> data = tableModel.getData();
         int numSource = 0, numFile = 0, numMissing = 0, numOld = 0;
 
-        for (String[] entry : data) {
+        for (String[] entry : tableModel.getData()) {
 
             if (entry[1] != "" && entry[2] != "") {
                 numSource++;
@@ -492,10 +480,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
     }
 
     private void saveLanguageFile(File file) {
-        Vector<String[]> data = tableModel.getData();
         StringBuilder sb = new StringBuilder();
 
-        for (String[] entry : data) {
+        for (String[] entry : tableModel.getData()) {
             if (entry[2] != "") sb.append(entry[0] + " = " + entry[2] + "\n");
         }
 
@@ -719,9 +706,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
             return tableData.get(row)[col];
         }
 
-        @SuppressWarnings("unchecked")
-        public Class getColumnClass(int c) {
-            return getValueAt(0, c).getClass();
+        public Class<?> getColumnClass(int c) {
+            return String.class;
         }
 
         public boolean isCellEditable(int row, int col) {
@@ -838,9 +824,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 return tableData.get(row)[col];
             }
 
-            @SuppressWarnings("unchecked")
-            public Class getColumnClass(int c) {
-                return getValueAt(0, c).getClass();
+            public Class<?> getColumnClass(int c) {
+                return String.class;
             }
 
             public boolean isCellEditable(int row, int col) {
