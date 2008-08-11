@@ -9,9 +9,7 @@ import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Comparator;
@@ -88,6 +86,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         if (editor.sourceFolder != null || editor.languageFile != null) editor.initList();
 
+        if (editor.sourceFolder == null) JOptionPane.showMessageDialog(editor, "You can download the zipped SourceCode for JD from:\nhttp://jdownloader.org/download");
     }
 
     public LangFileEditor() {
@@ -340,7 +339,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 data.add(new String[] { dialog.key, "", dialog.value });
             }
 
-//            Collections.sort(data, new StringArrayComparator());
+            // Collections.sort(data, new StringArrayComparator());
             tableModel.setData(data);
             table.getSelectionModel().setSelectionInterval(0, 0);
 
@@ -415,12 +414,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
         } else if (e.getSource() == mnuTranslateMissing) {
 
             if (lngKey == null) {
-                LanguageDialog dialog = new LanguageDialog(this);
-                if (dialog.key != null && !dialog.key.equals("")) {
-                    lngKey = dialog.key;
-                } else {
+                String result = JOptionPane.showInputDialog(this, "Please insert the Language Key to provide a correct translation of Google:", "Insert Language Key", JOptionPane.QUESTION_MESSAGE);
+                if (result == null) return;
+                if (!(result.length() == 2)) {
+                    JOptionPane.showMessageDialog(this, "The Language Key must have a length of two!", "Wrong Length!", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                lngKey = result;
             }
 
             Vector<String[]> data = tableModel.getData();
@@ -449,12 +449,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
         } else if (e.getSource() == mnuTranslate) {
 
             if (lngKey == null) {
-                LanguageDialog dialog = new LanguageDialog(this);
-                if (dialog.key != null && !dialog.key.equals("")) {
-                    lngKey = dialog.key;
-                } else {
+                String result = JOptionPane.showInputDialog(this, "Please insert the Language Key to provide a correct translation of Google:", "Insert Language Key", JOptionPane.QUESTION_MESSAGE);
+                if (result == null) return;
+                if (!(result.length() == 2)) {
+                    JOptionPane.showMessageDialog(this, "The Language Key must have a length of two!", "Wrong Length!", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                lngKey = result;
             }
 
             for (int i : table.getSelectedRows()) {
@@ -495,11 +496,12 @@ public class LangFileEditor extends JFrame implements ActionListener {
             Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
             out.write(sb.toString());
             out.close();
-        } catch (UnsupportedEncodingException ex) {
-        } catch (IOException ex) {
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "An error occured while writing the LanguageFile:\n" + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
-        JOptionPane.showMessageDialog(this, "LanguageFile saved successfully.");
+        JOptionPane.showMessageDialog(this, "LanguageFile saved successfully!", "Save successful!", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private Vector<String[]> getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
@@ -543,7 +545,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-//        Collections.sort(data, new StringArrayComparator());
+        // Collections.sort(data, new StringArrayComparator());
         return data;
 
     }
@@ -586,7 +588,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-//        Collections.sort(entries, new StringArrayComparator());
+        // Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -645,7 +647,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
-//        Collections.sort(entries, new StringArrayComparator());
+        // Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -721,7 +723,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         public void deleteRow(int index) {
-            oldEntries.remove(tableData.remove(index)[0]);
+            String temp = tableData.remove(index)[0];
+            oldEntries.remove(temp);
+            for (int i = dupes.size() - 1; i >= 0; --i) {
+                if (dupes.get(i)[1].equals(temp) || dupes.get(i)[2].equals(temp)) dupes.remove(i);
+            }
             this.fireTableRowsDeleted(index, index);
             setInfoLabels();
         }
@@ -978,74 +984,6 @@ public class LangFileEditor extends JFrame implements ActionListener {
             } else if (e.getSource() == btnCancel) {
 
                 value = null;
-                dispose();
-                owner.setVisible(true);
-
-            }
-
-        }
-
-    }
-
-    private class LanguageDialog extends JDialog implements ActionListener {
-
-        private static final long serialVersionUID = 1L;
-
-        private JButton btnOK = new JButton("OK");
-        private JButton btnCancel = new JButton("Cancel");
-        private JFrame owner;
-        private JTextField txtLanguageKey = new JTextField(2);
-
-        public String value;
-        public String key;
-
-        public LanguageDialog(JFrame owner) {
-
-            super(owner);
-            this.owner = owner;
-
-            setModal(true);
-            setLayout(new BorderLayout(5, 5));
-            setTitle("Insert Language Key");
-            getRootPane().setDefaultButton(btnOK);
-
-            btnOK.addActionListener(this);
-            btnCancel.addActionListener(this);
-
-            JPanel main = new JPanel(new BorderLayout(5, 5));
-            main.setBorder(new EmptyBorder(10, 10, 10, 10));
-            JPanel keyPanel = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons1 = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons2 = new JPanel(new FlowLayout());
-
-            main.add(keyPanel, BorderLayout.PAGE_START);
-            main.add(buttons1, BorderLayout.PAGE_END);
-
-            keyPanel.add(new JLabel("Please insert the Language Key to provide a correct translation of Google:"), BorderLayout.LINE_START);
-            keyPanel.add(txtLanguageKey, BorderLayout.CENTER);
-
-            buttons1.add(buttons2, BorderLayout.LINE_END);
-            buttons2.add(btnOK);
-            buttons2.add(btnCancel);
-
-            setContentPane(main);
-            pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
-            setVisible(true);
-
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            if (e.getSource() == btnOK) {
-
-                key = txtLanguageKey.getText();
-                dispose();
-                owner.setVisible(true);
-
-            } else if (e.getSource() == btnCancel) {
-
-                key = null;
                 dispose();
                 owner.setVisible(true);
 
