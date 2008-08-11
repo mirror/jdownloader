@@ -64,7 +64,7 @@ public class MyvideoDe extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray());
+            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
 
             DownloadLink thislink = createDownloadlink(link);
             thislink.setBrowserUrl(parameter);

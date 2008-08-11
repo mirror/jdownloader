@@ -70,17 +70,64 @@ public class ConvertDialog extends JFrame {
 
     };
 
-    private static boolean keepformat = false;
-    private static ConversionMode keeped;
 
-    public static ConversionMode DisplayDialog(Object[] displaymodes) {
+    private static boolean keepineverycase = false;
+	private static ConversionMode keeped;
+    private static Object[] keepedmodes;
+    private static boolean keepformat = false;
+    
+    public static boolean isKeepformat() {
+		return keepformat;
+	}
+
+	public static void setKeepformat(boolean keepformat) {
+		ConvertDialog.keepformat = keepformat;
+	}
+
+	public static boolean isKeepineverycase() {
+		return keepineverycase;
+	}
+
+	public static void setKeepineverycase(boolean keepineverycase) {
+		ConvertDialog.keepineverycase = keepineverycase;
+	}
+    
+    public static ConversionMode getKeeped() {
+    	if(keepformat)
+    	{
+    	return keeped;
+    	}
+        return null;
+    }
+    
+    public static void setKeepMode(ConversionMode NewKeepFormat) {
+    	ConvertDialog.keeped = NewKeepFormat;
+    	ConvertDialog.keepformat = true;
+    	ConvertDialog.keepedmodes = new Object[] {NewKeepFormat};
+    }
+
+    /**
+     * Zeigt Auswahldialog an.
+     * wenn keepformat aktiviert ist wird gespeichtertes Input zurückgegeben,
+     * es sei denn, andere Formate stehen zur Auswahl
+     */
+    public static ConversionMode DisplayDialog(Object[] displaymodes, String name) {
         logger.fine(displaymodes.length + " Convertmodi zur Auswahl.");
         if (keepformat) {
-            // Es muss überprüft werden, ob das Format überhaupt zur Auswahl
-            // steht.
-            for (int i = 0; i < displaymodes.length; i++) {
-                if (displaymodes[i].equals(keeped)) { return keeped;
-
+        	if(keepedmodes.equals(displaymodes))
+        	{
+        		return keeped;
+        	}
+        	if(keepineverycase)
+        	{
+                for (int i = 0; i < displaymodes.length; i++) 
+                {
+                    if (displaymodes[i].equals(keeped)) 
+                    { 
+                        // Es muss überprüft werden, ob das Format überhaupt zur Auswahl
+                        // steht.
+                    	return keeped;
+                    }
                 }
             }
         }
@@ -88,19 +135,23 @@ public class ConvertDialog extends JFrame {
         { return (ConversionMode) displaymodes[0]; }
 
         JCheckBox checkBox = new JCheckBox(JDLocale.L("convert.dialog.keepformat", "Format für diese Sitzung beibehalten"));
-        checkBox.setSelected(false);
-        ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, checkBox, JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:"), JOptionPane.QUESTION_MESSAGE, null, displaymodes, displaymodes[0]);
+        if(keepineverycase){ keepformat = true; }
+        checkBox.setSelected(keepformat);
+        ConversionMode selectedValue = (ConversionMode) JOptionPane.showInputDialog(null, checkBox, JDLocale.L("convert.dialog.chooseformat", "Wähle das Dateiformat:") + " [" + name + "]", JOptionPane.QUESTION_MESSAGE, null, displaymodes, displaymodes[0]);
 
         System.out.println("selectedValue: " + selectedValue);
         if (checkBox.isSelected()) {
             keepformat = true;
             keeped = selectedValue;
+            keepedmodes = displaymodes;
         } else {
             keepformat = false;
         }
         return selectedValue;
 
     }
+    
+
 
     /***************************************************************************
      * public static void main(String[] args) { //ConversionMode[] mode =

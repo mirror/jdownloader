@@ -33,13 +33,16 @@ import jd.plugins.RequestInfo;
 
 public class YouTubeCom extends PluginForDecrypt {
 
+	
+	//TODO: Neue Plugins im StreamingShare-Addon eintragen!
     static private String host = "youtube.com";
     static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
     private static final String PLAYER = "get_video";
     private static final String T = "\"t\"";
     private static final String VIDEO_ID = "video_id";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>", Pattern.CASE_INSENSITIVE);
+    private Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
+    
     static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
     public YouTubeCom() {
@@ -59,6 +62,22 @@ public class YouTubeCom extends PluginForDecrypt {
         Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
+        	if(StreamingShareLink.matcher(parameter).matches())
+        	{
+        		//StreamingShareLink
+        		String[] info = new Regex(parameter,StreamingShareLink).getMatches(0);
+                for(String debug:info)
+                {
+                	logger.info(debug);
+                }
+        		DownloadLink thislink = createDownloadlink(info[2]);
+                thislink.setBrowserUrl(info[3]);
+                thislink.setStaticFileName(info[1]);
+                thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[4])).GetText());
+                thislink.setProperty("convertto", info[4]);
+                decryptedLinks.add(thislink);
+        	}
+        	
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String video_id = "";
@@ -78,6 +97,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
+            String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim();
 
             /* Konvertierungsmöglichkeiten adden */
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
@@ -90,14 +110,14 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray());
+            
+            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
             if (ConvertTo != null) {
                 if (ConvertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     link += "&fmt=18";
                 } else if (ConvertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
                     link += "&fmt=13";
                 }
-                String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim();
                 DownloadLink thislink = createDownloadlink(link);
                 thislink.setBrowserUrl(parameter);
                 thislink.setStaticFileName(name + ".tmp");

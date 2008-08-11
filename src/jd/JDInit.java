@@ -654,6 +654,7 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("jdchat.JDChat", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("StreamingShareTool", 1.5));
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
