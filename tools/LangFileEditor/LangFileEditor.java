@@ -33,6 +33,7 @@ import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 
 import jd.http.Encoding;
@@ -77,7 +78,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 editor.sourceFolder = file;
                 editor.txtFolder.setText(arg);
                 // System.out.println("SourceFolder: " + arg);
-            } else if (editor.languageFile == null && arg.endsWith("lng")) {
+            } else if (editor.languageFile == null && arg.endsWith(".lng")) {
                 editor.languageFile = file;
                 editor.txtFile.setText(arg);
                 // System.out.println("LanguageFile: " + arg);
@@ -270,6 +271,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         } else if (e.getSource() == btnBrowseFile || e.getSource() == mnuBrowseFile) {
 
             JFileChooser chooser = new JFileChooser((languageFile != null) ? languageFile.getAbsolutePath() : null);
+            chooser.setFileFilter(new LngFileFilter());
 
             if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
@@ -286,6 +288,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogType(JFileChooser.SAVE_DIALOG);
             chooser.setDialogTitle("Save Language File As...");
+            chooser.setFileFilter(new LngFileFilter());
             chooser.setCurrentDirectory(languageFile.getParentFile());
             int value = chooser.showOpenDialog(this);
 
@@ -750,6 +753,22 @@ public class LangFileEditor extends JFrame implements ActionListener {
         public int compare(String[] s1, String[] s2) {
 
             return s1[0].compareToIgnoreCase(s2[0]);
+
+        }
+
+    }
+
+    private class LngFileFilter extends FileFilter {
+
+        public boolean accept(File f) {
+
+            return (f.isDirectory() || f.getName().toLowerCase().endsWith(".lng"));
+
+        }
+
+        public String getDescription() {
+
+            return "LanguageFiles (*.lng)";
 
         }
 
