@@ -2118,13 +2118,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for \"%s\" isn't valid! Please check username and password!", account.getUser()));
                     return;
                 }
-                JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]20:push[right]10[grow,fill][20]"));
+                JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
                 String def = String.format(JDLocale.L("plugins.host.premium.info.title", "Accountinformation from %s for %s"), account.getUser(), pluginForHost.getHost());
-                String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left") };
+                String[] label = new String[] { JDLocale.L("plugins.host.premium.info.validUntil", "Valid until"), JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"), JDLocale.L("plugins.host.premium.info.files", "Files"), JDLocale.L("plugins.host.premium.info.rapidpoints", "Rapidpoints"), JDLocale.L("plugins.host.premium.info.usedSpace", "Used Space"), JDLocale.L("plugins.host.premium.info.trafficShareLeft", "Traffic Share left"), JDLocale.L("plugins.host.premium.info.status", "Info") };
 
                 DateFormat formater = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
 
-                String[] data = new String[] { (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()) };
+                String[] data = new String[] { (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()),ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
 
                 for (int j = 0; j < data.length; j++) {
@@ -2135,6 +2135,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     }
 
                 }
+                
+              
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
             }
         }.start();

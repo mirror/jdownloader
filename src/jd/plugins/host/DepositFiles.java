@@ -20,6 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -28,6 +32,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -317,6 +322,79 @@ public class DepositFiles extends PluginForHost {
 
         dl.startDownload();
 
+    }
+    
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        Browser.clearCookies(HOST);
+        br.setAcceptLanguage("en");
+      
+        br.getPage("http://depositfiles.com/en/");
+        
+        Form login = br.getForm(1);
+        
+        login.put("login", account.getUser());
+        login.put("password", account.getPass());
+        
+        br.submitForm(login);
+        br.getPage("http://depositfiles.com/en/gold/");
+        String expire=br.getRegex("You have Gold access until: <b>(.*?)</b>").getFirstMatch();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
+        if(expire==null){
+            ai.setStatus("Account expired or logins not valid");
+            ai.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Account is ok");
+        //2009-07-19 17:50:29
+        logger.info(dateFormat.format(new Date())+"");
+        Date date;
+        try {
+            date = dateFormat.parse(expire);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+     
+        
+        
+//        br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
+//
+//        if (account.getUser().equals("") || account.getPass().equals("") || br.containsHTML("Your Premium Account has not been found")) {
+//            ai.setValid(false);
+//            return ai;
+//        }
+//
+//        String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+//        String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
+//        String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+//        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+//        String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+//        String trafficShareLeft = br.getRegex("<td>TrafficShare left:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+//        ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
+//        ai.setFilesNum(Integer.parseInt(files));
+//        ai.setPremiumPoints(Integer.parseInt(rapidPoints));
+//        ai.setUsedSpace(Regex.getSize(usedSpace));
+//        ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
+//        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
+////if(account.getStatus()==null||account.getStatus().trim().length()==0){
+////    account.setStatus("Account is ok");
+////}
+//        try {
+//            Date date = dateFormat.parse(validUntil);
+//            ai.setValidUntil(date.getTime());
+//        } catch (ParseException e) {
+//            e.printStackTrace();
+//        }
+//
+//        if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
+//            ai.setExpired(true);
+//        }
+//        logger.info(ai + "");
+
+        return ai;
     }
 
     @Override

@@ -21,6 +21,7 @@ public class AccountInfo extends Property {
     private long usedSpace = -1;
     private long trafficShareLeft = -1;
     private boolean expired = false;
+    private String status;
 
     public AccountInfo(PluginForHost plugin, Account account) {
         this.plugin = plugin;
@@ -171,6 +172,15 @@ public class AccountInfo extends Property {
      */
     public boolean isExpired() {
         return expired||this.getValidUntil()<new Date().getTime();
+    }
+
+    public void setStatus(String string) {
+       this.status=string;
+        
+    }
+
+    public String getStatus() {
+        return status;
     }
 
 }

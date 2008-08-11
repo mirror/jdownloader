@@ -21,9 +21,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 
@@ -38,40 +41,50 @@ public class Filefactory {
 
     private static final double OBJECTDETECTIONCONTRAST = 0.95;
 
-    @SuppressWarnings("unchecked")
-    public static Letter[] getLetters(Captcha captcha) {
-        ArrayList<PixelObject> os = new ArrayList<PixelObject>();
-        for (int y = 0; y < captcha.getHeight(); y++) {
-            for (int x = 0; x < captcha.getWidth(); x++) {
+    private static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance) {
+        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
 
-                int color = captcha.getPixelValue(x, y);
-
-                double bestvalue = 100.0;
-                PixelObject bo = null;
-                for (PixelObject akt : os) {
-                    double d;
-
-                    if (akt.getDistanceTo(x, y) < 10 && (d = UTILITIES.getColorDifference(akt.elementAt(0)[2], color)) < bestvalue) {
-                        bestvalue = d;
-                        bo = akt;
+        for (int x = 0; x < grid.getWidth(); x++) {
+            for (int y = 0; y < grid.getHeight(); y++) {
+                if (grid.getGrid()[x][y] == 0xffffff) continue;
+                if(x==2){
+                    ret=ret;
+                }
+                PixelObject n = new PixelObject(grid);
+                n.add(x, y, grid.getGrid()[x][y]);
+                for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
+                    PixelObject o = it.next();
+                    double dif;
+                    if ((dif=UTILITIES.getColorDifference(grid.getGrid()[x][y], o.elementAt(0)[2])) < 90 && o.isTouching(n, false, tollerance, tollerance)) {
+                        
+                        n.add(o);
+                        int[] rgb = UTILITIES.getRGB(n.getAverage());
+                        it.remove();
+                    }else{
+                        ret=ret;
+                       // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
+                           
                     }
-
                 }
-                if (bestvalue <= 30.0) {
-                    bo.add(x, y, color);
-
-                } else {
-
-                    PixelObject po = new PixelObject(captcha);
-                    po.add(x, y, color);
-                    os.add(po);
-                }
-
+                ret.add(n);
+                grid.getGrid()[x][y]=n.getAverage();
+                BasicWindow.showImage(grid.getImage(3), x+"-"+y);
+                ret=ret;
             }
         }
+
+        return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Letter[] getLetters(Captcha captcha) {
+        ArrayList<PixelObject> os = getObjects(captcha, 1);
+
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
+
+            BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
             if (true && (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
                 it.remove();
                 // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
@@ -84,8 +97,6 @@ public class Filefactory {
             }
 
         }
-
-        
 
         ArrayList<Letter> ret = new ArrayList<Letter>();
         int i = 0;
@@ -141,7 +152,7 @@ public class Filefactory {
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         int ths = Runtime.getRuntime().availableProcessors();
         MultiThreadDetection mtd = new MultiThreadDetection(ths, jac);
-        //Vector<Letter> ret = new Vector<Letter>();
+        // Vector<Letter> ret = new Vector<Letter>();
 
         ArrayList<Letter> r = new ArrayList<Letter>();
         int iii = 0;

@@ -3,6 +3,8 @@ package jd.gui.skins.simple.config.panels;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
@@ -25,7 +27,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumPanel extends JPanel implements ChangeListener, ActionListener {
+public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
@@ -116,7 +118,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                     }
                 }
             });
-            active.setSelected(i % 2 != 0 ? true : false);
+            active.setSelected(false);
             enables[i - 1] = active;
             enables[i - 1].addChangeListener(this);
             add(active, "alignleft");
@@ -136,16 +138,18 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             
             add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
             add(usernames[i - 1] = new JTextField(""));
-
+            usernames[i - 1].addFocusListener(this);
             add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-//            add(passwords[i - 1] = new JPasswordField(""), "wrap");
+// add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
-
-//            add(statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status")));
-//            JTextField status = new JTextField("");
-//            stati[i - 1] = status;
-//            status.setEditable(false);
-//            add(status, "span, gapbottom :10:push");
+            passwords[i - 1].addFocusListener(this);
+// add(statiLabels[i - 1] = new
+// JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account
+// Status")));
+// JTextField status = new JTextField("");
+// stati[i - 1] = status;
+// status.setEditable(false);
+// add(status, "span, gapbottom :10:push");
         }
 
     }
@@ -176,5 +180,19 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
         }
 
+    }
+
+    public void focusGained(FocusEvent e) {
+        e=e;
+        String text = ((JTextField) e.getSource()).getText();
+       ((JTextField) e.getSource()).setSelectionStart(0);
+       ((JTextField) e.getSource()).setSelectionEnd(text.length());
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void focusLost(FocusEvent e) {
+        // TODO Auto-generated method stub
+        
     }
 }

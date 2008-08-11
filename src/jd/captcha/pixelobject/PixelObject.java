@@ -16,7 +16,10 @@
 
 package jd.captcha.pixelobject;
 
+
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -50,7 +53,7 @@ public class PixelObject implements Comparable {
     private int avgIsSaveNum = 10;
     private boolean bordered = true;
     public int colorpixel = 0;
-
+    private HashMap<Integer, HashMap<Integer, int[]>> grid;
     /**
      * Kontrastwert für die durchschnisserkennung
      */
@@ -108,10 +111,11 @@ public class PixelObject implements Comparable {
     private int yMin = Integer.MAX_VALUE;
 
     /**
-     * @param owner
+     * @param grid
      */
-    public PixelObject(PixelGrid owner) {
-        this.owner = owner;
+    public PixelObject(PixelGrid grid) {
+        this.owner = grid;
+        this.grid = new HashMap<Integer, HashMap<Integer, int[]>>();
         object = new ArrayList<int[]>();
     }
 
@@ -128,7 +132,9 @@ public class PixelObject implements Comparable {
         int tmpAvg = avg;
 
         avg = UTILITIES.mixColors(avg, color, getSize(), 1);
-
+        HashMap<Integer, int[]> row = grid.get(x);
+        if (row == null) grid.put(x, row = new HashMap<Integer, int[]>());
+        row.put(y, new int[]{x,y,color});
         // if(JAntiCaptcha.isLoggerActive())logger.info(" AVG "+avg+"
         // ("+color+")");
         if (Math.abs(avg - tmpAvg) < owner.getMaxPixelValue() * contrast) {
@@ -157,6 +163,40 @@ public class PixelObject implements Comparable {
 
     }
 
+    private int getYMax() {
+       
+        return yMax;
+    }
+
+    private int getXMax() {
+       
+        return xMax;
+    }
+    public boolean isTouching(PixelObject b, boolean followX, int radiusX, int radiusY) {
+
+        if (b.getXMin() > getXMax() + radiusX) return false;
+        if (b.getXMax() < getXMin() - radiusY) return false;
+        if (b.getYMin() > getYMax() + radiusX) return false;
+        if (b.getYMax() < getYMin() - radiusY) return false;
+        HashMap<Integer, int[]> row;
+
+        for (int[] px : b.object) {
+
+        
+            for (int sx = -radiusX; sx <= radiusX; sx++) {
+                row = grid.get(px[0] + sx);
+                if (row == null) continue;
+                for (int sy = -radiusY; sy <= radiusY; sy++) {
+                    if (Math.abs(sx) == Math.abs(sy) && !followX) continue;
+                    if (row.get(px[1] + sy) != null) return true;
+                }
+
+            }
+
+        }
+        return false;
+
+    }
     /**
      * Schnelle aber ungenauere align Methode
      * 
@@ -573,7 +613,7 @@ public class PixelObject implements Comparable {
 
     @Override
     public String toString() {
-        return super.toString() + " " + getLocation()[0];
+        return super.toString() + " " + getLocation()[0]+"-"+getLocation()[1];
     }
 
     /**
