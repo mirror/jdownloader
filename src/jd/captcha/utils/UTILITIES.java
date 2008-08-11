@@ -865,13 +865,18 @@ public class UTILITIES {
 
         int[] av = UTILITIES.hexToRgb(a);
         int[] bv = UTILITIES.hexToRgb(b);
-        int R = (av[0] * ga + bv[0] * gb) / (ga + gb);
-        int G = (av[1] * ga + bv[1] * gb) / (ga + gb);
-        int B = (av[2] * ga + bv[2] * gb) / (ga + gb);
+        int R,G,B;
+    
+         R = (av[0] * ga + bv[0] * gb) / (ga + gb);
+         G = (av[1] * ga + bv[1] * gb) / (ga + gb);
+         B = (av[2] * ga + bv[2] * gb) / (ga + gb);
+       
 
-        return UTILITIES.rgbToHex(new int[] { R, G, B });
+        return UTILITIES.rgbToHex(new int[] { R, (G), (B) });
 
     }
+
+
 
     public static int nextJump(int x, int from, int to, int step) {
         int start = UTILITIES.getJumperStart(from, to);

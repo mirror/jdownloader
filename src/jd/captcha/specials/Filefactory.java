@@ -43,34 +43,45 @@ public class Filefactory {
 
     private static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance) {
         ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-
+        ArrayList<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 if (grid.getGrid()[x][y] == 0xffffff) continue;
-                if(x==2){
-                    ret=ret;
-                }
+
                 PixelObject n = new PixelObject(grid);
                 n.add(x, y, grid.getGrid()[x][y]);
+
+                merge = new ArrayList<PixelObject>();
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
-                    double dif;
-                    if ((dif=UTILITIES.getColorDifference(grid.getGrid()[x][y], o.elementAt(0)[2])) < 90 && o.isTouching(n, false, tollerance, tollerance)) {
-                        
-                        n.add(o);
-                        int[] rgb = UTILITIES.getRGB(n.getAverage());
-                        it.remove();
-                    }else{
-                        ret=ret;
-                       // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
-                           
+
+                    if (o.isTouching(x, y, true, 5, 5) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 15) {
+
+                        merge.add(o);
+                        // n.add(o);
+                        //                     
+                        // it.remove();
                     }
                 }
-                ret.add(n);
-                grid.getGrid()[x][y]=n.getAverage();
-                BasicWindow.showImage(grid.getImage(3), x+"-"+y);
-                ret=ret;
+                if (merge.size() == 0) {
+                    ret.add(n);
+                } else if (merge.size() == 1) {
+                    merge.get(0).add(n);
+
+                } else {
+                    for (PixelObject po : merge) {
+                        ret.remove(po);
+                        n.add(po);
+                    }
+
+                    ret.add(n);
+
+                }
+
+                // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
+                ret = ret;
             }
+            // BasicWindow.showImage(grid.getImage(6), x+"-");
         }
 
         return ret;
@@ -78,23 +89,43 @@ public class Filefactory {
 
     @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
-        ArrayList<PixelObject> os = getObjects(captcha, 1);
+captcha.cleanByRGBDistance(-1, 20);
+        long t = System.currentTimeMillis();
+        ArrayList<PixelObject> os = getObjects(captcha, 0);
 
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
 
-            BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
-            if (true && (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
+          // if(akt.getSize()>20)  BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
+           if(akt.getArea()==140){
+               t=t;
+           }
+          if(akt.getArea() > 1800 ){
+               it.remove();
+           }
+           else if(akt.getArea() < 130 ){
+               it.remove();
+           }
+           else if((double) akt.getArea() / (double) akt.getSize() < 1.2){
+               it.remove();
+           }
+           else if(akt.getArea() / akt.getSize() > 10){
+               it.remove();
+           }
+           else if(akt.getHeight() < 10 || akt.getWidth() < 5){ 
                 it.remove();
-                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
-                // "+akt.getArea()+" -"+((double)akt.getArea() /
-                // (double)akt.getSize())+" - "+akt.getHeight()+" -
-                // "+akt.getWidth());
-
-            } else {
-
             }
+//            if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2) || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
+//                it.remove();
+//                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
+//                // "+akt.getArea()+" -"+((double)akt.getArea() /
+//                // (double)akt.getSize())+" - "+akt.getHeight()+" -
+//                // "+akt.getWidth());
+//
+//            } else {
+//
+//            }
 
         }
 
@@ -112,15 +143,15 @@ public class Filefactory {
             i++;
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
 
-            if (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 8 || akt.getHeight() < 15 || akt.getWidth() < 5) {
-                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
-                // "+akt.getArea()+" -"+((double)akt.getArea() /
-                // (double)akt.getSize())+" - "+akt.getHeight()+" -
-                // "+akt.getWidth());
-            } else {
+//            if (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 8 || akt.getHeight() < 15 || akt.getWidth() < 5) {
+//                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
+//                // "+akt.getArea()+" -"+((double)akt.getArea() /
+//                // (double)akt.getSize())+" - "+akt.getHeight()+" -
+//                // "+akt.getWidth());
+//            } else {
                 ret.add(let);
 
-            }
+//            }
         }
 
         // for (int i = 0; i < letters.size(); i++) {

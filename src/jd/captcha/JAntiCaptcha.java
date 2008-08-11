@@ -456,10 +456,12 @@ public class JAntiCaptcha {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.info(getLetterNum() + "");
             }
+            
+            if (!jas.getBoolean("autoLetterNum")) {
             for (int i = newLettersVector.size() - 1; i >= getLetterNum(); i--) {
                 newLettersVector.remove(i);
             }
-
+            }
             // Wieder in die richtige reihenfolge sortieren
             Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
                 public int compare(LetterComperator obj1, LetterComperator obj2) {
