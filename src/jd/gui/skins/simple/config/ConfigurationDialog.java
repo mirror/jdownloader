@@ -282,6 +282,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
      */
     @SuppressWarnings("unchecked")
     private void addConfigPanel(Class configPanelClass, String img, String title) {
+        System.out.println(img);
 
         configClasses.add(configPanelClass);
 

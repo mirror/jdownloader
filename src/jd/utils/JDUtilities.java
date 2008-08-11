@@ -947,6 +947,10 @@ public class JDUtilities {
         }
         return images.get(imageName);
     }
+    
+    public static ImageIcon getImageIcon(String imageName) {
+        return new ImageIcon(imageName);
+    }
 
     /**
      * Prüft anhand der Globalen IP Check einstellungen die IP
