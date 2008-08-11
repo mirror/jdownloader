@@ -1,3 +1,5 @@
+package jd.plugins.optional;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -11,6 +13,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Vector;
@@ -31,13 +34,14 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
-import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 
+import jd.config.MenuItem;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -48,14 +52,15 @@ import jd.utils.JDUtilities;
  * @author eXecuTe|Greeny
  */
 
-public class LangFileEditor extends JFrame implements ActionListener {
+public class LangFileEditor extends PluginOptional {
 
-    private static final long serialVersionUID = 4958486311019858135L;
+    private JFrame frame;
+    private File sourceFolder, languageFile;
     private JTextField txtFolder, txtFile;
     private JLabel lblEntriesCount;
     private JButton btnBrowseFile, btnBrowseFolder;
     private JMenu mnuFile, mnuKey, mnuEntries;
-    private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuReload, mnuSave, mnuSaveAs, mnuExit;
+    private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JTable table;
@@ -66,44 +71,14 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
 
-    private File sourceFolder, languageFile;
+    private void showGui() {
 
-    public static void main(String args[]) {
-
-        LangFileEditor editor = new LangFileEditor();
-
-        for (String arg : args) {
-            File file = new File(arg);
-
-            if (editor.sourceFolder == null && file.isDirectory()) {
-                editor.sourceFolder = file;
-                editor.txtFolder.setText(arg);
-                // System.out.println("SourceFolder: " + arg);
-            } else if (editor.languageFile == null && arg.endsWith(".lng")) {
-                editor.languageFile = file;
-                editor.txtFile.setText(arg);
-                // System.out.println("LanguageFile: " + arg);
-            }
-        }
-
-        if (editor.sourceFolder != null || editor.languageFile != null) editor.initList();
-
-        if (editor.sourceFolder == null) JOptionPane.showMessageDialog(editor, "You can download the zipped SourceCode for JD from:\nhttp://jdownloader.org/download");
-    }
-
-    public LangFileEditor() {
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {
-            System.out.println("Error setting native LAF: " + e);
-        }
-
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setTitle("jDownloader - Language File Editor");
-        this.setMinimumSize(new Dimension(800, 500));
-        this.setPreferredSize(new Dimension(1200, 700));
-        this.setName("LANGFILEEDIT");
+        frame = new JFrame();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor"));
+        frame.setMinimumSize(new Dimension(800, 500));
+        frame.setPreferredSize(new Dimension(1200, 700));
+        frame.setName("LANGFILEEDIT");
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
@@ -113,7 +88,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
-        this.setContentPane(main);
+        frame.setContentPane(main);
 
         JPanel top = new JPanel(new BorderLayout(5, 5));
         JPanel top1 = new JPanel(new BorderLayout(5, 5));
@@ -122,27 +97,28 @@ public class LangFileEditor extends JFrame implements ActionListener {
         top.add(top1, BorderLayout.PAGE_START);
         top.add(top2, BorderLayout.PAGE_END);
 
-        top1.add(new JLabel("Source Folder: "), BorderLayout.LINE_START);
-        top1.add(txtFolder = new JTextField("<Please select the Source Folder!>"), BorderLayout.CENTER);
-        top1.add(btnBrowseFolder = new JButton("Browse"), BorderLayout.EAST);
+        top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
+        top1.add(txtFolder = new JTextField(JDLocale.L("plugins.optional.langfileeditor.sourceFolder.select", "<Please select the Source Folder!>")), BorderLayout.CENTER);
+        top1.add(btnBrowseFolder = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
         txtFolder.setEditable(false);
         btnBrowseFolder.addActionListener(this);
 
-        top2.add(new JLabel("Language File: "), BorderLayout.LINE_START);
-        top2.add(txtFile = new JTextField("<Please select a Language File!>"), BorderLayout.CENTER);
-        top2.add(btnBrowseFile = new JButton("Browse"), BorderLayout.EAST);
+        top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
+        top2.add(txtFile = new JTextField(JDLocale.L("plugins.optional.langfileeditor.languageFile.select", "<Please select a Language File!>")), BorderLayout.CENTER);
+        top2.add(btnBrowseFile = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
         txtFile.setEditable(false);
         btnBrowseFile.addActionListener(this);
 
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table), BorderLayout.CENTER);
+        //TODO: Auch hier: Lokalisieren oder Anzeige verändern
         main.add(lblEntriesCount = new JLabel("Entries Count:"), BorderLayout.PAGE_END);
 
         buildMenu();
 
-        this.setResizable(true);
-        this.pack();
-        this.setVisible(true);
+        frame.setResizable(true);
+        frame.pack();
+        frame.setVisible(true);
 
     }
 
@@ -176,23 +152,24 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
+        //TODO: lblEntriesCount entweder lokalisieren (...) oder die Statistik-Anzeige verändern (Popup?)
         lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld + "     [Probably old] " + oldEntries.size() + "     [Probably dupes] " + dupes.size());
 
     }
 
     private void buildMenu() {
         // File Menü
-        mnuFile = new JMenu("File");
+        mnuFile = new JMenu(JDLocale.L("plugins.optional.langfileeditor.file", "File"));
 
-        mnuFile.add(mnuBrowseFolder = new JMenuItem("Browse Source Folder"));
-        mnuFile.add(mnuBrowseFile = new JMenuItem("Browse Language File"));
+        mnuFile.add(mnuBrowseFolder = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.browseSourceFolder", "Browse Source Folder")));
+        mnuFile.add(mnuBrowseFile = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.browseLanguageFile", "Browse Language File")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuReload = new JMenuItem("Reload"));
+        mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuSave = new JMenuItem("Save"));
-        mnuFile.add(mnuSaveAs = new JMenuItem("Save As"));
+        mnuFile.add(mnuSave = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.save", "Save")));
+        mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuExit = new JMenuItem("Exit"));
+        mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
 
         mnuBrowseFolder.addActionListener(this);
         mnuBrowseFile.addActionListener(this);
@@ -202,22 +179,22 @@ public class LangFileEditor extends JFrame implements ActionListener {
         mnuSave.setEnabled(false);
         mnuSaveAs.addActionListener(this);
         mnuSaveAs.setEnabled(false);
-        mnuExit.addActionListener(this);
+        mnuClose.addActionListener(this);
 
         // Key Menü
-        mnuKey = new JMenu("Key");
+        mnuKey = new JMenu(JDLocale.L("plugins.optional.langfileeditor.key", "Key"));
         mnuKey.setEnabled(false);
 
-        mnuKey.add(mnuAdd = new JMenuItem("Add Key"));
-        mnuKey.add(mnuDelete = new JMenuItem("Delete Key(s)"));
+        mnuKey.add(mnuAdd = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key")));
+        mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuEdit = new JMenuItem("Edit Value(s)"));
-        mnuKey.add(mnuClear = new JMenuItem("Clear Values"));
+        mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
+        mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuAdopt = new JMenuItem("Adopt Default(s)"));
-        mnuKey.add(mnuAdoptMissing = new JMenuItem("Adopt Defaults of Missing Entries"));
-        mnuKey.add(mnuTranslate = new JMenuItem("Translate with Google"));
-        mnuKey.add(mnuTranslateMissing = new JMenuItem("Translate Missing Entries with Google"));
+        mnuKey.add(mnuAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
+        mnuKey.add(mnuAdoptMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
+        mnuKey.add(mnuTranslate = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate", "Translate with Google")));
+        mnuKey.add(mnuTranslateMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate.missing", "Translate Missing Entries with Google")));
 
         mnuAdd.addActionListener(this);
         mnuDelete.addActionListener(this);
@@ -229,15 +206,15 @@ public class LangFileEditor extends JFrame implements ActionListener {
         mnuTranslateMissing.addActionListener(this);
 
         // Entries Menü
-        mnuEntries = new JMenu("Entries");
+        mnuEntries = new JMenu(JDLocale.L("plugins.optional.langfileeditor.entries", "Entries"));
         mnuEntries.setEnabled(false);
 
-        mnuEntries.add(mnuSelectMissing = new JMenuItem("Select Missing Entries"));
-        mnuEntries.add(mnuSelectOld = new JMenuItem("Select Old Entries"));
+        mnuEntries.add(mnuSelectMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectMissing", "Select Missing Entries")));
+        mnuEntries.add(mnuSelectOld = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectOld", "Select Old Entries")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuShowDupes = new JMenuItem("Show Dupes"));
+        mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuSort = new JMenuItem("Sort Entries"));
+        mnuEntries.add(mnuSort = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.sortEntries", "Sort Entries")));
 
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
@@ -248,17 +225,22 @@ public class LangFileEditor extends JFrame implements ActionListener {
         menuBar.add(mnuFile);
         menuBar.add(mnuKey);
         menuBar.add(mnuEntries);
-        setJMenuBar(menuBar);
+        frame.setJMenuBar(menuBar);
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
 
-        if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
+        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
+
+            showGui();
+
+        } else if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
 
             JFileChooser chooser = new JFileChooser(sourceFolder);
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
                 sourceFolder = chooser.getSelectedFile();
                 txtFolder.setText(sourceFolder.getAbsolutePath());
                 initList();
@@ -269,7 +251,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
             JFileChooser chooser = new JFileChooser((languageFile != null) ? languageFile.getAbsolutePath() : null);
             chooser.setFileFilter(new LngFileFilter());
 
-            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
                 txtFile.setText(languageFile.getAbsolutePath());
                 initList();
@@ -283,18 +265,18 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-            chooser.setDialogTitle("Save Language File As...");
+            chooser.setDialogTitle(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As"));
             chooser.setFileFilter(new LngFileFilter());
             chooser.setCurrentDirectory(languageFile.getParentFile());
 
-            if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
+            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
 
         } else if (e.getSource() == mnuEdit) {
 
             int[] rows = table.getSelectedRows();
 
             for (int i = 0; i < rows.length; i++) {
-                EditDialog dialog = new EditDialog(this, data.get(rows[i]));
+                EditDialog dialog = new EditDialog(frame, data.get(rows[i]));
                 if (dialog.value != null) tableModel.setValueAt(dialog.value, rows[i], 2);
             }
 
@@ -314,12 +296,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         } else if (e.getSource() == mnuAdd) {
 
-            AddDialog dialog = new AddDialog(this);
+            AddDialog dialog = new AddDialog(frame);
 
             if (dialog.key != null && dialog.value != null && !dialog.key.equals("") && !dialog.value.equals("")) {
                 data.add(new String[] { dialog.key, "", dialog.value });
             }
 
+            setInfoLabels();
             tableModel.fireTableRowsInserted(data.size() - 1, data.size() - 1);
 
         } else if (e.getSource() == mnuAdoptMissing) {
@@ -328,7 +311,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                 if (data.get(i)[2].equals("")) {
                     String def = data.get(i)[1];
-                    if (!def.equals("") && !def.equals("<no default value>")) tableModel.setValueAt(def, i, 2);
+                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
                 }
 
             }
@@ -341,7 +324,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             for (int i : table.getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
-                if (!def.equals("") && !def.equals("<no default value>")) tableModel.setValueAt(def, i, 2);
+                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
             }
 
         } else if (e.getSource() == mnuClear) {
@@ -366,15 +349,15 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         } else if (e.getSource() == mnuShowDupes) {
 
-            new DupeDialog(this, dupes);
+            new DupeDialog(frame, dupes);
 
         } else if (e.getSource() == mnuTranslateMissing) {
 
             if (lngKey == null) {
-                String result = JOptionPane.showInputDialog(this, "Please insert the Language Key to provide a correct translation of Google:", "Insert Language Key", JOptionPane.QUESTION_MESSAGE);
+                String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
                 if (result == null) return;
                 if (!(result.length() == 2)) {
-                    JOptionPane.showMessageDialog(this, "The Language Key must have a length of two!", "Wrong Length!", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key must have a length of two!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Length!"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 lngKey = result;
@@ -386,7 +369,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                     String def = data.get(i)[1];
 
-                    if (!def.equals("") && !def.equals("<no default value>")) {
+                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
                         // System.out.println("Working on " + data.get(i)[0] +
                         // ":");
                         String result = JDLocale.translate(lngKey, def);
@@ -402,10 +385,10 @@ public class LangFileEditor extends JFrame implements ActionListener {
         } else if (e.getSource() == mnuTranslate) {
 
             if (lngKey == null) {
-                String result = JOptionPane.showInputDialog(this, "Please insert the Language Key to provide a correct translation of Google:", "Insert Language Key", JOptionPane.QUESTION_MESSAGE);
+                String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
                 if (result == null) return;
                 if (!(result.length() == 2)) {
-                    JOptionPane.showMessageDialog(this, "The Language Key must have a length of two!", "Wrong Length!", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key must have a length of two!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Length!"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 lngKey = result;
@@ -415,16 +398,16 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                 String def = tableModel.getValueAt(i, 1);
 
-                if (!def.equals("") && !def.equals("<no default value>")) {
+                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
                     tableModel.setValueAt(JDLocale.translate(lngKey, def), i, 2);
                 }
 
             }
 
-        } else if (e.getSource() == mnuExit) {
+        } else if (e.getSource() == mnuClose) {
 
-            setVisible(false);
-            dispose();
+            frame.setVisible(false);
+            frame.dispose();
 
         } else if (e.getSource() == mnuSort) {
 
@@ -446,11 +429,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
             out.write(sb.toString());
             out.close();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "An error occured while writing the LanguageFile:\n" + e.getMessage(), "Error!", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(frame, JDLocale.LF("plugins.optional.langfileeditor.save.error.message", "An error occured while writing the LanguageFile:\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.save.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        JOptionPane.showMessageDialog(this, "LanguageFile saved successfully!", "Save successful!", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
@@ -496,6 +479,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         Collections.sort(data, new StringArrayComparator());
         tableModel.fireTableRowsInserted(0, data.size() - 1);
+        setInfoLabels();
 
     }
 
@@ -565,7 +549,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                     keys.add(Encoding.UTF8Decode(match[0].trim()));
                     String k = match[0].trim();
-                    String v = "<no default value>";
+                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
 
                     try {
                         v = match[2].trim();
@@ -584,7 +568,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
                     keys.add(Encoding.UTF8Decode(match[0].trim()));
                     String k = match[0].trim();
-                    String v = "<no default value>";
+                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
 
                     try {
                         v = match[1].trim();
@@ -633,7 +617,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private class MyTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = -5434313385327397539L;
-        private String[] columnNames = { "Key", "Source Value", "Language File Value" };
+        private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.key", "Key"), JDLocale.L("plugins.optional.langfileeditor.sourceValue", "Source Value"), JDLocale.L("plugins.optional.langfileeditor.languageFileValue", "Language File Value") };
 
         public int getColumnCount() {
             return columnNames.length;
@@ -707,7 +691,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             setModal(true);
             setLayout(new GridBagLayout());
-            setTitle("Duplicated Entries");
+            setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries"));
 
             MyDupeTableModel tableModel = new MyDupeTableModel();
             JTable table = new JTable(tableModel);
@@ -715,7 +699,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
             JScrollPane scroll = new JScrollPane(table);
             scroll.setPreferredSize(new Dimension(900, 350));
 
-            JButton btnClose = new JButton("Close");
+            JButton btnClose = new JButton(JDLocale.L("plugins.optional.langfileeditor.close", "Close"));
             btnClose.addActionListener(this);
             getRootPane().setDefaultButton(btnClose);
 
@@ -740,7 +724,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         class MyDupeTableModel extends AbstractTableModel {
 
             private static final long serialVersionUID = -5434313385327397539L;
-            private String[] columnNames = { "String", "First Key", "Secondary Key" };
+            private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
             private Vector<String[]> tableData = new Vector<String[]>();
 
             public int getColumnCount() {
@@ -780,9 +764,9 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         private static final long serialVersionUID = 1L;
 
-        private JButton btnOK = new JButton("OK");
-        private JButton btnCancel = new JButton("Cancel");
-        private JButton btnAdopt = new JButton("Adopt Default Value");
+        private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
+        private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
+        private JButton btnAdopt = new JButton(JDLocale.L("plugins.optional.langfileeditor.adoptDefaultValue", "Adopt Default Value"));
         private JFrame owner;
         private JTextArea taSourceValue = new JTextArea(5, 20);
         private JTextArea taFileValue = new JTextArea(5, 20);
@@ -796,7 +780,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
-            setTitle("Edit Value");
+            setTitle(JDLocale.L("plugins.optional.langfileeditor.editValue", "Edit Value"));
             getRootPane().setDefaultButton(btnOK);
 
             JLabel lblKey = new JLabel("");
@@ -863,8 +847,8 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         private static final long serialVersionUID = 1L;
 
-        private JButton btnOK = new JButton("OK");
-        private JButton btnCancel = new JButton("Cancel");
+        private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
+        private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
         private JFrame owner;
         private JTextField tfKey = new JTextField(20);
         private JTextArea taValue = new JTextArea(5, 20);
@@ -930,6 +914,49 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
+    }
+
+    @Override
+    public String getRequirements() {
+        return "JRE 1.5+";
+    }
+
+    @Override
+    public boolean initAddon() {
+        return true;
+    }
+
+    @Override
+    public void onExit() {
+    }
+
+    @Override
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.langfileeditor.show_gui", "Show GUI"), 0).setActionListener(this));
+
+        return menu;
+    }
+
+    @Override
+    public String getPluginName() {
+        return JDLocale.L("plugins.optional.langfileeditor.name", "JDLangFileEditor");
+    }
+
+    @Override
+    public String getCoder() {
+        return "JD-Team";
+    }
+
+    @Override
+    public String getVersion() {
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        return ret == null ? "0.0" : ret;
+    }
+    
+    public static int getAddonInterfaceVersion() {
+        return 0;
     }
 
 }

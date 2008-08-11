@@ -71,10 +71,11 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for-proxy-authentication/
+            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
             System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
             System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
@@ -87,7 +88,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
             System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
@@ -210,7 +211,7 @@ public class JDInit {
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
                 // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
@@ -394,8 +395,8 @@ public class JDInit {
         boolean allOK = true;
         try {
             Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
-            
-            if(obj==null) {
+
+            if (obj == null) {
                 File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
                 if (file.exists()) {
                     logger.info("Wrapping jdownloader.config");
@@ -655,6 +656,7 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("Newsfeeds", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("StreamingShareTool", 1.5));
+        optionalPluginsVersionsArray.add(new optionalPluginsVersions("LangFileEditor", 1.5));
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
