@@ -105,8 +105,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
+        ArrayList<Account> list = new ArrayList<Account>();;
         for (int i = 1; i <= accountNum; i++) {
-
+            list.add(new Account("",""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
@@ -118,7 +119,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                     }
                 }
             });
-            active.setSelected(false);
+            active.setSelected(true);
             enables[i - 1] = active;
             enables[i - 1].addChangeListener(this);
             add(active, "alignleft");
@@ -143,6 +144,11 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
             passwords[i - 1].addFocusListener(this);
+            
+          
+            for(JCheckBox e:enables){
+                if(e!=null)                e.setSelected(false);
+            }
             // add(statiLabels[i - 1] = new
             // JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last
             // Account
@@ -152,6 +158,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // status.setEditable(false);
             // add(status, "span, gapbottom :10:push");
         }
+        
+      
 
     }
 

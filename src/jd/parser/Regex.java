@@ -16,7 +16,11 @@
 
 package jd.parser;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,8 +55,8 @@ public class Regex {
             res = Double.parseDouble(matches[0][0] + "." + matches[0][1]);
         }
         if (Regex.matches(string, Pattern.compile("(gb|gbyte|gig)", Pattern.CASE_INSENSITIVE))) {
-            res *= 1024 * 1024*1024;
-        }else      if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
+            res *= 1024 * 1024 * 1024;
+        } else if (Regex.matches(string, Pattern.compile("(mb|mbyte|megabyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024 * 1024;
         } else if (Regex.matches(string, Pattern.compile("(kb|kbyte|kilobyte)", Pattern.CASE_INSENSITIVE))) {
             res *= 1024;
@@ -289,7 +293,29 @@ public class Regex {
 
     public static void main(String args[]) {
 
-        //long ds = Regex.getSeconds("fdsf 67 min");
- 
+        // long ds = Regex.getSeconds("fdsf 67 min");
+
+    }
+
+    public static long getMilliSeconds(String expire, String timeformat, Locale l) {
+        SimpleDateFormat dateFormat;
+        
+        if(l!=null){
+            dateFormat= new SimpleDateFormat(timeformat, l);
+        }else{
+            dateFormat= new SimpleDateFormat(timeformat);
+        }
+        if (expire == null) { return -1; }
+
+        Date date;
+        try {
+            date = dateFormat.parse(expire);
+            return (date.getTime());
+        } catch (ParseException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return -1;
+
     }
 }

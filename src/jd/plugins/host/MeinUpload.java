@@ -21,12 +21,14 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.GetRequest;
 import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -87,7 +89,41 @@ public class MeinUpload extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
         dl.startDownload();
     }
-
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        Browser.clearCookies(HOST);
+        br.setAcceptLanguage("en");
+        br.getPage("http://meinupload.com/status.html");
+        Form login = br.getForm(0);
+        login.put("user", account.getUser());
+        login.put("pass", account.getPass());
+        br.submitForm(login);
+        
+        br.getPage("http://meinupload.com/account.html?aktion=status");
+        
+        
+        String expire=br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getFirstMatch();
+        if(expire==null){
+            ai.setValid(false);
+            ai.setStatus("Account invalid. Logins wrong?");
+            return ai;
+        }
+        String trafficLeft=br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getFirstMatch();
+        String points=br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getFirstMatch();
+        String cash=br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getFirstMatch();
+        String files=br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getFirstMatch();
+        
+        ai.setStatus("Account is ok.");
+        ai.setValidUntil(Regex.getMilliSeconds(expire,"dd.MM.yyyy",null));
+        
+        ai.setTrafficLeft(Regex.getSize(trafficLeft));
+        ai.setPremiumPoints(Integer.parseInt(points));
+        ai.setAccountBalance(Integer.parseInt(cash)*100);
+        ai.setFilesNum(Integer.parseInt(files));
+        
+     return ai;   
+    }
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();

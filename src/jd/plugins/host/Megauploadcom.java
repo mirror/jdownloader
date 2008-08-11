@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -33,6 +34,8 @@ import jd.http.Request;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -104,8 +107,27 @@ public class Megauploadcom extends PluginForHost {
     public boolean doBotCheck(File file) {
         return false;
     }
-
-    public void handlePremium(DownloadLink parameter, String user, String pass) throws Exception {
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        Browser.clearCookies(HOST);
+        br.setAcceptLanguage("en");
+       
+        
+        br.postPage("http://megaupload.com/en/", "login="+account.getUser()+"&password="+account.getPass());
+       
+        br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode="+ Browser.getCookie("http://megaupload.com", "user")+"&language=en&uniq="+System.currentTimeMillis());
+       String days= br.getRegex("daysremaining=\"(\\d*?)\"").getFirstMatch();
+       ai.setValidUntil(System.currentTimeMillis()+(Long.parseLong(days)*24*50*50*1000));
+       if(days==null||days.equals("0"))ai.setExpired(true);
+       ///xml/rewardpoints.php?confirmcode=ed4f6c040c12111d9aae6fa0cc046861&language=en&uniq=1218486921448
+       br.getPage("http://www.megaupload.com/xml/rewardpoints.php?confirmcode="+ Browser.getCookie("http://megaupload.com", "user")+"&language=en&uniq="+System.currentTimeMillis());
+       String points= br.getRegex("availablepoints=\"(\\d*?)\"").getFirstMatch();
+      ai.setPremiumPoints(Integer.parseInt(points));
+       
+     return ai;   
+    }
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
@@ -127,7 +149,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
         br.getHeaders().put("X-MUTB", link);
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage(url, "login=" + user + "&password=" + pass);
+        br.postPage(url, "login=" + account.getUser() + "&password=" + account.getPass());
         if (Browser.getCookie(url, "user") == null || Browser.getCookie(url, "user").length() == 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
@@ -209,17 +231,14 @@ public class Megauploadcom extends PluginForHost {
         return HOST;
     }
 
-    /*public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
-
-    // Retry-After
-
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { if
+     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
+     * true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
+     * return 20; } else { return 1; } }
+     *  // Retry-After
+     * 
+     */public String getPluginName() {
         return HOST;
     }
 

@@ -207,7 +207,7 @@ public class QshareCom extends PluginForHost {
         login.put("cookie", "1");
         br.submitForm(login);
 
-        String premiumError = br.getRegex("Folgender Fehler ist aufgetreten: (.*?)[\\.|<]").getFirstMatch();
+        String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getFirstMatch();
         if (premiumError != null) {
             linkStatus.setErrorMessage(Encoding.htmlDecode(premiumError));
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
@@ -247,7 +247,7 @@ public class QshareCom extends PluginForHost {
             login.put("cookie", "1");
             br.submitForm(login);
             br.getPage((String) null);
-            url = br.getRegex("<A HREF=\"(.{20,200})\" STYLE=\"font-size:14px;font\\-weight:bold;text\\-decoration:underline\">Dein Download Link<\\/A><BR>").getFirstMatch();
+            url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/"+account.getUser()+"/"+account.getPass()+"/.*?)\"").getFirstMatch();
             br.setFollowRedirects(true);
             br.openGetConnection(url);
 
