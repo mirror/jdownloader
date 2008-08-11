@@ -9,6 +9,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -49,13 +50,11 @@ public class FengShuiConfigPanel {
         addSeparator(panel, "Barrierefreies Internet", getImageIcon("res/accessibility.png"), "<html>Some hosters use captchas which are impossible<br> to enter for people with disabilities. With this functionality<br> the JD team addresses the requirement for<br> people with disabilities not to be discriminated against.<br> Read more about it at:<br> <b>http://en.wikipedia.org/wiki/Web_accessibility");
         JCheckBox accessibility = new JCheckBox(" I have disabilities. Process captchas for me!");
         addComponents(panel, "Automatic download?", accessibility);
-//        panel.add(accessibility, GAPLEFT + "align leading, wmax pref" + WRAP);
 
         addSeparator(panel, "Update Mode", getImageIcon("res/update_manager.png"), "<html>You can either update to the stable or newest beta version of JD");
         JCheckBox beta = new JCheckBox(" Always update to latest beta?");
         beta.setSelected(true);
         addComponents(panel, "Stable or Beta?", beta);
-//        panel.add(beta, GAPLEFT + "align leading, wmax pref" + WRAP);
         
         Container bpanel = new JPanel(new MigLayout());
         bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
@@ -82,7 +81,6 @@ public class FengShuiConfigPanel {
 	    panel.add(new JSeparator(), "span 3, pushx, growx");
 	    JLabel tip = new JLabel(getImageIcon("res/bulb.gif"));
 	    tip.setToolTipText(help);
-//	    panel.add(new JSeparator(), "split 2, pushx, growx");
         panel.add(tip, GAPLEFT + "w pref!, wrap");
     }
 	
@@ -93,15 +91,17 @@ public class FengShuiConfigPanel {
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         JFrame frame = new JFrame("Feng Shui Config");
-        frame.setContentPane(getPanel());
-//        frame.setContentPane(new JScrollPane(getPanel()));
+        JPanel panel = getPanel();
+        frame.setContentPane(new JScrollPane(panel));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         Dimension ps = frame.getPreferredSize();
         frame.setPreferredSize(new Dimension(Math.min(800, ps.width), Math.min(600, ps.height)));
         frame.pack();
+        panel.setPreferredSize(new Dimension(400 , 500));
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
         frame.setVisible(true);
+        System.out.println(frame.getBounds());
     }
 }
