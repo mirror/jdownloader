@@ -58,7 +58,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
     private JMenu mnuFile, mnuKey, mnuEntries;
     private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuReload, mnuSave, mnuSaveAs, mnuExit;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes;
+    private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JTable table;
     private MyTableModel tableModel;
 
@@ -72,26 +72,21 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         LangFileEditor editor = new LangFileEditor();
 
-        if (args.length == 1) {
-            File file = new File(args[0]);
-            if (file.isDirectory()) {
+        for (String arg : args) {
+            File file = new File(arg);
+
+            if (editor.sourceFolder == null && file.isDirectory()) {
                 editor.sourceFolder = file;
-                editor.txtFolder.setText(args[0]);
-                editor.initList();
-            } else if (args[0].endsWith(".lng")) {
+                editor.txtFolder.setText(arg);
+                // System.out.println("SourceFolder: " + arg);
+            } else if (editor.languageFile == null && arg.endsWith("lng")) {
                 editor.languageFile = file;
-                editor.txtFile.setText(args[0]);
-                editor.initList();
+                editor.txtFile.setText(arg);
+                // System.out.println("LanguageFile: " + arg);
             }
         }
 
-        if (args.length == 2) {
-            editor.sourceFolder = new File(args[0]);
-            editor.languageFile = new File(args[1]);
-            editor.txtFolder.setText(args[0]);
-            editor.txtFile.setText(args[1]);
-            editor.initList();
-        }
+        if (editor.sourceFolder != null || editor.languageFile != null) editor.initList();
 
     }
 
@@ -133,7 +128,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         btnBrowseFolder.addActionListener(this);
 
         top2.add(new JLabel("Language File: "), BorderLayout.LINE_START);
-        top2.add(txtFile = new JTextField("<Please select the Language File!>"), BorderLayout.CENTER);
+        top2.add(txtFile = new JTextField("<Please select a Language File!>"), BorderLayout.CENTER);
         top2.add(btnBrowseFile = new JButton("Browse"), BorderLayout.EAST);
         txtFile.setEditable(false);
         btnBrowseFile.addActionListener(this);
@@ -244,11 +239,15 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         mnuEntries.add(mnuSelectMissing = new JMenuItem("Select Missing Entries"));
         mnuEntries.add(mnuSelectOld = new JMenuItem("Select Old Entries"));
+        mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem("Show Dupes"));
+        mnuEntries.addSeparator();
+        mnuEntries.add(mnuSort = new JMenuItem("Sort Entries"));
 
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
         mnuShowDupes.addActionListener(this);
+        mnuEntries.addActionListener(this);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
@@ -342,6 +341,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                 data.add(new String[] { dialog.key, "", dialog.value });
             }
 
+//            Collections.sort(data, new StringArrayComparator());
             tableModel.setData(data);
             table.getSelectionModel().setSelectionInterval(0, 0);
             setInfoLabels();
@@ -434,9 +434,11 @@ public class LangFileEditor extends JFrame implements ActionListener {
                     String def = data.get(i)[1];
 
                     if (!def.equals("") && !def.equals("<no default value>")) {
-                        System.out.println("Working on " + data.get(i)[0] + ":");
+                        // System.out.println("Working on " + data.get(i)[0] +
+                        // ":");
                         String result = JDLocale.translate(lngKey, def);
-                        System.out.println("Default entry is \"" + def + "\" and google returned \"" + result + "\"");
+                        // System.out.println("Default: \"" + def +
+                        // "\" == Google: \"" + result + "\"");
                         tableModel.setValueAt(result, i, 2);
                     }
 
@@ -474,6 +476,12 @@ public class LangFileEditor extends JFrame implements ActionListener {
             setVisible(false);
             dispose();
 
+        } else if (e.getSource() == mnuSort) {
+
+            Vector<String[]> data = tableModel.getData();
+            Collections.sort(data, new StringArrayComparator());
+            tableModel.setData(data);
+
         }
 
     }
@@ -507,10 +515,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         for (String[] entry : sourceEntries) {
 
-            String[] temp = new String[3];
-            temp[0] = entry[0];
-            temp[1] = entry[1];
-            temp[2] = getValue(fileEntries, entry[0]);
+            String[] temp = new String[] { entry[0], entry[1], getValue(fileEntries, entry[0]) };
             if (temp[2] == null) temp[2] = "";
 
             data.add(temp);
@@ -526,10 +531,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
             if (getValue(data, entry[0]) == null) {
 
-                String[] temp = new String[3];
-                temp[0] = entry[0];
-                temp[1] = "";
-                temp[2] = entry[1];
+                String[] temp = new String[] { entry[0], "", entry[1] };
 
                 data.add(temp);
                 oldEntries.add(temp[0]);
@@ -543,6 +545,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
+//        Collections.sort(data, new StringArrayComparator());
         return data;
 
     }
@@ -579,13 +582,13 @@ public class LangFileEditor extends JFrame implements ActionListener {
             if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
                 keys.add(Encoding.UTF8Decode(match[0]));
-                String[] temp = new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) };
-                entries.add(temp);
+                entries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
 
             }
 
         }
 
+//        Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -617,8 +620,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                     } catch (Exception e) {
                     }
 
-                    String[] temp = new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) };
-                    entries.add(temp);
+                    entries.add(new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) });
 
                 }
 
@@ -637,8 +639,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
                     } catch (Exception e) {
                     }
 
-                    String[] temp = new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) };
-                    entries.add(temp);
+                    entries.add(new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) });
 
                 }
 
@@ -646,6 +647,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         }
 
+//        Collections.sort(entries, new StringArrayComparator());
         return entries;
 
     }
@@ -724,9 +726,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
         }
 
         public void setData(Vector<String[]> newData) {
-            System.out.println(newData.get(newData.size() - 1)[0]);
             Collections.sort(newData, new StringArrayComparator());
-            System.out.println(newData.get(newData.size() - 1)[0]);
             tableData = newData;
             this.fireTableRowsInserted(0, tableData.size() - 1);
         }
@@ -741,7 +741,7 @@ public class LangFileEditor extends JFrame implements ActionListener {
 
         public int compare(String[] s1, String[] s2) {
 
-            return s1[0].compareTo(s2[0]);
+            return s1[0].compareToIgnoreCase(s2[0]);
 
         }
 
