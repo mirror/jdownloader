@@ -28,11 +28,14 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.parser.Form;
+import jd.parser.JavaScript;
 import jd.parser.Regex;
 
 public class Browser {
@@ -380,7 +383,90 @@ public class Browser {
         return null;
 
     }
+    public JavaScript getJavaScript()
+    {
+    	if(request==null)return null;
+    	String data = toString();
+    	String url = request.getUrl().toString();
+        String basename = "";
+        String host = "";
+        LinkedList<String> set = new LinkedList<String>();
+        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), };
+        Matcher m;
+        for (Pattern element : basePattern) {
+            m = element.matcher(data);
+            if (m.find()) {
+            	url = Encoding.htmlDecode(m.group(1));
+                break;
+            }
+        }
+        if (url != null) {
+            url = url.replace("http://", "");
+            int dot = url.lastIndexOf('/');
+            if (dot != -1) {
+                basename = url.substring(0, dot + 1);
+            } else {
+                basename = "http://" + url + "/";
+            }
+            dot = url.indexOf('/');
+            if (dot != -1) {
+                host = "http://" + url.substring(0, dot);
+            } else {
+                host = "http://" + url;
+            }
+            url = "http://" + url;
+        } else {
+            url = "";
+        }
+        String[][] reg = new Regex(data, "<[ ]?script(.*?)>(.*?)<[ ]?/script>").getMatches();
+        StringBuffer buff = new StringBuffer();
+//        buff.append("var document[];\r\n");
+        for (int i = 0; i < reg.length; i++) {
+			if(reg[i][0].toLowerCase().contains("javascript"))
+			{
+				if(reg[i][1].length()>0)
+				buff.append(reg[i][1]+"\r\n");
+		        Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile(".*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE), 
+		        		 Pattern.compile(".*?src='(.*?)'", Pattern.CASE_INSENSITIVE), 
+		        		 Pattern.compile(".*?src=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE)};
+		        for (Pattern element : linkAndFormPattern) {
+		            m = element.matcher(reg[i][0]);
+		            while (m.find()) {
+		               String link = Encoding.htmlDecode(m.group(1));
+		                if (link.length() > 6 && link.matches("(?is)https?://.*")) {
+		                    ;
+		                } else if (link.length() > 0) {
+		                    if (link.length() > 2 && link.substring(0, 3).equals("www")) {
+		                        link = "http://" + link;
+		                    }
+		                    if (link.charAt(0) == '/') {
+		                        link = host + link;
+		                    } else if (link.charAt(0) == '#') {
+		                        link = url + link;
+		                    } else {
+		                        link = basename + link;
+		                    }
+		                }
+		                if (!set.contains(link)) {
+		                    set.add(link);
+		                }
+		            }
+		        }
+			}
+			
+		}
 
+        Iterator<String> iter = set.iterator();
+        while (iter.hasNext()) {
+    		String string = (String) iter.next();
+    		String page = this.cloneBrowser().getPage(string);
+    		buff.append(page+"\r\n");
+    	}
+        String ret = buff.toString();
+        //TODO document ersetzen
+       // ret.replaceAll("document\\.([^\\s;=]*)", "");
+        return new JavaScript(ret);
+    }
     public String postPage(String url, String post) {
 
         return postPage(url, Request.parseQuery(post));
