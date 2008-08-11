@@ -45,7 +45,9 @@ public class Form {
     public static Form[] getForms(Object requestInfo) {
         return Form.getForms(requestInfo, ".*");
     }
-
+public boolean equals(Form f){
+    return this.toString().equalsIgnoreCase(f.toString());
+}
     /**
      * Ein Array mit allen Forms dessen Inhalt dem matcher entspricht. Achtung
      * der Matcher bezieht sich nicht auf die Properties einer Form sondern auf

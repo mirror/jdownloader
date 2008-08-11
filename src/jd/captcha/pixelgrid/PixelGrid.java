@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.configuration.Property;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
@@ -1586,6 +1587,7 @@ public class PixelGrid extends Property {
         owner.getJas().set("minimumObjectArea", tmp);
 
         for (int i = 1; i < ret.size(); i++) {
+//            BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "+ret.elementAt(i).getSize());
             if (ret.elementAt(i).getSize() < maxSize) {
                 removeObjectFromGrid(ret.elementAt(i));
             }

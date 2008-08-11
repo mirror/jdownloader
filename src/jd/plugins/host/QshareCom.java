@@ -17,6 +17,10 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -26,6 +30,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -57,6 +62,57 @@ public class QshareCom extends PluginForHost {
         return false;
     }
 
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        Browser.clearCookies(HOST);
+        br.setAcceptLanguage("en");
+
+        br.getPage("http://www.qshare.com");
+        br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
+        br.setFollowRedirects(false);
+        // passt invalid html code an. es fehlt der form-close tag
+        if (br.getRequest().getHtmlCode().toLowerCase().contains("<form") && !br.getRequest().getHtmlCode().toLowerCase().contains("</form")) {
+            br.getRequest().setHtmlCode(br.getRequest().getHtmlCode() + "</form>");
+        }
+
+        Form[] forms = br.getForms();
+        Form login = forms[0];
+        login.put("username", account.getUser());
+        login.put("password", account.getPass());
+        login.put("cookie", "1");
+        br.submitForm(login);
+
+        String premiumError = br.getRegex("Following error occured: (.*?)[\\.|<]").getFirstMatch();
+        if (premiumError != null) {
+            ai.setValid(false);
+            ai.setStatus(premiumError);
+            return ai;
+        }
+        br.getPage("http://qshare.com/index.php?sysm=user_adm&sysf=details");
+
+        String expire = br.getRegex("[Ablauf der Flatrate am|Flatrate expires on]: <SPAN STYLE=.*?>(.*?)</SPAN>").getFirstMatch();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss", Locale.UK);
+        if (expire == null) {
+            ai.setStatus("Account expired or logins not valid");
+            ai.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Account is ok");
+        // 2009-07-19 17:50:29
+        logger.info(dateFormat.format(new Date()) + "");
+        Date date;
+        try {
+            date = dateFormat.parse(expire);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return ai;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -79,7 +135,7 @@ public class QshareCom extends PluginForHost {
         // return;
         // }
 
-        if(br.getRedirectLocation()!=null)br.getPage((String) null);
+        if (br.getRedirectLocation() != null) br.getPage((String) null);
 
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
         if (error != null) {
@@ -90,13 +146,13 @@ public class QshareCom extends PluginForHost {
         Form[] forms = br.getForms();
         page = br.submitForm(forms[0]);
 
-        if(br.getRegex("Du hast die maximal zulässige Anzahl").matches()){
+        if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) {
             logger.severe("There is already a download running with our ip");
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE); 
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(60000l);
             return;
         }
-        
+
         String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getFirstMatch();
         if (wait != null) {
             long waitTime = Long.parseLong(wait) * 60 * 1000;
@@ -118,7 +174,7 @@ public class QshareCom extends PluginForHost {
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-           
+
             return;
         }
         dl = new RAFDownload(this, downloadLink, con);
@@ -146,7 +202,7 @@ public class QshareCom extends PluginForHost {
 
         Form[] forms = br.getForms();
         Form login = forms[0];
-        login.put("username", user );
+        login.put("username", user);
         login.put("password", pass);
         login.put("cookie", "1");
         br.submitForm(login);
@@ -219,7 +275,7 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-      
+
         try {
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
@@ -239,7 +295,7 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-       
+
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
@@ -248,22 +304,15 @@ public class QshareCom extends PluginForHost {
         return HOST;
     }
 
-    
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        // if
-        // (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
-        // true) &&
-        // this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false))
-        // {
-        // return 20;
-        // } else {
-        return 1;
-        // }
-    }
-
-    @Override
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { // if //
+     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, //
+     * true) && // this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM,
+     * false)) // { // return 20; // } else { return 1; // } }
+     * 
+     * @Override
+     */public String getPluginName() {
         return HOST;
     }
 

@@ -96,10 +96,11 @@ captcha.cleanByRGBDistance(-1, 20);
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
-
-          // if(akt.getSize()>20)  BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
-           if(akt.getArea()==140){
-               t=t;
+//         if(akt.getSize()>20)  BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
+           if(akt.getArea()==1224){
+            
+            System.out.println("II");
+               
            }
           if(akt.getArea() > 1800 ){
                it.remove();
@@ -113,7 +114,7 @@ captcha.cleanByRGBDistance(-1, 20);
            else if(akt.getArea() / akt.getSize() > 10){
                it.remove();
            }
-           else if(akt.getHeight() < 10 || akt.getWidth() < 5){ 
+           else if(akt.getHeight() <  15|| akt.getWidth() < 5){ 
                 it.remove();
             }
 //            if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2) || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
@@ -136,20 +137,34 @@ captcha.cleanByRGBDistance(-1, 20);
 
             let.blurIt(2);
             let.toBlackAndWhite(1.16);
-            let.removeSmallObjects(OBJECTDETECTIONCONTRAST, OBJECTCOLORCONTRAST, 10);
+            let.removeSmallObjects(0.8, 0.8, 30);
             let.clean();
-            let = let.align(-20, 20);
+            let = let.align(-40, 40);
 
             i++;
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
-
-//            if (akt.getArea() > 1800 || akt.getArea() < 200 || akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2 || akt.getArea() / akt.getSize() > 8 || akt.getHeight() < 15 || akt.getWidth() < 5) {
-//                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
-//                // "+akt.getArea()+" -"+((double)akt.getArea() /
-//                // (double)akt.getSize())+" - "+akt.getHeight()+" -
-//                // "+akt.getWidth());
-//            } else {
+            if(pixelObject.getArea()==1224){
+                
+                System.out.println("II");
+                   
+               }
+            if(akt.getArea() > 2200 ){
+             
+            }
+            else if(akt.getArea() < 130 ){
+             
+            }
+            else if((double) akt.getArea() / (double) akt.getSize() < 1.2){
+               
+            }
+            else if(akt.getArea() / akt.getSize() > 10){
+               
+            }
+            else if(akt.getHeight() <  15|| akt.getWidth() < 5){ 
+                 
+             }else{
                 ret.add(let);
+             }
 
 //            }
         }
@@ -197,8 +212,8 @@ captcha.cleanByRGBDistance(-1, 20);
         for (Iterator<Letter> it = r.iterator(); it.hasNext();) {
             Letter akt = it.next();
 
-            if (akt.detected.getDecodedValue().equals("1")) {
-                it.remove();
+            if (akt.detected.getDecodedValue().equals("1")||akt.detected.getDecodedValue().equals(".")) {
+               it.remove();
             } else {
                 akt.id = id++;
             }
@@ -210,8 +225,13 @@ captcha.cleanByRGBDistance(-1, 20);
                 return 0;
             }
         });
-        List<Letter> list = r.subList(0, 4);
+        List<Letter> list ;
+        try{
+      list = r.subList(0, 4);
+        }catch(Exception e){return null;};
 
+        
+      
         Collections.sort(list, new Comparator<Letter>() {
             public int compare(Letter o1, Letter o2) {
                 if (o1.id > o2.id) { return 1; }
@@ -220,7 +240,7 @@ captcha.cleanByRGBDistance(-1, 20);
             }
         });
 
-        return r.subList(0, 4).toArray(new Letter[] {});
+        return list.toArray(new Letter[] {});
     }
 
 }

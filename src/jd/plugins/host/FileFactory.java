@@ -173,6 +173,8 @@ public class FileFactory extends PluginForHost {
         // case PluginStep.STEP_DOWNLOAD:
 
         String captchaCode = this.getCaptchaCode(captchaFile, downloadLink);
+        
+        captchaFile.renameTo(new File(captchaFile.getParentFile(),captchaFile.getName()+"_"+captchaCode+"_."+JDUtilities.getFileExtension(captchaFile)));
         try {
             logger.info(postTarget + "&captcha=" + captchaCode);
             requestInfo = HTTP.postRequest((new URL(actionString)), requestInfo.getCookie(), actionString, null, postTarget + "&captcha=" + captchaCode, true);
@@ -250,7 +252,7 @@ public class FileFactory extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 // step.setStatus(PluginStep.STATUS_ERROR);
 
-                // step.setParameter(10 * 60000l);
+                linkStatus.setValue( 60000l);
 
                 return;
             }

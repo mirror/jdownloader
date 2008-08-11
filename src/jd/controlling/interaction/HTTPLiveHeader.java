@@ -364,8 +364,8 @@ public class HTTPLiveHeader extends Interaction {
         script = script.replaceAll("\\]\\]\\]", ">");
         script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");
         script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
-        script = script.replaceAll("<RESPONSE>", "<RESPONSE><![CDATA[");
-        script = script.replaceAll("</RESPONSE>", "]]></RESPONSE>");
+        script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
+        script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         Document xmlScript;
         variables = new HashMap<String, String>();
         variables.put("user", user);
@@ -472,8 +472,11 @@ public class HTTPLiveHeader extends Interaction {
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
                             progress.finalize();
-                            return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);
-                        }
+                            return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);                    }
+                        
+                        
+                        
+       
                         String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
                         getVariables(toDo.getChildNodes().item(0).getNodeValue().trim(), keys, requestInfo);
 

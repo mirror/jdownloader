@@ -27,6 +27,7 @@ import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,6 +63,7 @@ import jd.config.MenuItem;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -122,11 +124,23 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private JTextArea textArea;
 
+    private JMenuItem menHelpWiki;
+
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == menImportHTTPLive) {
             importFF();
             return;
+        }
+        if(e.getSource()==menHelpWiki){
+            try {
+                JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink","http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
+            } catch (MalformedURLException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            return;
+            
         }
         if (e.getSource() == menImportJDLH) {
             importLHScript();
@@ -577,14 +591,16 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         JMenu menFile = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file", "File"));
         JMenu menEdit = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit", "Edit"));
+        JMenu menHelp = new JMenu(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help", "Help"));
         menuBar.add(menFile);
         menuBar.add(menEdit);
-
+        menuBar.add(menHelp);
         // Filemenu
         menImportHTTPLive = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importhhtplive", "Import Firefox LiveHeader Script"));
         menImportJDLH = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh", "Import JD-LiveHeader Script"));
         menImportFile = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importfile", "Open file"));
         menSave = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.save", "Save file"));
+        
         menExit = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.exit", "Exit"));
         menImportHTTPLive.addActionListener(this);
         menImportJDLH.addActionListener(this);
@@ -619,6 +635,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         menEditAddWait.addActionListener(this);
         menEditAddVariable.addActionListener(this);
 
+        // HelpMenu
+        menHelpWiki = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help.wiki", "Howto"));
+        menHelpWiki.addActionListener(this);
+        menHelp.add(menHelpWiki);
         menEdit.add(menEditValidate);
 
         // menEdit.add(menEditTest);
@@ -649,8 +669,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         script = script.replaceAll("\\]\\]\\]", ">");
         script = script.replaceAll("<REQUEST>", "<REQUEST><![CDATA[");
         script = script.replaceAll("</REQUEST>", "]]></REQUEST>");
-        script = script.replaceAll("<RESPONSE>", "<RESPONSE><![CDATA[");
-        script = script.replaceAll("</RESPONSE>", "]]></RESPONSE>");
+        script = script.replaceAll("<RESPONSE(.*?)>", "<RESPONSE$1><![CDATA[");
+        script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         Document xmlScript;
 
         try {
