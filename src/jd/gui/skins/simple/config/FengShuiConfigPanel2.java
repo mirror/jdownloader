@@ -25,7 +25,7 @@ public class FengShuiConfigPanel2 {
 
 
     private static JPanel getPanel() {
-		JPanel panel = new JPanel(new MigLayout("debug, ins 32 22 15 22", "[right, pref!]0[grow,fill]0[]"));
+		JPanel panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[grow,fill]0[]"));
 		
 	    addSeparator(panel, "Download Location", getImageIcon("res/package.png"), "<html>Determines where files <br>are both stored and extracted to.");
         JTextField folder = new JTextField(System.getProperty("user.dir"));
