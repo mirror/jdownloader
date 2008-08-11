@@ -20,38 +20,42 @@ import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel {
 
-	private static final String WRAP = ", wrap, gapbottom :100:push";
     private static final String GAPLEFT = "gapleft 15!, ";
+    private static final String GAPBOTTOM = ", gapbottom :100:push";
+	private static final String SPAN = ", spanx" + GAPBOTTOM;
+    
 
 
-    private static JPanel getPremiumAccountPanel() {
-		JPanel panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[grow,fill]0[]"));
+    private static JPanel getPanel() {
+		JPanel panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[right,grow,fill]0[]"));
 		
 	    addSeparator(panel, "Download Location", getImageIcon("res/package.png"), "<html>Determines where files <br>are both stored and extracted to.");
+        JPanel subPanel = new JPanel(new MigLayout("ins 0", "0[fill, grow]15[]0"));
         JTextField folder = new JTextField(System.getProperty("user.dir"));
-//        folder.setEditable(false);
-        addComponents(panel, "Choose Folder", folder, new JButton("Browse"));
+        subPanel.add(folder);
+        subPanel.add(new JButton("Browse"));
+        addComponents(panel, "Choose Folder", subPanel);
 
         addSeparator(panel, "Router Reconnect", getImageIcon("res/reconnect.png"), "<html>Sometimes your Router needs a kick in the balls!");
-        addComponents(panel, "Is reconnect working?");
-        panel.add(new JButton("Test Reconnect"), GAPLEFT + "wmax pref, split 2");
-        panel.add(new JButton("Change Settings"), GAPLEFT + "wmax pref" + WRAP);
+        JPanel subPanel2 = new JPanel(new MigLayout("ins 0", "0[]15[]0"));
+        subPanel2.add(new JButton("Test Reconnect"));
+        subPanel2.add(new JButton("Change Settings"));
+        addComponents(panel, "Is reconnect working?", subPanel2);
 	      
         addSeparator(panel, "Premium Accounts", getImageIcon("res/star.png"), "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster");
         addComponents(panel, "Enter your credentials");
-        panel.add(new JButton("Account Settings"), GAPLEFT + "align leading, wmax pref" + WRAP);
-
+        panel.add(new JButton("Account Settings"), GAPLEFT + "align leading, wmax pref" + SPAN);
         
         addSeparator(panel, "Barrierefreies Internet", getImageIcon("res/accessibility.png"), "<html>Some hosters use captchas which are impossible<br> to enter for people with disabilities. With this functionality<br> the JD team addresses the requirement for<br> people with disabilities not to be discriminated against.<br> Read more about it at:<br> <b>http://en.wikipedia.org/wiki/Web_accessibility");
-        addComponents(panel, "Automatic download?");
-        JCheckBox accessibility = new JCheckBox(" I have disabilities - let JD process captchas for me.");
-        panel.add(accessibility, GAPLEFT + "align leading, wmax pref" + WRAP);
+        JCheckBox accessibility = new JCheckBox(" I have disabilities. Process captchas for me!");
+        addComponents(panel, "Automatic download?", accessibility);
+//        panel.add(accessibility, GAPLEFT + "align leading, wmax pref" + WRAP);
 
         addSeparator(panel, "Update Mode", getImageIcon("res/update_manager.png"), "<html>You can either update to the stable or newest beta version of JD");
-        addComponents(panel, "Stable or Beta?");
-        JCheckBox beta = new JCheckBox(" Always update to latest beta version?");
+        JCheckBox beta = new JCheckBox(" Always update to latest beta?");
         beta.setSelected(true);
-        panel.add(beta, GAPLEFT + "align leading, wmax pref" + WRAP);
+        addComponents(panel, "Stable or Beta?", beta);
+//        panel.add(beta, GAPLEFT + "align leading, wmax pref" + WRAP);
         
         Container bpanel = new JPanel(new MigLayout());
         bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
@@ -63,9 +67,9 @@ public class FengShuiConfigPanel {
 	}
 
     private static void addComponents(JPanel panel, String label, JComponent... components) {
-        panel.add(new JLabel("<html><b color=\"#4169E1\">" + label), "gapleft 22, gaptop 14");
+        panel.add(new JLabel("<html><b color=\"#4169E1\">" + label), "gapleft 22, gaptop 5" + GAPBOTTOM);
         for (int i = 0; i < components.length; i++) {
-            if (i == components.length-1) panel.add(components[i], GAPLEFT + WRAP + ", gapright 5");
+            if (i == components.length-1) panel.add(components[i], GAPLEFT + SPAN + ", gapright 5");
             else panel.add(components[i], GAPLEFT);
         }
     }
@@ -75,7 +79,7 @@ public class FengShuiConfigPanel {
         label.setIconTextGap(8);
         panel.add(label, "align left, split 2");
 	    panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
-	    panel.add(new JSeparator(), "span 2, pushx, growx");
+	    panel.add(new JSeparator(), "span 3, pushx, growx");
 	    JLabel tip = new JLabel(getImageIcon("res/bulb.gif"));
 	    tip.setToolTipText(help);
 //	    panel.add(new JSeparator(), "split 2, pushx, growx");
@@ -89,9 +93,12 @@ public class FengShuiConfigPanel {
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         JFrame frame = new JFrame("Feng Shui Config");
-        frame.setContentPane(getPremiumAccountPanel());
-        frame.setPreferredSize(new Dimension(650,800));
+        frame.setContentPane(getPanel());
+//        frame.setContentPane(new JScrollPane(getPanel()));
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.pack();
+        Dimension ps = frame.getPreferredSize();
+        frame.setPreferredSize(new Dimension(Math.min(800, ps.width), Math.min(600, ps.height)));
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setAlwaysOnTop(true);
