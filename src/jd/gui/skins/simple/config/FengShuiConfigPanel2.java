@@ -25,7 +25,7 @@ public class FengShuiConfigPanel2 {
 
 
     private static JPanel getPanel() {
-		JPanel panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[grow,fill]0[]"));
+		JPanel panel = new JPanel(new MigLayout("debug, ins 32 22 15 22", "[right, pref!]0[grow,fill]0[]"));
 		
 	    addSeparator(panel, "Download Location", getImageIcon("res/package.png"), "<html>Determines where files <br>are both stored and extracted to.");
         JTextField folder = new JTextField(System.getProperty("user.dir"));
@@ -34,8 +34,8 @@ public class FengShuiConfigPanel2 {
 
         addSeparator(panel, "Router Reconnect", getImageIcon("res/reconnect.png"), "<html>Sometimes your Router needs a kick in the balls!");
         addComponents(panel, "Is reconnect working?");
-        panel.add(new JButton("Test"), GAPLEFT + "wmax pref, split 2");
-        panel.add(new JButton("Change"), GAPLEFT + "wmax pref" + WRAP);
+        panel.add(new JButton("Test Reconnect"), GAPLEFT + "wmax pref");
+        panel.add(new JButton("Change Settings"), "wmax pref, spanx");
 	      
         addSeparator(panel, "Premium Accounts", getImageIcon("res/star.png"), "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster");
         addComponents(panel, "Enter your credentials");
