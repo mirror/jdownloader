@@ -166,7 +166,7 @@ public class StreamingShareTool extends PluginOptional {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision: 2173 $", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
 

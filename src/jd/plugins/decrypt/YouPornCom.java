@@ -102,7 +102,7 @@ public class YouPornCom extends PluginForDecrypt {
     @Override
     public String getVersion() {
         // TODO Auto-generated method stub
-        String ret = new Regex("$Revision: 2107 $", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
 

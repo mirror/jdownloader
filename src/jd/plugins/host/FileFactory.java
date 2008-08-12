@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -28,9 +29,11 @@ import jd.http.Encoding;
 import jd.http.GetRequest;
 import jd.http.HTTPConnection;
 import jd.http.PostRequest;
+import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -51,7 +54,7 @@ public class FileFactory extends PluginForHost {
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
     private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
-    static private final String host = "filefactory.com";
+    static private final String HOST = "filefactory.com";
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
@@ -266,7 +269,32 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
 
     }
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+    
+        
+       Browser.clearCookies(HOST);
+       br.setFollowRedirects(true);
+       br.getPage("http://filefactory.com");
+     
+       Form login= br.getForm(0);
+       login.put("email",account.getUser());
+       login.put("password",account.getPass());
+       br.submitForm(login);
+  
+      
+      br.getPage("http://filefactory.com/rewards/summary/");
+      String expire =br.getMatch("subscription will expire on <strong>(.*?)</strong>");
+      // 17 October, 2008 (in 66 days).
+     ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
+    String pThisMonth=  br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replace("\\,", "");
+    String pUsable=  br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replace("\\,", "");
 
+     ai.setPremiumPoints(Integer.parseInt(pThisMonth) +Integer.parseInt(pUsable));
+    
+        return ai;
+    }
     // by eXecuTe
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
@@ -434,7 +462,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getHost() {
-        return host;
+        return HOST;
     }
 
     @Override
@@ -448,7 +476,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
    */ public String getPluginName() {
-        return host;
+        return HOST;
     }
 
     @Override

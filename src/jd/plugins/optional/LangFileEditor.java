@@ -39,6 +39,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.MenuItem;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -237,7 +238,8 @@ public class LangFileEditor extends PluginOptional {
 
         } else if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
 
-            JFileChooser chooser = new JFileChooser(sourceFolder);
+            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_SRC");
+           
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
             if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
@@ -248,7 +250,7 @@ public class LangFileEditor extends PluginOptional {
 
         } else if (e.getSource() == btnBrowseFile || e.getSource() == mnuBrowseFile) {
 
-            JFileChooser chooser = new JFileChooser((languageFile != null) ? languageFile.getAbsolutePath() : null);
+            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_LNG");
             chooser.setFileFilter(new LngFileFilter());
 
             if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {

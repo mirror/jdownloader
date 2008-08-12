@@ -2,6 +2,7 @@ package jd.gui.skins.simple.components.treetable;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -126,6 +127,10 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         label.setOpaque(false);
         miniBar = new MiniBar();
         progress = new JProgressBar();
+       Dimension dim = progress.getPreferredSize();
+       dim.width=Math.max(dim.width, 300);
+        progress.setPreferredSize(dim);
+        progress.setMinimumSize(dim);
         if (JDUtilities.getJavaVersion() >= 1.6) {
             ui = new TreeProgressBarUI();
             ui.setSelectionForeground(Color.BLACK);

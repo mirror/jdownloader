@@ -82,6 +82,8 @@ public class JDAction extends AbstractAction {
     private static final long serialVersionUID = 7393495345332708426L;
 
     public static final int WIKI = 33;
+
+    public static final int CHANGES = 35;
     private KeyStroke accelerator;
     private int actionID;
     private ActionListener actionListener;

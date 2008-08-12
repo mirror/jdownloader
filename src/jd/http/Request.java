@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import jd.utils.Sniffy;
 
 public abstract class Request {
-    public static int MAX_REDIRECTS = 30;
+//    public static int MAX_REDIRECTS = 30;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
 
     /**
@@ -164,15 +164,15 @@ public abstract class Request {
         postRequest(httpConnection);
 
         collectCookiesFromConnection();
-        while (followRedirects && httpConnection.getHeaderField("Location") != null && httpConnection.getHeaderField("Location").length() > 8) {
-            followCounter++;
-            if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
-
-            }
-            url = new URL(httpConnection.getHeaderField("Location"));
-            openConnection();
-            postRequest(httpConnection);
-        }
+//        while (followRedirects && httpConnection.getHeaderField("Location") != null ) {
+//            followCounter++;
+//            if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
+//
+//            }
+//            url = new URL(httpConnection.getHeaderField("Location"));
+//            openConnection();
+//            postRequest(httpConnection);
+//        }
         return this;
     }
 
@@ -354,11 +354,12 @@ public abstract class Request {
         try {
             long tima = System.currentTimeMillis();
             httpConnection = new HTTPConnection(url.openConnection());
+            httpConnection.setInstanceFollowRedirects(followRedirects);
             requestTime = System.currentTimeMillis() - tima;
             httpConnection.setReadTimeout(readTimeout);
             httpConnection.setConnectTimeout(connectTimeout);
 
-            httpConnection.setInstanceFollowRedirects(false);
+            
             if (headers != null) {
                 Set<String> keys = headers.keySet();
                 Iterator<String> iterator = keys.iterator();

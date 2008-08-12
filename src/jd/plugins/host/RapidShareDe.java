@@ -95,7 +95,7 @@ br.setFollowRedirects(false);
             this.sleep((int)waittime, downloadLink);
         } catch (Exception e) {
             try {
-                waittime = Long.parseLong(new Regex(br, "\\(Oder warte ([\\d]+) Minuten\\)").getFirstMatch()) * 60000;
+                waittime = Long.parseLong(new Regex(br, "Oder warte (\\d*?) Minute").getFirstMatch()) * 60000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 linkStatus.setValue(waittime);
                 return;
@@ -151,6 +151,17 @@ br.setFollowRedirects(false);
         dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
 //
         dl.startDownload();
+        File l = new File(downloadLink.getFileOutput());
+        if(l.length()<10240){
+            String local=JDUtilities.getLocalFile(l);
+            if(Regex.matches(local, "Zugriffscode falsch")){
+                l.delete();
+                l.deleteOnExit();
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+               return;
+            }
+            
+        }
     }
 
     @Override

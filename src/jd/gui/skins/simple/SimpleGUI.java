@@ -41,6 +41,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -99,6 +102,7 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
+import jd.gui.skins.simple.components.JHelpDialog.Action;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
@@ -807,6 +811,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JLabel warning;
 
     private Thread warningWorker;
+    private JDAction actionChanges;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -1042,6 +1047,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.ABOUT:
             JDAboutDialog.getDialog().setVisible(true);
+            break;
+        case JDAction.CHANGES:
+            showChangelogDialog();
             break;
         case JDAction.ITEMS_ADD:
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -1607,6 +1615,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
         actionWiki = new JDAction(this, null, "action.wiki", JDAction.WIKI);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
+        actionChanges = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.changes", JDAction.CHANGES);
+        
     }
 
     /**
@@ -1815,6 +1825,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menHelp.add(SimpleGUI.createMenuItem(actionHelp));
         menHelp.add(SimpleGUI.createMenuItem(actionWiki));
         menHelp.addSeparator();
+        menHelp.add(SimpleGUI.createMenuItem(actionChanges));
         menHelp.add(SimpleGUI.createMenuItem(actionAbout));
 
         menuBar.setLayout(new GridBagLayout());
@@ -2109,7 +2120,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
         new Thread() {
             public void run() {
-                AccountInfo ai = pluginForHost.getAccountInformation(account);
+                AccountInfo ai ;
+                try{
+                 ai = pluginForHost.getAccountInformation(account);
+                }catch(Exception e){
+                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror","Plugin %s my be defect. Inform support!",pluginForHost.getPluginID()));
+                     return;
+                }
                 if (ai == null) {
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return;
@@ -2139,5 +2156,73 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
             }
         }.start();
+    }
+    public static void showChangelogDialog(){
+        String update = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
+        String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getFirstMatch();
+        String version = new Regex(update, "<p>version(.*?)<").getFirstMatch().trim();
+        String updates = new Regex(update, "<ul>(.*?)</ul>").getFirstMatch();
+        String[][] lines = new Regex(updates, "<li>(.*?)\\:(.*?)</li>").getMatches();
+        ArrayList<String[]> list = new ArrayList<String[]>();
+        for (String[] line : lines) {
+            String type = new Regex(line[1], "\\((.*?)\\)").getFirstMatch();
+            if (type != null) {
+                line[1] = line[1].replaceAll("\\((.*?)\\)", "");
+                line[0] += " (" + type + ")";
+            }
+            list.add(line);
+        }
+
+        Collections.sort(list, new Comparator<String[]>() {
+            public int compare(String[] a, String[] b) {
+                return a[0].compareToIgnoreCase(b[0]);
+
+            }
+
+        });
+        StringBuffer html = new StringBuffer();
+        html.append("<style type=\"text/css\">#highlight {    background-color: #3399FF;  border: thin double #000000;}body {font-family: Geneva, Arial, Helvetica, sans-serif;}</style>");
+
+        if (message != null) {
+            html.append("<p>" + message + "</p>");
+        }
+        if (list.size() > 0) {
+            html.append("<ul>");
+            for (String[] line : list) {
+                html.append("<li>" + line[0] + " : " + line[1] + "</li>");
+
+            }
+            html.append("</ul>");
+        }
+
+        JDTheme.setTheme("default");
+        final JHelpDialog d = new JHelpDialog(new JFrame(), JDLocale.LF("system.update.message.title", "Update to version %s", version), html + "");
+        Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+        int minWidth = Math.min(d.getPreferredSize().width, (int) (size.width * .50));
+        int minHeight = Math.min(d.getPreferredSize().height, (int) (size.height * .75));
+        d.setPreferredSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 540)));
+        d.pack();
+        d.getBtn2().setVisible(false);
+        d.getBtn3().setVisible(false);
+        d.getBtn1().setText(JDLocale.L("system.update.showchangelog", "Show all changes"));
+       
+        
+        d.action1 = d.new Action() {
+            public boolean doAction() {
+
+               
+               try {
+                JLinkButton.openURL(JDLocale.L("system.update.changelogurl","http://jdownloader.org/changes?toolmode=1"));
+            } catch (MalformedURLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            d.dispose();
+            return true;
+            }
+        };
+
+        d.showDialog();    
+    
     }
 }

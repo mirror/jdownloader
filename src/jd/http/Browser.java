@@ -164,7 +164,7 @@ public class Browser {
             }
             GetRequest request = new GetRequest(string);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            request.setFollowRedirects(doRedirects);
+//            request.setFollowRedirects(doRedirects);
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             if (headers != null) {
@@ -179,6 +179,9 @@ public class Browser {
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(string);
+             if(this.doRedirects&&this.request.getLocation()!=null){
+                ret=this.getPage(null);
+            }
             return ret;
 
         } catch (MalformedURLException e) {
@@ -265,7 +268,7 @@ public class Browser {
                 request.setReadTimeout(readTimeout);
             }
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            request.setFollowRedirects(doRedirects);
+//            request.setFollowRedirects(doRedirects);
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             if (headers != null) {
@@ -276,7 +279,10 @@ public class Browser {
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(string);
-            return request.getHttpConnection();
+             if(this.doRedirects&&this.request.getLocation()!=null){
+                this.openGetConnection(null);
+            }
+            return this.request.getHttpConnection();
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -307,7 +313,7 @@ public class Browser {
             }
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            request.setFollowRedirects(doRedirects);
+//            request.setFollowRedirects(doRedirects);
             if (connectTimeout > 0) {
                 request.setConnectTimeout(connectTimeout);
             }
@@ -326,7 +332,10 @@ public class Browser {
 
             this.request = request;
             currentURL = new URL(url);
-            return request.getHttpConnection();
+             if(this.doRedirects&&this.request.getLocation()!=null){
+                this.openGetConnection(null);
+            }
+            return this.request.getHttpConnection();
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -350,7 +359,7 @@ public class Browser {
             }
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            request.setFollowRedirects(doRedirects);
+//            request.setFollowRedirects(doRedirects);
             if (connectTimeout > 0) {
                 request.setConnectTimeout(connectTimeout);
             }
@@ -372,6 +381,9 @@ public class Browser {
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(url);
+             if(this.doRedirects&&this.request.getLocation()!=null){
+                ret=this.getPage(null);
+            }
             return ret;
 
         } catch (MalformedURLException e) {
@@ -798,6 +810,11 @@ public class Browser {
 
     public HTTPConnection openFormConnection(int i) {
         return openFormConnection(getForm(i));
+        
+    }
+
+    public String getMatch(String string) {
+       return getRegex(string).getFirstMatch();
         
     }
 

@@ -44,7 +44,7 @@ public class JDLocale {
 
     private static HashMap<String, String> defaultData = new HashMap<String, String>();
 
-    private static final String DEFAULTLANGUAGE = JDLocale.isGerman() ? "german" : "english";
+    private static final String DEFAULTLANGUAGE = "english";
 
     private static String LANGUAGES_DIR = "jd/languages/";
 
@@ -88,6 +88,7 @@ public class JDLocale {
         }
         if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
         logger.info("Key not found: " + key);
+        HashMap<String, String> dat = defaultData;
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         }

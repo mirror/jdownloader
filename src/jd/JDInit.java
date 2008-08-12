@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.CookieHandler;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,6 +44,7 @@ import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -142,14 +144,14 @@ public class JDInit {
         JDUtilities.getRunType();
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
-            String lastLog = Encoding.UTF8Decode(JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html")));
-            if (lastLog.trim().length() > 5) {
+            
                 if (splashScreen != null) {
                     splashScreen.finish();
                 }
 
-                JDUtilities.getController().getUiInterface().showHTMLDialog("Update!", lastLog);
-            }
+                SimpleGUI.showChangelogDialog();
+            
+        
 
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
@@ -273,15 +275,15 @@ public class JDInit {
                             d.action1 = d.new Action() {
                                 public boolean doAction() {
 
-                                    try {
+                                
 
-                                        String update = Encoding.UTF8Decode(HTTP.getRequest(new URL(updater.getListPath().replaceAll("list.php", "") + "bin/updatemessage.html"), null, null, true).getHtmlCode());
-
-                                        JDUtilities.getGUI().showHTMLDialog("Update Changes", update);
-                                    } catch (IOException e) {
-
-                                        e.printStackTrace();
-                                    }
+                                        try {
+                                            JLinkButton.openURL(JDLocale.L("system.update.changelogurl","http://jdownloader.org/changes?toolmode=1"));
+                                        } catch (MalformedURLException e) {
+                                            // TODO Auto-generated catch block
+                                            e.printStackTrace();
+                                        }
+                                 
 
                                     return true;
                                 }
@@ -657,6 +659,8 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("StreamingShareTool", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("LangFileEditor", 1.5));
+       
+        
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
