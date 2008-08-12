@@ -66,6 +66,8 @@ public class LangFileEditor extends PluginOptional {
     private JTable table;
     private MyTableModel tableModel;
 
+    private String[] lngKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
+
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
@@ -354,8 +356,8 @@ public class LangFileEditor extends PluginOptional {
             if (lngKey == null) {
                 String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
                 if (result == null) return;
-                if (!(result.length() == 2)) {
-                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key must have a length of two!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Length!"), JOptionPane.ERROR_MESSAGE);
+                if (!isSupportedLanguageKey(result)) {
+                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 lngKey = result;
@@ -383,8 +385,8 @@ public class LangFileEditor extends PluginOptional {
             if (lngKey == null) {
                 String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
                 if (result == null) return;
-                if (!(result.length() == 2)) {
-                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key must have a length of two!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Length!"), JOptionPane.ERROR_MESSAGE);
+                if (!isSupportedLanguageKey(result)) {
+                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 lngKey = result;
@@ -414,6 +416,13 @@ public class LangFileEditor extends PluginOptional {
             tableModel.fireTableRowsUpdated(0, data.size() - 1);
         }
 
+    }
+
+    private boolean isSupportedLanguageKey(String lngKey) {
+        for (String element : lngKeys) {
+            if (element.equals(lngKey)) return true;
+        }
+        return false;
     }
 
     private void saveLanguageFile(File file) {
