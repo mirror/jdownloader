@@ -228,7 +228,7 @@ public class FileFactory extends PluginForHost {
                 }
 
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                // step.setStatus(PluginStep.STATUS_ERROR);
+               linkStatus.setValue(wait);
                 logger.info("Traffic Limit reached....");
                 // step.setParameter((long) wait);
                 return;
@@ -317,6 +317,17 @@ public class FileFactory extends PluginForHost {
                 /* falls direct-download ausgeschalten ist */
                 requestInfo = HTTP.getRequest(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
                 link = new Regex(requestInfo.getHtmlCode(), Pattern.compile(PREMIUM_LINK, Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                
+                if(link==null){
+                    logger.warning("Account Settings invalid");
+                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                    linkStatus.setErrorMessage("Logins incorrect. Check Login and password");
+                    return;
+                    
+                }
+                
+                
                 requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
             }
         }

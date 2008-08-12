@@ -308,6 +308,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 // if (!links.elementAt(i).isPluginActive()) {
                 links.elementAt(i).getLinkStatus().reset();
                 links.elementAt(i).reset();
+                links.elementAt(i).getPlugin().resetHosterWaitTime();
                 
 
             }
@@ -435,6 +436,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     if (!next.get(i).getLinkStatus().isPluginActive()) {
                         next.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
                         next.get(i).getLinkStatus().setStatusText("");
+                        next.get(i).getPlugin().resetHosterWaitTime();
                         next.get(i).reset();
                     }
                 }

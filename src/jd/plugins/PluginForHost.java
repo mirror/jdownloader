@@ -549,7 +549,7 @@ public abstract class PluginForHost extends Plugin {
             for (int i = 0; i < accounts.size(); i++) {
                 Account next = accounts.get(i);
 
-                if (!next.isTempDisabled() && next.isEnabled()) {
+                if (!next.isTempDisabled() && next.isEnabled()&&next.getPass()!=null&&next.getPass().trim().length()>0) {
                     account = next;
 
                     break;
