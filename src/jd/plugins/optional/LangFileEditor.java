@@ -111,8 +111,7 @@ public class LangFileEditor extends PluginOptional {
 
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table), BorderLayout.CENTER);
-        //TODO: Auch hier: Lokalisieren oder Anzeige verändern
-        main.add(lblEntriesCount = new JLabel("Entries Count:"), BorderLayout.PAGE_END);
+        main.add(lblEntriesCount = new JLabel(JDLocale.L("plugins.optional.langfileeditor.entriesCount", "Entries Count:")), BorderLayout.PAGE_END);
 
         buildMenu();
 
@@ -152,8 +151,7 @@ public class LangFileEditor extends PluginOptional {
 
         }
 
-        //TODO: lblEntriesCount entweder lokalisieren (...) oder die Statistik-Anzeige verändern (Popup?)
-        lblEntriesCount.setText("Entries Count:     [Sourcecode] " + numSource + "     [Language File] " + numFile + "     [Missing] " + numMissing + "     [Not found / no Default] " + numOld + "     [Probably old] " + oldEntries.size() + "     [Probably dupes] " + dupes.size());
+        lblEntriesCount.setText(JDLocale.LF("plugins.optional.langfileeditor.entriesCount.extended", "Entries Count:     [Sourcecode] %s     [Language File] %s     [Missing] %s     [Not found / no Default] %s     [Probably old] %s     [Probably dupes] %s", numSource, numFile, numMissing, numOld, oldEntries.size(), dupes.size()));
 
     }
 
@@ -954,7 +952,7 @@ public class LangFileEditor extends PluginOptional {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }
-    
+
     public static int getAddonInterfaceVersion() {
         return 0;
     }
