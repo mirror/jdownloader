@@ -123,7 +123,7 @@ public class LangFileEditor extends PluginOptional {
 
     private void initList() {
 
-        getData(getSourceEntries(sourceFolder), getLanguageFileEntries(languageFile));
+        this.initLocaleData();
         mnuEntries.setEnabled(true);
         mnuKey.setEnabled(true);
         mnuReload.setEnabled(true);
@@ -368,11 +368,9 @@ public class LangFileEditor extends PluginOptional {
                     String def = data.get(i)[1];
 
                     if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
-                        // System.out.println("Working on " + data.get(i)[0] +
-                        // ":");
+                        logger.finer("Working on " + data.get(i)[0] + ":");
                         String result = JDLocale.translate(lngKey, def);
-                        // System.out.println("Default: \"" + def +
-                        // "\" == Google: \"" + result + "\"");
+                        logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
                         tableModel.setValueAt(result, i, 2);
                     }
 
@@ -397,7 +395,10 @@ public class LangFileEditor extends PluginOptional {
                 String def = tableModel.getValueAt(i, 1);
 
                 if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
-                    tableModel.setValueAt(JDLocale.translate(lngKey, def), i, 2);
+                    logger.finer("Working on " + data.get(i)[0] + ":");
+                    String result = JDLocale.translate(lngKey, def);
+                    logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
+                    tableModel.setValueAt(result, i, 2);
                 }
 
             }
@@ -434,24 +435,28 @@ public class LangFileEditor extends PluginOptional {
         JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
     }
 
-    private void getData(Vector<String[]> sourceEntries, Vector<String[]> fileEntries) {
+    private void initLocaleData() {
 
-        String tmp;
+        String value;
+        String[] temp;
         Vector<String[]> dupeHelp = new Vector<String[]>();
         data.clear();
         oldEntries.clear();
         dupes.clear();
         lngKey = null;
 
+        Vector<String[]> sourceEntries = (sourceFolder == null) ? new Vector<String[]>() : getSourceEntries(sourceFolder);
+        Vector<String[]> fileEntries = (languageFile == null) ? new Vector<String[]>() : getLanguageFileEntries(languageFile);
+
         for (String[] entry : sourceEntries) {
 
-            String[] temp = new String[] { entry[0], entry[1], getValue(fileEntries, entry[0]) };
+            temp = new String[] { entry[0], entry[1], getValue(fileEntries, entry[0]) };
             if (temp[2] == null) temp[2] = "";
 
             data.add(temp);
             if (temp[2] != "") {
-                tmp = getValue(dupeHelp, temp[2]);
-                if (tmp != null) dupes.add(new String[] { temp[2], temp[0], tmp });
+                value = getValue(dupeHelp, temp[2]);
+                if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
                 dupeHelp.add(new String[] { temp[2], temp[0] });
             }
 
@@ -461,13 +466,13 @@ public class LangFileEditor extends PluginOptional {
 
             if (getValue(data, entry[0]) == null) {
 
-                String[] temp = new String[] { entry[0], "", entry[1] };
+                temp = new String[] { entry[0], "", entry[1] };
 
                 data.add(temp);
                 oldEntries.add(temp[0]);
                 if (temp[2] != "") {
-                    tmp = getValue(dupeHelp, temp[2]);
-                    if (tmp != null) dupes.add(new String[] { temp[2], temp[0], tmp });
+                    value = getValue(dupeHelp, temp[2]);
+                    if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
                     dupeHelp.add(new String[] { temp[2], temp[0] });
                 }
 
@@ -500,8 +505,6 @@ public class LangFileEditor extends PluginOptional {
 
     private Vector<String[]> getLanguageFileEntries(File file) {
 
-        if (file == null) return new Vector<String[]>();
-
         String content = JDUtilities.getLocalFile(file);
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
@@ -526,8 +529,6 @@ public class LangFileEditor extends PluginOptional {
     }
 
     private Vector<String[]> getSourceEntries(File dir) {
-
-        if (dir == null) return new Vector<String[]>();
 
         Vector<String> fileContents = getFileContents(dir, "java");
         Vector<String[]> entries = new Vector<String[]>();
@@ -638,8 +639,7 @@ public class LangFileEditor extends PluginOptional {
         }
 
         public boolean isCellEditable(int row, int col) {
-            if (col == 2) return true;
-            return false;
+            return (col == 2);
         }
 
         public void setValueAt(Object value, int row, int col) {
