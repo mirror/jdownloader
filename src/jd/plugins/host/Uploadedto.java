@@ -21,14 +21,17 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -119,6 +122,69 @@ public class Uploadedto extends PluginForHost {
         return false;
     }
 
+    
+    public AccountInfo getAccountInformation(Account account) {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+    
+        
+       Browser.clearCookies(HOST);
+       br.setFollowRedirects(true);
+       br.setAcceptLanguage("en");
+       br.getPage("http://uploaded.to/login");
+     
+       Form login= br.getForm(0);
+       login.put("email", account.getUser());
+       login.put("password", account.getPass());
+       
+       br.submitForm(login);
+       if(br.containsHTML("Login failed!")){
+           ai.setValid(false);
+           ai.setStatus("User ID or password wrong");
+           return ai;
+           
+       }
+      String balance= br.getMatch("Your bank balance is:</span> <span class=.*?>(.*?)</span>");
+      String points= br.getMatch("Your point account is:</span>.*?<span class=.*?>(\\d*?)</span>");
+      String traffic=br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
+      String expire=br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
+      
+     ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
+     ai.setAccountBalance((int)Double.parseDouble(balance)*100);
+     ai.setTrafficLeft(Regex.getSize(traffic));
+     ai.setPremiumPoints(Integer.parseInt(points));
+     ;
+//       login.put("email",account.getUser());
+//       login.put("password",account.getPass());
+//       br.submitForm(login);
+//  
+//      if(br.containsHTML("record of an account with that email")){
+//          ai.setValid(false);
+//          ai.setStatus("No account with this email");
+//          return ai;
+//      }
+//      if(br.containsHTML("password you entered is incorrect")){
+//          ai.setValid(false);
+//          ai.setStatus("Account found, but password is wrong");
+//          return ai;
+//      }
+//      br.getPage("http://filefactory.com/rewards/summary/");
+//      String expire =br.getMatch("subscription will expire on <strong>(.*?)</strong>");
+//      if(expire==null){
+//          ai.setValid(false);
+//          return ai;
+//      }
+//      // 17 October, 2008 (in 66 days).
+//     ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
+//    String pThisMonth=  br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replaceAll("\\,", "");
+//    String pUsable=  br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
+//
+//     ai.setPremiumPoints(Integer.parseInt(pThisMonth) +Integer.parseInt(pUsable));
+//    
+        return ai;
+    }
+    
+    
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
 

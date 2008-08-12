@@ -428,7 +428,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             // boolean rr = false;
             try {
                 
-                logger.info("I-"+0);
+                // logger.info("I-"+0);
                 for (FilePackage filePackage : fps) {
                     links = filePackage.getDownloadLinks();
 
@@ -466,7 +466,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         }
                         if (link.isEnabled() && linkStatus.isPluginActive()) {
-                            // logger.info("ip: "+link);
+                            // // logger.info("Ip: "+link);
                             hasInProgressLinks = true;
 
                         }
@@ -485,7 +485,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                     }
                 }
-                logger.info("I-"+1);
+                // logger.info("I-"+1);
                 Reconnecter.doReconnectIfRequested();
                 if (inProgress > 0) {
                     fps = controller.getPackages();
@@ -523,13 +523,13 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                 }
                 int ret = 0;
-                logger.info("I-"+2);
+                // logger.info("I-"+2);
                 if (Interaction.getInteractionsRunning() == 0 && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
 
                     ret = setDownloadActive();
 
                 }
-                logger.info("I-"+3);
+                // logger.info("I-"+3);
                 if (ret == 0) {
 
                     if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {

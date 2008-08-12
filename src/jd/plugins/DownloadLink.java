@@ -1060,6 +1060,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public int getPercent() {
+        if(Math.min(downloadCurrent, downloadMax)<=0)return 0;
         return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
     }
 
