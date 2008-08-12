@@ -935,9 +935,11 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
+                    if(!nextDownloadLink.getPlugin().canResume(nextDownloadLink)){
                     if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0 && nextDownloadLink.isEnabled()) {
 
                         ret++;
+                    }
                     }
                 }
             }
@@ -1903,7 +1905,7 @@ public class JDController implements ControlListener, UIListener {
     /**
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
-    public void stopDownloads() {
+    public boolean stopDownloads() {
         if (getDownloadStatus() == DOWNLOAD_RUNNING) {
             setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
@@ -1913,6 +1915,9 @@ public class JDController implements ControlListener, UIListener {
             logger.info("termination broadcast");
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
+            return true;
+        }else{
+            return false;
         }
     }
 
@@ -1993,23 +1998,23 @@ public class JDController implements ControlListener, UIListener {
             // saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
             break;
         case UIEvent.UI_INTERACT_RECONNECT:
-            if (getRunningDownloadNum() > 0) {
-                logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
-                stopDownloads();
-            }
-
-            // Interaction.handleInteraction(Interaction.
-            // INTERACTION_NEED_RECONNECT,
-            // this);
-            if (Reconnecter.waitForNewIP(1)) {
-                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-
-            } else {
-
-                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-
-            }
-
+//            if (getRunningDownloadNum() > 0) {
+//                logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
+//                stopDownloads();
+//            }
+//
+//            // Interaction.handleInteraction(Interaction.
+//            // INTERACTION_NEED_RECONNECT,
+//            // this);
+//            if (Reconnecter.waitForNewIP(1)) {
+//                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+//
+//            } else {
+//
+//                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+//
+//            }
+Reconnecter.requestReconnect();
             // uiInterface.setDownloadLinks(downloadLinks);
             break;
         case UIEvent.UI_INTERACT_UPDATE:

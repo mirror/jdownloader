@@ -283,13 +283,26 @@ public class FileFactory extends PluginForHost {
        login.put("password",account.getPass());
        br.submitForm(login);
   
-      
+      if(br.containsHTML("record of an account with that email")){
+          ai.setValid(false);
+          ai.setStatus("No account with this email");
+          return ai;
+      }
+      if(br.containsHTML("password you entered is incorrect")){
+          ai.setValid(false);
+          ai.setStatus("Account found, but password is wrong");
+          return ai;
+      }
       br.getPage("http://filefactory.com/rewards/summary/");
       String expire =br.getMatch("subscription will expire on <strong>(.*?)</strong>");
+      if(expire==null){
+          ai.setValid(false);
+          return ai;
+      }
       // 17 October, 2008 (in 66 days).
      ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM, yyyy", Locale.UK));
-    String pThisMonth=  br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replace("\\,", "");
-    String pUsable=  br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replace("\\,", "");
+    String pThisMonth=  br.getMatch("\\(Usable next month\\)</td>.*?<td.*?>(.*?)</td>").replaceAll("\\,", "");
+    String pUsable=  br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
 
      ai.setPremiumPoints(Integer.parseInt(pThisMonth) +Integer.parseInt(pUsable));
     

@@ -132,6 +132,13 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setStep(1);
         download.addEntry(ce);
 
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads"));
+        ce.setDefaultValue(true);
+       
+        download.addEntry(ce);
+        
+        //
+        //   
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
         ce.setDefaultValue(false);
         conditionEntry = ce;

@@ -518,7 +518,7 @@ public class Rapidshare extends PluginForHost {
         HTTPConnection urlConnection = br.openPostConnection(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
 
         dl = new RAFDownload(this, downloadLink, urlConnection);
-
+dl.setResume(true);
         if (dl.startDownload()) {
 
             if (new File(downloadLink.getFileOutput()).length() < 8000) {

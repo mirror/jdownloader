@@ -504,7 +504,9 @@ public abstract class PluginForHost extends Plugin {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.getLinkStatus().setErrorMessage("Plugin has no hanldPremium Method");
     }
-
+    public boolean canResume(DownloadLink link){
+        return ignoreHosterWaittime(link)?true:false;
+    }
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     @SuppressWarnings("unchecked")

@@ -1,5 +1,6 @@
 package jd.utils;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -35,7 +36,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnect() {
-
+        logger.info("1");
         if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) { return true; }
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
@@ -49,15 +50,19 @@ public class Reconnecter {
 
             if (!ipChangeSuccess) {
                 IS_RECONNECTING = false;
+                logger.info("2");
                 return false;
             }
         }
+        logger.info("3");
+        ArrayList<DownloadLink> disabled = new ArrayList<DownloadLink>();
         if (!ipChangeSuccess) {
             if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
                 // logger.finer("Downloads are running. reconnect is disabled");
                 IS_RECONNECTING = false;
                 return false;
             }
+            logger.info("4");
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, JDUtilities.getController());
             String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
             if (type == null) {
@@ -66,7 +71,26 @@ public class Reconnecter {
                 return false;
             }
             IS_RECONNECTING = true;
+            boolean interrupt = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
+            if (interrupt) {
+                JDUtilities.getController().pauseDownloads(true);
 
+                Iterator<FilePackage> iterator = JDUtilities.getController().getPackages().iterator();
+                FilePackage fp = null;
+                DownloadLink nextDownloadLink;
+
+                while (iterator.hasNext()) {
+                    fp = iterator.next();
+                    Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                    while (it2.hasNext()) {
+                        nextDownloadLink = it2.next();
+                        if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
+                            nextDownloadLink.setEnabled(false);
+                            disabled.add(nextDownloadLink);
+                        }
+                    }
+                }
+            }
             if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
                 ipChangeSuccess = new ExternReconnect().interact(null);
             } else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
@@ -74,10 +98,16 @@ public class Reconnecter {
             } else {
                 ipChangeSuccess = new HTTPLiveHeader().interact(null);
             }
-
+            if (interrupt) {
+                JDUtilities.getController().pauseDownloads(false);
+                for (DownloadLink link : disabled)
+                    link.setEnabled(true);
+            }
+            logger.info("5");
             LAST_RECONNECT_SUCCESS = ipChangeSuccess;
             logger.info("Reconnect success: " + ipChangeSuccess);
         }
+        logger.info("6");
         if (ipChangeSuccess) {
             Reconnecter.resetAllLinks();
 
@@ -93,6 +123,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
+        logger.info("REquested: " + RECONNECT_REQUESTS);
         if (RECONNECT_REQUESTS > 0) { return Reconnecter.doReconnect(); }
         return false;
     }
@@ -122,7 +153,7 @@ public class Reconnecter {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0 ) {
+                    if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         nextDownloadLink.getPlugin().resetHosterWaitTime();
                         logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
                         ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
