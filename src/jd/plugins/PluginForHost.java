@@ -31,6 +31,7 @@ import jd.config.MenuItem;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
+
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -87,6 +88,9 @@ public abstract class PluginForHost extends Plugin {
         case 1:
 
             ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config, "Select where filesdownloaded with JDownloader should be stored.");
+           
+           
+            
             JPanel panel = new JPanel(new BorderLayout());
             JPanel topPanel = new JPanel();
             panel.add(topPanel, BorderLayout.NORTH);

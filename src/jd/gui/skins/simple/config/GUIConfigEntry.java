@@ -175,6 +175,24 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             // total.setMinimumSize(new Dimension(200, 200));
             total = null;
+
+            // this.setLayout(new BorderLayout());
+            // this.add(left = new
+            // JLabel(configEntry.getLabel()),BorderLayout.NORTH);
+            // // JDUtilities.addToGridBag(this, left = new
+            // JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets,
+            // GridBagConstraints.NONE, GridBagConstraints.WEST);
+            // // addInstantHelpLink();
+            // input[0] = new JTextArea();
+            // input[0].setEnabled(configEntry.isEnabled());
+            // doc = (PlainDocument) ((JTextArea) input[0]).getDocument();
+            // doc.addDocumentListener(this);
+            // this.add(new JScrollPane(input[0]),BorderLayout.CENTER);
+            // //JDUtilities.addToGridBag(this, total = new
+            // JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets,
+            // GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            // // total.setMinimumSize(new Dimension(200, 200));
+            // total = null;
             break;
         case ConfigContainer.TYPE_CHECKBOX:
 
@@ -287,7 +305,9 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             input[0] = new PremiumPanel(this);
             input[0].setEnabled(configEntry.isEnabled());
 
-//            JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            // JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]),
+            // 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH,
+            // GridBagConstraints.EAST);
             JDUtilities.addToGridBag(this, total = input[0], 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             // total.setMinimumSize(new Dimension(200, 200));
             total = null;
@@ -477,7 +497,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_TEXTAREA:
             ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
-            
+
         case ConfigContainer.TYPE_PREMIUMPANEL:
             ((PremiumPanel) input[0]).setAccounts(text);
             break;
@@ -540,7 +560,5 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
     public void stateChanged(ChangeEvent e) {
         getConfigEntry().valueChanged(getText());
     }
-
-   
 
 }

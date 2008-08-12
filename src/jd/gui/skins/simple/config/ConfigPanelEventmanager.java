@@ -222,7 +222,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
             logger.info(interaction.getConfig().getEntries() + " _ ");
             if (interaction.getConfig().getEntries().size() > 0) {
-                openPopupPanel(new ConfigPanelDefault(uiinterface, interaction.getConfig()));
+                openPopupPanel(new ConfigEntriesPanel(interaction.getConfig(), JDLocale.LF("gui.config.plugin.interaction.dialogname", "%s Configuration",interaction.getInteractionName())));
             }
 
         }

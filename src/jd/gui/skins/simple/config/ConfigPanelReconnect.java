@@ -55,7 +55,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     private Configuration configuration;
 
-    private ConfigPanelDefault er;
+    private ConfigEntriesPanel er;
 
     private SubPanelLiveHeaderReconnect lh;
 
@@ -204,14 +204,14 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             JDUtilities.addToGridBag(panel, lh, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         } else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
-            er = new ConfigPanelDefault(uiinterface, ((Interaction) new ExternReconnect()).getConfig());
+            er = new ConfigEntriesPanel(((Interaction) new ExternReconnect()).getConfig(), JDLocale.L("gui.config.reconnect.extern.dialogname", "Extern Reconnect"));//new ConfigPanelDefault(uiinterface, ((Interaction) new ExternReconnect()).getConfig());
 
             JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 
         }
 
         else if (((String) box.getSelectedItem()).equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
-            er = new ConfigPanelDefault(uiinterface, ((Interaction) new BatchReconnect()).getConfig());
+            er = new ConfigEntriesPanel(((Interaction) new BatchReconnect()).getConfig(), JDLocale.L("gui.config.reconnect.batch.dialogname", "Batch Reconnect"));
 
             JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
 

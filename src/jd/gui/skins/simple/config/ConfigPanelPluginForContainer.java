@@ -35,6 +35,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForContainer;
@@ -126,7 +127,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     private void editEntry() {
         PluginForContainer plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+            
+            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.container.dialogname", "%s Configuration",plugin.getPluginName())));
         }
     }
 

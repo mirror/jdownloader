@@ -136,7 +136,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     private void editEntry() {
         PluginForDecrypt plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigPanelPlugin(configuration, uiinterface, plugin));
+            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.decrypt.dialogname", "%s Configuration",plugin.getPluginName())));
         }
     }
 

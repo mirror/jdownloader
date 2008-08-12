@@ -399,9 +399,10 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         addGUIConfigEntry(ce);
 
         routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
-        addGUIConfigEntry(routerScript);
-
-        add(panel);
+        //addGUIConfigEntry(routerScript);
+        this.entries.add(routerScript);
+        add(panel,BorderLayout.NORTH);
+        add(routerScript,BorderLayout.CENTER);
 
     }
 
