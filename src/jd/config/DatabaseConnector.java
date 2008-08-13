@@ -41,8 +41,15 @@ public class DatabaseConnector implements Serializable {
             
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
-            
-            if(!new File(configpath + "database.script").exists()) {
+            boolean checktables=true;
+            try{
+            ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = 'dummy'");
+            }catch(Exception e){
+                logger.warning("Database tables error");
+                e.printStackTrace();
+                checktables=false;
+            }
+            if(!new File(configpath + "database.script").exists()|!checktables) {
                 logger.info("No configuration database found. Creating new one.");
                 
                 con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)"); 

@@ -98,7 +98,7 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
             tabbedPane = new JTabbedPane();
             tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-            tabbedPane.setTabPlacement(SwingConstants.RIGHT);
+            tabbedPane.setTabPlacement(SwingConstants.TOP);
             Vector<ConfigEntry> entries = container.getEntries();
 
             Vector<ConfigContainer> container = new Vector<ConfigContainer>();

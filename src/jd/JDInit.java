@@ -20,12 +20,10 @@ import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,11 +45,9 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -73,10 +69,10 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
             System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
@@ -90,7 +86,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
             System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
@@ -144,14 +140,12 @@ public class JDInit {
         JDUtilities.getRunType();
         if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
             logger.info("Returned from Update");
-            
-                if (splashScreen != null) {
-                    splashScreen.finish();
-                }
 
-                SimpleGUI.showChangelogDialog();
-            
-        
+            if (splashScreen != null) {
+                splashScreen.finish();
+            }
+
+            SimpleGUI.showChangelogDialog();
 
         }
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
@@ -213,7 +207,7 @@ public class JDInit {
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
                 // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
@@ -275,15 +269,12 @@ public class JDInit {
                             d.action1 = d.new Action() {
                                 public boolean doAction() {
 
-                                
-
-                                        try {
-                                            JLinkButton.openURL(JDLocale.L("system.update.changelogurl","http://jdownloader.org/changes?toolmode=1"));
-                                        } catch (MalformedURLException e) {
-                                            // TODO Auto-generated catch block
-                                            e.printStackTrace();
-                                        }
-                                 
+                                    try {
+                                        JLinkButton.openURL(JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"));
+                                    } catch (MalformedURLException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
 
                                     return true;
                                 }
@@ -395,57 +386,30 @@ public class JDInit {
 
     public Configuration loadConfiguration() {
         boolean allOK = true;
-        try {
-            Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
 
-            if (obj == null) {
-                File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
-                if (file.exists()) {
-                    logger.info("Wrapping jdownloader.config");
-                    obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
-                    System.out.println(obj.getClass().getName());
-                    JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
-                }
+        Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
+
+        if (obj == null) {
+            File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
+            if (file.exists()) {
+                logger.info("Wrapping jdownloader.config");
+                obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+                System.out.println(obj.getClass().getName());
+                JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
             }
-
-            if (obj != null) {
-                if (obj instanceof Configuration) {
-                    Configuration configuration = (Configuration) obj;
-                    JDUtilities.setConfiguration(configuration);
-                    JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
-                    JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
-                    JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
-
-                } else {
-                    // log += "\r\n" + ("Configuration error: " + obj);
-                    // log += "\r\n" + ("Konfigurationskonflikt. Lade Default
-                    // einstellungen");
-                    allOK = false;
-                    if (JDUtilities.getConfiguration() == null) {
-                        JDUtilities.getConfiguration().setDefaultValues();
-                    }
-                }
-            } else {
-                logger.info("no configuration loaded");
-                logger.info("Konfigurationskonflikt. Lade Default einstellungen");
-
-                allOK = false;
-                if (JDUtilities.getConfiguration() == null) {
-                    JDUtilities.getConfiguration().setDefaultValues();
-                }
-            }
-        } catch (Exception e) {
-            logger.info("Konfigurationskonflikt. Lade Default einstellungen");
-            e.printStackTrace();
-            allOK = false;
-            if (JDUtilities.getConfiguration() == null) {
-                JDUtilities.setConfiguration(new Configuration());
-            }
-            JDUtilities.getConfiguration().setDefaultValues();
         }
 
-        if (!allOK) {
+        if (obj != null) {
 
+            Configuration configuration = (Configuration) obj;
+            JDUtilities.setConfiguration(configuration);
+            JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
+            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
+
+        } else {
+            JDUtilities.setConfiguration(new Configuration());
+            JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
             installerVisible = true;
             try {
                 splashScreen.finish();
@@ -659,8 +623,6 @@ public class JDInit {
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("JDInfoFileWriter", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("StreamingShareTool", 1.5));
         optionalPluginsVersionsArray.add(new optionalPluginsVersions("LangFileEditor", 1.5));
-       
-        
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 

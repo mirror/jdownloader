@@ -50,16 +50,21 @@ public final class Sniffy {
             String prem = exec.getStream() + " \r\n " + exec.getErrorStream();
             boolean check1=true;
             boolean check2=false;
-            if (!Regex.matches(prem, "could be a sniffer")) { check1= false; }
+            if (!Regex.matches(prem, "could be a sniffer")) {{
+                JDUtilities.getLogger().warning("Sniffy:1");
+                check1= false; }
+            }
             for (Pattern white : whiteList) {
 
                 list = white.matcher(list).replaceAll("");
 
             }
             for (Pattern black : blackList) {
-                Regex r;
-                if ((r = new Regex(list, black)).matches()) {
-
+           
+       
+                String r;
+                if ((r = new Regex(list, black).getFirstMatch())!=null) {
+                    JDUtilities.getLogger().warning("Sniffy:2"+r);
                     check2= true; }
             }
 

@@ -192,7 +192,7 @@ public class Configuration extends Property implements Serializable {
      */
     private int waitForIPCheck = 0;
 
-    private String version = "";
+  
 
     /**
      * Konstruktor für ein Configuration Object
@@ -303,42 +303,6 @@ public class Configuration extends Property implements Serializable {
         this.interactions = interactions;
     }
 
-    /**
-     * Setzt die Version der Configfile
-     * 
-     * @param version
-     */
-    public void setConfigurationVersion(String version) {
-        this.version = version;
-    }
-
-    /**
-     * Gibt die version der Configfile zurück. Ändert sich die Konfigversion,
-     * werden die defaulteinstellungen erneut geschrieben. So wird
-     * sichergestellt, dass bei einem Update eine Aktuelle Configfie erstellt
-     * wird
-     * 
-     * @return Versionsstring der Konfiguration
-     */
-    public String getConfigurationVersion() {
-        if (version == null) { return "0.0.0"; }
-        return version;
-    }
-
-    /**
-     * Legt die defaulteinstellungen in das configobjekt
-     */
-    public void setDefaultValues() {
-
-        if (getProperty("maxSimultanDownloads") == null || (Integer) getProperty("maxSimultanDownloads") == 0) {
-            setProperty("maxSimultanDownloads", 3);
-        }
-
-        String id = "$Id$";
-        if (id.length() > 22) {
-            setConfigurationVersion(id.substring(22, id.length() - 2));
-        }
-    }
 
     /**
      * GIbt alle Properties der Config aus

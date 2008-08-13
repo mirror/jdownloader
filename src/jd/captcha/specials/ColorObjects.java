@@ -22,14 +22,12 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import jd.captcha.JAntiCaptcha;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
-import jd.plugins.DownloadLink;
 
 /**
  * 
@@ -37,10 +35,6 @@ import jd.plugins.DownloadLink;
  * @author JD-Team
  */
 public class ColorObjects {
-
-
-
-
 
     private static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance) {
         ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
@@ -80,7 +74,7 @@ public class ColorObjects {
                 }
 
                 // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
-             
+
             }
             // BasicWindow.showImage(grid.getImage(6), x+"-");
         }
@@ -90,42 +84,38 @@ public class ColorObjects {
 
     @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
-      
+
         ArrayList<PixelObject> os = getObjects(captcha, 10);
 
         Collections.sort(os, new Comparator<PixelObject>() {
             public int compare(PixelObject a, PixelObject b) {
-            if(a.getSize()>b.getSize())return -1;
-            if(a.getSize()<b.getSize())return 1;
-            return 0;
+                if (a.getSize() > b.getSize()) return -1;
+                if (a.getSize() < b.getSize()) return 1;
+                return 0;
             }
 
         });
-        
-//        for(PixelObject po:os){
-//           if(po.getSize()>20) BasicWindow.showImage(po.toLetter().getImage(3));
-//        }
+
+        // for(PixelObject po:os){
+        // if(po.getSize()>20) BasicWindow.showImage(po.toLetter().getImage(3));
+        // }
         List<PixelObject> ret = os.subList(0, captcha.owner.getLetterNum());
         Collections.sort(ret);
-       
-Letter[] let= new Letter[ret.size()];
 
-int i=0;
-for(PixelObject po:ret){
-    let[i++]=po.toLetter();
-    BasicWindow.showImage(let[i-1].getImage(3));
-    let[i-1].toBlackAndWhite(1.1);
-    let[i-1].removeSmallObjects(0.99, 0.99);
-    let[i-1].clean();
- 
- 
-}
-      
-    
+        Letter[] let = new Letter[ret.size()];
+
+        int i = 0;
+        for (PixelObject po : ret) {
+            let[i++] = po.toLetter();
+            BasicWindow.showImage(let[i - 1].getImage(3));
+            let[i - 1].toBlackAndWhite(1.1);
+            let[i - 1].removeSmallObjects(0.99, 0.99);
+            let[i - 1].clean();
+
+        }
+
         return let;
 
     }
-
- 
 
 }

@@ -150,7 +150,7 @@ public class Uploadedto extends PluginForHost {
       String expire=br.getMatch("Valid until: </span> <span class=.*?>(.*?)</span>");
       
      ai.setValidUntil(Regex.getMilliSeconds(expire, "dd-MM-yyyy hh:mm", null));
-     ai.setAccountBalance((int)Double.parseDouble(balance)*100);
+     ai.setAccountBalance((int)(Double.parseDouble(balance)*100));
      ai.setTrafficLeft(Regex.getSize(traffic));
      ai.setPremiumPoints(Integer.parseInt(points));
      ;
