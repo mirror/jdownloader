@@ -68,7 +68,7 @@ public final class Sniffy {
             list = whiteList.matcher(list).replaceAll("");
 
             for (Pattern black : blackList) {
-                JDUtilities.getLogger().info(list);
+               
 
                 String r;
                 if ((r = new Regex(list, black).getFirstMatch()) != null) {

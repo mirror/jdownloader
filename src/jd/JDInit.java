@@ -463,7 +463,7 @@ public class JDInit {
             if (!inst.isAborted()) {
 
                 File home = JDUtilities.getResourceFile(".");
-                if (home.canWrite()&&JDUtilities.getResourceFile("noupdate.txt")==null) {
+                if (home.canWrite()&&!JDUtilities.getResourceFile("noupdate.txt").exists()) {
               
                   
 

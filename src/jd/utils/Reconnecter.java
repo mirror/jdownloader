@@ -128,7 +128,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-        logger.info("REquested: " + RECONNECT_REQUESTS);
+   
         if (RECONNECT_REQUESTS > 0) { return Reconnecter.doReconnect(); }
         return false;
     }

@@ -453,7 +453,7 @@ public class Main {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED&&JDUtilities.getResourceFile("noupdate.txt")==null) {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED&&!JDUtilities.getResourceFile("noupdate.txt").exists()) {
                     init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
                 }
             }
