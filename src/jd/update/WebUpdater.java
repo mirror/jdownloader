@@ -42,6 +42,9 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
+
+import sun.misc.BASE64Encoder;
+
 /**
  * @author JD-Team Webupdater lädt pfad und hash infos von einem server und
  *         vergleicht sie mit den lokalen versionen
@@ -131,6 +134,14 @@ public class WebUpdater implements Serializable {
 
     }
 
+    public static String Base64Encode(String plain) {
+
+        if (plain == null) { return null; }
+        String base64 = new BASE64Encoder().encode(plain.getBytes());
+
+        return base64;
+    }
+
     /**
      * Lädt fileurl nach filepath herunter
      * 
@@ -142,8 +153,10 @@ public class WebUpdater implements Serializable {
 
         try {
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
+            String org=filepath;
+            filepath = new File(filepath+".tmp").getAbsolutePath();
             File file = new File(filepath);
-            if (file.isFile()) {
+            if (file.exists()&&file.isFile()) {
                 if (!file.delete()) {
                     log("Konnte Datei nicht löschen " + file);
                     return false;
@@ -161,7 +174,22 @@ public class WebUpdater implements Serializable {
 
             URL url = new URL(fileurl);
             URLConnection con = url.openConnection();
+            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
+                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
+                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
 
+                con.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+
+            }
+
+            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
+
+                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
+                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS_SOCKS", "");
+
+                con.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+
+            }
             BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 
             byte[] b = new byte[1024];
@@ -171,6 +199,17 @@ public class WebUpdater implements Serializable {
             }
             output.close();
             input.close();
+
+            log("Download ok...rename...");
+            if (new File(org).exists()&&new File(org).isFile()) {
+                if (!new File(org).delete()) {
+                    log("Could not delete file " + org);
+                    return false;
+                }
+
+            }
+            
+            file.renameTo(new File(org));
 
             return true;
         } catch (FileNotFoundException e) {
@@ -410,6 +449,24 @@ public class WebUpdater implements Serializable {
     public String getRequest(URL link) {
         try {
             HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+
+            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
+                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
+                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
+
+                httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+
+            }
+
+            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
+
+                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
+                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("ROXY_PASS_SOCKS", "");
+
+                httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+
+            }
+
             httpConnection.setReadTimeout(10000);
             httpConnection.setReadTimeout(10000);
             httpConnection.setInstanceFollowRedirects(true);

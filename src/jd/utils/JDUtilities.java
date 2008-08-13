@@ -1675,7 +1675,16 @@ public class JDUtilities {
         return cfg;
 
     }
+    public static SubConfiguration getSubConfig(String name, boolean b) {
+        if(!b)return getSubConfig(name);
+        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
 
+        SubConfiguration cfg = new SubConfiguration(name,b);
+        subConfigs.put(name, cfg);
+        cfg.save();
+        return cfg;
+    }
+    
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
@@ -2311,6 +2320,6 @@ public class JDUtilities {
         }
         return dbconnect;
     }
-    
+
 
 }

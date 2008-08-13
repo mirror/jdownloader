@@ -40,6 +40,8 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 
+
+
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class Main {
@@ -157,20 +159,52 @@ public class Main {
         boolean plafisSet = false;
 
         /* Http-Proxy einstellen */
-        if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_PROXY", false)) {
-            System.setProperty("http.proxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("PROXY_HOST", ""));
-            System.setProperty("http.proxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("PROXY_PORT", 8080)).toString());
+        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
+           
+            String host=SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_HOST", "");
+            String port=new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("PROXY_PORT", 8080)).toString();
+            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
+            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
+            
+            System.setProperty( "http.proxySet", "true" );
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port);
+            System.setProperty("http.proxyUserName", user);
+            System.setProperty("http.proxyPassword", pass);
+            
             Main.log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
         } else {
+            System.setProperty( "http.proxySet", "false" );
             System.setProperty("http.proxyHost", "");
             Main.log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
         }
         /* Socks-Proxy einstellen */
-        if (SubConfiguration.getSubConfig("DOWNLOAD").getBooleanProperty("USE_SOCKS", false)) {
-            System.setProperty("socksProxyHost", SubConfiguration.getSubConfig("DOWNLOAD").getStringProperty("SOCKS_HOST", ""));
-            System.setProperty("socksProxyPort", new Integer(SubConfiguration.getSubConfig("DOWNLOAD").getIntegerProperty("SOCKS_PORT", 1080)).toString());
+        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
+           
+            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
+            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS_SOCKS", "");
+            String host=SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("SOCKS_HOST", "");
+            String port=new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("SOCKS_PORT", 1080)).toString();
+            
+            System.setProperty("socksProxySet", "true");
+            System.setProperty("socksProxyHost",host );
+            System.setProperty("socksProxyPort", port); 
+            System.setProperty("socksProxyUserName", user);
+            System.setProperty("socksProxyPassword", pass);
+            System.setProperty("socks.useProxy", "true");
+            System.setProperty("socks.proxyHost",host);
+            System.setProperty("socks.proxyPort", port);
+            System.setProperty("socks.proxyUserName", user);
+            System.setProperty("socks.proxyPassword", pass);
+            
+            
+            
+            
             Main.log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
         } else {
+            System.setProperty("socksProxySet", "false");
+            System.setProperty("socks.useProxy", "false");
+            System.setProperty("socks.proxyHost","");
             System.setProperty("socksProxyHost", "");
             Main.log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
         }

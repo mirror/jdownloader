@@ -57,7 +57,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
     @Override
     public void initPanel() {
 
-        config = JDUtilities.getSubConfig("WEBUPDATE");
+        config = JDUtilities.getSubConfig("WEBUPDATE",true);
         GUIConfigEntry ce;
         // ce = new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,

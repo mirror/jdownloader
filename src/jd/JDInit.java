@@ -79,8 +79,13 @@ public class JDInit {
             String port=new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
             String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_HOST, host);
             
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_PROXY, true);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PORT, port);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_USER, user);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PASS, pass);
+
             System.setProperty( "http.proxySet", "true" );
             System.setProperty("http.proxyHost", host);
             System.setProperty("http.proxyPort", port);
@@ -91,9 +96,12 @@ public class JDInit {
 
         } else {
             System.setProperty("http.proxyHost", "");
-            
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_PROXY, false);
+       
+          
             System.setProperty( "http.proxySet", "false" );
             logger.info("http-proxy: disabled");
+           
         }
     }
 
@@ -109,16 +117,9 @@ public class JDInit {
             
             System.setProperty("socksProxySet", "true");
             System.setProperty("socksProxyHost",host );
-            System.setProperty("socksProxyPort", port);
-            
-            
+            System.setProperty("socksProxyPort", port); 
             System.setProperty("socksProxyUserName", user);
             System.setProperty("socksProxyPassword", pass);
-
-            
-         
-          
-
             System.setProperty("socks.useProxy", "true");
             System.setProperty("socks.proxyHost",host);
             System.setProperty("socks.proxyPort", port);
@@ -126,10 +127,25 @@ public class JDInit {
             System.setProperty("socks.proxyPassword", pass);
             
             logger.info("socks-proxy: enabled");
+            
+  JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.SOCKS_HOST, host);
+            
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_SOCKS, true);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.SOCKS_PORT, port);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_USER_SOCKS, user);
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PASS_SOCKS, pass);
+         
+           
+            
+            
         } else {
-            System.setProperty("socksProxyHost", "");
             System.setProperty("socksProxySet", "false");
             System.setProperty("socks.useProxy", "false");
+            System.setProperty("socks.proxyHost","");
+            System.setProperty("socksProxyHost", "");
+               
+            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_SOCKS, false);
+  
             logger.info("socks-proxy: disabled");
         }
     }

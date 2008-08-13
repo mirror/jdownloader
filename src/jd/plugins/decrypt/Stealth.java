@@ -29,6 +29,8 @@ import jd.plugins.PluginForDecrypt;
 
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
+    
+    
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public Stealth() {
@@ -39,7 +41,7 @@ public class Stealth extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            //CaptchaInfo<File, String> captchaInfo = null;
+            // CaptchaInfo<File, String> captchaInfo = null;
             Browser.clearCookies(host);
             br.getPage(parameter);
             for (int i = 0; i < 5; i++) {
@@ -52,30 +54,33 @@ public class Stealth extends PluginForDecrypt {
                     }
                     logger.finest("Captcha Protected");
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
-                    File file=this.getLocalCaptchaFile(this);
-                    Form form=br.getForm(0);
+                    File file = this.getLocalCaptchaFile(this);
+                    Form form = br.getForm(0);
                     Browser.download(file, br.openGetConnection(captchaAdress));
-                    String code=getCaptchaCode(file, this);
-                   
+                    String code = getCaptchaCode(file, this);
+
                     form.put("txtCode", code);
-                   
+
                     br.submitForm(form);
                 } else {
                     break;
                 }
             }
-String p=new Regex(br, Pattern.compile("<div align=\"center\"><a id=\"(.*?)\" href=\"", Pattern.CASE_INSENSITIVE)).getFirstMatch() + "&typ=hit";
-            br.postPage("http://stealth.to/ajax.php", p);
-            String[] links = br.getRegex( Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            String p = new Regex(br, Pattern.compile("<div align=\"center\"><a id=\"(.*?)\" href=\"", Pattern.CASE_INSENSITIVE)).getFirstMatch() + "&typ=hit";
+           String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getMatches(1);
+            
+            // br.postPage("http://stealth.to/ajax.php", "id="+p);
+           // String[] links = br.getRegex(Pattern.compile("dl = window\\.open\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
             progress.setRange(links.length);
 
             for (String element : links) {
-                //entspricht quasi neuem tab
-                Browser tmp=br.cloneBrowser();
-              
-                tmp.getPage("http://stealth.to/" + element);
+                // entspricht quasi neuem tab
+                Browser tmp = br.cloneBrowser();
+
+                tmp.getPage("http://stealth.to/popup.php?id=" + element);
                 String[] decLinks = tmp.getRegex(Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(decLinks[1])));
+                String link=Encoding.htmlDecode(decLinks[1]);
+                decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
             }
         } catch (Exception e) {

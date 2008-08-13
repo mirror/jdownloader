@@ -76,6 +76,8 @@ public class Wiireloaded extends PluginForDecrypt {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
             String calc_page = br.getPage(u);
             String rechnung[][] = new Regex(calc_page, Pattern.compile("\\((\\w+) (\\+|\\-) (\\w+) = \\?\\)", Pattern.CASE_INSENSITIVE)).getMatches();
+            
+            if(rechnung.length>0){
             Integer calc_result;
             if (rechnung[0][1].contains("+")) {
                 calc_result = RomanToInt(rechnung[0][0]) + RomanToInt(rechnung[0][2]);
@@ -91,6 +93,14 @@ public class Wiireloaded extends PluginForDecrypt {
                 decryptedLinks.add(link);
             }
             progress.increase(1);
+            }else{
+                
+            br.getPage("http://wii-reloaded.ath.cx/protect/load.php");
+               
+               br=br;
+                
+                
+            }
         }
         progress.increase(1);
         return decryptedLinks;

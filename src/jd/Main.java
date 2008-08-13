@@ -372,6 +372,7 @@ public class Main {
         }
         JDInit.setupProxy();
         JDInit.setupSocks();
+        JDUtilities.getSubConfig("WEBUPDATE",true).save();
         init.removeFiles();
 
         /*

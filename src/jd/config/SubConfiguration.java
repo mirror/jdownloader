@@ -16,6 +16,7 @@
 
 package jd.config;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -28,11 +29,26 @@ public class SubConfiguration extends Property implements Serializable {
 
     @SuppressWarnings("unchecked")
     public SubConfiguration(String name) {
-        this.name = name;
-        Object props = JDUtilities.getDatabaseConnector().getData(name);
-        if (props != null) {
-            this.setProperties((HashMap<String, Object>) props);
+        this(name,false);
+    }
+
+    public SubConfiguration(String name, boolean b) {
+        if(b){
+            this.name = name;
+            File file;
+            Object props = JDUtilities.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
+            file.getParentFile().mkdirs();
+            if (props != null) {
+                setProperties((HashMap<String, Object>) props);
+            }
+        }else{
+            this.name = name;
+            Object props = JDUtilities.getDatabaseConnector().getData(name);
+            if (props != null) {
+                this.setProperties((HashMap<String, Object>) props);
+            } 
         }
+        // TODO Auto-generated constructor stub
     }
 
     public void save() {
