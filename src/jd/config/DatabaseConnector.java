@@ -60,7 +60,7 @@ public class DatabaseConnector implements Serializable {
                 File f = null;
                 for(String tmppath : new File(configpath).list()) {
                     try {
-                        if(tmppath.endsWith(".cfg")) {
+                        if(tmppath.endsWith(".cfg")&&!tmppath.endsWith("WEBUPDATE.cfg")) {
                             logger.finest("Wrapping " + tmppath);
                             
                             Object props = JDUtilities.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
@@ -70,6 +70,7 @@ public class DatabaseConnector implements Serializable {
                                 pst.setObject(2, props);
                                 pst.execute();
                             }
+                            
                             f.delete();
                         }
                     }

@@ -152,6 +152,8 @@ public class WebUpdater implements Serializable {
     private boolean downloadBinary(String filepath, String fileurl) {
 
         try {
+            
+            log("downloading... You must NOT close the window!");
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
             String org=filepath;
             filepath = new File(filepath+".tmp").getAbsolutePath();
@@ -174,6 +176,8 @@ public class WebUpdater implements Serializable {
 
             URL url = new URL(fileurl);
             URLConnection con = url.openConnection();
+            con.setReadTimeout(10000);
+            con.setReadTimeout(10000);
             if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
                 String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
                 String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
@@ -200,7 +204,7 @@ public class WebUpdater implements Serializable {
             output.close();
             input.close();
 
-            log("Download ok...rename...");
+            log("Download ok...rename "+file.getName()+"to "+new File(org).getName());
             if (new File(org).exists()&&new File(org).isFile()) {
                 if (!new File(org).delete()) {
                     log("Could not delete file " + org);
@@ -321,6 +325,8 @@ public class WebUpdater implements Serializable {
                 progresslist.setValue(20);
             }
 
+            
+           
             if (cid > 0) {
                 source = getRequest(new URL(listPath + "?cid=" + cid));
             } else {
@@ -467,8 +473,8 @@ public class WebUpdater implements Serializable {
 
             }
 
-            httpConnection.setReadTimeout(10000);
-            httpConnection.setReadTimeout(10000);
+            httpConnection.setReadTimeout(20000);
+            httpConnection.setReadTimeout(20000);
             httpConnection.setInstanceFollowRedirects(true);
             httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
             // Content-Encoding: gzip
@@ -598,10 +604,10 @@ public class WebUpdater implements Serializable {
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                    log("Webupdater: directfile: " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
+                    log("Webupdater: download" + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
                     downloadBinary(tmp[0], tmp[1]);
                 } else {
-                    log("Webupdater: file: " + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
+                    log("Webupdater:  download" + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
                     downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0));
                 }
                 log("Webupdater: ready");

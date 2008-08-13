@@ -1681,7 +1681,7 @@ public class JDUtilities {
 
         SubConfiguration cfg = new SubConfiguration(name,b);
         subConfigs.put(name, cfg);
-        cfg.save();
+        cfg.save(); 
         return cfg;
     }
     

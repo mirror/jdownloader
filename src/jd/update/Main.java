@@ -157,7 +157,9 @@ public class Main {
         SubConfiguration guiConfig = SubConfiguration.getSubConfig("simpleGUI");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
-
+        log.append("Webupdater 13.8.2008 21:42 started\r\n");
+        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"");
+     
         /* Http-Proxy einstellen */
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
            
