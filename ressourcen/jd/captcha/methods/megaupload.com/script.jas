@@ -65,7 +65,7 @@ param.backgroundsamplecleancontrast=0.15;
 
 
 
-
+param.useSpecialGetLetters=ColorObjects.getLetters;
 ##################Prepare captcha
 
 captcha.prepare.normalize();
@@ -78,5 +78,5 @@ captcha.prepare.normalize();
 ##################Prepare letter
 
 #letter.prepare.removeSmallObjects(0.3,0.5,30);
-letter.prepare.toBlackAndWhite();
-letter.prepare.clean();
+#letter.prepare.toBlackAndWhite();
+#letter.prepare.clean();
