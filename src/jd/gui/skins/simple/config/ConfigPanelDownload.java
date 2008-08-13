@@ -195,6 +195,16 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(8080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
+        
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "User"));
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        network.addEntry(ce);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Pass"));
+      
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        network.addEntry(ce);
 
         // ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
         // JDUtilities.getConfiguration(), Configuration.PROXY_USER,
@@ -230,7 +240,16 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
+        
+        
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER_SOCKS, JDLocale.L("gui.config.download.proxy.user", "User"));
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        network.addEntry(ce);
 
+        ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS_SOCKS, JDLocale.L("gui.config.download.proxy.pass", "Pass"));
+   
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        network.addEntry(ce);
     }
 
 }

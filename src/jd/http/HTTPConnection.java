@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.config.Configuration;
+import jd.utils.JDUtilities;
+
 public class HTTPConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
@@ -45,6 +48,24 @@ public class HTTPConnection {
         requestProperties = new HashMap<String, List<String>>();
 
         connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+
+            connection.setRequestProperty("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
+
+        }
+        
+        
+        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
+            
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+
+            connection.setRequestProperty("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
+
+        }
+
         Map<String, List<String>> tmp = connection.getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
         while (set.hasNext()) {
@@ -190,16 +211,15 @@ public class HTTPConnection {
     }
 
     public boolean isOK() {
-     
-            try {
-                if(connection.getResponseCode()>-2 && connection.getResponseCode()<500)
-                    return true;
-                else
-                    return false;
-            } catch (IOException e) {
+
+        try {
+            if (connection.getResponseCode() > -2 && connection.getResponseCode() < 500)
+                return true;
+            else
                 return false;
-            }
+        } catch (IOException e) {
+            return false;
         }
-    
+    }
 
 }

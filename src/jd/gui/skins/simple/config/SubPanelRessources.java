@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  * 
  */
-public class ConfigPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
+public class SubPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
 
     private class InternalTable extends JTable {
 
@@ -241,7 +241,7 @@ public class ConfigPanelRessources extends ConfigPanel implements MouseListener,
 
     private InternalTable table;
 
-    public ConfigPanelRessources(Configuration configuration, UIInterface uiinterface) {
+    public SubPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         // this.configuration = configuration;
         initPanel();

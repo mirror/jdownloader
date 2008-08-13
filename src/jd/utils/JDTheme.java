@@ -66,9 +66,10 @@ public class JDTheme {
     }
 
     public static String getThemeValue(String key, String def) {
-        if (data == null) {
+        if (data == null||defaultData==null) {
             logger.severe("Use setTheme() first!");
-            return key;
+            setTheme("default");
+            
         }
 
         if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }

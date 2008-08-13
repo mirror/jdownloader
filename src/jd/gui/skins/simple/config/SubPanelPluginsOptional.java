@@ -51,7 +51,7 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  * 
  */
-public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionListener, MouseListener {
+public class SubPanelPluginsOptional extends ConfigPanel implements ActionListener, MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -122,7 +122,7 @@ public class ConfigPanelPluginsOptional extends ConfigPanel implements ActionLis
 
     private JTable table;
 
-    public ConfigPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
+    public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
 

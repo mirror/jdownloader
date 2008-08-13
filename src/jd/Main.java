@@ -359,7 +359,7 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     private void go() {
-        JDInit init = new JDInit(splashScreen);
+        final JDInit init = new JDInit(splashScreen);
         logger.info("Register plugins");
         init.init();
         init.loadImages();
@@ -423,9 +423,7 @@ public class Main {
 
             init.checkUpdate();
 
-            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
-                init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
-            }
+         
 
         }
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
@@ -451,6 +449,16 @@ public class Main {
             public void run() {
 
                 new PackageManager().interact(this);
+                
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                    init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
+                }
             }
 
         }.start();

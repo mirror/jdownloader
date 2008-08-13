@@ -75,11 +75,24 @@ public class JDInit {
             // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
-            System.setProperty("http.proxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, ""));
-            System.setProperty("http.proxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString());
-            logger.info("http-proxy: enabled");
+            String host=JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+            String port=new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
+
+            
+            System.setProperty( "http.proxySet", "true" );
+            System.setProperty("http.proxyHost", host);
+            System.setProperty("http.proxyPort", port);
+            logger.info("http-proxy: enabled "+user+":"+pass+"@"+host+":"+port);
+           
+            System.setProperty("http.proxyUserName", user);
+            System.setProperty("http.proxyPassword", pass);
+
         } else {
             System.setProperty("http.proxyHost", "");
+            
+            System.setProperty( "http.proxySet", "false" );
             logger.info("http-proxy: disabled");
         }
     }
@@ -88,11 +101,35 @@ public class JDInit {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
             // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            System.setProperty("socksProxyHost", JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, ""));
-            System.setProperty("socksProxyPort", new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString());
+            
+            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
+            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
+            String host=JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+            String port=new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString();
+            
+            System.setProperty("socksProxySet", "true");
+            System.setProperty("socksProxyHost",host );
+            System.setProperty("socksProxyPort", port);
+            
+            
+            System.setProperty("socksProxyUserName", user);
+            System.setProperty("socksProxyPassword", pass);
+
+            
+         
+          
+
+            System.setProperty("socks.useProxy", "true");
+            System.setProperty("socks.proxyHost",host);
+            System.setProperty("socks.proxyPort", port);
+            System.setProperty("socks.proxyUserName", user);
+            System.setProperty("socks.proxyPassword", pass);
+            
             logger.info("socks-proxy: enabled");
         } else {
             System.setProperty("socksProxyHost", "");
+            System.setProperty("socksProxySet", "false");
+            System.setProperty("socks.useProxy", "false");
             logger.info("socks-proxy: disabled");
         }
     }
@@ -152,9 +189,7 @@ public class JDInit {
         JDUtilities.saveConfig();
     }
 
-    public void checkWebstartFile() {
 
-    }
 
     protected void createQueueBackup() {
         Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
@@ -419,29 +454,23 @@ public class JDInit {
             SimpleGUI.setUIManager();
             Installer inst = new Installer();
 
-            if (!inst.isAborted() && inst.getHomeDir() != null && inst.getDownloadDir() != null) {
+            if (!inst.isAborted()) {
 
-                String newHome = inst.getHomeDir();
-                logger.info("Home Dir: " + newHome);
-                File homeDirectoryFile = new File(newHome);
-                boolean createSuccessfull = true;
-                if (!homeDirectoryFile.exists()) {
-                    createSuccessfull = homeDirectoryFile.mkdirs();
-                }
-                if (createSuccessfull && homeDirectoryFile.canWrite()) {
-                    System.setProperty("jdhome", homeDirectoryFile.getAbsolutePath());
-                    String dlDir = inst.getDownloadDir();
+                File home = JDUtilities.getResourceFile(".");
+                if (home.canWrite()) {
+              
+                  
 
-                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
+                    JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
 
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, dlDir);
+                 
 
-                    Browser.download(new File(homeDirectoryFile, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                    Browser.download(new File(home, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
 
-                    JDUtilities.setHomeDirectory(homeDirectoryFile.getAbsolutePath());
+                  
 
                     JDUtilities.saveConfig();
-                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, homeDirectoryFile.getAbsolutePath(), 0));
+                    logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                     System.exit(0);
 
                 }
@@ -449,12 +478,12 @@ public class JDInit {
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Fehler. Bitte wähle Pfade mit Schreibrechten!"));
 
                 System.exit(1);
-                inst.dispose();
+        
             } else {
                 logger.info("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Fehler. Installation abgebrochen"));
                 System.exit(0);
-                inst.dispose();
+               
             }
         }
         // try {

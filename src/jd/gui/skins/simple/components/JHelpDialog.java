@@ -109,7 +109,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         super(frame);
         parentFrame = frame;
         setLayout(new GridBagLayout());
-
+this.setModal(false);
         setBtn1(new JButton("UNSET"));
         setBtn2(new JButton("UNSET"));
         setBtn3(new JButton("UNSET"));

@@ -148,8 +148,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // settings"));
         addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.V("gui.images.config.host"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.V("gui.images.config.decrypt"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
-        addConfigPanel(ConfigPanelRessources.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.ressources", "Paketmanager"));
-        addConfigPanel(ConfigPanelPluginsOptional.class, JDTheme.V("gui.images.config.addons"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
+        addConfigPanel(ConfigPanelAddons.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.addons", "Addon manager"));
+//        addConfigPanel(SubPanelPluginsOptional.class, JDTheme.V("gui.images.config.addons"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
 
         // this.addConfigPanel(ConfigPanelLinks.class,
         // JDTheme.V("gui.images.config.tip"),

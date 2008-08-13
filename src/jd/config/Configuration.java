@@ -161,6 +161,12 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
 
+    public static final String PROXY_USER = "PROXY_USER";
+
+    public static final String PROXY_PASS = "PROXY_PASS";
+
+    public static final String PROXY_USER_SOCKS = "PROXY_USER_SOCKS";
+    public static final String PROXY_PASS_SOCKS = "PROXY_PASS_SOCKS";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

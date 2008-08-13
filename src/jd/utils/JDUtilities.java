@@ -149,12 +149,12 @@ public class JDUtilities {
      */
     public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
 
-    /**
-     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
-     * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
-     * KonfigDialog geändert werden
-     */
-    private static String homeDirectory = null;
+//    /**
+//     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
+//     * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
+//     * KonfigDialog geändert werden
+//     */
+//    private static String homeDirectory = null;
 
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
@@ -855,13 +855,13 @@ public class JDUtilities {
         return JDUtilities.getController().getUiInterface();
     }
 
-    /**
-     * @author astaldo
-     * @return homeDirectory
-     */
-    public static String getHomeDirectory() {
-        return homeDirectory;
-    }
+//    /**
+//     * @author astaldo
+//     * @return homeDirectory
+//     */
+//    public static String getHomeDirectory() {
+//        return homeDirectory;
+//    }
 
     /**
      * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
@@ -2107,13 +2107,13 @@ public class JDUtilities {
      * 
      * @param homeDirectory
      */
-    public static void setHomeDirectory(String homeDirectory) {
-        JDUtilities.homeDirectory = homeDirectory;
-        homeDirectoryFile = new File(homeDirectory);
-        if (!homeDirectoryFile.exists()) {
-            homeDirectoryFile.mkdirs();
-        }
-    }
+//    public static void setHomeDirectory(String homeDirectory) {
+//        JDUtilities.homeDirectory = homeDirectory;
+//        homeDirectoryFile = new File(homeDirectory);
+//        if (!homeDirectoryFile.exists()) {
+//            homeDirectoryFile.mkdirs();
+//        }
+//    }
 
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
@@ -2227,33 +2227,33 @@ public class JDUtilities {
         }
     }
 
-    /**
-     * Schreibt das Home Verzeichnis in den Webstart Cache
-     * 
-     * @param newHomeDir
-     *            Das neue JD-HOME
-     */
-    @SuppressWarnings("unchecked")
-    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
-        try {
-            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
-            String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
-            JDUtilities.setHomeDirectory(homeDir);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-    }
+//    /**
+//     * Schreibt das Home Verzeichnis in den Webstart Cache
+//     * 
+//     * @param newHomeDir
+//     *            Das neue JD-HOME
+//     */
+//    @SuppressWarnings("unchecked")
+//    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
+//        try {
+//            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+//            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
+//            String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
+//            JDUtilities.setHomeDirectory(homeDir);
+//        } catch (ClassNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (SecurityException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchMethodException e) {
+//            e.printStackTrace();
+//        } catch (IllegalArgumentException e) {
+//            e.printStackTrace();
+//        } catch (IllegalAccessException e) {
+//            e.printStackTrace();
+//        } catch (InvocationTargetException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * Schreibt content in eine Lokale textdatei
@@ -2296,7 +2296,7 @@ public class JDUtilities {
 
             DOMSource source = new DOMSource(header);
 
-            transformer.transform(source, result);
+            transformer.transform(source, result); 
 
             String xmlString = result.getWriter().toString();
             return xmlString;
