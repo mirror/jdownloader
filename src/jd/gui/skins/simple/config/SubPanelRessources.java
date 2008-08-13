@@ -425,7 +425,7 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         // logger.info("save");
         saveConfigEntries();
         config.save();
-        new PackageManager().interact(this);
+       
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

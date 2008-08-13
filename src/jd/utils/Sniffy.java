@@ -11,7 +11,7 @@ public final class Sniffy {
     Pattern.compile("(Wireshark|PRTG Traffic Grapher|INTEREST Security Scanner|NETCORtools|PIAFCTM|Attack Tool Kit 4.1|Big Mother|Colasoft Capsa|cb_PMM|easy Look at Net|easy Look at Packets|Ethereal|Etherscan Analyzer|SoftX HTTP Debugger Pro|SoftX HTTP Debugger Lite|HTTP Monitor|NetControl|Packetyzer|Traffic Analyzer|TCP Spy|tcpdump|windump|NetworkMiner|CommView|NetworkActiv|Network General|Packet Analyzer|OmniPeek|HTTP Analyzer|URL Helper|URL Snooper|ettercap|FritzCap|Network Monitor|Network Monitor|Essential NetTools|Gobbler|Ethload|Netman|PacketView|Network Analyzer|LAN Analyzer|NetMinder|LANdecoder32|Protocol Analyzer|EvilMonkey|Trivial Proxy|Proxomitron)", Pattern.CASE_INSENSITIVE)
 
     };
-    public static Pattern[] whiteList = new Pattern[] { Pattern.compile("Sniffy", Pattern.CASE_INSENSITIVE) };
+    public static Pattern whiteList = Pattern.compile("(Sniffy|sygate)", Pattern.CASE_INSENSITIVE);
 
     public static boolean hasSniffer() {
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV || JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) { return false; }
@@ -48,27 +48,36 @@ public final class Sniffy {
             exec.start();
             exec.waitTimeout();
             String prem = exec.getStream() + " \r\n " + exec.getErrorStream();
-            boolean check1=true;
-            boolean check2=false;
-            if (!Regex.matches(prem, "could be a sniffer")) {{
+            boolean check1 = false;
+            boolean check2 = false;
+            String[][] whit = new Regex(list, whiteList).getMatches();
+            for (String[] m : whit) {
+                for (String s : m) {
+                    JDUtilities.getLogger().finer("Found " + s + " is ok");
+                }
+            }
+            if (Regex.matches(prem, "could be a sniffer")&&!Regex.matches(list, whiteList)) {
+
                 JDUtilities.getLogger().warning("Sniffy:1");
-                check1= false; }
-            }
-            for (Pattern white : whiteList) {
-
-                list = white.matcher(list).replaceAll("");
+                check1=true;
 
             }
+
+      
+
+            list = whiteList.matcher(list).replaceAll("");
+
             for (Pattern black : blackList) {
-           
-       
+                JDUtilities.getLogger().info(list);
+
                 String r;
-                if ((r = new Regex(list, black).getFirstMatch())!=null) {
-                    JDUtilities.getLogger().warning("Sniffy:2"+r);
-                    check2= true; }
+                if ((r = new Regex(list, black).getFirstMatch()) != null) {
+                    JDUtilities.getLogger().warning("Sniffy:2" + r);
+                    check2 = true;
+                }
             }
 
-            return check1|check2;
+            return check1 | check2;
         } catch (Exception e) {
             e.printStackTrace();
         }

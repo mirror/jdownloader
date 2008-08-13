@@ -297,7 +297,7 @@ public class JDInit {
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI()!=null?((SimpleGUI) JDUtilities.getGUI()).getFrame():null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
@@ -434,7 +434,8 @@ public class JDInit {
             }
         }
 
-        if (obj != null) {
+     
+        if (obj != null&&((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)!=null) {
 
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
@@ -443,7 +444,12 @@ public class JDInit {
             JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
 
         } else {
-            JDUtilities.setConfiguration(new Configuration());
+            Configuration configuration = new Configuration();
+            JDUtilities.setConfiguration(configuration);
+            JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));
+            JDTheme.setTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_THEME, "default"));
+            JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "default"));
+
             JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
             installerVisible = true;
             try {
@@ -457,7 +463,7 @@ public class JDInit {
             if (!inst.isAborted()) {
 
                 File home = JDUtilities.getResourceFile(".");
-                if (home.canWrite()) {
+                if (home.canWrite()&&JDUtilities.getResourceFile("noupdate.txt")==null) {
               
                   
 
@@ -474,14 +480,18 @@ public class JDInit {
                     System.exit(0);
 
                 }
+                if(!home.canWrite()){
                 logger.info("INSTALL abgebrochen");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Fehler. Bitte wähle Pfade mit Schreibrechten!"));
-
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to "+home));
+                JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(1);
+                }
         
             } else {
                 logger.info("INSTALL abgebrochen2");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Fehler. Installation abgebrochen"));
+                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
+                
+                JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
                
             }

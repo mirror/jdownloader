@@ -402,10 +402,7 @@ public class Main {
             }
         }
 
-        if (init.installerWasVisible()) {
-            init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
-
-        } else {
+    
 
             Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
@@ -425,7 +422,7 @@ public class Main {
 
          
 
-        }
+        
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
@@ -456,7 +453,7 @@ public class Main {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED&&JDUtilities.getResourceFile("noupdate.txt")==null) {
                     init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
                 }
             }

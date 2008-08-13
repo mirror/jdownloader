@@ -250,11 +250,11 @@ public class Serienjunkies extends PluginForDecrypt {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
                             for (String element4 : links2) {
                                 if (canHandle(element4)) {
-                                    if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-                                        decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(element4));
-                                    } else {
+//                                    if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+//                                        decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(element4));
+//                                    } else {
                                         decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
-                                    }
+//                                    }
 
                                 }
 
@@ -268,10 +268,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-            // step.setParameter((new
-            // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
-        } else {
+//        if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
+//            // step.setParameter((new
+//            // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
+//        } else {
 
             String[] info = getLinkName(parameter);
 
@@ -283,7 +283,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
             decryptedLinks.add(createdl(parameter, info));
 
-        }
+//        }
         return decryptedLinks;
     }
 
@@ -518,8 +518,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_DIREKTDECRYPT", JDLocale.L("plugins.SerienJunkies.decryptImmediately", "Decrypt immediately")));
-        cfg.setDefaultValue(false);
+//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_DIREKTDECRYPT", JDLocale.L("plugins.SerienJunkies.decryptImmediately", "Decrypt immediately")));
+//        cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));

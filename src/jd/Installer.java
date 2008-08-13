@@ -81,6 +81,7 @@ public class Installer {
         showPanel(configContainer);
         String lang=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE);
         if(lang==null){
+            JDUtilities.getLogger().severe("language not set");
             this.aborted=true;
             return;
         }
@@ -99,6 +100,8 @@ public class Installer {
         showPanel(configContainer);
         if(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)==null){
             this.aborted=true;
+            
+            JDUtilities.getLogger().severe("downloaddir not set");
             return;
         }
  
@@ -163,26 +166,8 @@ ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer, "Select wher
     }
 
   
-    public String getDownloadDir() {
-        return null;
-//        new File(downloadDir.getText()).mkdirs();
-//        if (!new File(downloadDir.getText()).exists() || !new File(downloadDir.getText()).canWrite()) {
-//            aborted = true;
-////            JOptionPane.showMessageDialog(this, JDLocale.L("installer.aborted.dirNotValid", "Installation aborted!\r\nDownload Directory is not valid: ") + homeDir.getText());
-//            homeDir.setText("");
-//            downloadDir.setText("");
-////            dispose();
-//            System.exit(1);
-//            return null;
-//        }
-//
-//        return downloadDir.getText();
-    }
 
-    public String getHomeDir() {
-return null;
 
-    }
 
     public boolean isAborted() {
         return aborted;
