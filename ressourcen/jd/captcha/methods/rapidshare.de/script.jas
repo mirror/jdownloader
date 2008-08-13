@@ -43,6 +43,8 @@ param.splitGapsOverlap=6;
 
 ##################Prepare captcha
 
+param.useSpecialGetLetters=ColorObjects.getLetters;
+
 #captcha.normalize();
 
 #captcha.prepare.reduceWhiteNoise(4,0.2);
@@ -53,6 +55,6 @@ param.splitGapsOverlap=6;
 ##################Prepare letter
 
 #letter.prepare.removeSmallObjects(0.3,0.5,30);
-letter.prepare.toBlackAndWhite();
-letter.prepare.clean();
-letter.prepare.align(-10,10);
+#letter.prepare.toBlackAndWhite();
+#letter.prepare.clean();
+#letter.prepare.align(-10,10);
