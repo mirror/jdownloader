@@ -61,7 +61,7 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
 
-        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "cap_1" + ".png"));
+        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "08.08.2008_03.46.36.313__NULL_BAD" + ".png"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
