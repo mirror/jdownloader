@@ -9,7 +9,7 @@ param.borderVarianceY=6;
 param.scanVarianceX=6;
 param.scanVarianceY=6;
 param.trainOnlyUnknown=true;
-param.colorType = b;
+param.colorType = RGB;
 param.relativecontrast=0.90;
 param.gaps={18,37,55,74};
 param.usepeakgapdetection=false;
@@ -18,14 +18,14 @@ param.LetterSearchLimitPerfectPercent=25;
 param.objectColorContrast = 0.6;
 param.objectDetectionContrast = 0.8;
 param.useObjectDetection = true;
-param.minimumObjectArea = 80;
+param.minimumObjectArea = 30;
 param.backgroundsamplecleancontrast=0.15;
 param.minimumLetterWidth=4;
 
 param.alignAngleSteps=1;
 param.intersectionDimensionWeight=0.2;
 param.minCleftSize=4;
-param.overlayNoiseSize=3;
+param.overlayNoiseSize=4;
 param.scanAngleLeft=-15;
 param.scanAngleRight=15;
 param.scanAngleSteps=5;
@@ -44,16 +44,17 @@ param.splitGapsOverlap=3;
 
 
 
+captcha.prepare.cleanByRGBDistance(1,70);
+#captcha.prepare.toBlackAndWhite(1);
+#captcha.prepare.reduceBlackNoise(3,0.8);
+#captcha.prepare.blurIt(2);
 captcha.prepare.toBlackAndWhite(1);
-captcha.prepare.reduceBlackNoise(3,0.8);
-captcha.prepare.blurIt(1);
-captcha.prepare.toBlackAndWhite(1);
-captcha.prepare.removeSmallObjects(0.6,0.8,20);
+#
 
 
 
 ##################Prepare letter
-
+#captcha.prepare.removeSmallObjects(0.5,0.9,25);
 letter.prepare.clean();
 letter.prepare.resizeToHeight(30);
 letter.prepare.align(-15,15);
