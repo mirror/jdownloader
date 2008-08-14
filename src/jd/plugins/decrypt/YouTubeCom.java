@@ -102,8 +102,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-            String name = new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim();
-
+            String name = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim());
             /* Konvertierungsmöglichkeiten adden */
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEOMP4);
