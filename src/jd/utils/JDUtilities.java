@@ -471,18 +471,6 @@ public class JDUtilities {
         return null;
     }
 
-    /**
-     * TODO: Serverpfad in de Config aufnehmen Gleicht das homedir mit dem
-     * server ab. Der Serverpfad steht noch in WebUpdater.java
-     * 
-     * @author JD-Team
-     * @return Anzahl der aktualisierten Files
-     */
-    public static int doWebupdate() {
-        WebUpdater wu = new WebUpdater(null);
-        wu.run();
-        return wu.getUpdatedFiles();
-    }
 
     /**
      * verschlüsselt string mit der übergebenen encryption (Containerpluginname
@@ -1673,15 +1661,6 @@ public class JDUtilities {
 
     }
 
-    public static SubConfiguration getSubConfig(String name, boolean b) {
-        if (!b) return getSubConfig(name);
-        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
-
-        SubConfiguration cfg = new SubConfiguration(name, b);
-        subConfigs.put(name, cfg);
-        cfg.save();
-        return cfg;
-    }
 
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.

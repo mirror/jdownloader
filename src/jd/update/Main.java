@@ -24,7 +24,6 @@ import java.awt.Insets;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Vector;
@@ -39,8 +38,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
-
-
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
@@ -157,9 +154,12 @@ public class Main {
         SubConfiguration guiConfig = SubConfiguration.getSubConfig("WEBUPDATE");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
-        log.append("Webupdater 13.8.2008 21:42 started\r\n");
-        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"");
-     
+        log.append("Webupdater 13.8.2008 21:42 started\r\n\r\n");
+
+        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"\r\n");
+        System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"\r\n");
+        System.out.println(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties()+"\r\n");
+        log.append(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties()+"\r\n");
         /* Http-Proxy einstellen */
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
            
@@ -339,23 +339,17 @@ public class Main {
             progresslist.setValue(100);
             updater.updateFiles(files);
         }
-        String[] jdus = new File("packages").list(new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                if (name.endsWith(".jdu")) { return true; }
-                return false;
+     
+        
+        SubConfiguration jdus = SubConfiguration.getSubConfig("JDU");
+        ArrayList<PackageData> data = (ArrayList<PackageData>) jdus.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
+        
+     
+       
 
-            }
-
-        });
-        if (jdus == null) {
-            jdus = new String[0];
-        }
-        Main.log(log, "JD Packages to install: " + jdus.length + System.getProperty("line.separator"));
-        ArrayList<File> readmes = new ArrayList<File>();
-        ArrayList<File> failed = new ArrayList<File>();
-        ArrayList<File> successfull = new ArrayList<File>();
-        for (String jdu : jdus) {
-            File zip = new File(new File("packages"), jdu);
+        for (PackageData pa : data) {
+            if(!pa.isDownloaded())continue;
+            File zip = new File(pa.getStringProperty("LOCALPATH"));
 
             Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
 
@@ -368,24 +362,18 @@ public class Main {
                     for (File element : efiles) {
                         Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
                         if (element.getAbsolutePath().endsWith("readme.html")) {
-                            readmes.add(element.getAbsoluteFile());
+                            pa.setProperty("README", element.getAbsolutePath());
+                           
                         }
                     }
-                    String comment = SubConfiguration.getSubConfig("PACKAGEMANAGER").getStringProperty("COMMENT_" + zip.getAbsolutePath());
-
-                    if (comment != null) {
-
-                        String[] dat = comment.split("_");
-
-                        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("PACKAGE_INSTALLED_VERSION_" + dat[0], dat[1]);
-                        SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
+                   pa.setInstalled(true);
+                    pa.setUpdating(false);
+                    pa.setDownloaded(false);
+                    pa.setInstalledVersion(Integer.parseInt(pa.getStringProperty("version")));
+            
                         Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
-                        successfull.add(zip.getAbsoluteFile());
+                       
 
-                    } else {
-                        Main.log(log, "Installation failed: " + zip + System.getProperty("line.separator"));
-                        failed.add(zip.getAbsoluteFile());
-                    }
                     zip.delete();
                     zip.deleteOnExit();
 
@@ -396,12 +384,13 @@ public class Main {
                 zip.delete();
                 zip.deleteOnExit();
             }
+            
 
         }
-        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED", readmes);
-        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_FAILED", failed);
-        SubConfiguration.getSubConfig("PACKAGEMANAGER").setProperty("NEW_INSTALLED_SUCCESSFULL", successfull);
-        SubConfiguration.getSubConfig("PACKAGEMANAGER").save();
+        jdus.save();
+        
+        
+
         Main.trace(updater.getLogger().toString());
         Main.trace("End Webupdate");
         logWindow.setText(log.toString());

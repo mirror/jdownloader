@@ -77,7 +77,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     if (captchaFileName == null) { return null; }
                     String captchaUrl = "http://" + host + "/" + captchaFileName;
                     File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-                    boolean fileDownloaded = Browser.download(captchaFile, br.openGetConnection(captchaUrl));
+                    boolean fileDownloaded = Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
                     if (!fileDownloaded) {
                         logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
                         return null;

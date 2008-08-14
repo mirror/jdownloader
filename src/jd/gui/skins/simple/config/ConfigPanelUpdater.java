@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
+import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -57,7 +58,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
     @Override
     public void initPanel() {
 
-        config = JDUtilities.getSubConfig("WEBUPDATE",true);
+        config = CFGConfig.getConfig("WEBUPDATE");
         GUIConfigEntry ce;
         // ce = new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,

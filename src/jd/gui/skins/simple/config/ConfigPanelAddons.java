@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
+import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -77,6 +78,7 @@ public class ConfigPanelAddons extends ConfigPanel {
         cep.save();
         // this.saveConfigEntries();
         config.save();
+        CFGConfig.getConfig("JDU").save();
         new PackageManager().interact(this);
     }
 

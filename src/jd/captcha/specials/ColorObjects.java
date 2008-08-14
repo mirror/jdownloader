@@ -107,7 +107,7 @@ public class ColorObjects {
         int i = 0;
         for (PixelObject po : ret) {
             let[i++] = po.toLetter();
-            BasicWindow.showImage(let[i - 1].getImage(3));
+//            BasicWindow.showImage(let[i - 1].getImage(3));
             let[i - 1].toBlackAndWhite(1.1);
             let[i - 1].removeSmallObjects(0.99, 0.99);
             let[i - 1].clean();

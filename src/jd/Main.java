@@ -40,6 +40,7 @@ import javax.swing.JFrame;
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
+import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
@@ -372,7 +373,7 @@ public class Main {
         }
         JDInit.setupProxy();
         JDInit.setupSocks();
-        JDUtilities.getSubConfig("WEBUPDATE",true).save();
+        CFGConfig.getConfig("WEBUPDATE").save();
         init.removeFiles();
 
         /*

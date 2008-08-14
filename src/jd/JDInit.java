@@ -35,6 +35,7 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
@@ -80,12 +81,12 @@ public class JDInit {
             String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
             String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_HOST, host);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_HOST, host);
 
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_PROXY, true);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PORT, port);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_USER, user);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PASS, pass);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_PROXY, true);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PORT, port);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_USER, user);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PASS, pass);
 
             System.setProperty("http.proxySet", "true");
             System.setProperty("http.proxyHost", host);
@@ -97,7 +98,7 @@ public class JDInit {
 
         } else {
             System.setProperty("http.proxyHost", "");
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_PROXY, false);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_PROXY, false);
 
             System.setProperty("http.proxySet", "false");
             logger.info("http-proxy: disabled");
@@ -128,12 +129,12 @@ public class JDInit {
 
             logger.info("socks-proxy: enabled");
 
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.SOCKS_HOST, host);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.SOCKS_HOST, host);
 
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_SOCKS, true);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.SOCKS_PORT, port);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_USER_SOCKS, user);
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PASS_SOCKS, pass);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_SOCKS, true);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.SOCKS_PORT, port);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_USER_SOCKS, user);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.PROXY_PASS_SOCKS, pass);
 
         } else {
             System.setProperty("socksProxySet", "false");
@@ -141,7 +142,7 @@ public class JDInit {
             System.setProperty("socks.proxyHost", "");
             System.setProperty("socksProxyHost", "");
 
-            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_SOCKS, false);
+            CFGConfig.getConfig("WEBUPDATE").setProperty(Configuration.USE_SOCKS, false);
 
             logger.info("socks-proxy: disabled");
         }
@@ -223,10 +224,12 @@ public class JDInit {
     }
 
     public void doWebupdate(final int oldCid, final boolean guiCall) {
-SubConfiguration cfg = JDUtilities.getSubConfig("WEBUPDATE",true);
+        CFGConfig cfg =   CFGConfig.getConfig("WEBUPDATE");
         
 cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
-           
+cfg.save();
+
+
         
         new Thread() {
 

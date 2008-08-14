@@ -25,9 +25,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.EventObject;
 import java.util.HashMap;
-import java.util.Vector;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -39,6 +40,9 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import jd.captcha.pixelgrid.Letter;
+import jd.captcha.pixelobject.PixelObject;
+import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -46,6 +50,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -108,22 +113,22 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            HashMap<String, String> element = packageData.elementAt(rowIndex);
+            PackageData element = packageData.get(rowIndex);
 
             switch (columnIndex) {
             case 0:
-                return element.get("name");
+                return element.getStringProperty("name");
             case 1:
-                return element.get("category");
+                return element.getStringProperty("category");
             case 2:
-                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.get("infourl"));
+                return new JLinkButton(JDLocale.L("gui.config.packagemanager.table.info", "Info"), element.getStringProperty("infourl"));
             case 3:
-                return element.get("version");
+                return element.getStringProperty("version");
             case 4:
-                return getInstalledVersion(element);
+                return element.getInstalledVersion();
 
             case 5:
-                return element.get("selected") != null;
+                return element.isSelected();
 
             }
             return null;
@@ -141,25 +146,13 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
          */
         @Override
         public void setValueAt(Object value, int row, int col) {
-            // logger.info("Set value: " + value);
-            // if ((Boolean) value) {
-            // if
-            // (JDUtilities.getGUI().showConfirmDialog(JDUtilities.sprintf(
-            // JDLocale.L("gui.config.plugin.abg_confirm",
-            // "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit
-            // einverstanden!"), new String[] {
-            // pluginsForHost.elementAt(row).getHost() })))
-            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            // }
-            // else {
-            // pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
-            // }
+          
 
-            HashMap<String, String> element = packageData.elementAt(row);
-            boolean v = !(element.get("selected") != null);
-            config.setProperty("PACKAGE_SELECTED_" + element.get("id"), v);
-
-            element.put("selected", v ? "true" : null);
+           PackageData element = packageData.get(row);
+            boolean v = !element.isSelected();
+          
+            element.setSelected(v);
+          
 
         }
     }
@@ -235,9 +228,9 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
      */
 
     // private Configuration configuration;
-    private SubConfiguration config;
+    //private SubConfiguration config;
 
-    private Vector<HashMap<String, String>> packageData = new Vector<HashMap<String, String>>();
+    private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
     private InternalTable table;
 
@@ -255,47 +248,17 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
     public void actionPerformed(ActionEvent e) {
         for (int i = 0; i < packageData.size(); i++) {
 
-            config.setProperty("PACKAGE_INSTALLED_VERSION_" + packageData.get(i).get("id"), 0);
+            packageData.get(i).setInstalledVersion(-1);
+            packageData.get(i).setUpdating(false);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
 
-        config.setProperty("CURRENT_JDU_LIST", new ArrayList<String>());
-        config.save();
+       
     }
 
-    public int getInstalledVersion(HashMap<String, String> element) {
-        return config.getIntegerProperty("PACKAGE_INSTALLED_VERSION_" + element.get("id"), 0);
 
-    }
 
-    // private class MarkRenderer extends DefaultTableCellRenderer {
-    // /**
-    // *
-    // */
-    // private static final long serialVersionUID = -448800592517509052L;
-    //
-    // public Component getTableCellRendererComponent(JTable table, Object
-    // value, boolean isSelected, boolean hasFocus, int row, int column) {
-    // Component c = super.getTableCellRendererComponent(table, value,
-    // isSelected, hasFocus, row, column);
-    // if (!isSelected) {
-    //
-    // PluginForHost plugin = pluginsForHost.get(row);
-    // if (plugin.getConfig().getEntries().size() == 0) {
-    // c.setBackground(new Color(0, 0, 0, 10));
-    // c.setForeground(new Color(0, 0, 0, 70));
-    // }
-    // else {
-    // c.setBackground(Color.WHITE);
-    // c.setForeground(Color.BLACK);
-    // }
-    //
-    // }
-    // // logger.info("jj");
-    // return c;
-    // }
-    //
-    // }
+
 
     @Override
     public String getName() {
@@ -306,10 +269,18 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
     @Override
     public void initPanel() {
         setPreferredSize(new Dimension(650, 350));
-        config = JDUtilities.getSubConfig("PACKAGEMANAGER",true);
+       
         packageData = new PackageManager().getPackageData();
 
-        JDUtilities.sortHashVectorOn(packageData, "category");
+        Collections.sort(packageData, new Comparator<PackageData>() {
+
+            public int compare(PackageData o1, PackageData o2) {
+                if(o1.getSortID()>o2.getSortID())return 1;
+                if(o1.getSortID()<o2.getSortID())return -1;
+                return 0;
+              
+            }
+        });
         ConfigEntry ce;
         // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
         // "PACKAGEMANAGER_AUTOUPDATE",
@@ -424,8 +395,8 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
     public void save() {
         // logger.info("save");
         saveConfigEntries();
-        config.save();
-       
+        CFGConfig.getConfig("JDU").save();
+
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

@@ -10,6 +10,7 @@ import javax.swing.SwingConstants;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -50,7 +51,9 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
         if (value instanceof DownloadLink) {
             int id = ((DownloadLink) value).getPartByName();
             if (((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update ") + "-> v." + ((DownloadLink) value).getSourcePluginComment().split("_")[1]);
+                PackageData pd = (PackageData)((DownloadLink) value).getProperty("JDU");
+                
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update ") +pd.getInstalledVersion()+ "-> " +pd.getStringProperty("version") );
             } else {
                 lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
             }

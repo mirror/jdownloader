@@ -14,43 +14,27 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.update;
+package jd.config;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
-public class SubConfiguration extends Property implements Serializable {
+import jd.utils.JDUtilities;
 
-    private static final long serialVersionUID = 7803718581558607222L;
+public class CFGConfig extends SubConfiguration implements Serializable {
+
+    private static HashMap<String, CFGConfig> CONFIGS = new HashMap<String, CFGConfig>();
     /**
      * 
      */
-    private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+    private static final long serialVersionUID = 9187069483565313810L;
 
-    public static SubConfiguration getSubConfig(String name) {
-        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
-
-        SubConfiguration cfg = new SubConfiguration(name);
-        subConfigs.put(name, cfg);
-        return cfg;
-
-    }
-
-    // private transient Logger logger;
-    private String name;
-
-    /**
-     * 
-     */
     @SuppressWarnings("unchecked")
-    public SubConfiguration(String name) {
-        // logger = JDUtilities.getLogger();
+    private CFGConfig(String name) {
         this.name = name;
         File file;
-        Object props = utils.loadObject(file = new File("config/" + name + ".cfg"));
-     
-        System.out.println("Config file: " + file.getAbsolutePath());
+        Object props = JDUtilities.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
         file.getParentFile().mkdirs();
         if (props != null) {
             setProperties((HashMap<String, Object>) props);
@@ -58,7 +42,14 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     public void save() {
-        utils.saveObject(getProperties(), new File("config/" + name + ".cfg"));
+        JDUtilities.saveObject(null, getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
+    }
+
+    public static CFGConfig getConfig(String string) {
+        if (CONFIGS.containsKey(string)) return CONFIGS.get(string);
+        CFGConfig ret = new CFGConfig(string);
+        CONFIGS.put(string, ret);
+        return ret;
     }
 
 }

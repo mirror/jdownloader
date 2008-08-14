@@ -7,6 +7,7 @@ import javax.swing.tree.TreePath;
 import jd.gui.skins.simple.DownloadLinksTreeTablePanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -165,7 +166,8 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             switch (column) {
             case COL_PART:
                 if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                    value = JDLocale.L("gui.treetable.part.label_update", "Update ") + "->" + downloadLink.getSourcePluginComment().split("_")[1];
+                    PackageData pd = (PackageData)downloadLink.getProperty("JDU");
+                    value = JDLocale.L("gui.treetable.part.label_update", "Update ") + pd.getInstalledVersion()+"->" + pd.getStringProperty("version");
                 } else {
                     int id = downloadLink.getPartByName();
                     value = JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ";
