@@ -53,6 +53,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
+import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -1399,8 +1400,15 @@ public class JDController implements ControlListener, UIListener {
                     fp = iterator.next();
                     it = fp.getDownloadLinks().iterator();
                     while (it.hasNext()) {
-
                         localLink = it.next();
+                        if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU &&(localLink.getProperty("JDU")==null ||!(localLink.getProperty("JDU") instanceof PackageData))) {
+                            iterator.remove();
+                            continue;
+                        }
+                          
+                        
+                        
+                        
                         if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             localLink.getLinkStatus().reset();
                         }
