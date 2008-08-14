@@ -40,6 +40,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.interaction.PackageManager;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
@@ -53,6 +54,7 @@ import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -232,17 +234,9 @@ public class JDInit {
 
             public void run() {
                 ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
-                String[] jdus = JDUtilities.getResourceFile("packages").list(new FilenameFilter() {
-                    public boolean accept(File dir, String name) {
-                        if (name.endsWith(".jdu")) { return true; }
-                        return false;
-
-                    }
-
-                });
-                if (jdus == null) {
-                    jdus = new String[0];
-                }
+                PackageManager pm = new PackageManager();
+                ArrayList<PackageData> packages = pm.getDownloadedPackages();
+            
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 
@@ -281,7 +275,7 @@ public class JDInit {
                     return;
                 }
 
-                if (files == null && jdus.length == 0) {
+                if (files == null && packages.size() == 0) {
                     logger.severe("Webupdater offline");
                     progress.finalize();
                     return;
@@ -295,11 +289,11 @@ public class JDInit {
 
                 logger.finer("init progressbar");
                 progress.setStatusText(JDLocale.L("init.webupdate.progress.1_title", "Update Check"));
-                if (files.size() > 0 || jdus.length > 0) {
+                if (files.size() > 0 || packages.size() > 0) {
 
-                    progress.setStatus(org - (files.size() + jdus.length));
+                    progress.setStatus(org - (files.size() + packages.size()));
                     logger.finer("FIles to update: " + files);
-                    logger.finer("JDUs to update: " + jdus.length);
+                    logger.finer("JDUs to update: " + packages.size());
 
                     createQueueBackup();
 
@@ -312,7 +306,7 @@ public class JDInit {
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + packages.size()) + " update(s) available. Start Webupdater now?" + "</font>");
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
