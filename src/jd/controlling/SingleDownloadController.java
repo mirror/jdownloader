@@ -234,7 +234,8 @@ public class SingleDownloadController extends Thread {
             // onErrorRetry(downloadLink, currentPlugin);
             // }
 
-            // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.finished",
+            // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
+            // "controller.status.finished",
             // "Fertig"));
             // if (resultPluginStatus != PluginStep.STATUS_ERROR &&
             // resultLinkStatus != LinkStatus.FINISHED) {
@@ -304,19 +305,20 @@ public class SingleDownloadController extends Thread {
 
         /*
          * 
-         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-         * 0)==0){
+         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost
+         * (), 0)==0){
          * 
          * JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
          * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
          * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
          * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
-         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
-         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
-         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
-         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-         * Anbieter: </font></p>")+plugin.getHost(); String
+         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial, Helvetica,
+         * sans-serif\">Die Allgemeinen Geschäftsbedingungen
+         * (AGB)</font></strong><font size=\"2\" face=\"Verdana, Arial,
+         * Helvetica, sans-serif\"><br> wurden nicht gelesen und
+         * akzeptiert.</font></font></p><p><font size=\"2\" face=\"Verdana,
+         * Arial, Helvetica, sans-serif\"><br> Anbieter:
+         * </font></p>")+plugin.getHost(); String
          * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
          * JDUtilities.getGUI().showHelpMessage(title, message, url); }
          */
@@ -370,9 +372,7 @@ public class SingleDownloadController extends Thread {
     private void onErrorFileExists(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus status = downloadLink.getLinkStatus();
 
-        String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
-
-        if (todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
+        if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
             status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "Datei schon vorhanden"));
 
@@ -421,7 +421,8 @@ public class SingleDownloadController extends Thread {
     // milliSeconds = 10000;
     // }
     // downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.reconnect",
+    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
+    // "controller.status.reconnect",
     // "Reconnect "));
     // // downloadLink.setInProgress(true);
     // fireControlEvent(new ControlEvent(this,
@@ -433,7 +434,7 @@ public class SingleDownloadController extends Thread {
     // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
     // // this);
     // //
-    // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
+    //Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
     // // this);
     // Reconnecter.requestReconnect();
     // // if (Reconnecter.waitForNewIP(0)) {
@@ -469,7 +470,8 @@ public class SingleDownloadController extends Thread {
     // */
     // private void onErrorNotUploaded(DownloadLink downloadLink, PluginForHost
     // plugin) {
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.incompleteUpload",
+    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
+    // "controller.status.incompleteUpload",
     // "File not full uploaded"));
     // linkStatus.addStatus(LinkStatus.TODO);
     // fireControlEvent(new ControlEvent(this,
@@ -485,7 +487,8 @@ public class SingleDownloadController extends Thread {
     // */
     // private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost
     // plugin) {
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.captchaError",
+    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
+    // "controller.status.captchaError",
     // "Captcha Fehler"));
     //
     // fireControlEvent(new ControlEvent(this,
@@ -581,7 +584,7 @@ public class SingleDownloadController extends Thread {
         Reconnecter.requestReconnect();
         // while (status.getRemainingWaittime() > 0) {
         //
-        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        //fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
         // downloadLink);
         // try {
         // Thread.sleep(1000);

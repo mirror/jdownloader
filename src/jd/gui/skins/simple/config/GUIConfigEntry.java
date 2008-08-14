@@ -68,9 +68,7 @@ import jd.utils.JDUtilities;
  */
 
 public class GUIConfigEntry extends JPanel implements ActionListener, ChangeListener, PropertyChangeListener, DocumentListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -1391952049282528582L;
 
     private ConfigEntry configEntry;
@@ -86,10 +84,6 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
     private Insets insets;
 
     private JComponent left;
-
-    /**
-     * Checkbox id
-     */
 
     protected Logger logger = JDUtilities.getLogger();
 
@@ -252,6 +246,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             addInstantHelpLink();
             break;
         case ConfigContainer.TYPE_COMBOBOX:
+        case ConfigContainer.TYPE_COMBOBOX_INDEX:
 
             JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             addInstantHelpLink();
@@ -386,7 +381,8 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
-            // return ((JComboBox) input[0]).getSelectedItem();
+            return ((JComboBox) input[0]).getSelectedItem();
+        case ConfigContainer.TYPE_COMBOBOX_INDEX:
             return ((JComboBox) input[0]).getSelectedIndex();
         case ConfigContainer.TYPE_LABEL:
             return null;
@@ -479,20 +475,15 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
                 e1.printStackTrace();
             }
             break;
-
         case ConfigContainer.TYPE_PASSWORDFIELD:
             ((JPasswordField) input[0]).setText(text == null ? "" : text.toString());
             break;
-
         case ConfigContainer.TYPE_TEXTFIELD:
             ((JTextField) input[0]).setText(text == null ? "" : text.toString());
-
             break;
-
         case ConfigContainer.TYPE_TEXTAREA:
             ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
-
         case ConfigContainer.TYPE_PREMIUMPANEL:
             ((PremiumPanel) input[0]).setAccounts(text);
             break;
@@ -508,25 +499,19 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             }
             break;
         case ConfigContainer.TYPE_BUTTON:
-
             break;
         case ConfigContainer.TYPE_COMBOBOX:
-            JComboBox box = (JComboBox) input[0];
-            if (text instanceof Integer) {
-                box.setSelectedIndex((Integer) text);
-            } else {
-                box.setSelectedItem(text);
-            }
-
+            ((JComboBox) input[0]).setSelectedItem(text);
+            break;
+        case ConfigContainer.TYPE_COMBOBOX_INDEX:
+            ((JComboBox) input[0]).setSelectedIndex((Integer) text);
             break;
         case ConfigContainer.TYPE_LABEL:
-
             break;
         case ConfigContainer.TYPE_BROWSEFOLDER:
         case ConfigContainer.TYPE_BROWSEFILE:
             ((BrowseFile) input[0]).setText(text == null ? "" : text.toString());
             break;
-
         case ConfigContainer.TYPE_SPINNER:
             int value = text instanceof Integer ? (Integer) text : Integer.parseInt(text.toString());
             try {

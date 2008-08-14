@@ -38,15 +38,15 @@ public class ConfigContainer implements Serializable {
      */
     private static final long serialVersionUID = 6583843494325603616L;
     /**
-     * ConfigElement ist ein Browser für eine Datei public ConfigEntry(int type,
-     * Property propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Textfeld public ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, String label) {
      */
-    public static final int TYPE_BROWSEFILE = 7;
+    public static final int TYPE_TEXTFIELD = 0;
     /**
-     * ConfigElement ist ein Browser für ein Verzeichnis public ConfigEntry(int
-     * type, Property propertyInstance, String propertyName, String label) {
+     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, Object[] list, String label)
      */
-    public static final int TYPE_BROWSEFOLDER = 9;
+    public static final int TYPE_COMBOBOX = 1;
     /**
      * ConfigElement ist ein Button ConfigEntry(int type, ActionListener
      * listener, String label)
@@ -57,31 +57,23 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_CHECKBOX = 3;
     /**
-     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, Object[] list, String label)
-     */
-    public static final int TYPE_COMBOBOX = 1;
-    public static final int TYPE_CONTAINER = 13;
-    /**
      * ConfigElement ist ein Label ConfigEntry(int type, String label)
      */
     public static final int TYPE_LABEL = 4;
-    public static final int TYPE_LINK = 12;
-    /**
-     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
-     * propertyInstance, String propertyName, String label) {
-     */
-    public static final int TYPE_PASSWORDFIELD = 11;
     /**
      * ConfigElement ist ein Radiobutton ConfigEntry(int type, Property
      * propertyInstance, String propertyName, Object[] list, String label)
      */
     public static final int TYPE_RADIOFIELD = 5;
-
     /**
      * ConfigElement ist eine Trennlinie ConfigEntry(int type)
      */
     public static final int TYPE_SEPARATOR = 6;
+    /**
+     * ConfigElement ist ein Browser für eine Datei public ConfigEntry(int type,
+     * Property propertyInstance, String propertyName, String label) {
+     */
+    public static final int TYPE_BROWSEFILE = 7;
     /**
      * ConfigElement ist eine Zahlenkomponente (Spinner) ConfigEntry(int type,
      * Property propertyInstance, String propertyName, String label, int start,
@@ -89,16 +81,29 @@ public class ConfigContainer implements Serializable {
      */
     public static final int TYPE_SPINNER = 8;
     /**
+     * ConfigElement ist ein Browser für ein Verzeichnis public ConfigEntry(int
+     * type, Property propertyInstance, String propertyName, String label) {
+     */
+    public static final int TYPE_BROWSEFOLDER = 9;
+    /**
      * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
      * propertyInstance, String propertyName, String label) {
      */
     public static final int TYPE_TEXTAREA = 10;
     /**
-     * ConfigElement ist ein Textfeld public ConfigEntry(int type, Property
+     * ConfigElement ist ein Textbereich public ConfigEntry(int type, Property
      * propertyInstance, String propertyName, String label) {
      */
-    public static final int TYPE_TEXTFIELD = 0;
+    public static final int TYPE_PASSWORDFIELD = 11;
+    public static final int TYPE_LINK = 12;
+    public static final int TYPE_CONTAINER = 13;
     public static final int TYPE_PREMIUMPANEL = 14;
+    /**
+     * ConfigElement ist ein Combobox ConfigEntry(int type, Property
+     * propertyInstance, String propertyName, Object[] list, String label)
+     * dessen Index (und nicht Text) gespeichert und geladen wird
+     */
+    public static final int TYPE_COMBOBOX_INDEX = 15;
 
     private ActionListener actionListener;
 

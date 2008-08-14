@@ -36,9 +36,6 @@ import jd.utils.JDUtilities;
  */
 public class ConfigPanelDownload extends ConfigPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4145243293360008779L;
 
     private ConfigEntriesPanel cep;
@@ -98,7 +95,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(false);
         container.addEntry(ce);
         String[] removeDownloads = new String[] { JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDLocale.L("gui.config.general.toDoWithDownloads.packageReady", "when package is ready"), JDLocale.L("gui.config.general.toDoWithDownloads.never", "never") };
-        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDLocale.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ..."));
+        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDLocale.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ..."));
         ce.setDefaultValue(removeDownloads[1]);
         container.addEntry(ce);
 
@@ -164,7 +161,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, JDLocale.L("gui.config.download.startDownloadsOnStartUp", "Download beim Programmstart beginnen"));
         ce.setDefaultValue(false);
         container.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, Configuration.PARAM_FILE_EXISTS, new String[] { JDLocale.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen") }, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:"));
+        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, config, Configuration.PARAM_FILE_EXISTS, new String[] { JDLocale.L("system.download.triggerfileexists.overwrite", "Datei überschreiben"), JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen") }, JDLocale.L("system.download.triggerfileexists", "Wenn eine Datei schon vorhanden ist:"));
         ce.setDefaultValue(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
         container.addEntry(ce);
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_DO_CRC, JDLocale.L("gui.config.download.crc", "SFV/CRC Check wenn möglich durchführen"));

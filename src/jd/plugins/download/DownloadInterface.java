@@ -486,8 +486,8 @@ abstract public class DownloadInterface {
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
 
                 error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
-            
-            }catch (UnknownHostException e){
+
+            } catch (UnknownHostException e) {
                 linkStatus.setValue(10 * 60000l);
                 error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
 
@@ -556,7 +556,8 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+max);
+            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
                 logger.finer("Maxspeed= " + maxspeed + " buffer=" + bufferSize + "time: " + getTimeInterval());
@@ -796,7 +797,7 @@ abstract public class DownloadInterface {
                 // CLR 1.1.4322; .NET CLR 2.0.50727)}{Authorization: Basic
                 // NDkxMjM4MDpUNFN6N2YySjZK}{Accept-Language: de, en-gb;q=0.9,
                 // en;q=0.8}{Referer:
-                // http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
+                //http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
                 // bytes=26282889-}{Host: rs305tl2.rapidshare.com}{Accept:
                 // text/html, image/gif, image/jpeg, *; q=.2, */*;
                 // q=.2}{Connection: keep-alive}{null: null}{null: null}{null:
@@ -908,7 +909,8 @@ abstract public class DownloadInterface {
             if (isInterrupted() || downloadLink.isAborted()) {
                 // error(ERROR_ABORTED_BY_USER);
                 logger.severe("ABBORTED BY USER");
-                // error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L("download.error.message.rangeheaderparseerror","Unexpected
+                // error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L(
+                // "download.error.message.rangeheaderparseerror","Unexpected
                 // rangeheader
                 // format:")+connection.getHeaderField("Content-Range"));
 
@@ -1007,12 +1009,11 @@ abstract public class DownloadInterface {
 
     private boolean fatalErrorOccured = false;
 
-    private boolean doFileSizeCheck=true;
+    private boolean doFileSizeCheck = true;
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
         this.downloadLink = downloadLink;
-        if(urlConnection.getContentLength()>0)
-        this.downloadLink.setDownloadSize(urlConnection.getContentLength());
+        if (urlConnection.getContentLength() > 0) this.downloadLink.setDownloadSize(urlConnection.getContentLength());
         this.downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
         linkStatus = downloadLink.getLinkStatus();
         downloadLink.setDownloadInstance(this);
@@ -1247,8 +1248,8 @@ abstract public class DownloadInterface {
      * @return
      */
     public boolean handleErrors() {
-      
-        if (this.doFileSizeCheck&&(totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
+
+        if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
             return false;
@@ -1452,9 +1453,8 @@ abstract public class DownloadInterface {
         if (fileOutput.exists()) {
 
             logger.severe("File already exists. " + fileOutput);
-            String todo = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_FILE_EXISTS, JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"));
 
-            if (!todo.equals(JDLocale.L("system.download.triggerfileexists.skip", "Link überspringen"))) {
+            if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
@@ -1500,7 +1500,8 @@ abstract public class DownloadInterface {
             // // e.printStackTrace();
             // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_SPECIFIC);
             //
-            // plugin.getCurrentStep().setParameter(JDUtilities.convertExceptionReadable(e));
+            // plugin.getCurrentStep().setParameter(JDUtilities.
+            // convertExceptionReadable(e));
             // plugin.getCurrentStep().setStatus(PluginStep.STATUS_ERROR);
             //
             // }
@@ -1607,8 +1608,8 @@ abstract public class DownloadInterface {
     abstract protected boolean writeChunkBytes(Chunk chunk);
 
     public void setFilesizeCheck(boolean b) {
-        this.doFileSizeCheck=b;
-        
+        this.doFileSizeCheck = b;
+
     }
 
 }
