@@ -56,7 +56,7 @@ public class Stealth extends PluginForDecrypt {
                     String captchaAdress = "http://stealth.to/captcha_img.php?PHPSESSID=" + sessid;
                     File file = this.getLocalCaptchaFile(this);
                     Form form = br.getForm(0);
-                    Browser.download(file, br.openGetConnection(captchaAdress));
+                    Browser.download(file, br.cloneBrowser().openGetConnection(captchaAdress));
                     String code = getCaptchaCode(file, this);
 
                     form.put("txtCode", code);
@@ -78,8 +78,8 @@ public class Stealth extends PluginForDecrypt {
                 Browser tmp = br.cloneBrowser();
 
                 tmp.getPage("http://stealth.to/popup.php?id=" + element);
-                String[] decLinks = tmp.getRegex(Pattern.compile("iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                String link=Encoding.htmlDecode(decLinks[1]);
+                String decLinks = tmp.getRegex(Pattern.compile("frame src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String link=Encoding.htmlDecode(decLinks);
                 decryptedLinks.add(createDownloadlink(link));
                 progress.increase(1);
             }

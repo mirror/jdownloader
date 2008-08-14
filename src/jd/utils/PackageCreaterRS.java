@@ -57,8 +57,8 @@ public class PackageCreaterRS {
 
         StringBuffer sb = new StringBuffer();
         sb.append("<packages>");
-        String uid = "3373035";
-        String pw = JOptionPane.showInputDialog(frame, "PW für: " + 3373035);
+        String uid = "jdown3";
+        String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         for (String p : packages) {
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
@@ -79,10 +79,10 @@ public class PackageCreaterRS {
             } while (filename == null || new File(srcDir, filename).exists());
             Zip zip = new Zip(files, new File(srcDir, filename));
             zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
-            zip.fillSize = 3 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
+            zip.fillSize = 5 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-                if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");
@@ -104,6 +104,43 @@ public class PackageCreaterRS {
 
                 e.printStackTrace();
             }
+           i = 1;
+             filename = null;
+          
+            name = dat[1];
+            do {
+                filename = name + "_" + df.format(dt) + "_v" + i  +" (LIGHT).jdu";
+                i++;
+            } while (filename == null || new File(srcDir, filename).exists());
+             zip = new Zip(files, new File(srcDir, filename));
+            zip.setExcludeFilter(Pattern.compile("\\.svn", Pattern.CASE_INSENSITIVE));
+
+            try {
+                zip.zip();
+                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                    if (pw != null) {
+                        System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
+                        // sb.append("<package>");
+                        // sb.append("<category>"+c.showInputDialog(frame,
+                        // "Kategorie für: " + name)+"</category>");
+                        // sb.append("<name>"+JOptionPane.showInputDialog(frame,
+                        // "Name für: " + name)+"</name>");
+                        // sb.append("<version>"+JOptionPane.showInputDialog(frame,
+                        // "Version für: " + name)+"</version>");
+                        // sb.append("<url>"+url+"</url>");
+                        // sb.append("<filename>"+name+".jdu</filename>");
+                        // sb.append("<infourl>http://wiki.jdownloader.org/index.php?title="+name+"</infourl>");
+                        // sb.append("<preselected>false</preselected>");
+                        // sb.append("<id>"+id+"</id>");
+                        // sb.append("</package>");
+                    }
+                }
+            } catch (Exception e) {
+
+                e.printStackTrace();
+            }
+            
+            
         }
         sb.append("</packages>");
 
