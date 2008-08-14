@@ -78,7 +78,7 @@ public class Installer {
             JDUtilities.getLogger().severe("downloaddir not set");
             return;
         }
-
+        JDUtilities.saveConfig();
         //        
         // File downloadPath = JDUtilities.getJDHomeDirectoryFromEnvironment();
         // File installPath = downloadPath;
