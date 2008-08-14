@@ -193,8 +193,6 @@ public class PackageManager extends Interaction implements Serializable {
         }
         CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", data);
 
-        ProgressController progress = new ProgressController(JDLocale.L("interaction.packagemanager.progress.loadpackages", "Load packagedata"), 10);
-        progress.setRange(3);
         try {
             //
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
@@ -204,7 +202,7 @@ public class PackageManager extends Interaction implements Serializable {
             } else {
                 br.getPage("http://jdservice.ath.cx/update/packages/list.php");
             }
-            progress.increase(1);
+          
             String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
 
             // xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
@@ -254,13 +252,11 @@ public class PackageManager extends Interaction implements Serializable {
 
             }
             PACKAGE_DATA = data;
-            progress.increase(1);
-            progress.finalize();
+          
             CFGConfig.getConfig("JDU").save();
             return data;
         } catch (Exception e) {
-            e.printStackTrace();
-            progress.finalize();
+      
             return new ArrayList<PackageData>();
         }
 

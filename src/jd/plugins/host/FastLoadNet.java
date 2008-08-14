@@ -311,7 +311,9 @@ public class FastLoadNet extends PluginForHost {
         }
 
     }
-
+    public int getMaxSimultanFreeDownloadNum() {
+        return 10;
+    }
     @Override
     public void reset() {
         cookie = "";
