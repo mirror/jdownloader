@@ -17,16 +17,12 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Bm4uin extends PluginForDecrypt {
     static private final String host = "bm4u.in";
@@ -39,22 +35,16 @@ public class Bm4uin extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            String pass = requestInfo.getFirstMatch("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>");
-            String[][] links = requestInfo.getRegexp("onClick=\"window\\.open\\('crypt\\.php\\?id=([\\d]+)&amp;mirror=([\\d\\w]+)&part=([\\d]+)").getMatches();
-            for (String[] element : links) {
-                url = new URL("http://bm4u.in/crypt.php?id=" + element[0] + "&mirror=" + element[1] + "&part=" + element[2]);
-                requestInfo = HTTP.getRequest(url);
-                DownloadLink link = createDownloadlink(requestInfo.getFirstMatch("<iframe src=\"(.*?)\" width").trim());
-                link.addSourcePluginPassword(pass);
-                decryptedLinks.add(link);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String page = br.getPage(parameter);
+        String pass = new Regex(page, Pattern.compile("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String[][] links = new Regex(page, Pattern.compile("onClick=\"window\\.open\\('crypt\\.php\\?id=([\\d]+)&amp;mirror=([\\d\\w]+)&part=([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+        for (String[] element : links) {
+            DownloadLink link = createDownloadlink(new Regex(br.getPage("http://bm4u.in/crypt.php?id=" + element[0] + "&mirror=" + element[1] + "&part=" + element[2]), Pattern.compile("<iframe src=\"(.*?)\" width", Pattern.CASE_INSENSITIVE)).getFirstMatch().trim());
+            link.addSourcePluginPassword(pass);
+            decryptedLinks.add(link);
         }
+
         return decryptedLinks;
     }
 
