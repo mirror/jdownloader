@@ -19,7 +19,6 @@ package jd;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.CookieHandler;
@@ -236,7 +235,7 @@ public class JDInit {
                 ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-            
+
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 
@@ -310,7 +309,7 @@ public class JDInit {
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
-                            d.action1 = d.new Action() {
+                            d.setAction1(d.new Action() {
                                 public boolean doAction() {
 
                                     try {
@@ -321,7 +320,7 @@ public class JDInit {
 
                                     return true;
                                 }
-                            };
+                            });
                             d.showDialog();
 
                             if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
@@ -462,7 +461,6 @@ public class JDInit {
             try {
                 splashScreen.finish();
             } catch (Exception e) {
-                // TODO: handle exception
             }
             SimpleGUI.setUIManager();
             Installer inst = new Installer();

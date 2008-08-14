@@ -2093,7 +2093,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     return;
                 }
                 if (ai == null) {
-                    
+
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return;
                 }
@@ -2169,11 +2169,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         int minHeight = Math.min(d.getPreferredSize().height, (int) (size.height * .75));
         d.setPreferredSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 540)));
         d.pack();
-        d.getBtn2().setVisible(false);
         d.getBtn3().setVisible(false);
         d.getBtn1().setText(JDLocale.L("system.update.showchangelog", "Show all changes"));
+        d.getBtn2().setText(JDLocale.L("gui.btn_ok", "OK"));
 
-        d.action1 = d.new Action() {
+        d.setAction1(d.new Action() {
             public boolean doAction() {
 
                 try {
@@ -2184,7 +2184,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 d.dispose();
                 return true;
             }
-        };
+        });
+
+        d.setAction2(d.new Action() {
+            public boolean doAction() {
+                d.dispose();
+                return true;
+            }
+        });
 
         d.showDialog();
 

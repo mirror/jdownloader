@@ -83,10 +83,8 @@ public class JHelpDialog extends JDialog implements ActionListener {
         return d.getStatus();
     }
 
-    public Action action1;
-
+    private Action action1;
     private Action action2;
-
     private Action action3;
 
     private JButton btn1;
@@ -130,7 +128,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
         JDUtilities.addToGridBag(this, getBtn1(), 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn2(), 2, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-
         JDUtilities.addToGridBag(this, getBtn3(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 
         pack();
@@ -236,6 +233,18 @@ public class JHelpDialog extends JDialog implements ActionListener {
         setVisible(false);
         setModal(true);
         setVisible(true);
+    }
+
+    public void setAction1(Action action1) {
+        this.action1 = action1;
+    }
+
+    public void setAction2(Action action2) {
+        this.action2 = action2;
+    }
+
+    public void setAction3(Action action3) {
+        this.action3 = action3;
     }
 
 }
