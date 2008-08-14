@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -39,6 +40,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.MenuItem;
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -61,7 +63,7 @@ public class LangFileEditor extends PluginOptional {
     private JLabel lblEntriesCount;
     private JButton btnBrowseFile, btnBrowseFolder;
     private JMenu mnuFile, mnuKey, mnuEntries;
-    private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JTable table;
@@ -168,6 +170,8 @@ public class LangFileEditor extends PluginOptional {
         mnuFile.add(mnuSave = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.save", "Save")));
         mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As")));
         mnuFile.addSeparator();
+        mnuFile.add(mnuDownloadSource = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.download", "Download SourceCode")));
+        mnuFile.addSeparator();
         mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
 
         mnuBrowseFolder.addActionListener(this);
@@ -178,6 +182,7 @@ public class LangFileEditor extends PluginOptional {
         mnuSave.setEnabled(false);
         mnuSaveAs.addActionListener(this);
         mnuSaveAs.setEnabled(false);
+        mnuDownloadSource.addActionListener(this);
         mnuClose.addActionListener(this);
 
         // Key Menü
@@ -414,6 +419,15 @@ public class LangFileEditor extends PluginOptional {
 
             Collections.sort(data, new StringArrayComparator());
             tableModel.fireTableRowsUpdated(0, data.size() - 1);
+
+        } else if (e.getSource() == mnuDownloadSource) {
+
+            try {
+                JLinkButton.openURL("http://jdownloader.org/download");
+            } catch (MalformedURLException e1) {
+                e1.printStackTrace();
+            }
+
         }
 
     }
