@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -41,7 +40,7 @@ public class RsLayerCom extends PluginForDecrypt {
         super();
     }
 
-    private boolean add_container(String cryptedLink, String ContainerFormat) throws IOException {
+    private boolean add_container(String cryptedLink, String ContainerFormat) {
         String link_id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {
@@ -57,72 +56,66 @@ public class RsLayerCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            Browser.clearCookies(host);
-            br.getPage(parameter);
-            if (parameter.indexOf("/link-") != -1) {
-                String link = br.getRegex("<iframe src=\"(.*?)\" ").getFirstMatch();
-                link = Encoding.htmlDecode(link);
-                if (link == null) {
+        Browser.clearCookies(host);
+        br.getPage(parameter);
+        if (parameter.indexOf("/link-") != -1) {
+            String link = br.getRegex("<iframe src=\"(.*?)\" ").getFirstMatch();
+            link = Encoding.htmlDecode(link);
+            if (link == null) {
+                return null;
+            } else {
+                decryptedLinks.add(createDownloadlink(link));
+            }
+
+        } else if (parameter.indexOf("/directory-") != -1) {
+            Form[] forms = br.getForms();
+            if (forms != null && forms.length != 0 && forms[0] != null) {
+                Form captchaForm = forms[0];
+                String captchaFileName = br.getRegex(strCaptchaPattern).getFirstMatch(1);
+                if (captchaFileName == null) { return null; }
+                String captchaUrl = "http://" + host + "/" + captchaFileName;
+                File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
+                boolean fileDownloaded = Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
+                if (!fileDownloaded) {
+                    logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
                     return null;
-                } else {
-                    decryptedLinks.add(createDownloadlink(link));
                 }
-
-            } else if (parameter.indexOf("/directory-") != -1) {
-                Form[] forms = br.getForms();
-                if (forms != null && forms.length != 0 && forms[0] != null) {
-                    Form captchaForm = forms[0];
-                    String captchaFileName = br.getRegex(strCaptchaPattern).getFirstMatch(1);
-                    if (captchaFileName == null) { return null; }
-                    String captchaUrl = "http://" + host + "/" + captchaFileName;
-                    File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-                    boolean fileDownloaded = Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-                    if (!fileDownloaded) {
-                        logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
-                        return null;
-                    }
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                    if (null == captchaCode || captchaCode.length() == 0) {
-                        logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
-                        return null;
-                    }
-                    captchaForm.put("captcha_input", captchaCode);
-                    br.submitForm(captchaForm);
-
-                    if (br.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
-                        logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
-                        return null;
-                    }
-                    if (br.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
-                        logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
-                        return null;
-                    }
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                if (null == captchaCode || captchaCode.length() == 0) {
+                    logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
+                    return null;
                 }
-                String layerLinks[][] = br.getRegex(linkPattern).getMatches();
-                if (layerLinks.length == 0) {
-                    if (!add_container(parameter, ".dlc")) {
-                        if (!add_container(parameter, ".rsdf")) {
-                            add_container(parameter, ".ccf");
-                        }
-                    }
-                } else {
-                    progress.setRange(layerLinks.length);
-                    for (String[] element : layerLinks) {
-                        String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
-                        String page = br.getPage(layerLink);
-                        String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                        if (link != null) {
-                            decryptedLinks.add(createDownloadlink(link));
-                        }
-                        progress.increase(1);
-                    }
+                captchaForm.put("captcha_input", captchaCode);
+                br.submitForm(captchaForm);
+
+                if (br.containsHTML("Sicherheitscode<br />war nicht korrekt")) {
+                    logger.info(JDLocale.L("plugins.decrypt.general.captchaCodeWrong", "Captcha Code falsch"));
+                    return null;
+                }
+                if (br.containsHTML("Gültigkeit für den<br> Sicherheitscode<br>ist abgelaufen")) {
+                    logger.info(JDLocale.L("plugins.decrypt.rslayer.captchaExpired", "Sicherheitscode abgelaufen"));
+                    return null;
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            String layerLinks[][] = br.getRegex(linkPattern).getMatches();
+            if (layerLinks.length == 0) {
+                if (!add_container(parameter, ".dlc")) {
+                    if (!add_container(parameter, ".rsdf")) {
+                        add_container(parameter, ".ccf");
+                    }
+                }
+            } else {
+                progress.setRange(layerLinks.length);
+                for (String[] element : layerLinks) {
+                    String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
+                    String page = br.getPage(layerLink);
+                    String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                    if (link != null) decryptedLinks.add(createDownloadlink(link));
+                    progress.increase(1);
+                }
+            }
         }
+
         return decryptedLinks;
 
     }

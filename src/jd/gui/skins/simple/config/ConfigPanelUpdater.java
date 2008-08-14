@@ -25,7 +25,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
@@ -33,9 +32,6 @@ import jd.utils.JDUtilities;
  */
 public class ConfigPanelUpdater extends ConfigPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4145243293360008779L;
     private SubConfiguration config;
     private Configuration configuration;

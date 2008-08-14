@@ -109,7 +109,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.RequestInfo;
-import jd.update.WebUpdater;
 
 import org.w3c.dom.Document;
 
@@ -470,7 +469,6 @@ public class JDUtilities {
         }
         return null;
     }
-
 
     /**
      * verschlüsselt string mit der übergebenen encryption (Containerpluginname
@@ -1660,7 +1658,6 @@ public class JDUtilities {
         return cfg;
 
     }
-
 
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.

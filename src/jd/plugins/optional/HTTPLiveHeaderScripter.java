@@ -130,23 +130,15 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == menImportHTTPLive) {
             importFF();
-            return;
-        }
-        if(e.getSource()==menHelpWiki){
+        } else if (e.getSource() == menHelpWiki) {
             try {
-                JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink","http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
+                JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
             } catch (MalformedURLException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
-            return;
-            
-        }
-        if (e.getSource() == menImportJDLH) {
+        } else if (e.getSource() == menImportJDLH) {
             importLHScript();
-            return;
-        }
-        if (e.getSource() == menImportFile) {
+        } else if (e.getSource() == menImportFile) {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.openfile", "Open"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -157,14 +149,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             try {
                 Vector<String> save = (Vector<String>) JDUtilities.loadObject(frame, ret, true);
                 textArea.setText(save.get(2));
-
             } catch (Exception e2) {
                 textArea.setText(JDUtilities.getLocalFile(ret));
             }
 
-            return;
-        }
-        if (e.getSource() == menSave) {
+        } else if (e.getSource() == menSave) {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.avefile", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -186,21 +175,14 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             save.add("?s).*" + manu.toLowerCase() + ".*");
 
             JDUtilities.saveObject(frame, save, ret, null, null, true);
-            return;
-        }
-        if (e.getSource() == menExit) {
+        } else if (e.getSource() == menExit) {
             frame.dispose();
-            return;
-        }
-        if (e.getSource() == menEditValidate) {
+        } else if (e.getSource() == menEditValidate) {
             if (validate()) {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
 
             }
-            return;
-        }
-
-        if (e.getSource() == menEditAddRequest) {
+        } else if (e.getSource() == menEditAddRequest) {
 
             if (!validate()) { return; }
             String script = textArea.getText();
@@ -215,9 +197,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
-            return;
-        }
-        if (e.getSource() == menEditAddDefine) {
+        } else if (e.getSource() == menEditAddDefine) {
             if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.indexOf("[[[STEP]]]"), script.indexOf("[[[HSRC]]]") + 9);
@@ -230,9 +210,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
-            return;
-        }
-        if (e.getSource() == menEditAddWait) {
+        } else if (e.getSource() == menEditAddWait) {
             if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
@@ -245,10 +223,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             sb.append(script.substring(id).trim());
             textArea.setText(sb + "");
-            return;
-        }
-
-        if (frame == null || !frame.isVisible()) {
+        } else if (frame == null || !frame.isVisible()) {
             initGUI();
         } else {
             frame.dispose();
@@ -256,7 +231,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     }
 
     private String convertFF(String script) {
-        String[] forbidden = new String[] { "jpg", "gif", "ico", "png", "mid" , "css" , "js", "xml"  };
+        String[] forbidden = new String[] { "jpg", "gif", "ico", "png", "mid", "css", "js", "xml" };
         String[] forbiddenHeaders = new String[] { "accept", "user-agent", "If-Modified-Since", "Cache-Control" };
 
         ArrayList<String> ips = new ArrayList<String>();
@@ -391,21 +366,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     private void importLHScript() {
         Vector<String[]> scripts = new HTTPLiveHeader().getLHScripts();
 
-        Collections.sort(scripts, new Comparator<Object>() {
-            public int compare(Object a, Object b) {
-                String[] aa = (String[]) a;
-                String[] bb = (String[]) b;
-
-                if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) > 0) {
-                    return 1;
-                } else if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) < 0) {
-                    return -1;
-                } else {
-                    return 0;
-                }
-
+        Collections.sort(scripts, new Comparator<String[]>() {
+            public int compare(String[] a, String[] b) {
+                return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
             }
-
         });
 
         HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
@@ -525,8 +489,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         dialog.setLocationRelativeTo(null);
         dialog.setVisible(true);
         int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.
-                                                           // showConfirmDialog
-                                                           // (this,
+        // showConfirmDialog
+        // (this,
         // panel,
         // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
         // "Router
@@ -600,7 +564,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         menImportJDLH = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importjdlh", "Import JD-LiveHeader Script"));
         menImportFile = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importfile", "Open file"));
         menSave = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.save", "Save file"));
-        
+
         menExit = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.exit", "Exit"));
         menImportHTTPLive.addActionListener(this);
         menImportJDLH.addActionListener(this);

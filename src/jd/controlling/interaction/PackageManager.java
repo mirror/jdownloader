@@ -16,7 +16,6 @@
 
 package jd.controlling.interaction;
 
-import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -28,12 +27,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.JDInit;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.update.PackageData;
@@ -56,82 +53,86 @@ public class PackageManager extends Interaction implements Serializable {
      */
     private static final long serialVersionUID = 1L;
 
-  
-
     public PackageManager() {
-      
 
     }
 
-    @SuppressWarnings("unchecked")
     private void checkNewInstalled() {
-        
-        
-        ArrayList<PackageData> ret= new ArrayList<PackageData>();
-        boolean ch=false;String links="";
-        for( PackageData pa:getPackageData()){
-            if(pa.isInstalled()){
+
+        // ArrayList<PackageData> ret= new ArrayList<PackageData>();
+        boolean ch = false;
+        String links = "";
+        for (PackageData pa : getPackageData()) {
+            if (pa.isInstalled()) {
                 pa.setInstalled(false);
-            
-                ch=true;
-                links+=JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>",pa.getStringProperty("name"),pa.getStringProperty("version"),pa.getStringProperty("infourl"));
-              
-                
-                
+
+                ch = true;
+                links += JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
+
             }
         }
-        if(!ch)return;
-        
-        JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message","Installed new updates<hr>%s",links), 15);
-        
-//        ArrayList<File> slist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
-//        if (slist != null) {
-//            for (File del : slist) {
-//                del.delete();
-//
-//                String html = JDLocale.L("modules.packagemanager.installednewpackage.title", "Package Installed") + "<hr><b>" + del.getName() + "</b><hr>";
-//                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-//            }
-//        }
-//
-//        ArrayList<File> flist = (ArrayList<File>) managerConfig.getProperty("NEW_INSTALLED_FAILED");
-//        if (flist != null) {
-//            for (File del : flist) {
-//                del.delete();
-//                JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.failed", "Installation failed. try again: ") + "<hr><b>" + del.getName() + "</b>", 15);
-//
-//            }
-//        }
-//
-//        Object list = managerConfig.getProperty("NEW_INSTALLED");
-//        managerConfig.setProperty("NEW_INSTALLED_SUCCESSFULL", null);
-//        managerConfig.setProperty("NEW_INSTALLED", null);
-//        managerConfig.setProperty("NEW_INSTALLED_FAILED", null);
-//        managerConfig.save();
-//        if (list == null) { return; }
-//
-//        ArrayList<File> readmes = (ArrayList<File>) list;
-//        for (File readme : readmes) {
-//            String html;
-//            if (readme == null) {
-//
-//                continue;
-//            }
-//            html = JDUtilities.getLocalFile(readme);
-//            if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-//                html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
-//                html = JDLocale.L("modules.packagemanager.infonewpackage.title", "Package information") + "<hr><b>" + readme.getAbsolutePath() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
-//                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-//            } else {
-//                JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
-//            }
-//
-//        }
+        if (!ch) return;
+
+        JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links), 15);
+
+        // ArrayList<File> slist = (ArrayList<File>)
+        // managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
+        // if (slist != null) {
+        // for (File del : slist) {
+        // del.delete();
+        //
+        // String html =
+        // JDLocale.L("modules.packagemanager.installednewpackage.title",
+        // "Package Installed") + "<hr><b>" + del.getName() + "</b><hr>";
+        // JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+        // }
+        // }
+        //
+        // ArrayList<File> flist = (ArrayList<File>)
+        // managerConfig.getProperty("NEW_INSTALLED_FAILED");
+        // if (flist != null) {
+        // for (File del : flist) {
+        // del.delete();
+        // JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L(
+        // "modules.packagemanager.loadednewpackage.failed",
+        // "Installation failed. try again: ") + "<hr><b>" + del.getName() +
+        // "</b>", 15);
+        //
+        // }
+        // }
+        //
+        // Object list = managerConfig.getProperty("NEW_INSTALLED");
+        // managerConfig.setProperty("NEW_INSTALLED_SUCCESSFULL", null);
+        // managerConfig.setProperty("NEW_INSTALLED", null);
+        // managerConfig.setProperty("NEW_INSTALLED_FAILED", null);
+        // managerConfig.save();
+        // if (list == null) { return; }
+        //
+        // ArrayList<File> readmes = (ArrayList<File>) list;
+        // for (File readme : readmes) {
+        // String html;
+        // if (readme == null) {
+        //
+        // continue;
+        // }
+        // html = JDUtilities.getLocalFile(readme);
+        // if (Regex.matches(html, "src\\=\"(.*?)\"")) {
+        // html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+        // html = JDLocale.L("modules.packagemanager.infonewpackage.title",
+        // "Package information") + "<hr><b>" + readme.getAbsolutePath() +
+        // "</b><hr><a href='" + html + "'>" +
+        // JDLocale.L("modules.packagemanager.loadednewpackage.more",
+        // "More Information & Installnotes") + "</a>";
+        // JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+        // } else {
+        // JDUtilities.getGUI().showCountdownConfirmDialog(html, 15);
+        // }
+        //
+        // }
 
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean doInteraction(Object arg) {
 
         checkNewInstalled();
@@ -152,7 +153,8 @@ public class PackageManager extends Interaction implements Serializable {
                 Vector<DownloadLink> links = distributeData.findLinks();
                 dat.setUpdating(true);
                 Iterator<DownloadLink> it = links.iterator();
-                // while(it.hasNext())it.next().setDownloadPath(JDUtilities.getResourceFile("packages").getAbsolutePath());
+                // while(it.hasNext())it.next().setDownloadPath(JDUtilities.
+                // getResourceFile("packages").getAbsolutePath());
                 while (it.hasNext()) {
                     DownloadLink next = it.next();
                     next.setFilePackage(fp);
@@ -190,7 +192,7 @@ public class PackageManager extends Interaction implements Serializable {
             pd.setSortID(-1);
         }
         CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", data);
-   
+
         ProgressController progress = new ProgressController(JDLocale.L("interaction.packagemanager.progress.loadpackages", "Load packagedata"), 10);
         progress.setRange(3);
         try {
@@ -204,8 +206,8 @@ public class PackageManager extends Interaction implements Serializable {
             }
             progress.increase(1);
             String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
-            
-//            xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
+
+            // xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
             DocumentBuilderFactory factory;
             InputSource inSource;
             Document doc;
@@ -268,23 +270,24 @@ public class PackageManager extends Interaction implements Serializable {
     public void initConfig() {
 
     }
-public ArrayList<PackageData> getDownloadedPackages(){
-    ArrayList<PackageData> ret= new ArrayList<PackageData>();
-    for( PackageData pa:getPackageData()){
-        if(pa.isDownloaded()&&pa.isUpdating()){
-            ret.add(pa);
+
+    public ArrayList<PackageData> getDownloadedPackages() {
+        ArrayList<PackageData> ret = new ArrayList<PackageData>();
+        for (PackageData pa : getPackageData()) {
+            if (pa.isDownloaded() && pa.isUpdating()) {
+                ret.add(pa);
+            }
         }
+        return ret;
+
     }
-    return ret;
-    
-}
-    @SuppressWarnings("unchecked")
+
     public void onDownloadedPackage(final DownloadLink downloadLink) {
         // File dir = JDUtilities.getResourceFile("packages");
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
-        final PackageData dat=(PackageData)downloadLink.getProperty("JDU");
-        if(dat==null){
+        final PackageData dat = (PackageData) downloadLink.getProperty("JDU");
+        if (dat == null) {
             logger.severe("Dat==null");
             return;
         }
@@ -302,33 +305,30 @@ public ArrayList<PackageData> getDownloadedPackages(){
                 }
                 JDUtilities.getController().removeDownloadLink(downloadLink);
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-                boolean ch=false;
-                all: for(FilePackage fp:JDUtilities.getController().getPackages()){
-                    for(DownloadLink dLink:fp.getDownloadLinks()){
-                        if(dLink.getLinkType()==DownloadLink.LINKTYPE_JDU){
-                            ch=true;
+                boolean ch = false;
+                all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                    for (DownloadLink dLink : fp.getDownloadLinks()) {
+                        if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                            ch = true;
                             break all;
                         }
                     }
                 }
-                if(!ch){
-                    String list="";
-                    for(PackageData pa:getDownloadedPackages()){
-                        list+=pa.getStringProperty("name")+" v."+pa.getStringProperty("version")+"<br/>";
+                if (!ch) {
+                    String list = "";
+                    for (PackageData pa : getDownloadedPackages()) {
+                        list += pa.getStringProperty("name") + " v." + pa.getStringProperty("version") + "<br/>";
                     }
-                    String message=JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>",list);
-                    boolean ret=JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
-                    if(ret){
+                    String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list);
+                    boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
+                    if (ret) {
                         new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
-                        
+
                     }
                 }
 
             }
         }.start();
-        
-        
-    
 
         // String[] dat = downloadLink.getSourcePluginComment().split("_");
 

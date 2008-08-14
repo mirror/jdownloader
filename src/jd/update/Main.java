@@ -147,6 +147,7 @@ public class Main {
 
     }
 
+    @SuppressWarnings("unchecked")
     public static void main(String args[]) {
         final StringBuffer log = new StringBuffer();
 
@@ -156,57 +157,54 @@ public class Main {
         boolean plafisSet = false;
         log.append("Webupdater 13.8.2008 21:42 started\r\n\r\n");
 
-        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"\r\n");
-        System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties()+"\r\n");
-        System.out.println(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties()+"\r\n");
-        log.append(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties()+"\r\n");
+        log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
+        System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
+        System.out.println(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties() + "\r\n");
+        log.append(SubConfiguration.getSubConfig("PACKAGEMANAGER").getProperties() + "\r\n");
         /* Http-Proxy einstellen */
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
-           
-            String host=SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_HOST", "");
-            String port=new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("PROXY_PORT", 8080)).toString();
+
+            String host = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_HOST", "");
+            String port = new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("PROXY_PORT", 8080)).toString();
             String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
             String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
-            
-            System.setProperty( "http.proxySet", "true" );
+
+            System.setProperty("http.proxySet", "true");
             System.setProperty("http.proxyHost", host);
             System.setProperty("http.proxyPort", port);
             System.setProperty("http.proxyUserName", user);
             System.setProperty("http.proxyPassword", pass);
-            
+
             Main.log(log, "http-proxy: enabled" + System.getProperty("line.separator"));
         } else {
-            System.setProperty( "http.proxySet", "false" );
+            System.setProperty("http.proxySet", "false");
             System.setProperty("http.proxyHost", "");
             Main.log(log, "http-proxy: disabled" + System.getProperty("line.separator"));
         }
         /* Socks-Proxy einstellen */
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
-           
+
             String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
             String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS_SOCKS", "");
-            String host=SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("SOCKS_HOST", "");
-            String port=new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("SOCKS_PORT", 1080)).toString();
-            
+            String host = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("SOCKS_HOST", "");
+            String port = new Integer(SubConfiguration.getSubConfig("WEBUPDATE").getIntegerProperty("SOCKS_PORT", 1080)).toString();
+
             System.setProperty("socksProxySet", "true");
-            System.setProperty("socksProxyHost",host );
-            System.setProperty("socksProxyPort", port); 
+            System.setProperty("socksProxyHost", host);
+            System.setProperty("socksProxyPort", port);
             System.setProperty("socksProxyUserName", user);
             System.setProperty("socksProxyPassword", pass);
             System.setProperty("socks.useProxy", "true");
-            System.setProperty("socks.proxyHost",host);
+            System.setProperty("socks.proxyHost", host);
             System.setProperty("socks.proxyPort", port);
             System.setProperty("socks.proxyUserName", user);
             System.setProperty("socks.proxyPassword", pass);
-            
-            
-            
-            
+
             Main.log(log, "socks-proxy: enabled" + System.getProperty("line.separator"));
         } else {
             System.setProperty("socksProxySet", "false");
             System.setProperty("socks.useProxy", "false");
-            System.setProperty("socks.proxyHost","");
+            System.setProperty("socks.proxyHost", "");
             System.setProperty("socksProxyHost", "");
             Main.log(log, "socks-proxy: disabled" + System.getProperty("line.separator"));
         }
@@ -339,16 +337,12 @@ public class Main {
             progresslist.setValue(100);
             updater.updateFiles(files);
         }
-     
-        
+
         SubConfiguration jdus = SubConfiguration.getSubConfig("JDU");
         ArrayList<PackageData> data = (ArrayList<PackageData>) jdus.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
-        
-     
-       
 
         for (PackageData pa : data) {
-            if(!pa.isDownloaded())continue;
+            if (!pa.isDownloaded()) continue;
             File zip = new File(pa.getStringProperty("LOCALPATH"));
 
             Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
@@ -363,16 +357,15 @@ public class Main {
                         Main.log(log, "       extracted: " + element + System.getProperty("line.separator"));
                         if (element.getAbsolutePath().endsWith("readme.html")) {
                             pa.setProperty("README", element.getAbsolutePath());
-                           
+
                         }
                     }
-                   pa.setInstalled(true);
+                    pa.setInstalled(true);
                     pa.setUpdating(false);
                     pa.setDownloaded(false);
                     pa.setInstalledVersion(Integer.parseInt(pa.getStringProperty("version")));
-            
-                        Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
-                       
+
+                    Main.log(log, "Installation successfull: " + zip + System.getProperty("line.separator"));
 
                     zip.delete();
                     zip.deleteOnExit();
@@ -384,12 +377,9 @@ public class Main {
                 zip.delete();
                 zip.deleteOnExit();
             }
-            
 
         }
         jdus.save();
-        
-        
 
         Main.trace(updater.getLogger().toString());
         Main.trace("End Webupdate");

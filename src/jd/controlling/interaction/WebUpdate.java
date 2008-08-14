@@ -16,8 +16,6 @@
 
 package jd.controlling.interaction;
 
-import java.io.File;
-import java.io.FilenameFilter;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -37,14 +35,9 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class WebUpdate extends Interaction implements Serializable {
-    /**
-     * serialVersionUID
-     */
+
     private static final String NAME = JDLocale.L("interaction.webupdate.name", "WebUpdate");
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 5345996658356704386L;
 
     private WebUpdater updater;
@@ -86,8 +79,8 @@ public class WebUpdate extends Interaction implements Serializable {
     public void run() {
         ProgressController progress = new ProgressController("Webupdater", 5);
         Vector<Vector<String>> files = updater.getAvailableFiles();
-     PackageManager pm = new PackageManager();
-ArrayList<PackageData> packages = pm.getDownloadedPackages();
+        PackageManager pm = new PackageManager();
+        ArrayList<PackageData> packages = pm.getDownloadedPackages();
         if ((files == null || files.size() == 0) && packages.size() == 0) { return; }
         int org;
         progress.setRange(org = files.size());

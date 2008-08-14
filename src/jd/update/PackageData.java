@@ -2,12 +2,13 @@ package jd.update;
 
 public class PackageData extends Property {
 
+    private static final long serialVersionUID = 313280647294844981L;
     private boolean preselected = false;
     private boolean selected;
     private int id;
     private int installedVersion = 0;
-    private boolean updating=false;
-    private int sortID=-1;
+    private boolean updating = false;
+    private int sortID = -1;
     private boolean downloaded;
     private boolean installed;;
 
@@ -49,7 +50,6 @@ public class PackageData extends Property {
         this.installedVersion = installed;
     }
 
- 
     public boolean isUpdating() {
         return updating;
     }
@@ -60,7 +60,7 @@ public class PackageData extends Property {
 
     public int getSortID() {
         return this.sortID;
-      
+
     }
 
     public void setSortID(int sortID) {
@@ -68,8 +68,8 @@ public class PackageData extends Property {
     }
 
     public void setDownloaded(boolean b) {
-       this.downloaded=b;
-        
+        this.downloaded = b;
+
     }
 
     public boolean isDownloaded() {
@@ -77,8 +77,8 @@ public class PackageData extends Property {
     }
 
     public void setInstalled(boolean b) {
-       installed=b;
-        
+        installed = b;
+
     }
 
     public boolean isInstalled() {

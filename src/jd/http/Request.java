@@ -37,10 +37,9 @@ import java.util.zip.GZIPInputStream;
 import jd.config.Configuration;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
-import jd.utils.Sniffy;
 
 public abstract class Request {
-//    public static int MAX_REDIRECTS = 30;
+    // public static int MAX_REDIRECTS = 30;
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
 
     /**
@@ -50,7 +49,7 @@ public abstract class Request {
      *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
      */
-  
+
     public static HashMap<String, String> parseQuery(String query) {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -65,21 +64,20 @@ public abstract class Request {
 
         if (query == null) { return ret; }
         try {
-        
+
             String[] split = query.trim().split("[\\&|=]");
-            int i=0;
+            int i = 0;
             while (true) {
                 String key = null;
                 String value = null;
-                if (split.length>i) key = split[i++];
-                if (split.length>i) value = split[i++];
-              
+                if (split.length > i) key = split[i++];
+                if (split.length > i) value = split[i++];
+
                 if (key != null) {
                     ret.put(key, value);
                 } else {
                     break;
                 }
-                
 
             }
 
@@ -123,7 +121,7 @@ public abstract class Request {
     }
 
     public Request(HTTPConnection con) {
-        httpConnection=con;
+        httpConnection = con;
         collectCookiesFromConnection();
     }
 
@@ -164,15 +162,18 @@ public abstract class Request {
         postRequest(httpConnection);
 
         collectCookiesFromConnection();
-//        while (followRedirects && httpConnection.getHeaderField("Location") != null ) {
-//            followCounter++;
-//            if (followCounter >= MAX_REDIRECTS) { throw new IOException("Connection redirects too often. Max (" + MAX_REDIRECTS + ")");
-//
-//            }
-//            url = new URL(httpConnection.getHeaderField("Location"));
-//            openConnection();
-//            postRequest(httpConnection);
-//        }
+        // while (followRedirects && httpConnection.getHeaderField("Location")
+        // != null ) {
+        // followCounter++;
+        // if (followCounter >= MAX_REDIRECTS) { throw new
+        // IOException("Connection redirects too often. Max (" + MAX_REDIRECTS +
+        // ")");
+        //
+        // }
+        // url = new URL(httpConnection.getHeaderField("Location"));
+        // openConnection();
+        // postRequest(httpConnection);
+        // }
         return this;
     }
 
@@ -346,7 +347,6 @@ public abstract class Request {
     }
 
     public void openConnection() throws IOException {
-  
 
         try {
             long tima = System.currentTimeMillis();
@@ -356,7 +356,6 @@ public abstract class Request {
             httpConnection.setReadTimeout(readTimeout);
             httpConnection.setConnectTimeout(connectTimeout);
 
-            
             if (headers != null) {
                 Set<String> keys = headers.keySet();
                 Iterator<String> iterator = keys.iterator();

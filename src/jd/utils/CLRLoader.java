@@ -215,21 +215,10 @@ public class CLRLoader {
     private static void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
             list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
-            Collections.sort(list, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    String[] aa = (String[]) a;
-                    String[] bb = (String[]) b;
-
-                    if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) > 0) {
-                        return 1;
-                    } else if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) < 0) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-
+            Collections.sort(list, new Comparator<String[]>() {
+                public int compare(String[] a, String[] b) {
+                    return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
-
             });
 
         }

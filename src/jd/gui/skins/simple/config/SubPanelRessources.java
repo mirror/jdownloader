@@ -40,13 +40,10 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
-import jd.captcha.pixelgrid.Letter;
-import jd.captcha.pixelobject.PixelObject;
 import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
@@ -146,13 +143,11 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
          */
         @Override
         public void setValueAt(Object value, int row, int col) {
-          
 
-           PackageData element = packageData.get(row);
+            PackageData element = packageData.get(row);
             boolean v = !element.isSelected();
-          
+
             element.setSelected(v);
-          
 
         }
     }
@@ -228,8 +223,7 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
      */
 
     // private Configuration configuration;
-    //private SubConfiguration config;
-
+    // private SubConfiguration config;
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
     private InternalTable table;
@@ -253,12 +247,7 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
 
-       
     }
-
-
-
-
 
     @Override
     public String getName() {
@@ -269,16 +258,16 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
     @Override
     public void initPanel() {
         setPreferredSize(new Dimension(650, 350));
-       
+
         packageData = new PackageManager().getPackageData();
 
         Collections.sort(packageData, new Comparator<PackageData>() {
 
             public int compare(PackageData o1, PackageData o2) {
-                if(o1.getSortID()>o2.getSortID())return 1;
-                if(o1.getSortID()<o2.getSortID())return -1;
+                if (o1.getSortID() > o2.getSortID()) return 1;
+                if (o1.getSortID() < o2.getSortID()) return -1;
                 return 0;
-              
+
             }
         });
         ConfigEntry ce;

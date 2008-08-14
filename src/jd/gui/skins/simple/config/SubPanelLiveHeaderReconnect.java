@@ -64,9 +64,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener, ControlListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 6710420298517566329L;
 
     // private Configuration configuration;
@@ -129,19 +127,9 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         if (e.getSource() == btnSelectRouter) {
             Vector<String[]> scripts = lh.getLHScripts();
 
-            Collections.sort(scripts, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    String[] aa = (String[]) a;
-                    String[] bb = (String[]) b;
-
-                    if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) > 0) {
-                        return 1;
-                    } else if ((aa[0] + " " + aa[1]).compareToIgnoreCase((bb[0] + " " + bb[1])) < 0) {
-                        return -1;
-                    } else {
-                        return 0;
-                    }
-
+            Collections.sort(scripts, new Comparator<String[]>() {
+                public int compare(String[] a, String[] b) {
+                    return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
 
             });
@@ -399,10 +387,10 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
         addGUIConfigEntry(ce);
 
         routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getConfiguration(), Configuration.PARAM_HTTPSEND_REQUESTS, JDLocale.L("gui.config.liveHeader.script", "HTTP Script")));
-        //addGUIConfigEntry(routerScript);
+        // addGUIConfigEntry(routerScript);
         this.entries.add(routerScript);
-        add(panel,BorderLayout.NORTH);
-        add(routerScript,BorderLayout.CENTER);
+        add(panel, BorderLayout.NORTH);
+        add(routerScript, BorderLayout.CENTER);
 
     }
 
