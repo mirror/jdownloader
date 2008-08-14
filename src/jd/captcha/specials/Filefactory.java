@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
@@ -37,7 +36,7 @@ import jd.captcha.utils.UTILITIES;
  */
 public class Filefactory {
 
-    private static final double OBJECTCOLORCONTRAST = 0.01;
+    // private static final double OBJECTCOLORCONTRAST = 0.01;
 
     private static final double OBJECTDETECTIONCONTRAST = 0.95;
 
@@ -79,7 +78,7 @@ public class Filefactory {
                 }
 
                 // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
-                ret = ret;
+                // ret = ret;
             }
             // BasicWindow.showImage(grid.getImage(6), x+"-");
         }
@@ -89,44 +88,47 @@ public class Filefactory {
 
     @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
-captcha.cleanByRGBDistance(-1, 20);
-        long t = System.currentTimeMillis();
+        captcha.cleanByRGBDistance(-1, 20);
+        // long t = System.currentTimeMillis();
         ArrayList<PixelObject> os = getObjects(captcha, 0);
 
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
-//         if(akt.getSize()>20)  BasicWindow.showImage(akt.toLetter().getImage(5), "fil " + akt.getArea() + " -" + ((double) akt.getArea() / (double) akt.getSize()) + " - " + akt.getHeight() + " - " + akt.getWidth());
-           if(akt.getArea()==1224){
-            
-            System.out.println("II");
-               
-           }
-          if(akt.getArea() > 1800 ){
-               it.remove();
-           }
-           else if(akt.getArea() < 130 ){
-               it.remove();
-           }
-           else if((double) akt.getArea() / (double) akt.getSize() < 1.2){
-               it.remove();
-           }
-           else if(akt.getArea() / akt.getSize() > 10){
-               it.remove();
-           }
-           else if(akt.getHeight() <  15|| akt.getWidth() < 5){ 
+            // if(akt.getSize()>20)
+            // BasicWindow.showImage(akt.toLetter().getImage(5), "fil " +
+            // akt.getArea() + " -" + ((double) akt.getArea() / (double)
+            // akt.getSize()) + " - " + akt.getHeight() + " - " +
+            // akt.getWidth());
+            if (akt.getArea() == 1224) {
+
+                System.out.println("II");
+
+            }
+            if (akt.getArea() > 1800) {
+                it.remove();
+            } else if (akt.getArea() < 130) {
+                it.remove();
+            } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
+                it.remove();
+            } else if (akt.getArea() / akt.getSize() > 10) {
+                it.remove();
+            } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
                 it.remove();
             }
-//            if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 && (double) akt.getArea() / (double) akt.getSize() < 1.2) || akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 || akt.getWidth() < 5)) {
-//                it.remove();
-//                // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
-//                // "+akt.getArea()+" -"+((double)akt.getArea() /
-//                // (double)akt.getSize())+" - "+akt.getHeight()+" -
-//                // "+akt.getWidth());
-//
-//            } else {
-//
-//            }
+            // if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 &&
+            // (double) akt.getArea() / (double) akt.getSize() < 1.2) ||
+            // akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 ||
+            // akt.getWidth() < 5)) {
+            // it.remove();
+            // // BasicWindow.showImage(akt.toLetter().getImage(5),"fil
+            // // "+akt.getArea()+" -"+((double)akt.getArea() /
+            // // (double)akt.getSize())+" - "+akt.getHeight()+" -
+            // // "+akt.getWidth());
+            //
+            // } else {
+            //
+            // }
 
         }
 
@@ -143,30 +145,26 @@ captcha.cleanByRGBDistance(-1, 20);
 
             i++;
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
-            if(pixelObject.getArea()==1224){
-                
-                System.out.println("II");
-                   
-               }
-            if(akt.getArea() > 2200 ){
-             
-            }
-            else if(akt.getArea() < 130 ){
-             
-            }
-            else if((double) akt.getArea() / (double) akt.getSize() < 1.2){
-               
-            }
-            else if(akt.getArea() / akt.getSize() > 10){
-               
-            }
-            else if(akt.getHeight() <  15|| akt.getWidth() < 5){ 
-                 
-             }else{
-                ret.add(let);
-             }
+            if (pixelObject.getArea() == 1224) {
 
-//            }
+                System.out.println("II");
+
+            }
+            if (akt.getArea() > 2200) {
+
+            } else if (akt.getArea() < 130) {
+
+            } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
+
+            } else if (akt.getArea() / akt.getSize() > 10) {
+
+            } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
+
+            } else {
+                ret.add(let);
+            }
+
+            // }
         }
 
         // for (int i = 0; i < letters.size(); i++) {
@@ -176,13 +174,16 @@ captcha.cleanByRGBDistance(-1, 20);
         //
         // Letter l = obj.toLetter();
         // //
-        // l.removeSmallObjects(captcha.owner.getJas().getDouble("ObjectColorContrast"),
+        // l.removeSmallObjects(captcha.owner.getJas().getDouble(
+        // "ObjectColorContrast"),
         // // captcha.owner.getJas().getDouble("ObjectDetectionContrast"));
         // captcha.owner.getJas().executeLetterPrepareCommands(l);
         // // if(owner.getJas().getInteger("leftAngle")!=0 ||
         // // owner.getJas().getInteger("rightAngle")!=0) l =
         // //
-        // l.align(owner.getJas().getDouble("ObjectDetectionContrast"),owner.getJas().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
+        // l.align(owner.getJas().getDouble("ObjectDetectionContrast"),owner.
+        // getJas
+        // ().getInteger("leftAngle"),owner.getJas().getInteger("rightAngle"));
         // // l.reduceWhiteNoise(2);
         // // l.toBlackAndWhite(0.6);
         //
@@ -212,8 +213,8 @@ captcha.cleanByRGBDistance(-1, 20);
         for (Iterator<Letter> it = r.iterator(); it.hasNext();) {
             Letter akt = it.next();
 
-            if (akt.detected.getDecodedValue().equals("1")||akt.detected.getDecodedValue().equals(".")) {
-               it.remove();
+            if (akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals(".")) {
+                it.remove();
             } else {
                 akt.id = id++;
             }
@@ -225,13 +226,14 @@ captcha.cleanByRGBDistance(-1, 20);
                 return 0;
             }
         });
-        List<Letter> list ;
-        try{
-      list = r.subList(0, 4);
-        }catch(Exception e){return null;};
+        List<Letter> list;
+        try {
+            list = r.subList(0, 4);
+        } catch (Exception e) {
+            return null;
+        }
+        ;
 
-        
-      
         Collections.sort(list, new Comparator<Letter>() {
             public int compare(Letter o1, Letter o2) {
                 if (o1.id > o2.id) { return 1; }

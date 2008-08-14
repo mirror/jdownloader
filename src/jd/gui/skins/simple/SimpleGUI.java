@@ -195,13 +195,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
             lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
-            int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
             spMax = new JSpinner();
-            spMax.setModel(new SpinnerNumberModel(maxspeed, 0, Integer.MAX_VALUE, 50));
+            spMax.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0), 0, Integer.MAX_VALUE, 50));
             spMax.setPreferredSize(new Dimension(60, 20));
             spMax.setToolTipText(JDLocale.L("gui.tooltip.statusbar.speedlimiter", "Geschwindigkeitsbegrenzung festlegen(kb/s) [0:unendlich]"));
             spMax.addChangeListener(this);
+            colorizeSpinnerSpeed();
 
             spMaxDls = new JSpinner();
             spMaxDls.setModel(new SpinnerNumberModel(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2), 1, 20, 1));
@@ -226,7 +226,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // right.add(bundle(lblSpeed, spMax));
             addItem(right, bundle(lblSpeed, spMax));
 
-            colorizeSpinnerSpeed(maxspeed);
             // JDUtilities.addToGridBag(this, lblMessage, 0, 0, 1, 1, 1, 1, new
             // Insets(0, 5,
             // 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
@@ -290,12 +289,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // else
         // lbl.setIcon(imgInactive);
         // }
-        private void colorizeSpinnerSpeed(Integer Speed) {
+        private void colorizeSpinnerSpeed() {
             /* färbt den spinner ein, falls speedbegrenzung aktiv */
             JSpinner.DefaultEditor spMaxEditor = (JSpinner.DefaultEditor) spMax.getEditor();
-            Color warning = JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03");
-            if (Speed > 0) {
-                lblSpeed.setForeground(warning);
+            if ((Integer) spMax.getValue() > 0) {
+                lblSpeed.setForeground(JDTheme.C("gui.color.statusbar.maxspeedhighlight", "ff0c03"));
                 spMaxEditor.getTextField().setForeground(Color.red);
             } else {
                 lblSpeed.setForeground(Color.black);
@@ -304,20 +302,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void controlEvent(ControlEvent event) {
-            Property p;
-            switch (event.getID()) {
-            case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
-                p = (Property) event.getSource();
+            if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
+                Property p = (Property) event.getSource();
                 if (spMax != null && event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
-
-                    spMax.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-                    colorizeSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
-
+                    setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
                 } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                     spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
                 } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-
                 }
                 // else if (event.getParameter().equals(CESClient.UPDATE)) {
                 // p = (Property) event.getSource();
@@ -332,7 +324,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 // setText("");
                 // }
                 // }
-                break;
             }
 
         }
@@ -376,37 +367,27 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         public void setSpinnerSpeed(Integer speed) {
             spMax.setValue(speed);
-            colorizeSpinnerSpeed(speed);
+            colorizeSpinnerSpeed();
         }
 
         public void setText(String text) {
-            if (text == null) {
-                text = JDLocale.L("sys.message.welcome");
-            }
-            lblMessage.setText(text);
+            lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome") : text);
         }
 
         public void stateChanged(ChangeEvent e) {
-            int max = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0);
 
             if (e.getSource() == spMax) {
-                int value = (Integer) spMax.getValue();
-                colorizeSpinnerSpeed(value);
-                if (max != value) {
-                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
-                    JDUtilities.getSubConfig("DOWNLOAD").save();
-                }
+                colorizeSpinnerSpeed();
+                SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+                subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMax.getValue());
+                subConfig.save();
 
-            }
-            if (e.getSource() == spMaxDls) {
-                int value = (Integer) spMaxDls.getValue();
-                if (max != value) {
-                    JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
-                    JDUtilities.getSubConfig("DOWNLOAD").save();
-                }
+            } else if (e.getSource() == spMaxDls) {
+                SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
+                subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
+                subConfig.save();
 
-            }
-            if (e.getSource() == chbPremium) {
+            } else if (e.getSource() == chbPremium) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
                     JDUtilities.saveConfig();
@@ -464,17 +445,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return menuItem;
     }
 
-    // private JDAction removeFinished;
-
     public static JMenuItem getJMenuItem(final MenuItem mi) {
         switch (mi.getID()) {
         case MenuItem.SEPARATOR:
             return null;
         case MenuItem.NORMAL:
-            JMenuItem m = new JMenuItem(new JDMenuAction(mi));
-
-            return m;
-
+            return new JMenuItem(new JDMenuAction(mi));
         case MenuItem.TOGGLE:
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
             JDUtilities.getLogger().info("SELECTED: " + mi.isSelected());
@@ -620,14 +596,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
     }
-
-    // private JDAction actionItemsTop;
-
-    // private JDAction actionItemsUp;
-
-    // private JDAction actionItemsDown;
-
-    // private JDAction actionItemsBottom;
 
     public static void setUIManager() {
         if (uiInitated) { return; }
@@ -1911,7 +1879,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void setGUIStatus(int id) {
         switch (id) {
         case UIInterface.WINDOW_STATUS_TRAYED:
-
             break;
         case UIInterface.WINDOW_STATUS_MAXIMIZED:
             frame.setState(JFrame.MAXIMIZED_BOTH);
@@ -1919,11 +1886,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case UIInterface.WINDOW_STATUS_MINIMIZED:
             frame.setState(JFrame.ICONIFIED);
             break;
-
         case UIInterface.WINDOW_STATUS_NORMAL:
             frame.setState(JFrame.NORMAL);
             frame.setVisible(true);
-
             break;
         case UIInterface.WINDOW_STATUS_FOREGROUND:
             frame.setState(JFrame.NORMAL);

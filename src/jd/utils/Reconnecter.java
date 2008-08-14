@@ -13,7 +13,6 @@ import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForHost;
 
 public class Reconnecter {
 
@@ -128,7 +127,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-   
+
         if (RECONNECT_REQUESTS > 0) { return Reconnecter.doReconnect(); }
         return false;
     }
@@ -161,10 +160,10 @@ public class Reconnecter {
                     if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
-                   
-                        nextDownloadLink.getPlugin().resetHosterWaitTime();
-                        logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
-                        nextDownloadLink.getPlugin().resetPluginGlobals();
+
+                            nextDownloadLink.getPlugin().resetHosterWaitTime();
+                            logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
+                            nextDownloadLink.getPlugin().resetPluginGlobals();
                         }
 
                     }

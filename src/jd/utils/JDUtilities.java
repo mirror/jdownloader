@@ -48,7 +48,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -114,7 +113,6 @@ import jd.update.WebUpdater;
 
 import org.w3c.dom.Document;
 
-
 /**
  * @author astaldo/JD-Team
  */
@@ -129,7 +127,7 @@ public class JDUtilities {
      * Die Konfiguration
      */
     private static Configuration configuration = new Configuration();
-    
+
     private static DatabaseConnector dbconnect = null;
 
     private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
@@ -149,18 +147,17 @@ public class JDUtilities {
      */
     public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
 
-//    /**
-//     * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
-//     * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
-//     * KonfigDialog geändert werden
-//     */
-//    private static String homeDirectory = null;
+    // /**
+    // * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
+    // * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
+    // * KonfigDialog geändert werden
+    // */
+    // private static String homeDirectory = null;
 
     /**
      * Das ist das File Objekt, daß das HomeDirectory darstellt
      */
-    private static File homeDirectoryFile = null;
-
+    // private static File homeDirectoryFile = null;
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
@@ -221,6 +218,7 @@ public class JDUtilities {
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+
     public static String getSimString(String a, String b) {
 
         String ret = "";
@@ -231,6 +229,7 @@ public class JDUtilities {
         }
         return ret;
     }
+
     /**
      * Fügt ein Bild zur Map hinzu
      * 
@@ -559,7 +558,7 @@ public class JDUtilities {
      * @return MegaByte Formatierter String
      */
     public static String formatBytesToMB(long downloadMax) {
-        if(downloadMax<0)return null;
+        if (downloadMax < 0) return null;
         DecimalFormat c = new DecimalFormat("0.00");
         return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
     }
@@ -849,19 +848,17 @@ public class JDUtilities {
     }
 
     public static UIInterface getGUI() {
-        if (JDUtilities.getController() == null) {
-            return null;
-        }
+        if (JDUtilities.getController() == null) { return null; }
         return JDUtilities.getController().getUiInterface();
     }
 
-//    /**
-//     * @author astaldo
-//     * @return homeDirectory
-//     */
-//    public static String getHomeDirectory() {
-//        return homeDirectory;
-//    }
+    // /**
+    // * @author astaldo
+    // * @return homeDirectory
+    // */
+    // public static String getHomeDirectory() {
+    // return homeDirectory;
+    // }
 
     /**
      * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
@@ -947,7 +944,7 @@ public class JDUtilities {
         }
         return images.get(imageName);
     }
-    
+
     public static ImageIcon getImageIcon(String imageName) {
         return new ImageIcon(imageName);
     }
@@ -966,7 +963,7 @@ public class JDUtilities {
         String site = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_CHECK_SITE, "http://checkip.dyndns.org");
         String patt = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PARAM_GLOBAL_IP_PATTERN, "Address\\: ([0-9.]*)\\<\\/body\\>");
 
-        try { 
+        try {
             logger.finer("IP Check via " + site);
             RequestInfo requestInfo = HTTP.getRequest(new URL(site), null, null, true);
             Pattern pattern = Pattern.compile(patt);
@@ -1404,7 +1401,7 @@ public class JDUtilities {
      * @return Plugins zum Laden von Containerdateien
      */
     public static Vector<PluginForContainer> getPluginsForContainer() {
-        if(pluginsForContainer==null)pluginsForContainer= new Vector<PluginForContainer> ();
+        if (pluginsForContainer == null) pluginsForContainer = new Vector<PluginForContainer>();
         return pluginsForContainer;
     }
 
@@ -1414,7 +1411,7 @@ public class JDUtilities {
      * @return Plugins zum Entschlüsseln
      */
     public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
-        if(pluginsForDecrypt==null) pluginsForDecrypt = new Vector<PluginForDecrypt>();
+        if (pluginsForDecrypt == null) pluginsForDecrypt = new Vector<PluginForDecrypt>();
         return pluginsForDecrypt;
     }
 
@@ -1453,7 +1450,7 @@ public class JDUtilities {
      * @return Alle optionalen Plugins
      */
     public static HashMap<String, PluginOptional> getPluginsOptional() {
-        if(pluginsOptional==null)pluginsOptional=new HashMap<String, PluginOptional>();
+        if (pluginsOptional == null) pluginsOptional = new HashMap<String, PluginOptional>();
         return pluginsOptional;
     }
 
@@ -1675,16 +1672,17 @@ public class JDUtilities {
         return cfg;
 
     }
+
     public static SubConfiguration getSubConfig(String name, boolean b) {
-        if(!b)return getSubConfig(name);
+        if (!b) return getSubConfig(name);
         if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
 
-        SubConfiguration cfg = new SubConfiguration(name,b);
+        SubConfiguration cfg = new SubConfiguration(name, b);
         subConfigs.put(name, cfg);
-        cfg.save(); 
+        cfg.save();
         return cfg;
     }
-    
+
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
      * 
@@ -1695,7 +1693,7 @@ public class JDUtilities {
     }
 
     // /**
-    // * Fügt einen PluginListener hinzu 
+    // * Fügt einen PluginListener hinzu
     // *
     // * @param listener
     // */
@@ -1946,7 +1944,10 @@ public class JDUtilities {
     }
 
     public static void saveConfig() {
-        //JDUtilities.saveObject(null, JDUtilities.getConfiguration(), JDUtilities.getJDHomeDirectoryFromEnvironment(), JDUtilities.CONFIG_PATH.split("\\.")[0], "." + JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
+        // JDUtilities.saveObject(null, JDUtilities.getConfiguration(),
+        // JDUtilities.getJDHomeDirectoryFromEnvironment(),
+        // JDUtilities.CONFIG_PATH.split("\\.")[0], "." +
+        // JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
         JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
     }
 
@@ -2116,14 +2117,13 @@ public class JDUtilities {
      * 
      * @param homeDirectory
      */
-//    public static void setHomeDirectory(String homeDirectory) {
-//        JDUtilities.homeDirectory = homeDirectory;
-//        homeDirectoryFile = new File(homeDirectory);
-//        if (!homeDirectoryFile.exists()) {
-//            homeDirectoryFile.mkdirs();
-//        }
-//    }
-
+    // public static void setHomeDirectory(String homeDirectory) {
+    // JDUtilities.homeDirectory = homeDirectory;
+    // homeDirectoryFile = new File(homeDirectory);
+    // if (!homeDirectoryFile.exists()) {
+    // homeDirectoryFile.mkdirs();
+    // }
+    // }
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
@@ -2210,16 +2210,12 @@ public class JDUtilities {
     }
 
     public static String validateFileandPathName(String name) {
-        if (name == null) {
-            return null;
-        }
+        if (name == null) { return null; }
         return name.replaceAll("([<|>|\\||\"|:|\\*|\\?|/|\\x00])+", "_");
     }
 
     public static String removeEndingPoints(String name) {
-        if (name == null) {
-            return null;
-        }
+        if (name == null) { return null; }
         return name.replaceAll("\\.*$", "");
     }
 
@@ -2236,33 +2232,36 @@ public class JDUtilities {
         }
     }
 
-//    /**
-//     * Schreibt das Home Verzeichnis in den Webstart Cache
-//     * 
-//     * @param newHomeDir
-//     *            Das neue JD-HOME
-//     */
-//    @SuppressWarnings("unchecked")
-//    public static void writeJDHomeDirectoryToWebStartCookie(String newHomeDir) {
-//        try {
-//            Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-//            Method method = webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie", new Class[] { String.class });
-//            String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
-//            JDUtilities.setHomeDirectory(homeDir);
-//        } catch (ClassNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (SecurityException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchMethodException e) {
-//            e.printStackTrace();
-//        } catch (IllegalArgumentException e) {
-//            e.printStackTrace();
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        } catch (InvocationTargetException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    // /**
+    // * Schreibt das Home Verzeichnis in den Webstart Cache
+    // *
+    // * @param newHomeDir
+    // * Das neue JD-HOME
+    // */
+    // @SuppressWarnings("unchecked")
+    // public static void writeJDHomeDirectoryToWebStartCookie(String
+    // newHomeDir) {
+    // try {
+    // Class webStartHelper = Class.forName("jd.JDWebStartHelper");
+    // Method method =
+    // webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie",
+    // new Class[] { String.class });
+    // String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
+    // JDUtilities.setHomeDirectory(homeDir);
+    // } catch (ClassNotFoundException e) {
+    // e.printStackTrace();
+    // } catch (SecurityException e) {
+    // e.printStackTrace();
+    // } catch (NoSuchMethodException e) {
+    // e.printStackTrace();
+    // } catch (IllegalArgumentException e) {
+    // e.printStackTrace();
+    // } catch (IllegalAccessException e) {
+    // e.printStackTrace();
+    // } catch (InvocationTargetException e) {
+    // e.printStackTrace();
+    // }
+    // }
 
     /**
      * Schreibt content in eine Lokale textdatei
@@ -2305,7 +2304,7 @@ public class JDUtilities {
 
             DOMSource source = new DOMSource(header);
 
-            transformer.transform(source, result); 
+            transformer.transform(source, result);
 
             String xmlString = result.getWriter().toString();
             return xmlString;
@@ -2314,12 +2313,12 @@ public class JDUtilities {
         }
         return null;
     }
+
     public static DatabaseConnector getDatabaseConnector() {
-        if(dbconnect==null) {
+        if (dbconnect == null) {
             dbconnect = new DatabaseConnector();
         }
         return dbconnect;
     }
-
 
 }

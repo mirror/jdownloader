@@ -17,9 +17,7 @@
 package jd.utils;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,7 +30,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.http.PostRequest;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -88,7 +85,7 @@ public class JDLocale {
         }
         if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
         logger.info("Key not found: " + key);
-        HashMap<String, String> dat = defaultData;
+        // HashMap<String, String> dat = defaultData;
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
         }
@@ -113,67 +110,68 @@ public class JDLocale {
         return JDLocale.getLocaleString(key, def);
     }
 
-    public static void main(String[] argv) {
-        logger = JDUtilities.getLogger();
-        File code = new File("G:/jdworkspace/JD/src");
-        final Vector<File> javas = new Vector<File>();
-        FileFilter ff = new FileFilter() {
-
-            public boolean accept(File pathname) {
-                if (pathname.isDirectory()) {
-                    pathname.listFiles(this);
-                }
-                if (pathname.getAbsolutePath().endsWith(".java")) {
-                    javas.add(pathname);
-                }
-
-                return true;
-            }
-        };
-        code.listFiles(ff);
-
-        StringBuffer sb = new StringBuffer();
-        HashMap<String, String> map = new HashMap<String, String>();
-
-        for (File java : javas) {
-            String c = JDUtilities.getLocalFile(java);
-            logger.info(java.getAbsolutePath());
-            ArrayList<ArrayList<String>> res = SimpleMatches.getAllSimpleMatches(c, "JDLocale.L(°,°)");
-            logger.info("Found " + res.size() + " entries");
-            for (ArrayList<String> entry : res) {
-                if (!map.containsKey(entry.get(0))) {
-                    String key = entry.get(0).trim();
-                    String value = entry.get(1).trim();
-                    if (key.contains(";")) {
-                        continue;
-                    }
-                    while (key.startsWith("\"")) {
-                        key = key.substring(1);
-                    }
-                    while (value.startsWith("\"")) {
-                        value = value.substring(1);
-                    }
-                    while (key.endsWith(")")) {
-                        key = key.substring(0, key.length() - 1);
-                    }
-                    while (key.endsWith("\"")) {
-                        key = key.substring(0, key.length() - 1);
-                    }
-
-                    while (value.endsWith("\"")) {
-                        value = value.substring(0, value.length() - 1);
-                    }
-                    value.replaceAll("\r\n", "\\r\\n");
-                    value.replaceAll("\n\r", "\\r\\n");
-                    value.replaceAll("//", "");
-                    map.put(key, value);
-
-                    sb.append("\r\n" + key + " = " + value);
-                }
-            }
-        }
-        logger.info(sb.toString());
-    }
+    // public static void main(String[] argv) {
+    // logger = JDUtilities.getLogger();
+    // File code = new File("G:/jdworkspace/JD/src");
+    // final Vector<File> javas = new Vector<File>();
+    // FileFilter ff = new FileFilter() {
+    //
+    // public boolean accept(File pathname) {
+    // if (pathname.isDirectory()) {
+    // pathname.listFiles(this);
+    // }
+    // if (pathname.getAbsolutePath().endsWith(".java")) {
+    // javas.add(pathname);
+    // }
+    //
+    // return true;
+    // }
+    // };
+    // code.listFiles(ff);
+    //
+    // StringBuffer sb = new StringBuffer();
+    // HashMap<String, String> map = new HashMap<String, String>();
+    //
+    // for (File java : javas) {
+    // String c = JDUtilities.getLocalFile(java);
+    // logger.info(java.getAbsolutePath());
+    // ArrayList<ArrayList<String>> res = SimpleMatches.getAllSimpleMatches(c,
+    // "JDLocale.L(°,°)");
+    // logger.info("Found " + res.size() + " entries");
+    // for (ArrayList<String> entry : res) {
+    // if (!map.containsKey(entry.get(0))) {
+    // String key = entry.get(0).trim();
+    // String value = entry.get(1).trim();
+    // if (key.contains(";")) {
+    // continue;
+    // }
+    // while (key.startsWith("\"")) {
+    // key = key.substring(1);
+    // }
+    // while (value.startsWith("\"")) {
+    // value = value.substring(1);
+    // }
+    // while (key.endsWith(")")) {
+    // key = key.substring(0, key.length() - 1);
+    // }
+    // while (key.endsWith("\"")) {
+    // key = key.substring(0, key.length() - 1);
+    // }
+    //
+    // while (value.endsWith("\"")) {
+    // value = value.substring(0, value.length() - 1);
+    // }
+    // value.replaceAll("\r\n", "\\r\\n");
+    // value.replaceAll("\n\r", "\\r\\n");
+    // value.replaceAll("//", "");
+    // map.put(key, value);
+    //
+    // sb.append("\r\n" + key + " = " + value);
+    // }
+    // }
+    // }
+    // logger.info(sb.toString());
+    // }
 
     private static HashMap<String, String> parseLanguageFile(File file) {
         HashMap<String, String> dat = new HashMap<String, String>();
