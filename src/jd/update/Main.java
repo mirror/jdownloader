@@ -154,7 +154,7 @@ public class Main {
         final StringBuffer log = new StringBuffer();
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        SubConfiguration guiConfig = SubConfiguration.getSubConfig("simpleGUI");
+        SubConfiguration guiConfig = SubConfiguration.getSubConfig("WEBUPDATE");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
         log.append("Webupdater 13.8.2008 21:42 started\r\n");

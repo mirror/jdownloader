@@ -36,6 +36,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
@@ -222,7 +223,11 @@ public class JDInit {
     }
 
     public void doWebupdate(final int oldCid, final boolean guiCall) {
-
+SubConfiguration cfg = JDUtilities.getSubConfig("WEBUPDATE",true);
+        
+cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
+           
+        
         new Thread() {
 
             public void run() {

@@ -306,7 +306,7 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
     @Override
     public void initPanel() {
         setPreferredSize(new Dimension(650, 350));
-        config = JDUtilities.getSubConfig("PACKAGEMANAGER");
+        config = JDUtilities.getSubConfig("PACKAGEMANAGER",true);
         packageData = new PackageManager().getPackageData();
 
         JDUtilities.sortHashVectorOn(packageData, "category");

@@ -207,6 +207,28 @@
 					 
 		        </jar>
 		
+		<manifest file="Manifest.MF">
+					<attribute name="Created-By" value="JD-Team" />
+					<attribute name="Main-Class" value="jd.update.Main" />
+			    </manifest>
+		        <jar jarfile="${dist}/JDInfoFileWriter.jar" manifest="Manifest.MF">
+		            <fileset dir="${cls}">
+		                <include name="jd/plugins/optional/JDInfoFileWriter*" />                
+		              </fileset>
+					 
+		        </jar>
+		
+		<manifest file="Manifest.MF">
+						<attribute name="Created-By" value="JD-Team" />
+						<attribute name="Main-Class" value="jd.update.Main" />
+				    </manifest>
+			        <jar jarfile="${dist}/JDFolderWatch.jar" manifest="Manifest.MF">
+			            <fileset dir="${cls}">
+			                <include name="jd/plugins/optional/JDFolderWatch*" />                
+			              </fileset>
+						 
+			        </jar>
+		
     </target>
 	<target name="jarContainer">
 		<!-- Container -->

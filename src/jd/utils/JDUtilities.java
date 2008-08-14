@@ -1695,7 +1695,7 @@ public class JDUtilities {
     }
 
     // /**
-    // * Fügt einen PluginListener hinzu
+    // * Fügt einen PluginListener hinzu 
     // *
     // * @param listener
     // */

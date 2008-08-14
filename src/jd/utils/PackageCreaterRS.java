@@ -82,7 +82,7 @@ public class PackageCreaterRS {
             zip.fillSize = 5 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");
@@ -117,7 +117,7 @@ public class PackageCreaterRS {
 
             try {
                 zip.zip();
-                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");

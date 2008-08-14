@@ -58,7 +58,7 @@ public class PackageManager extends Interaction implements Serializable {
     private SubConfiguration managerConfig;
 
     public PackageManager() {
-        managerConfig = JDUtilities.getSubConfig("PACKAGEMANAGER");
+        managerConfig = JDUtilities.getSubConfig("PACKAGEMANAGER",true);
 
     }
 
