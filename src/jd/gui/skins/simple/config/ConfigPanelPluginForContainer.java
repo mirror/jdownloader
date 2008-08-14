@@ -35,7 +35,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
-import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.plugins.PluginForContainer;
@@ -63,8 +62,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
             case 0:
                 return JDLocale.L("gui.config.plugin.container.column_host", "Host");
             case 1:
-                // return
-                // JDLocale.L("gui.config.plugin.container.column_id","ID");
                 return JDLocale.L("gui.config.plugin.container.column_version", "Version");
             case 2:
                 return JDLocale.L("gui.config.plugin.container.column_author", "Ersteller");
@@ -83,7 +80,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
             case 0:
                 return pluginsForContainer.elementAt(rowIndex).getPluginName();
             case 1:
-                // return pluginsForContainer.elementAt(rowIndex).getPluginID();
                 return pluginsForContainer.elementAt(rowIndex).getVersion();
             case 2:
                 return pluginsForContainer.elementAt(rowIndex).getCoder();
@@ -93,13 +89,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         }
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -169660462836773855L;
-    /**
-     * 
-     */
 
     private JButton btnEdit;
 
@@ -127,8 +117,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     private void editEntry() {
         PluginForContainer plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            
-            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.container.dialogname", "%s Configuration",plugin.getPluginName())));
+
+            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.container.dialogname", "%s Configuration", plugin.getPluginName())));
         }
     }
 
@@ -250,8 +240,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     /**
-     * Speichert alle Änderungen auf der Maske TODO: PluginsForDecrypt haben
-     * noch keinen properties laoder.
+     * Speichert alle Änderungen auf der Maske
      */
     @Override
     public void save() {

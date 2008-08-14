@@ -17,11 +17,9 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.ComponentOrientation;
-import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
@@ -47,9 +45,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
         public abstract boolean doAction();
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     public static int STATUS_ANSWER_1 = 1;
@@ -109,7 +104,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         super(frame);
         parentFrame = frame;
         setLayout(new GridBagLayout());
-this.setModal(false);
+        this.setModal(false);
         setBtn1(new JButton("UNSET"));
         setBtn2(new JButton("UNSET"));
         setBtn3(new JButton("UNSET"));
@@ -137,8 +132,7 @@ this.setModal(false);
         JDUtilities.addToGridBag(this, getBtn2(), 2, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 
         JDUtilities.addToGridBag(this, getBtn3(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-     
-       
+
         pack();
 
         // setLocation(JDUtilities.getCenterOfComponent(null, this));

@@ -69,83 +69,79 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
-            String host=JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
-            String port=new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
+            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
+            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PROXY_PORT, 8080)).toString();
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
             String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_HOST, host);
-            
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_PROXY, true);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PORT, port);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_USER, user);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PASS, pass);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_HOST, host);
 
-            System.setProperty( "http.proxySet", "true" );
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_PROXY, true);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PORT, port);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_USER, user);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PASS, pass);
+
+            System.setProperty("http.proxySet", "true");
             System.setProperty("http.proxyHost", host);
             System.setProperty("http.proxyPort", port);
-            logger.info("http-proxy: enabled "+user+":"+pass+"@"+host+":"+port);
-           
+            logger.info("http-proxy: enabled " + user + ":" + pass + "@" + host + ":" + port);
+
             System.setProperty("http.proxyUserName", user);
             System.setProperty("http.proxyPassword", pass);
 
         } else {
             System.setProperty("http.proxyHost", "");
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_PROXY, false);
-       
-          
-            System.setProperty( "http.proxySet", "false" );
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_PROXY, false);
+
+            System.setProperty("http.proxySet", "false");
             logger.info("http-proxy: disabled");
-           
+
         }
     }
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
-            
+
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
             String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-            String host=JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
-            String port=new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString();
-            
+            String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.SOCKS_HOST, "");
+            String port = new Integer(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.SOCKS_PORT, 1080)).toString();
+
             System.setProperty("socksProxySet", "true");
-            System.setProperty("socksProxyHost",host );
-            System.setProperty("socksProxyPort", port); 
+            System.setProperty("socksProxyHost", host);
+            System.setProperty("socksProxyPort", port);
             System.setProperty("socksProxyUserName", user);
             System.setProperty("socksProxyPassword", pass);
             System.setProperty("socks.useProxy", "true");
-            System.setProperty("socks.proxyHost",host);
+            System.setProperty("socks.proxyHost", host);
             System.setProperty("socks.proxyPort", port);
             System.setProperty("socks.proxyUserName", user);
             System.setProperty("socks.proxyPassword", pass);
-            
+
             logger.info("socks-proxy: enabled");
-            
-  JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.SOCKS_HOST, host);
-            
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_SOCKS, true);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.SOCKS_PORT, port);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_USER_SOCKS, user);
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.PROXY_PASS_SOCKS, pass);
-         
-           
-            
-            
+
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.SOCKS_HOST, host);
+
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_SOCKS, true);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.SOCKS_PORT, port);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_USER_SOCKS, user);
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.PROXY_PASS_SOCKS, pass);
+
         } else {
             System.setProperty("socksProxySet", "false");
             System.setProperty("socks.useProxy", "false");
-            System.setProperty("socks.proxyHost","");
+            System.setProperty("socks.proxyHost", "");
             System.setProperty("socksProxyHost", "");
-               
-            JDUtilities.getSubConfig("WEBUPDATE",true).setProperty(Configuration.USE_SOCKS, false);
-  
+
+            JDUtilities.getSubConfig("WEBUPDATE", true).setProperty(Configuration.USE_SOCKS, false);
+
             logger.info("socks-proxy: disabled");
         }
     }
@@ -205,8 +201,6 @@ public class JDInit {
         JDUtilities.saveConfig();
     }
 
-
-
     protected void createQueueBackup() {
         Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
         Iterator<DownloadLink> it = links.iterator();
@@ -258,7 +252,7 @@ public class JDInit {
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
                 // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
@@ -313,7 +307,7 @@ public class JDInit {
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI()!=null?((SimpleGUI) JDUtilities.getGUI()).getFrame():null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + jdus.length) + " update(s) available. Start Webupdater now?" + "</font>");
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
@@ -323,7 +317,6 @@ public class JDInit {
                                     try {
                                         JLinkButton.openURL(JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"));
                                     } catch (MalformedURLException e) {
-                                        // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
 
@@ -436,7 +429,7 @@ public class JDInit {
     }
 
     public Configuration loadConfiguration() {
-        boolean allOK = true;
+        // boolean allOK = true;
 
         Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
 
@@ -450,8 +443,7 @@ public class JDInit {
             }
         }
 
-     
-        if (obj != null&&((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)!=null) {
+        if (obj != null && ((Configuration) obj).getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) != null) {
 
             Configuration configuration = (Configuration) obj;
             JDUtilities.setConfiguration(configuration);
@@ -479,37 +471,31 @@ public class JDInit {
             if (!inst.isAborted()) {
 
                 File home = JDUtilities.getResourceFile(".");
-                if (home.canWrite()&&!JDUtilities.getResourceFile("noupdate.txt").exists()) {
-              
-                  
+                if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
 
                     JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
 
-                 
-
                     Browser.download(new File(home, "webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-
-                  
 
                     JDUtilities.saveConfig();
                     logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                     System.exit(0);
 
                 }
-                if(!home.canWrite()){
-                logger.info("INSTALL abgebrochen");
-                JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to "+home));
-                JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
-                System.exit(1);
+                if (!home.canWrite()) {
+                    logger.info("INSTALL abgebrochen");
+                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to " + home));
+                    JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                    System.exit(1);
                 }
-        
+
             } else {
                 logger.info("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
-                
+
                 JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                 System.exit(0);
-               
+
             }
         }
         // try {

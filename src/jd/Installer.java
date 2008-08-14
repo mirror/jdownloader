@@ -17,28 +17,14 @@ package jd;
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.io.File;
 import java.util.Locale;
 
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.utils.JDLocale;
@@ -53,105 +39,101 @@ import jd.utils.JDUtilities;
  */
 public class Installer {
 
-    /**
-     * 8764525546298642601L
-     */
     private static final long serialVersionUID = 8764525546298642601L;
 
     // private Logger logger = JDUtilities.getLogger();
 
     private boolean aborted = false;
 
-
-
-
-
-    /**
-     * 
-     */
     public Installer() {
 
         super();
         ConfigEntry ce;
         ConfigContainer configContainer;
-        
+
         configContainer = new ConfigContainer(this, "Language");
         ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault());
         configContainer.addEntry(ce);
         showPanel(configContainer);
-        String lang=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE);
-        if(lang==null){
+        String lang = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE);
+        if (lang == null) {
             JDUtilities.getLogger().severe("language not set");
-            this.aborted=true;
+            this.aborted = true;
             return;
         }
         JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "english"));
-        
-        
+
         configContainer = new ConfigContainer(this, "Download");
-         
-         ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-        configContainer.addEntry(ce);  
-        
-        
-        ce=new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("WEBUPDATE"), "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.betainstaller", "Use JDownloader BETA")).setDefaultValue(false);
-         configContainer.addEntry(ce);  
-        
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        configContainer.addEntry(ce);
+
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getSubConfig("WEBUPDATE"), "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.betainstaller", "Use JDownloader BETA")).setDefaultValue(false);
+        configContainer.addEntry(ce);
+
         showPanel(configContainer);
-        if(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY)==null){
-            this.aborted=true;
-            
+        if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
+            this.aborted = true;
+
             JDUtilities.getLogger().severe("downloaddir not set");
             return;
         }
- 
-//        
-//        File downloadPath = JDUtilities.getJDHomeDirectoryFromEnvironment();
-//        File installPath = downloadPath;
-//        setModal(true);
-//        setLayout(new BorderLayout());
-//
-//        setTitle(JDLocale.L("installer.title", "JDownloader Installation"));
-//        setAlwaysOnTop(true);
-//
-//        setLocation(20, 20);
-//        panel = new JPanel(new GridBagLayout());
-//
-//        homeDir = new BrowseFile();
-//        homeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//        homeDir.setEditable(true);
-//        homeDir.setText(installPath.getAbsolutePath());
-//
-//        downloadDir = new BrowseFile();
-//        downloadDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//        downloadDir.setEditable(true);
-//        downloadDir.setText(downloadPath.getAbsolutePath());
-//        addWindowListener(this);
-//        // JDUtilities.addToGridBag(panel, new
-//        // JLabel(JDLocale.L("installer.installDir","Install Directory")),
-//        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-//        // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
-//        // GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        // JDUtilities.addToGridBag(panel, homeDir, GridBagConstraints.RELATIVE,
-//        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0,
-//        // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("installer.downloadDir", "Downloaddirectory")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        JDUtilities.addToGridBag(panel, downloadDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-//        btnOK = new JButton(JDLocale.L("gui.btn_continue", "Continue..."));
-//        btnOK.addActionListener(this);
-//        JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        this.add(panel, BorderLayout.CENTER);
-//        pack();
-//
-//        setVisible(true);
+
+        //        
+        // File downloadPath = JDUtilities.getJDHomeDirectoryFromEnvironment();
+        // File installPath = downloadPath;
+        // setModal(true);
+        // setLayout(new BorderLayout());
+        //
+        // setTitle(JDLocale.L("installer.title", "JDownloader Installation"));
+        // setAlwaysOnTop(true);
+        //
+        // setLocation(20, 20);
+        // panel = new JPanel(new GridBagLayout());
+        //
+        // homeDir = new BrowseFile();
+        // homeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        // homeDir.setEditable(true);
+        // homeDir.setText(installPath.getAbsolutePath());
+        //
+        // downloadDir = new BrowseFile();
+        // downloadDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        // downloadDir.setEditable(true);
+        // downloadDir.setText(downloadPath.getAbsolutePath());
+        // addWindowListener(this);
+        // // JDUtilities.addToGridBag(panel, new
+        // // JLabel(JDLocale.L("installer.installDir","Install Directory")),
+        // // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
+        // // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // // JDUtilities.addToGridBag(panel, homeDir,
+        // GridBagConstraints.RELATIVE,
+        // // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1,
+        // 0,
+        // // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, new
+        // JLabel(JDLocale.L("installer.downloadDir", "Downloaddirectory")),
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // JDUtilities.addToGridBag(panel, downloadDir,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.REMAINDER, 1, 1, 0, insets,
+        // GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
+        // btnOK = new JButton(JDLocale.L("gui.btn_continue", "Continue..."));
+        // btnOK.addActionListener(this);
+        // JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // this.add(panel, BorderLayout.CENTER);
+        // pack();
+        //
+        // setVisible(true);
     }
 
     private void showPanel(ConfigContainer configContainer) {
-ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
-        
-        
-        
-        
+        ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
+
         JPanel panel = new JPanel(new BorderLayout());
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
@@ -160,20 +142,12 @@ ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer, "Select wher
         pop.setModal(true);
         pop.setAlwaysOnTop(true);
         pop.setLocation(JDUtilities.getCenterOfComponent(null, pop));
-        pop.setVisible(true);      
-      
-        
+        pop.setVisible(true);
+
     }
-
-  
-
-
 
     public boolean isAborted() {
         return aborted;
     }
-
- 
-  
 
 }

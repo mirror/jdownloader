@@ -29,7 +29,6 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -88,19 +87,23 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
         btnCancel = new JButton(JDLocale.L("gui.config.popup.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
-//        Insets insets = new Insets(5, 5, 5, 5);
-//
-//        JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.FIRST_LINE_START);
-//        JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-//        JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-//        setLocation(JDUtilities.getCenterOfComponent(parent, this));
-        
+        // Insets insets = new Insets(5, 5, 5, 5);
+        //
+        // JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1,
+        // 1, 1, null, GridBagConstraints.BOTH,
+        // GridBagConstraints.FIRST_LINE_START);
+        // JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        // JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets,
+        // GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
+        // setLocation(JDUtilities.getCenterOfComponent(parent, this));
+
         Container cpanel = new JPanel(new BorderLayout());
         Container bpanel = new JPanel(new MigLayout("", "[grow][]"));
-//        bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
+        // bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
         bpanel.add(btnSave, "w pref!, align right, tag ok right");
         bpanel.add(btnCancel, "w pref!, tag cancel, wrap");
-        
+
         cpanel.add(jpanel);
         cpanel.add(bpanel, BorderLayout.SOUTH);
         Dimension minSize = panel.getMinimumSize();

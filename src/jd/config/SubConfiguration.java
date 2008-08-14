@@ -27,13 +27,13 @@ public class SubConfiguration extends Property implements Serializable {
     private static final long serialVersionUID = 7803718581558607222L;
     private String name;
 
-    @SuppressWarnings("unchecked")
     public SubConfiguration(String name) {
-        this(name,false);
+        this(name, false);
     }
 
+    @SuppressWarnings("unchecked")
     public SubConfiguration(String name, boolean b) {
-        if(b){
+        if (b) {
             this.name = name;
             File file;
             Object props = JDUtilities.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
@@ -41,14 +41,13 @@ public class SubConfiguration extends Property implements Serializable {
             if (props != null) {
                 setProperties((HashMap<String, Object>) props);
             }
-        }else{
+        } else {
             this.name = name;
             Object props = JDUtilities.getDatabaseConnector().getData(name);
             if (props != null) {
                 this.setProperties((HashMap<String, Object>) props);
-            } 
+            }
         }
-        // TODO Auto-generated constructor stub
     }
 
     public void save() {

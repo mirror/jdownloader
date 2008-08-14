@@ -17,17 +17,12 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
 import java.util.logging.Level;
-
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.components.BrowseFile;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -36,9 +31,10 @@ public class ConfigPanelGeneral extends ConfigPanel {
      * serialVersionUID
      */
     private static final long serialVersionUID = 3383448498625377495L;
-    private BrowseFile brsHomeDir;
+    // private BrowseFile brsHomeDir;
     private Configuration configuration;
-    private JLabel lblHomeDir;
+
+    // private JLabel lblHomeDir;
 
     public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -75,13 +71,17 @@ public class ConfigPanelGeneral extends ConfigPanel {
         // }
         // addGUIConfigEntry(ce);
 
-//        if (JDUtilities.getHomeDirectory() != null) {
-//            brsHomeDir = new BrowseFile();
-//            brsHomeDir.setText(JDUtilities.getHomeDirectory());
-//            brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//            JDUtilities.addToGridBag(panel, lblHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
-//            JDUtilities.addToGridBag(panel, brsHomeDir, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-//        }
+        // if (JDUtilities.getHomeDirectory() != null) {
+        // brsHomeDir = new BrowseFile();
+        // brsHomeDir.setText(JDUtilities.getHomeDirectory());
+        // brsHomeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        // JDUtilities.addToGridBag(panel, lblHomeDir,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 1, 1,
+        // insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
+        // JDUtilities.addToGridBag(panel, brsHomeDir,
+        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1,
+        // 1, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        // }
         add(panel, BorderLayout.NORTH);
     }
 
@@ -95,9 +95,12 @@ public class ConfigPanelGeneral extends ConfigPanel {
         saveConfigEntries();
 
         JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL));
-//        if (JDUtilities.getHomeDirectory() != null && !JDUtilities.getHomeDirectory().equalsIgnoreCase(brsHomeDir.getText().trim())) {
-//            JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().trim());
-//
-//        }
+        // if (JDUtilities.getHomeDirectory() != null &&
+        // !JDUtilities.getHomeDirectory
+        // ().equalsIgnoreCase(brsHomeDir.getText().trim())) {
+        //JDUtilities.writeJDHomeDirectoryToWebStartCookie(brsHomeDir.getText().
+        // trim());
+        //
+        // }
     }
 }

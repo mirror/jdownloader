@@ -102,7 +102,6 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
-import jd.gui.skins.simple.components.JHelpDialog.Action;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
@@ -1616,7 +1615,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionWiki = new JDAction(this, null, "action.wiki", JDAction.WIKI);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
         actionChanges = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.changes", JDAction.CHANGES);
-        
+
     }
 
     /**
@@ -2120,19 +2119,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void showAccountInformation(final PluginForHost pluginForHost, final Account account) {
         new Thread() {
             public void run() {
-                AccountInfo ai ;
-                try{
-                 ai = pluginForHost.getAccountInformation(account);
-                }catch(Exception e){
-                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror","Plugin %s my be defect. Inform support!",pluginForHost.getPluginID()));
-                     return;
+                AccountInfo ai;
+                try {
+                    ai = pluginForHost.getAccountInformation(account);
+                } catch (Exception e) {
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s my be defect. Inform support!", pluginForHost.getPluginID()));
+                    return;
                 }
                 if (ai == null) {
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return;
                 }
                 if (!ai.isValid()) {
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for \"%s\" isn't valid! Please check username and password!\r\n%s", account.getUser(),ai.getStatus()!=null?ai.getStatus():""));
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for \"%s\" isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
@@ -2157,7 +2156,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }.start();
     }
-    public static void showChangelogDialog(){
+
+    public static void showChangelogDialog() {
         String update = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
         String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getFirstMatch();
         String version = new Regex(update, "<p>version(.*?)<").getFirstMatch().trim();
@@ -2205,24 +2205,21 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         d.getBtn2().setVisible(false);
         d.getBtn3().setVisible(false);
         d.getBtn1().setText(JDLocale.L("system.update.showchangelog", "Show all changes"));
-       
-        
+
         d.action1 = d.new Action() {
             public boolean doAction() {
 
-               
-               try {
-                JLinkButton.openURL(JDLocale.L("system.update.changelogurl","http://jdownloader.org/changes?toolmode=1"));
-            } catch (MalformedURLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            d.dispose();
-            return true;
+                try {
+                    JLinkButton.openURL(JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"));
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+                d.dispose();
+                return true;
             }
         };
 
-        d.showDialog();    
-    
+        d.showDialog();
+
     }
 }
