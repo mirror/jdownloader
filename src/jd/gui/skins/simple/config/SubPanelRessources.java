@@ -22,13 +22,10 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EventObject;
-import java.util.HashMap;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -53,35 +50,19 @@ import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
- * 
  */
-public class SubPanelRessources extends ConfigPanel implements MouseListener, ActionListener {
-
-    private class InternalTable extends JTable {
-
-        /**
-         * 
-         */
-        private static final long serialVersionUID = 1L;
-
-    }
+public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1L;
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-
             return getValueAt(0, columnIndex).getClass();
-
         }
 
         public int getColumnCount() {
-
             return 6;
         }
 
@@ -100,7 +81,6 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
                 return JDLocale.L("gui.config.packagemanager.column_installedVersion", "Inst. Version");
             case 5:
                 return JDLocale.L("gui.config.packagemanager.column_select", "Auswählen");
-
             }
             return super.getColumnName(column);
         }
@@ -123,84 +103,61 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
                 return element.getStringProperty("version");
             case 4:
                 return element.getInstalledVersion();
-
             case 5:
                 return element.isSelected();
-
             }
             return null;
         }
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-
             return true;
         }
 
-        /*
-         * Don't need to implement this method unless your table's data can
-         * change.
-         */
         @Override
         public void setValueAt(Object value, int row, int col) {
-
             PackageData element = packageData.get(row);
-            boolean v = !element.isSelected();
-
-            element.setSelected(v);
-
+            element.setSelected(!element.isSelected());
         }
     }
 
     private class JLinkButtonEditor implements TableCellEditor, ActionListener {
 
-        private JLinkButton btn;
-
         private boolean stop = false;
 
         public void actionPerformed(ActionEvent e) {
-
             stop = true;
             table.tableChanged(new TableModelEvent(table.getModel()));
-
         }
 
         public void addCellEditorListener(CellEditorListener l) {
-
         }
 
         public void cancelCellEditing() {
-
         }
 
         public Object getCellEditorValue() {
-
             return null;
         }
 
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-
-            btn = (JLinkButton) value;
+            JLinkButton btn = (JLinkButton) value;
             btn.addActionListener(this);
-            return (JLinkButton) value;
+            return btn;
         }
 
         public boolean isCellEditable(EventObject anEvent) {
-
             return true;
         }
 
         public void removeCellEditorListener(CellEditorListener l) {
-
         }
 
         public boolean shouldSelectCell(EventObject anEvent) {
-
             return false;
         }
 
         public boolean stopCellEditing() {
-
             return stop;
         }
 
@@ -213,20 +170,13 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
 
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 
-     */
 
     // private Configuration configuration;
     // private SubConfiguration config;
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
-    private InternalTable table;
+    private JTable table;
 
     public SubPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -234,14 +184,10 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         initPanel();
 
         load();
-
     }
-
-    // //Nested Classes
 
     public void actionPerformed(ActionEvent e) {
         for (int i = 0; i < packageData.size(); i++) {
-
             packageData.get(i).setInstalledVersion(-1);
             packageData.get(i).setUpdating(false);
         }
@@ -251,7 +197,6 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
 
     @Override
     public String getName() {
-
         return JDLocale.L("gui.config.packagemanager.name", "Paketmanager");
     }
 
@@ -270,39 +215,14 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
 
             }
         });
-        ConfigEntry ce;
-        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
-        // "PACKAGEMANAGER_AUTOUPDATE",
-        // JDLocale.L("gui.config.packagemanager.doautoupdate", "Ausgewählte
-        // Pakete automatisch aktuell halten"));
-        // ce.setDefaultValue(true);
-        // addGUIConfigEntry(new GUIConfigEntry(ce));
-        // ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config,
-        // "PACKAGEMANAGER_EXTRACT_AFTERDOWNLOAD",
-        // JDLocale.L("gui.config.packagemanager.doautoupdateafterdownloads",
-        // "Geladene Pakete sofort nach dem Download installieren (sonst nach
-        // dem Beenden)"));
-        // ce.setDefaultValue(false);
-        // addGUIConfigEntry(new GUIConfigEntry(ce));
-        ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
-        // addGUIConfigEntry(new GUIConfigEntry(ce));
-        table = new InternalTable();
+
+        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
+        table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
-        // table.setDragEnabled(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        // table.setDropMode(DropMode.INSERT_ROWS);
 
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
-        // this.setPreferredSize(new Dimension(650, 350));
-        // table.getColumn(table.getColumnName(0)).setCellRenderer(new
-        // MarkRenderer());
-        // table.getColumn(table.getColumnName(1)).setCellRenderer(new
-        // MarkRenderer());
-        // table.getColumn(table.getColumnName(2)).setCellRenderer(new
-        // MarkRenderer());
-        // table.getColumn(table.getColumnName(3)).setCellRenderer(new
-        // MarkRenderer());
         table.getColumn(table.getColumnName(2)).setCellRenderer(new JLinkButtonRenderer());
         table.getColumn(table.getColumnName(2)).setCellEditor(new JLinkButtonEditor());
 
@@ -322,26 +242,21 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
                 break;
             case 3:
                 column.setPreferredWidth(30);
-
                 break;
             case 4:
                 column.setPreferredWidth(30);
-
                 break;
             case 5:
                 column.setPreferredWidth(60);
                 column.setMaxWidth(60);
                 column.setMinWidth(60);
-
                 break;
-
             }
 
         }
 
         // add(scrollPane);
         // list = new JList();
-        table.addMouseListener(this);
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
@@ -349,35 +264,9 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         add(panel, BorderLayout.CENTER);
     }
 
-    public boolean isSelectedByUser(HashMap<String, String> elementAt) {
-
-        return false;
-    }
-
     @Override
     public void load() {
         loadConfigEntries();
-
-    }
-
-    public void mouseClicked(MouseEvent e) {
-
-    }
-
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    public void mouseExited(MouseEvent e) {
-
-    }
-
-    public void mousePressed(MouseEvent e) {
-
-    }
-
-    public void mouseReleased(MouseEvent e) {
-
     }
 
     @Override
@@ -385,7 +274,6 @@ public class SubPanelRessources extends ConfigPanel implements MouseListener, Ac
         // logger.info("save");
         saveConfigEntries();
         CFGConfig.getConfig("JDU").save();
-
     }
 
     // private class InternalTableCellRenderer extends DefaultTableCellRenderer

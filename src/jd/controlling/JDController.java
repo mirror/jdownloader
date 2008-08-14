@@ -1401,14 +1401,11 @@ public class JDController implements ControlListener, UIListener {
                     it = fp.getDownloadLinks().iterator();
                     while (it.hasNext()) {
                         localLink = it.next();
-                        if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU &&(localLink.getProperty("JDU")==null ||!(localLink.getProperty("JDU") instanceof PackageData))) {
+                        if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
                             iterator.remove();
                             continue;
                         }
-                          
-                        
-                        
-                        
+
                         if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             localLink.getLinkStatus().reset();
                         }

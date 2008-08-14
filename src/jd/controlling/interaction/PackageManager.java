@@ -28,7 +28,6 @@ import jd.JDInit;
 import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.controlling.DistributeData;
-import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
