@@ -186,7 +186,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // roter Kreis - we are roally f#$%cked!
             ImageIcon statusIcon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.jd_logo"), 16, -1);
 
-            lblMessage = new JLabel(JDLocale.L("sys.message.welcome"));
+            lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
@@ -371,7 +371,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void setText(String text) {
-            lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome") : text);
+            lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome", "Welcome to JDownloader") : text);
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -1590,8 +1590,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Das Menü wird hier initialisiert
      */
     public void initMenuBar() {
-        JMenu menFile = new JMenu(JDLocale.L("gui.menu.file"));
-        JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra"));
+        JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
+        JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
         JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
@@ -2088,7 +2088,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 try {
                     ai = pluginForHost.getAccountInformation(account);
                 } catch (Exception e) {
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s my be defect. Inform support!", pluginForHost.getPluginID()));
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return;
                 }
                 if (ai == null) {

@@ -31,14 +31,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 class mergeFile extends File {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
 
     public mergeFile(String pathname) {
         super(pathname);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -72,7 +69,7 @@ public class Unrar extends Interaction implements Serializable {
      * serialVersionUID
      */
 
-    private transient static final String NAME = JDLocale.L("interaction.unrar.name");
+    private transient static final String NAME = JDLocale.L("interaction.unrar.name", "Extractor");
 
     public transient static final String PROPERTY_UNRARCOMMAND = "UNRAR_PROPERTY_UNRARCMD", PROPERTY_AUTODELETE = "UNRAR_PROPERTY_AUTODELETE", PROPERTY_OVERWRITE_FILES = "UNRAR_PROPERTY_OVERWRITE_FILES", PROPERTY_ENABLED = "UNRAR_PROPERTY_ENABLED", PROPERTY_WAIT_FOR_TERMINATION = "UNRAR_WAIT_FOR_TERMINATION", PROPERTY_ENABLE_EXTRACTFOLDER = "UNRAR_PROPERTY_ENABLE_EXTRACTFOLDER", PROPERTY_EXTRACTFOLDER = "UNRAR_PROPERTY_EXTRACTFOLDER", PROPERTY_DELETE_INFOFILE = "PROPERTY_DELETE_INFOFILE", PROPERTY_USE_HJMERGE = "PROPERTY_USE_HJMERGE", PROPERTY_DELETE_MERGEDFILES = "PROPERTY_DELETE_MERGEDFILES";
 
@@ -256,6 +253,6 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return JDLocale.L("interaction.unrar.name");
+        return JDLocale.L("interaction.unrar.name", "Extractor");
     }
 }

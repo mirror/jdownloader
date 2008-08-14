@@ -80,9 +80,7 @@ public class JDLocale {
 
         }
 
-        if (def == null) {
-            def = key;
-        }
+        if (def == null) def = key;
         if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
         logger.info("Key not found: " + key);
         // HashMap<String, String> dat = defaultData;
@@ -102,9 +100,9 @@ public class JDLocale {
         return System.getProperty("user.country") != null && System.getProperty("user.country").equalsIgnoreCase("DE");
     }
 
-    public static String L(String key) {
-        return JDLocale.getLocaleString(key, null);
-    }
+    // public static String L(String key) {
+    // return JDLocale.getLocaleString(key, null);
+    // }
 
     public static String L(String key, String def) {
         return JDLocale.getLocaleString(key, def);

@@ -77,7 +77,7 @@ public class LangFileEditor extends PluginOptional {
     private void showGui() {
 
         frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor"));
         frame.setMinimumSize(new Dimension(800, 500));
         frame.setPreferredSize(new Dimension(1200, 700));
@@ -105,6 +105,7 @@ public class LangFileEditor extends PluginOptional {
         top1.add(btnBrowseFolder = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
         txtFolder.setEditable(false);
         btnBrowseFolder.addActionListener(this);
+        frame.getRootPane().setDefaultButton(btnBrowseFolder);
 
         top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
         top2.add(txtFile = new JTextField(JDLocale.L("plugins.optional.langfileeditor.languageFile.select", "<Please select a Language File!>")), BorderLayout.CENTER);
@@ -249,6 +250,8 @@ public class LangFileEditor extends PluginOptional {
                 sourceFolder = chooser.getSelectedFile();
                 txtFolder.setText(sourceFolder.getAbsolutePath());
                 initList();
+
+                frame.getRootPane().setDefaultButton(btnBrowseFile);
             }
 
         } else if (e.getSource() == btnBrowseFile || e.getSource() == mnuBrowseFile) {
@@ -260,6 +263,8 @@ public class LangFileEditor extends PluginOptional {
                 languageFile = chooser.getSelectedFile();
                 txtFile.setText(languageFile.getAbsolutePath());
                 initList();
+
+                frame.getRootPane().setDefaultButton(btnBrowseFolder);
             }
 
         } else if (e.getSource() == mnuSave) {
@@ -316,7 +321,8 @@ public class LangFileEditor extends PluginOptional {
 
                 if (data.get(i)[2].equals("")) {
                     String def = data.get(i)[1];
-                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+//                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+                    if (!def.equals("")) tableModel.setValueAt(def, i, 2);
                 }
 
             }
@@ -329,7 +335,8 @@ public class LangFileEditor extends PluginOptional {
 
             for (int i : table.getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
-                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+//                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+                if (!def.equals("")) tableModel.setValueAt(def, i, 2);
             }
 
         } else if (e.getSource() == mnuClear) {
@@ -374,7 +381,8 @@ public class LangFileEditor extends PluginOptional {
 
                     String def = data.get(i)[1];
 
-                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+//                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+                    if (!def.equals("")) {
                         logger.finer("Working on " + data.get(i)[0] + ":");
                         String result = JDLocale.translate(lngKey, def);
                         logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
@@ -401,7 +409,8 @@ public class LangFileEditor extends PluginOptional {
 
                 String def = tableModel.getValueAt(i, 1);
 
-                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+//                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+                if (!def.equals("")) {
                     logger.finer("Working on " + data.get(i)[0] + ":");
                     String result = JDLocale.translate(lngKey, def);
                     logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
@@ -561,50 +570,24 @@ public class LangFileEditor extends PluginOptional {
 
         for (String file : fileContents) {
 
-            String pattern1 = "JDLocale\\.L" + "[\\n\\s]*?\\([\\n\\s]*?" + "\"\\s*?(.*?)\\s*?\"" + "[\\n\\s]*?(,[\\n\\s]*?" + "\"\\s*?(.*?)\\s*?\"" + "[\\n\\s]*?)*\\)";
-            String pattern2 = "JDLocale\\.LF" + "[\\n\\s]*?\\([\\n\\s]*?" + "\"\\s*?(.*?)\\s*?\"" + "[\\n\\s]*?,[\\n\\s]*?" + "\"\\s*?(.*?)\\s*?\"" + "[\\n\\s]*?,";
+            String pattern1 = "JDLocale\\.L\\(\"(.*?)\",[\\s]?\"(.*?)\"\\)";
+            String pattern2 = "JDLocale\\.LF\\(\"(.*?)\",[\\s]?\"(.*?)\",";
+            String[][] matches = new Regex(Pattern.compile(pattern1 + "|" + pattern2).matcher(file)).getMatches();
 
-            String[][] matches1 = new Regex(Pattern.compile(pattern1).matcher(file)).getMatches();
-            String[][] matches2 = new Regex(Pattern.compile(pattern2).matcher(file)).getMatches();
+            int key;
+            for (String[] match : matches) {
 
-            for (String[] match : matches1) {
+                key = (match[0] != null) ? 0 : 2;
+                if (!keys.contains(match[key].trim())) {
 
-                if (!keys.contains(match[0].trim())) {
-
-                    keys.add(Encoding.UTF8Decode(match[0].trim()));
-                    String k = match[0].trim();
-                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
-
-                    try {
-                        v = match[2].trim();
-                    } catch (Exception e) {
-                    }
-
-                    entries.add(new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) });
+                    keys.add(Encoding.UTF8Decode(match[key].trim()));
+//                    String k = match[key].trim();
+//                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
+//                    v = match[key + 1].trim();
+                    entries.add(new String[] { Encoding.UTF8Decode(match[key].trim()), Encoding.UTF8Decode(match[key + 1].trim()) });
 
                 }
-
             }
-
-            for (String[] match : matches2) {
-
-                if (!keys.contains(match[0].trim())) {
-
-                    keys.add(Encoding.UTF8Decode(match[0].trim()));
-                    String k = match[0].trim();
-                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
-
-                    try {
-                        v = match[1].trim();
-                    } catch (Exception e) {
-                    }
-
-                    entries.add(new String[] { Encoding.UTF8Decode(k), Encoding.UTF8Decode(v) });
-
-                }
-
-            }
-
         }
 
         return entries;

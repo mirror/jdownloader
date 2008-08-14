@@ -56,12 +56,12 @@ public class TabProgress extends JPanel implements ActionListener {
         /**
          * Bezeichnung der Spalte für die Fortschrittsanzeige
          */
-        private String labelColumnProgress = JDLocale.L("gui.tab.plugin_activity.column_progress");
+        private String labelColumnProgress = JDLocale.L("gui.tab.plugin_activity.column_progress", "Progress");
 
         /**
          * Bezeichnung der Spalte für den Pluginnamen
          */
-        private String labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin");
+        private String labelColumnStatusText = JDLocale.L("gui.tab.plugin_activity.column_plugin", "Module");
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {

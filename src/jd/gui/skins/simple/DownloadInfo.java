@@ -161,7 +161,6 @@ public class DownloadInfo extends JFrame {
         if (downloadLink.getDownloadSize() > 0) {
             addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
         }
-        // JDLocale.L("linkinformation.", "")
         if (downloadLink.isAborted()) {
             addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
         }

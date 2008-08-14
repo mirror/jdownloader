@@ -17,22 +17,18 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class CineTo extends PluginForDecrypt {
     final static String host = "cine.to";
-    private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine.to/index.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
     public CineTo() {
@@ -40,39 +36,28 @@ public class CineTo extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(String parameter) {
-        String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        RequestInfo reqinfo;
-        try {
-            if (cryptedLink.matches(patternLink_Show.pattern())) {
-                reqinfo = HTTP.getRequest(new URL(cryptedLink));
-                String[] mirrors = reqinfo.getRegexp("href=\"index.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"").getMatches(1);
-                for (String element : mirrors) {
-                    decryptedLinks.add(createDownloadlink("http://cine.to/index.php?do=protect&id=" + element));
-                }
-            } else if (cryptedLink.matches(patternLink_Protected.pattern())) {
-                reqinfo = HTTP.getRequest(new URL(cryptedLink));
-                logger.info(reqinfo.getLocation());
-                String[][] captcha = reqinfo.getRegexp("span class=\"(.*?)\"").getMatches();
-                String capText = "";
-                if (captcha.length == 80) {
-                    for (int j = 1; j < 5; j++) {
-                        capText = capText + extractCaptcha(captcha, j);
-                    }
-                }
-                reqinfo = HTTP.postRequest(new URL(cryptedLink), reqinfo.getCookie(), parameter, null, "captcha=" + capText + "&submit=Senden", true);
-                String[][] links = reqinfo.getRegexp("window.open\\(\'(.*?)\'").getMatches();
-                progress.setRange(links.length);
-                for (String[] element : links) {
-                    DownloadLink link = createDownloadlink(element[0]);
-                    link.addSourcePluginPassword("cine.to");
-                    decryptedLinks.add(link);
-                    progress.increase(1);
+        if (parameter.matches(patternLink_Show.pattern())) {
+            String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            for (String element : mirrors) {
+                decryptedLinks.add(createDownloadlink("http://cine.to/index.php?do=protect&id=" + element));
+            }
+        } else if (parameter.matches(patternLink_Protected.pattern())) {
+            String[][] captcha = new Regex(br.getPage(parameter), Pattern.compile("span class=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            String capText = "";
+            if (captcha.length == 80) {
+                for (int j = 1; j < 5; j++) {
+                    capText = capText + extractCaptcha(captcha, j);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            String[] links = new Regex(br.postPage(parameter, "captcha=" + capText + "&submit=Senden"), Pattern.compile("window\\.open\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            progress.setRange(links.length);
+            for (String element : links) {
+                DownloadLink link = createDownloadlink(element);
+                link.addSourcePluginPassword("cine.to");
+                decryptedLinks.add(link);
+                progress.increase(1);
+            }
         }
         return decryptedLinks;
     }

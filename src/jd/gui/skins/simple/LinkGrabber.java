@@ -298,7 +298,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     newTab.addLinks(linksToTransfer);
                     refreshTable();
                 }
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers"))) {
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"))) {
                 int[] rows = table.getSelectedRows();
 
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
@@ -309,7 +309,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 totalLinkList.removeAll(linkList);
                 linkList = list;
                 refreshTable();
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection"))) {
+            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"))) {
                 int[] rows = table.getSelectedRows();
 
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
@@ -952,12 +952,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         } else if (e.getSource() == mRemoveEmptyPackages) {
             removeEmptyPackages();
             emptyCheck();
-        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete"))) {
+        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"))) {
             Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
             int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.getX(), (int) loc.getY());
             removePackageAt(destID);
             emptyCheck();
-        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
+        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"))) {
             addTab();
         } else if (e.getSource() == insertAtPosition) {
             guiConfig.setProperty(PROPERTY_POSITION, insertAtPosition.getSelectedIndex());
@@ -1196,7 +1196,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void confirmAll() {
-        if (insertAtPosition.getSelectedItem().equals(JDLocale.L("gui.linkgrabber.pos.top"))) {
+        if (insertAtPosition.getSelectedItem().equals(JDLocale.L("gui.linkgrabber.pos.top", "Anfang"))) {
             for (int i = tabList.size() - 1; i > -1; --i) {
                 confirmPackage(i, null);
             }
@@ -1495,7 +1495,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             Point point = e.getPoint();
-            new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues package") }, this);
+            new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket") }, this);
         }
 
     }

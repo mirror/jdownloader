@@ -235,19 +235,9 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
             routerData = parser.parseXMLFile(fileRoutersDat);
 
-            Collections.sort(routerData, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    if (a instanceof RouterData && b instanceof RouterData) {
-
-                        if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) > 0) {
-                            return 1;
-                        } else if (((RouterData) a).getRouterName().compareToIgnoreCase(((RouterData) b).getRouterName()) < 0) {
-                            return -1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                    return 0;
+            Collections.sort(routerData, new Comparator<RouterData>() {
+                public int compare(RouterData a, RouterData b) {
+                    return a.getRouterName().compareToIgnoreCase(b.getRouterName());
                 }
 
             });
@@ -335,13 +325,12 @@ class SubPanelHTTPReconnect extends ConfigPanel implements ItemListener, ActionL
 
         Insets insets = new Insets(1, 5, 1, 5);
         int row = 0;
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_control"), pnlControl);
-
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_router"), pnlRouter);
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_login"), pnlLogin);
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_connect"), pnlConnect);
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_disconnect"), pnlDisconnect);
-        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_ipCheck"), pnlIpCheck);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_control", "Connection establishment"), pnlControl);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_router", "Router"), pnlRouter);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_login", "Login"), pnlLogin);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_connect", "Connection establishment"), pnlConnect);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_disconnect", "Connection disconnect"), pnlDisconnect);
+        tabbedPane.addTab(JDLocale.L("gui.config.httpreconnect.tab_ipCheck", "Ip-Check"), pnlIpCheck);
 
         row = 0;
 

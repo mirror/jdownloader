@@ -40,7 +40,7 @@ public class JDAction extends AbstractAction {
     public static final int ABOUT = 32;
 
     public static final int APP_ALLOW_RECONNECT = 31;
-//    public static final int APP_CES = 30;
+    // public static final int APP_CES = 30;
     public static final int APP_CLIPBOARD = 28;
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
@@ -112,11 +112,11 @@ public class JDAction extends AbstractAction {
             ImageIcon icon = new ImageIcon(image);
             putValue(Action.SMALL_ICON, icon);
         }
-        putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu." + ressourceName + ".desc"));
-        putValue(Action.NAME, JDLocale.L("gui.menu." + ressourceName + ".name"));
-        char mnemonic = JDLocale.L("gui.menu." + ressourceName + ".mnem").charAt(0);
+        putValue(Action.SHORT_DESCRIPTION, JDLocale.L("gui.menu." + ressourceName + ".desc", ""));
+        putValue(Action.NAME, JDLocale.L("gui.menu." + ressourceName + ".name", ressourceName));
+        char mnemonic = JDLocale.L("gui.menu." + ressourceName + ".mnem", "-").charAt(0);
 
-        if (mnemonic != 0 && JDLocale.L("gui.menu." + ressourceName + ".mnem").contentEquals("-") == false) {
+        if (mnemonic != 0 && JDLocale.L("gui.menu." + ressourceName + ".mnem", "-").contentEquals("-") == false) {
             Class<?> b = KeyEvent.class;
             Field f;
             try {
@@ -128,7 +128,7 @@ public class JDAction extends AbstractAction {
                 e.printStackTrace();
             }
         }
-        String acceleratorString = JDLocale.L("gui.menu." + ressourceName + ".accel");
+        String acceleratorString = JDLocale.L("gui.menu." + ressourceName + ".accel", "-");
         if (acceleratorString != null && acceleratorString.length() > 0) {
             accelerator = KeyStroke.getKeyStroke(acceleratorString);
         }
