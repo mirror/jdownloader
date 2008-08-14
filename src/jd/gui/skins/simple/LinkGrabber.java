@@ -960,7 +960,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage"))) {
             addTab();
         } else if (e.getSource() == insertAtPosition) {
-            guiConfig.setProperty("PROPERTY_POSITION", insertAtPosition.getSelectedIndex());
+            guiConfig.setProperty(PROPERTY_POSITION, insertAtPosition.getSelectedIndex());
             JDUtilities.saveConfig();
             return;
         } else if (e.getSource() == mHostSelectionRemove) {
@@ -1389,8 +1389,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     protected PackageTab getSelectedTab() {
         return tabList.get(tabbedPane.getSelectedIndex());
     }
-
-
 
     public int getTotalLinkCount() {
         return totalLinkList.size();
