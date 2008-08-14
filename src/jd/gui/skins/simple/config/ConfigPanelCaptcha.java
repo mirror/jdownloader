@@ -270,6 +270,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             switch (c) {
 
             case 0:
+                column.setMaxWidth(80);
                 column.setPreferredWidth(50);
                 break;
             case 1:

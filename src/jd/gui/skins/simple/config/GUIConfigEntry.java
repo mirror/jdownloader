@@ -372,9 +372,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         // //logger.info(configEntry.getType()+"_2");
         switch (configEntry.getType()) {
         case ConfigContainer.TYPE_LINK:
-
             return ((JLinkButton) input[0]).getLinkURL().toString();
-
         case ConfigContainer.TYPE_PASSWORDFIELD:
             return new String(((JPasswordField) input[0]).getPassword());
         case ConfigContainer.TYPE_TEXTFIELD:
@@ -382,15 +380,14 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_TEXTAREA:
             return ((JTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
-
             return ((JCheckBox) input[0]).isSelected();
-
         case ConfigContainer.TYPE_PREMIUMPANEL:
             return ((PremiumPanel) input[0]).getAccounts();
         case ConfigContainer.TYPE_BUTTON:
             return null;
         case ConfigContainer.TYPE_COMBOBOX:
-            return ((JComboBox) input[0]).getSelectedItem();
+            // return ((JComboBox) input[0]).getSelectedItem();
+            return ((JComboBox) input[0]).getSelectedIndex();
         case ConfigContainer.TYPE_LABEL:
             return null;
         case ConfigContainer.TYPE_RADIOFIELD:
@@ -408,9 +405,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_BROWSEFILE:
             return ((BrowseFile) input[0]).getText();
         case ConfigContainer.TYPE_SPINNER:
-
             return ((JSpinner) input[0]).getValue();
-
         }
 
         return null;
@@ -517,7 +512,11 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             break;
         case ConfigContainer.TYPE_COMBOBOX:
             JComboBox box = (JComboBox) input[0];
-            box.setSelectedItem(text);
+            if (text instanceof Integer) {
+                box.setSelectedIndex((Integer) text);
+            } else {
+                box.setSelectedItem(text);
+            }
 
             break;
         case ConfigContainer.TYPE_LABEL:

@@ -64,7 +64,7 @@ public abstract class PluginForHost extends Plugin {
     // private int retryOnErrorCount = 0;
     private int maxConnections = 50;
 
-    private static final int ACCOUNT_NUM = 5;
+    // private static final int ACCOUNT_NUM = 5;
     public static final String PROPERTY_PREMIUM = "PREMIUM";
     protected Browser br = new Browser();
     private boolean enablePremium = false;
@@ -84,16 +84,11 @@ public abstract class PluginForHost extends Plugin {
 
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
-        switch (e.getID()) {
-        case 1:
-
+        if (e.getID() == 1) {
             ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config, "Select where filesdownloaded with JDownloader should be stored.");
-           
-           
-            
+
             JPanel panel = new JPanel(new BorderLayout());
-            JPanel topPanel = new JPanel();
-            panel.add(topPanel, BorderLayout.NORTH);
+            panel.add(new JPanel(), BorderLayout.NORTH);
             panel.add(cpanel, BorderLayout.CENTER);
             ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel, SimpleGUI.CURRENTGUI, JDUtilities.getConfiguration());
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
@@ -119,7 +114,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public AccountInfo getAccountInformation(Account account) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -150,14 +144,13 @@ public abstract class PluginForHost extends Plugin {
 
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
             m.setSelected(a.isEnabled());
-
             m.setActionListener(this);
-
             account.addMenuItem(m);
+
             m = new MenuItem(JDLocale.L("plugins.menu.premiumInfo", "Accountinformationen abrufen"), 200 + c - 1);
             m.setActionListener(this);
-
             account.addMenuItem(m);
+
             premium.addMenuItem(account);
         }
         return menuList;
@@ -412,7 +405,8 @@ public abstract class PluginForHost extends Plugin {
 
     // public int getMaxRetriesOnError() {
     // return
-    // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(PARAM_MAX_ERROR_RETRIES,
+    // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(
+    // PARAM_MAX_ERROR_RETRIES,
     // 0);
     // }
 
@@ -504,9 +498,11 @@ public abstract class PluginForHost extends Plugin {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.getLinkStatus().setErrorMessage("Plugin has no hanldPremium Method");
     }
-    public boolean canResume(DownloadLink link){
-        return ignoreHosterWaittime(link)?true:false;
+
+    public boolean canResume(DownloadLink link) {
+        return ignoreHosterWaittime(link) ? true : false;
     }
+
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     @SuppressWarnings("unchecked")
@@ -521,7 +517,8 @@ public abstract class PluginForHost extends Plugin {
 
         if (true) {
 
-            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            // downloadLink.getLinkStatus().addStatus(LinkStatus.
+            // ERROR_TEMPORARILY_UNAVAILABLE);
             // downloadLink.getLinkStatus().setErrorMessage("bla und so");
             // downloadLink.getLinkStatus().setValue(0);
             // return;
@@ -551,7 +548,7 @@ public abstract class PluginForHost extends Plugin {
             for (int i = 0; i < accounts.size(); i++) {
                 Account next = accounts.get(i);
 
-                if (!next.isTempDisabled() && next.isEnabled()&&next.getPass()!=null&&next.getPass().trim().length()>0) {
+                if (!next.isTempDisabled() && next.isEnabled() && next.getPass() != null && next.getPass().trim().length() > 0) {
                     account = next;
 
                     break;

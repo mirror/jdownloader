@@ -97,8 +97,9 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen"));
         ce.setDefaultValue(false);
         container.addEntry(ce);
-        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, new String[] { JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDLocale.L("gui.config.general.toDoWithDownloads.never", "never") }, JDLocale.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ..."));
-        ce.setDefaultValue(JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"));
+        String[] removeDownloads = new String[] { JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately"), JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup"), JDLocale.L("gui.config.general.toDoWithDownloads.packageReady", "when package is ready"), JDLocale.L("gui.config.general.toDoWithDownloads.never", "never") };
+        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getConfiguration(), Configuration.PARAM_FINISHED_DOWNLOADS_ACTION, removeDownloads, JDLocale.L("gui.config.general.toDoWithDownloads", "Remove finished downloads ..."));
+        ce.setDefaultValue(removeDownloads[1]);
         container.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, JDLocale.L("gui.config.download.timeout.read", "Timeout beim Lesen [ms]"), 0, 120000);
@@ -134,11 +135,9 @@ public class ConfigPanelDownload extends ConfigPanel {
 
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", JDLocale.L("gui.config.download.autoresume", "Let Reconnects interrupt resumeable downloads"));
         ce.setDefaultValue(true);
-       
+
         download.addEntry(ce);
-        
-        //
-        //   
+
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, Configuration.PARAM_GLOBAL_IP_DISABLE, JDLocale.L("gui.config.download.ipcheck.disable", "IP Überprüfung deaktivieren"));
         ce.setDefaultValue(false);
         conditionEntry = ce;
@@ -195,14 +194,13 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(8080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
-        
-        
+
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER, JDLocale.L("gui.config.download.proxy.user", "User"));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS, JDLocale.L("gui.config.download.proxy.pass", "Pass"));
-      
+
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
 
@@ -240,14 +238,13 @@ public class ConfigPanelDownload extends ConfigPanel {
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
-        
-        
+
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_USER_SOCKS, JDLocale.L("gui.config.download.proxy.user", "User"));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
 
         ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_PASS_SOCKS, JDLocale.L("gui.config.download.proxy.pass", "Pass"));
-   
+
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         network.addEntry(ce);
     }

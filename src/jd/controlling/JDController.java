@@ -577,20 +577,28 @@ public class JDController implements ControlListener, UIListener {
             lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             addToFinished(lastDownloadFinished);
 
-            // Prüfen ob das Paket fertig ist
+            // Prüfen ob das Paket fertig ist und entfernt werden soll
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
+                if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
+                    removePackage(lastDownloadFinished.getFilePackage());
+                    this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                    saveDownloadLinks();
+                    break;
+                }
             }
-            // Prüfen obd er Link entfernt werden soll.
-            if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.immediate", "immediately").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+
+            // Prüfen ob der Link entfernt werden soll
+            if (lastDownloadFinished.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 0) {
 
                 removeDownloadLink(lastDownloadFinished);
                 this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
             }
+
             saveDownloadLinks();
 
             break;
@@ -935,11 +943,11 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if(!nextDownloadLink.getPlugin().canResume(nextDownloadLink)){
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0 && nextDownloadLink.isEnabled()) {
+                    if (!nextDownloadLink.getPlugin().canResume(nextDownloadLink)) {
+                        if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive() && nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0 && nextDownloadLink.isEnabled()) {
 
-                        ret++;
-                    }
+                            ret++;
+                        }
                     }
                 }
             }
@@ -1396,7 +1404,7 @@ public class JDController implements ControlListener, UIListener {
                         if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                             localLink.getLinkStatus().reset();
                         }
-                        if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDLocale.L("gui.config.general.toDoWithDownloads.atStart", "at startup").equals(JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION))) {
+                        if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
                             it.remove();
                             if (fp.getDownloadLinks().size() == 0) {
                                 iterator.remove();
@@ -1818,10 +1826,10 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
-     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
-     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
-     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
+     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
+     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
+     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
      * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);
@@ -1916,7 +1924,7 @@ public class JDController implements ControlListener, UIListener {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -1998,23 +2006,26 @@ public class JDController implements ControlListener, UIListener {
             // saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
             break;
         case UIEvent.UI_INTERACT_RECONNECT:
-//            if (getRunningDownloadNum() > 0) {
-//                logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
-//                stopDownloads();
-//            }
-//
-//            // Interaction.handleInteraction(Interaction.
-//            // INTERACTION_NEED_RECONNECT,
-//            // this);
-//            if (Reconnecter.waitForNewIP(1)) {
-//                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
-//
-//            } else {
-//
-//                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
-//
-//            }
-Reconnecter.requestReconnect();
+            // if (getRunningDownloadNum() > 0) {
+            // logger.info(
+            // "Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
+            // stopDownloads();
+            // }
+            //
+            // // Interaction.handleInteraction(Interaction.
+            // // INTERACTION_NEED_RECONNECT,
+            // // this);
+            // if (Reconnecter.waitForNewIP(1)) {
+            // uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success",
+            // "Reconnect erfolgreich"));
+            //
+            // } else {
+            //
+            // uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed",
+            // "Reconnect fehlgeschlagen"));
+            //
+            // }
+            Reconnecter.requestReconnect();
             // uiInterface.setDownloadLinks(downloadLinks);
             break;
         case UIEvent.UI_INTERACT_UPDATE:

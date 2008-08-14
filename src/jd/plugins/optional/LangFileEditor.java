@@ -67,8 +67,6 @@ public class LangFileEditor extends PluginOptional {
     private JTable table;
     private MyTableModel tableModel;
 
-    private String[] lngKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
-
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
@@ -239,7 +237,7 @@ public class LangFileEditor extends PluginOptional {
         } else if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
 
             JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_SRC");
-           
+
             chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
             if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
@@ -421,6 +419,8 @@ public class LangFileEditor extends PluginOptional {
     }
 
     private boolean isSupportedLanguageKey(String lngKey) {
+        String[] lngKeys = new String[] { "da", "de", "fi", "fr", "el", "hi", "it", "ja", "ko", "hr", "nl", "no", "pl", "pt", "ro", "ru", "sv", "es", "cs", "en", "ar" };
+
         for (String element : lngKeys) {
             if (element.equals(lngKey)) return true;
         }
