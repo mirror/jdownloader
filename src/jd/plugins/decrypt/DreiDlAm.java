@@ -98,7 +98,7 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         if (parameter.indexOf("3dl.am/download/start/") != -1) {

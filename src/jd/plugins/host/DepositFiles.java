@@ -324,7 +324,7 @@ public class DepositFiles extends PluginForHost {
 
     }
     
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         Browser.clearCookies(HOST);

@@ -35,7 +35,7 @@ public class Web06de extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String link = new Regex(cryptedLink, "user=\\d+site=(.*)").getFirstMatch();

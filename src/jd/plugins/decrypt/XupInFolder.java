@@ -40,7 +40,7 @@ public class XupInFolder extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));

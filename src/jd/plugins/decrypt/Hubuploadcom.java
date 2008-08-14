@@ -40,7 +40,7 @@ public class Hubuploadcom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {

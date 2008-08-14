@@ -33,7 +33,7 @@ public class FileUploadnet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String user = new Regex(parameter, "upload\\.net/(.*?)/").getFirstMatch();
         String file = new Regex(parameter, user + "/(.*)").getFirstMatch();

@@ -40,7 +40,7 @@ public class Gamezam extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
         String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

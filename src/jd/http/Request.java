@@ -346,10 +346,7 @@ public abstract class Request {
     }
 
     public void openConnection() throws IOException {
-        if (Sniffy.hasSniffer()) {
-            System.err.println("Sniffer Software detected");
-            throw new IOException("Sniffer found");
-        }
+  
 
         try {
             long tima = System.currentTimeMillis();

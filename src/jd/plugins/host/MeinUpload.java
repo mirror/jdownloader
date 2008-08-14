@@ -89,7 +89,7 @@ public class MeinUpload extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
         dl.startDownload();
     }
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         Browser.clearCookies(HOST);

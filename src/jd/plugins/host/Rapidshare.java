@@ -50,6 +50,7 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Sniffy;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -333,6 +334,11 @@ public class Rapidshare extends PluginForHost {
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
         Browser br = new Browser();
+        
+        if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_CONTAINER){
+            br.setSnifferDetection(true);
+        }
+       
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
 
@@ -1146,7 +1152,7 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         br.setAcceptLanguage("en");

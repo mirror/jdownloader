@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
+import jd.utils.Sniffy;
 
 public class Browser {
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
@@ -125,6 +127,7 @@ public class Browser {
     private int readTimeout = -1;
 
     private Request request;
+    private boolean snifferDetection = false;
 
     public Browser() {
 
@@ -155,6 +158,15 @@ public class Browser {
         return headers;
     }
 
+    private boolean snifferCheck() {
+        if (!snifferDetection) return false;
+        if (Sniffy.hasSniffer()) {
+            JDUtilities.getLogger().severe("Sniffer Software detected");
+            return true;
+        }
+        return false;
+    }
+
     public String getPage(String string) {
         string = getURL(string);
         try {
@@ -162,14 +174,20 @@ public class Browser {
             if (currentURL == null) {
                 currentURL = new URL(string);
             }
+            
+            if (snifferCheck()){
+                throw new IOException("Sniffer found");   
+            } 
             GetRequest request = new GetRequest(string);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-//            request.setFollowRedirects(doRedirects);
+            // request.setFollowRedirects(doRedirects);
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             if (headers != null) {
                 request.getHeaders().putAll(headers);
             }
+                    
+                
             request.connect();
             String ret = null;
             if (request.getHttpConnection().getHeaderField("Content-Length") == null || Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
@@ -179,8 +197,8 @@ public class Browser {
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(string);
-             if(this.doRedirects&&this.request.getLocation()!=null){
-                ret=this.getPage(null);
+            if (this.doRedirects && this.request.getLocation() != null) {
+                ret = this.getPage(null);
             }
             return ret;
 
@@ -260,6 +278,9 @@ public class Browser {
             if (currentURL == null) {
                 currentURL = new URL(string);
             }
+            if (snifferCheck()){
+                throw new IOException("Sniffer found");   
+            } 
             GetRequest request = new GetRequest(string);
             if (connectTimeout > 0) {
                 request.setConnectTimeout(connectTimeout);
@@ -268,18 +289,19 @@ public class Browser {
                 request.setReadTimeout(readTimeout);
             }
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-//            request.setFollowRedirects(doRedirects);
+            // request.setFollowRedirects(doRedirects);
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             if (headers != null) {
                 request.getHeaders().putAll(headers);
             }
+     
             request.connect();
 
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(string);
-             if(this.doRedirects&&this.request.getLocation()!=null){
+            if (this.doRedirects && this.request.getLocation() != null) {
                 this.openGetConnection(null);
             }
             return this.request.getHttpConnection();
@@ -311,9 +333,12 @@ public class Browser {
             if (currentURL == null) {
                 currentURL = new URL(url);
             }
+            if (snifferCheck()){
+                throw new IOException("Sniffer found");   
+            } 
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-//            request.setFollowRedirects(doRedirects);
+            // request.setFollowRedirects(doRedirects);
             if (connectTimeout > 0) {
                 request.setConnectTimeout(connectTimeout);
             }
@@ -332,7 +357,7 @@ public class Browser {
 
             this.request = request;
             currentURL = new URL(url);
-             if(this.doRedirects&&this.request.getLocation()!=null){
+            if (this.doRedirects && this.request.getLocation() != null) {
                 this.openGetConnection(null);
             }
             return this.request.getHttpConnection();
@@ -357,9 +382,12 @@ public class Browser {
             if (currentURL == null) {
                 currentURL = new URL(url);
             }
+            if (snifferCheck()){
+                throw new IOException("Sniffer found");   
+            } 
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-//            request.setFollowRedirects(doRedirects);
+            // request.setFollowRedirects(doRedirects);
             if (connectTimeout > 0) {
                 request.setConnectTimeout(connectTimeout);
             }
@@ -381,8 +409,8 @@ public class Browser {
             Browser.updateCookies(request);
             this.request = request;
             currentURL = new URL(url);
-             if(this.doRedirects&&this.request.getLocation()!=null){
-                ret=this.getPage(null);
+            if (this.doRedirects && this.request.getLocation() != null) {
+                ret = this.getPage(null);
             }
             return ret;
 
@@ -395,11 +423,11 @@ public class Browser {
         return null;
 
     }
-    public JavaScript getJavaScript()
-    {
-    	if(request==null)return null;
-    	String data = toString();
-    	String url = request.getUrl().toString();
+
+    public JavaScript getJavaScript() {
+        if (request == null) return null;
+        String data = toString();
+        String url = request.getUrl().toString();
         String basename = "";
         String host = "";
         LinkedList<String> set = new LinkedList<String>();
@@ -408,7 +436,7 @@ public class Browser {
         for (Pattern element : basePattern) {
             m = element.matcher(data);
             if (m.find()) {
-            	url = Encoding.htmlDecode(m.group(1));
+                url = Encoding.htmlDecode(m.group(1));
                 break;
             }
         }
@@ -432,53 +460,50 @@ public class Browser {
         }
         String[][] reg = new Regex(data, "<[ ]?script(.*?)>(.*?)<[ ]?/script>").getMatches();
         StringBuffer buff = new StringBuffer();
-//        buff.append("var document[];\r\n");
+        // buff.append("var document[];\r\n");
         for (int i = 0; i < reg.length; i++) {
-			if(reg[i][0].toLowerCase().contains("javascript"))
-			{
-				if(reg[i][1].length()>0)
-				buff.append(reg[i][1]+"\r\n");
-		        Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile(".*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE), 
-		        		 Pattern.compile(".*?src='(.*?)'", Pattern.CASE_INSENSITIVE), 
-		        		 Pattern.compile(".*?src=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE)};
-		        for (Pattern element : linkAndFormPattern) {
-		            m = element.matcher(reg[i][0]);
-		            while (m.find()) {
-		               String link = Encoding.htmlDecode(m.group(1));
-		                if (link.length() > 6 && link.matches("(?is)https?://.*")) {
-		                    ;
-		                } else if (link.length() > 0) {
-		                    if (link.length() > 2 && link.substring(0, 3).equals("www")) {
-		                        link = "http://" + link;
-		                    }
-		                    if (link.charAt(0) == '/') {
-		                        link = host + link;
-		                    } else if (link.charAt(0) == '#') {
-		                        link = url + link;
-		                    } else {
-		                        link = basename + link;
-		                    }
-		                }
-		                if (!set.contains(link)) {
-		                    set.add(link);
-		                }
-		            }
-		        }
-			}
-			
-		}
+            if (reg[i][0].toLowerCase().contains("javascript")) {
+                if (reg[i][1].length() > 0) buff.append(reg[i][1] + "\r\n");
+                Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile(".*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+                for (Pattern element : linkAndFormPattern) {
+                    m = element.matcher(reg[i][0]);
+                    while (m.find()) {
+                        String link = Encoding.htmlDecode(m.group(1));
+                        if (link.length() > 6 && link.matches("(?is)https?://.*")) {
+                            ;
+                        } else if (link.length() > 0) {
+                            if (link.length() > 2 && link.substring(0, 3).equals("www")) {
+                                link = "http://" + link;
+                            }
+                            if (link.charAt(0) == '/') {
+                                link = host + link;
+                            } else if (link.charAt(0) == '#') {
+                                link = url + link;
+                            } else {
+                                link = basename + link;
+                            }
+                        }
+                        if (!set.contains(link)) {
+                            set.add(link);
+                        }
+                    }
+                }
+            }
+
+        }
 
         Iterator<String> iter = set.iterator();
         while (iter.hasNext()) {
-    		String string = (String) iter.next();
-    		String page = this.cloneBrowser().getPage(string);
-    		buff.append(page+"\r\n");
-    	}
+            String string = (String) iter.next();
+            String page = this.cloneBrowser().getPage(string);
+            buff.append(page + "\r\n");
+        }
         String ret = buff.toString();
-        //TODO document ersetzen
-       // ret.replaceAll("document\\.([^\\s;=]*)", "");
+        // TODO document ersetzen
+        // ret.replaceAll("document\\.([^\\s;=]*)", "");
         return new JavaScript(ret);
     }
+
     public String postPage(String url, String post) {
 
         return postPage(url, Request.parseQuery(post));
@@ -521,8 +546,11 @@ public class Browser {
         this.readTimeout = readTimeout;
     }
 
-    public String submitForm(Form form) {
+    public String submitForm(Form form) throws IOException {
         String base = null;
+        if (snifferCheck()){
+            throw new IOException("Sniffer found");   
+        } 
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
         switch (form.method) {
@@ -740,16 +768,17 @@ public class Browser {
         }
 
     }
+
     public boolean downloadFile(File file, String urlString) {
         try {
             urlString = URLDecoder.decode(urlString, "UTF-8");
-           
+
             HTTPConnection con = this.openGetConnection(urlString);
             con.setInstanceFollowRedirects(true);
             return Browser.download(file, con);
         } catch (Exception e) {
             e.printStackTrace();
-        } 
+        }
         return false;
     }
 
@@ -803,19 +832,27 @@ public class Browser {
     }
 
     public Form[] getForms(String downloadURL) {
-       this.getPage(downloadURL);
-       return this.getForms();
-    
+        this.getPage(downloadURL);
+        return this.getForms();
+
     }
 
     public HTTPConnection openFormConnection(int i) {
         return openFormConnection(getForm(i));
-        
+
     }
 
     public String getMatch(String string) {
-       return getRegex(string).getFirstMatch();
-        
+        return getRegex(string).getFirstMatch();
+
+    }
+
+    public boolean isSnifferDetection() {
+        return snifferDetection;
+    }
+
+    public void setSnifferDetection(boolean snifferDetection) {
+        this.snifferDetection = snifferDetection;
     }
 
 }

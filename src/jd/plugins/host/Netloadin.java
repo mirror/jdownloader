@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.Date;
 import java.util.regex.Pattern;
@@ -183,7 +184,7 @@ Browser c=br.cloneBrowser();
 
     }
 
-    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) {
+    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
 
@@ -216,7 +217,7 @@ Browser c=br.cloneBrowser();
         }
 
     }
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
        

@@ -98,14 +98,14 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-        logger.info("RUN: " + params);
+//      r.info("RUN: " + params);
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
             } else {
                 if (new File(params.get(0)).getParentFile().exists()) {
-                    logger.info("Run in: " + new File(params.get(0)).getParentFile());
+//                    logger.info("Run in: " + new File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
                     logger.severe("Working drectory " + runIn + " does not exist!");

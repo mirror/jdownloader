@@ -205,7 +205,7 @@ public class PackageManager extends Interaction implements Serializable {
             progress.increase(1);
             String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
             
-            xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
+//            xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
             DocumentBuilderFactory factory;
             InputSource inSource;
             Document doc;

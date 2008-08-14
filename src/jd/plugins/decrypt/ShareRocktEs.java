@@ -39,7 +39,7 @@ public class ShareRocktEs extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
         br = new Browser();
         String page = br.getPage(cryptedLink);

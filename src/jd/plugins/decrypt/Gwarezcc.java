@@ -52,7 +52,7 @@ public class Gwarezcc extends PluginForDecrypt {
         setConfigEelements();
     }
 
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = (String) parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {

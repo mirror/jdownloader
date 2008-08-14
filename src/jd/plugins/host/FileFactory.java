@@ -269,7 +269,7 @@ public class FileFactory extends PluginForHost {
         dl.startDownload();
 
     }
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
     

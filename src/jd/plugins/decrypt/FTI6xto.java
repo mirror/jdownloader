@@ -40,7 +40,7 @@ public class FTI6xto extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         try {
             if (!parameter.endsWith(".dlc")) {
                 URL url = new URL(parameter);

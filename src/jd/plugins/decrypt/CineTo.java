@@ -35,7 +35,7 @@ public class CineTo extends PluginForDecrypt {
         super();
     }
 
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(patternLink_Show.pattern())) {
             String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);

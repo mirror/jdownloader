@@ -42,7 +42,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         try {
             URL url = new URL(parameter);
             para = parameter;

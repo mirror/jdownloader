@@ -178,7 +178,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
        Browser.clearCookies("serienjunkies.org");
         br.getPage("http://serienjunkies.org/enter/");
       

@@ -38,7 +38,7 @@ public class YouPornCom extends PluginForDecrypt {
     private static final Pattern DOWNLOADFILE = Pattern.compile("download\\.youporn\\.com/download/\\d+/flv/[^\\?]*", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) {
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         RequestInfo loader;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {

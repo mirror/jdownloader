@@ -113,7 +113,7 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    public AccountInfo getAccountInformation(Account account) {
+    public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
     }
 

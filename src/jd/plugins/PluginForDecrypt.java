@@ -89,8 +89,9 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @param step
      * @param parameter
      * @return gerade abgeschlossener Schritt
+     * @throws Exception TODO
      */
-    public abstract ArrayList<DownloadLink> decryptIt(String parameter);
+    public abstract ArrayList<DownloadLink> decryptIt(String parameter) throws Exception;
 
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
@@ -111,7 +112,12 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
 
         progress = new ProgressController("Decrypter: " + getLinkName());
         progress.setStatusText("decrypt-" + getPluginName() + ": " + getLinkName());
-        ArrayList<DownloadLink> tmpLinks = decryptIt(cryptedLink);
+        ArrayList<DownloadLink> tmpLinks=null;
+        try{
+            tmpLinks= decryptIt(cryptedLink);
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         if(tmpLinks==null){
             logger.severe("Decrypter out of date: "+this);
             return new ArrayList<DownloadLink>();
