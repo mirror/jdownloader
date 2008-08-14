@@ -126,7 +126,7 @@ public class MyBot extends PircBot {
             String[] svn = post.getRegexp("<h2>([\\d]+)/([\\d]+)/[\\d]+:</h2><dl><dt class=\"changeset\"><a href=\".*?\"><span class=\"time\">([\\d]+):([\\d]+)</span> Changeset <em>.([\\d]+).</em> by (.*?)</a></dt><dd class=\"changeset\">(.*?)</dd>").getMatches()[0];
             settings.svnRev = Integer.parseInt(svn[4]);
             Utilities.saveObject(settings, config);
-            return "Es gab eine Quellcodeänderung von " + svn[5] + " am " + svn[1] + "." + svn[0] + " um " + svn[2] + ":" + svn[3] + " Uhr " + (svn[6].endsWith("--") ? "" : svn[5] + ": \"" + svn[6].replaceAll("[\n\r]", " ").replaceAll("\\&hellip\\;", "...") + "\" ") + ((settings.svnRev > version) ? " es wird bald die Version 0." + ((double) settings.svnRev) / 1000 + " oder höher verfügbar sein!" : "");
+            return "Es gab eine Quellcodeänderung von " + svn[5] + " am " + svn[1] + "." + svn[0] + " um " + svn[2] + ":" + svn[3] + " Uhr " + (svn[6].endsWith("--") ? "" : svn[5] + ": \"" + svn[6].replaceAll("[\n\r]", " ").replaceAll("\\&hellip\\;", "...").replaceAll("<a class=(.*?)>", "").replaceAll("[\\?]?</a>", "") + "\" ") + ((settings.svnRev > version) ? " es wird bald die Version 0." + ((double) settings.svnRev) / 1000 + " oder höher verfügbar sein!" : "");
         } catch (MalformedURLException e) {
             
             e.printStackTrace();

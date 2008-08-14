@@ -19,16 +19,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableColumn;
 
+import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.HTTP;
 import jd.utils.JDLocale;
 
 import org.jdesktop.swingx.JXHyperlink;
 import org.jdesktop.swingx.JXTitledSeparator;
-
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.exception.BrowserLaunchingExecutionException;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JDAboutDialog {
 
@@ -42,15 +38,10 @@ public class JDAboutDialog {
             this.url = url;
         }
 
-        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             try {
-                BrowserLauncher.openURL(url);
-            } catch (UnsupportedOperatingSystemException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingExecutionException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingInitializingException e1) {
+                JLinkButton.openURL(url);
+            } catch (MalformedURLException e1) {
                 e1.printStackTrace();
             }
         }
