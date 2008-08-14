@@ -24,6 +24,7 @@ import java.io.File;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
@@ -40,9 +41,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1155282457354673850L;
 
         public Class<?> getColumnClass(int columnIndex) {
@@ -51,7 +49,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
                 return Boolean.class;
             case 1:
                 return String.class;
-
             }
             return String.class;
         }
@@ -66,7 +63,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
                 return JDLocale.L("gui.config.jac.column.use", "Verwenden");
             case 1:
                 return JDLocale.L("gui.config.jac.column.method", "Methode");
-
             }
             return super.getColumnName(column);
         }
@@ -82,7 +78,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
                 return configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true);
             case 1:
                 return methods[rowIndex].getName() + " : " + (configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[rowIndex].getName(), true) ? JDLocale.L("gui.config.jac.status.auto", "Automatische Erkennung") : JDLocale.L("gui.config.jac.status.noauto", "Manuelle Eingabe"));
-
             }
             return null;
         }
@@ -260,6 +255,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(internalTableModel);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
         table.addMouseListener(this);
         // setPreferredSize(new Dimension(700, 350));
@@ -276,7 +272,6 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
             case 1:
                 column.setPreferredWidth(600);
                 break;
-
             }
         }
 
@@ -307,19 +302,15 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
      */
 
     public void mouseEntered(MouseEvent e) {
-
     }
 
     public void mouseExited(MouseEvent e) {
-
     }
 
     public void mousePressed(MouseEvent e) {
-
     }
 
     public void mouseReleased(MouseEvent e) {
-
     }
 
     /**

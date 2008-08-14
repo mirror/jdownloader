@@ -32,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -91,9 +92,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         }
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -5308908915544580923L;
     private JButton btnEdit;
     private Configuration configuration;
@@ -136,7 +134,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     private void editEntry() {
         PluginForDecrypt plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.decrypt.dialogname", "%s Configuration",plugin.getPluginName())));
+            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.decrypt.dialogname", "%s Configuration", plugin.getPluginName())));
         }
     }
 
@@ -145,12 +143,8 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
     }
 
-    private int getSelectedInteractionIndex() {
-        return table.getSelectedRow();
-    }
-
     private PluginForDecrypt getSelectedPlugin() {
-        int index = getSelectedInteractionIndex();
+        int index = table.getSelectedRow();
         if (index < 0) { return null; }
         return pluginsForDecrypt.elementAt(index);
     }
@@ -161,6 +155,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         table = new JTable(); // new InternalTable();
         InternalTableModel internalTableModel = new InternalTableModel();
         table.setModel(new InternalTableModel());
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         setPreferredSize(new Dimension(550, 350));
 
         TableColumn column = null;

@@ -33,6 +33,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -150,16 +151,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         if (e.getSource() == btnEdit) {
             editEntry();
-
-        }
-
-        if (e.getSource() == enableDisable) {
+        } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
             boolean b = configuration.getBooleanProperty(getConfigParamKey(plugins.get(rowIndex)), false);
             configuration.setProperty(getConfigParamKey(plugins.get(rowIndex)), !b);
             fireTableChanged();
-        }
-        if (e.getSource() == openPluginDir) {
+        } else if (e.getSource() == openPluginDir) {
 
             try {
                 new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));
@@ -172,7 +169,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     private void editEntry() {
         PluginOptional plugin = getSelectedPlugin();
         if (plugin != null && plugin.getConfig().getEntries().size() > 0) {
-            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.optional.dialogname", "%s Configuration",plugin.getPluginName())));
+            openPopupPanel(new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.optional.dialogname", "%s Configuration", plugin.getPluginName())));
         }
     }
 
@@ -211,13 +208,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         return JDLocale.L("gui.config.plugin.optional.name", "Optional Plugins");
     }
 
-    private int getSelectedIndex() {
-        return table.getSelectedRow();
-    }
-
     private PluginOptional getSelectedPlugin() {
-        int index = getSelectedIndex();
-        if (index < 0) { return null; }
+        int index = table.getSelectedRow();
+        if (index < 0) return null;
         return plugins.elementAt(index);
     }
 
@@ -230,6 +223,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         InternalTableModel internalTableModel = new InternalTableModel();
 
         table.setModel(new InternalTableModel());
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         // this.setPreferredSize(new Dimension(700, 350));
 
         TableColumn column = null;
@@ -266,11 +260,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         btnEdit.addActionListener(this);
         enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus", "An/Aus"));
-
         enableDisable.addActionListener(this);
 
         openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir", "Addon Ordner öffnen"));
-
         openPluginDir.addActionListener(this);
 
         link = new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122"));
@@ -320,10 +312,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1) {
-            editEntry();
-        }
-
+        if (e.getClickCount() > 1) editEntry();
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -345,7 +334,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         PluginOptional plugin = getSelectedPlugin();
         // currentPlugin = plugin;
-        if (plugin == null) { return; }
+        if (plugin == null) return;
 
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
