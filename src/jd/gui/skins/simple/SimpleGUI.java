@@ -2088,10 +2088,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 try {
                     ai = pluginForHost.getAccountInformation(account);
                 } catch (Exception e) {
+                    e.printStackTrace();
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("gui.accountcheck.pluginerror", "Plugin %s may be defect. Inform support!", pluginForHost.getPluginID()));
                     return;
                 }
                 if (ai == null) {
+                    
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return;
                 }
