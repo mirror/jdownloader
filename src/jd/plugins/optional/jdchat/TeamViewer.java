@@ -40,17 +40,12 @@ public class TeamViewer {
     }
 
     public static String[] AskForTeamviewerIDPW() {
-        System.out.println("Ask for Teamviewer ID & PW.");
+        //System.out.println("Ask for Teamviewer ID & PW.");
 
-        String[] abc = SimpleGUI.CURRENTGUI.showTextAreaDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
-
-        return abc;
-
+    	return SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
     }
 
     public static void main(String[] args) {
-        // ConversionMode[] mode =
-        // {ConversionMode.AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
         TeamViewer.AskForTeamviewerIDPW();
 
     }

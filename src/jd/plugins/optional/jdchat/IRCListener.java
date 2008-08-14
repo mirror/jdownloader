@@ -2,6 +2,7 @@ package jd.plugins.optional.jdchat;
 
 import java.util.logging.Logger;
 
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 import org.schwering.irc.lib.IRCConstants;
@@ -116,20 +117,30 @@ class IRCListener implements IRCEventListener {
 
     public void onPrivmsg(String chan, IRCUser u, String msg) {
 
-        User user = owner.getUser(u.getNick());
+        final User user = owner.getUser(u.getNick());
         if (user == null) { return; }
 
         if (user.rank == User.RANK_OP && msg.trim().matches("\\!getteamviewer[\\s]+" + owner.getNick())) {
-            String[] data = TeamViewer.handleTeamviewer();
-            owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);
+        	
+            new Thread(new Runnable() {
 
-            /*
-             * new Thread() {
-             * 
-             * 
-             * }.start();
-             */
+                public void run() {
+                	
+                	String[] data = TeamViewer.handleTeamviewer();
+                	if(new Regex(data[0],"^[\\s]*$").matches())
+                	{
+                		owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
+                	}
+                	else
+                	{
+                		owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);               		
+                	}
+                	logger.info("Teamviewer-Daten: [" + data[0] + "] [" + data[1] + "]");
+                }
 
+            }).start();
+        
+            
         } else if (msg.trim().startsWith("ACTION ")) {
             owner.addToText(null, JDChat.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 

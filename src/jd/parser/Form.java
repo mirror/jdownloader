@@ -155,11 +155,16 @@ public boolean equals(Form f){
 
     public String getAction(String baseURL) {
         URL baseurl = null;
+        if(baseURL == null)
+        { baseurl = null; }
+        else
+        {
         try {
             baseurl = new URL(baseURL);
         } catch (MalformedURLException e) {
 
             e.printStackTrace();
+        }
         }
         String ret = action;
         if (action == null || action.matches("[\\s]*")) {
