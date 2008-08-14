@@ -140,7 +140,7 @@ public abstract class PluginForHost extends Plugin {
             c++;
             if (a.getUser() == null || a.getUser().trim().length() == 0) continue;
 
-            account = new MenuItem(MenuItem.CONTAINER, i + ". " + a.getUser(), 0);
+            account = new MenuItem(MenuItem.CONTAINER, i++ + ". " + a.getUser(), 0);
 
             m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.enable_premium", "Aktivieren"), 100 + c - 1);
             m.setSelected(a.isEnabled());

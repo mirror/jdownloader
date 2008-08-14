@@ -1132,5 +1132,5 @@ plugins.optional.streamsharingtool.action.start = Start StreamSharing Tool
 gui.menu.plugins.phost = Premium hoster
 plugins.menu.configs = Configuration
 plugins.menu.accounts = Accounts
-plugins.menu.enable_premium = Enable Accounts
+plugins.menu.enable_premium = Enable Account
 plugins.menu.premiumInfo = Get Accountinfo
