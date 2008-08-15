@@ -17,21 +17,17 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class UpPicoasisNet extends PluginForDecrypt {
 
-    final static String host = "up.picoasis.net";
+    private final static String host = "up.picoasis.net";
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
 
     public UpPicoasisNet() {
@@ -41,17 +37,10 @@ public class UpPicoasisNet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
 
-            String link = new Regex(reqinfo.getHtmlCode(), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            if (link == null) { return null; }
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        String link = new Regex(br.getPage(parameter), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+
         return decryptedLinks;
     }
 

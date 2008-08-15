@@ -17,24 +17,18 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class UploadJockeycom extends PluginForDecrypt {
 
     static private final String HOST = "uploadjockey.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
-    private String CODER = "JD-Team";
 
     public UploadJockeycom() {
         super();
@@ -42,24 +36,15 @@ public class UploadJockeycom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        URL url;
-        RequestInfo requestInfo;
-        try {
-            url = new URL(cryptedLink);
-            requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-            String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"http\\:\\/\\/www\\.uploadjockey\\.com\\/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            for (String[] element : links) {
-                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element[0])));
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String links[][] = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] element : links) {
+            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element[0])));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
@@ -70,7 +55,7 @@ public class UploadJockeycom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override

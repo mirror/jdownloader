@@ -17,21 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class XupInFolder extends PluginForDecrypt {
 
-    final static String host = "xup.in";
-    private String LINK_PATTERN = "href=\"(http://www\\.xup\\.in/dl,[0-9]*/.*?/)\"";
+    private final static String host = "xup.in";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
 
@@ -42,18 +37,14 @@ public class XupInFolder extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            RequestInfo requestInfo = HTTP.getRequest(new URL(parameter));
-            String[][] links = new Regex(requestInfo.getHtmlCode(), LINK_PATTERN).getMatches();
-            progress.setRange(links.length);
-            for (String[] link : links) {
-                decryptedLinks.add(createDownloadlink(link[0]));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("href=\"(http://www\\.xup\\.in/dl,[0-9]*/.*?/)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] link : links) {
+            decryptedLinks.add(createDownloadlink(link[0]));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

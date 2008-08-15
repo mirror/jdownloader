@@ -17,17 +17,13 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class DownloadsPesArenacom extends PluginForDecrypt {
 
@@ -41,24 +37,11 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
-            if (id != null) {
-                URL url = new URL("http://downloads.pes-arena.com/content.php?id=" + id);
-                RequestInfo reqinfo = HTTP.getRequest(url);
-                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe src=\"(.*?)\"").getFirstMatch());
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
-                } else {
-                    return null;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String id = new Regex(parameter, patternSupported).getFirstMatch();
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.getPage("http://downloads.pes-arena.com/content.php?id=" + id), Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+
         return decryptedLinks;
     }
 

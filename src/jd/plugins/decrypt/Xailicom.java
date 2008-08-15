@@ -17,17 +17,13 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Xailicom extends PluginForDecrypt {
 
@@ -41,27 +37,16 @@ public class Xailicom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo reqinfo = HTTP.getRequest(url);
 
-            String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatches(1);
-            progress.setRange(links.length);
-            for (String element : links) {
-                reqinfo = HTTP.getRequest(new URL("http://www.xaili.com/include/get.php?link=" + element));
-                String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                if (link != null) {
-                    link = Encoding.htmlDecode(link);
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        progress.setRange(links.length);
+        for (String element : links) {
+            String link = new Regex(br.getPage("http://www.xaili.com/include/get.php?link=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
