@@ -40,6 +40,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
@@ -56,6 +57,10 @@ import jd.utils.JDUtilities;
  */
 
 public class LangFileEditor extends PluginOptional {
+
+    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
+    private static final String PROPERTY_FOLDER = "PROPERTY_FOLDER";
+    private static final String PROPERTY_FILE = "PROPERTY_FILE";
 
     private JFrame frame;
     private File sourceFolder, languageFile;
@@ -101,14 +106,16 @@ public class LangFileEditor extends PluginOptional {
         top.add(top2, BorderLayout.PAGE_END);
 
         top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
-        top1.add(txtFolder = new JTextField(JDLocale.L("plugins.optional.langfileeditor.sourceFolder.select", "<Please select the Source Folder!>")), BorderLayout.CENTER);
+        sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER);
+        top1.add(txtFolder = new JTextField((sourceFolder != null) ? sourceFolder.getAbsolutePath() : JDLocale.L("plugins.optional.langfileeditor.sourceFolder.select", "<Please select the Source Folder!>")), BorderLayout.CENTER);
         top1.add(btnBrowseFolder = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
         txtFolder.setEditable(false);
         btnBrowseFolder.addActionListener(this);
         frame.getRootPane().setDefaultButton(btnBrowseFolder);
 
         top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
-        top2.add(txtFile = new JTextField(JDLocale.L("plugins.optional.langfileeditor.languageFile.select", "<Please select a Language File!>")), BorderLayout.CENTER);
+        languageFile = (File) subConfig.getProperty(PROPERTY_FILE);
+        top2.add(txtFile = new JTextField((languageFile != null) ? languageFile.getAbsolutePath() : JDLocale.L("plugins.optional.langfileeditor.languageFile.select", "<Please select a Language File!>")), BorderLayout.CENTER);
         top2.add(btnBrowseFile = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
         txtFile.setEditable(false);
         btnBrowseFile.addActionListener(this);
@@ -123,6 +130,7 @@ public class LangFileEditor extends PluginOptional {
         frame.pack();
         frame.setVisible(true);
 
+        if (sourceFolder != null || languageFile != null) initList();
     }
 
     private void initList() {
@@ -238,7 +246,11 @@ public class LangFileEditor extends PluginOptional {
 
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
 
-            showGui();
+            if (frame == null || !frame.isVisible()) {
+                showGui();
+            } else {
+                frame.toFront();
+            }
 
         } else if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
 
@@ -251,6 +263,8 @@ public class LangFileEditor extends PluginOptional {
                 txtFolder.setText(sourceFolder.getAbsolutePath());
                 initList();
 
+                subConfig.setProperty(PROPERTY_FOLDER, sourceFolder);
+                subConfig.save();
                 frame.getRootPane().setDefaultButton(btnBrowseFile);
             }
 
@@ -264,6 +278,8 @@ public class LangFileEditor extends PluginOptional {
                 txtFile.setText(languageFile.getAbsolutePath());
                 initList();
 
+                subConfig.setProperty(PROPERTY_FILE, languageFile);
+                subConfig.save();
                 frame.getRootPane().setDefaultButton(btnBrowseFolder);
             }
 
@@ -321,7 +337,9 @@ public class LangFileEditor extends PluginOptional {
 
                 if (data.get(i)[2].equals("")) {
                     String def = data.get(i)[1];
-//                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+                    // if (!def.equals("") && !def.equals(JDLocale.L(
+                    // "plugins.optional.langfileeditor.noDefaultValue",
+                    // "<no default value>"))) tableModel.setValueAt(def, i, 2);
                     if (!def.equals("")) tableModel.setValueAt(def, i, 2);
                 }
 
@@ -335,7 +353,9 @@ public class LangFileEditor extends PluginOptional {
 
             for (int i : table.getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
-//                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) tableModel.setValueAt(def, i, 2);
+                // if (!def.equals("") && !def.equals(JDLocale.L(
+                // "plugins.optional.langfileeditor.noDefaultValue",
+                // "<no default value>"))) tableModel.setValueAt(def, i, 2);
                 if (!def.equals("")) tableModel.setValueAt(def, i, 2);
             }
 
@@ -381,7 +401,9 @@ public class LangFileEditor extends PluginOptional {
 
                     String def = data.get(i)[1];
 
-//                    if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+                    // if (!def.equals("") && !def.equals(JDLocale.L(
+                    // "plugins.optional.langfileeditor.noDefaultValue",
+                    // "<no default value>"))) {
                     if (!def.equals("")) {
                         logger.finer("Working on " + data.get(i)[0] + ":");
                         String result = JDLocale.translate(lngKey, def);
@@ -409,7 +431,9 @@ public class LangFileEditor extends PluginOptional {
 
                 String def = tableModel.getValueAt(i, 1);
 
-//                if (!def.equals("") && !def.equals(JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>"))) {
+                // if (!def.equals("") && !def.equals(JDLocale.L(
+                // "plugins.optional.langfileeditor.noDefaultValue",
+                // "<no default value>"))) {
                 if (!def.equals("")) {
                     logger.finer("Working on " + data.get(i)[0] + ":");
                     String result = JDLocale.translate(lngKey, def);
@@ -547,8 +571,8 @@ public class LangFileEditor extends PluginOptional {
 
         for (String[] match : matches) {
 
-            if (match[0].endsWith(" ")) match[0] = match[0].substring(0, match[0].length() - 1);
-            if (match[1].startsWith(" ")) match[1] = match[1].substring(1);
+            match[0] = match[0].trim();
+            match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
             if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
                 keys.add(Encoding.UTF8Decode(match[0]));
@@ -574,17 +598,16 @@ public class LangFileEditor extends PluginOptional {
             String pattern2 = "JDLocale\\.LF\\(\"(.*?)\",[\\s]?\"(.*?)\",";
             String[][] matches = new Regex(Pattern.compile(pattern1 + "|" + pattern2).matcher(file)).getMatches();
 
-            int key;
+            int start;
             for (String[] match : matches) {
 
-                key = (match[0] != null) ? 0 : 2;
-                if (!keys.contains(match[key].trim())) {
+                start = (match[0] != null) ? 0 : 2;
+                match[start] = match[start].trim();
+                match[start + 1] = match[start + 1].trim() + ((match[start + 1].endsWith(" ")) ? " " : "");
+                if (!keys.contains(match[start])) {
 
-                    keys.add(Encoding.UTF8Decode(match[key].trim()));
-//                    String k = match[key].trim();
-//                    String v = JDLocale.L("plugins.optional.langfileeditor.noDefaultValue", "<no default value>");
-//                    v = match[key + 1].trim();
-                    entries.add(new String[] { Encoding.UTF8Decode(match[key].trim()), Encoding.UTF8Decode(match[key + 1].trim()) });
+                    keys.add(Encoding.UTF8Decode(match[start]));
+                    entries.add(new String[] { Encoding.UTF8Decode(match[start]), Encoding.UTF8Decode(match[start + 1]) });
 
                 }
             }
