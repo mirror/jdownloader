@@ -40,22 +40,11 @@ public class Myupcc extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            String link = requestInfo.getRegexp("<a href=\\\"(.*?)\\\" target").getFirstMatch();
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String link = new Regex(br.getPage(parameter), Pattern.compile("<a href=\\\\\"(.*?)\\\\\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        if (link != null) decryptedLinks.add(createDownloadlink(link));
+
         return decryptedLinks;
     }
 
