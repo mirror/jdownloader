@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,14 +36,7 @@ public class MyvideoDe extends PluginForDecrypt {
     static private String host = "myvideo.de";
     static private final Pattern FILENAME = Pattern.compile("GetThis\\('(.*?)',", Pattern.CASE_INSENSITIVE);
     static public final Pattern DOWNLOADURL = Pattern.compile("SWFObject\\('http://myvideo.*?/player/.*?swf\\?(http://[\\w\\.\\-0-9]*//*.*?flv)&amp;ID=[0-9]+', 'video_player_swf'", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/" /*
-                                                                                                         * Das
-                                                                                                         * reicht,
-                                                                                                         * Titel
-                                                                                                         * dahinter
-                                                                                                         * nicht
-                                                                                                         * nötig
-                                                                                                         */, Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/", Pattern.CASE_INSENSITIVE);
 
     public MyvideoDe() {
         super();
@@ -77,11 +69,6 @@ public class MyvideoDe extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

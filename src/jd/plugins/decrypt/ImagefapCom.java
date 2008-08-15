@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -32,8 +31,6 @@ public class ImagefapCom extends PluginForDecrypt {
     static private final String host = "imagefap.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
 
-    private URL url;
-
     public ImagefapCom() {
         super();
     }
@@ -46,7 +43,7 @@ public class ImagefapCom extends PluginForDecrypt {
             if (!parameter.contains("view=2")) {
                 parameter += "&view=2";
             }
-            url = new URL(parameter);
+            URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
@@ -60,11 +57,6 @@ public class ImagefapCom extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

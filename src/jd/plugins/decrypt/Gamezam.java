@@ -117,11 +117,6 @@ public class Gamezam extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }
@@ -132,7 +127,7 @@ public class Gamezam extends PluginForDecrypt {
     }
 
     @Override
-public String getPluginName() {
+    public String getPluginName() {
         return host;
     }
 

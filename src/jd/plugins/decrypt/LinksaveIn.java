@@ -36,8 +36,6 @@ public class LinksaveIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    private String CODER = "JD-Team";
-
     public LinksaveIn() {
         super();
     }
@@ -68,13 +66,8 @@ public class LinksaveIn extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override

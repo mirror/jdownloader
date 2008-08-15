@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -44,7 +43,6 @@ public class ftp2share extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             Browser br = new Browser();
-      
 
             if (cryptedLink.matches(patternSupported_Folder.pattern())) {
                 if (!cryptedLink.contains("?system")) {
@@ -78,11 +76,6 @@ public class ftp2share extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

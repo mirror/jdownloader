@@ -46,19 +46,18 @@ public class Lixin extends PluginForDecrypt {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-          
-            
+
             boolean lix_continue = false;
             Matcher matcher;
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */
-           
+
             br.getPage(cryptedLink);
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                matcher = patternCaptcha.matcher(br+"");
+                matcher = patternCaptcha.matcher(br + "");
                 if (matcher.find()) {
                     form = br.getForm(0);
-                    
+
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                     File captchaFile = this.getLocalCaptchaFile(this);
                     if (!Browser.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
@@ -81,7 +80,7 @@ public class Lixin extends PluginForDecrypt {
             }
             if (lix_continue == true) {
                 /* EinzelLink filtern */
-                matcher = patternIframe.matcher(br+"");
+                matcher = patternIframe.matcher(br + "");
                 if (matcher.find()) {
                     /* EinzelLink gefunden */
                     String link = matcher.group(1);
@@ -90,9 +89,9 @@ public class Lixin extends PluginForDecrypt {
                     /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
                     Form[] forms = br.getForms();
                     for (Form element : forms) {
-                       
+
                         br.submitForm(element);
-                        matcher = patternIframe.matcher(br+"");
+                        matcher = patternIframe.matcher(br + "");
                         if (matcher.find()) {
                             /* EinzelLink gefunden */
                             String link = matcher.group(1);
@@ -106,11 +105,6 @@ public class Lixin extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

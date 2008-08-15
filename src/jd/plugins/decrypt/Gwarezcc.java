@@ -49,7 +49,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
     public Gwarezcc() {
         super();
-        setConfigEelements();
+        setConfigElements();
     }
 
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
@@ -137,12 +137,8 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     public String getCoder() {
-        return "JD-Team,Scikes";
+        return "JD-Team, Scikes";
     }
 
     public String getHost() {
@@ -213,7 +209,7 @@ public class Gwarezcc extends PluginForDecrypt {
         return link;
     }
 
-    private void setConfigEelements() {
+    private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_DLC, JDLocale.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));
     }
 

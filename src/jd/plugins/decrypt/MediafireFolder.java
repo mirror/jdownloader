@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -37,17 +36,17 @@ public class MediafireFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            Browser br= new Browser();
-          
+            Browser br = new Browser();
+
             br.getPage(parameter);
-            String reqlink =  br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
+            String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
             if (reqlink == null) { return null; }
             br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
-            String links[][] = br.getRegex( Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
+            String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
-        
+
             for (String[] element : links) {
-               
+
                 DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
                 link.setName(element[1]);
                 link.setDownloadSize(Long.parseLong(element[2]));
@@ -59,11 +58,6 @@ public class MediafireFolder extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
