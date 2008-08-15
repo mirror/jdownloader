@@ -374,8 +374,19 @@ public class Main {
             } catch (Exception e) {
 
                 e.printStackTrace();
+
+                StackTraceElement[] trace = e.getStackTrace();
+                for (int i = 0; i < trace.length; i++)
+                    Main.log(log, "\tat " + trace[i]+"\r\n");
+
                 zip.delete();
                 zip.deleteOnExit();
+
+                pa.setInstalled(true);
+                pa.setUpdating(false);
+                pa.setDownloaded(false);
+            
+                
             }
 
         }

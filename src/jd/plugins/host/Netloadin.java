@@ -289,7 +289,7 @@ public class Netloadin extends PluginForHost {
 
             return;
         }
-
+    
         br.getPage(downloadLink.getDownloadURL());
         HTTPConnection con;
         if (br.getRedirectLocation() == null) {

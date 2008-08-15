@@ -59,21 +59,29 @@ public class PackageManager extends Interaction implements Serializable {
     private void checkNewInstalled() {
 
         // ArrayList<PackageData> ret= new ArrayList<PackageData>();
-        boolean ch = false;
+   
         String links = "";
+        String error = "";
         for (PackageData pa : getPackageData()) {
             if (pa.isInstalled()) {
+                if(pa.getInstalledVersion()!=Integer.parseInt(pa.getStringProperty("version"))){
+                    error += JDLocale.LF("system.update.error.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
+
+                }else{
+                    
+                    links += JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
+
+                    
+                }
                 pa.setInstalled(false);
-
-                ch = true;
-                links += JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
-
+             
+                
             }
         }
-        if (!ch) return;
+     
 
-        JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links), 15);
-
+        if(!links.equals(""))JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links), 15);
+        if(!error.equals(""))JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links), 15);
         // ArrayList<File> slist = (ArrayList<File>)
         // managerConfig.getProperty("NEW_INSTALLED_SUCCESSFULL");
         // if (slist != null) {
