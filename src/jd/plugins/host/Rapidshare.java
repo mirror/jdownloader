@@ -848,7 +848,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+//        LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
@@ -879,7 +879,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public String getFileInformationString(DownloadLink parameter) {
-        LinkStatus linkStatus = parameter.getLinkStatus();
+//        LinkStatus linkStatus = parameter.getLinkStatus();
         // if (this.hardewareError) {
         // return "<Hardware Fehler> " +
         // super.getFileInformationString(parameter);
@@ -1166,13 +1166,13 @@ public class Rapidshare extends PluginForHost {
             ai.setValid(false);
             return ai;
         }
-
-        String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-        String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
-        String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        logger.info(br+"");
+        String validUntil = br.getRegex("<td>(Expiration date:|G&uuml;ltig bis:)</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+        String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch(2);
+        String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
         String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-        String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-        String trafficShareLeft = br.getRegex("<td>TrafficShare left:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
+        String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+        String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
         ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));
