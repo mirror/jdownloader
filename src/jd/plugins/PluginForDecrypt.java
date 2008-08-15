@@ -123,23 +123,23 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             return new ArrayList<DownloadLink>();
         }
         FilePackage fp= new FilePackage();
-        String pn=null;
-        for(DownloadLink link:tmpLinks){
-            if(link.getFilePackage()==JDUtilities.getController().getDefaultFilePackage()){
-                
-                link.setFilePackage(fp);
-                
-                if(pn==null){
-                    pn=link.getName();
-                }else{
-                    pn=JDUtilities.getSimString(pn, link.getName());
-                }
-            }
-           
-            
-        }
-        if(pn==null||pn.length()<=3)pn=JDLocale.L("plugins.decrypt.packagename.various","various");
-        fp.setName(pn);
+//        String pn=null;
+//        for(DownloadLink link:tmpLinks){
+//            if(link.getFilePackage()==JDUtilities.getController().getDefaultFilePackage()){
+//                
+//                link.setFilePackage(fp);
+//                
+//                if(pn==null){
+//                    pn=link.getName();
+//                }else{
+//                    pn=JDUtilities.getSimString(pn, link.getName());
+//                }
+//            }
+//           
+//            
+//        }
+//        if(pn==null||pn.length()<=3)pn=JDLocale.L("plugins.decrypt.packagename.various","various");
+//        fp.setName(pn);
         
         if (tmpLinks == null) {
             logger.severe("ACHTUNG1 Decrypt Plugins müssen im letzten schritt einen  Vector<DownloadLink>");

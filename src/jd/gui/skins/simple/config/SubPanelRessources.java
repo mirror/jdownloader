@@ -188,7 +188,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         for (int i = 0; i < packageData.size(); i++) {
-            packageData.get(i).setInstalledVersion(-1);
+            packageData.get(i).setInstalledVersion(0);
             packageData.get(i).setUpdating(false);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
