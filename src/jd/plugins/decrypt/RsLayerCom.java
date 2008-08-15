@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -40,7 +41,7 @@ public class RsLayerCom extends PluginForDecrypt {
         super();
     }
 
-    private boolean add_container(String cryptedLink, String ContainerFormat) {
+    private boolean add_container(String cryptedLink, String ContainerFormat) throws IOException {
         String link_id = new Regex(cryptedLink, patternSupported).getFirstMatch();
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {

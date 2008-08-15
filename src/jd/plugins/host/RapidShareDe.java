@@ -238,23 +238,24 @@ br.setFollowRedirects(false);
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        
+        try {
         Browser.clearCookies(HOST);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         Form[] forms = br.getForms();
         if (forms.length < 2) { return false; }
-        try {
+      
         br.submitForm(forms[1]);
        
             String[][] regExp = new Regex(br, "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
             downloadLink.setDownloadSize(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
             return true;
-        } catch (Exception e) {
-            // TODO: handle exception
+        }catch(Exception e){
+            e.printStackTrace();
         }
         return false;
+
     }
 
     @Override

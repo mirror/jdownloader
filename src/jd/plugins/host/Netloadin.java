@@ -346,6 +346,7 @@ Browser c=br.cloneBrowser();
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        try{
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         Browser.clearCookies(HOST);
@@ -383,6 +384,10 @@ Browser c=br.cloneBrowser();
         downloadLink.setDownloadSize((int) Regex.getSize(entries[1]));
 
         if (entries[2].equalsIgnoreCase("online")) { return true; }
+        return false;
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return false;
 
     }

@@ -38,6 +38,7 @@ import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.SnifferException;
 import jd.utils.Sniffy;
 
 public class Browser {
@@ -142,12 +143,10 @@ public class Browser {
     }
 
     public Form[] getForms() {
-        try {
+       
 
             return Form.getForms(this);
-        } catch (Exception e) {
-            return null;
-        }
+     
 
     }
 
@@ -158,25 +157,25 @@ public class Browser {
         return headers;
     }
 
-    private boolean snifferCheck() {
+    private boolean snifferCheck() throws SnifferException {
         if (!snifferDetection) return false;
         if (Sniffy.hasSniffer()) {
             JDUtilities.getLogger().severe("Sniffer Software detected");
-            return true;
+            throw new SnifferException();   
         }
         return false;
     }
 
-    public String getPage(String string) {
+    public String getPage(String string) throws IOException {
         string = getURL(string);
-        try {
+       
 
             if (currentURL == null) {
                 currentURL = new URL(string);
             }
             
             if (snifferCheck()){
-                throw new IOException("Sniffer found");   
+//                throw new SnifferException();   
             } 
             GetRequest request = new GetRequest(string);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
@@ -202,13 +201,8 @@ public class Browser {
             }
             return ret;
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        return null;
+       
+     
     }
 
     public int getReadTimeout() {
@@ -232,7 +226,7 @@ public class Browser {
         return request;
     }
 
-    public HTTPConnection openFormConnection(Form form) {
+    public HTTPConnection openFormConnection(Form form) throws IOException {
 
         String base = null;
         if (request != null) base = request.getUrl().toString();
@@ -271,15 +265,15 @@ public class Browser {
 
     }
 
-    public HTTPConnection openGetConnection(String string) {
+    public HTTPConnection openGetConnection(String string) throws IOException {
         string = getURL(string);
 
-        try {
+       
             if (currentURL == null) {
                 currentURL = new URL(string);
             }
             if (snifferCheck()){
-                throw new IOException("Sniffer found");   
+                //throw new IOException("Sniffer found");   
             } 
             GetRequest request = new GetRequest(string);
             if (connectTimeout > 0) {
@@ -306,13 +300,7 @@ public class Browser {
             }
             return this.request.getHttpConnection();
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        return null;
+   
     }
 
     private String getURL(String string) {
@@ -327,14 +315,14 @@ public class Browser {
         return string;
     }
 
-    private HTTPConnection openPostConnection(String url, HashMap<String, String> post) {
+    private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-        try {
+  
             if (currentURL == null) {
                 currentURL = new URL(url);
             }
             if (snifferCheck()){
-                throw new IOException("Sniffer found");   
+                //throw new IOException("Sniffer found");   
             } 
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
@@ -362,28 +350,21 @@ public class Browser {
             }
             return this.request.getHttpConnection();
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        return null;
     }
 
-    public HTTPConnection openPostConnection(String url, String post) {
+    public HTTPConnection openPostConnection(String url, String post) throws IOException {
 
         return openPostConnection(url, Request.parseQuery(post));
     }
 
-    public String postPage(String url, HashMap<String, String> post) {
+    public String postPage(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-        try {
+  
             if (currentURL == null) {
                 currentURL = new URL(url);
             }
             if (snifferCheck()){
-                throw new IOException("Sniffer found");   
+                //throw new IOException("Sniffer found");   
             } 
             PostRequest request = new PostRequest(url);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
@@ -414,17 +395,11 @@ public class Browser {
             }
             return ret;
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        return null;
+     
 
     }
 
-    public JavaScript getJavaScript() {
+    public JavaScript getJavaScript() throws IOException {
         if (request == null) return null;
         String data = toString();
         String url = request.getUrl().toString();
@@ -504,7 +479,7 @@ public class Browser {
         return new JavaScript(ret);
     }
 
-    public String postPage(String url, String post) {
+    public String postPage(String url, String post) throws IOException {
 
         return postPage(url, Request.parseQuery(post));
     }
@@ -549,7 +524,7 @@ public class Browser {
     public String submitForm(Form form) throws IOException {
         String base = null;
         if (snifferCheck()){
-            throw new IOException("Sniffer found");   
+            //throw new IOException("Sniffer found");   
         } 
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
@@ -623,12 +598,9 @@ public class Browser {
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             String ret = null;
-            try {
+        
                 ret = request.read();
-            } catch (IOException e) {
-
-                e.printStackTrace();
-            }
+         
             Browser.updateCookies(request);
             this.request = request;
             try {
@@ -661,14 +633,12 @@ public class Browser {
         return new Regex(this, fileNotFound).matches();
     }
 
-    public String loadConnection(HTTPConnection con) {
-        try {
+    public String loadConnection(HTTPConnection con) throws IOException {
+    
             if (con == null) return request.read();
             if (con == null) return null;
             return Request.read(con);
-        } catch (IOException e) {
-            return null;
-        }
+    
 
     }
 
@@ -831,13 +801,13 @@ public class Browser {
         return br;
     }
 
-    public Form[] getForms(String downloadURL) {
+    public Form[] getForms(String downloadURL) throws IOException {
         this.getPage(downloadURL);
         return this.getForms();
 
     }
 
-    public HTTPConnection openFormConnection(int i) {
+    public HTTPConnection openFormConnection(int i) throws IOException {
         return openFormConnection(getForm(i));
 
     }

@@ -50,6 +50,7 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.SnifferException;
 import jd.utils.Sniffy;
 
 import org.mozilla.javascript.Context;
@@ -334,11 +335,11 @@ public class Rapidshare extends PluginForHost {
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
         Browser br = new Browser();
-        
-        if(downloadLink.getLinkType()==DownloadLink.LINKTYPE_CONTAINER){
+
+        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             br.setSnifferDetection(true);
         }
-       
+
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
 
@@ -595,6 +596,9 @@ public class Rapidshare extends PluginForHost {
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+            if (Sniffy.hasSniffer()) throw new SnifferException();
+        }
         Rapidshare.correctURL(downloadLink);
         logger.info(downloadLink.getDownloadURL());
 
@@ -1175,9 +1179,9 @@ public class Rapidshare extends PluginForHost {
         ai.setUsedSpace(Regex.getSize(usedSpace));
         ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);
-//if(account.getStatus()==null||account.getStatus().trim().length()==0){
-//    account.setStatus("Account is ok");
-//}
+        // if(account.getStatus()==null||account.getStatus().trim().length()==0){
+        // account.setStatus("Account is ok");
+        // }
         try {
             Date date = dateFormat.parse(validUntil);
             ai.setValidUntil(date.getTime());
@@ -1192,7 +1196,6 @@ public class Rapidshare extends PluginForHost {
 
         return ai;
     }
-
 
     /**
      * Wartet die angegebene Ticketzeit ab

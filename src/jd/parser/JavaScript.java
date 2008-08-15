@@ -51,10 +51,11 @@ public final class JavaScript {
 
 	/**
 	 * TODO
-	 * muss noch überarbeitet werden
+	 * muss noch ï¿½berarbeitet werden
 	 * @param args
 	 */
 	public static void main(String[] args) {
+	    try{
 		Browser b = new Browser();
 	b.getPage("http://rapidlayer.in/go/c8f16ccc");
 	JavaScript js = b.getJavaScript();
@@ -65,6 +66,9 @@ public final class JavaScript {
 	//js.javaScript=js.javaScript.replaceAll("document.getElementById\\('ausgabe'\\).innerHTML=", "return ");
 System.out.println(js);
 	System.out.println(js.callFunction(fun_id, new String[] {dec}));
+	    }catch(Exception e ){
+	        e.printStackTrace();
+	    }
 	}
 
 }

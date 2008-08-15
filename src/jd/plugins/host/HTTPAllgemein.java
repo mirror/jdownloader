@@ -1,6 +1,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
@@ -21,7 +22,6 @@ public class HTTPAllgemein extends PluginForHost {
 
     private String contentType;
 
-
     public HTTPAllgemein() {
         super();
     }
@@ -40,41 +40,48 @@ public class HTTPAllgemein extends PluginForHost {
     public String getCoder() {
         return "JD-Team";
     }
+
     public String getFileInformationString(DownloadLink parameter) {
-        return "("+contentType+")"+parameter.getName();
+        return "(" + contentType + ")" + parameter.getName();
     }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-         String linkurl;
-        downloadLink.setUrlDownload(linkurl=downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
-       
-      
-            if (linkurl != null) {
-                br.setFollowRedirects(true);
-               
-         
-                HTTPConnection urlConnection =  br.openGetConnection(linkurl);
-                if(!urlConnection.isOK())return false;
+        String linkurl;
+        downloadLink.setUrlDownload(linkurl = downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
+
+        if (linkurl != null) {
+            br.setFollowRedirects(true);
+
+            HTTPConnection urlConnection;
+            try {
+                urlConnection = br.openGetConnection(linkurl);
+
+                if (!urlConnection.isOK()) return false;
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadSize(urlConnection.getContentLength());
-                this.contentType=urlConnection.getContentType();
+                this.contentType = urlConnection.getContentType();
                 return true;
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+
             }
-     
+        }
+
         linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
         return false;
 
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    /*
+     * public int getMaxSimultanDownloadNum() { return Integer.MAX_VALUE; }
+     * 
+     * @Override
+     */public String getPluginName() {
         return HOST;
     }
 
@@ -102,9 +109,8 @@ public class HTTPAllgemein extends PluginForHost {
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        HTTPConnection urlConnection =  br.openGetConnection(downloadLink.getDownloadURL());
-        
-   
+        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             // step.setStatus(PluginStep.STATUS_ERROR);

@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
+import jd.JDInit;
 import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -25,6 +26,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
@@ -35,6 +37,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
     private static final long serialVersionUID = 4145243293360008779L;
     private SubConfiguration config;
     private Configuration configuration;
+    private Boolean beta;
 
     public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -55,6 +58,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
     public void initPanel() {
 
         config = CFGConfig.getConfig("WEBUPDATE");
+        this.beta = CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false);
         GUIConfigEntry ce;
         // ce = new GUIConfigEntry(new
         // ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
@@ -87,6 +91,10 @@ public class ConfigPanelUpdater extends ConfigPanel {
         logger.info("save");
         saveConfigEntries();
         config.save();
+        if (beta != CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
+            new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
+        }
+
     }
 
 }

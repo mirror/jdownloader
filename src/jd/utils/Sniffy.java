@@ -13,7 +13,7 @@ public final class Sniffy {
     public static Pattern whiteList = Pattern.compile("(Sniffy|sygate|kaspersky|Linksys Wireless Network Monitor)", Pattern.CASE_INSENSITIVE);
 
     public static boolean hasSniffer() {
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV || JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) { return false; }
+//        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV || JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL) { return false; }
         if (OSDetector.isWindows()) { return Sniffy.hasWinSnifer();
 
         }
