@@ -17,23 +17,20 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Collectr extends PluginForDecrypt {
 
     static private String host = "collectr.net";
 
-    static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?");
+    static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
 
     public Collectr() {
@@ -42,24 +39,28 @@ public class Collectr extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+
+        Browser.clearCookies(host);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            Matcher matcher = patternAb18.matcher(reqinfo.getHtmlCode());
-            if (matcher.find()) {
-                reqinfo = HTTP.postRequest(url, "o18=true");
-            }
-            String link = new Regex(reqinfo.getHtmlCode(), "<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getFirstMatch();
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        br.getPage(parameter);
+
+        Form[] forms = br.getForms();
+
+        if (Regex.matches(br.toString(), patternAb18)) {
+            forms[0].put("o18", "o18=true");
+            br.submitForm(forms[0]);
         }
+
+        String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getMatches(1);
+        progress.setRange(links.length);
+
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(element));
+            progress.increase(1);
+        }
+
         return decryptedLinks;
     }
 
