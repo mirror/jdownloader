@@ -17,17 +17,12 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class FilehostIt extends PluginForDecrypt {
 
@@ -41,19 +36,14 @@ public class FilehostIt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "<td>\n								<div align=\"center\"><a href=\"°\">");
-            progress.setRange(links.size());
-            for (int i = 0; i < links.size(); i++) {
-                decryptedLinks.add(createDownloadlink(links.get(i).get(0)));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("<td>\n								<div align=\"center\"><a href=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] element : links) {
+            decryptedLinks.add(createDownloadlink(element[0]));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
