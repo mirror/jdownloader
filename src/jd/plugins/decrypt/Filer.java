@@ -20,12 +20,14 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
+    static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/\\w*/\\w*", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
@@ -34,14 +36,18 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+
+        String cryptedLink = parameter;
+        Browser.clearCookies(host);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String[][] matches = new Regex(br.getPage(parameter), Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatches();
-        progress.setRange(matches.length);
-        for (String[] elements : matches) {
-            DownloadLink link = createDownloadlink("http://www.filer.net/get/" + elements[0] + ".html");
-            link.setName(elements[1]);
-            decryptedLinks.add(link);
+        br.getPage(cryptedLink);
+        String[] links = br.getRegex(INFO).getMatches(1);
+        progress.setRange(links.length);
+
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink("http://www.filer.net/get/" + element + ".html"));
             progress.increase(1);
         }
 
