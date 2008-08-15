@@ -118,7 +118,7 @@ public class DownloadInfo extends JFrame {
             return;
         }
         JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(JDLocale.L("gui.linkInfo." + label, label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
         JLabel value;
         JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
