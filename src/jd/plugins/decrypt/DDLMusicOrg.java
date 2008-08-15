@@ -61,7 +61,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                     password = null;
                 }
 
-                String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getColumn(1);
+                String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getColumn(-1);
 
                 progress.setRange(ids.length);
                 DownloadLink link;

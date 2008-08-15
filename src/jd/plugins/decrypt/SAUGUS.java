@@ -76,7 +76,7 @@ public class SAUGUS extends PluginForDecrypt {
 
             if (br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
             String hst = "http://" + br.getRequest().getUrl().getHost() + "/";
-            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getColumn(1);
+            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getColumn(-1);
             progress.setRange(crypt.length);
 
             for (String string : crypt) {

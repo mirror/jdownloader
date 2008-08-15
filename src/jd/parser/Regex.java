@@ -16,6 +16,7 @@
 
 package jd.parser;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,6 +25,32 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+/**
+ * Die Regexklasse
+ * Diese Klasse wird in JD zum Parsen über Regluar Expressions verwendet. Andere Konstrukte wie  getBetween un Co sollten wenn möglich nicht verwendet werden.
+ * Zum Parsen wird der Klasse der text (Heuhaufen) und das pattern übergeben. Das Pattern kann mehrmals im Text vorkommen und kanns elbst mehrere "PLatzhalter" enhalten. 
+ * daraus ergibt sich ein Tabellenartiges 2-D Trefferfeld. Die reihen dieser Tabelle sind dabei Die trefferGruppen.
+ * 
+ * Beispiel: Sind 3 Platzhalter im Pattern (..) So hat jede Reihe 3 Einträge. Es gibt soviele Reihen wie das pattern im Text vorkommt.
+ * 
+ * Der ZUgriff auf die Treffer erfolgt über Reihen und Spalten. 
+ * 
+ *  _______X
+ * |
+ * |
+ * |
+ * Y
+ * 
+ * Der Erste Treffer, bzw die erste Treffergruppe haben immer den Index 0. Mit Index -1 wird jeweils der Komplette Match angesprochen. 
+ * Beispiel:  "http://(.*?)\\.(.*?)"  auf a href="http://www.google.de"  
+ * Index 0 z.B. getMatch(0,0); gibt www.google zurück
+ * Index 1      getMatch(1,0); gibt de zurück
+ * index -1     getMatch(-1,0); gibt "http://www.google.de" zurück.
+ * 
+ * 
+ *
+ */
 public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
@@ -144,29 +171,7 @@ public class Regex {
         return c;
     }
 
-    /*
-     * public static void main(String args[]) { String
-     * txt="http://oxygen-warez.com/category/XVID/10'000_BC_DVD_Rip_AC3_104902.html"; // //
-     * 
-     * new
-     * Regex(txt,"(http://.*filefox.in/\\?id=.+)|(http://.*alphawarez.us/\\?id=.+)|(http://.*pirate-loads.com/\\?id=.+)|(http://.*fettrap.com/\\?id=.+)|(http://.*omega-music.com(/\\?id=.+|/download/.+/.+.html))|(http://.*hardcoremetal.biz/\\?id=.+)|(http://.*flashload.org/\\?id=.+)|(http://.*twin-warez.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*steelwarez.com/\\?id=.+)|(http://.*fullstreams.info/\\?id=.+)|(http://.*lionwarez.com/\\?id=.+)|(http://.*1dl.in/\\?id=.+)|(http://.*chrome-database.com/\\?id=.+)|(http://.*oneload.org/\\?id=.+)|(http://.*youwarez.biz/\\?id=.+)|(http://.*saugking.net/\\?id=.+)|(http://.*leetpornz.com/\\?id=.+)|(http://.*freefiles4u.com/\\?id=.+)|(http://.*dark-load.net/\\?id=.+)|(http://.*wrzunlimited.1gb.in/\\?id=.+)|(http://.*crimeland.de/\\?id=.+)|(http://.*get-warez.in/\\?id=.+)|(http://.*meinsound.com/\\?id=.+)|(http://.*projekt-tempel-news.de.vu/\\?id=.+)|(http://.*datensau.org/\\?id=.+)|(http://.*musik.am(/\\?id=.+|/download/.+/.+.html))|(http://.*spreaded.net(/\\?id=.+|/download/.+/.+.html))|(http://.*relfreaks.com(/\\?id=.+|/download/.+/.+.html))|(http://.*babevidz.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serien24.com(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-4-free.net(/\\?id=.+|/download/.+/.+.html))|(http://.*xxx-reactor.net(/\\?id=.+|/download/.+/.+.html))|(http://.*porn-traffic.net(/\\?id=.+|/category/.+/.+.html))|(http://.*chili-warez.net(/\\?id=.+|/.+/.+.html))|(http://.*game-freaks.net(/\\?id=.+|/download/.+/.+.html))|(http://.*isos.at(/\\?id=.+|/download/.+/.+.html))|(http://.*your-load.com(/\\?id=.+|/download/.+/.+.html))|(http://.*mov-world.net(/\\?id=.+|/category/.+/.+.html))|(http://.*xtreme-warez.net(/\\?id=.+|/category/.+/.+.html))|(http://.*sceneload.to(/\\?id=.+|/download/.+/.+.html))|(http://.*oxygen-warez.com(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.to(/\\?id=.+|/category/.+/.+.html))|(http://.*serienfreaks.in(/\\?id=.+|/category/.+/.+.html))|(http://.*warez-load.com(/\\?id=.+|/category/.+/.+.html))|(http://.*ddl-scene.com(/\\?id=.+|/category/.+/.+.html))|(http://.*mp3king.cinipac-hosting.biz/\\?id=.+)").matches(); //
-     * String[] matchs2 = new Regex(txt,"ich .*? (.*?) und").getMatches(0);
-     * System.out.println("II"); }
-     */
 
-    /**
-     * 
-     * gibt den ersten Treffer aus fals groups existieren von group 1 sonst von
-     * group 0
-     */
-    public String getFirstMatch() {
-        if (matcher == null) { return null; }
-        if (matcher.groupCount() == 0) {
-            return getMatch(-1);
-        } else {
-            return getMatch(0);
-        }
-    }
 
     // /**
     // * gibt den ersten Treffer einer group aus
@@ -235,8 +240,10 @@ public class Regex {
      */
     public String[] getColumn(int x) {
         if (matcher == null) { return null; }
+        x++;
         Matcher matchertmp = matcher;
         matcher.reset();
+        
         ArrayList<String> ar = new ArrayList<String>();
         while (matchertmp.find()) {
             ar.add(matchertmp.group(x));
@@ -304,9 +311,53 @@ public class Regex {
 
     }
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws IOException {
+       Browser br= new Browser();
+       br.getPage("http://www.google.de/search?q=jdownloader");
+       //Pattern mit 2 Platzhaltern. Jede Reihe wird also 2 TReffer lang sein
+       Regex regex = new Regex(br,"<h2 class=r><a href=\"(.*?)\" class=l onmousedown=.*?\">(.*?)</a></h2>");
+       
+       //Holt das ganze 2D Treffer feld
+       String[][] matches2D = regex.getMatches();
+       
+       
+       /*
+        * Spalten abrufen
+        */
+       //Holt sich aus jeder Gruppe nur den ersten. Das entspricht Nur den Seitenurls. 
+       String[] urls=regex.getColumn(0);
+       //Holt sich nur die Seitentitel
+       String[] title=regex.getColumn(1);
+       //Holt sich den Kompletten "Match"
+       String[] complete=regex.getColumn(-1);
+       
+       /*
+        * Gruppen bzw Reihen abrufen
+        */
+       //Holt sich den 1. Treffer
+       String[] first= regex.getRow(0);
+       
+       /*
+        * Gezielt auf Treffer abfragen
+        */
+       //Gibt den namen des 3. Treffers zurück
+       
+       String name3= regex.getMatch(1, 2);
+       
+       
+       
+       /*
+        * Abkürzungen.
+        * Manche oft verwendete konstrukte sind abgekürzt
+        */
+       
+       //ZUgriff auf die Treffer der erste gruppe.
+       
+       String bestUrl=regex.getMatch(0);
+       String bestTitle=regex.getMatch(1);
+       String bestCompleteMatch=regex.getMatch(-1);
 
-        // long ds = Regex.getSeconds("fdsf 67 min");
+       regex=regex;
 
     }
 

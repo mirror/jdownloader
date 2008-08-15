@@ -77,7 +77,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                     if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
@@ -88,7 +88,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (dlc_found == false) {
                     /* Mirrors suchen (Verschlüsselt) */
-                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(1);
+                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                     for (int i = 0; i < mirror_pages.length; i++) {
                         /* Mirror Page zur weiteren Verarbeitung adden */
                         decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
@@ -100,7 +100,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                 String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
                 /* Parts suchen */
-                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getColumn(1);
+                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                 /* Passwort suchen */
                 url = new URL("http://gwarez.cc/" + downloadid + "#details");
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);

@@ -64,7 +64,7 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     private void add_relinkus_links(RequestInfo reqinfo, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(-1);
         progress.addToMax(links.length);
         for (String link : links) {
             reqinfo = HTTP.postRequest(new URL("http://relink.us/" + Encoding.htmlDecode(link)), "submit=Open");
@@ -93,7 +93,7 @@ public class RelinkUs extends PluginForDecrypt {
             }
 
             add_relinkus_links(reqinfo, decryptedLinks);
-            String more_links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(1);
+            String more_links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             for (String link : more_links) {
                 url = new URL("http://relink.us/" + link);
                 reqinfo = HTTP.getRequest(url);

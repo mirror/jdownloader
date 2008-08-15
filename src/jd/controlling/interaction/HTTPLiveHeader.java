@@ -116,7 +116,7 @@ public class HTTPLiveHeader extends Interaction {
             // ArrayList<ArrayList<String>> cats =
             // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
             // href=?cat_select=°>");
-            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getColumn(1);
+            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getColumn(-1);
             for (String element : cats) {
                 requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
                 // ArrayList<ArrayList<String>> router =
@@ -412,7 +412,7 @@ public class HTTPLiveHeader extends Interaction {
                             String key = attributes.item(attribute).getNodeName();
                             String value = attributes.item(attribute).getNodeValue();
                             String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
-                            String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(1);
+                            String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
                                 String req;
                                 if (value.startsWith(params[0])) {
@@ -577,7 +577,7 @@ public class HTTPLiveHeader extends Interaction {
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         // ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request,
         // "%%%°%%%", 1);
-        String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(1);
+        String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(-1);
         if (params.length > 0) {
             String req;
             if (request.startsWith(params[0])) {

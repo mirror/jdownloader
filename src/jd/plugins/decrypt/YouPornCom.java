@@ -42,7 +42,7 @@ public class YouPornCom extends PluginForDecrypt {
         try {
             if (new Regex(parameter, patternSupported_Other).matches()) {
                 loader = HTTP.getRequest(new URL(parameter), "age_check=1", "", true);
-                String[] matches = new Regex(loader.getHtmlCode(), Pattern.compile("<a href=\"(/watch[^\"]+)\">.*?</.*?></", Pattern.CASE_INSENSITIVE)).getColumn(1);
+                String[] matches = new Regex(loader.getHtmlCode(), Pattern.compile("<a href=\"(/watch[^\"]+)\">.*?</.*?></", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                 for (String link : matches) {
                     DownloadLink dlink = createDownloadlink("http://youporn.com" + link);
                     decryptedLinks.add(dlink);

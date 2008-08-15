@@ -44,7 +44,7 @@ public class SharebeeCom extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqInfo = HTTP.getRequest(url);
 
-            String[] g = new Regex(reqInfo.getHtmlCode(), Pattern.compile("u=(.*?)\'\\);return false;\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getColumn(1);
+            String[] g = new Regex(reqInfo.getHtmlCode(), Pattern.compile("u=(.*?)\'\\);return false;\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             progress.setRange(g.length);
 
             for (String element : g) {

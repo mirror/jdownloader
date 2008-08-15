@@ -51,7 +51,7 @@ public class EinsKhDe extends PluginForDecrypt {
         if (Regex.matches(parameter, patternSupported_File)) {
             /* Einzelne Datei */
 
-            String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(1);
+            String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getColumn(-1);
             progress.setRange(links.length);
 
             for (String element : links) {
@@ -79,7 +79,7 @@ public class EinsKhDe extends PluginForDecrypt {
                 }
             }
 
-            String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getColumn(1);
+            String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getColumn(-1);
             progress.setRange(links.length);
 
             for (String element : links) {

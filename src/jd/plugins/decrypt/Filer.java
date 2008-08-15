@@ -38,7 +38,7 @@ public class Filer extends PluginForDecrypt {
 
         Browser.clearCookies(host);
         br.getPage(parameter);
-        String[] links = br.getRegex("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>").getColumn(1);
+        String[] links = br.getRegex("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>").getColumn(-1);
         progress.setRange(links.length);
 
         for (String element : links) {

@@ -37,7 +37,7 @@ public class CineTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(patternLink_Show.pattern())) {
-            String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+            String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             for (String element : mirrors) {
                 decryptedLinks.add(createDownloadlink("http://cine.to/index.php?do=protect&id=" + element));
             }
@@ -49,7 +49,7 @@ public class CineTo extends PluginForDecrypt {
                     capText = capText + extractCaptcha(captcha, j);
                 }
             }
-            String[] links = new Regex(br.postPage(parameter, "captcha=" + capText + "&submit=Senden"), Pattern.compile("window\\.open\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getColumn(1);
+            String[] links = new Regex(br.postPage(parameter, "captcha=" + capText + "&submit=Senden"), Pattern.compile("window\\.open\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             progress.setRange(links.length);
             for (String element : links) {
                 DownloadLink link = createDownloadlink(element);

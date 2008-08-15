@@ -126,7 +126,7 @@ public class Serienjunkies extends PluginForDecrypt {
             return true;
         } else {
 
-            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getColumn(0);
+            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getColumn(-1);
             Pattern pat = Pattern.compile("http://[\\w\\.]{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*", Pattern.CASE_INSENSITIVE);
             for (String element : links) {
                 Matcher m = pat.matcher(element);
@@ -295,7 +295,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public String[] getDecryptableLinks(String data) {
-        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(0);
+        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(-1);
         Vector<String> ret = new Vector<String>();
         scatChecked = true;
         for (String element : links) {

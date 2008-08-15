@@ -416,7 +416,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             }
 
-            String[] matches = requestInfo.getRegexp(patEntry).getColumn(1);
+            String[] matches = requestInfo.getRegexp(patEntry).getColumn(-1);
 
             for (String match : matches) {
 
@@ -920,7 +920,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                             regex = new Regex(Pattern.compile("href=\"(http://download\\.serienjunkies\\.org/.*?\\.html)\"").matcher(match2[1]));
 
-                            for (String link : regex.getColumn(1)) {
+                            for (String link : regex.getColumn(-1)) {
                                 links.add(link);
                             }
 

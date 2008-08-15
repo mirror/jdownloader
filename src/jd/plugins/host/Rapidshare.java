@@ -815,7 +815,7 @@ public class Rapidshare extends PluginForHost {
         // }
         // Vector<String> serverids = getAllSimpleMatches(ticketCode,
         // patternForServer, 3);
-        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(1);
+        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(-1);
 
         // logger.info(ticketCode);
         logger.info("wished Mirror #1 Server " + serverAbb);

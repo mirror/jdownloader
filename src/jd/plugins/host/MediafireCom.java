@@ -127,7 +127,7 @@ public class MediafireCom extends PluginForHost {
         String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getMatch(0);
         url = "http://" + url.replaceAll("'(.*?)'", "$1");
 
-        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getColumn(1);
+        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getColumn(-1);
 
         for (String var : vars) {
             String value = br.getRegex(var + " ?= ?\\'(.*?)\\'").getMatch(0);

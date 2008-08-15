@@ -44,7 +44,7 @@ public class ShareRocktEs extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String[] matches;
         if (new Regex(cryptedLink, patternSupported_v).matches()) {
-            matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(1);
+            matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(-1);
         } else {
             String match = new Regex(cryptedLink, patternSupported_go).getMatch(0);
             if (match == null) { return null; }

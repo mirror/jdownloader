@@ -34,7 +34,7 @@ public class TinyLoadCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] links = new Regex(br.getPage(parameter), Pattern.compile("alt=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        String[] links = new Regex(br.getPage(parameter), Pattern.compile("alt=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(-1);
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(element));
         }
