@@ -42,6 +42,19 @@ import jd.utils.SnifferException;
 import jd.utils.Sniffy;
 
 public class Browser {
+    public class BrowserException extends IOException {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 1509988898224037320L;
+
+        public BrowserException(String string) {
+            super(string);
+        }
+
+    }
+
     public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
 
     public static void clearCookies(String string) {
@@ -138,7 +151,7 @@ public class Browser {
 
     private HashMap<String, String> headers;
 
-    private int limit = 500 * 1024 * 1025;
+    private int limit = 1 * 1024 * 1024;
 
     private int readTimeout = -1;
 
@@ -200,7 +213,10 @@ public class Browser {
 
         request.connect();
         String ret = null;
-        if (request.getHttpConnection().getHeaderField("Content-Length") == null || Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
+
+     
+        if (request.getHttpConnection().getHeaderField("Content-Length") == null) {
+            checkContentLengthLimit(request);
             ret = request.read();
         }
 
@@ -212,6 +228,13 @@ public class Browser {
         }
         return ret;
 
+    }
+
+    private void checkContentLengthLimit(Request request) throws BrowserException {
+        if(Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) > limit){
+            throw new BrowserException("Content-length too big");
+        }
+        
     }
 
     public int getReadTimeout() {
@@ -299,7 +322,7 @@ public class Browser {
         }
 
         request.connect();
-
+       
         Browser.updateCookies(request);
         this.request = request;
         currentURL = new URL(string);
@@ -349,7 +372,7 @@ public class Browser {
             request.getHeaders().putAll(headers);
         }
         request.connect();
-
+       
         this.request = request;
         currentURL = new URL(url);
         if (this.doRedirects && this.request.getLocation() != null) {
@@ -388,9 +411,11 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-        request.connect();
+     
         String ret = null;
-        if (request.getHttpConnection().getHeaderField("Content-Length") == null || limit > 0 && Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
+        checkContentLengthLimit(request);
+        if (request.getHttpConnection().getHeaderField("Content-Length") == null ) {
+            checkContentLengthLimit(request);
             ret = request.read();
         }
 
@@ -615,7 +640,7 @@ public class Browser {
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             String ret = null;
-
+            checkContentLengthLimit(request);
             ret = request.read();
 
             Browser.updateCookies(request);
@@ -651,7 +676,7 @@ public class Browser {
     }
 
     public String loadConnection(HTTPConnection con) throws IOException {
-
+        checkContentLengthLimit(request);
         if (con == null) return request.read();
         if (con == null) return null;
         return Request.read(con);
