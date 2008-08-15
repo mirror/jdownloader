@@ -17,17 +17,15 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class EinsKhDe extends PluginForDecrypt {
@@ -44,47 +42,54 @@ public class EinsKhDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+        
+        Browser.clearCookies(host);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            progress.setRange(1);
-            URL url = new URL(cryptedLink);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            if (cryptedLink.matches(patternSupported_File.pattern())) {
-                /* eine einzelne Datei */
-                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getFirstMatch().toString());
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
-                } else {
-                    return null;
-                }
-            } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
-                /* ein Folder */
-                if (reqinfo.containsHTML("Der Ordner ist Passwortgesch&uuml;tzt.")) {
-                    for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                        logger.finest("1kh.de - Ordnerpasswort benötigt");
-                        String password = JDUtilities.getGUI().showUserInputDialog("1kh.de - Ordnerpasswort?");
-                        if (password == null) {
-                            /* auf abbruch geklickt */
-                            return null;
-                        }
-                        reqinfo = HTTP.postRequest(url, "Password=" + password + "&submit=weiter");
-                        if (!reqinfo.containsHTML("Das eingegebene Passwort ist falsch")) {
-                            break;
-                        }
+        
+        br.getPage(parameter);
+        Form[] forms = br.getForms();
+        if (Regex.matches(parameter, patternSupported_File)) {
+            /* Einzelne Datei */
+            
+            String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatches(1);
+            progress.setRange(links.length);
+            
+            for (String element : links) {
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
+                progress.increase(1);
+            }
+        } else {  
+            /* ganzer Ordner */
+            if (forms[0].getVars().containsKey("Password")) {
+                /* Ordner ist Passwort geschützt */
+                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                    String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
+                  
+                    if (password == null) {
+                        /* Auf "Abbruch" geklickt */
+                        return decryptedLinks;
+                    }
+                    
+                    forms[0].put("Password", password);
+                    br.submitForm(forms[0]);
+                    
+                    if (!br.containsHTML("Das eingegebene Passwort ist falsch!")) {
+                        break;
                     }
                 }
-                String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                progress.setRange(links.length);
-                for (String element : links) {
-                    decryptedLinks.add(createDownloadlink("http://1kh.de/" + element));
-                    progress.increase(1);
-                }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            
+            String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getMatches(1);
+            progress.setRange(links.length);
+            
+            for (String element : links) {
+                decryptedLinks.add(createDownloadlink("http://1kh.de/" + element));
+                progress.increase(1);
+            }
+            
         }
+
         return decryptedLinks;
     }
 

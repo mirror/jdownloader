@@ -85,7 +85,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                         /* Eingabefeld für Passwort vorhanden */
                         String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
                         if (password == null) {
-                            /* Auf "Abbruch" gecklickt */
+                            /* Auf "Abbruch" geklickt */
                             return decryptedLinks;
                         }
                         forms[0].put("folderpass", password);
