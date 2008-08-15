@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -39,21 +40,21 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+        
         String cryptedLink = parameter;
+        Browser.clearCookies(host);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "src=\"(.*?)\"").getFirstMatch());
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        
+        br.getPage(cryptedLink);
+        String[] links = br.getRegex("src=\"(.*?)\"").getMatches(1);
+        progress.setRange(links.length);
+        
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
+            progress.increase(1);
         }
+        
         return decryptedLinks;
     }
 
