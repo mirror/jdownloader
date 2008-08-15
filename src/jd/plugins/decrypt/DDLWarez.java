@@ -58,7 +58,7 @@ public class DDLWarez extends PluginForDecrypt {
         public void run() {
             if (gotjob == true) {
                 logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " started!");
-               String base=br.getBaseURL();
+                String base=br.getBaseURL();
                 String action = form.getAction(base);
              
                 if (action.contains("get_file")) {
