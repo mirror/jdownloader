@@ -215,10 +215,10 @@ public class Browser {
         String ret = null;
 
      
-        if (request.getHttpConnection().getHeaderField("Content-Length") == null) {
+       
             checkContentLengthLimit(request);
             ret = request.read();
-        }
+        
 
         Browser.updateCookies(request);
         this.request = request;
@@ -414,11 +414,11 @@ public class Browser {
         }
      
         String ret = null;
-        checkContentLengthLimit(request);
-        if (request.getHttpConnection().getHeaderField("Content-Length") == null ) {
+  
+        
             checkContentLengthLimit(request);
             ret = request.read();
-        }
+        
 
         Browser.updateCookies(request);
         this.request = request;
