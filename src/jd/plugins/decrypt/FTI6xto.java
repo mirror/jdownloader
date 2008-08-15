@@ -17,17 +17,13 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class FTI6xto extends PluginForDecrypt {
@@ -41,20 +37,13 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        try {
-            if (!parameter.endsWith(".dlc")) {
-                URL url = new URL(parameter);
-                RequestInfo requestInfo = HTTP.getRequest(url);
-                parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + requestInfo.getFirstMatch("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc") + ".dlc";
-            }
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            if (Browser.download(container, parameter)) {
-                JDUtilities.getController().loadContainerFile(container);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        if (!parameter.endsWith(".dlc")) parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + new Regex(br.getPage(parameter), Pattern.compile("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc", Pattern.CASE_INSENSITIVE)).getFirstMatch() + ".dlc";
+
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        if (Browser.download(container, parameter)) {
+            JDUtilities.getController().loadContainerFile(container);
         }
+
         return null;
     }
 
