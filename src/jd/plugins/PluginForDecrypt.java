@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -78,6 +79,11 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
+    }
+
+    @Override
+    public boolean doBotCheck(File file) {
+        return false;
     }
 
     /**
