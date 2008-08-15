@@ -16,17 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Hideurlbiz extends PluginForDecrypt {
 
@@ -40,32 +35,21 @@ public class Hideurlbiz extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            String links[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value=\"(Download|Free Download)\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            for (String[] element : links) {
-                requestInfo = HTTP.getRequest(new URL(element[1]));
-                if (requestInfo.getLocation() != null) {
-                    /* direkt aus dem locationheader */
-                    decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
-                } else {
-                    /* aus dem htmlcode den link finden */
-                    String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                    if (link != null) {
-                        decryptedLinks.add(createDownloadlink(link));
-                    }
-                }
+
+        String links[][] = new Regex(br.getPage(parameter), Pattern.compile("value=\"(Download|Free Download)\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] element : links) {
+            String page = br.getPage(element[1]);
+            if (br.getRedirectLocation() != null) {
+                decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            } else {
+                String link = new Regex(page, Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                if (link != null) decryptedLinks.add(createDownloadlink(link));
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

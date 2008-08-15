@@ -16,17 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Hubuploadcom extends PluginForDecrypt {
 
@@ -40,27 +36,16 @@ public class Hubuploadcom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String Cookie = reqinfo.getCookie();
-            String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<form action=\"(.*?)\"><input type=\"submit\" class=\"dlbutton\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
 
-            progress.setRange(links.length);
-            for (String element : links) {
-                reqinfo = HTTP.getRequest(new URL(element), Cookie, cryptedLink, false);
-                String link = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("<form action=\"(.*?)\"><input type=\"submit\" class=\"dlbutton\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        progress.setRange(links.length);
+        for (String element : links) {
+            String link = Encoding.htmlDecode(new Regex(br.getPage(element), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+            if (link != null) decryptedLinks.add(createDownloadlink(link));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
