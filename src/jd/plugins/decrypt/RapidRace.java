@@ -1,6 +1,5 @@
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -13,8 +12,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class RapidRace extends PluginForDecrypt {
-    static private final String CODER = "TheBlindProphet";
-
     static private final String HOST = "rapidrace.org";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
@@ -53,13 +50,8 @@ public class RapidRace extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "TheBlindProphet";
     }
 
     @Override

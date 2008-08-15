@@ -35,10 +35,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
-/**
- * DecryptPlugin für secured.in Links
- * 
- */
 public class Secured extends PluginForDecrypt {
     class Cypher {
         private final int[] iatwbfrd = new int[] { 0xd1310ba6, 0x98dfb5ac, 0x2ffd72db, 0xd01adfb7, 0xb8e1afed, 0x6a267e96, 0xba7c9045, 0xf12c7f99, 0x24a19947, 0xb3916cf7, 0x0801f2e2, 0x858efc16, 0x636920d8, 0x71574e69, 0xa458fea3, 0xf4933d7e, 0x0d95748f, 0x728eb658, 0x718bcd58, 0x82154aee, 0x7b54a41d, 0xc25a59b5, 0x9c30d539, 0x2af26013, 0xc5d1b023, 0x286085f0, 0xca417918, 0xb8db38ef, 0x8e79dcb0, 0x603a180e, 0x6c9e0e8b, 0xb01e8a3e, 0xd71577c1, 0xbd314b27, 0x78af2fda, 0x55605c60, 0xe65525f3, 0xaa55ab94, 0x57489862, 0x63e81440, 0x55ca396a, 0x2aab10b6, 0xb4cc5c34, 0x1141e8ce, 0xa15486af, 0x7c72e993, 0xb3ee1411, 0x636fbc2a, 0x2ba9c55d, 0x741831f6, 0xce5c3e16, 0x9b87931e, 0xafd6ba33, 0x6c24cf5c, 0x7a325381, 0x28958677, 0x3b8f4898, 0x6b4bb9af, 0xc4bfe81b, 0x66282193, 0x61d809cc, 0xfb21a991, 0x487cac60, 0x5dec8032, 0xef845d5d, 0xe98575b1, 0xdc262302, 0xeb651b88, 0x23893e81, 0xd396acc5,
@@ -261,8 +257,6 @@ public class Secured extends PluginForDecrypt {
 
     static private final String AJAX_URL = "http://secured.in/ajax-handler.php";
 
-    static private final String CODER = "olimex|JD-Team";
-
     static private String DOWNLOAD_CMD = "downloaditfgh4w5z4e5";
 
     static private final String HOST = "secured.in";
@@ -381,13 +375,8 @@ public class Secured extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "olimex, JD-Team";
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,8 +37,6 @@ public class Rapidlayerin extends PluginForDecrypt {
     static private final String HOST = "rapidlayer.in";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
-    private String CODER = "JD-Team";
 
     public Rapidlayerin() {
         super();
@@ -80,13 +77,8 @@ public class Rapidlayerin extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override

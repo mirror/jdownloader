@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -83,11 +82,6 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }
@@ -98,7 +92,7 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     @Override
-   public String getPluginName() {
+    public String getPluginName() {
         return host;
     }
 

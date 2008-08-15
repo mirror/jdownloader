@@ -54,14 +54,13 @@ public class UrlShieldnet extends PluginForDecrypt {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-       
-      
+
             boolean do_continue = true;
             Form form;
             Browser.clearCookies(host);
-      
+
             br.getPage(cryptedLink);
-br.setFollowRedirects(false);
+            br.setFollowRedirects(false);
             for (int retry = 1; retry < 5; retry++) {
                 if (br.containsHTML("Invalid Password")) {
                     br.getPage(cryptedLink);
@@ -75,7 +74,7 @@ br.setFollowRedirects(false);
                         break;
                     }
                     form.getVars().put("password", passCode);
-                    
+
                     br.submitForm(form);
                 } else {
                     do_continue = true;
@@ -84,14 +83,14 @@ br.setFollowRedirects(false);
             }
             if (do_continue == true) {
                 if (br.containsHTML("window.alert")) {
-                    logger.severe(br.getRegex( "window.alert\\(\"(.*?)\"\\)").getFirstMatch());
+                    logger.severe(br.getRegex("window.alert\\(\"(.*?)\"\\)").getFirstMatch());
                     do_continue = false;
                 }
             }
             if (do_continue == true) {
                 /* doofes JS */
-                String all = Encoding.htmlDecode(br.getRegex(  Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                String dec = br.getRegex(  Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                 all = all.replaceAll("document\\.writeln\\(s\\);", "");
                 Context cx = Context.enter();
                 Scriptable scope = cx.initStandardObjects();
@@ -109,10 +108,10 @@ br.setFollowRedirects(false);
                         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
                         break;
                     }
-                    
+
                     br.getPage(url);
                     if (br.containsHTML("getkey.php?id")) {
-                        String captchaurl =  br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                         form = br.getForm(0);
                         /* Captcha zu verarbeiten */
                         captchaFile = getLocalCaptchaFile(this);
@@ -125,7 +124,7 @@ br.setFollowRedirects(false);
                         /* CaptchaCode holen */
                         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return null; }
                         form.getVars().put("userkey", captchaCode);
-                        
+
                         br.submitForm(form);
                     }
                 }
@@ -138,11 +137,6 @@ br.setFollowRedirects(false);
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

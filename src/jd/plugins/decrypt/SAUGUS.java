@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -74,8 +73,8 @@ public class SAUGUS extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             br.getPage(parameter);
-            
-            if ( br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
+
+            if (br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
             String hst = "http://" + br.getRequest().getUrl().getHost() + "/";
             String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
             progress.setRange(crypt.length);
@@ -105,11 +104,6 @@ public class SAUGUS extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

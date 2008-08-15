@@ -25,7 +25,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -179,9 +178,9 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-       Browser.clearCookies("serienjunkies.org");
+        Browser.clearCookies("serienjunkies.org");
         br.getPage("http://serienjunkies.org/enter/");
-      
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (parameter.matches(".*\\?(cat|p)\\=[\\d]+.*")) {
             boolean isP = parameter.contains("/?p=");
@@ -192,7 +191,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 br.getPage("http://serienjunkies.org/");
 
                 Pattern pattern = Pattern.compile("<a href=\"http://serienjunkies.org/\\?cat\\=([\\d]+)\">(.*?)</a><br", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(br+"");
+                Matcher matcher = pattern.matcher(br + "");
                 String name = null;
                 while (matcher.find()) {
                     if (Integer.parseInt(matcher.group(1)) == cat) {
@@ -214,7 +213,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     }
 
                 }
-                lastHtmlCode = br+"";
+                lastHtmlCode = br + "";
                 String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
                 for (String element : links) {
                     decryptedLinks.add(createDownloadlink(element));
@@ -225,10 +224,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 String htmlcode = "";
                 if (isP) {
                     br.getPage(parameter);
-                    htmlcode = br+"";
+                    htmlcode = br + "";
                 } else {
                     br.getPage("http://serienjunkies.org/?cat=" + cat);
-                    htmlcode = br+"";
+                    htmlcode = br + "";
                     try {
                         int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getFirstMatch());
                         for (int i = 2; i < pages + 1; i++) {
@@ -250,11 +249,14 @@ public class Serienjunkies extends PluginForDecrypt {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
                             for (String element4 : links2) {
                                 if (canHandle(element4)) {
-//                                    if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-//                                        decryptedLinks.addAll((new jd.plugins.host.Serienjunkies()).getDLinks(element4));
-//                                    } else {
-                                        decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
-//                                    }
+                                    // if (getPluginConfig().getBooleanProperty(
+                                    // "USE_DIREKTDECRYPT", false)) {
+                                    // decryptedLinks.addAll((new
+                                    // jd.plugins.host
+                                    // .Serienjunkies()).getDLinks(element4));
+                                    // } else {
+                                    decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
+                                    // }
 
                                 }
 
@@ -268,27 +270,24 @@ public class Serienjunkies extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-//        if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false)) {
-//            // step.setParameter((new
-//            // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
-//        } else {
+        // if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false))
+        // {
+        // // step.setParameter((new
+        // // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
+        // } else {
 
-            String[] info = getLinkName(parameter);
+        String[] info = getLinkName(parameter);
 
-            if (info == null) {
-                br.getPage("http://serienjunkies.org/?s=" + parameter.replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen");
-                lastHtmlCode = br+"";
-                info = getLinkName(parameter);
-            }
+        if (info == null) {
+            br.getPage("http://serienjunkies.org/?s=" + parameter.replaceFirst(".*/", "").replaceFirst("\\.html?$", "") + "&submit=Suchen");
+            lastHtmlCode = br + "";
+            info = getLinkName(parameter);
+        }
 
-            decryptedLinks.add(createdl(parameter, info));
+        decryptedLinks.add(createdl(parameter, info));
 
-//        }
+        // }
         return decryptedLinks;
-    }
-
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     public String getCoder() {
@@ -518,8 +517,11 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-//        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_DIREKTDECRYPT", JDLocale.L("plugins.SerienJunkies.decryptImmediately", "Decrypt immediately")));
-//        cfg.setDefaultValue(false);
+        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // getPluginConfig(), "USE_DIREKTDECRYPT",
+        // JDLocale.L("plugins.SerienJunkies.decryptImmediately",
+        // "Decrypt immediately")));
+        // cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));

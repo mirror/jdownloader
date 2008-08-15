@@ -84,11 +84,6 @@ public class ScumIn extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }
@@ -99,7 +94,7 @@ public class ScumIn extends PluginForDecrypt {
     }
 
     @Override
-public String getPluginName() {
+    public String getPluginName() {
         return host;
     }
 

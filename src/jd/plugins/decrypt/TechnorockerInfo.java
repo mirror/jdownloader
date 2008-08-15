@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -43,11 +42,6 @@ public class TechnorockerInfo extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

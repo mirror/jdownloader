@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -41,11 +40,6 @@ public class RapidSpreadCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

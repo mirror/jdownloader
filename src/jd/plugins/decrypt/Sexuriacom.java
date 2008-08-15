@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -26,7 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Sexuriacom extends PluginForDecrypt {
-    private static final String CODER = "ToKaM";
     private static final String HOST = "sexuria.com";
 
     private static final Pattern patternSupported_Main = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
@@ -70,23 +68,18 @@ public class Sexuriacom extends PluginForDecrypt {
                 logger.info(br.getRedirectLocation());
             }
             return decryptedLinks;
-        }else if(new Regex(cryptedLink, patternSupportetRedirect).matches()){
-        	String id = new Regex(cryptedLink, patternSupportetRedirect).getFirstMatch();
-        	decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id +".html" ));
-        	System.out.println(decryptedLinks.get(0));
-        	return decryptedLinks;
+        } else if (new Regex(cryptedLink, patternSupportetRedirect).matches()) {
+            String id = new Regex(cryptedLink, patternSupportetRedirect).getFirstMatch();
+            decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
+            System.out.println(decryptedLinks.get(0));
+            return decryptedLinks;
         }
         return null;
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "ToKaM";
     }
 
     @Override

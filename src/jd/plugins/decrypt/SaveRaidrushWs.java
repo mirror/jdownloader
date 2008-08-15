@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -35,7 +34,7 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        
+
         String[][] links = new Regex(br.getPage(parameter), Pattern.compile("get\\('(.*?)','FREE','(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
         progress.setRange(links.length);
         for (String[] elements : links) {
@@ -44,11 +43,6 @@ public class SaveRaidrushWs extends PluginForDecrypt {
         }
 
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

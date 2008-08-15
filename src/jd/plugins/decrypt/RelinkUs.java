@@ -48,7 +48,7 @@ public class RelinkUs extends PluginForDecrypt {
 
     public RelinkUs() {
         super();
-        setConfigEelements();
+        setConfigElements();
     }
 
     private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
@@ -107,11 +107,6 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }
@@ -137,7 +132,7 @@ public class RelinkUs extends PluginForDecrypt {
         return ret == null ? "0.0" : ret;
     }
 
-    private void setConfigEelements() {
+    private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));

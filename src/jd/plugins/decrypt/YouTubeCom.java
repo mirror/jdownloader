@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -34,8 +33,7 @@ import jd.plugins.RequestInfo;
 
 public class YouTubeCom extends PluginForDecrypt {
 
-	
-	//TODO: Neue Plugins im StreamingShare-Addon eintragen!
+    // TODO: Neue Plugins im StreamingShare-Addon eintragen!
     static private String host = "youtube.com";
     static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
     private static final String PLAYER = "get_video";
@@ -43,7 +41,7 @@ public class YouTubeCom extends PluginForDecrypt {
     private static final String VIDEO_ID = "video_id";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>", Pattern.CASE_INSENSITIVE);
     private Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
-    
+
     static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
     public YouTubeCom() {
@@ -63,17 +61,15 @@ public class YouTubeCom extends PluginForDecrypt {
         Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-        	if(StreamingShareLink.matcher(parameter).matches())
-        	{
-        		//StreamingShareLink
+            if (StreamingShareLink.matcher(parameter).matches()) {
+                // StreamingShareLink
 
-        		String[] info = new Regex(parameter,StreamingShareLink).getMatches()[0];
-        		
-        		for(String debug:info)
-                {
-                	logger.info(debug);
+                String[] info = new Regex(parameter, StreamingShareLink).getMatches()[0];
+
+                for (String debug : info) {
+                    logger.info(debug);
                 }
-        		DownloadLink thislink = createDownloadlink(info[1]);
+                DownloadLink thislink = createDownloadlink(info[1]);
                 thislink.setBrowserUrl(info[2]);
                 thislink.setStaticFileName(info[0]);
                 thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[3])).GetText());
@@ -81,8 +77,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
                 decryptedLinks.add(thislink);
                 return decryptedLinks;
-        	}
-        	
+            }
+
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String video_id = "";
@@ -114,7 +110,6 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            
             ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
             if (ConvertTo != null) {
                 if (ConvertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
@@ -134,11 +129,6 @@ public class YouTubeCom extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

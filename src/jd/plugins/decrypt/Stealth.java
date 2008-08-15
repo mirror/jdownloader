@@ -72,11 +72,6 @@ public class Stealth extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }

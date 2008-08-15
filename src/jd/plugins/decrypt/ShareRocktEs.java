@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -26,7 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class ShareRocktEs extends PluginForDecrypt {
-    private static final String CODER = "ToKaM";
     private static final String HOST = "share.rockt.es";
 
     private static final Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
@@ -49,9 +47,7 @@ public class ShareRocktEs extends PluginForDecrypt {
             matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getMatches(1);
         } else {
             String match = new Regex(cryptedLink, patternSupported_go).getFirstMatch();
-            if (match == null) {
-                return null;
-            }
+            if (match == null) { return null; }
             matches = new String[] { match };
         }
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -81,14 +77,8 @@ public class ShareRocktEs extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        return CODER;
+        return "ToKaM";
     }
 
     @Override

@@ -43,17 +43,16 @@ public class ShareOnAll extends PluginForDecrypt {
             Browser.clearCookies(host);
             String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
             String url = "http://www.shareonall.com/showlinks.php?f=" + id + ".htm";
-         
+
             br.getPage(url);
             boolean do_continue = false;
             Form form;
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 if (br.containsHTML("<img src='code")) {
                     form = br.getForm(0);
-                    String captchaAddress = br.getRegex( Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String captchaAddress = br.getRegex(Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                     captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
-                    
-          
+
                     File captchaFile = this.getLocalCaptchaFile(this);
                     if (!Browser.download(captchaFile, br.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
@@ -68,7 +67,7 @@ public class ShareOnAll extends PluginForDecrypt {
                     captchaCode = captchaCode.toUpperCase();
                     form.put("c", captchaCode);
                     br.submitForm(form);
-                 
+
                 } else {
                     do_continue = true;
                     break;
@@ -76,7 +75,7 @@ public class ShareOnAll extends PluginForDecrypt {
             }
             if (do_continue == true) {
                 // Links herausfiltern
-                String links[][] = br.getRegex( Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
+                String links[][] = br.getRegex(Pattern.compile("<a href=\'(.*?)\' target='_blank'>", Pattern.CASE_INSENSITIVE)).getMatches();
                 progress.setRange(links.length);
                 for (String[] element : links) {
                     decryptedLinks.add(createDownloadlink(element[0]));
@@ -88,11 +87,6 @@ public class ShareOnAll extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

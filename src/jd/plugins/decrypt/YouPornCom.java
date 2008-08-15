@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class YouPornCom extends PluginForDecrypt {
-    private static final String CODER = "JD-Team";
     private static final String HOST = "youporn.com";
     private static final Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.*/?", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Other = Pattern.compile("http://[\\w\\.]*?youporn\\.com/(.*?page=\\d+)", Pattern.CASE_INSENSITIVE);
@@ -52,9 +50,7 @@ public class YouPornCom extends PluginForDecrypt {
             } else {
                 loader = HTTP.getRequest(new URL(parameter), "age_check=1", "", true);
                 String matches = new Regex(loader.getHtmlCode(), DOWNLOADFILE).getFirstMatch();
-                if (matches == null) {
-                    return null;
-                }
+                if (matches == null) { return null; }
                 DownloadLink dlink = createDownloadlink("http://" + matches);
                 dlink.setBrowserUrl(parameter);
                 decryptedLinks.add(dlink);
@@ -70,38 +66,27 @@ public class YouPornCom extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public String getCoder() {
-        // TODO Auto-generated method stub
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public String getHost() {
-        // TODO Auto-generated method stub
         return HOST;
     }
 
     @Override
     public String getPluginName() {
-        // TODO Auto-generated method stub
         return HOST;
     }
 
     @Override
     public Pattern getSupportedLinks() {
-        // TODO Auto-generated method stub
         return patternSupported;
     }
 
     @Override
     public String getVersion() {
-        // TODO Auto-generated method stub
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
         return ret == null ? "0.0" : ret;
     }

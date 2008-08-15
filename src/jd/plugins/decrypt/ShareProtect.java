@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -40,20 +39,19 @@ public class ShareProtect extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             Browser.clearCookies(host);
-       
+
             br.getPage(parameter);
             String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getMatches(1);
             StringBuffer htmlc = new StringBuffer();
             for (String element : matches) {
                 htmlc.append(Encoding.htmlDecode(element) + "\n");
             }
-         
 
-            String[] links = new Regex(htmlc,"<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
+            String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
             progress.setRange(links.length);
             htmlc = new StringBuffer();
             for (String element : links) {
-                
+
                 br.getPage("http://" + br.getHost() + "/" + element);
                 htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
                 progress.increase(1);
@@ -68,11 +66,6 @@ public class ShareProtect extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

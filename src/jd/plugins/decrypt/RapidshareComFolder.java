@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -72,11 +71,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
-    @Override
     public String getCoder() {
         return "JD-Team";
     }
@@ -89,22 +83,22 @@ public class RapidshareComFolder extends PluginForDecrypt {
     private void getLinks(String source) {
         RequestInfo reqhelp;
         String folders[] = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getMatches(1);
-        String[] links=new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getMatches(1);
+        String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getMatches(1);
         for (String element : folders) {
-       
-                try {
-                    reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + element, false);
-                    getLinks(reqhelp.getHtmlCode());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            
+
+            try {
+                reqhelp = HTTP.postRequest(new URL(para), cookie, para, null, "password=" + password + "&subpassword=&browse=ID%3D" + element, false);
+                getLinks(reqhelp.getHtmlCode());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
-        
+
         for (String element : links) {
-           
-                decryptedLinks.add(createDownloadlink("http://rapidshare.com/files/"+element));
-            
+
+            decryptedLinks.add(createDownloadlink("http://rapidshare.com/files/" + element));
+
         }
     }
 
