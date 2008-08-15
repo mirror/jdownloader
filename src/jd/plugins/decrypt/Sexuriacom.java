@@ -72,7 +72,7 @@ public class Sexuriacom extends PluginForDecrypt {
             return decryptedLinks;
         }else if(new Regex(cryptedLink, patternSupportetRedirect).matches()){
         	String id = new Regex(cryptedLink, patternSupportetRedirect).getFirstMatch();
-        	decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_jdownloader_" + id +".html" ));
+        	decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id +".html" ));
         	System.out.println(decryptedLinks.get(0));
         	return decryptedLinks;
         }
