@@ -92,8 +92,6 @@ public class CryptItCom extends PluginForDecrypt {
         return requestInfo;
     }
 
-    private String CODER = "jD-Team";
-
     public CryptItCom() {
         super();
     }
@@ -265,7 +263,7 @@ public class CryptItCom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override

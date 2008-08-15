@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -42,60 +41,55 @@ public class EinsKhDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        
+
         Browser.clearCookies(host);
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        
+
         br.getPage(parameter);
         Form[] forms = br.getForms();
         if (Regex.matches(parameter, patternSupported_File)) {
             /* Einzelne Datei */
-            
+
             String[] links = br.getRegex("<iframe name=\"pagetext\" height=\".*?\" frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>").getMatches(1);
             progress.setRange(links.length);
-            
+
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
                 progress.increase(1);
             }
-        } else {  
+        } else {
             /* ganzer Ordner */
             if (forms[0].getVars().containsKey("Password")) {
                 /* Ordner ist Passwort geschützt */
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
-                  
+
                     if (password == null) {
                         /* Auf "Abbruch" geklickt */
                         return decryptedLinks;
                     }
-                    
+
                     forms[0].put("Password", password);
                     br.submitForm(forms[0]);
-                    
+
                     if (!br.containsHTML("Das eingegebene Passwort ist falsch!")) {
                         break;
                     }
                 }
             }
-            
+
             String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getMatches(1);
             progress.setRange(links.length);
-            
+
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink("http://1kh.de/" + element));
                 progress.increase(1);
             }
-            
+
         }
 
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

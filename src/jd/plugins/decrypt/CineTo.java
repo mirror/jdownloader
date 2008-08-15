@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -60,10 +59,6 @@ public class CineTo extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     private String extractCaptcha(String[][] source, int captchanumber) {

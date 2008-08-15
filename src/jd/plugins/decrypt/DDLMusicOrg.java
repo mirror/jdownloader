@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -52,9 +51,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 RequestInfo reqinfo = HTTP.getRequest(new URL(cryptedLink.replace("ddlm_cr.php", "test2.php")), null, cryptedLink, false);
                 String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
-                if (link == null) {
-                    return null;
-                }
+                if (link == null) { return null; }
                 decryptedLinks.add(createDownloadlink(link));
             } else if (new Regex(cryptedLink, patternLink_Main).matches()) {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
@@ -88,11 +85,6 @@ public class DDLMusicOrg extends PluginForDecrypt {
             return null;
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

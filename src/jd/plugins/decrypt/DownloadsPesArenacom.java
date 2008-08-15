@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -43,11 +42,6 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.getPage("http://downloads.pes-arena.com/content.php?id=" + id), Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
 
         return decryptedLinks;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
