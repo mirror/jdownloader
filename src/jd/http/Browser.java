@@ -86,6 +86,21 @@ public class Browser {
 
     }
 
+    public static void setCookie(String url, String key, String value) {
+        String host;
+
+        host = Browser.getHost(url);
+        HashMap<String, String> cookies;
+        if (!COOKIES.containsKey(host)) {
+            cookies = new HashMap<String, String>();
+            COOKIES.put(host, cookies);
+        } else {
+            cookies = COOKIES.get(host);
+        }
+        cookies.put(key.trim(), value.trim());
+
+    }
+
     public static String getHost(Object url) {
         try {
             String ret = new URL(url + "").getHost();

@@ -76,6 +76,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         private long timer;
 
         public TooltipTimer(int delay) {
+            this.setName("GUITooltiptimer");
             this.delay = delay;
         }
 

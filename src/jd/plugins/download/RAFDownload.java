@@ -51,6 +51,7 @@ public class RAFDownload extends DownloadInterface {
         public boolean waitFlag = true;
 
         public WriterWorker() {
+            this.setName("RAFWriterWorker");
             start();
         }
 

@@ -848,7 +848,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-//        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        // LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
@@ -879,7 +879,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public String getFileInformationString(DownloadLink parameter) {
-//        LinkStatus linkStatus = parameter.getLinkStatus();
+        // LinkStatus linkStatus = parameter.getLinkStatus();
         // if (this.hardewareError) {
         // return "<Hardware Fehler> " +
         // super.getFileInformationString(parameter);
@@ -1159,15 +1159,16 @@ public class Rapidshare extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setAcceptLanguage("en");
+        br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
-
+        HTTPConnection con = br.getRequest().getHttpConnection();
         if (account.getUser().equals("") || account.getPass().equals("") || br.containsHTML("Your Premium Account has not been found")) {
             ai.setValid(false);
             return ai;
         }
-        logger.info(br+"");
-        String validUntil = br.getRegex("<td>(Expiration date:|G&uuml;ltig bis:)</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+        logger.info(br + "");
+        String validUntil = br.getRegex("<td>(Expire date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+
         String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch(2);
         String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
         String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
@@ -1186,7 +1187,15 @@ public class Rapidshare extends PluginForHost {
             Date date = dateFormat.parse(validUntil);
             ai.setValidUntil(date.getTime());
         } catch (ParseException e) {
-            e.printStackTrace();
+            try {
+                dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy");
+                Date date = dateFormat.parse(validUntil);
+                ai.setValidUntil(date.getTime());
+                e.printStackTrace();
+            } catch (ParseException e2) {
+                return null;
+            }
+
         }
 
         if (br.containsHTML("expired") && br.containsHTML("if (1)")) {

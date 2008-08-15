@@ -63,7 +63,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     private int totalSpeed = 0;
 
     public DownloadWatchDog(JDController controller) {
-
+this.setName("Downloadwatchdog");
         this.controller = controller;
         controller.addControlListener(this);
     }

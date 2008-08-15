@@ -130,7 +130,7 @@ public class Uploadedto extends PluginForHost {
         
        Browser.clearCookies(HOST);
        br.setFollowRedirects(true);
-       br.setAcceptLanguage("en");
+       br.setAcceptLanguage("en, en-gb;q=0.8");
        br.getPage("http://uploaded.to/login");
      
        Form login= br.getForm(0);

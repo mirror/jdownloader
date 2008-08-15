@@ -88,7 +88,7 @@ public class SingleDownloadController extends Thread {
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
-        linkStatus.setStatusText(JDLocale.L("controller.status.termination", "termination..."));
+//        linkStatus.setStatusText(JDLocale.L("controller.status.termination", "termination..."));
         // aborted = true;
 
         // if (currentPlugin != null) currentPlugin.abort();
@@ -123,7 +123,9 @@ public class SingleDownloadController extends Thread {
             if (downloadLink.getDownloadURL() == null) {
 
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
-
+                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Fehler"));
+                
+                 downloadLink.setEnabled(false);
                 // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);

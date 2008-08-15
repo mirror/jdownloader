@@ -121,7 +121,7 @@ public class LinkStatus implements Serializable {
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
     private DownloadLink downloadLink;
-    private transient String errorMessage;
+    private  String errorMessage;
 
     private int lastestStatus = TODO;
     private int status = TODO;
@@ -286,6 +286,7 @@ public class LinkStatus implements Serializable {
         if(downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()){
             return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]");
         }
+        if(this.errorMessage!=null)return errorMessage;
         if (statusText != null) { return statusText; }
         return "";
 
@@ -339,7 +340,7 @@ public class LinkStatus implements Serializable {
     public void reset() {
         setStatus(TODO);
 
-        errorMessage = null;
+//        errorMessage = null;
         statusText = null;
         retryCount = 0;
         totalWaitTime = 0;
@@ -378,7 +379,7 @@ public class LinkStatus implements Serializable {
     public void setStatus(int status) {
         this.status = status;
         lastestStatus = status;
-        System.out.println("");
+    
     }
 
     public void setStatusText(String l) {

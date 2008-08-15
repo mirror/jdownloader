@@ -328,7 +328,7 @@ public class DepositFiles extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         Browser.clearCookies(HOST);
-        br.setAcceptLanguage("en");
+        br.setAcceptLanguage("en, en-gb;q=0.8");
       
         br.getPage("http://depositfiles.com/en/");
         

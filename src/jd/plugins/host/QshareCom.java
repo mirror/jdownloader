@@ -66,7 +66,7 @@ public class QshareCom extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         Browser.clearCookies(HOST);
-        br.setAcceptLanguage("en");
+        br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://www.qshare.com");
         br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
