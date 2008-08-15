@@ -76,30 +76,27 @@ public class Wiireloaded extends PluginForDecrypt {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
             String calc_page = br.getPage(u);
             String rechnung[][] = new Regex(calc_page, Pattern.compile("\\((\\w+) (\\+|\\-) (\\w+) = \\?\\)", Pattern.CASE_INSENSITIVE)).getMatches();
-            
-            if(rechnung.length>0){
-            Integer calc_result;
-            if (rechnung[0][1].contains("+")) {
-                calc_result = RomanToInt(rechnung[0][0]) + RomanToInt(rechnung[0][2]);
+
+            if (rechnung.length > 0) {
+                Integer calc_result;
+                if (rechnung[0][1].contains("+")) {
+                    calc_result = RomanToInt(rechnung[0][0]) + RomanToInt(rechnung[0][2]);
+                } else {
+                    calc_result = RomanToInt(rechnung[0][0]) - RomanToInt(rechnung[0][2]);
+                }
+                Form form = br.getForms()[0];
+                form.setVariable(0, calc_result.toString());
+                br.submitForm(form);
+                if (br.getRedirectLocation() != null) {
+                    DownloadLink link = createDownloadlink(br.getRedirectLocation());
+                    link.setSourcePluginPasswords(link_passwds);
+                    decryptedLinks.add(link);
+                }
+                progress.increase(1);
             } else {
-                calc_result = RomanToInt(rechnung[0][0]) - RomanToInt(rechnung[0][2]);
-            }
-            Form form = br.getForms()[0];
-            form.setVariable(0, calc_result.toString());
-            br.submitForm(form);
-            if (br.getRedirectLocation() != null) {
-                DownloadLink link = createDownloadlink(br.getRedirectLocation());
-                link.setSourcePluginPasswords(link_passwds);
-                decryptedLinks.add(link);
-            }
-            progress.increase(1);
-            }else{
-                
-            br.getPage("http://wii-reloaded.ath.cx/protect/load.php");
-               
-               br=br;
-                
-                
+
+                br.getPage("http://wii-reloaded.ath.cx/protect/load.php");
+
             }
         }
         progress.increase(1);

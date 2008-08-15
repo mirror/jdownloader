@@ -18,10 +18,8 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -41,38 +39,26 @@ public class RaidrushOrg extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            Browser br = new Browser();
-            String page = br.getPage(parameter);
-            String title = new Regex(page, "<big><strong>(.*?)</strong></big>").getFirstMatch();
-            String pass = new Regex(page, "<strong>Passwort\\:</strong> <small>(.*?)</small>").getFirstMatch();
-            FilePackage fp = new FilePackage();
-            Vector<String> passes = new Vector<String>();
-            passes.add(pass);
-            fp.setName(title);
-            fp.setPassword(pass);
 
-            String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
-            progress.setRange(matches.length);
-            for (String[] match : matches) {
+        String page = br.getPage(parameter);
+        String title = new Regex(page, "<big><strong>(.*?)</strong></big>").getFirstMatch();
+        String pass = new Regex(page, "<strong>Passwort\\:</strong> <small>(.*?)</small>").getFirstMatch();
+        FilePackage fp = new FilePackage();
+        fp.setName(title);
+        fp.setPassword(pass);
 
-                String page2 = br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
-                String link = new Regex(page2, "unescape\\(\"(.*?)\"\\)").getFirstMatch();
-
-                link = Encoding.htmlDecode(link);
-                link = new Regex(link, "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
-                DownloadLink dl = createDownloadlink(link);
-                dl.setSourcePluginPasswords(passes);
-                dl.setFilePackage(fp);
-                decryptedLinks.add(dl);
-
-                progress.increase(1);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
+        progress.setRange(matches.length);
+        for (String[] match : matches) {
+            String link = new Regex(br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]), "unescape\\(\"(.*?)\"\\)").getFirstMatch();
+            link = new Regex(Encoding.htmlDecode(link), "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getFirstMatch();
+            DownloadLink dl = createDownloadlink(link);
+            dl.addSourcePluginPassword(pass);
+            dl.setFilePackage(fp);
+            decryptedLinks.add(dl);
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

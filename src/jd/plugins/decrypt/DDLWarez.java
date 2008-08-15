@@ -22,8 +22,6 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-import jd.http.GetRequest;
-import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
